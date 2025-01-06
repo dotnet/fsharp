@@ -1065,7 +1065,7 @@ type internal BackgroundCompiler
                         tcProj.TcGlobals,
                         options.IsIncompleteTypeCheckEnvironment,
                         Some builder,
-                        options,
+                        Some options,
                         Array.ofList tcDependencyFiles,
                         creationDiags,
                         parseResults.Diagnostics,
@@ -1247,7 +1247,7 @@ type internal BackgroundCompiler
                      tcEnvAtEnd.AccessRights,
                      tcAssemblyExprOpt,
                      Array.ofList tcDependencyFiles,
-                     options)
+                     Some options)
 
                 let results =
                     FSharpCheckProjectResults(

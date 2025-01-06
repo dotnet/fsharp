@@ -1695,7 +1695,7 @@ type internal TransparentCompiler
                             bootstrapInfo.TcGlobals,
                             projectSnapshot.IsIncompleteTypeCheckEnvironment,
                             None,
-                            projectSnapshot.ToOptions(),
+                            None,
                             Array.ofList tcInfo.tcDependencyFiles,
                             creationDiags,
                             parseResults.Diagnostics,
@@ -1962,7 +1962,7 @@ type internal TransparentCompiler
                          tcEnvAtEnd.AccessRights,
                          Some checkedImplFiles,
                          Array.ofList tcDependencyFiles,
-                         projectSnapshot.ToOptions())
+                         None)
 
                     let results =
                         FSharpCheckProjectResults(

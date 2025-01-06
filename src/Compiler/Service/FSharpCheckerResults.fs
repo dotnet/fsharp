@@ -348,7 +348,7 @@ type internal TypeCheckInfo
         tcAccessRights: AccessorDomain,
         projectFileName: string,
         mainInputFileName: string,
-        projectOptions: FSharpProjectOptions,
+        projectOptions: FSharpProjectOptions option,
         sResolutions: TcResolutions,
         sSymbolUses: TcSymbolUses,
         sFallback: NameResolutionEnv,
@@ -3289,7 +3289,7 @@ module internal ParseAndCheckFile =
                     tcEnvAtEnd.AccessRights,
                     projectFileName,
                     mainInputFileName,
-                    projectOptions,
+                    Some projectOptions,
                     sink.GetResolutions(),
                     sink.GetSymbolUses(),
                     tcEnvAtEnd.NameEnv,
@@ -3302,9 +3302,9 @@ module internal ParseAndCheckFile =
         }
 
 [<Sealed>]
-type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions) =
+type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions option) =
 
-    member _.ProjectOptions = projectOptions
+    member _.ProjectOptions = projectOptions |> Option.defaultWith (fun () -> failwith "not available")
 
     member _.GetReferencedAssemblies() = assemblies
 
@@ -3713,7 +3713,7 @@ type FSharpCheckProjectResults
             AccessorDomain *
             CheckedImplFile list option *
             string[] *
-            FSharpProjectOptions) option
+            FSharpProjectOptions option) option
     ) =
 
     let getDetails () =
@@ -4009,7 +4009,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  tcState.TcEnvFromImpls.AccessRights,
                  None,
                  dependencyFiles,
-                 projectOptions)
+                 Some projectOptions)
 
             let projectResults =
                 FSharpCheckProjectResults(fileName, Some tcConfig, keepAssemblyContents, errors, Some details)
