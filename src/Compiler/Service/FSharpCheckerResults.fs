@@ -3302,9 +3302,11 @@ module internal ParseAndCheckFile =
         }
 
 [<Sealed>]
-type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions option) =
+type FSharpProjectContext
+    (thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions option) =
 
-    member _.ProjectOptions = projectOptions |> Option.defaultWith (fun () -> failwith "not available")
+    member _.ProjectOptions =
+        projectOptions |> Option.defaultWith (fun () -> failwith "not available")
 
     member _.GetReferencedAssemblies() = assemblies
 
