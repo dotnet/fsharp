@@ -352,14 +352,22 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             else 
                 let implTypars, implValTy = implVal.GeneralizedType
                 let sigTypars, sigValTy = sigVal.GeneralizedType
-                if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) else
-                let aenv = aenv.BindEquivTypars implTypars sigTypars 
-                checkTypars m aenv implTypars sigTypars &&
-                if not (typeAEquiv g aenv implValTy sigValTy) then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer
-                elif not (checkValInfo aenv (err denv) implVal sigVal) then false
-                elif implVal.IsExtensionMember <> sigVal.IsExtensionMember then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
-                elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
-                else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
+                if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) 
+                else
+                    let aenv = aenv.BindEquivTypars implTypars sigTypars 
+                    checkTypars m aenv implTypars sigTypars &&
+                        let strictTyEquals = typeAEquiv g aenv implValTy sigValTy
+                        let nullTolerantEquals = g.checkNullness && typeAEquiv g {aenv with NullnessMustEqual = false} implValTy sigValTy
+
+                        // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
+                        if not strictTyEquals && nullTolerantEquals then
+                            warning(mk_err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer)
+
+                        if not strictTyEquals && not nullTolerantEquals then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer                          
+                        elif not (checkValInfo aenv (err denv) implVal sigVal) then false
+                        elif implVal.IsExtensionMember <> sigVal.IsExtensionMember then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
+                        elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
+                        else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
 
 
         and checkExnInfo err aenv (infoReader: InfoReader) (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) implTypeRepr sigTypeRepr =
