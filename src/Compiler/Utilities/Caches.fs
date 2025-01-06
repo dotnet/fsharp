@@ -53,9 +53,9 @@ type CacheOptions =
 type CachedEntity<'Value> =
     val Value: 'Value
     val mutable LastAccessed: int64
-    val mutable AccessCount: uint64
+    val mutable AccessCount: int64
 
-    new(value: 'Value) = { Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0UL }
+    new(value: 'Value) = { Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0L }
 
 
 [<Sealed; NoComparison; NoEquality>]
