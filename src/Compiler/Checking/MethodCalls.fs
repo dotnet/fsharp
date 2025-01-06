@@ -328,21 +328,46 @@ let AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote (infoReader: InfoR
     else
         AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy callerArgTy m
 
+let inline tryDestOptionalTy g ty =
+    if isOptionTy g ty then
+        destOptionTy g ty
+    elif g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g ty then
+        destValueOptionTy g ty
+    else
+        ty
+
+let inline mkOptionalTy (g: TcGlobals) ty  =
+    if g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g ty then
+        mkValueOptionTy g ty
+    else
+        mkOptionTy g ty
+
+let inline mkOptionalNone (g: TcGlobals) ty calledArgTy mMethExpr =
+    if g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g ty then
+        mkValueNone g calledArgTy mMethExpr
+    else
+        mkNone g calledArgTy mMethExpr
+
+
 /// Adjust the called argument type to take into account whether the caller's argument is CSharpMethod(?arg=Some(3)) or CSharpMethod(arg=1) 
 let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
     let g = infoReader.g
     let m = callerArg.Range
 
     let callerArgTy = callerArg.CallerArgumentType
-    if callerArg.IsExplicitOptional then 
-        match calledArg.OptArgInfo with 
+    if callerArg.IsExplicitOptional then
+        match calledArg.OptArgInfo with
         // CSharpMethod(?x = arg), optional C#-style argument, may have nullable type
-        | CallerSide _ -> 
+        | CallerSide _ ->
             if g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then
-                if isNullableTy g calledArgTy then
-                    mkOptionTy g (destNullableTy g calledArgTy), TypeDirectedConversionUsed.No, None
-                else
-                    mkOptionTy g calledArgTy, TypeDirectedConversionUsed.No, None
+
+                let calledArgTy =
+                    if isNullableTy g calledArgTy then
+                        destNullableTy g calledArgTy
+                    else
+                        calledArgTy
+
+                mkOptionalTy g calledArgTy, TypeDirectedConversionUsed.No, None
             else
                 calledArgTy, TypeDirectedConversionUsed.No, None
 
@@ -392,11 +417,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
 
         // FSharpMethod(x = arg), optional F#-style argument, should have option type
         | CalleeSide ->
-            let calledArgTy2 = 
-                if isOptionTy g calledArgTy then
-                    destOptionTy g calledArgTy
-                else
-                    calledArgTy
+            let calledArgTy2 = tryDestOptionalTy g calledArgTy
             AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote infoReader ad callerArgTy calledArgTy2 calledArg m
 
 // F# supports adhoc conversions at some specific points
@@ -1476,11 +1497,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 /// can be used with 'CalleeSide' optional arguments
 let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) =
     let calledArgTy = calledArg.CalledArgumentType
-    let calledNonOptTy = 
-        if isOptionTy g calledArgTy then 
-            destOptionTy g calledArgTy 
-        else
-            calledArgTy // should be unreachable
+    let calledNonOptTy = tryDestOptionalTy g calledArgTy
 
     match calledArg.CallerInfo, eCallerMemberName with
     | CallerLineNumber, _ when typeEquiv g calledNonOptTy g.int_ty ->
@@ -1494,7 +1511,8 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
         let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
         mkSome g calledNonOptTy memberNameExpr mMethExpr
     | _ ->
-        mkNone g calledNonOptTy mMethExpr
+        mkOptionalNone g calledArgTy calledNonOptTy mMethExpr
+
 
 /// Get the expression that must be inserted on the caller side for an optional arg where
 /// no caller argument has been provided. 
@@ -1573,20 +1591,24 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                     // AdjustCallerArgExpr later on will deal with any nullable conversion
                     callerArgExpr
 
-            | CalleeSide -> 
-                if isOptCallerArg then 
+            | CalleeSide ->
+                if isOptCallerArg then
                     // FSharpMethod(?x=b) --> FSharpMethod(?x=b)
-                    callerArgExpr 
-                else                            
+                    callerArgExpr
+                else
                     // FSharpMethod(x=b) when FSharpMethod(A) --> FSharpMethod(?x=Some(b :> A))
-                    if isOptionTy g calledArgTy then 
-                        let calledNonOptTy = destOptionTy g calledArgTy 
+                    if isOptionTy g calledArgTy then
+                        let calledNonOptTy = destOptionTy g calledArgTy
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
                         mkSome g calledNonOptTy callerArgExpr2 m
-                    else 
+                    elif g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters) && isValueOptionTy g calledArgTy then
+                        let calledNonOptTy = destValueOptionTy g calledArgTy
+                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                        mkValueSome g calledNonOptTy callerArgExpr2 m
+                    else
                         assert false
-                        callerArgExpr // defensive code - this case is unreachable 
-                        
+                        callerArgExpr // defensive code - this case is unreachable
+
         let callerArg2 = CallerArg(tyOfExpr g callerArgExpr2, m, isOptCallerArg, callerArgExpr2)
         { assignedArg with CallerArg=callerArg2 }
 

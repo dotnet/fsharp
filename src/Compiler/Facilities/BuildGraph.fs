@@ -3,7 +3,6 @@
 module FSharp.Compiler.BuildGraph
 
 open System.Threading
-open System.Threading.Tasks
 open System.Globalization
 
 [<RequireQualifiedAccess>]
@@ -40,55 +39,31 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
             cachedResultNode
         else
             async {
+                let! ct = Async.CancellationToken
                 Interlocked.Increment(&requestCount) |> ignore
+                let enter = semaphore.WaitAsync(ct)
 
                 try
-                    let! ct = Async.CancellationToken
+                    do! enter |> Async.AwaitTask
 
-                    // We must set 'taken' before any implicit cancellation checks
-                    // occur, making sure we are under the protection of the 'try'.
-                    // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
-                    // implicit cancellation checks even before the try is entered, as do the
-                    // de-sugaring of 'do!' and other NodeCode constructs.
-                    let mutable taken = false
-
-                    try
-                        do!
-                            semaphore
-                                .WaitAsync(ct)
-                                .ContinueWith(
-                                    (fun _ -> taken <- true),
-                                    (TaskContinuationOptions.NotOnCanceled
-                                     ||| TaskContinuationOptions.NotOnFaulted
-                                     ||| TaskContinuationOptions.ExecuteSynchronously)
-                                )
-                            |> Async.AwaitTask
-
-                        match cachedResult with
-                        | ValueSome value -> return value
-                        | _ ->
-                            let tcs = TaskCompletionSource<'T>()
-
-                            Async.StartWithContinuations(
-                                async {
-                                    Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                                    return! computation
-                                },
-                                (fun res ->
-                                    cachedResult <- ValueSome res
-                                    cachedResultNode <- async.Return res
-                                    computation <- Unchecked.defaultof<_>
-                                    tcs.SetResult(res)),
-                                (fun ex -> tcs.SetException(ex)),
-                                (fun _ -> tcs.SetCanceled()),
-                                ct
-                            )
-
-                            return! tcs.Task |> Async.AwaitTask
-                    finally
-                        if taken then
-                            semaphore.Release() |> ignore
+                    match cachedResult with
+                    | ValueSome value -> return value
+                    | _ ->
+                        Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
+                        let! result = computation
+                        cachedResult <- ValueSome result
+                        cachedResultNode <- async.Return result
+                        computation <- Unchecked.defaultof<_>
+                        return result
                 finally
+                    // At this point, the semaphore awaiter is either already completed or about to get canceled.
+                    // If calling Wait() does not throw an exception it means the semaphore was successfully taken and needs to be released.
+                    try
+                        enter.Wait()
+                        semaphore.Release() |> ignore
+                    with _ ->
+                        ()
+
                     Interlocked.Decrement(&requestCount) |> ignore
             }
 

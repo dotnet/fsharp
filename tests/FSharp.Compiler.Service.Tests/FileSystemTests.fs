@@ -1,4 +1,6 @@
-﻿module FSharp.Compiler.Service.Tests.FileSystemTests
+﻿// FileSystem is a global shared resource.
+[<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module FSharp.Compiler.Service.Tests.FileSystemTests
 
 open Xunit
 open FSharp.Test.Assert

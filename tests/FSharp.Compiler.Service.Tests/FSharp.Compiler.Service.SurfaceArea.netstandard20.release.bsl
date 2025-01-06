@@ -2011,9 +2011,12 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.Cancellable: Boolean HasCancellationToken
+FSharp.Compiler.Cancellable: Boolean get_HasCancellationToken()
 FSharp.Compiler.Cancellable: System.Threading.CancellationToken Token
 FSharp.Compiler.Cancellable: System.Threading.CancellationToken get_Token()
 FSharp.Compiler.Cancellable: Void CheckAndThrow()
+FSharp.Compiler.Cancellable: Void TryCheckAndThrow()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.DelayedILModuleReader: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
@@ -2107,7 +2110,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] Dependen
 FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean UsesTransparentCompiler
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Boolean get_UsesTransparentCompiler()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.DocumentSource], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker Instance
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Instance()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
@@ -2544,6 +2547,82 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+FSharpReferencedProjectSnapshot
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes Create(Int32)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 AssemblyDataKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 AssemblyDataKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 BootstrapInfoKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 BootstrapInfoKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 BootstrapInfoStaticKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 BootstrapInfoStaticKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 DependencyGraphKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 DependencyGraphKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 FrameworkImportsKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 FrameworkImportsKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ItemKeyStoreKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ItemKeyStoreKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseAndCheckAllFilesInProjectKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseAndCheckAllFilesInProjectKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseAndCheckFileInProjectKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseAndCheckFileInProjectKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseAndCheckProjectKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseAndCheckProjectKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseFileKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseFileKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseFileWithoutProjectKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ParseFileWithoutProjectKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ProjectExtrasKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ProjectExtrasKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ScriptClosureKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 ScriptClosureKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 SemanticClassificationKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 SemanticClassificationKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 TcIntermediateKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 TcIntermediateKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 TcLastFileKeepStrongly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 TcLastFileKeepWeakly
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_AssemblyDataKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_AssemblyDataKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_BootstrapInfoKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_BootstrapInfoKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_BootstrapInfoStaticKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_BootstrapInfoStaticKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_DependencyGraphKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_DependencyGraphKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_FrameworkImportsKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_FrameworkImportsKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ItemKeyStoreKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ItemKeyStoreKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseAndCheckAllFilesInProjectKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseAndCheckAllFilesInProjectKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseAndCheckFileInProjectKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseAndCheckFileInProjectKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseAndCheckProjectKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseAndCheckProjectKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseFileKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseFileKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseFileWithoutProjectKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ParseFileWithoutProjectKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ProjectExtrasKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ProjectExtrasKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ScriptClosureKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_ScriptClosureKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_SemanticClassificationKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_SemanticClassificationKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_TcIntermediateKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_TcIntermediateKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_TcLastFileKeepStrongly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Int32 get_TcLastFileKeepWeakly()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: System.String ToString()
+FSharp.Compiler.CodeAnalysis.TransparentCompiler.CacheSizes: Void .ctor(Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32, Int32)
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharp.Compiler.CodeAnalysis.FSharpChecker Checker
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharp.Compiler.CodeAnalysis.FSharpChecker get_Checker()
 FSharp.Compiler.CodeAnalysis.Workspace.FSharpWorkspace: FSharpWorkspaceFiles Files
