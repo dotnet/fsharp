@@ -658,7 +658,7 @@ type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer:
 
     member s.ToArray() = SetTree.toArray tree
 
-    override this.Equals(that: objnull) =
+    override this.Equals(that) =
         match that with
         // Cast to the exact same type as this, otherwise not equal.
         | :? Set<'T, 'ComparerTag> as that -> ((this :> System.IComparable).CompareTo(that) = 0)
@@ -1239,7 +1239,7 @@ type internal Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(c
         override s.GetEnumerator() =
             (MapTree.toSeq tree :> System.Collections.IEnumerator)
 
-    override this.Equals(that: objnull) =
+    override this.Equals(that) =
         match that with
         // Cast to the exact same type as this, otherwise not equal.
         | :? Map<'Key, 'T, 'ComparerTag> as that -> ((this :> System.IComparable).CompareTo(that) = 0)

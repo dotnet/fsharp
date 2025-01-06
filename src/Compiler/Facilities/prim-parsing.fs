@@ -5,6 +5,7 @@
 namespace Internal.Utilities.Text.Parsing
 
 open Internal.Utilities.Text.Lexing
+open Internal.Utilities.Library
 
 open System
 open System.Buffers
@@ -28,7 +29,7 @@ type internal IParseState
 
     member _.ResultEndPosition = lhsPos[1]
 
-    member _.GetInput index = ruleValues[index - 1]
+    member _.GetInput index = !! ruleValues[index - 1]
 
     member _.ResultRange = (lhsPos[0], lhsPos[1])
 
