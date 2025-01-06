@@ -4,7 +4,7 @@ open System
 open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
+open System.Diagnostics
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CachingStrategy = LRU | MRU | LFU
@@ -21,30 +21,19 @@ type CacheOptions =
       PercentageToEvict: int
       Strategy: CachingStrategy
       EvictionMethod: EvictionMethod
-      LevelOfConcurrency: int
-      Weak: bool } with
-    static member Default = { MaximumCapacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking; Weak = false }
+      LevelOfConcurrency: int } with
+    static member Default = { MaximumCapacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking; }
 
 [<Sealed; NoComparison; NoEquality>]
-type CachedEntity<'Key, 'Value> =
-    val Key: 'Key
+type CachedEntity<'Value> =
     val Value: 'Value
     val mutable LastAccessed: int64
     val mutable AccessCount: uint64
 
-    new(key: 'Key, value: 'Value) = { Key = key; Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0UL }
+    new(value: 'Value) = { Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0UL }
 
 [<Sealed; NoComparison; NoEquality>]
-type Weak<'K>(key) =
-    let collected = new Event<'K>()
-    [<CLIEvent>]
-    member val Collected = collected.Publish
-
-    // TODO: Do we want to store it as WeakReference here?
-    override _.Finalize() = collected.Trigger key
-
-// TODO: This has a very naive and straightforward implementation for managing lifetimes, when evicting, will have to traverse the dictionary.
-[<Sealed; NoComparison; NoEquality>]
+[<DebuggerDisplay("{GetStats()}")>]
 type Cache<'Key, 'Value> (options: CacheOptions) as this =
 
     let capacity = options.MaximumCapacity + (options.MaximumCapacity * options.PercentageToEvict / 100)
@@ -54,17 +43,16 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
         if options.EvictionMethod = EvictionMethod.Background then
             Task.Run(this.TryEvictTask, cts.Token) |> ignore
 
-    let cacheHit = Event<'Key * 'Value>()
-    let cacheMiss = Event<'Key>()
-    let eviction = Event<'Key * EvictionReason>()
+    let cacheHit = Event<_ * _>()
+    let cacheMiss = Event<_>()
+    let eviction = Event<_ * EvictionReason>()
 
     [<CLIEvent>] member val CacheHit = cacheHit.Publish
     [<CLIEvent>] member val CacheMiss = cacheMiss.Publish
     [<CLIEvent>] member val Eviction = eviction.Publish
 
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-    member val Store = ConcurrentDictionary<'Key, CachedEntity<'Key,'Value>>(options.LevelOfConcurrency, capacity)
-    member val ConditionalWeakTable = new ConditionalWeakTable<_, Weak<_>>();
+    member val Store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
 
     member _.GetStats() =
         {|
@@ -87,23 +75,23 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
             0
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
-    member private this.TryGetItemsToEvict () =
+    member private _.TryGetItemsToEvict () =
         match options.Strategy with
         | CachingStrategy.LRU ->
-            this.Store.Values |> Seq.sortBy _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+            this.Store |> Seq.sortBy _.Value.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
         | CachingStrategy.MRU ->
-            this.Store.Values |> Seq.sortByDescending _.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+            this.Store |> Seq.sortByDescending _.Value.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
         | CachingStrategy.LFU ->
-            this.Store.Values |> Seq.sortBy _.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+            this.Store |> Seq.sortBy _.Value.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
 
-    member private this.TryEvictItems () =
+    member private _.TryEvictItems () =
         if this.GetEvictCount() > 0 then
             for key in this.TryGetItemsToEvict () do
-                let (removed, _) = this.Store.TryRemove(key)
-                if removed then
-                    eviction.Trigger(key, EvictionReason.Evicted)
+                match this.Store.TryRemove(key) with
+                | true, _ -> eviction.Trigger(key, EvictionReason.Evicted)
+                | _ -> () // TODO: We probably want to count eviction misses as well?
 
-    member private this.TryEvictTask () =
+    member private _.TryEvictTask () =
         // This will spin in the background trying to evict items.
         // One of the issues is that if the delay is high (>100ms), it will not be able to evict items in time, and the cache will grow beyond the maximum capacity.
         backgroundTask {
@@ -114,13 +102,13 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
         }
 
     // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
-    member this.TryEvict() =
+    member _.TryEvict() =
         if this.GetEvictCount() > 0 then
             match options.EvictionMethod with
             | EvictionMethod.Blocking -> this.TryEvictItems ()
             | EvictionMethod.Background -> ()
 
-    member _.TryGet(key: 'Key) =
+    member _.TryGet(key) =
         match this.Store.TryGetValue(key) with
         | true, value ->
             // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
@@ -132,27 +120,19 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
             cacheMiss.Trigger(key)
             ValueNone
 
-    [<NoCompilerInlining>]
-    member this.Add(key: 'Key, value: 'Value) = let _ = this.TryAdd(key, value) in ()
+    member _.TryAdd(key, value: 'Value, ?update: bool) =
 
-    [<NoCompilerInlining>]
-    member this.TryAdd<'Key>(key: 'Key, value: 'Value) =
-
-        // Weak table/references only make sense if we work with reference types (for obvious reasons).
-        // So, if `Weak` is enabled for value types as keys of the cache, it will simply box them, resulting in additional allocations.
-        // GC-based eviction shall not be used with value types as keys.
-        if options.Weak then
-            let weak = Weak<'Key>(key)
-            this.ConditionalWeakTable.TryAdd(key :> obj, weak) |> ignore
-            weak.Collected.Add(this.RemoveCollected)
+        let update = defaultArg update false
 
         this.TryEvict()
-        this.Store.TryAdd(key, CachedEntity<'Key, 'Value>(key, value))
 
-    // TODO: This needs heavy testing to ensure we aren't leaking anything.
-    member private _.RemoveCollected(key: 'Key) =
-        this.Store.TryRemove(key) |> ignore
-        eviction.Trigger(key, EvictionReason.Collected);
+        let value = CachedEntity<'Value>(value)
+
+        if update then
+            this.Store.AddOrUpdate(key, value, (fun _ _ -> value)) |> ignore
+            true
+        else
+            this.Store.TryAdd(key, value)
 
     interface IDisposable with
         member _.Dispose() = cts.Cancel()
