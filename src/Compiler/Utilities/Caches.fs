@@ -6,14 +6,39 @@ open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
 
+[<RequireQualifiedAccess>]
+// Default Seq.* function have one issue - when doing `Seq.sortBy`, it will call a `ToArray` on the collection,
+// which is *not* calling `ConcurrentDictionary.ToArray`, but uses a custom one instead (treating it as `ICollection`)
+// this leads to and exception when trying to evict without locking (The index is equal to or greater than the length of the array,
+// or the number of elements in the dictionary is greater than the available space from index to the end of the destination array.)
+// this is casuedby insertions happened between reading the `Count` and doing the `CopyTo`.
+// This solution introduces a custom `ConcurrentDictionary.sortBy` which will be calling a proper `CopyTo`, the one on the ConcurrentDictionary itself.
+module ConcurrentDictionary =
+
+    open System.Collections
+    open System.Collections.Generic
+
+    let inline mkSeq f =
+        { new IEnumerable<'U> with
+            member _.GetEnumerator() = f()
+
+          interface IEnumerable with
+            member _.GetEnumerator() = (f() :> IEnumerator) }
+
+    let inline mkDelayedSeq (f: unit -> IEnumerable<'T>) =
+        mkSeq (fun () -> f().GetEnumerator())
+
+    let inline sortBy ([<InlineIfLambda>] projection) (source: ConcurrentDictionary<_, _>) =
+        mkDelayedSeq (fun () ->
+            let array = source.ToArray()
+            Array.sortInPlaceBy projection array
+            array :> seq<_>)
+
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type CachingStrategy = LRU | MRU | LFU
+type CachingStrategy = LRU | LFU
 
 [<Struct; RequireQualifiedAccess; NoComparison>]
 type EvictionMethod = Blocking | Background
-
-[<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type EvictionReason = Evicted | Collected
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -32,6 +57,7 @@ type CachedEntity<'Value> =
 
     new(value: 'Value) = { Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0UL }
 
+
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
 type Cache<'Key, 'Value> (options: CacheOptions) as this =
@@ -45,7 +71,7 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
-    let eviction = Event<_ * EvictionReason>()
+    let eviction = Event<_>()
 
     [<CLIEvent>] member val CacheHit = cacheHit.Publish
     [<CLIEvent>] member val CacheMiss = cacheMiss.Publish
@@ -61,44 +87,52 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
             Strategy = options.Strategy
             LevelOfConcurrency = options.LevelOfConcurrency
             Count = this.Store.Count
-            LeastRecentlyAccesssed = this.Store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
             MostRecentlyAccesssed = this.Store.Values |> Seq.maxBy _.LastAccessed |> _.LastAccessed
-            LeastFrequentlyAccessed = this.Store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
+            LeastRecentlyAccesssed = this.Store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
             MostFrequentlyAccessed = this.Store.Values |> Seq.maxBy _.AccessCount |> _.AccessCount
+            LeastFrequentlyAccessed = this.Store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
         |}
 
 
     member private _.GetEvictCount() =
         if this.Store.Count >= options.MaximumCapacity then
-            this.Store.Count * options.PercentageToEvict / 100
+            (this.Store.Count - options.MaximumCapacity) + (options.MaximumCapacity * options.PercentageToEvict / 100)
         else
             0
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
     member private _.TryGetItemsToEvict () =
-        match options.Strategy with
-        | CachingStrategy.LRU ->
-            this.Store |> Seq.sortBy _.Value.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
-        | CachingStrategy.MRU ->
-            this.Store |> Seq.sortByDescending _.Value.LastAccessed |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
-        | CachingStrategy.LFU ->
-            this.Store |> Seq.sortBy _.Value.AccessCount |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
+        this.Store |>
+            match options.Strategy with
+            | CachingStrategy.LRU ->
+                ConcurrentDictionary.sortBy _.Value.LastAccessed
+            | CachingStrategy.LFU ->
+                ConcurrentDictionary.sortBy _.Value.AccessCount
+        |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
 
     member private _.TryEvictItems () =
         if this.GetEvictCount() > 0 then
             for key in this.TryGetItemsToEvict () do
                 match this.Store.TryRemove(key) with
-                | true, _ -> eviction.Trigger(key, EvictionReason.Evicted)
+                | true, _ -> eviction.Trigger(key)
                 | _ -> () // TODO: We probably want to count eviction misses as well?
 
-    member private _.TryEvictTask () =
-        // This will spin in the background trying to evict items.
-        // One of the issues is that if the delay is high (>100ms), it will not be able to evict items in time, and the cache will grow beyond the maximum capacity.
+    // TODO: Shall this be a safer task, wrapping everything in try .. with, so it's not crashing silently?
+    member private this.TryEvictTask () =
         backgroundTask {
             while not cts.Token.IsCancellationRequested do
-                if this.GetEvictCount() > 0 then
-                    this.TryEvictItems ()
-                // do! Task.Delay(100, cts.Token)
+                    let evictionCount = this.GetEvictCount()
+                    if evictionCount > 0 then
+                        this.TryEvictItems ()
+                    let utilization = (this.Store.Count / options.MaximumCapacity)
+                    // So, based on utilization this will scale the delay between 0 and 1 seconds.
+                    // Worst case scenario would be when 1 second delay happens, then cache will grow rapidly, and beyond the maximum capacity.
+                    // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
+                    // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
+                    let delay = 1000 - (1000 * utilization)
+                    if delay > 0 then
+                        do! Task.Delay(delay)
+
         }
 
     // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
