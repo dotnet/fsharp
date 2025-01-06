@@ -457,7 +457,7 @@ module Range =
     let rangeOrder =
         let tripleOrder = Pair.order (String.order, Pair.order (posOrder, posOrder))
         let fileLineColumn = fun (r: range) -> r.FileName, (r.Start, r.End)
-        { new IComparer<pos> with
+        { new IComparer<range> with
             member _.Compare(x, xx) = tripleOrder.Compare(fileLineColumn x , fileLineColumn xx)
         }
 
