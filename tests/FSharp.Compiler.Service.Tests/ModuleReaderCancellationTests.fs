@@ -1,3 +1,5 @@
+// Sequential execution because of shared mutable state.
+[<FSharp.Test.RunTestCasesInSequence>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System
@@ -116,8 +118,8 @@ type PreTypeDefData =
                 mkILMethods []
 
         let typeAttributes = TypeAttributes.Public
-        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, emptyILInterfaceImpls, [],
-            None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [], ILTypeDefAdditionalFlags.None,
+        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, [], [],
+            None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [],
             emptyILSecurityDecls, emptyILCustomAttrsStored)
 
 type PreTypeDef(data: PreTypeDefData) =
