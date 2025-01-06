@@ -11156,31 +11156,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let supportEnforceAttributeTargets =
             (g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty)
             && not isVolatile // VolatileFieldAttribute has a special treatment(specific error FS823)
-        
-        // Check for attributes in unit of measure expressions
+
+        // Check for attributes in unit-of-measure expressions
         // e.g. let x = 1.0<m>
         //                  ^
         let rec checkAttributeInMeasure ty =
             match stripTyEqns g ty with
-            | TType_app(typeInstantiation= [ TType_measure tm ]) ->
-                let checkAttribs tm m =
-                    let attribs =
-                        ListMeasureConOccsWithNonZeroExponents g true tm
-                        |> List.map fst
-                        |> List.map(_.Attribs)
-                        |> List.concat
-
-                    CheckFSharpAttributes g attribs m |> CommitOperationResult
-                
-                match tm with
-                | Measure.Const(range = m) -> checkAttribs tm m
-                | Measure.Inv ms -> checkAttribs tm ms.Range
-                | Measure.One(m) -> checkAttribs tm m
-                | Measure.RationalPower(measure = ms1) -> checkAttribs tm ms1.Range
-                | Measure.Prod(measure1= ms1; measure2= ms2) ->
-                    checkAttribs ms1 ms1.Range
-                    checkAttribs ms2 ms2.Range
-                | Measure.Var(typar) -> checkAttribs tm typar.Range
+            | TType_app(typeInstantiation= [ TType_measure tm ]) -> CheckUnitOfMeasureAttributes g tm
             | TType_tuple(elementTypes= elementTypes) -> elementTypes |> List.iter checkAttributeInMeasure
             | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
             | TType_fun(domainType = domainType; rangeType= rangeType) ->

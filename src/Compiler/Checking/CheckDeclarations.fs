@@ -3241,30 +3241,12 @@ module EstablishTypeDefinitionCores =
                                     warning(Error(FSComp.SR.chkAttributeAliased(attrib.TypeRef.FullName), tycon.Id.idRange))
                         | _ -> ()
 
-                    // Check for attributes in unit of measure definitions
+                    // Check for attributes in unit-of-measure declarations
                     // e.g. [<Measure>] type m = 1<m>
                     //                             ^
                     let rec checkAttributeInMeasure ty =
                         match stripTyEqns g ty with
-                        | TType_measure tm ->
-                            let checkAttribs tm m =
-                                let attribs =
-                                    ListMeasureConOccsWithNonZeroExponents g true tm
-                                    |> List.map fst
-                                    |> List.map(_.Attribs)
-                                    |> List.concat
-
-                                CheckFSharpAttributes g attribs m |> CommitOperationResult
-                            
-                            match tm with
-                            | Measure.Const(range = m) -> checkAttribs tm m
-                            | Measure.Inv ms -> checkAttribs tm ms.Range
-                            | Measure.One(m) -> checkAttribs tm m
-                            | Measure.RationalPower(measure = ms1) -> checkAttribs tm ms1.Range
-                            | Measure.Prod(measure1= ms1; measure2= ms2) ->
-                                checkAttribs ms1 ms1.Range
-                                checkAttribs ms2 ms2.Range
-                            | Measure.Var(typar) -> checkAttribs tm typar.Range
+                        | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
                         | TType_tuple(elementTypes= elementTypes) -> elementTypes |> List.iter checkAttributeInMeasure
                         | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
                         | TType_fun(domainType = domainType; rangeType= rangeType) ->
