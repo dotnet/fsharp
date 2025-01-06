@@ -573,7 +573,7 @@ module internal Implementation =
                 else if Flags.debug then
                     Console.WriteLine("ALARM!!! drop through case in parser")
         // OK, we're done - read off the overall generated value
-        valueStack.Peep().value
+        !! valueStack.Peep().value
 
 type internal Tables<'Token> with
 
