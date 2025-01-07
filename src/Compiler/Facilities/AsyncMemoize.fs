@@ -84,7 +84,7 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
 
     member _.Request() =
         async {
-            try 
+            try
                 return! withStateUpdate request
             finally
                 updateState afterRequest
