@@ -135,7 +135,7 @@ type ConsoleLoggerProvider() =
 
 /// Notify the exiter if any error has occurred
 let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
-    if diagnosticsLogger.ErrorCount > 0 then
+    if diagnosticsLogger.CheckForRealErrorsIgnoringWarnings  then
         exiter.Exit 1
 
 let TypeCheck
