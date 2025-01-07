@@ -256,6 +256,8 @@ let x1 = 1.2<m>
 let t1 = 1.0<s>
 
 let result1 = genericSumUnits v1 v2
+
+let res = System.Collections.Generic.Dictionary<int<m>,int<s>>()
         """
         |> typecheck
         |> shouldFail
@@ -276,6 +278,8 @@ let result1 = genericSumUnits v1 v2
             (Warning 44, Line 20, Col 16, Line 20, Col 17, "This construct is deprecated. Use s2")
             (Warning 44, Line 21, Col 14, Line 21, Col 15, "This construct is deprecated. Use m2")
             (Warning 44, Line 22, Col 14, Line 22, Col 15, "This construct is deprecated. Use s2")
+            (Warning 44, Line 26, Col 53, Line 26, Col 54, "This construct is deprecated. Use m2")
+            (Warning 44, Line 26, Col 60, Line 26, Col 61, "This construct is deprecated. Use s2")
         ]
         
     [<Fact>]

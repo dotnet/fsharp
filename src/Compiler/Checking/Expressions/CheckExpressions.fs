@@ -11162,12 +11162,16 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         //                  ^
         let rec checkAttributeInMeasure ty =
             match stripTyEqns g ty with
-            | TType_app(typeInstantiation= [ TType_measure tm ]) -> CheckUnitOfMeasureAttributes g tm
+            | TType_app(typeInstantiation= ttypes) ->
+                match ttypes with
+                | [ TType_measure tm ] -> CheckUnitOfMeasureAttributes g tm
+                | ttypes -> ttypes |> List.iter checkAttributeInMeasure
             | TType_tuple(elementTypes= elementTypes) -> elementTypes |> List.iter checkAttributeInMeasure
             | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
             | TType_fun(domainType = domainType; rangeType= rangeType) ->
                 checkAttributeInMeasure domainType
                 checkAttributeInMeasure rangeType
+            | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
             | _ -> ()
 
         checkAttributeInMeasure overallTy
