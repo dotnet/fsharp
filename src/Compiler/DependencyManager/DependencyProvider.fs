@@ -657,7 +657,7 @@ type DependencyProvider
             packageManagerTextLines: (string * string) seq,
             reportError: ResolvingErrorReport,
             executionTfm: string,
-            [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull,
+            [<Optional; DefaultParameterValue(null: string | null)>] executionRid: string | null,
             [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string,
             [<Optional; DefaultParameterValue("")>] mainScriptName: string,
             [<Optional; DefaultParameterValue("")>] fileName: string,
