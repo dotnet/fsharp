@@ -15,7 +15,7 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString (s: string MaybeNull) =
+    let ofString (s: string | null) =
         match s with
         | null -> None
         | "" -> None
@@ -122,8 +122,10 @@ type IResolveDependenciesResult =
     /// This path is also equivalent to
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
-    
+
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string

@@ -39,7 +39,9 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 /// Wraps access to a DependencyManager implementation
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
 
     /// Name of the dependency manager
