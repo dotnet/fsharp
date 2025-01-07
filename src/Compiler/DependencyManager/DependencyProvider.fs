@@ -681,8 +681,8 @@ type DependencyProvider
                     try
                         let executionRid =
                             match executionRid with
-                            | Null -> RidHelpers.platformRid
-                            | NonNull executionRid -> executionRid
+                            | null -> RidHelpers.platformRid
+                            | executionRid -> executionRid
 
                         Ok(
                             packageManager.ResolveDependencies(
