@@ -19,7 +19,7 @@ let tempDirectoryOfThisTestRun =
 
 let cleanUpTemporaryDirectoryOfThisTestRun () =
     if tempDirectoryOfThisTestRun.IsValueCreated then
-        () //try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
+        try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
 
 let createTemporaryDirectory () =
     tempDirectoryOfThisTestRun.Value
