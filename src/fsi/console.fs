@@ -8,18 +8,6 @@ open System.Collections.Generic
 open System.Runtime.InteropServices
 open FSharp.Compiler.DiagnosticsLogger
 
-[<AutoOpen>]
-module internal ConsoleHelpers =
-
-#if NO_CHECKNULLS
-  type MaybeNull<'T when 'T : null> = 'T
-
-  // Shim to match nullness checking library support in preview
-  let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-#else
-  type MaybeNull<'T when 'T : not null> = 'T | null
-#endif
-
 type internal Style =
     | Prompt
     | Out
@@ -42,17 +30,17 @@ type internal History() =
         list.Clear()
         current <- -1
 
-    member _.Add (line: string MaybeNull) = 
+    member _.Add (line: string | null) = 
         match line with 
-        | Null
+        | null
         | "" -> ()
-        | NonNull line -> list.Add(line)
+        | _ -> list.Add(line)
 
-    member _.AddLast (line: string MaybeNull) =  
+    member _.AddLast (line: string | null) =  
         match line with 
-        | Null
+        | null
         | "" -> ()
-        | NonNull line ->
+        | _ ->
             list.Add(line)
             current <- list.Count
 
