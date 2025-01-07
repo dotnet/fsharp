@@ -113,7 +113,7 @@ type AssemblyResolveHandler internal (assemblyProbingPaths: AssemblyResolutionPr
             else
                 new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable)
 
-    new(assemblyProbingPaths: AssemblyResolutionProbe MaybeNull) = new AssemblyResolveHandler(Option.ofObj assemblyProbingPaths)
+    new(assemblyProbingPaths: AssemblyResolutionProbe|null) = new AssemblyResolveHandler(Option.ofObj assemblyProbingPaths)
 
     interface IDisposable with
         member _.Dispose() =
