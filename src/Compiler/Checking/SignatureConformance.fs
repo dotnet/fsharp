@@ -357,13 +357,13 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     let aenv = aenv.BindEquivTypars implTypars sigTypars 
                     checkTypars m aenv implTypars sigTypars &&
                         let strictTyEquals = typeAEquiv g aenv implValTy sigValTy
-                        let nullTolerantEquals = g.checkNullness && typeAEquiv g {aenv with NullnessMustEqual = false} implValTy sigValTy
+                        let onlyDiffersInNullness = not(strictTyEquals) && g.checkNullness && typeAEquiv g {aenv with NullnessMustEqual = false} implValTy sigValTy
 
                         // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
-                        if not strictTyEquals && nullTolerantEquals then
+                        if onlyDiffersInNullness then
                             informationalWarning(mk_err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer)
 
-                        if not strictTyEquals && not nullTolerantEquals then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer                          
+                        if not strictTyEquals && not onlyDiffersInNullness then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer                          
                         elif not (checkValInfo aenv (err denv) implVal sigVal) then false
                         elif implVal.IsExtensionMember <> sigVal.IsExtensionMember then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
                         elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
@@ -402,7 +402,21 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkField aenv infoReader (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) implField sigField =
             implField.SetOtherXmlDoc(sigField.XmlDoc)
 
-            let err f = errorR(FieldNotContained(denv, infoReader, enclosingImplTycon, enclosingSigTycon, implField, sigField, f)); false
+            let diag f = FieldNotContained(denv, infoReader, enclosingImplTycon, enclosingSigTycon, implField, sigField, f)
+            let err f = errorR(diag f); false
+
+            let areTypesDifferent() =
+                let strictTyEquals = typeAEquiv g aenv implField.FormalType sigField.FormalType
+                let onlyDiffersInNullness = not(strictTyEquals) && g.checkNullness &&  typeAEquiv g {aenv with NullnessMustEqual = false} implField.FormalType sigField.FormalType
+
+                // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
+                if onlyDiffersInNullness then
+                    informationalWarning(diag FSComp.SR.FieldNotContainedTypesDiffer)
+                    false
+                else
+                    not strictTyEquals  
+
+
             sigField.rfield_other_range <- Some (implField.Range, true)
             implField.rfield_other_range <- Some (sigField.Range, false)
             if implField.rfield_id.idText <> sigField.rfield_id.idText then err FSComp.SR.FieldNotContainedNamesDiffer
@@ -410,7 +424,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             elif implField.IsStatic <> sigField.IsStatic then err FSComp.SR.FieldNotContainedStaticsDiffer
             elif implField.IsMutable <> sigField.IsMutable then err FSComp.SR.FieldNotContainedMutablesDiffer
             elif implField.LiteralValue <> sigField.LiteralValue then err FSComp.SR.FieldNotContainedLiteralsDiffer
-            elif not (typeAEquiv g aenv implField.FormalType sigField.FormalType) then err FSComp.SR.FieldNotContainedTypesDiffer
+            elif areTypesDifferent() then err FSComp.SR.FieldNotContainedTypesDiffer
             else 
                 checkAttribs aenv implField.FieldAttribs sigField.FieldAttribs (fun attribs -> implField.rfield_fattribs <- attribs) &&
                 checkAttribs aenv implField.PropertyAttribs sigField.PropertyAttribs (fun attribs -> implField.rfield_pattribs <- attribs)
