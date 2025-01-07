@@ -607,7 +607,7 @@ type DependencyProvider
             outputDir: string,
             reportError: ResolvingErrorReport,
             path: string
-        ) : string MaybeNull * IDependencyManagerProvider MaybeNull =
+        ) : string | null * IDependencyManagerProvider | null =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers =
@@ -637,7 +637,7 @@ type DependencyProvider
             outputDir: string,
             reportError: ResolvingErrorReport,
             key: string
-        ) : IDependencyManagerProvider MaybeNull =
+        ) : IDependencyManagerProvider  | null =
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key

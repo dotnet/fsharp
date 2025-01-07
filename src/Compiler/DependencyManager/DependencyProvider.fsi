@@ -138,4 +138,4 @@ type DependencyProvider =
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
     member TryFindDependencyManagerInPath:
         compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string ->
-            string MaybeNull * IDependencyManagerProvider MaybeNull
+            string | null * IDependencyManagerProvider | null
