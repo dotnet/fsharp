@@ -122,7 +122,8 @@ type IResolveDependenciesResult =
     /// This path is also equivalent to
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
-
+    
+[<AllowNullLiteral>]
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
