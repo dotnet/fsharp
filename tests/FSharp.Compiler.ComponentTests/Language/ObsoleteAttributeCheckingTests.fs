@@ -323,10 +323,23 @@ type MyClass() =
     
 type A<[<Measure>] 'u>(x: int<m>) =
     member _.X = x
-        """
+    
+type B(x: int<m>, y: int<s>) =
+    member _.X = x
+         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            (Warning 44, Line 30, Col 44, Line 30, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 30, Col 58, Line 30, Col 59, "This construct is deprecated. Use s2")
+            (Warning 44, Line 32, Col 44, Line 32, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 32, Col 58, Line 32, Col 59, "This construct is deprecated. Use s2")
+            (Warning 44, Line 32, Col 72, Line 32, Col 73, "This construct is deprecated. Use m2")
+            (Warning 44, Line 34, Col 44, Line 34, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 34, Col 57, Line 34, Col 58, "This construct is deprecated. Use s2")
+            (Warning 44, Line 36, Col 44, Line 36, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 36, Col 57, Line 36, Col 58, "This construct is deprecated. Use s2")
+            (Warning 44, Line 36, Col 70, Line 36, Col 71, "This construct is deprecated. Use m2")
             (Warning 44, Line 12, Col 36, Line 12, Col 37, "This construct is deprecated. Use m2")
             (Warning 44, Line 12, Col 50, Line 12, Col 51, "This construct is deprecated. Use s2")
             (Warning 44, Line 14, Col 43, Line 14, Col 44, "This construct is deprecated. Use m2")
@@ -343,17 +356,9 @@ type A<[<Measure>] 'u>(x: int<m>) =
             (Warning 44, Line 22, Col 31, Line 22, Col 32, "This construct is deprecated. Use s2")
             (Warning 44, Line 24, Col 29, Line 24, Col 30, "This construct is deprecated. Use m2")
             (Warning 44, Line 26, Col 29, Line 26, Col 30, "This construct is deprecated. Use s2")
-            (Warning 44, Line 30, Col 44, Line 30, Col 45, "This construct is deprecated. Use m2")
-            (Warning 44, Line 30, Col 58, Line 30, Col 59, "This construct is deprecated. Use s2")
-            (Warning 44, Line 32, Col 44, Line 32, Col 45, "This construct is deprecated. Use m2")
-            (Warning 44, Line 32, Col 58, Line 32, Col 59, "This construct is deprecated. Use s2")
-            (Warning 44, Line 32, Col 72, Line 32, Col 73, "This construct is deprecated. Use m2")
-            (Warning 44, Line 34, Col 44, Line 34, Col 45, "This construct is deprecated. Use m2")
-            (Warning 44, Line 34, Col 57, Line 34, Col 58, "This construct is deprecated. Use s2")
-            (Warning 44, Line 36, Col 44, Line 36, Col 45, "This construct is deprecated. Use m2")
-            (Warning 44, Line 36, Col 57, Line 36, Col 58, "This construct is deprecated. Use s2")
-            (Warning 44, Line 36, Col 70, Line 36, Col 71, "This construct is deprecated. Use m2")
             (Warning 44, Line 38, Col 31, Line 38, Col 32, "This construct is deprecated. Use m2")
+            (Warning 44, Line 41, Col 15, Line 41, Col 16, "This construct is deprecated. Use m2")
+            (Warning 44, Line 41, Col 26, Line 41, Col 27, "This construct is deprecated. Use s2")
         ]
     
     [<Fact>]

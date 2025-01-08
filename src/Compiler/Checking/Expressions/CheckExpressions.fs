@@ -4823,7 +4823,15 @@ and TcTypesOrMeasures optKinds (cenv: cenv) newOk checkConstraints occ env tpenv
         List.mapFold (TcTypeOrMeasure None cenv newOk checkConstraints occ WarnOnIWSAM.Yes env) tpenv args
     | Some kinds ->
         if List.length kinds = List.length args then
-            List.mapFold (fun tpenv (arg, kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv arg) tpenv (List.zip args kinds)
+            let ttypes, tpenv = List.mapFold (fun tpenv (arg, kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv arg) tpenv (List.zip args kinds)
+
+            for ttype in ttypes do
+                match stripTyEqns cenv.g ttype with
+                | TType_measure tm -> CheckUnitOfMeasureAttributes cenv.g tm
+                | _ -> ()
+                                
+            ttypes, tpenv
+            
         elif isNil kinds then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
@@ -11162,16 +11170,10 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         //                  ^
         let rec checkAttributeInMeasure ty =
             match stripTyEqns g ty with
-            | TType_app(typeInstantiation= ttypes) ->
-                match ttypes with
-                | [ TType_measure tm ] -> CheckUnitOfMeasureAttributes g tm
-                | ttypes -> ttypes |> List.iter checkAttributeInMeasure
-            | TType_tuple(elementTypes= elementTypes) -> elementTypes |> List.iter checkAttributeInMeasure
-            | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
+            | TType_app(typeInstantiation= [ TType_measure tm ]) -> CheckUnitOfMeasureAttributes g tm
             | TType_fun(domainType = domainType; rangeType= rangeType) ->
                 checkAttributeInMeasure domainType
                 checkAttributeInMeasure rangeType
-            | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
             | _ -> ()
 
         checkAttributeInMeasure overallTy

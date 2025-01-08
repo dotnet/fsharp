@@ -3244,19 +3244,12 @@ module EstablishTypeDefinitionCores =
                     // Check for attributes in unit-of-measure declarations
                     // e.g. [<Measure>] type m = 1<m>
                     //                             ^
-                    let rec checkAttributeInMeasure ty =
-                        match stripTyEqns g ty with
-                        | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
-                        | TType_tuple(elementTypes= elementTypes) -> elementTypes |> List.iter checkAttributeInMeasure
-                        | TType_var(typar={typar_solution = Some(typeApp) }) -> checkAttributeInMeasure typeApp
-                        | TType_fun(domainType = domainType; rangeType= rangeType) ->
-                            checkAttributeInMeasure domainType
-                            checkAttributeInMeasure rangeType
-                        | _ -> ()
+                    match stripTyEqns g ty with
+                    | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
+                    | _ -> ()
                         
                     checkAttributeAliased ty tycon g.attrib_AutoOpenAttribute
                     checkAttributeAliased ty tycon g.attrib_StructAttribute
-                    checkAttributeInMeasure ty
 
                     if not firstPass then
                         let ftyvs = freeInTypeLeftToRight g false ty
