@@ -122,7 +122,7 @@ type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
             LeastFrequentlyAccessed = this.Store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
         |}
 
-    member private this.GetEvictCount() =
+    member private this.CalculateEvictionCount() =
         if this.Store.Count >= options.MaximumCapacity then
             (this.Store.Count - options.MaximumCapacity)
             + (options.MaximumCapacity * options.PercentageToEvict / 100)
@@ -130,18 +130,18 @@ type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
             0
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
-    member private this.TryGetItemsToEvict() =
+    member private this.TryGetPickToEvict() =
         this.Store
         |> match options.Strategy with
            | CachingStrategy.LRU -> ConcurrentDictionary.sortBy _.Value.LastAccessed
            | CachingStrategy.LFU -> ConcurrentDictionary.sortBy _.Value.AccessCount
-        |> Seq.take (this.GetEvictCount())
+        |> Seq.take (this.CalculateEvictionCount())
         |> Seq.map (fun x -> x.Key)
 
     // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
     member private this.TryEvictItems() =
-        if this.GetEvictCount() > 0 then
-            for key in this.TryGetItemsToEvict() do
+        if this.CalculateEvictionCount() > 0 then
+            for key in this.TryGetPickToEvict() do
                 match this.Store.TryRemove(key) with
                 | true, _ -> eviction.Trigger(key)
                 | _ -> () // TODO: We probably want to count eviction misses as well?
@@ -150,7 +150,7 @@ type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
     member private this.TryEvictTask() =
         backgroundTask {
             while not cts.Token.IsCancellationRequested do
-                let evictionCount = this.GetEvictCount()
+                let evictionCount = this.CalculateEvictionCount()
 
                 if evictionCount > 0 then
                     this.TryEvictItems()
@@ -168,26 +168,26 @@ type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
         }
 
     member this.TryEvict() =
-        if this.GetEvictCount() > 0 then
+        if this.CalculateEvictionCount() > 0 then
             match options.EvictionMethod with
             | EvictionMethod.Blocking -> this.TryEvictItems()
             | EvictionMethod.Background -> ()
 
-    member this.TryGet(key) =
+    member this.TryGet(key, value: outref<'Value>) =
         match this.Store.TryGetValue(key) with
-        | true, value ->
+        | true, cachedEntity ->
             // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
-            value.LastAccessed <- DateTimeOffset.Now.Ticks
-            let _ = Interlocked.Increment(&value.AccessCount) in
-            ()
-            cacheHit.Trigger(key, value.Value)
-            ValueSome value
+            cachedEntity.LastAccessed <- DateTimeOffset.Now.Ticks
+            let _ = Interlocked.Increment(&cachedEntity.AccessCount)
+            cacheHit.Trigger(key, cachedEntity.Value)
+            value <- cachedEntity.Value
+            true
         | _ ->
             cacheMiss.Trigger(key)
-            ValueNone
+            value <- Unchecked.defaultof<'Value>
+            false
 
     member this.TryAdd(key, value: 'Value, ?update: bool) =
-
         let update = defaultArg update false
 
         this.TryEvict()
@@ -195,7 +195,7 @@ type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
         let value = CachedEntity<'Value>(value)
 
         if update then
-            this.Store.AddOrUpdate(key, value, (fun _ _ -> value)) |> ignore
+            let _ = this.Store.AddOrUpdate(key, value, (fun _ _ -> value))
             true
         else
             this.Store.TryAdd(key, value)
