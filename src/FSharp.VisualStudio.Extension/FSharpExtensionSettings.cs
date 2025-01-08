@@ -22,7 +22,7 @@ namespace FSharp.VisualStudio.Extension
 
 
         [VisualStudioContribution]
-        public static SettingCategory FSharpCategory { get; } = new("fsharp", "F#");
+        public static SettingCategory FSharpCategory { get; } = new("fsharp", "%F#%");
 
         [VisualStudioContribution]
         public static Setting.Enum GetDiagnosticsFrom { get; } = new(
