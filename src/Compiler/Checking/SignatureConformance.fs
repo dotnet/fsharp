@@ -361,7 +361,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
                         // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
                         if onlyDiffersInNullness then
-                            informationalWarning(mk_err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer)
+                            warning(mk_err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer)
 
                         if not strictTyEquals && not onlyDiffersInNullness then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer                          
                         elif not (checkValInfo aenv (err denv) implVal sigVal) then false
@@ -411,7 +411,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
                 // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
                 if onlyDiffersInNullness then
-                    informationalWarning(diag FSComp.SR.FieldNotContainedTypesDiffer)
+                    warning(diag FSComp.SR.FieldNotContainedTypesDiffer)
                     false
                 else
                     not strictTyEquals  
