@@ -558,7 +558,7 @@ stages:
             env:
                 DOTNET_DbgEnableMiniDump: 1
                 DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_BuildConfig)\$(Build.BuildId)-%e-%p-%t.dmp
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)/$(Build.BuildId)-%e-%p-%t.dmp
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -615,7 +615,7 @@ stages:
               COMPlus_DefaultStackSize: 1000000
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_BuildConfig)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)/$(Build.BuildId)-%e-%p-%t.dmp
             displayName: Build / Test
           - task: PublishBuildArtifacts@1
             displayName: Publish Dumps
