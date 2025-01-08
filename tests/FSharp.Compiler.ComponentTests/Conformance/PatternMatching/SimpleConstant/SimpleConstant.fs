@@ -8,18 +8,20 @@ open FSharp.Test.Compiler
 
 module SimpleConstant =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DiffAssembly.fs"|])>]
+    [<Theory; FileInlineData("DiffAssembly.fs")>]
     let ``SimpleConstant - DiffAssembly_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_NoRangeConst01.fs"|])>]
+    [<Theory; FileInlineData("E_NoRangeConst01.fs")>]
     let ``SimpleConstant - E_NoRangeConst01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -27,9 +29,10 @@ module SimpleConstant =
         |> withSingleDiagnostic (Error 10, Line 9, Col 9, Line 9, Col 11, "Unexpected symbol '..' in pattern matching. Expected '->' or other token.")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_type_bigint.fs"|])>]
+    [<Theory; FileInlineData("E_type_bigint.fs")>]
     let ``SimpleConstant - E_type_bigint_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -40,9 +43,10 @@ module SimpleConstant =
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_type_bignum40.fs"|])>]
+    [<Theory; FileInlineData("E_type_bignum40.fs")>]
     let ``SimpleConstant - E_type_bignum40_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -54,54 +58,60 @@ module SimpleConstant =
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FullyQualify01.fs"|])>]
+    [<Theory; FileInlineData("FullyQualify01.fs")>]
     let ``SimpleConstant - FullyQualify01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"matchConst01.fs"|])>]
+    [<Theory; FileInlineData("matchConst01.fs")>]
     let ``SimpleConstant - matchConst01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"matchConst02.fs"|])>]
+    [<Theory; FileInlineData("matchConst02.fs")>]
     let ``SimpleConstant - matchConst02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"matchConst03.fs"|])>]
+    [<Theory; FileInlineData("matchConst03.fs")>]
     let ``SimpleConstant - matchConst03_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
     
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"matchConst04.fs"|])>]
+    [<Theory; FileInlineData("matchConst04.fs")>]
     let ``SimpleConstant - matchConst04_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MatchLiteral01.fs"|])>]
+    [<Theory; FileInlineData("MatchLiteral01.fs")>]
     let ``SimpleConstant - MatchLiteral01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -116,9 +126,10 @@ module SimpleConstant =
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MatchNaN.fs"|])>]
+    [<Theory; FileInlineData("MatchNaN.fs")>]
     let ``SimpleConstant - MatchNaN_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -130,18 +141,20 @@ module SimpleConstant =
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_bigint.fs"|])>]
+    [<Theory; FileInlineData("type_bigint.fs")>]
     let ``SimpleConstant - type_bigint_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_bool.fs"|])>]
+    [<Theory; FileInlineData("type_bool.fs")>]
     let ``SimpleConstant - type_bool_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -149,72 +162,80 @@ module SimpleConstant =
         |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 8, "This rule will never be matched")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_byte.fs"|])>]
+    [<Theory; FileInlineData("type_byte.fs")>]
     let ``SimpleConstant - type_byte_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_byteArr.fs"|])>]
+    [<Theory; FileInlineData("type_byteArr.fs")>]
     let ``SimpleConstant - type_byteArr_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_char.fs"|])>]
+    [<Theory; FileInlineData("type_char.fs")>]
     let ``SimpleConstant - type_char_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_double.fs"|])>]
+    [<Theory; FileInlineData("type_double.fs")>]
     let ``SimpleConstant - type_double_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_float32.fs"|])>]
+    [<Theory; FileInlineData("type_float32.fs")>]
     let ``SimpleConstant - type_float32_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_int.fs"|])>]
+    [<Theory; FileInlineData("type_int.fs")>]
     let ``SimpleConstant - type_int_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_int16.fs"|])>]
+    [<Theory; FileInlineData("type_int16.fs")>]
     let ``SimpleConstant - type_int16_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/SimpleConstant)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"type_int64.fs"|])>]
+    [<Theory; FileInlineData("type_int64.fs")>]
     let ``SimpleConstant - type_int64_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
