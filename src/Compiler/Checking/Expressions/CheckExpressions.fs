@@ -807,7 +807,8 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             | TyparKind.Measure -> Measure.Const(tcref, ms.Range)
 
         | SynMeasure.Power(measure = ms; power = exponent) -> Measure.RationalPower (tcMeasure ms, TcSynRationalConst exponent)
-        | SynMeasure.Product(measure1 = ms1; measure2 = ms2; range= m) -> Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
+        | SynMeasure.Product(measure1 = ms1; measure2 = ms2; range= m) ->
+            Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
@@ -7681,6 +7682,14 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
       TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
         let cTy = NewInferenceType g
         let c' = TcConst cenv cTy m env c
+        let rec checkAttributeInMeasure ty =
+            match stripTyEqns g ty with
+            | TType_app(typeInstantiation= ttypes) -> ttypes |> List.iter checkAttributeInMeasure
+            | TType_fun(rangeType= rangeType) -> checkAttributeInMeasure rangeType
+            | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
+            | _ -> ()
+    
+        checkAttributeInMeasure cTy
         Expr.Const (c', m, cTy), cTy, tpenv)
 
 //-------------------------------------------------------------------------
@@ -11164,19 +11173,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let supportEnforceAttributeTargets =
             (g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) && memberFlagsOpt.IsNone && not attrs.IsEmpty)
             && not isVolatile // VolatileFieldAttribute has a special treatment(specific error FS823)
-
-        // Check for attributes in unit-of-measure expressions
-        // e.g. let x = 1.0<m>
-        //                  ^
-        let rec checkAttributeInMeasure ty =
-            match stripTyEqns g ty with
-            | TType_app(typeInstantiation= [ TType_measure tm ]) -> CheckUnitOfMeasureAttributes g tm
-            | TType_fun(domainType = domainType; rangeType= rangeType) ->
-                checkAttributeInMeasure domainType
-                checkAttributeInMeasure rangeType
-            | _ -> ()
-
-        checkAttributeInMeasure overallTy
 
         if supportEnforceAttributeTargets then
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding

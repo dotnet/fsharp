@@ -104,11 +104,24 @@ open System
 [<Measure; Obsolete("Use something else")>] type cm
 
 [<Measure>] type ml = cm^3
+
+type Mls = int<cm> * int<cm>
+
+type IMl2 =
+    abstract member Ml2 : x: int<cm> * y: int<cm> -> int
+    abstract member Ml3 : x: int<cm> * y: int<cm> -> int<cm>
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 5, Col 23, Line 5, Col 25, "This construct is deprecated. Use something else")
+            (Warning 44, Line 7, Col 16, Line 7, Col 18, "This construct is deprecated. Use something else")
+            (Warning 44, Line 7, Col 26, Line 7, Col 28, "This construct is deprecated. Use something else")
+            (Warning 44, Line 10, Col 34, Line 10, Col 36, "This construct is deprecated. Use something else")
+            (Warning 44, Line 10, Col 47, Line 10, Col 49, "This construct is deprecated. Use something else")
+            (Warning 44, Line 11, Col 34, Line 11, Col 36, "This construct is deprecated. Use something else")
+            (Warning 44, Line 11, Col 47, Line 11, Col 49, "This construct is deprecated. Use something else")
+            (Warning 44, Line 11, Col 58, Line 11, Col 60, "This construct is deprecated. Use something else")
         ]        
             
     [<Fact>]
@@ -180,11 +193,15 @@ type kg
 type cm
 
 let myCm = 3<cm/kg>
+
+let cm2 = 3<cm/kg> * 3<cm/kg>
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 10, Col 14, Line 10, Col 16, "This construct is deprecated. Use cm2")
+            (Warning 44, Line 10, Col 14, Line 10, Col 16, "This construct is deprecated. Use cm2");
+            (Warning 44, Line 12, Col 13, Line 12, Col 15, "This construct is deprecated. Use cm2");
+            (Warning 44, Line 12, Col 24, Line 12, Col 26, "This construct is deprecated. Use cm2")
         ]
 
     [<Fact>]
@@ -206,6 +223,8 @@ let mPerCm = 0.01<m/cm>
         |> withDiagnostics [
             (Warning 44, Line 10, Col 24, Line 10, Col 26, "This construct is deprecated. Use cm2")
             (Warning 44, Line 10, Col 27, Line 10, Col 28, "This construct is deprecated. Use m2")
+            (Warning 44, Line 10, Col 38, Line 10, Col 40, "This construct is deprecated. Use cm2")
+            (Warning 44, Line 10, Col 41, Line 10, Col 42, "This construct is deprecated. Use m2")
             (Warning 44, Line 11, Col 19, Line 11, Col 20, "This construct is deprecated. Use m2")
             (Warning 44, Line 11, Col 21, Line 11, Col 23, "This construct is deprecated. Use cm2")
         ]

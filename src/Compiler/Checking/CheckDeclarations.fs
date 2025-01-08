@@ -3242,8 +3242,8 @@ module EstablishTypeDefinitionCores =
                         | _ -> ()
 
                     // Check for attributes in unit-of-measure declarations
-                    // e.g. [<Measure>] type m = 1<m>
-                    //                             ^
+                    // [<Measure>] type x = 1<s>
+                    //                        ^
                     match stripTyEqns g ty with
                     | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
                     | _ -> ()
