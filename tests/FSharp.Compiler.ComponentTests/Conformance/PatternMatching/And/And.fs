@@ -8,43 +8,48 @@ open FSharp.Test.Compiler
 
 module And =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern01.fs"|])>]
+    [<Theory; FileInlineData("andPattern01.fs")>]
     let ``And - andPattern01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern02.fs"|])>]
+    [<Theory; FileInlineData("andPattern02.fs")>]
     let ``And - andPattern02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern03.fs"|])>]
+    [<Theory; FileInlineData("andPattern03.fs")>]
     let ``And - andPattern03_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"andPattern04.fs"|])>]
+    [<Theory; FileInlineData("andPattern04.fs")>]
     let ``And - andPattern04_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> typecheck
         |> shouldSucceed
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IdentBoundTwice.fs"|])>]
+    [<Theory; FileInlineData("E_IdentBoundTwice.fs")>]
     let ``And - E_IdentBoundTwice_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck

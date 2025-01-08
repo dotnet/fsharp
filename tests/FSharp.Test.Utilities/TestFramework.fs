@@ -4,12 +4,11 @@ module TestFramework
 
 open System
 open System.IO
-open System.Reflection
 open System.Diagnostics
+open System.Reflection
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
-open Xunit.Sdk
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
@@ -64,7 +63,7 @@ module Commands =
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir (timeout:int) =
+    let executeProcess pathToExe arguments workingDir =
         let commandLine = ResizeArray()
         let errorsList = ResizeArray()
         let outputList = ResizeArray()
@@ -103,11 +102,7 @@ module Commands =
         if p.Start() then
             p.BeginOutputReadLine()
             p.BeginErrorReadLine()
-            if not(p.WaitForExit(timeout)) then
-                // Timed out resolving throw a diagnostic.
-                raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
-            else
-                p.WaitForExit()
+            p.WaitForExit()
 #if DEBUG
         let workingDir' =
             if workingDir = ""
@@ -564,8 +559,7 @@ module Command =
             | Output r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some (toLog.Post) }
+                fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some ignore }
             | OutputAndError (r1,r2) ->
                 use writer1 = openWrite r1
                 use writer2 = openWrite r2
@@ -579,8 +573,7 @@ module Command =
             | Error r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (outFile.Post) }
+                fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some (outFile.Post) }
 
         let exec cmdArgs =
             log "%s" (logExec dir path args redirect)

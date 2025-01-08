@@ -32,6 +32,7 @@ open FSharp.Compiler.Text
 open Xunit
 open FSharp.Test.Utilities
 
+
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
@@ -349,9 +350,9 @@ type SyntheticProject =
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
                 Stamp = None }
-
-        
+       
         OptionsCache.GetOrAdd(key, factory).Value
+
 
 
     member this.GetAllProjects() =
@@ -1022,9 +1023,7 @@ type ProjectWorkflowBuilder
 
     member this.DeleteProjectDir() =
         if Directory.Exists initialProject.ProjectDir then
-            try
-                Directory.Delete(initialProject.ProjectDir, true)
-            with _ -> ()
+            try Directory.Delete(initialProject.ProjectDir, true) with _ -> ()
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try

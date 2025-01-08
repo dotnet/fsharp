@@ -45,6 +45,8 @@ val nameOfVal: v: Val -> string
 
 val arityOfVal: v: Val -> ValReprInfo
 
+val tryGetArityOfValForDisplay: v: Val -> ValReprInfo option
+
 val arityOfValForDisplay: v: Val -> ValReprInfo
 
 val tupInfoRef: TupInfo

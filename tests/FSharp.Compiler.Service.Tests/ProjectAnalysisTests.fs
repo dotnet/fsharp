@@ -105,28 +105,31 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Diagnostics[0].Range.StartColumn |> shouldEqual 43
     wholeProjectResults.Diagnostics[0].Range.EndColumn |> shouldEqual 44
 
-[<Fact>]
-let ``Test project1 and make sure TcImports gets cleaned up`` () =
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module ClearLanguageServiceRootCachesTest =
+    [<Fact>]
+    let ``Test project1 and make sure TcImports gets cleaned up`` () =
 
-    // A private checker for this test.
-    let checker = FSharpChecker.Create()
+        // A private checker for this test.
+        let checker = FSharpChecker.Create()
     
-    let test () =
-        let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
-        match checkFileAnswer with
-        | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
-        | FSharpCheckFileAnswer.Succeeded checkFileResults ->
-            let tcImportsOpt = checkFileResults.TryGetCurrentTcImports ()
-            Assert.True tcImportsOpt.IsSome
-            let weakTcImports = WeakReference tcImportsOpt.Value
-            Assert.True weakTcImports.IsAlive
-            weakTcImports
+        let test () =
+            let _, checkFileAnswer = checker.ParseAndCheckFileInProject(Project1.fileName1, 0, Project1.fileSource1, Project1.options) |> Async.RunImmediate
+            match checkFileAnswer with
+            | FSharpCheckFileAnswer.Aborted -> failwith "should not be aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+                let tcImportsOpt = checkFileResults.TryGetCurrentTcImports ()
+                Assert.True tcImportsOpt.IsSome
+                let weakTcImports = WeakReference tcImportsOpt.Value
+                Assert.True weakTcImports.IsAlive
+                weakTcImports
 
-    // Here we are only keeping a handle to weakTcImports and nothing else
-    let weakTcImports = test ()
-    checker.InvalidateConfiguration Project1.options
-    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
+        // Here we are only keeping a handle to weakTcImports and nothing else
+        let weakTcImports = test ()
+        checker.InvalidateConfiguration Project1.options
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        GC.Collect()
+        System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
@@ -3688,7 +3691,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP>]
+[<FactForDESKTOP; RunTestCasesInSequence>]
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -3696,7 +3699,7 @@ let ``Test Project25 whole project errors`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP>]
+[<FactForDESKTOP; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
@@ -3753,8 +3756,8 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.")>]
-[<FactForDESKTOP>]
-let ``Test symbol uses of type-provided types`` () =
+[<FactForDESKTOP; RunTestCasesInSequence>]
+let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
@@ -3773,8 +3776,8 @@ let ``Test symbol uses of type-provided types`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((4, 15), (4, 26))); ("file1", ((10, 8), (10, 19)))|]
 
-[<Fact>]
-let ``Test symbol uses of fully-qualified records`` () =
+[<Fact; RunTestCasesInSequence>]
+let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
@@ -5788,18 +5791,20 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Aborted -> failwith "no check results"
     | FSharpCheckFileAnswer.Succeeded r -> r
 
-[<Fact>]
-let ``References from #r nuget are included in script project options`` () =
-    let checkResults = checkContentAsScript """
-#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
-#r "nuget: Dapper"
-"""
-    let assemblyNames =
-        checkResults.ProjectContext.GetReferencedAssemblies()
-        |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
-        |> Seq.distinct
-    printfn "%s" (assemblyNames |> String.concat "\n")
-    Assert.Contains("Dapper.dll", assemblyNames)
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module ScriptClosureCacheUse =
+    [<Fact>]
+    let ``References from #r nuget are included in script project options`` () =
+        let checkResults = checkContentAsScript """
+    #i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
+    #r "nuget: Dapper"
+    """
+        let assemblyNames =
+            checkResults.ProjectContext.GetReferencedAssemblies()
+            |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
+            |> Seq.distinct
+        printfn "%s" (assemblyNames |> String.concat "\n")
+        Assert.Contains("Dapper.dll", assemblyNames)
 
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()
