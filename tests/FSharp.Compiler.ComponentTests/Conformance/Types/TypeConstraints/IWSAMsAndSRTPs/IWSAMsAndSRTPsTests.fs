@@ -1228,10 +1228,11 @@ printf "%A" res"""
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
 #else
     // SOURCE=ConstrainedAndInterfaceCalls.fs							# ConstrainedAndInterfaceCalls.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConstrainedAndInterfaceCalls.fs"|])>]
+    [<Theory; FileInlineData("ConstrainedAndInterfaceCalls.fs")>]
 #endif
     let ``ConstrainedAndInterfaceCalls.fs`` compilation =
-        compilation 
+        compilation
+        |> getCompilation
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
         |> verifyCompile
         |> shouldFail
