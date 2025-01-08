@@ -1922,7 +1922,7 @@ let CheckMultipleInputsUsingGraphMode
             (fun (state: State) ->
                 let tcState, priorErrors = state
                 let (partialResult: PartialResult, tcState) = finisher tcState
-                let hasErrors = logger.ErrorCount > 0
+                let hasErrors = logger.CheckForRealErrorsIgnoringWarnings
                 let priorOrCurrentErrors = priorErrors || hasErrors
                 let state: State = tcState, priorOrCurrentErrors
                 partialResult, state)
