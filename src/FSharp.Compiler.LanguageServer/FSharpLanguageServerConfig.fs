@@ -5,10 +5,19 @@ type FSharpLanguageServerFeatures =
         Diagnostics: bool
         SemanticHighlighting: bool
     }
-    static member Default = { Diagnostics = true; SemanticHighlighting = true }
+
+    static member Default =
+        {
+            Diagnostics = true
+            SemanticHighlighting = true
+        }
 
 type FSharpLanguageServerConfig =
     {
         EnabledFeatures: FSharpLanguageServerFeatures
     }
-    static member Default = { EnabledFeatures = FSharpLanguageServerFeatures.Default }
+
+    static member Default =
+        {
+            EnabledFeatures = FSharpLanguageServerFeatures.Default
+        }

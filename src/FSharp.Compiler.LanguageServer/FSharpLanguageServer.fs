@@ -30,7 +30,13 @@ type Extensions =
         Async.StartAsTask(this, cancellationToken = ct)
 
 type FSharpLanguageServer
-    (jsonRpc: JsonRpc, logger: ILspLogger, ?initialWorkspace: FSharpWorkspace, ?addExtraHandlers: Action<IServiceCollection>, ?config: FSharpLanguageServerConfig) =
+    (
+        jsonRpc: JsonRpc,
+        logger: ILspLogger,
+        ?initialWorkspace: FSharpWorkspace,
+        ?addExtraHandlers: Action<IServiceCollection>,
+        ?config: FSharpLanguageServerConfig
+    ) =
 
     // TODO: Switch to SystemTextJsonLanguageServer
     inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, Newtonsoft.Json.JsonSerializer.CreateDefault(), logger)
@@ -82,7 +88,13 @@ type FSharpLanguageServer
     static member Create(initialWorkspace, config: FSharpLanguageServerConfig, addExtraHandlers: Action<IServiceCollection>) =
         FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers, config)
 
-    static member Create(logger: ILspLogger, initialWorkspace, ?addExtraHandlers: Action<IServiceCollection>, ?config: FSharpLanguageServerConfig) =
+    static member Create
+        (
+            logger: ILspLogger,
+            initialWorkspace,
+            ?addExtraHandlers: Action<IServiceCollection>,
+            ?config: FSharpLanguageServerConfig
+        ) =
 
         let struct (clientStream, serverStream) = FullDuplexStream.CreatePair()
 
