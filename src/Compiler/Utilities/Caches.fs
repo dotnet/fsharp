@@ -154,7 +154,7 @@ type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
         | true, value ->
             // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
             value.LastAccessed <- DateTimeOffset.Now.Ticks
-            value.AccessCount <- Interlocked.Increment(&value.AccessCount)
+            let _ = Interlocked.Increment(&value.AccessCount) in ()
             cacheHit.Trigger(key, value.Value)
             ValueSome value
         | _ ->
