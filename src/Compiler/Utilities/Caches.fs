@@ -46,28 +46,25 @@ type CacheOptions =
       PercentageToEvict: int
       Strategy: CachingStrategy
       EvictionMethod: EvictionMethod
-      LevelOfConcurrency: int } with
-    static member Default = { MaximumCapacity = 100; PercentageToEvict = 5; Strategy = CachingStrategy.LRU; LevelOfConcurrency = Environment.ProcessorCount; EvictionMethod = EvictionMethod.Blocking; }
+      LevelOfConcurrency: int }
+    static member Default =
+        { MaximumCapacity = 100
+          PercentageToEvict = 5
+          Strategy = CachingStrategy.LRU
+          LevelOfConcurrency = Environment.ProcessorCount
+          EvictionMethod = EvictionMethod.Blocking }
 
 [<Sealed; NoComparison; NoEquality>]
 type CachedEntity<'Value> =
     val Value: 'Value
     val mutable LastAccessed: int64
     val mutable AccessCount: int64
-
     new(value: 'Value) = { Value = value; LastAccessed = DateTimeOffset.Now.Ticks; AccessCount = 0L }
 
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value> (options: CacheOptions) as this =
-
-    let capacity = options.MaximumCapacity + (options.MaximumCapacity * options.PercentageToEvict / 100)
-    let cts = new CancellationTokenSource()
-
-    do
-        if options.EvictionMethod = EvictionMethod.Background then
-            Task.Run(this.TryEvictTask, cts.Token) |> ignore
+type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
@@ -80,7 +77,17 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
     member val Store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
 
-    member _.GetStats() =
+    static member Create(options: CacheOptions) =
+        let capacity = options.MaximumCapacity + (options.MaximumCapacity * options.PercentageToEvict / 100)
+        let cts = new CancellationTokenSource()
+        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+
+        if options.EvictionMethod = EvictionMethod.Background then
+            Task.Run(cache.TryEvictTask, cts.Token) |> ignore
+
+        cache
+
+    member this.GetStats() =
         {|
             Capacity = options.MaximumCapacity
             PercentageToEvict = options.PercentageToEvict
@@ -94,14 +101,14 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
         |}
 
 
-    member private _.GetEvictCount() =
+    member private this.GetEvictCount() =
         if this.Store.Count >= options.MaximumCapacity then
             (this.Store.Count - options.MaximumCapacity) + (options.MaximumCapacity * options.PercentageToEvict / 100)
         else
             0
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
-    member private _.TryGetItemsToEvict () =
+    member private this.TryGetItemsToEvict () =
         this.Store |>
             match options.Strategy with
             | CachingStrategy.LRU ->
@@ -110,7 +117,8 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
                 ConcurrentDictionary.sortBy _.Value.AccessCount
         |> Seq.take (this.GetEvictCount()) |> Seq.map (fun x -> x.Key)
 
-    member private _.TryEvictItems () =
+    // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
+    member private this.TryEvictItems () =
         if this.GetEvictCount() > 0 then
             for key in this.TryGetItemsToEvict () do
                 match this.Store.TryRemove(key) with
@@ -118,7 +126,7 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
                 | _ -> () // TODO: We probably want to count eviction misses as well?
 
     // TODO: Shall this be a safer task, wrapping everything in try .. with, so it's not crashing silently?
-    member private this.TryEvictTask () =
+    member private this.TryEvictTask() =
         backgroundTask {
             while not cts.Token.IsCancellationRequested do
                     let evictionCount = this.GetEvictCount()
@@ -126,23 +134,22 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
                         this.TryEvictItems ()
                     let utilization = (this.Store.Count / options.MaximumCapacity)
                     // So, based on utilization this will scale the delay between 0 and 1 seconds.
-                    // Worst case scenario would be when 1 second delay happens, then cache will grow rapidly, and beyond the maximum capacity.
+                    // Worst case scenario would be when 1 second delay happens,
+                    // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
                     // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
                     // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
                     let delay = 1000 - (1000 * utilization)
                     if delay > 0 then
                         do! Task.Delay(delay)
-
         }
 
-    // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
-    member _.TryEvict() =
+    member this.TryEvict() =
         if this.GetEvictCount() > 0 then
             match options.EvictionMethod with
             | EvictionMethod.Blocking -> this.TryEvictItems ()
             | EvictionMethod.Background -> ()
 
-    member _.TryGet(key) =
+    member this.TryGet(key) =
         match this.Store.TryGetValue(key) with
         | true, value ->
             // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
@@ -154,7 +161,7 @@ type Cache<'Key, 'Value> (options: CacheOptions) as this =
             cacheMiss.Trigger(key)
             ValueNone
 
-    member _.TryAdd(key, value: 'Value, ?update: bool) =
+    member this.TryAdd(key, value: 'Value, ?update: bool) =
 
         let update = defaultArg update false
 
