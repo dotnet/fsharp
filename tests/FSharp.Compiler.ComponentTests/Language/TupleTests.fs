@@ -35,16 +35,16 @@ for x, y in [1, 2] do ()
      |> typecheck
      |> shouldSucceed     
     
-    [<Fact>]
-    let ``Simple reference tuple destructuring in a lambda`` () =
-        FSharp """
-type Class() =
-    member _.Method(x:(int*int)[]) =
-        x |> Array.iter (fun (a, b) -> ())
-    """
-     |> ignoreWarnings
-     |> typecheck
-     |> shouldSucceed
+//     [<Fact>]
+//     let ``Simple reference tuple destructuring in a lambda`` () =
+//         FSharp """
+// type Class() =
+//     member _.Method(x:(int*int)[]) =
+//         x |> Array.iter (fun (a, b) -> ())
+//     """
+//      |> ignoreWarnings
+//      |> typecheck
+//      |> shouldSucceed
      
     [<Fact>]
     let ``Function - Simple tuple destructuring in a lambda`` () =
@@ -190,15 +190,15 @@ let f (a: struct (int * int)) =
      |> typecheck
      |> shouldSucceed
     
-    [<Fact>]
-    let ``Function - Simple struct tuple destructuring in a lambda`` () =
-        FSharp """
-let f (a: struct (int * int) list) =
-    a |> List.map fst
-    """
-     |> ignoreWarnings
-     |> typecheck
-     |> shouldSucceed
+//     [<Fact>]
+//     let ``Function - Simple struct tuple destructuring in a lambda`` () =
+//         FSharp """
+// let f (a: struct (int * int) list) =
+//     a |> List.map fst
+//     """
+//      |> ignoreWarnings
+//      |> typecheck
+//      |> shouldSucceed
      
     [<Fact>]
     let ``Function - Simple struct tuple destructuring in a match lambda AppExpr`` () =

@@ -122,7 +122,7 @@ let mkSimplePatForVarSpace m (patvs: Val list) =
         | [ v ] -> [ mkSynSimplePatVar false v.Id ]
         | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
 
-    SynSimplePats.SimplePats(spats, false, [], m)
+    SynSimplePats.SimplePats(spats, [], m)
 
 let mkPatForVarSpace m (patvs: Val list) =
     match patvs with
@@ -3110,7 +3110,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         SynExpr.Lambda(
             false,
             false,
-            SynSimplePats.SimplePats([ mkSynSimplePatVar false (mkSynId mBuilderVal builderValName) ], false, [], mBuilderVal),
+            SynSimplePats.SimplePats([ mkSynSimplePatVar false (mkSynId mBuilderVal builderValName) ], [], mBuilderVal),
             runExpr,
             None,
             mBuilderVal,
