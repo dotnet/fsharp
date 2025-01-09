@@ -17,85 +17,44 @@ module ListExpressionStepping =
         |> verifyILBaseline
 
     // SOURCE=ListExpressionSteppingTest1.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest1.exe"    # ListExpressionSteppingTest1.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ListExpressionStepping01.fs"|])>]
-    let ``ListExpressionStepping01_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("ListExpressionStepping01.fs", Realsig=BooleanOptions.Both)>]
+    let ``ListExpressionStepping01_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=ListExpressionSteppingTest1.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest1.exe"    # ListExpressionSteppingTest1.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ListExpressionStepping01.fs"|])>]
-    let ``ListExpressionStepping01_RealInternalSignatureOn_Off`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest2.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest2.exe"    # ListExpressionSteppingTest2.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ListExpressionStepping02.fs"|])>]
-    let ``ListExpressionStepping02_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("ListExpressionStepping02.fs", Realsig=BooleanOptions.Both)>]
+    let ``ListExpressionStepping02_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=ListExpressionSteppingTest2.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest2.exe"    # ListExpressionSteppingTest2.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ListExpressionStepping02.fs"|])>]
-    let ``ListExpressionStepping02_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest3.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest3.exe"    # ListExpressionSteppingTest3.fs 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ListExpressionStepping03.fs"|])>]
+    [<Theory; FileInlineData("ListExpressionStepping03.fs", Realsig=BooleanOptions.Both)>]
     let ``ListExpressionStepping03_RealInternalSignatureOn_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=ListExpressionSteppingTest3.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest3.exe"    # ListExpressionSteppingTest3.fs 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ListExpressionStepping03.fs"|])>]
-    let ``ListExpressionStepping03_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest4.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest4.exe"    # ListExpressionSteppingTest4.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ListExpressionStepping04.fs"|])>]
+    [<Theory; FileInlineData("ListExpressionStepping04.fs", Realsig=BooleanOptions.Both)>]
     let ``ListExpressionStepping04_RealInternalSignatureOn_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=ListExpressionSteppingTest4.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest4.exe"    # ListExpressionSteppingTest4.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ListExpressionStepping04.fs"|])>]
-    let ``ListExpressionStepping04_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest5.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest5.exe"    # ListExpressionSteppingTest5.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ListExpressionStepping05.fs"|])>]
+    [<Theory; FileInlineData("ListExpressionStepping05.fs", Realsig=BooleanOptions.Both)>]
     let ``ListExpressionStepping05_RealInternalSignatureOn_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    // SOURCE=ListExpressionSteppingTest5.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest5.exe"    # ListExpressionSteppingTest5.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ListExpressionStepping05.fs"|])>]
-    let ``ListExpressionStepping05_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
     // SOURCE=ListExpressionSteppingTest6.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest6.exe"    # ListExpressionSteppingTest6.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"ListExpressionStepping06.fs"|])>]
+    [<Theory; FileInlineData("ListExpressionStepping06.fs", Realsig=BooleanOptions.Both)>]
     let ``ListExpressionStepping06_RealInternalSignatureOn_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
+        |> getCompilation
         |> verifyCompilation
 
-    // SOURCE=ListExpressionSteppingTest6.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ListExpressionSteppingTest6.exe"    # ListExpressionSteppingTest6.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"ListExpressionStepping06.fs"|])>]
-    let ``ListExpressionStepping06_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
-        |> verifyCompilation
