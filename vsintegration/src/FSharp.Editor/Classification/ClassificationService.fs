@@ -32,6 +32,9 @@ type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<Semanti
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
 
+    static let shouldProduceClassification (document: Document) =
+        document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceSemanticHighlighting()
+
     static let getLexicalClassifications (filePath: string, defines, text: SourceText, textSpan: TextSpan, ct: CancellationToken) =
 
         let text = text.GetSubText(textSpan)
@@ -155,6 +158,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 result: List<ClassifiedSpan>,
                 cancellationToken: CancellationToken
             ) =
+
+            if not (document |> shouldProduceClassification) then
+                System.Threading.Tasks.Task.CompletedTask
+                else
+
             cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
@@ -207,6 +215,11 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 result: List<ClassifiedSpan>,
                 cancellationToken: CancellationToken
             ) =
+
+            if not (document |> shouldProduceClassification) then
+                System.Threading.Tasks.Task.CompletedTask
+                else
+
             cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
