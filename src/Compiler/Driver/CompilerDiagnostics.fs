@@ -148,8 +148,7 @@ type Exception with
         | IntfImplInExtrinsicAugmentation m
         | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
-        | ObsoleteError(_, m)
-        | ObsoleteWarning(_, m)
+        | ObsoleteDiagnostic(_, _, _, _, m)
         | Experimental(_, m)
         | PossibleUnverifiableCode m
         | UserCompilerMessage(_, _, m)
@@ -266,7 +265,7 @@ type Exception with
         | UnresolvedOverloading _ -> 41
         | LibraryUseOnly _ -> 42
         | ErrorFromAddingConstraint _ -> 43
-        | ObsoleteWarning _ -> 44
+        | ObsoleteDiagnostic(isError = false) -> 44
         | ReservedKeyword _ -> 46
         | SelfRefObjCtor _ -> 47
         | VirtualAugmentationOnNullValuedType _ -> 48
@@ -327,7 +326,7 @@ type Exception with
         | UnresolvedConversionOperator _ -> 93
 
         // avoid 94-100 for safety
-        | ObsoleteError _ -> 101
+        | ObsoleteDiagnostic(isError = true) -> 101
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange _
         | TypeProviders.ProvidedTypeResolution _ -> 103
@@ -1791,9 +1790,7 @@ type Exception with
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
-        | ObsoleteError(s, _)
-
-        | ObsoleteWarning(s, _) ->
+        | ObsoleteDiagnostic(message = s) ->
             os.AppendString(Obsolete1E().Format)
 
             if s <> "" then

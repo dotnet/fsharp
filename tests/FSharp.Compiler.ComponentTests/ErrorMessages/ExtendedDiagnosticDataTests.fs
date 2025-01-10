@@ -241,3 +241,133 @@ type  Foo = {| bar: int; x: int |}
        (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
         assertRange (4,5) (4,8) fieldsData.SignatureRange
         assertRange (4,6) (4,9) fieldsData.ImplementationRange)
+
+
+[<Fact>]
+let ``Warning - ObsoleteDiagnosticExtendedData 01`` () =
+    FSharp """
+open System
+[<Obsolete("Message", false, DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+       
+[<Fact>]
+let ``Warning - ObsoleteDiagnosticExtendedData 02`` () =
+    FSharp """
+open System
+[<Obsolete("Message", false, DiagnosticId = "FS222")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
+        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+       
+[<Fact>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 03`` () =
+    FSharp """
+open System
+[<Obsolete("Message", false)>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+       
+[<Fact>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 04`` () =
+    FSharp """
+open System
+[<Obsolete(DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+       
+
+[<Fact>]
+let ``Error - ObsoleteDiagnosticExtendedData 01`` () =
+    FSharp """
+open System
+[<Obsolete("Message", true, DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+       
+[<Fact>]
+let ``Error - ObsoleteDiagnosticExtendedData 02`` () =
+    FSharp """
+open System
+[<Obsolete("Message", true, DiagnosticId = "FS222")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
+        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+       
+[<Fact>]
+let ``Error -  ObsoleteDiagnosticExtendedData 03`` () =
+    FSharp """
+open System
+[<Obsolete("Message", true)>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+       
+[<Fact>]
+let ``Error -  ObsoleteDiagnosticExtendedData 04`` () =
+    FSharp """
+open System
+[<Obsolete("", true, DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
