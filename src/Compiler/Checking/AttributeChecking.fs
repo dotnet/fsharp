@@ -249,28 +249,44 @@ let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
     | _ ->
         ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
 
-/// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
+let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
+    let extractILAttribValueFrom name namedArgs   =
+        match namedArgs with 
+        | ExtractILAttributeNamedArg name (AttribElemStringArg v) -> v 
+        | _ -> ""
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match TryDecodeILAttribute tref cattrs with
-    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef ->
-            WarnD(ObsoleteDiagnostic(false, "", msg, "", m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef ->
+    | Some ([ILAttribElem.String (Some msg) ], namedArgs) when not isByrefLikeTyconRef ->
+        let diagnosticId =  extractILAttribValueFrom "DiagnosticId" namedArgs
+        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
+        WarnD(ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], namedArgs) when not isByrefLikeTyconRef ->
+        let diagnosticId =  extractILAttribValueFrom "DiagnosticId" namedArgs
+        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
         if isError then
             if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
                 CheckCompilerFeatureRequiredAttribute g cattrs msg m
             else
-                ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
+                ErrorD (ObsoleteDiagnostic(true, diagnosticId, msg, urlFormat, m))
         else
-            WarnD (ObsoleteDiagnostic(false, "", msg, "", m))
+            WarnD (ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
 
-    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef ->
-        WarnD(ObsoleteDiagnostic(false, "", "", "", m))
-    | Some _ when not isByrefLikeTyconRef ->
-        WarnD(ObsoleteDiagnostic(false, "", "", "", m))
+    | Some ([ILAttribElem.String None ], namedArgs) when not isByrefLikeTyconRef ->
+        let diagnosticId =  extractILAttribValueFrom "DiagnosticId" namedArgs
+        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
+        WarnD(ObsoleteDiagnostic(false, diagnosticId, "", urlFormat, m))
+    | Some (_, namedArgs) when not isByrefLikeTyconRef ->
+        let diagnosticId =  extractILAttribValueFrom "DiagnosticId" namedArgs
+        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
+        WarnD(ObsoleteDiagnostic(false, diagnosticId, "", urlFormat, m))
     | _ ->
         CompleteD
 
+/// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
+let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
+    trackErrors {
+        do! CheckILObsoleteAttributes g isByrefLikeTyconRef cattrs m
+    }
 let langVersionPrefix = "--langversion:preview"
 
 let private CheckObsoleteAttributes g attribs m =
