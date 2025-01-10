@@ -12,6 +12,10 @@
     <NoWarn>$(NoWarn);NU5125</NoWarn>
     <NoWarn>$(NoWarn);64;1182;1204</NoWarn>         <!--Temporary fix for sourcebuild -->
     <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>         <!--Temporary fix for sourcebuild -->
+	<OtherFlags>$(OtherFlags) --warnaserror-:34</OtherFlags>
+	  <OtherFlags>$(OtherFlags) --warnaserror-:193</OtherFlags>
+	  <!-- for the love of god I cannot see all errors at once -->
+
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>

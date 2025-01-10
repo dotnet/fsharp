@@ -104,33 +104,33 @@ type ProvidedType =
 
     member IsGenericType: bool
 
-    member Namespace: string
+    member Namespace: string MaybeNull
 
-    member FullName: string
+    member FullName: string MaybeNull
 
     member IsArray: bool
 
-    member GetInterfaces: unit -> ProvidedType[]
+    member GetInterfaces: unit -> ProvidedType[] MaybeNull
 
-    member Assembly: ProvidedAssembly
+    member Assembly: ProvidedAssembly MaybeNull
 
     member BaseType: ProvidedType MaybeNull
 
-    member GetNestedType: string -> ProvidedType
+    member GetNestedType: string -> ProvidedType MaybeNull
 
-    member GetNestedTypes: unit -> ProvidedType[]
+    member GetNestedTypes: unit -> ProvidedType[] MaybeNull
 
     member GetAllNestedTypes: unit -> ProvidedType[]
 
-    member GetMethods: unit -> ProvidedMethodInfo[]
+    member GetMethods: unit -> ProvidedMethodInfo[] MaybeNull
 
     member GetFields: unit -> ProvidedFieldInfo[]
 
     member GetField: string -> ProvidedFieldInfo
 
-    member GetProperties: unit -> ProvidedPropertyInfo[]
+    member GetProperties: unit -> ProvidedPropertyInfo[] MaybeNull
 
-    member GetProperty: string -> ProvidedPropertyInfo
+    member GetProperty: string -> ProvidedPropertyInfo MaybeNull
 
     member GetEvents: unit -> ProvidedEventInfo[]
 
@@ -138,7 +138,7 @@ type ProvidedType =
 
     member GetConstructors: unit -> ProvidedConstructorInfo[]
 
-    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo[]
+    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo[] MaybeNull
 
     member GetGenericTypeDefinition: unit -> ProvidedType
 
@@ -180,19 +180,19 @@ type ProvidedType =
 
     member GetEnumUnderlyingType: unit -> ProvidedType
 
-    member MakePointerType: unit -> ProvidedType
+    member MakePointerType: unit -> ProvidedType MaybeNull
 
-    member MakeByRefType: unit -> ProvidedType
+    member MakeByRefType: unit -> ProvidedType MaybeNull
 
-    member MakeArrayType: unit -> ProvidedType
+    member MakeArrayType: unit -> ProvidedType MaybeNull
 
-    member MakeArrayType: rank: int -> ProvidedType
+    member MakeArrayType: rank: int -> ProvidedType MaybeNull
 
-    member MakeGenericType: args: ProvidedType[] -> ProvidedType
+    member MakeGenericType: args: ProvidedType[] MaybeNull -> ProvidedType MaybeNull
 
     member AsProvidedVar: name: string -> ProvidedVar
 
-    static member Void: ProvidedType
+    static member Void: ProvidedType MaybeNull
 
     static member CreateNoContext: Type -> ProvidedType
 
@@ -275,7 +275,7 @@ type ProvidedMethodBase =
 
     member IsConstructor: bool
 
-    member GetParameters: unit -> ProvidedParameterInfo[]
+    member GetParameters: unit -> ProvidedParameterInfo[] MaybeNull
 
     member GetGenericArguments: unit -> ProvidedType[]
 
@@ -335,7 +335,7 @@ type ProvidedFieldInfo =
 
     member IsLiteral: bool
 
-    member GetRawConstantValue: unit -> obj
+    member GetRawConstantValue: unit -> obj MaybeNull
 
     member FieldType: ProvidedType
 
@@ -359,11 +359,11 @@ type ProvidedPropertyInfo =
 
     inherit ProvidedMemberInfo
 
-    member GetGetMethod: unit -> ProvidedMethodInfo
+    member GetGetMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetSetMethod: unit -> ProvidedMethodInfo
+    member GetSetMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetIndexParameters: unit -> ProvidedParameterInfo[]
+    member GetIndexParameters: unit -> ProvidedParameterInfo[] MaybeNull
 
     member CanRead: bool
 
@@ -385,7 +385,7 @@ type ProvidedEventInfo =
 
     member GetAddMethod: unit -> ProvidedMethodInfo
 
-    member GetRemoveMethod: unit -> ProvidedMethodInfo
+    member GetRemoveMethod: unit -> ProvidedMethodInfo MaybeNull
 
     member EventHandlerType: ProvidedType
 
@@ -422,7 +422,7 @@ type ProvidedExprType =
 
     | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]
 
-    | ProvidedConstantExpr of obj * ProvidedType
+    | ProvidedConstantExpr of obj MaybeNull * ProvidedType
 
     | ProvidedDefaultExpr of ProvidedType
 
@@ -448,10 +448,10 @@ type ProvidedExprType =
 #endif
 type ProvidedExpr =
 
-    member Type: ProvidedType
+    member Type: ProvidedType MaybeNull
 
     /// Convert the expression to a string for diagnostics
-    member UnderlyingExpressionString: string
+    member UnderlyingExpressionString: string MaybeNull
 
     member GetExprType: unit -> ProvidedExprType option
 
@@ -461,7 +461,7 @@ type ProvidedExpr =
 #endif
 type ProvidedVar =
 
-    member Type: ProvidedType
+    member Type: ProvidedType MaybeNull
 
     member Name: string
 
@@ -472,7 +472,7 @@ type ProvidedVar =
     override GetHashCode: unit -> int
 
 /// Get the provided expression for a particular use of a method.
-val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr
+val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr MaybeNull
 
 /// Validate that the given provided type meets some of the rules for F# provided types
 val ValidateProvidedTypeAfterStaticInstantiation:
@@ -497,7 +497,7 @@ val TryLinkProvidedType:
     Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string -> string list
+val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string MaybeNull -> string list
 
 /// Decompose the enclosing name of a type (including any class nestings) into a list of parts.
 /// e.g. System.Object -> ["System"; "Object"]
