@@ -26,9 +26,9 @@ open FSharp.Core.CompilerServices
 
 exception ObsoleteDiagnostic of
     isError: bool *
-    diagnosticId: string option *
+    diagnosticId: string *
     message: string *
-    urlFormat: string option *
+    urlFormat: string *
     range: range
 
 let fail() = failwith "This custom attribute has an argument that cannot yet be converted using this API"
@@ -247,83 +247,60 @@ let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
     | Some([ILAttribElem.String (Some featureName) ], _) when featureName = "RequiredMembers" ->
         CompleteD
     | _ ->
-        ErrorD (ObsoleteDiagnostic(true, None, msg, None, m))
+        ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
 
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match TryDecodeILAttribute tref cattrs with
     | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef ->
-            WarnD(ObsoleteDiagnostic(false, None, msg, None, m))
+            WarnD(ObsoleteDiagnostic(false, "", msg, "", m))
     | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef ->
         if isError then
             if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
                 CheckCompilerFeatureRequiredAttribute g cattrs msg m
             else
-                ErrorD (ObsoleteDiagnostic(true, None, msg, None, m))
+                ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
         else
-            WarnD (ObsoleteDiagnostic(false, None, msg, None, m))
+            WarnD (ObsoleteDiagnostic(false, "", msg, "", m))
 
     | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef ->
-        WarnD(ObsoleteDiagnostic(false, None, "", None, m))
+        WarnD(ObsoleteDiagnostic(false, "", "", "", m))
     | Some _ when not isByrefLikeTyconRef ->
-        WarnD(ObsoleteDiagnostic(false, None, "",None, m))
+        WarnD(ObsoleteDiagnostic(false, "", "", "", m))
     | _ ->
         CompleteD
 
 let langVersionPrefix = "--langversion:preview"
 
 let private CheckObsoleteAttributes g attribs m =
+    let extractAttribValueFrom name namedArgs   =
+        match namedArgs with 
+        | ExtractAttribNamedArg name (AttribStringArg v) -> v 
+        | _ -> ""
+
     trackErrors {
         match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(unnamedArgs= [ AttribStringArg s ]; propVal= namedArgs)) ->
-            let diagnosticId = 
-                match namedArgs with 
-                | ExtractAttribNamedArg "DiagnosticId" (AttribStringArg v) -> Some v 
-                | _ -> None
-                
-            let urlFormat =
-                match namedArgs with 
-                | ExtractAttribNamedArg "UrlFormat" (AttribStringArg v) -> Some v 
-                | _ -> None
+            let diagnosticId =  extractAttribValueFrom "DiagnosticId" namedArgs
+            let urlFormat = extractAttribValueFrom "UrlFormat" namedArgs
             do! WarnD(ObsoleteDiagnostic(false, diagnosticId, s, urlFormat, m))
 
         | Some(Attrib(unnamedArgs= [ AttribStringArg s; AttribBoolArg(isError) ]; propVal= namedArgs)) -> 
-            let diagnosticId = 
-                match namedArgs with 
-                | ExtractAttribNamedArg "DiagnosticId" (AttribStringArg v) -> Some v 
-                | _ -> None
-                
-            let urlFormat =
-                match namedArgs with 
-                | ExtractAttribNamedArg "UrlFormat" (AttribStringArg v) -> Some v 
-                | _ -> None
-            
+            let diagnosticId = extractAttribValueFrom "DiagnosticId" namedArgs
+            let urlFormat = extractAttribValueFrom "UrlFormat" namedArgs
             if isError then
                 do! ErrorD (ObsoleteDiagnostic(true, diagnosticId, s, urlFormat, m))
             else
                 do! WarnD (ObsoleteDiagnostic(false, diagnosticId, s, urlFormat, m))
         | Some(Attrib(unnamedArgs= [ AttribStringArg s ]; propVal= namedArgs)) ->
-            let diagnosticId = 
-                match namedArgs with 
-                | ExtractAttribNamedArg "DiagnosticId" (AttribStringArg v) -> Some v 
-                | _ -> None
-                    
-            let urlFormat =
-                match namedArgs with 
-                | ExtractAttribNamedArg "UrlFormat" (AttribStringArg v) -> Some v 
-                | _ -> None
+            let diagnosticId = extractAttribValueFrom "DiagnosticId" namedArgs       
+            let urlFormat = extractAttribValueFrom "UrlFormat" namedArgs
+
             do! WarnD(ObsoleteDiagnostic(false, diagnosticId, s, urlFormat, m))
         | Some(Attrib(propVal= namedArgs)) ->
-            let diagnosticId = 
-                match namedArgs with 
-                | ExtractAttribNamedArg "DiagnosticId" (AttribStringArg v) -> Some v 
-                | _ -> None
-                    
-            let urlFormat =
-                match namedArgs with 
-                | ExtractAttribNamedArg "UrlFormat" (AttribStringArg v) -> Some v 
-                | _ -> None
+            let diagnosticId = extractAttribValueFrom "DiagnosticId" namedArgs  
+            let urlFormat = extractAttribValueFrom "UrlFormat" namedArgs
             do! WarnD(ObsoleteDiagnostic(false, diagnosticId, "", urlFormat, m))
         | None -> 
             ()
@@ -392,16 +369,16 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
 let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
     let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
     match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), tref.FullName)), m) with
-    | Some ([ Some (:? string as msg) ], _) -> WarnD(ObsoleteDiagnostic(false, None, msg, None, m))
+    | Some ([ Some (:? string as msg) ], _) -> WarnD(ObsoleteDiagnostic(false, "", msg, "", m))
     | Some ([ Some (:? string as msg); Some (:?bool as isError) ], _) ->
         if isError then 
-            ErrorD (ObsoleteDiagnostic(true, None, msg, None, m))
+            ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
         else 
-            WarnD (ObsoleteDiagnostic(false, None, msg, None, m))
+            WarnD (ObsoleteDiagnostic(false, "", msg, "", m))
     | Some ([ None ], _) -> 
-        WarnD(ObsoleteDiagnostic(false, None, "", None, m))
+        WarnD(ObsoleteDiagnostic(false, "", "", "", m))
     | Some _ -> 
-        WarnD(ObsoleteDiagnostic(false, None, "", None, m))
+        WarnD(ObsoleteDiagnostic(false, "", "", "", m))
     | None -> 
         CompleteD
 #endif

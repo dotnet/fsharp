@@ -256,8 +256,8 @@ let x = MyClass()
     |> checkDiagnostic
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
-        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
 [<Fact>]
 let ``Warning - ObsoleteDiagnosticExtendedData 02`` () =
@@ -272,8 +272,8 @@ let x = MyClass()
     |> checkDiagnostic
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
-        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
 [<Fact>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 03`` () =
@@ -288,8 +288,8 @@ let x = MyClass()
     |> checkDiagnostic
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
-        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
 [<Fact>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 04`` () =
@@ -304,8 +304,8 @@ let x = MyClass()
     |> checkDiagnostic
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
-        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
 
 [<Fact>]
@@ -321,8 +321,8 @@ let x = MyClass()
     |> checkDiagnostic
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
-        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
 [<Fact>]
 let ``Error - ObsoleteDiagnosticExtendedData 02`` () =
@@ -337,8 +337,8 @@ let x = MyClass()
     |> checkDiagnostic
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
-        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
 [<Fact>]
 let ``Error -  ObsoleteDiagnosticExtendedData 03`` () =
@@ -353,8 +353,8 @@ let x = MyClass()
     |> checkDiagnostic
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
-        Assert.Equal(None, obsoleteDiagnostic.UrlFormat))
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
 [<Fact>]
 let ``Error -  ObsoleteDiagnosticExtendedData 04`` () =
@@ -369,5 +369,5 @@ let x = MyClass()
     |> checkDiagnostic
        (101, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
-        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId.Value)
-        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat.Value))
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))

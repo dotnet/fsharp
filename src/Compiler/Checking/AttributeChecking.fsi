@@ -15,9 +15,9 @@ open FSharp.Compiler.TypedTree
 
 exception ObsoleteDiagnostic of
     isError: bool *
-    diagnosticId: string option *
+    diagnosticId: string *
     message: string *
-    urlFormat: string option *
+    urlFormat: string *
     range: range
 
 type AttribInfo =
