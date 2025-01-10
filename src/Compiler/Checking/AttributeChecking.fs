@@ -417,7 +417,27 @@ let CheckEntityAttributes g (tcref: TyconRef) m =
         CheckFSharpAttributes g tcref.Attribs m
         
 let CheckILEventAttributes g (tcref: TyconRef) cattrs m  =    
-    CheckILAttributes g (isByrefLikeTyconRef g m tcref) cattrs m 
+    CheckILAttributes g (isByrefLikeTyconRef g m tcref) cattrs m
+
+let CheckUnitOfMeasureAttributes g (measure: Measure) = 
+    let checkAttribs tm m =
+        let attribs =
+            ListMeasureConOccsWithNonZeroExponents g true tm
+            |> List.map fst
+            |> List.map(_.Attribs)
+            |> List.concat
+
+        CheckFSharpAttributes g attribs m |> CommitOperationResult
+                
+    match measure with
+    | Measure.Const(range = m) -> checkAttribs measure m
+    | Measure.Inv ms -> checkAttribs measure ms.Range
+    | Measure.One(m) -> checkAttribs measure m
+    | Measure.RationalPower(measure = ms1) -> checkAttribs measure ms1.Range
+    | Measure.Prod(measure1= ms1; measure2= ms2) ->
+        checkAttribs ms1 ms1.Range
+        checkAttribs ms2 ms2.Range
+    | Measure.Var(typar) -> checkAttribs measure typar.Range
 
 /// Check the attributes associated with a method, returning warnings and errors as data.
 let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =

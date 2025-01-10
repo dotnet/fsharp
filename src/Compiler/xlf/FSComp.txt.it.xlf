@@ -4559,7 +4559,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="needs-review-translation">Espressione di calcolo, sequenza o record non valida. Il formato delle espressioni sequenza deve essere 'seq {{ ... }}'</target>
+        <target state="translated">Espressione di calcolo, sequenza o record non valida. Il formato delle espressioni sequenza deve essere 'seq {{ ... }}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">
