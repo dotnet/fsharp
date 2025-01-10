@@ -243,7 +243,7 @@ type  Foo = {| bar: int; x: int |}
         assertRange (4,6) (4,9) fieldsData.ImplementationRange)
 
 
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning - ObsoleteDiagnosticExtendedData 01`` () =
     FSharp """
 open System
@@ -259,7 +259,7 @@ let x = MyClass()
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
 
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning - ObsoleteDiagnosticExtendedData 02`` () =
     FSharp """
 open System
@@ -275,7 +275,7 @@ let x = MyClass()
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 03`` () =
     FSharp """
 open System
@@ -291,7 +291,7 @@ let x = MyClass()
         Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 04`` () =
     FSharp """
 open System
@@ -308,7 +308,7 @@ let x = MyClass()
         Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 05`` () =
     let CSLib =
         CSharp """
@@ -339,7 +339,7 @@ let text = Class1.Test();
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 06`` () =
     let CSLib =
         CSharp """
@@ -370,7 +370,7 @@ let text = Class1.Test();
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 07`` () =
     let CSLib =
         CSharp """
@@ -401,7 +401,7 @@ let text = Class1.Test();
         Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 08`` () =
     let CSLib =
         CSharp """
@@ -432,7 +432,7 @@ let text = Class1.Test();
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning - ObsoleteDiagnosticExtendedData 09`` () =
     FSharp """
 open System
@@ -448,6 +448,7 @@ let x = MyClass()
         Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
 
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Warning -  ObsoleteDiagnosticExtendedData 10`` () =
     let CSLib =
         CSharp """
@@ -478,7 +479,7 @@ let text = Class1.Test();
         Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
 
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Error - ObsoleteDiagnosticExtendedData 01`` () =
     FSharp """
 open System
@@ -494,7 +495,7 @@ let x = MyClass()
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Error - ObsoleteDiagnosticExtendedData 02`` () =
     FSharp """
 open System
@@ -510,7 +511,7 @@ let x = MyClass()
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Error -  ObsoleteDiagnosticExtendedData 03`` () =
     FSharp """
 open System
@@ -526,7 +527,7 @@ let x = MyClass()
         Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("", obsoleteDiagnostic.UrlFormat))
        
-[<Fact>]
+[<FSharp.Test.FactForNETCOREAPP>]
 let ``Error -  ObsoleteDiagnosticExtendedData 04`` () =
     FSharp """
 open System
