@@ -49,8 +49,17 @@
   {
     
     .maxstack  8
-    IL_0000:  call       void [runtime]System.Console::WriteLine()
-    IL_0005:  ret
+    IL_0000:  nop
+    IL_0001:  ldc.i4.1
+    IL_0002:  brfalse.s  IL_000c
+
+    IL_0004:  call       void [runtime]System.Console::WriteLine()
+    IL_0009:  nop
+    IL_000a:  br.s       IL_0012
+
+    IL_000c:  call       void [runtime]System.Console::WriteLine()
+    IL_0011:  nop
+    IL_0012:  ret
   } 
 
 } 

@@ -5,6 +5,11 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         
+  .ver 2:1:0:0
+}
 .assembly extern runtime { }
 .assembly assembly
 {
@@ -34,25 +39,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method private specialname rtspecialname static void  .cctor() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldc.i4.0
-    IL_0001:  stsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_0006:  ldsfld     int32 '<StartupCode$assembly>'.$assembly::init@
-    IL_000b:  pop
-    IL_000c:  ret
-  } 
-
-  .method assembly specialname static void staticInitialization@() cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  call       void [runtime]System.Console::WriteLine()
-    IL_0005:  ret
-  } 
-
 } 
 
 .class private abstract auto ansi sealed '<StartupCode$assembly>'.$assembly
@@ -66,9 +52,23 @@
   {
     .entrypoint
     
-    .maxstack  8
-    IL_0000:  call       void assembly::staticInitialization@()
-    IL_0005:  ret
+    .maxstack  4
+    .locals init (string V_0)
+    IL_0000:  ldstr      "A"
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldstr      "A"
+    IL_000c:  call       bool [netstandard]System.String::Equals(string,
+                                                                 string)
+    IL_0011:  brfalse.s  IL_001b
+
+    IL_0013:  call       void [runtime]System.Console::WriteLine()
+    IL_0018:  nop
+    IL_0019:  br.s       IL_0021
+
+    IL_001b:  call       void [runtime]System.Console::WriteLine()
+    IL_0020:  nop
+    IL_0021:  ret
   } 
 
 } 

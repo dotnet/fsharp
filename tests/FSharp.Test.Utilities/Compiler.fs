@@ -228,42 +228,43 @@ module rec Compiler =
         | true -> Some (File.ReadAllText path)
         | _ -> None
 
-    let createCompilationUnit baselineSuffix directoryPath filename =
+    let createCompilationUnit sourceBaselineSuffix ilBaselineSuffixes directoryPath filename =
 
         let outputDirectoryPath = createTemporaryDirectory().FullName
         let sourceFilePath = normalizePathSeparator (directoryPath ++ filename)
-        let fsBslFilePath = sourceFilePath + baselineSuffix + ".err.bsl"
+        let fsBslFilePath = sourceFilePath + sourceBaselineSuffix + ".err.bsl"
         let ilBslFilePath =
             let ilBslPaths = [|
+                for baselineSuffix in ilBaselineSuffixes do
 #if DEBUG
     #if NETCOREAPP
-                yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #else
     #if NETCOREAPP
-                yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + baselineSuffix + ".il.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #endif
-            |]
+                |]
 
             let findBaseline =
                 ilBslPaths
                 |> Array.tryPick(fun p -> if File.Exists(p) then Some p else None)
             match findBaseline with
             | Some s -> s
-            | None -> sourceFilePath + baselineSuffix + ".il.bsl"
+            | None -> sourceFilePath + sourceBaselineSuffix + ".il.bsl"
 
         let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
         let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
@@ -314,7 +315,7 @@ module rec Compiler =
 
         let results =
             fsFiles
-            |> Array.map (fun fs -> (createCompilationUnit baselineSuffix directoryPath fs) :> obj)
+            |> Array.map (fun fs -> (createCompilationUnit baselineSuffix [baselineSuffix] directoryPath fs) :> obj)
             |> Seq.map (fun c -> [| c |])
 
         results

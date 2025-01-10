@@ -5,7 +5,6 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern runtime { }
 .assembly assembly
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
@@ -49,8 +48,9 @@
   {
     
     .maxstack  8
-    IL_0000:  call       void [runtime]System.Console::WriteLine()
-    IL_0005:  ret
+    IL_0000:  nop
+    IL_0001:  call       void [runtime]System.Console::WriteLine()
+    IL_0006:  ret
   } 
 
 } 

@@ -130,11 +130,27 @@ and [<NoComparison; NoEquality; AutoOpen>]
             else
                 ""
 
-        let realsigBsl =  (getBaseline realsig  ".RealInternalSignature")
-        let optimizeBsl = (getBaseline optimize ".Optimize")
-        let baselineSuffix = Option.defaultValue "" (combineBaselines realsigBsl optimizeBsl)
-        let compilation = createCompilationUnit baselineSuffix directoryPath fileName
+        let rsLabel = ".RealInternalSignature"
+        let optLabel = ".Optimize"
+        let realsigBsl =  (getBaseline realsig  rsLabel)
+        let optimizeBsl = (getBaseline optimize optLabel)
+        let sourceBaselineSuffix = Option.defaultValue "" (combineBaselines realsigBsl optimizeBsl)
 
+        let baselineSuffixes = [
+            yield Option.defaultValue "" (combineBaselines realsigBsl optimizeBsl)              // .RealInternalSignatureOff.OptimizeOff.
+            yield Option.defaultValue "" (combineBaselines realsigBsl (Some (optLabel)))        // .RealInternalSignatureOff.Optimize.
+            yield Option.defaultValue "" (combineBaselines (Some rsLabel) optimizeBsl)          // .RealInternalSignature.OptimizeOff.
+            yield Option.defaultValue "" (combineBaselines (Some rsLabel) (Some optLabel))      // .RealInternalSignature.Optimize.
+            yield Option.defaultValue "" (combineBaselines realsigBsl None)                     // .RealInternalSignatureOff.
+            yield Option.defaultValue "" (combineBaselines (Some rsLabel) None)                 // .RealInternalSignature.
+            yield Option.defaultValue "" (combineBaselines None optimizeBsl)                    // .OptimizeOff.
+            yield Option.defaultValue "" (combineBaselines None (Some optLabel))                // .Optimize
+            yield Option.defaultValue "" (combineBaselines None optimizeBsl)                    // .OptimizeOff.
+            yield Option.defaultValue "" (combineBaselines None (Some optLabel))                // .Optimize
+            yield ""                                                                            //
+            ]
+
+        let compilation = createCompilationUnit sourceBaselineSuffix baselineSuffixes directoryPath fileName
         compilation |> setRealInternalSignature |> setOptimization
 
     override _.ToString(): string =
