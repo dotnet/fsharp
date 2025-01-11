@@ -3241,6 +3241,13 @@ module EstablishTypeDefinitionCores =
                                     warning(Error(FSComp.SR.chkAttributeAliased(attrib.TypeRef.FullName), tycon.Id.idRange))
                         | _ -> ()
 
+                    // Check for attributes in unit-of-measure declarations
+                    // [<Measure>] type x = 1<s>
+                    //                        ^
+                    match stripTyEqns g ty with
+                    | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
+                    | _ -> ()
+                        
                     checkAttributeAliased ty tycon g.attrib_AutoOpenAttribute
                     checkAttributeAliased ty tycon g.attrib_StructAttribute
 
@@ -3807,11 +3814,11 @@ module EstablishTypeDefinitionCores =
 
             and accInMeasure measureTy acc =
                 match stripUnitEqns measureTy with
-                | Measure.Const tcref when ListSet.contains (===) tcref.Deref tycons ->  
+                | Measure.Const(tyconRef= tcref) when ListSet.contains (===) tcref.Deref tycons ->  
                     (tycon, tcref.Deref) :: acc
-                | Measure.Const tcref when tcref.IsTypeAbbrev ->              
+                | Measure.Const(tyconRef= tcref) when tcref.IsTypeAbbrev ->              
                     accInMeasure (reduceTyconRefAbbrevMeasureable tcref) acc
-                | Measure.Prod (ms1, ms2) -> accInMeasure ms1 (accInMeasure ms2 acc)
+                | Measure.Prod(measure1= ms1; measure2= ms2) -> accInMeasure ms1 (accInMeasure ms2 acc)
                 | Measure.Inv invTy -> accInMeasure invTy acc
                 | _ -> acc
 

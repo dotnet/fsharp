@@ -213,6 +213,8 @@ type SynMeasure =
     /// A parenthesized measure
     | Paren of measure: SynMeasure * range: range
 
+    member Range: range
+
 /// Represents an unchecked syntax tree of F# unit of measure exponents.
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =

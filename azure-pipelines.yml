@@ -29,7 +29,7 @@ variables:
   # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
   # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
   - name: FSharpReleaseBranchName
-    value: release/dev17.13
+    value: release/dev17.14
   # VS Insertion branch name (NOT the same as F# branch)
   # Should be previous release branch or 'main' in 'main' and 'main' in release branch
   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
@@ -88,7 +88,7 @@ extends:
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
       # Localization: we only run it for specific release branches
-      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.13') }}:
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.14') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp
