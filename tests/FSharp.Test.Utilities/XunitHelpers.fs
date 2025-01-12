@@ -15,7 +15,6 @@ open FSharp.Compiler.Diagnostics
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
-open FSharp.Compiler.Diagnostics
 
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
