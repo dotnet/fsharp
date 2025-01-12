@@ -75,7 +75,7 @@
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
-    <SystemPackageVersionVersion>8.0.0</SystemPackageVersionVersion>
+    <SystemPackageVersionVersion>9.0.0</SystemPackageVersionVersion>
     <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
     <SystemCollectionsImmutableVersion>$(SystemPackageVersionVersion)</SystemCollectionsImmutableVersion>
     <SystemComponentModelCompositionVersion>$(SystemPackageVersionVersion)</SystemComponentModelCompositionVersion>
