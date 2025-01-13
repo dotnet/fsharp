@@ -75,7 +75,7 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
                 stampEquals this.tcGlobals this.ty1 other.ty1
                 && stampEquals this.tcGlobals this.ty2 other.ty2
 
-    override this.Equals other =
+    override this.Equals(other:objnull) =
         match other with
         | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
         | _ -> false

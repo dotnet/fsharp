@@ -308,7 +308,7 @@ type FsiEvaluationSession =
     member ReportUnhandledException: exn: exn -> unit
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
-    member ValueBound: IEvent<obj * Type * string>
+    member ValueBound: IEvent<objnull * Type * string>
 
     /// Gets the root-level values that are bound to an identifier
     member GetBoundValues: unit -> FsiBoundValue list

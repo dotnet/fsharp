@@ -5205,7 +5205,7 @@ module Settings =
                 evLoop.ScheduleRestart()
                 evLoop <- x
 
-        member _.AddPrintTransformer(printer: 'T -> obj) =
+        member _.AddPrintTransformer(printer: 'T -> objnull) =
             addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: objnull) -> printer (unbox x))) :: addedPrinters
 
     let fsi = InteractiveSettings()

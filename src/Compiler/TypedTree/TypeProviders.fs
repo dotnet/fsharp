@@ -376,7 +376,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.Namespace : string MaybeNull = x.Namespace
 
-    member _.FullName = x.FullName
+    member _.FullName : string MaybeNull = x.FullName
 
     member _.IsArray = x.IsArray
 
@@ -612,7 +612,7 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     member _.IsOptional = x.IsOptional
 
-    member _.RawDefaultValue = x.RawDefaultValue
+    member _.RawDefaultValue : objnull = x.RawDefaultValue
 
     member _.HasDefaultValue = x.Attributes.HasFlag(ParameterAttributes.HasDefault)
 
@@ -790,7 +790,7 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
 
     member _.IsLiteral = x.IsLiteral
 
-    member _.GetRawConstantValue() = x.GetRawConstantValue()
+    member _.GetRawConstantValue() : objnull = x.GetRawConstantValue()
 
     /// FieldInfo.FieldType cannot be null
 
@@ -1069,7 +1069,7 @@ type ProvidedVar (x: Var, ctxt) =
         | Null -> [| |]
         | _ -> xs |> Array.map (ProvidedVar.CreateNonNull ctxt)
 
-    override _.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
+    override _.Equals (y:objnull) = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
 
     override _.GetHashCode() = x.GetHashCode()
 

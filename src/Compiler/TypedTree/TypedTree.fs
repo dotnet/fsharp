@@ -5578,7 +5578,7 @@ type NamedDebugPointKey =
 
     override x.GetHashCode() = hash x.Name + hash x.Range
 
-    override x.Equals(yobj: obj) = 
+    override x.Equals(yobj: objnull) = 
         match yobj with 
         | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
         | _ -> false

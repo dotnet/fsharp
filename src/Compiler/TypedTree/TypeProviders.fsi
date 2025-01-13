@@ -110,7 +110,7 @@ type ProvidedType =
 
     member IsArray: bool
 
-    member GetInterfaces: unit -> ProvidedType[] MaybeNull
+    member GetInterfaces: unit -> ProvidedType[]
 
     member Assembly: ProvidedAssembly MaybeNull
 
@@ -335,7 +335,7 @@ type ProvidedFieldInfo =
 
     member IsLiteral: bool
 
-    member GetRawConstantValue: unit -> obj MaybeNull
+    member GetRawConstantValue: unit -> objnull
 
     member FieldType: ProvidedType
 
