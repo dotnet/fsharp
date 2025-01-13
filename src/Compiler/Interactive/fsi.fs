@@ -114,14 +114,14 @@ module internal Utilities =
             { new IAnyToLayoutCall with
                 member _.AnyToLayout(options, o: objnull, ty: Type) =
                     match o with
-                    | null -> Display.any_to_layout options (o,ty)
+                    | null -> Display.any_to_layout options (o, ty)
                     | o ->
                         let n = pointerToNativeInt o
                         Display.any_to_layout options (n, n.GetType())
 
                 member _.FsiAnyToLayout(options, o: objnull, ty: Type) =
                     match o with
-                    | null -> Display.any_to_layout options (o,ty)
+                    | null -> Display.any_to_layout options (o, ty)
                     | o ->
                         let n = pointerToNativeInt o
                         Display.any_to_layout options (n, n.GetType())

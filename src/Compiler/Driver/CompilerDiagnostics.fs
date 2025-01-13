@@ -159,8 +159,8 @@ type Exception with
         | IndeterminateType m
         | TyconBadArgs(_, _, _, m) -> Some m
 
-        | FieldNotContained(_,_, _, _, _, arf, _, _) -> Some arf.Range
-        | ValueNotContained(_,_, _, _, aval, _, _) -> Some aval.Range
+        | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
+        | ValueNotContained(_, _, _, _, aval, _, _) -> Some aval.Range
         | UnionCaseNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
         | FSharpExceptionNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
@@ -256,8 +256,8 @@ type Exception with
         | LetRecUnsound _ -> 31
         | FieldsFromDifferentTypes _ -> 32
         | TyconBadArgs _ -> 33
-        | FieldNotContained(kind=TypeMismatchSource.NullnessOnlyMismatch) -> 3261
-        | ValueNotContained (kind=TypeMismatchSource.NullnessOnlyMismatch) -> 3261
+        | FieldNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
+        | ValueNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
         | ValueNotContained _ -> 34
         | Deprecated _ -> 35
         | UnionCaseNotContained _ -> 36
@@ -1620,7 +1620,7 @@ type Exception with
 
         | UnionPatternsBindDifferentNames _ -> os.AppendString(UnionPatternsBindDifferentNamesE().Format)
 
-        | ValueNotContained(_,denv, infoReader, mref, implVal, sigVal, f) ->
+        | ValueNotContained(_, denv, infoReader, mref, implVal, sigVal, f) ->
             let text1, text2 =
                 NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
 
@@ -1644,7 +1644,7 @@ type Exception with
                 )
             )
 
-        | FieldNotContained(_,denv, infoReader, enclosingTycon, _, v1, v2, f) ->
+        | FieldNotContained(_, denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
             os.AppendString(

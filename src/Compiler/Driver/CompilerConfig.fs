@@ -317,7 +317,7 @@ type AssemblyReference =
 
     member x.ProjectReference = (let (AssemblyReference(_, _, contents)) = x in contents)
 
-    member x.SimpleAssemblyNameIs (name:string) =
+    member x.SimpleAssemblyNameIs(name: string) =
         (String.Compare(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0)
         || not (x.Text.Contains "/")
            && not (x.Text.Contains "\\")
