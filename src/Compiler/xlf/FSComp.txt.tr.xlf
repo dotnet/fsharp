@@ -1362,6 +1362,11 @@
         <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute">
+        <source>Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</source>
+        <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">Söz dizimi “expr1[expr2]” dizin oluşturma için kullanılıyor. Dizin oluşturmayı etkinleştirmek için bir tür ek açıklama eklemeyi düşünün veya bir işlev çağırıyorsanız bir boşluk ekleyin, örn. “expr1 [expr2]”.</target>
