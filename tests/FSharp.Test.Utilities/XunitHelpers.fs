@@ -31,6 +31,9 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // This gets executed once per test assembly.
         MessageSink.sinkWriter |> ignore
         TestConsole.install()
+#if !NETCOREAPP
+        AssemblyResolver.addResolver ()
+#endif
 
     interface IDisposable with
         member _.Dispose() =
