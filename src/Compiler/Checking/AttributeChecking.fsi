@@ -89,6 +89,8 @@ val CheckEntityAttributes: g: TcGlobals -> tcref: TyconRef -> m: range -> Operat
 
 val CheckUnionCaseAttributes: g: TcGlobals -> x: UnionCaseRef -> m: range -> OperationResult<unit>
 
+val CheckUnitOfMeasureAttributes: g: TcGlobals -> measure: Measure -> unit
+
 val CheckRecdFieldAttributes: g: TcGlobals -> x: RecdFieldRef -> m: range -> OperationResult<unit>
 
 val CheckValAttributes: g: TcGlobals -> x: ValRef -> m: range -> OperationResult<unit>
