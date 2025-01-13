@@ -146,8 +146,10 @@ type FSharpXunitFramework(sink: IMessageSink) =
         log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
         TestConsole.install()
 
-// TODO: Currently does not work with Desktop .NET Framework. Upcoming OpenTelemetry 1.11.0 may change it.
-#if NETCOREAPP
+#if !NETCOREAPP
+        AssemblyResolver.addResolver ()
+#endif
+
     let traceProvider =
         Sdk.CreateTracerProviderBuilder()
                 .AddSource(ActivityNames.FscSourceName)
@@ -155,15 +157,12 @@ type FSharpXunitFramework(sink: IMessageSink) =
                     ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1.0.0"))
                 .AddOtlpExporter()
                 .Build()
-#endif
 
     interface IDisposable with
         member _.Dispose() =
             cleanUpTemporaryDirectoryOfThisTestRun ()
-#if NETCOREAPP
             traceProvider.ForceFlush() |> ignore
             traceProvider.Dispose()
-#endif
             base.Dispose()        
 
     override this.CreateDiscoverer (assemblyInfo) =
