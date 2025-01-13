@@ -779,10 +779,8 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: FieldInfo[] MaybeNull) : ProvidedFieldInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: FieldInfo[]) : ProvidedFieldInfo[] = 
+        xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
     member _.IsInitOnly = x.IsInitOnly
 
@@ -913,10 +911,8 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedEventInfo (x, ctxt)
     
-    static member CreateArray ctxt (xs: EventInfo[] MaybeNull) : ProvidedEventInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: EventInfo[]) : ProvidedEventInfo[] = 
+        xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
     
     member _.Handle = x
 
@@ -946,10 +942,8 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: ConstructorInfo[] MaybeNull) : ProvidedConstructorInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: ConstructorInfo[]) : ProvidedConstructorInfo[] = 
+        xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 

@@ -126,7 +126,7 @@ type ProvidedType =
 
     member GetFields: unit -> ProvidedFieldInfo[]
 
-    member GetField: string -> ProvidedFieldInfo
+    member GetField: string -> ProvidedFieldInfo MaybeNull
 
     member GetProperties: unit -> ProvidedPropertyInfo[] MaybeNull
 
@@ -134,7 +134,7 @@ type ProvidedType =
 
     member GetEvents: unit -> ProvidedEventInfo[]
 
-    member GetEvent: string -> ProvidedEventInfo
+    member GetEvent: string -> ProvidedEventInfo MaybeNull
 
     member GetConstructors: unit -> ProvidedConstructorInfo[]
 
@@ -170,7 +170,7 @@ type ProvidedType =
 
     member GenericParameterPosition: int
 
-    member GetElementType: unit -> ProvidedType
+    member GetElementType: unit -> ProvidedType MaybeNull
 
     member GetGenericArguments: unit -> ProvidedType[]
 
@@ -383,7 +383,7 @@ type ProvidedEventInfo =
 
     inherit ProvidedMemberInfo
 
-    member GetAddMethod: unit -> ProvidedMethodInfo
+    member GetAddMethod: unit -> ProvidedMethodInfo MaybeNull
 
     member GetRemoveMethod: unit -> ProvidedMethodInfo MaybeNull
 
@@ -467,7 +467,7 @@ type ProvidedVar =
 
     member IsMutable: bool
 
-    override Equals: obj -> bool
+    override Equals: objnull -> bool
 
     override GetHashCode: unit -> int
 
