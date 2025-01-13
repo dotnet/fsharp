@@ -8,9 +8,10 @@ open FSharp.Test.Compiler
 
 module Decimal =
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"literal01.fs"|])>]
+    [<Theory; FileInlineData("literal01.fs")>]
     let ``Decimal - literal01.fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges";]
         |> compile

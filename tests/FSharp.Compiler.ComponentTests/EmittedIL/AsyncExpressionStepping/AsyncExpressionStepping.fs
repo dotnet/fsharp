@@ -17,74 +17,38 @@ module AsyncExpressionStepping =
         |> verifyBaseline
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AsyncExpressionSteppingTest1.fs"|])>]
-    let ``AsyncExpressionSteppingTest1_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest1.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest1_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AsyncExpressionSteppingTest1.fs"|])>]
-    let ``AsyncExpressionSteppingTest1_RealInternalSignatureOff_fs`` compilation =
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest2.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest2`` compilation =
         compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AsyncExpressionSteppingTest2.fs"|])>]
-    let ``AsyncExpressionSteppingTest2_RealInternalSignatureOnfs`` compilation =
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest3.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest3_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AsyncExpressionSteppingTest2.fs"|])>]
-    let ``AsyncExpressionSteppingTest2_RealInternalSignatureOff_fs`` compilation =
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest4.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest4_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AsyncExpressionSteppingTest3.fs"|])>]
-    let ``AsyncExpressionSteppingTest3_RealInternalSignatureOn_fs`` compilation =
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest5.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest5_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOn
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AsyncExpressionSteppingTest3.fs"|])>]
-    let ``AsyncExpressionSteppingTest3_RealInternalSignatureOff_fs`` compilation =
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest6.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest6_fs`` compilation =
         compilation
-        |> withRealInternalSignatureOff
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AsyncExpressionSteppingTest4.fs"|])>]
-    let ``AsyncExpressionSteppingTest4_RealInternalSignatureOn_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AsyncExpressionSteppingTest4.fs"|])>]
-    let ``AsyncExpressionSteppingTest4_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AsyncExpressionSteppingTest5.fs"|])>]
-    let ``AsyncExpressionSteppingTest5_RealInternalSignatureOn_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AsyncExpressionSteppingTest5.fs"|])>]
-    let ``AsyncExpressionSteppingTest5_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOn", Includes=[|"AsyncExpressionSteppingTest6.fs"|])>]
-    let ``AsyncExpressionSteppingTest6_RealInternalSignatureOn_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOn
-        |> verifyCompilation
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".RealInternalSignatureOff", Includes=[|"AsyncExpressionSteppingTest6.fs"|])>]
-    let ``AsyncExpressionSteppingTest6_RealInternalSignatureOff_fs`` compilation =
-        compilation
-        |> withRealInternalSignatureOff
+        |> getCompilation
         |> verifyCompilation
