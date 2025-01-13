@@ -4050,8 +4050,6 @@ type NamedDebugPointKey =
 
     interface IComparable
 
-    override Equals: yobj: objnull -> bool
-
     override GetHashCode: unit -> int
 
 /// Represents a complete typechecked implementation file, including its inferred or explicit signature.
