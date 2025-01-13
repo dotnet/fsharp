@@ -467,8 +467,6 @@ type ProvidedVar =
 
     member IsMutable: bool
 
-    override Equals: objnull -> bool
-
     override GetHashCode: unit -> int
 
 /// Get the provided expression for a particular use of a method.

@@ -395,7 +395,7 @@ module Settings =
         member AddPrinter: ('T -> string) -> unit
 
         /// <summary>Register a print transformer that controls the output of the interactive session.</summary>
-        member AddPrintTransformer: ('T -> obj) -> unit
+        member AddPrintTransformer: ('T -> objnull) -> unit
 
         member internal AddedPrinters: Choice<Type * (objnull -> string), Type * (objnull -> objnull)> list
 

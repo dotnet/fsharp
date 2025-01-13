@@ -1069,7 +1069,7 @@ type ProvidedVar (x: Var, ctxt) =
         | Null -> [| |]
         | _ -> xs |> Array.map (ProvidedVar.CreateNonNull ctxt)
 
-    override _.Equals (y:objnull) = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
+    override _.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
 
     override _.GetHashCode() = x.GetHashCode()
 
