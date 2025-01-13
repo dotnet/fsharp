@@ -449,13 +449,13 @@ let rec ImportProvidedTypeAsILType (env: ImportMap) (m: range) (st: Tainted<Prov
     elif st.PUntaint((fun st -> st.IsGenericParameter), m) then
         mkILTyvarTy (uint16 (st.PUntaint((fun st -> st.GenericParameterPosition), m)))
     elif st.PUntaint((fun st -> st.IsArray), m) then
-        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()), m))
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> !! st.GetElementType()), m))
         ILType.Array(ILArrayShape.FromRank (st.PUntaint((fun st -> st.GetArrayRank()), m)), et)
     elif st.PUntaint((fun st -> st.IsByRef), m) then
-        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()), m))
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> !! st.GetElementType()), m))
         ILType.Byref et
     elif st.PUntaint((fun st -> st.IsPointer), m) then
-        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()), m))
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> !! st.GetElementType()), m))
         ILType.Ptr et
     else
         let gst, genericArgs =
@@ -493,15 +493,15 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then
-        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> !! st.GetElementType()), m))
         // TODO Nullness - integration into type providers as a separate feature for later.
         let nullness = Nullness.knownAmbivalent
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then
-        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> !! st.GetElementType()), m))
         mkByrefTy g elemTy
     elif st.PUntaint((fun st -> st.IsPointer), m) then
-        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> !! st.GetElementType()), m))
         if isUnitTy g elemTy || isVoidTy g elemTy && g.voidptr_tcr.CanDeref then
             mkVoidPtrTy g
         else

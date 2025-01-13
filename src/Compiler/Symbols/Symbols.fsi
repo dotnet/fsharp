@@ -572,7 +572,7 @@ type FSharpField =
     member Name: string
 
     /// Get the default initialization info, for static literals
-    member LiteralValue: obj option
+    member LiteralValue: objnull option
 
     ///  Indicates if the declared visibility of the field, not taking signatures into account
     override Accessibility: FSharpAccessibility
@@ -636,7 +636,7 @@ type FSharpStaticParameter =
     member Kind: FSharpType
 
     /// Get the default value for the static parameter
-    member DefaultValue: obj
+    member DefaultValue: objnull
 
     /// Indicates if the static parameter is optional
     member IsOptional: bool
@@ -945,7 +945,7 @@ type FSharpMemberOrFunctionOrValue =
     member IsMemberThisValue: bool
 
     /// Indicates if this is a [<Literal>] value, and if so what value? (may be null)
-    member LiteralValue: obj option
+    member LiteralValue: objnull option
 
     /// Get the accessibility information for the member, function or value
     override Accessibility: FSharpAccessibility
@@ -1189,10 +1189,10 @@ type FSharpAttribute =
     member AttributeType: FSharpEntity
 
     /// The arguments to the constructor for the attribute
-    member ConstructorArguments: IList<FSharpType * obj>
+    member ConstructorArguments: IList<FSharpType * objnull>
 
     /// The named arguments for the attribute
-    member NamedArguments: IList<FSharpType * string * bool * obj>
+    member NamedArguments: IList<FSharpType * string * bool * objnull>
 
     /// Indicates if the attribute type is in an unresolved assembly
     member IsUnresolved: bool

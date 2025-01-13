@@ -828,7 +828,7 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
         sourceFilesWithDelayLoggers
         |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
-            let directoryName = Path.GetDirectoryName fileName
+            let directoryName = !!(Path.GetDirectoryName fileName)
 
             let input =
                 parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
@@ -841,7 +841,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
 
     sourceFiles
     |> Array.map (fun (fileName, isLastCompiland) ->
-        let directoryName = Path.GetDirectoryName fileName
+        let directoryName = !!(Path.GetDirectoryName fileName)
 
         let input =
             ParseOneInputFile(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), diagnosticsLogger, retryLocked)

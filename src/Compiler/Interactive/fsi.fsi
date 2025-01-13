@@ -15,7 +15,7 @@ open Internal.Utilities.Library
 type FsiValue =
 
     /// The value, as an object
-    member ReflectionValue: obj
+    member ReflectionValue: objnull
 
     /// The type of the value, from the point of view of the .NET type system
     member ReflectionType: Type

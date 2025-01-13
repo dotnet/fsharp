@@ -12318,7 +12318,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
     member _.ClearGeneratedValue(ctxt, v) = ClearGeneratedValue ctxt ilxGenEnv v
 
     /// Invert the compilation of the given value and set the storage of the value, even if it is immutable
-    member _.ForceSetGeneratedValue(ctxt, v, value: obj) =
+    member _.ForceSetGeneratedValue(ctxt, v, value: objnull) =
         SetGeneratedValue ctxt ilxGenEnv true v value
 
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type

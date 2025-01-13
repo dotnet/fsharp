@@ -54,7 +54,7 @@ type TTypeCacheKey =
     val ty2: TType
     val canCoerce: CanCoerce
     val tcGlobals: TcGlobals
-    override Equals: other: obj -> bool
+    override Equals: other: objnull -> bool
     override GetHashCode: unit -> int
 
 /// Represents a context used for converting AbstractIL .NET and provided types to F# internal compiler data structures.
