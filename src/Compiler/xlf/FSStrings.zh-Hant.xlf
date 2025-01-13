@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">通常不應在樣式中使用大寫的變數識別碼。這可能表示缺少公開宣告或樣式名稱拼字錯誤。</target>
+        <target state="translated">通常不應在樣式中使用大寫的變數識別碼。這可能表示缺少公開宣告或樣式名稱拼字錯誤。</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

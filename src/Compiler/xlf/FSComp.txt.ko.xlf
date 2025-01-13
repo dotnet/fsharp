@@ -4559,7 +4559,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="needs-review-translation">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
+        <target state="translated">레코드, 시퀀스 또는 계산 식이 잘못되었습니다. 시퀀스 식의 형식은 'seq {{ ... }}'여야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">
