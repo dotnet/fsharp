@@ -437,7 +437,7 @@ module OldStyleMessages =
     let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
     let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
     let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s")
     let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
     let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
     let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
@@ -677,8 +677,7 @@ type Exception with
 
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2)
-            |> ignore
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
 
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
