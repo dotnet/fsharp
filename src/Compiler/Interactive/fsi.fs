@@ -2204,7 +2204,7 @@ type internal FsiDynamicCompiler
             lock tcLockObject (fun _ ->
                 CheckClosedInputSet(
                     ctok,
-                    diagnosticsLogger.CheckForErrors,
+                    (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
                     tcConfig,
                     tcImports,
                     tcGlobals,
