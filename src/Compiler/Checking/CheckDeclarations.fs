@@ -3060,7 +3060,7 @@ module EstablishTypeDefinitionCores =
 
             if not isRootGenerated then 
                 let desig = theRootTypeWithRemapping.TypeProviderDesignation
-                let nm = theRootTypeWithRemapping.PUntaint((fun st -> st.FullName), m)
+                let nm = theRootTypeWithRemapping.PUntaint((fun st -> string st.FullName), m)
                 error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig, nm), m))
 
             cenv.createsGeneratedProvidedTypes <- true
@@ -3101,7 +3101,7 @@ module EstablishTypeDefinitionCores =
 
                 if not isGenerated then 
                     let desig = st.TypeProviderDesignation
-                    let nm = st.PUntaint((fun st -> st.FullName), m)
+                    let nm = st.PUntaint((fun st -> string st.FullName), m)
                     error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig, nm), m))
 
                 // Embed the type into the module we're compiling

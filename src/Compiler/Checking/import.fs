@@ -598,7 +598,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 | Some found -> found.Coerce(m)
                 | None ->
                     let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
-                    let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
+                    let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> string declaringGenericTypeDefn.FullName), m)
                     error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ ->
          match mbase.OfType<ProvidedConstructorInfo>() with
@@ -630,7 +630,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 match found with
                 | Some found -> found.Coerce(m)
                 | None ->
-                    let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName), m)
+                    let typeName = declaringGenericTypeDefn.PUntaint((fun x -> string x.FullName), m)
                     error(Error(FSComp.SR.etIncorrectProvidedConstructor(DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
          | _ -> mbase
 

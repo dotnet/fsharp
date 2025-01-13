@@ -2115,7 +2115,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName |> string), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif

@@ -118,11 +118,11 @@ type ProvidedType =
 
     member GetNestedType: string -> ProvidedType MaybeNull
 
-    member GetNestedTypes: unit -> ProvidedType[] MaybeNull
+    member GetNestedTypes: unit -> ProvidedType[]
 
     member GetAllNestedTypes: unit -> ProvidedType[]
 
-    member GetMethods: unit -> ProvidedMethodInfo[] MaybeNull
+    member GetMethods: unit -> ProvidedMethodInfo[]
 
     member GetFields: unit -> ProvidedFieldInfo[]
 
@@ -138,7 +138,7 @@ type ProvidedType =
 
     member GetConstructors: unit -> ProvidedConstructorInfo[]
 
-    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo[] MaybeNull
+    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo[]
 
     member GetGenericTypeDefinition: unit -> ProvidedType
 
@@ -180,19 +180,19 @@ type ProvidedType =
 
     member GetEnumUnderlyingType: unit -> ProvidedType
 
-    member MakePointerType: unit -> ProvidedType MaybeNull
+    member MakePointerType: unit -> ProvidedType
 
-    member MakeByRefType: unit -> ProvidedType MaybeNull
+    member MakeByRefType: unit -> ProvidedType
 
-    member MakeArrayType: unit -> ProvidedType MaybeNull
+    member MakeArrayType: unit -> ProvidedType
 
-    member MakeArrayType: rank: int -> ProvidedType MaybeNull
+    member MakeArrayType: rank: int -> ProvidedType
 
-    member MakeGenericType: args: ProvidedType[] MaybeNull -> ProvidedType MaybeNull
+    member MakeGenericType: args: ProvidedType[] -> ProvidedType
 
     member AsProvidedVar: name: string -> ProvidedVar
 
-    static member Void: ProvidedType MaybeNull
+    static member Void: ProvidedType
 
     static member CreateNoContext: Type -> ProvidedType
 
@@ -275,7 +275,7 @@ type ProvidedMethodBase =
 
     member IsConstructor: bool
 
-    member GetParameters: unit -> ProvidedParameterInfo[] MaybeNull
+    member GetParameters: unit -> ProvidedParameterInfo[]
 
     member GetGenericArguments: unit -> ProvidedType[]
 
@@ -363,7 +363,7 @@ type ProvidedPropertyInfo =
 
     member GetSetMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetIndexParameters: unit -> ProvidedParameterInfo[] MaybeNull
+    member GetIndexParameters: unit -> ProvidedParameterInfo[]
 
     member CanRead: bool
 
@@ -448,10 +448,10 @@ type ProvidedExprType =
 #endif
 type ProvidedExpr =
 
-    member Type: ProvidedType MaybeNull
+    member Type: ProvidedType
 
     /// Convert the expression to a string for diagnostics
-    member UnderlyingExpressionString: string MaybeNull
+    member UnderlyingExpressionString: string
 
     member GetExprType: unit -> ProvidedExprType option
 
@@ -461,7 +461,7 @@ type ProvidedExpr =
 #endif
 type ProvidedVar =
 
-    member Type: ProvidedType MaybeNull
+    member Type: ProvidedType
 
     member Name: string
 
@@ -472,7 +472,7 @@ type ProvidedVar =
     override GetHashCode: unit -> int
 
 /// Get the provided expression for a particular use of a method.
-val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr MaybeNull
+val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr
 
 /// Validate that the given provided type meets some of the rules for F# provided types
 val ValidateProvidedTypeAfterStaticInstantiation:
