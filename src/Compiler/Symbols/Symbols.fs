@@ -2512,9 +2512,9 @@ type FSharpType(cenv, ty:TType) =
        DiagnosticsLogger.protectAssemblyExploration true <| fun () -> 
         match stripTyparEqns ty with 
         | TType_app (tcref, tyargs, _) -> FSharpEntity(cenv, tcref, tyargs).IsUnresolved
-        | TType_measure (Measure.Const tcref) ->  FSharpEntity(cenv, tcref).IsUnresolved
+        | TType_measure (Measure.Const(tyconRef= tcref)) ->  FSharpEntity(cenv, tcref).IsUnresolved
         | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr).IsUnresolved 
-        | TType_measure Measure.One ->  FSharpEntity(cenv, cenv.g.measureone_tcr).IsUnresolved 
+        | TType_measure (Measure.One _) ->  FSharpEntity(cenv, cenv.g.measureone_tcr).IsUnresolved 
         | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv, cenv.g.measureinverse_tcr).IsUnresolved 
         | _ -> false
     
@@ -2528,7 +2528,7 @@ type FSharpType(cenv, ty:TType) =
        isResolved() &&
        protect <| fun () -> 
          match stripTyparEqns ty with 
-         | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One) -> true 
+         | TType_app _ | TType_measure (Measure.Const _ | Measure.Prod _ | Measure.Inv _ | Measure.One _) -> true 
          | _ -> false
 
     member _.IsMeasureType =
@@ -2556,9 +2556,9 @@ type FSharpType(cenv, ty:TType) =
        protect <| fun () -> 
         match stripTyparEqns ty with 
         | TType_app (tcref, tyargs, _) -> FSharpEntity(cenv, tcref, tyargs) 
-        | TType_measure (Measure.Const tcref) ->  FSharpEntity(cenv, tcref) 
+        | TType_measure (Measure.Const(tyconRef= tcref)) ->  FSharpEntity(cenv, tcref) 
         | TType_measure (Measure.Prod _) ->  FSharpEntity(cenv, cenv.g.measureproduct_tcr) 
-        | TType_measure Measure.One ->  FSharpEntity(cenv, cenv.g.measureone_tcr) 
+        | TType_measure (Measure.One _) ->  FSharpEntity(cenv, cenv.g.measureone_tcr) 
         | TType_measure (Measure.Inv _) ->  FSharpEntity(cenv, cenv.g.measureinverse_tcr) 
         | _ -> invalidOp "not a named type"
 
@@ -2587,8 +2587,8 @@ type FSharpType(cenv, ty:TType) =
         | TType_tuple (_, tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection) 
         | TType_fun(domainTy, rangeTy, _) -> [| FSharpType(cenv, domainTy); FSharpType(cenv, rangeTy) |] |> makeReadOnlyCollection
         | TType_measure (Measure.Const _) ->  [| |] |> makeReadOnlyCollection
-        | TType_measure (Measure.Prod (t1, t2)) ->  [| FSharpType(cenv, TType_measure t1); FSharpType(cenv, TType_measure t2) |] |> makeReadOnlyCollection
-        | TType_measure Measure.One ->  [| |] |> makeReadOnlyCollection
+        | TType_measure (Measure.Prod(measure1= t1; measure2 = t2)) ->  [| FSharpType(cenv, TType_measure t1); FSharpType(cenv, TType_measure t2) |] |> makeReadOnlyCollection
+        | TType_measure (Measure.One _) ->  [| |] |> makeReadOnlyCollection
         | TType_measure (Measure.Inv t1) ->  [| FSharpType(cenv, TType_measure t1) |] |> makeReadOnlyCollection
         | _ -> invalidOp "not a named type"
 

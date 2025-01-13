@@ -26,8 +26,6 @@ module TestConsole =
 
         override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = holder.Value.Write(value)
-        override _.Write(value: string) = holder.Value.Write(value)
-        override _.WriteLine(value: string) = holder.Value.WriteLine(value)
         member _.Value = holder.Value
         member _.Set (writer: TextWriter) = holder.Value <- writer
 
@@ -47,8 +45,6 @@ module TestConsole =
         do redirecting.Set this
         override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = wrapped.Write(value); base.Write(value)
-        override _.Write(value: string) = wrapped.Write(value); base.Write(value)
-        override _.WriteLine(value: string) = wrapped.WriteLine(value); base.Write(value)
         override _.Dispose (disposing: bool) =
             redirecting.Set wrapped
             base.Dispose(disposing: bool)

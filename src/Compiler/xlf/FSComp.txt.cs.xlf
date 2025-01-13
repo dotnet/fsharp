@@ -4559,7 +4559,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSequenceExpressionSyntaxForm">
         <source>Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq {{ ... }}'</source>
-        <target state="needs-review-translation">Neplatný výraz záznamu, pořadí nebo výpočtu. Výrazy pořadí by měly mít notaci seq {{ ... }}.</target>
+        <target state="translated">Neplatný výraz záznamu, pořadí nebo výpočtu. Výrazy pořadí by měly mít notaci seq {{ ... }}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">

@@ -6,6 +6,7 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open FSharp.Compiler.Text.Range
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing
@@ -553,16 +554,19 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then
                     let rec conv ty =
                         match ty with
-                        | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv ty1, conv ty2)
+                        | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr ->
+                            let ms1: Measure = conv ty1
+                            let ms2: Measure = conv ty2
+                            Measure.Prod(ms1, ms2, unionRanges ms1.Range ms2.Range)
                         | TType_app (tcref, [ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
-                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One
-                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const tcref
+                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One(tcref.Range)
+                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const(tcref, tcref.Range)
                         | TType_app (tcref, _, _) ->
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
-                            Measure.One
+                            Measure.One(tcref.Range)
                         | _ ->
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name), m))
-                            Measure.One
+                            Measure.One(Range.Zero)
 
                     TType_measure (conv genericArg)
                 else
