@@ -206,7 +206,7 @@ export TEST_UPDATE_BSL=1
 
 ## Retain Test run built artifacts
 
-When investigating tests issues it is sometimes usefull to examine the artifacts built whe running tests.  Those built using the newer test framework are usually,
+When investigating tests issues it is sometimes useful to examine the artifacts built when running tests.  Those built using the newer test framework are usually,
 built in the %TEMP%\FSharp.Test.Utilities subdirectory.
 
 To tell the test framework to not cleanup these files use the: FSHARP_RETAIN_TESTBUILDS environment variable
