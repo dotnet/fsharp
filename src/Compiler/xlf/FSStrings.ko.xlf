@@ -18,8 +18,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <source>Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</source>
+        <target state="new">Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningWithType">
@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 열려 있는 선언이 없거나 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
+        <target state="translated">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 열려 있는 선언이 없거나 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
