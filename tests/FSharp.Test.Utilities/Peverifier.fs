@@ -6,10 +6,10 @@ open System
 open System.IO
 open TestFramework
 
-type PEVerifyOutput =
-    {
+type PEVerifyOutput ={
         ExitCode: int
-        Lines:   string array
+        OutputLines: string array
+        ErrorLines: string array
     }
 
 [<RequireQualifiedAccess>]
@@ -19,36 +19,45 @@ type PEVerifyResult =
 
 [<RequireQualifiedAccess>]
 module PEVerifier =
-
     let config = initializeSuite ()
 
-    let private exec exe args =
+    let private exec (dotnetExe: string) args workingDirectory =
         let arguments = args |> String.concat " "
-        let exitCode, _output, errors = Commands.executeProcess exe arguments ""
+        let exitCode, _output, errors = Commands.executeProcess dotnetExe arguments workingDirectory
         let errors = errors |> String.concat Environment.NewLine
         errors, exitCode
 
-    let private verifyPEFileCore peverifierArgs dllFilePath =
+    let private verifyPEFileCore peverifierArgs (dllFilePath: string) =
         let mutable errors = ResizeArray ()
-        let peverifierPath = config.PEVERIFY
-        let peverifyFullArgs = [ yield dllFilePath; yield "/NOLOGO"; yield! peverifierArgs  ]
-        let stdErr, exitCode =
-            let peverifierCommandPath = Path.ChangeExtension(dllFilePath, ".peverifierCommandPath")
-            File.WriteAllLines(peverifierCommandPath, [| $"{peverifierPath} {peverifyFullArgs}" |] )
+        let peverifyFullArgs = [ yield "--verbose"; yield dllFilePath; yield! peverifierArgs  ]
+        let workingDirectory = Path.GetDirectoryName dllFilePath
+        let _, exitCode =
+            let peverifierCommandPath = Path.ChangeExtension(dllFilePath, ".peverifierCommandPath.cmd")
+            let args = peverifyFullArgs |> Seq.fold(fun a acc -> $"{a} " + acc) ""
+            File.WriteAllLines(peverifierCommandPath, [| $"{args}" |] )
             File.Copy(typeof<RequireQualifiedAccessAttribute>.Assembly.Location, Path.GetDirectoryName(dllFilePath) ++ "FSharp.Core.dll", true)
-            exec peverifierPath peverifyFullArgs
+            let profile = Environment.GetEnvironmentVariable("USERPROFILE")
+            exec $"{profile}/.dotnet/tools/ilverify.exe" peverifyFullArgs workingDirectory
 
-        if exitCode <> 0 then
-            errors.Add (sprintf "PEVERIFIER failed with error code: %d" exitCode)
+        // Grab output
+        let outputLines = File.ReadAllLines(Path.Combine(workingDirectory, "StandardOutput.txt"))
+        let errorLines = File.ReadAllLines(Path.Combine(workingDirectory, "StandardError.txt"))
 
-        if not (String.IsNullOrWhiteSpace stdErr) then
-            errors.Add (sprintf "PEVERIFIER stderr is not empty:\n %s" stdErr)
+        let result = {
+            ExitCode = exitCode
+            OutputLines = outputLines
+            ErrorLines = errorLines
+        }
 
-        let error = { ExitCode=exitCode; Lines = errors.ToArray() }
+        if result.ExitCode <> 0 then
+            errors.Add ($"PEVERIFIER failed with error code: {exitCode}")
+
+        if result.ErrorLines |> Array.length <= 0 then
+            errors.Add ($"PEVERIFIER stderr is not empty:\n {result.ErrorLines}")
 
         match errors.Count with
-        | 0 -> PEVerifyResult.Success error
-        | _ -> PEVerifyResult.Failure error
+        | 0 -> PEVerifyResult.Success result
+        | _ -> PEVerifyResult.Failure result
 
     let private verifyPEFileAux cUnit args =
         let result =
@@ -68,6 +77,16 @@ module PEVerifier =
 
     let verifyPEFileWithArgs cUnit args =
         verifyPEFileCore cUnit args
+
+    let verifyPEFileWithSystemDlls cUnit =
+        // Get the path containing mecorlib.dll or System.Core.Private.dll
+        let fsharpCorePath = typeof<unit>.Assembly.Location
+        let systemPath = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+        let systemDllPaths =
+            DirectoryInfo(systemPath).GetFiles("*.dll")
+            |> Array.map (fun dll -> $"--reference \"{Path.Combine(systemPath, dll.FullName)}\"")
+            |> Array.toList
+        verifyPEFileAux cUnit ($"--reference \"{fsharpCorePath}\"" :: systemDllPaths)
 
     let shouldFail result =
         match result with

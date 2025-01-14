@@ -1468,7 +1468,6 @@ Actual:
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
-
         let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
                 let mdi = reader.GetMethodDebugInformation sp
@@ -1480,7 +1479,6 @@ Actual:
             failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
 
     let private verifyDocuments (reader: MetadataReader) expectedDocuments =
-
         let documents =
             [ for doc in reader.Documents do
                 if not doc.IsNil then
