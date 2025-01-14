@@ -10,6 +10,12 @@ open Xunit.Abstractions
 
 open TestFramework
 
+open FSharp.Compiler.Diagnostics
+
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
@@ -28,8 +34,10 @@ type FSharpXunitFramework(sink: IMessageSink) =
 
     interface IDisposable with
         member _.Dispose() =
-            cleanUpTemporaryDirectoryOfThisTestRun ()
-            base.Dispose()       
+            match Environment.GetEnvironmentVariable("FSHARP_RETAIN_TESTBUILDS") with
+            | null -> cleanUpTemporaryDirectoryOfThisTestRun  ()
+            | _ -> ()
+            base.Dispose()
 
 #else
 
@@ -45,6 +53,7 @@ type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArgument
     override this.InvokeTestAsync (aggregator: ExceptionAggregator) =
         task {
             use capture = new TestConsole.ExecutionCapture()
+            use _ = Activity.start test.DisplayName [  ]
             let! executionTime = this.BaseInvokeTestMethodAsync aggregator
             let output =
                 seq {
@@ -139,9 +148,24 @@ type FSharpXunitFramework(sink: IMessageSink) =
         log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
         TestConsole.install()
 
+// TODO: Currently does not work with Desktop .NET Framework. Upcoming OpenTelemetry 1.11.0 may change it.
+#if NETCOREAPP
+    let traceProvider =
+        Sdk.CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .SetResourceBuilder(
+                    ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1.0.0"))
+                .AddOtlpExporter()
+                .Build()
+#endif
+
     interface IDisposable with
         member _.Dispose() =
             cleanUpTemporaryDirectoryOfThisTestRun ()
+#if NETCOREAPP
+            traceProvider.ForceFlush() |> ignore
+            traceProvider.Dispose()
+#endif
             base.Dispose()        
 
     override this.CreateDiscoverer (assemblyInfo) =
