@@ -2272,12 +2272,15 @@ and [<Sealed>] TcImports
             | ProjectAssemblyDataResult.Unavailable false -> return None
             | _ ->
 
-                let assemblyData =
-                    match contentsOpt with
-                    | ProjectAssemblyDataResult.Available ilb -> ilb
-                    | ProjectAssemblyDataResult.Unavailable _ ->
-                        let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, fileName, m)
-                        RawFSharpAssemblyDataBackedByFileOnDisk(ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
+                let! assemblyData =
+                    cancellable {
+                        match contentsOpt with
+                        | ProjectAssemblyDataResult.Available ilb -> return ilb
+                        | ProjectAssemblyDataResult.Unavailable _ ->
+                            let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, fileName, m)
+                            return RawFSharpAssemblyDataBackedByFileOnDisk(ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
+                    }
+                    |> Cancellable.toAsync
 
                 let ilShortAssemName = assemblyData.ShortAssemblyName
                 let ilScopeRef = assemblyData.ILScopeRef
