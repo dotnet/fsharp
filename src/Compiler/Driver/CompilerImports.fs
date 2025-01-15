@@ -2255,6 +2255,7 @@ and [<Sealed>] TcImports
             r: AssemblyResolution
         ) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
         async {
+            do! Cancellable.UseToken()
             CheckDisposed()
             let m = r.originalReference.Range
             let fileName = r.resolvedPath
@@ -2272,15 +2273,12 @@ and [<Sealed>] TcImports
             | ProjectAssemblyDataResult.Unavailable false -> return None
             | _ ->
 
-                let! assemblyData =
-                    cancellable {
-                        match contentsOpt with
-                        | ProjectAssemblyDataResult.Available ilb -> return ilb
-                        | ProjectAssemblyDataResult.Unavailable _ ->
-                            let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, fileName, m)
-                            return RawFSharpAssemblyDataBackedByFileOnDisk(ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
-                    }
-                    |> Cancellable.toAsync
+                let assemblyData =
+                    match contentsOpt with
+                    | ProjectAssemblyDataResult.Available ilb -> ilb
+                    | ProjectAssemblyDataResult.Unavailable _ ->
+                        let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, fileName, m)
+                        RawFSharpAssemblyDataBackedByFileOnDisk(ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
 
                 let ilShortAssemName = assemblyData.ShortAssemblyName
                 let ilScopeRef = assemblyData.ILScopeRef
