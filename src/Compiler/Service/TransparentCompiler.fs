@@ -766,8 +766,8 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            async {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
+                            cancellable {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -778,7 +778,7 @@ type internal TransparentCompiler
                                     // Note 'false' - if a PEReference doesn't find an ILModuleReader then we don't
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
-                            }
+                            } |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
