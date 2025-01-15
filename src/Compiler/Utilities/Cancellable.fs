@@ -18,10 +18,10 @@ type Cancellable =
 
     static member Token = ensureToken "Token not available outside of Cancellable computation."
 
-    static member UseToken () =
+    static member UseToken() =
         async {
             let! ct = Async.CancellationToken
-            tokenHolder.Value <- ValueSome ct 
+            tokenHolder.Value <- ValueSome ct
         }
 
     static member UsingToken(ct) =
