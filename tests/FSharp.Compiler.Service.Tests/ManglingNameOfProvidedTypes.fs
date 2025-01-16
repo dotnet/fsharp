@@ -32,13 +32,13 @@ type ManglingNamesOfProvidedTypesWithSingleParameter() =
     member this.DemangleDefaultValue() = 
         let name, parameters = PrettyNaming.DemangleProvidedTypeName "MyNamespace.Test,"
         Assert.shouldBe "MyNamespace.Test" name
-        Assert.shouldBeEquivalentTo [||] parameters
+        Assert.shouldBeEmpty parameters
 
     [<Fact>]
     member this.DemangleNewDefaultValue() = 
         let name, parameters = PrettyNaming.DemangleProvidedTypeName "MyNamespace.Test"
         Assert.shouldBe "MyNamespace.Test" name
-        Assert.shouldBeEquivalentTo [||] parameters
+        Assert.shouldBeEmpty parameters
 
 
 type ManglingNamesOfProvidedTypesWithMultipleParameter() = 
