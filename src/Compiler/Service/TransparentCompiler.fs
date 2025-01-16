@@ -766,7 +766,7 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async {
                                 let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
@@ -779,7 +779,6 @@ type internal TransparentCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
-                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -788,13 +787,12 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.ILModuleReference(nm, getStamp, getReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async {
                                 let ilReader = getReader ()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -1433,7 +1431,6 @@ type internal TransparentCompiler
                              prevTcInfo.tcState,
                              input,
                              true)
-                        |> Cancellable.toAsync
 
                     //fileChecked.Trigger fileName
 

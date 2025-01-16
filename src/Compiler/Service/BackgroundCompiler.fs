@@ -328,7 +328,7 @@ type internal BackgroundCompiler
                 | FSharpReferencedProject.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async {
                                 let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
@@ -341,7 +341,6 @@ type internal BackgroundCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
-                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -350,13 +349,12 @@ type internal BackgroundCompiler
                 | FSharpReferencedProject.ILModuleReference(nm, getStamp, getReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async {
                                 let ilReader = getReader ()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -747,7 +745,6 @@ type internal BackgroundCompiler
                     keepAssemblyContents,
                     suggestNamesForErrors
                 )
-                |> Cancellable.toAsync
 
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
             return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.ProjectTimeStamp)
@@ -1321,7 +1318,7 @@ type internal BackgroundCompiler
                 "BackgroundCompiler.GetProjectOptionsFromScript"
                 [| Activity.Tags.fileName, fileName; Activity.Tags.userOpName, _userOpName |]
 
-        cancellable {
+        async {
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             let useSdkRefs = defaultArg useSdkRefs true
@@ -1411,7 +1408,6 @@ type internal BackgroundCompiler
 
             return options, (diags @ diagnostics.Diagnostics)
         }
-        |> Cancellable.toAsync
 
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         use _ =

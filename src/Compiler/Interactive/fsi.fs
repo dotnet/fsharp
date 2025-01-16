@@ -4809,7 +4809,7 @@ type FsiEvaluationSession
 
     member _.ParseAndCheckInteraction(code) =
         fsiInteractionProcessor.ParseAndCheckInteraction(legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
-        |> Cancellable.runWithoutCancellation
+        |> Async.RunImmediate
 
     member _.InteractiveChecker = checker
 
