@@ -112,4 +112,4 @@ let cc = a.Normal "hmm"
 
     let actual = getAllHints document
 
-    actual |> Assert.shouldBe expected
+    actual |> Assert.shouldBeEquivalentTo expected
