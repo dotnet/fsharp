@@ -73,7 +73,6 @@
 
   <ItemGroup>
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
-    <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->
@@ -83,14 +82,12 @@
   </ItemGroup>
 
     <ItemGroup>
-
-	    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
-	    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
-	    <InternalsVisibleTo Include="LanguageServiceProfiling" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
-
+      <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+      <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
+      <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+      <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+      <InternalsVisibleTo Include="LanguageServiceProfiling" />
+      <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     </ItemGroup>
 
   <ItemGroup>
