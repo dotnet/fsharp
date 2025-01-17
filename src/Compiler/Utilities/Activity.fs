@@ -7,6 +7,7 @@ open System.Diagnostics
 open System.IO
 open System.Text
 open Internal.Utilities.Library
+open System.Collections.Generic
 
 
 module ActivityNames =
@@ -102,11 +103,16 @@ module internal Activity =
 
     let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
 
-    let addEvent name =
+    let logEvent name (tags: (string * obj) seq) =
         match Activity.Current with
         | null -> ()
-        | activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
+        | activity when activity.Source = activitySource ->
+            let collection = tags |> Seq.map KeyValuePair |> ActivityTagsCollection
+            let event = new ActivityEvent(name, tags = collection)
+            activity.AddEvent event |> ignore
         | _ -> ()
+
+    let addEvent name = logEvent name Seq.empty
 
     module Profiling =
 
