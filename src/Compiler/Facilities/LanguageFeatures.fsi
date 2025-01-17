@@ -89,6 +89,7 @@ type LanguageFeature =
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
+    | ScopedNowarn
 
 /// LanguageVersion management
 type LanguageVersion =

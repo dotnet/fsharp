@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/AndKeyword.fs", false,
-      QualifiedNameOfFile AndKeyword, [], [],
+      QualifiedNameOfFile AndKeyword, [],
       [SynModuleOrNamespace
          ([AndKeyword], false, AnonModule,
           [Let
@@ -59,4 +59,5 @@ ImplFile
                                EqualsRange = Some (3,8--3,9) })], (2,0--3,15))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

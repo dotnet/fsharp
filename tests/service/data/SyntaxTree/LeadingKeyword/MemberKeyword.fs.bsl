@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/MemberKeyword.fs", false,
-      QualifiedNameOfFile MemberKeyword, [], [],
+      QualifiedNameOfFile MemberKeyword, [],
       [SynModuleOrNamespace
          ([MemberKeyword], false, AnonModule,
           [Types
@@ -45,4 +45,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,26))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

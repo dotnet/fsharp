@@ -3,7 +3,7 @@ ImplFile
      ("/root/Expression/SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword.fs",
       false,
       QualifiedNameOfFile
-        SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword, [], [],
+        SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword, [],
       [SynModuleOrNamespace
          ([SynExprTryFinallyContainsTheRangeOfTheTryAndWithKeyword], false,
           AnonModule,
@@ -14,4 +14,5 @@ ImplFile
                                    FinallyKeyword = (4,0--4,7) }), (2,0--5,2))],
           PreXmlDocEmpty, [], None, (2,0--6,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

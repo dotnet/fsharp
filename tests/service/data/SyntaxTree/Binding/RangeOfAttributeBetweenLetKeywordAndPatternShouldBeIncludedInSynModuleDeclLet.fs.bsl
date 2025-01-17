@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeBetweenLetKeywordAndPatternShouldBeIncludedInSynModuleDeclLet],
           false, AnonModule,
@@ -34,4 +34,5 @@ ImplFile
                     EqualsRange = Some (2,22--2,23) })], (2,0--2,25))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

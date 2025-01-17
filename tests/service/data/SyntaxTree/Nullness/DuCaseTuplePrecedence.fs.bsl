@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/DuCaseTuplePrecedence.fs", false,
-      QualifiedNameOfFile DuCaseTuplePrecedence, [], [],
+      QualifiedNameOfFile DuCaseTuplePrecedence, [],
       [SynModuleOrNamespace
          ([DuCaseTuplePrecedence], false, AnonModule,
           [Types
@@ -43,4 +43,5 @@ ImplFile
                     WithKeyword = None })], (1,0--1,41))], PreXmlDocEmpty, [],
           None, (1,0--2,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

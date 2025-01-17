@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/EnumCase/MultipleSynEnumCasesHaveBarRange.fs", false,
-      QualifiedNameOfFile MultipleSynEnumCasesHaveBarRange, [], [],
+      QualifiedNameOfFile MultipleSynEnumCasesHaveBarRange, [],
       [SynModuleOrNamespace
          ([MultipleSynEnumCasesHaveBarRange], false, AnonModule,
           [Types
@@ -30,4 +30,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,14))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

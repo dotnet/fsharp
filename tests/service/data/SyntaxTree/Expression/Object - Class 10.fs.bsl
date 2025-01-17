@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Object - Class 10.fs", false, QualifiedNameOfFile Module,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr
@@ -37,6 +37,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,2), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (4,21)-(4,22) parse error Expecting expression

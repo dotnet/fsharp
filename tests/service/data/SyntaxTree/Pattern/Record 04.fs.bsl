@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Pattern/Record 04.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/Pattern/Record 04.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr
@@ -16,6 +16,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,13), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (4,6)-(4,7) parse error Unexpected symbol '}' in pattern. Expected '.', '=' or other token.

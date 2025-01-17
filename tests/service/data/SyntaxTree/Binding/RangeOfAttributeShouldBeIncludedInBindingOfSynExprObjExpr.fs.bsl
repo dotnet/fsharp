@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr.fs",
       false,
       QualifiedNameOfFile
-        RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr, [], [],
+        RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInBindingOfSynExprObjExpr], false,
           AnonModule,
@@ -50,4 +50,5 @@ ImplFile
                  (2,2--2,21), (2,0--4,32)), (2,0--4,32))], PreXmlDocEmpty, [],
           None, (2,0--4,32), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
