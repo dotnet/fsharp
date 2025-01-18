@@ -41,9 +41,6 @@ type A<[<Measure>]'u>(x : int<'u>) =
 module M =
     type A<[<Measure>] 'u> with // Note the Measure attribute
         member this.Y = this.X
-        
-    type B<'u> with
-        member this.Y = this.X
 
 open System.Runtime.CompilerServices
 type FooExt =
