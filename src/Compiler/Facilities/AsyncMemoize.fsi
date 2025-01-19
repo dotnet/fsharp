@@ -42,12 +42,7 @@ type Extensions =
 ///
 /// Strongly holds at most one result per key.
 /// </summary>
-type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality
-#if !NO_CHECKNULLS
-    and 'TKey:not null
-    and 'TVersion:not null
-#endif
-    > =
+type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality and 'TKey:not null and 'TVersion:not null> =
 
     /// <param name="keepStrongly">Maximum number of strongly held results to keep in the cache</param>
     /// <param name="keepWeakly">Maximum number of weakly held results to keep in the cache</param>
