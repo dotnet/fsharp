@@ -5573,10 +5573,22 @@ recdExprCore:
             None, l
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding ()) }
 
+  /* handles case like { x }  */
+  | appExpr recdExprBindings opt_seps_recd
+     { match $1 with
+       | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, m) ->
+            let f = mkRecdField (SynLongIdent([List.last ident.LongIdent], [], []))
+            let l = List.rev $2
+            let l = rebindRanges (f, None, Some $1) l $3
+            (None, l)
+       | _ -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding()) }
+
   | appExpr
-    { let mExpr = rhs parseState 1
-      reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
-      Some($1, (mExpr.EndRange, None)), [] }
+    { match $1 with
+      | LongOrSingleIdent(false, (SynLongIdent _ as ident), None, m) ->
+           let f = mkRecdField (SynLongIdent([List.last ident.LongIdent], [], []))
+           (None, [ SynExprRecordField(f, None, Some $1, None) ])
+      | _ -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding()) }
 
 /*
     handles cases when identifier can start from the underscore
@@ -5643,7 +5655,7 @@ seps_recd:
 
 
 /* identifier can start from the underscore */
-pathOrUnderscore :
+pathOrUnderscore:
   | path
     { mkRecdField $1 }
 
@@ -5675,12 +5687,10 @@ recdBinding:
        ($1, Some mEquals, None) }
 
   | pathOrUnderscore
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None, None) }
-
-  | pathOrUnderscore ends_coming_soon_or_recover
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None, None) }
+     { let ident, b = $1
+       let f = SynLongIdent([List.last ident.LongIdent], [], []), b
+       let expr = SynExpr.LongIdent(false, ident, None, rhs parseState 1)
+       (f, None, Some expr) }
 
 /* There is a minor conflict between
        seq { new ty() }  // sequence expression with one very odd 'action' expression
