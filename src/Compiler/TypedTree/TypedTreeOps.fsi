@@ -1186,6 +1186,9 @@ val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVar
 /// Get the free variables in a module definition.
 val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
 
+/// Get the free variables in an expression with accumulator
+val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
+
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
 

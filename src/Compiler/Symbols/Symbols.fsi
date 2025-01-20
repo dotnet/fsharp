@@ -708,6 +708,9 @@ type FSharpGenericParameterConstraint =
     /// Indicates a constraint that a type has a 'null' value
     member IsSupportsNullConstraint: bool
 
+    /// Indicates a constraint that a type doesn't support nullness
+    member IsNotSupportsNullConstraint: bool
+
     /// Indicates a constraint that a type supports F# generic comparison
     member IsComparisonConstraint: bool
 
@@ -749,6 +752,9 @@ type FSharpGenericParameterConstraint =
 
     /// Gets further information about a delegate constraint
     member DelegateConstraintData: FSharpGenericParameterDelegateConstraint
+
+    /// An anti-constraint indicating that ref structs (e.g. Span<>) are allowed here
+    member IsAllowsRefStructConstraint: bool
 
 [<RequireQualifiedAccess>]
 type FSharpInlineAnnotation =

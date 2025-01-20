@@ -133,9 +133,9 @@ type DependencyProvider =
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey:
         compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string ->
-            IDependencyManagerProvider MaybeNull
+            IDependencyManagerProvider | null
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
     member TryFindDependencyManagerInPath:
         compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string ->
-            string MaybeNull * IDependencyManagerProvider MaybeNull
+            string | null * IDependencyManagerProvider | null
