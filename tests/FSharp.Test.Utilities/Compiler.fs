@@ -13,6 +13,7 @@ open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open Xunit
+open Xunit.Abstractions
 open System
 open System.Collections.Immutable
 open System.IO
@@ -29,8 +30,8 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open FSharp.Compiler.CodeAnalysis
 
-
 module rec Compiler =
+
     [<AutoOpen>]
     type SourceUtilities () =
         static member getCurrentMethodName([<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) = memberName
@@ -57,7 +58,9 @@ module rec Compiler =
         | FS of FSharpCompilationSource
         | CS of CSharpCompilationSource
         | IL of ILCompilationSource
-        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
+
+        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this)
+
         member this.OutputDirectory =
             let toString diOpt =
                 match diOpt: DirectoryInfo option with
@@ -67,6 +70,7 @@ module rec Compiler =
             | FS fs -> fs.OutputDirectory |> toString
             | CS cs -> cs.OutputDirectory |> toString
             | _ -> raise (Exception "Not supported for this compilation type")
+
         member this.WithStaticLink(staticLink: bool) = match this with | FS fs -> FS { fs with StaticLink = staticLink } | cu -> cu
 
     type FSharpCompilationSource =
@@ -81,7 +85,7 @@ module rec Compiler =
           References:       CompilationUnit list
           TargetFramework:  TargetFramework
           StaticLink:       bool
-          }
+        }
 
         member this.CreateOutputDirectory() =
             match this.OutputDirectory with
@@ -218,6 +222,103 @@ module rec Compiler =
         let invalidPathChars = Array.concat [Path.GetInvalidPathChars(); [| ':'; '\\'; '/'; ' '; '.' |]]
         let result = invalidPathChars |> Array.fold(fun (acc:string) (c:char) -> acc.Replace(string(c), "_")) name
         result
+
+    let readFileOrDefault (path: string): string option =
+        match FileSystem.FileExistsShim(path) with
+        | true -> Some (File.ReadAllText path)
+        | _ -> None
+
+    let createCompilationUnit sourceBaselineSuffix ilBaselineSuffixes directoryPath filename =
+
+        let outputDirectoryPath = createTemporaryDirectory().FullName
+        let sourceFilePath = normalizePathSeparator (directoryPath ++ filename)
+        let fsBslFilePath = sourceFilePath + sourceBaselineSuffix + ".err.bsl"
+        let ilBslFilePath =
+            let ilBslPaths = [|
+                for baselineSuffix in ilBaselineSuffixes do
+#if DEBUG
+    #if NETCOREAPP
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
+    #else
+                    yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
+    #endif
+                    yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
+#else
+    #if NETCOREAPP
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
+    #else
+                    yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
+    #endif
+                    yield sourceFilePath + baselineSuffix + ".il.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
+#endif
+                |]
+
+            let findBaseline =
+                ilBslPaths
+                |> Array.tryPick(fun p -> if File.Exists(p) then Some p else None)
+            match findBaseline with
+            | Some s -> s
+            | None -> sourceFilePath + sourceBaselineSuffix + ".il.bsl"
+
+        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
+        let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
+        let fsBslSource = readFileOrDefault fsBslFilePath
+        let ilBslSource = readFileOrDefault ilBslFilePath
+
+        {   Source            = SourceCodeFileKind.Create(sourceFilePath)
+            AdditionalSources = []
+            Baseline          =
+                Some
+                    {
+                        SourceFilename = Some sourceFilePath
+                        FSBaseline = { FilePath = fsOutFilePath; BslSource = fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { FilePath = ilOutFilePath; BslSource = ilBslFilePath; Content = ilBslSource }
+                    }
+            Options           = Compiler.defaultOptions
+            OutputType        = Library
+            Name              = Some filename
+            IgnoreWarnings    = false
+            References        = []
+            OutputDirectory   = Some (DirectoryInfo(outputDirectoryPath))
+            TargetFramework   = TargetFramework.Current
+            StaticLink        = false
+            } |> FS
+
+    /// For all files specified in the specified directory, whose name can be found in includedFiles
+    /// create a compilation with all baselines correctly when set
+    let createCompilationUnitForFiles baselineSuffix directoryPath includedFiles =
+
+        if not (Directory.Exists(directoryPath)) then
+            failwith (sprintf "Directory does not exist: \"%s\"." directoryPath)
+
+        let allFiles : string[] = Directory.GetFiles(directoryPath, "*.fs")
+
+        let filteredFiles =
+            match includedFiles |> Array.map (fun f -> normalizePathSeparator (directoryPath ++ f)) with
+                | [||] -> allFiles
+                | incl -> incl
+
+        let fsFiles = filteredFiles |> Array.map Path.GetFileName
+
+        if fsFiles |> Array.length < 1 then
+            failwith (sprintf "No required files found in \"%s\".\nAll files: %A.\nIncludes:%A." directoryPath allFiles includedFiles)
+
+        for f in filteredFiles do
+            if not <| FileSystem.FileExistsShim(f) then
+                failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includedFiles
+
+        let results =
+            fsFiles
+            |> Array.map (fun fs -> (createCompilationUnit baselineSuffix [baselineSuffix] directoryPath fs) :> obj)
+            |> Seq.map (fun c -> [| c |])
+
+        results
 
     let getTestOutputDirectory dir testCaseName extraDirectory =
         // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
@@ -401,16 +502,21 @@ module rec Compiler =
     let CSharpFromPath (path: string) : CompilationUnit =
         csFromString (SourceFromPath path) |> CS
 
-    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS src -> FS {src with Source=SourceCodeFileKind.Fsx({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
-        | _ -> failwith "Only F# compilation can be of type Fsx."
-
     let asFs (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS { Source = SourceCodeFileKind.Fsi _} -> cUnit
         | FS src -> FS {src with Source=SourceCodeFileKind.Fs({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
         | _ -> failwith "Only F# compilation can be of type Fs."
+
+    let asFsi (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS src -> FS {src with Source=SourceCodeFileKind.Fsi({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
+        | _ -> failwith "Only F# compilation can be of type Fsi."
+
+    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS src -> FS {src with Source=SourceCodeFileKind.Fsx({FileName=src.Source.GetSourceFileName; SourceText=src.Source.GetSourceText})}
+        | _ -> failwith "Only F# compilation can be of type Fsx."
 
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -536,6 +642,10 @@ module rec Compiler =
 
     let withOptimize (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--optimize+" ] "withOptimize is only supported for F#" cUnit
+
+    let withOptimization (optimization: bool) (cUnit: CompilationUnit) : CompilationUnit =
+        let option = if optimization then "--optimize+" else "--optimize-"
+        withOptionsHelper [ option ] "withOptimization is only supported for F#" cUnit
 
     let withFullPdb(cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--debug:full" ] "withFullPdb is only supported for F#" cUnit
@@ -1795,10 +1905,10 @@ Actual:
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
 
-
     let getImpliedSignatureHash cUnit = 
         let tcResults = cUnit |> typecheckResults
         let hash = tcResults.CalculateSignatureHash()
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
+

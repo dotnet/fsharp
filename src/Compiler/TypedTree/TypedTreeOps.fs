@@ -228,12 +228,12 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
 
 and remapMeasureAux tyenv unt =
     match unt with
-    | Measure.One -> unt
-    | Measure.Const tcref ->
-        match tyenv.tyconRefRemap.TryFind tcref with 
-        | Some tcref -> Measure.Const tcref
+    | Measure.One _ -> unt
+    | Measure.Const(entityRef, m) ->
+        match tyenv.tyconRefRemap.TryFind entityRef with 
+        | Some tcref -> Measure.Const(tcref, m)
         | None -> unt
-    | Measure.Prod(u1, u2) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2)
+    | Measure.Prod(u1, u2, m) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2, m)
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var tp as unt -> 
@@ -243,6 +243,9 @@ and remapMeasureAux tyenv unt =
           | Some tpTy -> 
               match tpTy with
               | TType_measure unt -> unt
+              | TType_var(typar= typar) when tp.Kind = TyparKind.Measure ->
+                    // This is a measure typar that is not yet solved, so we can't remap it
+                    error(Error(FSComp.SR.tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute(), typar.Range))
               | _ -> failwith "remapMeasureAux: incorrect kinds"
           | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
@@ -444,7 +447,7 @@ let reduceTyconRefAbbrevMeasureable (tcref: TyconRef) =
 
 let rec stripUnitEqnsFromMeasureAux canShortcut unt = 
     match stripUnitEqnsAux canShortcut unt with 
-    | Measure.Const tcref when tcref.IsTypeAbbrev ->  
+    | Measure.Const(tyconRef= tcref) when tcref.IsTypeAbbrev ->  
         stripUnitEqnsFromMeasureAux canShortcut (reduceTyconRefAbbrevMeasureable tcref) 
     | m -> m
 
@@ -457,20 +460,20 @@ let stripUnitEqnsFromMeasure m = stripUnitEqnsFromMeasureAux false m
 /// What is the contribution of unit-of-measure constant ucref to unit-of-measure expression measure? 
 let rec MeasureExprConExponent g abbrev ucref unt =
     match (if abbrev then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
-    | Measure.Const ucrefR -> if tyconRefEq g ucrefR ucref then OneRational else ZeroRational
+    | Measure.Const(tyconRef= ucrefR) -> if tyconRefEq g ucrefR ucref then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureExprConExponent g abbrev ucref untR)
-    | Measure.Prod(unt1, unt2) -> AddRational(MeasureExprConExponent g abbrev ucref unt1) (MeasureExprConExponent g abbrev ucref unt2)
-    | Measure.RationalPower(untR, q) -> MulRational (MeasureExprConExponent g abbrev ucref untR) q
+    | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureExprConExponent g abbrev ucref unt1) (MeasureExprConExponent g abbrev ucref unt2)
+    | Measure.RationalPower(measure= untR; power= q) -> MulRational (MeasureExprConExponent g abbrev ucref untR) q
     | _ -> ZeroRational
 
 /// What is the contribution of unit-of-measure constant ucref to unit-of-measure expression measure
 /// after remapping tycons? 
 let rec MeasureConExponentAfterRemapping g r ucref unt =
     match stripUnitEqnsFromMeasure unt with
-    | Measure.Const ucrefR -> if tyconRefEq g (r ucrefR) ucref then OneRational else ZeroRational
+    | Measure.Const(tyconRef= ucrefR) -> if tyconRefEq g (r ucrefR) ucref then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureConExponentAfterRemapping g r ucref untR)
-    | Measure.Prod(unt1, unt2) -> AddRational(MeasureConExponentAfterRemapping g r ucref unt1) (MeasureConExponentAfterRemapping g r ucref unt2)
-    | Measure.RationalPower(untR, q) -> MulRational (MeasureConExponentAfterRemapping g r ucref untR) q
+    | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureConExponentAfterRemapping g r ucref unt1) (MeasureConExponentAfterRemapping g r ucref unt2)
+    | Measure.RationalPower(measure= untR; power= q) -> MulRational (MeasureConExponentAfterRemapping g r ucref untR) q
     | _ -> ZeroRational
 
 /// What is the contribution of unit-of-measure variable tp to unit-of-measure expression unt? 
@@ -478,8 +481,8 @@ let rec MeasureVarExponent tp unt =
     match stripUnitEqnsFromMeasure unt with
     | Measure.Var tpR -> if typarEq tp tpR then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureVarExponent tp untR)
-    | Measure.Prod(unt1, unt2) -> AddRational(MeasureVarExponent tp unt1) (MeasureVarExponent tp unt2)
-    | Measure.RationalPower(untR, q) -> MulRational (MeasureVarExponent tp untR) q
+    | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureVarExponent tp unt1) (MeasureVarExponent tp unt2)
+    | Measure.RationalPower(measure = untR; power= q) -> MulRational (MeasureVarExponent tp untR) q
     | _ -> ZeroRational
 
 /// List the *literal* occurrences of unit variables in a unit expression, without repeats  
@@ -487,8 +490,8 @@ let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
         | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | Measure.Inv untR -> gather acc untR
         | _ -> acc   
     gather [] unt
@@ -502,9 +505,9 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
             else 
                 let e = MeasureVarExponent tp untexpr
                 if e = ZeroRational then acc else (tp, e) :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv untR -> gather acc untR
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | _ -> acc   
     gather [] untexpr
 
@@ -512,13 +515,13 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
 let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
     let rec gather acc unt =  
         match (if eraseAbbrevs then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
-        | Measure.Const c -> 
+        | Measure.Const(tyconRef= c) -> 
             if List.exists (fun (cR, _) -> tyconRefEq g c cR) acc then acc else 
             let e = MeasureExprConExponent g eraseAbbrevs c untexpr
             if e = ZeroRational then acc else (c, e) :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv untR -> gather acc untR
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | _ -> acc  
     gather [] untexpr
 
@@ -527,9 +530,9 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
 let ListMeasureConOccsAfterRemapping g r unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Const c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.Const(tyconRef= c) -> if List.exists (tyconRefEq g (r c)) acc then acc else r c :: acc
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | Measure.Inv untR -> gather acc untR
         | _ -> acc
    
@@ -538,19 +541,19 @@ let ListMeasureConOccsAfterRemapping g r unt =
 /// Construct a measure expression representing the n'th power of a measure
 let MeasurePower u n = 
     if n = 1 then u
-    elif n = 0 then Measure.One
+    elif n = 0 then Measure.One(range0)
     else Measure.RationalPower (u, intToRational n)
 
 let MeasureProdOpt m1 m2 =
     match m1, m2 with
-    | Measure.One, _ -> m2
-    | _, Measure.One -> m1
-    | _, _ -> Measure.Prod (m1, m2)
+    | Measure.One _, _ -> m2
+    | _, Measure.One _ -> m1
+    | _, _ -> Measure.Prod (m1, m2, unionRanges m1.Range m2.Range)
 
 /// Construct a measure expression representing the product of a list of measures
 let ProdMeasures ms = 
     match ms with 
-    | [] -> Measure.One 
+    | [] -> Measure.One(range0)
     | m :: ms -> List.foldBack MeasureProdOpt ms m
 
 let isDimensionless g ty =
@@ -580,9 +583,23 @@ let normalizeMeasure g ms =
     let vs = ListMeasureVarOccsWithNonZeroExponents ms
     let cs = ListMeasureConOccsWithNonZeroExponents g false ms
     match vs, cs with
-    | [], [] -> Measure.One
+    | [], [] -> Measure.One(ms.Range)
     | [(v, e)], [] when e = OneRational -> Measure.Var v
-    | vs, cs -> List.foldBack (fun (v, e) -> fun m -> Measure.Prod (Measure.RationalPower (Measure.Var v, e), m)) vs (List.foldBack (fun (c, e) -> fun m -> Measure.Prod (Measure.RationalPower (Measure.Const c, e), m)) cs Measure.One)
+    | vs, cs ->
+        List.foldBack
+            (fun (v, e) ->
+                fun unt ->
+                    let measureVar = Measure.Var(v)
+                    let measureRational = Measure.RationalPower(measureVar, e)
+                    Measure.Prod(measureRational, unt, unionRanges measureRational.Range unt.Range))
+            vs
+            (List.foldBack
+                (fun (c, e) ->
+                fun unt ->
+                    let measureConst = Measure.Const(c, c.Range)
+                    let measureRational = Measure.RationalPower(measureConst, e)
+                    let prodM = unionRanges measureConst.Range unt.Range
+                    Measure.Prod(measureRational, unt, prodM)) cs (Measure.One(ms.Range)))
  
 let tryNormalizeMeasureInType g ty =
     match ty with
@@ -916,14 +933,14 @@ let tryNiceEntityRefOfTy ty =
     let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> ValueSome tcref
-    | TType_measure (Measure.Const tcref) -> ValueSome tcref
+    | TType_measure (Measure.Const(tyconRef= tcref)) -> ValueSome tcref
     | _ -> ValueNone
 
 let tryNiceEntityRefOfTyOption ty = 
     let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> Some tcref
-    | TType_measure (Measure.Const tcref) -> Some tcref
+    | TType_measure (Measure.Const(tyconRef= tcref)) -> Some tcref
     | _ -> None
     
 let mkInstForAppTy g ty = 
@@ -1159,7 +1176,7 @@ let getMeasureOfType g ty =
     match ty with 
     | AppTy g (tcref, [tyarg]) ->
         match stripTyEqns g tyarg with  
-        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
+        | TType_measure ms when not (measureEquiv g ms (Measure.One(tcref.Range))) -> Some (tcref, ms)
         | _ -> None
     | _ -> None
 
@@ -3510,6 +3527,10 @@ let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = 
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
     args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
+    
+[<return: Struct>]
+let (|ExtractILAttributeNamedArg|_|) nm (args: ILAttributeNamedArg list) = 
+    args |> List.tryPick (function nm2, _, _, v when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
 
 [<return: Struct>]
 let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
@@ -3525,6 +3546,8 @@ let (|AttribBoolArg|_|) = function AttribExpr(_, Expr.Const (Const.Bool n, _, _)
 
 [<return: Struct>]
 let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n | _ -> ValueNone
+
+let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with

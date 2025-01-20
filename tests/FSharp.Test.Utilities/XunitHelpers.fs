@@ -10,6 +10,12 @@ open Xunit.Abstractions
 
 open TestFramework
 
+open FSharp.Compiler.Diagnostics
+
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
@@ -25,11 +31,16 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // This gets executed once per test assembly.
         MessageSink.sinkWriter |> ignore
         TestConsole.install()
+#if !NETCOREAPP
+        AssemblyResolver.addResolver ()
+#endif
 
     interface IDisposable with
         member _.Dispose() =
-            cleanUpTemporaryDirectoryOfThisTestRun ()
-            base.Dispose()       
+            match Environment.GetEnvironmentVariable("FSHARP_RETAIN_TESTBUILDS") with
+            | null -> cleanUpTemporaryDirectoryOfThisTestRun  ()
+            | _ -> ()
+            base.Dispose()
 
 #else
 
@@ -45,6 +56,7 @@ type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArgument
     override this.InvokeTestAsync (aggregator: ExceptionAggregator) =
         task {
             use capture = new TestConsole.ExecutionCapture()
+            use _ = Activity.start test.DisplayName [  ]
             let! executionTime = this.BaseInvokeTestMethodAsync aggregator
             let output =
                 seq {
@@ -139,9 +151,23 @@ type FSharpXunitFramework(sink: IMessageSink) =
         log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
         TestConsole.install()
 
+#if !NETCOREAPP
+        AssemblyResolver.addResolver ()
+#endif
+
+    let traceProvider =
+        Sdk.CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .SetResourceBuilder(
+                    ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1.0.0"))
+                .AddOtlpExporter()
+                .Build()
+
     interface IDisposable with
         member _.Dispose() =
             cleanUpTemporaryDirectoryOfThisTestRun ()
+            traceProvider.ForceFlush() |> ignore
+            traceProvider.Dispose()
             base.Dispose()        
 
     override this.CreateDiscoverer (assemblyInfo) =

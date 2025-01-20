@@ -843,6 +843,8 @@ val CollectAllNoCaching: FreeVarOptions
 
 val CollectAll: FreeVarOptions
 
+val ListMeasureVarOccs: Measure -> Typar list
+
 val accFreeInTypes: FreeVarOptions -> TType list -> FreeTyvars -> FreeTyvars
 
 val accFreeInType: FreeVarOptions -> TType -> FreeTyvars -> FreeTyvars
@@ -1183,6 +1185,9 @@ val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVar
 
 /// Get the free variables in a module definition.
 val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
+
+/// Get the free variables in an expression with accumulator
+val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
 
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
@@ -2597,6 +2602,9 @@ val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
 val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
 [<return: Struct>]
+val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
+
+[<return: Struct>]
 val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
 
 [<return: Struct>]
@@ -2607,6 +2615,8 @@ val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
 
 [<return: Struct>]
 val (|AttribStringArg|_|): (AttribExpr -> string voption)
+
+val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
 
 [<return: Struct>]
 val (|Int32Expr|_|): Expr -> int32 voption

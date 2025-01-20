@@ -11,7 +11,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <IsTestProject>false</IsTestProject>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --realsig-</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
     <DefineConstants>XUNIT_EXTRAS</DefineConstants>
@@ -33,7 +33,6 @@
     <None Include="ScriptingShims.fsx" />
     <Compile Include="TestConsole.fs" />
     <Compile Include="TestFramework.fs" />
-    <Compile Include="XunitHelpers.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
@@ -43,8 +42,10 @@
     <Compile Include="Compiler.fs" />
     <Compile Include="Peverifier.fs" />
     <Compile Include="DirectoryAttribute.fs" />
+    <Compile Include="FileInlineDataAttribute.fs" />
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
+    <Compile Include="XunitHelpers.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -72,7 +73,6 @@
 
   <ItemGroup>
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
-    <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->
@@ -82,14 +82,12 @@
   </ItemGroup>
 
     <ItemGroup>
-
-	    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
-	    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
-	    <InternalsVisibleTo Include="LanguageServiceProfiling" />
-	    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
-
+      <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+      <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
+      <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+      <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+      <InternalsVisibleTo Include="LanguageServiceProfiling" />
+      <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     </ItemGroup>
 
   <ItemGroup>
@@ -107,7 +105,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
     <PackageReference Include="Microsoft.NETCore.App.Ref" Version="6.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
-    <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.4.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
 	  <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
   </ItemGroup>
 

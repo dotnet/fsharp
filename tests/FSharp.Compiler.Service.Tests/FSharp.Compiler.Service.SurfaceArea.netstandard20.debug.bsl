@@ -2856,6 +2856,11 @@ FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedDa
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+IFSharpDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String DiagnosticId
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String UrlFormat
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String get_DiagnosticId()
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String get_UrlFormat()
+FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnostic Create(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Int32, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity Severity
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_Severity()
@@ -5398,6 +5403,8 @@ FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean IsRequiresDefa
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean IsSimpleChoiceConstraint
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean IsSupportsNullConstraint
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean IsUnmanagedConstraint
+FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean IsNotSupportsNullConstraint
+FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean IsAllowsRefStructConstraint
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsCoercesToConstraint()
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsComparisonConstraint()
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsDefaultsToConstraint()
@@ -5411,6 +5418,8 @@ FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsRequires
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsSimpleChoiceConstraint()
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsSupportsNullConstraint()
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsUnmanagedConstraint()
+FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsNotSupportsNullConstraint()
+FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: Boolean get_IsAllowsRefStructConstraint()
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: FSharp.Compiler.Symbols.FSharpGenericParameterDefaultsToConstraint DefaultsToConstraintData
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: FSharp.Compiler.Symbols.FSharpGenericParameterDefaultsToConstraint get_DefaultsToConstraintData()
 FSharp.Compiler.Symbols.FSharpGenericParameterConstraint: FSharp.Compiler.Symbols.FSharpGenericParameterDelegateConstraint DelegateConstraintData
@@ -8116,6 +8125,8 @@ FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Product
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Seq
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Tags
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Var
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynMeasure: Int32 Tag
 FSharp.Compiler.Syntax.SynMeasure: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMeasure: System.String ToString()
