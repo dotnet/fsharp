@@ -13,9 +13,12 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-exception ObsoleteWarning of string * range
-
-exception ObsoleteError of string * range
+exception ObsoleteDiagnostic of
+    isError: bool *
+    diagnosticId: string *
+    message: string *
+    urlFormat: string *
+    range: range
 
 type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
