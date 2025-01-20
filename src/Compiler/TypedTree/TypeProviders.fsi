@@ -104,19 +104,19 @@ type ProvidedType =
 
     member IsGenericType: bool
 
-    member Namespace: string
+    member Namespace: string MaybeNull
 
-    member FullName: string
+    member FullName: string MaybeNull
 
     member IsArray: bool
 
     member GetInterfaces: unit -> ProvidedType[]
 
-    member Assembly: ProvidedAssembly
+    member Assembly: ProvidedAssembly MaybeNull
 
     member BaseType: ProvidedType MaybeNull
 
-    member GetNestedType: string -> ProvidedType
+    member GetNestedType: string -> ProvidedType MaybeNull
 
     member GetNestedTypes: unit -> ProvidedType[]
 
@@ -126,15 +126,15 @@ type ProvidedType =
 
     member GetFields: unit -> ProvidedFieldInfo[]
 
-    member GetField: string -> ProvidedFieldInfo
+    member GetField: string -> ProvidedFieldInfo MaybeNull
 
-    member GetProperties: unit -> ProvidedPropertyInfo[]
+    member GetProperties: unit -> ProvidedPropertyInfo[] MaybeNull
 
-    member GetProperty: string -> ProvidedPropertyInfo
+    member GetProperty: string -> ProvidedPropertyInfo MaybeNull
 
     member GetEvents: unit -> ProvidedEventInfo[]
 
-    member GetEvent: string -> ProvidedEventInfo
+    member GetEvent: string -> ProvidedEventInfo MaybeNull
 
     member GetConstructors: unit -> ProvidedConstructorInfo[]
 
@@ -170,7 +170,7 @@ type ProvidedType =
 
     member GenericParameterPosition: int
 
-    member GetElementType: unit -> ProvidedType
+    member GetElementType: unit -> ProvidedType MaybeNull
 
     member GetGenericArguments: unit -> ProvidedType[]
 
@@ -335,7 +335,7 @@ type ProvidedFieldInfo =
 
     member IsLiteral: bool
 
-    member GetRawConstantValue: unit -> obj
+    member GetRawConstantValue: unit -> objnull
 
     member FieldType: ProvidedType
 
@@ -359,9 +359,9 @@ type ProvidedPropertyInfo =
 
     inherit ProvidedMemberInfo
 
-    member GetGetMethod: unit -> ProvidedMethodInfo
+    member GetGetMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetSetMethod: unit -> ProvidedMethodInfo
+    member GetSetMethod: unit -> ProvidedMethodInfo MaybeNull
 
     member GetIndexParameters: unit -> ProvidedParameterInfo[]
 
@@ -383,9 +383,9 @@ type ProvidedEventInfo =
 
     inherit ProvidedMemberInfo
 
-    member GetAddMethod: unit -> ProvidedMethodInfo
+    member GetAddMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetRemoveMethod: unit -> ProvidedMethodInfo
+    member GetRemoveMethod: unit -> ProvidedMethodInfo MaybeNull
 
     member EventHandlerType: ProvidedType
 
@@ -422,7 +422,7 @@ type ProvidedExprType =
 
     | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]
 
-    | ProvidedConstantExpr of obj * ProvidedType
+    | ProvidedConstantExpr of obj MaybeNull * ProvidedType
 
     | ProvidedDefaultExpr of ProvidedType
 
@@ -467,8 +467,6 @@ type ProvidedVar =
 
     member IsMutable: bool
 
-    override Equals: obj -> bool
-
     override GetHashCode: unit -> int
 
 /// Get the provided expression for a particular use of a method.
@@ -497,7 +495,7 @@ val TryLinkProvidedType:
     Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string -> string list
+val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string MaybeNull -> string list
 
 /// Decompose the enclosing name of a type (including any class nestings) into a list of parts.
 /// e.g. System.Object -> ["System"; "Object"]

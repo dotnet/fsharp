@@ -448,10 +448,22 @@ module Range =
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
     let posOrder =
-        Order.orderOn (fun (p: pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
+        let pairOrder = Pair.order (Int32.order, Int32.order)
+        let lineAndColumn = fun (p: pos) -> p.Line, p.Column
+
+        { new IComparer<pos> with
+            member _.Compare(x, xx) =
+                pairOrder.Compare(lineAndColumn x, lineAndColumn xx)
+        }
 
     let rangeOrder =
-        Order.orderOn (fun (r: range) -> r.FileName, (r.Start, r.End)) (Pair.order (String.order, Pair.order (posOrder, posOrder)))
+        let tripleOrder = Pair.order (String.order, Pair.order (posOrder, posOrder))
+        let fileLineColumn = fun (r: range) -> r.FileName, (r.Start, r.End)
+
+        { new IComparer<range> with
+            member _.Compare(x, xx) =
+                tripleOrder.Compare(fileLineColumn x, fileLineColumn xx)
+        }
 
     let outputRange (os: TextWriter) (m: range) =
         fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End

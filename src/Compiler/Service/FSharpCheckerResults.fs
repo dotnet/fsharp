@@ -188,7 +188,7 @@ and FSharpProjectOptions =
             && options1.ReferencedProjects = options2.ReferencedProjects
             && options1.LoadTime = options2.LoadTime
 
-    member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
+    member po.ProjectDirectory = !! Path.GetDirectoryName(po.ProjectFileName)
 
     override this.ToString() =
         "FSharpProjectOptions(" + this.ProjectFileName + ")"

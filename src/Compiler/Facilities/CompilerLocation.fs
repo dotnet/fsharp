@@ -32,6 +32,7 @@ module internal FSharpEnvironment =
     let FSharpCoreLibRunningVersion =
         try
             match versionOf<Unit> with
+            | null -> None
             | s when String.IsNullOrEmpty(s) -> None
             | s -> Some(s)
         with _ ->

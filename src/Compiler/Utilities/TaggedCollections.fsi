@@ -5,6 +5,7 @@ namespace Internal.Utilities.Collections.Tagged
 
     open System
     open System.Collections.Generic
+    open Internal.Utilities.Library
 
     /// Immutable sets based on binary trees, default tag
 
@@ -114,7 +115,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         interface IComparable
 
-        override Equals : obj -> bool
+        override Equals : objEqualsArg -> bool
 
     type internal Set<'T> = Set<'T, IComparer<'T>>    
 
@@ -218,7 +219,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         interface IComparable
 
-        override Equals : obj -> bool
+        override Equals : objEqualsArg -> bool
 
     type internal Map<'Key,'Value> = Map<'Key, 'Value, IComparer<'Key>>    
 

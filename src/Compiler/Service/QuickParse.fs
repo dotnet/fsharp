@@ -200,7 +200,7 @@ module QuickParse =
     /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
-    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string) (index: int) : (string * int * bool) option =
+    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
         if String.IsNullOrEmpty lineStr then
             None
         else

@@ -376,7 +376,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.Namespace : string MaybeNull = x.Namespace
 
-    member _.FullName = x.FullName
+    member _.FullName : string MaybeNull = x.FullName
 
     member _.IsArray = x.IsArray
 
@@ -413,7 +413,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     /// Type.BaseType can be null when Type is interface or object
     member _.BaseType = x.BaseType |> ProvidedType.Create ctxt
 
-    member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] MaybeNull = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+    member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
 
     /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
     member _.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
@@ -486,12 +486,10 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         | null -> nullArg name 
         | t -> ProvidedType (t, ctxt)
 
-    static member CreateArray ctxt (xs: Type[] MaybeNull) : ProvidedType[] MaybeNull = 
-        match xs with
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedType.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: Type[] ) : ProvidedType[]  = 
+        xs |> Array.map (ProvidedType.CreateNonNull ctxt)
 
-    static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
+    static member CreateNoContext (x:Type) = ProvidedType.CreateNonNull ProvidedTypeContext.Empty x
 
     static member Void = ProvidedType.CreateNoContext typeof<System.Void>
 
@@ -614,7 +612,7 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     member _.IsOptional = x.IsOptional
 
-    member _.RawDefaultValue = x.RawDefaultValue
+    member _.RawDefaultValue : objnull = x.RawDefaultValue
 
     member _.HasDefaultValue = x.Attributes.HasFlag(ParameterAttributes.HasDefault)
 
@@ -628,15 +626,8 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
     
-    static member CreateArray ctxt (xs: ParameterInfo[] MaybeNull) : ProvidedParameterInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
-    
-    static member CreateArrayNonNull ctxt xs : ProvidedParameterInfo[] = 
-        match box xs with 
-        | Null -> [| |]
-        | _  -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: ParameterInfo[]) : ProvidedParameterInfo[] = 
+        xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
     
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider =
@@ -741,7 +732,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                     with err -> raise (StripException (StripException err))
                 !!paramsAsObj :?> ParameterInfo[] 
 
-        staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
+        staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
     member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: objnull[]) = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
@@ -788,10 +779,8 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: FieldInfo[] MaybeNull) : ProvidedFieldInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: FieldInfo[]) : ProvidedFieldInfo[] = 
+        xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
     member _.IsInitOnly = x.IsInitOnly
 
@@ -801,7 +790,7 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
 
     member _.IsLiteral = x.IsLiteral
 
-    member _.GetRawConstantValue() = x.GetRawConstantValue()
+    member _.GetRawConstantValue() : objnull = x.GetRawConstantValue()
 
     /// FieldInfo.FieldType cannot be null
 
@@ -844,10 +833,8 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
         | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
 
-    static member CreateArray ctxt (xs: MethodInfo[] MaybeNull) : ProvidedMethodInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: MethodInfo[]) : ProvidedMethodInfo[] = 
+        xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -924,10 +911,8 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedEventInfo (x, ctxt)
     
-    static member CreateArray ctxt (xs: EventInfo[] MaybeNull) : ProvidedEventInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: EventInfo[]) : ProvidedEventInfo[] = 
+        xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
     
     member _.Handle = x
 
@@ -957,10 +942,8 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: ConstructorInfo[] MaybeNull) : ProvidedConstructorInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: ConstructorInfo[]) : ProvidedConstructorInfo[] = 
+        xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -997,13 +980,13 @@ type ProvidedExprType =
 #endif
 type ProvidedExpr (x: Expr, ctxt) =
 
-    member _.Type = x.Type |> ProvidedType.Create ctxt
+    member _.Type = x.Type |> ProvidedType.CreateNonNull ctxt
 
     member _.Handle = x
 
     member _.Context = ctxt
 
-    member _.UnderlyingExpressionString = x.ToString()
+    member _.UnderlyingExpressionString = string (x.ToString())
 
     member _.GetExprType() =
         match x with
@@ -1072,7 +1055,7 @@ type ProvidedExpr (x: Expr, ctxt) =
 [<RequireQualifiedAccess; Class; Sealed>]
 #endif
 type ProvidedVar (x: Var, ctxt) =
-    member _.Type = x.Type |> ProvidedType.Create ctxt
+    member _.Type = x.Type |> ProvidedType.CreateNonNull ctxt
     member _.Name = x.Name
     member _.IsMutable = x.IsMutable
     member _.Handle = x
@@ -1092,7 +1075,7 @@ type ProvidedVar (x: Var, ctxt) =
 
 /// Get the provided invoker expression for a particular use of a method.
 let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
-    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
+    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var p.Handle |]) |> ProvidedExpr.CreateNonNull methodBase.Context
 
 /// Compute the Name or FullName property of a provided type, reporting appropriate errors
 let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
@@ -1181,7 +1164,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
             if String.IsNullOrEmpty memberName then 
                 errorR(Error(FSComp.SR.etNullOrEmptyMemberName fullName, m))  
             else 
-                let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, ProvidedType.CreateNoContext(typeof<obj>), fun mi -> mi.DeclaringType)
+                let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, (ProvidedType.CreateNoContext(typeof<obj>) |> withNull), fun mi -> mi.DeclaringType)
                 match miDeclaringType with 
                     // Generated nested types may have null DeclaringType
                 | Tainted.Null when mi.OfType<ProvidedType>().IsSome -> ()

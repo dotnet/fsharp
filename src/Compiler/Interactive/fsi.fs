@@ -77,7 +77,7 @@ open FSharp.Compiler.CheckExpressionsOps
 // For the FSI as a service methods...
 //----------------------------------------------------------------------------
 
-type FsiValue(reflectionValue: obj, reflectionType: Type, fsharpType: FSharpType) =
+type FsiValue(reflectionValue: objnull, reflectionType: Type, fsharpType: FSharpType) =
     member _.ReflectionValue = reflectionValue
 
     member _.ReflectionType = reflectionType
@@ -93,15 +93,15 @@ type FsiBoundValue(name: string, value: FsiValue) =
 [<AutoOpen>]
 module internal Utilities =
     type IAnyToLayoutCall =
-        abstract AnyToLayout: FormatOptions * obj * Type -> Layout
-        abstract FsiAnyToLayout: FormatOptions * obj * Type -> Layout
+        abstract AnyToLayout: FormatOptions * objnull * Type -> Layout
+        abstract FsiAnyToLayout: FormatOptions * objnull * Type -> Layout
 
     type private AnyToLayoutSpecialization<'T>() =
         interface IAnyToLayoutCall with
-            member _.AnyToLayout(options, o: obj, ty: Type) =
+            member _.AnyToLayout(options, o: objnull, ty: Type) =
                 Display.any_to_layout options ((Unchecked.unbox o: 'T), ty)
 
-            member _.FsiAnyToLayout(options, o: obj, ty: Type) =
+            member _.FsiAnyToLayout(options, o: objnull, ty: Type) =
                 Display.fsi_any_to_layout options ((Unchecked.unbox o: 'T), ty)
 
     let getAnyToLayoutCall (ty: Type) =
@@ -112,13 +112,19 @@ module internal Utilities =
                 |> NativeInterop.NativePtr.toNativeInt
 
             { new IAnyToLayoutCall with
-                member _.AnyToLayout(options, o: obj, ty: Type) =
-                    let n = pointerToNativeInt o
-                    Display.any_to_layout options (n, n.GetType())
+                member _.AnyToLayout(options, o: objnull, ty: Type) =
+                    match o with
+                    | null -> Display.any_to_layout options (o, ty)
+                    | o ->
+                        let n = pointerToNativeInt o
+                        Display.any_to_layout options (n, n.GetType())
 
-                member _.FsiAnyToLayout(options, o: obj, ty: Type) =
-                    let n = pointerToNativeInt o
-                    Display.any_to_layout options (n, n.GetType())
+                member _.FsiAnyToLayout(options, o: objnull, ty: Type) =
+                    match o with
+                    | null -> Display.any_to_layout options (o, ty)
+                    | o ->
+                        let n = pointerToNativeInt o
+                        Display.any_to_layout options (n, n.GetType())
             }
         else
             let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
@@ -677,7 +683,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
             }
 
     /// Generate a layout for an actual F# value, where we know the value has the given static type.
-    member _.PrintValue(printMode, opts: FormatOptions, x: obj, ty: Type) =
+    member _.PrintValue(printMode, opts: FormatOptions, x: objnull, ty: Type) =
         // We do a dynamic invoke of any_to_layout with the right System.Type parameter for the static type of the saved value.
         // In principle this helps any_to_layout do the right thing as it descends through terms. In practice it means
         // it at least does the right thing for top level 'null' list and option values (but not for nested ones).
@@ -2198,7 +2204,7 @@ type internal FsiDynamicCompiler
             lock tcLockObject (fun _ ->
                 CheckClosedInputSet(
                     ctok,
-                    diagnosticsLogger.CheckForErrors,
+                    (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
                     tcConfig,
                     tcImports,
                     tcGlobals,
@@ -5191,7 +5197,7 @@ module Settings =
             and set v = args <- v
 
         member _.AddPrinter(printer: 'T -> string) =
-            addedPrinters <- Choice1Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
+            addedPrinters <- Choice1Of2(typeof<'T>, (fun (x: objnull) -> printer (unbox x))) :: addedPrinters
 
         member _.EventLoop
             with get () = evLoop
@@ -5199,8 +5205,8 @@ module Settings =
                 evLoop.ScheduleRestart()
                 evLoop <- x
 
-        member _.AddPrintTransformer(printer: 'T -> obj) =
-            addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
+        member _.AddPrintTransformer(printer: 'T -> objnull) =
+            addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: objnull) -> printer (unbox x))) :: addedPrinters
 
     let fsi = InteractiveSettings()
 

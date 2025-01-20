@@ -187,8 +187,6 @@ type Expr =
     /// </example>
     member CustomAttributes: Expr list
 
-    override Equals: obj: objnull -> bool
-
     /// <summary>Builds an expression that represents getting the address of a value.</summary>
     ///
     /// <param name="target">The target expression.</param>

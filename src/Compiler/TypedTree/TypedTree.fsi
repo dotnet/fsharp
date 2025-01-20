@@ -3149,7 +3149,7 @@ type TType =
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/dotnet/fsharp/issues/2561
-    member GetAssemblyName: unit -> string MaybeNull
+    member GetAssemblyName: unit -> string
 
     override ToString: unit -> string
 
@@ -4049,8 +4049,6 @@ type NamedDebugPointKey =
       Name: string }
 
     interface IComparable
-
-    override Equals: yobj: obj -> bool
 
     override GetHashCode: unit -> int
 

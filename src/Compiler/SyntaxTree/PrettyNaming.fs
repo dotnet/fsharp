@@ -670,8 +670,8 @@ let IsLogicalPrefixOperator logicalName =
     if String.IsNullOrEmpty logicalName then
         false
     else
-        let displayName = ConvertValLogicalNameToDisplayNameCore !!logicalName
-        displayName <> !!logicalName && IsValidPrefixOperatorDefinitionName displayName
+        let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
+        displayName <> logicalName && IsValidPrefixOperatorDefinitionName displayName
 
 let IsLogicalTernaryOperator logicalName =
     let displayName = ConvertValLogicalNameToDisplayNameCore logicalName

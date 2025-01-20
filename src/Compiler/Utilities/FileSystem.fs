@@ -431,16 +431,16 @@ module internal FileSystemUtils =
 
     let fileNameOfPath path =
         checkPathForIllegalChars path
-        Path.GetFileName(path)
+        !! Path.GetFileName(path)
 
     let fileNameWithoutExtensionWithValidate (validate: bool) path =
         if validate then
             checkPathForIllegalChars path
 
-        Path.GetFileNameWithoutExtension(path)
+        !! Path.GetFileNameWithoutExtension(path)
 
     let fileNameWithoutExtension path =
-        fileNameWithoutExtensionWithValidate true path
+        !! fileNameWithoutExtensionWithValidate true path
 
     let trimQuotes (path: string) = path.Trim([| ' '; '\"' |])
 

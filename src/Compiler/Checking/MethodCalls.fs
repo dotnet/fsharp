@@ -1815,14 +1815,14 @@ module ProvidedMethodCalls =
         let rec loop (st: Tainted<ProvidedType>) = 
             if st.PUntaint((fun st -> st.IsGenericParameter), m) then st
             elif st.PUntaint((fun st -> st.IsArray), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 let rank = st.PUntaint((fun st -> st.GetArrayRank()), m)
                 (loop et).PApply((fun st -> if rank = 1 then st.MakeArrayType() else st.MakeArrayType(rank)), m)
             elif st.PUntaint((fun st -> st.IsByRef), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 (loop et).PApply((fun st -> st.MakeByRefType()), m)
             elif st.PUntaint((fun st -> st.IsPointer), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 (loop et).PApply((fun st -> st.MakePointerType()), m)
             else
                 let isGeneric = st.PUntaint((fun st -> st.IsGenericType), m)
@@ -2115,7 +2115,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName |> string), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif

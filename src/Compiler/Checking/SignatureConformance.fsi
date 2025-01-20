@@ -13,9 +13,14 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.InfoReader
 
+type TypeMismatchSource =
+    | NullnessOnlyMismatch
+    | RegularMismatch
+
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
 exception ValueNotContained of
+    kind: TypeMismatchSource *
     DisplayEnv *
     InfoReader *
     ModuleOrNamespaceRef *
@@ -28,6 +33,7 @@ exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase *
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
 exception FieldNotContained of
+    kind: TypeMismatchSource *
     DisplayEnv *
     InfoReader *
     Tycon *

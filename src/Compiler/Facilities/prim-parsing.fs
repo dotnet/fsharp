@@ -5,6 +5,7 @@
 namespace Internal.Utilities.Text.Parsing
 
 open Internal.Utilities.Text.Lexing
+open Internal.Utilities.Library
 
 open System
 open System.Buffers
@@ -28,7 +29,7 @@ type internal IParseState
 
     member _.ResultEndPosition = lhsPos[1]
 
-    member _.GetInput index = ruleValues[index - 1]
+    member _.GetInput index = !!ruleValues[index - 1]
 
     member _.ResultRange = (lhsPos[0], lhsPos[1])
 
@@ -572,7 +573,7 @@ module internal Implementation =
                 else if Flags.debug then
                     Console.WriteLine("ALARM!!! drop through case in parser")
         // OK, we're done - read off the overall generated value
-        valueStack.Peep().value
+        !!valueStack.Peep().value
 
 type internal Tables<'Token> with
 
