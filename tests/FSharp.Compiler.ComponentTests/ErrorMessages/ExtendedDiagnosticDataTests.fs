@@ -542,3 +542,35 @@ let x = MyClass()
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
         Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
+
+[<Fact>]
+let ``Warning -  ExperimentalExtendedData 01`` () =
+    let CSLib =
+        CSharp """
+using System.Diagnostics.CodeAnalysis;
+
+[Experimental(diagnosticId: "FS222")]
+public static class Class1
+{
+    public static string Test()
+    {
+        return "Hello";
+    }
+}
+    """
+        |> withName "CSLib"
+
+    let app =
+        FSharp """
+open MyLib
+
+let text = Class1.Test();
+    """ |> withReferences [CSLib]
+
+    app
+    |> typecheckResults
+    |> checkDiagnostic
+       (57, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+       (fun (experimental: ExperimentalExtendedData) ->
+        Assert.Equal("FS222", experimental.DiagnosticId)
+        Assert.Equal("", experimental.UrlFormat))
