@@ -13,13 +13,6 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-exception ObsoleteDiagnostic of
-    isError: bool *
-    diagnosticId: string *
-    message: string *
-    urlFormat: string *
-    range: range
-
 type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range

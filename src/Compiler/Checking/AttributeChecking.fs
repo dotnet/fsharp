@@ -24,13 +24,6 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
-exception ObsoleteDiagnostic of
-    isError: bool *
-    diagnosticId: string *
-    message: string *
-    urlFormat: string *
-    range: range
-
 let fail() = failwith "This custom attribute has an argument that cannot yet be converted using this API"
 
 let rec private evalILAttribElem elem = 
@@ -248,8 +241,9 @@ let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
         CompleteD
     | _ ->
         ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
+        
 
-let private extractILObsoleteAttributeInfo namedArgs =
+let private extractILAttributeInfo namedArgs =
     let extractILAttribValueFrom name namedArgs   =
         match namedArgs with 
         | ExtractILAttributeNamedArg name (AttribElemStringArg v) -> v 
@@ -258,24 +252,53 @@ let private extractILObsoleteAttributeInfo namedArgs =
     let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
     (diagnosticId, urlFormat)
 
+let private CheckILExperimentalAttributes (g: TcGlobals) cattrs m =
+    let (AttribInfo(tref,_)) = g.attrib_IlExperimentalAttribute
+    match TryDecodeILAttribute tref cattrs with
+    // [Experimental("DiagnosticId")]
+    // [Experimental(diagnosticId: "DiagnosticId")]
+    // [Experimental("DiagnosticId", UrlFormat = "UrlFormat")]
+    // [Experimental(diagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
+    // Constructors the Message diagnosticId.
+    | Some ([ attribElement ], namedArgs) ->
+        let extractILAttribValueFrom name namedArgs   =
+            match namedArgs with 
+            | ExtractILAttributeNamedArg name (AttribElemStringArg v) -> v 
+            | _ -> ""
+        
+        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
+        
+        let diagnosticId = 
+            match attribElement with 
+            | ILAttribElem.String (Some msg) -> msg
+            | ILAttribElem.String None
+            | _ -> ""
+
+        WarnD(Experimental(FSComp.SR.experimentalConstruct (), diagnosticId, urlFormat, m))
+    | Some (_, namedArgs) ->
+        let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
+        WarnD(Experimental(FSComp.SR.experimentalConstruct (), diagnosticId, urlFormat, m))
+    // No arguments
+    | None -> CompleteD
+
 let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     if isByrefLikeTyconRef then
         CompleteD
     else
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         match TryDecodeILAttribute tref cattrs with
-        // [<Obsolete>]
-        // [<Obsolete("Message")>]
-        // [<Obsolete("Message", true)>]
-        // [<Obsolete("Message", DiagnosticId = "DiagnosticId")>]
-        // [<Obsolete("Message", DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")>]
-        // [<Obsolete(DiagnosticId = "DiagnosticId")>]
-        // [<Obsolete(DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")>]
-        // [<Obsolete("Message", true, DiagnosticId = "DiagnosticId")>]
-        // [<Obsolete("Message", true, DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")>]
+        // [Obsolete>]
+        // [Obsolete("Message")]
+        // [Obsolete("Message", true)]
+        // [Obsolete("Message", DiagnosticId = "DiagnosticId")]
+        // [Obsolete("Message", DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
+        // [Obsolete(DiagnosticId = "DiagnosticId")]
+        // [Obsolete(DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
+        // [Obsolete("Message", true, DiagnosticId = "DiagnosticId")]
+        // [Obsolete("Message", true, DiagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
         // Constructors deciding on IsError and Message properties.
         | Some ([ attribElement ], namedArgs) ->
-            let diagnosticId, urlFormat = extractILObsoleteAttributeInfo namedArgs
+            let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
             let msg = 
                 match attribElement with 
                 | ILAttribElem.String (Some msg) -> msg
@@ -284,7 +307,7 @@ let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs 
 
             WarnD (ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
         | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], namedArgs) ->
-            let diagnosticId, urlFormat = extractILObsoleteAttributeInfo namedArgs
+            let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
             if isError then
                 if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
                     CheckCompilerFeatureRequiredAttribute g cattrs msg m
@@ -294,15 +317,16 @@ let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs 
                 WarnD (ObsoleteDiagnostic(false, diagnosticId, msg, urlFormat, m))
         // Only DiagnosticId, UrlFormat
         | Some (_, namedArgs) ->
-            let diagnosticId, urlFormat = extractILObsoleteAttributeInfo namedArgs
+            let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
             WarnD(ObsoleteDiagnostic(false, diagnosticId, "", urlFormat, m))
         // No arguments
         | None -> CompleteD
 
-/// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
+/// Check IL attributes for Experimental, warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     trackErrors {
         do! CheckILObsoleteAttributes g isByrefLikeTyconRef cattrs m
+        do! CheckILExperimentalAttributes g cattrs m
     }
 
 let langVersionPrefix = "--langversion:preview"
@@ -366,7 +390,7 @@ let private CheckCompilerMessageAttribute g attribs m =
             ()
     }
     
-let private CheckExperimentalAttribute g attribs m =
+let private CheckFSharpExperimentalAttribute g attribs m =
     trackErrors {
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
         | Some(Attrib(unnamedArgs= [ AttribStringArg(s) ])) ->
@@ -376,9 +400,9 @@ let private CheckExperimentalAttribute g attribs m =
                 else
                     g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
             if not (isExperimentalAttributeDisabled s) then
-                do! WarnD(Experimental(s, m))
+                do! WarnD(Experimental(s, "", "", m))
         | Some _ ->
-            do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
+            do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), "", "", m))
         | _ ->
             ()
     }
@@ -399,7 +423,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
         trackErrors {
             do! CheckObsoleteAttributes g attribs m
             do! CheckCompilerMessageAttribute g attribs m
-            do! CheckExperimentalAttribute g attribs m
+            do! CheckFSharpExperimentalAttribute g attribs m
             do! CheckUnverifiableAttribute g attribs m
         }
 

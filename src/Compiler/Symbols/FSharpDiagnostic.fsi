@@ -61,6 +61,17 @@ module public ExtendedData =
         /// Represents the URL format of the diagnostic
         member UrlFormat: string
 
+    /// Additional data for diagnostics about obsolete attributes.
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type public ExperimentalExtendedData =
+        interface IFSharpDiagnosticExtendedData
+
+        /// Represents the DiagnosticId of the diagnostic
+        member DiagnosticId: string
+
+        /// Represents the URL format of the diagnostic
+        member UrlFormat: string
+
     /// Additional data for type-mismatch-like (usually with ErrorNumber = 1) diagnostics
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
     type public TypeMismatchDiagnosticExtendedData =
