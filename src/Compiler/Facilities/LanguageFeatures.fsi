@@ -89,6 +89,7 @@ type LanguageFeature =
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
+    | UseBangBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion =
