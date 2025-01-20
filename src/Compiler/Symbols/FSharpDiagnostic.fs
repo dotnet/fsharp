@@ -78,6 +78,16 @@ module ExtendedData =
         /// Represents the URL format of the diagnostic
         member this.UrlFormat: string = urlFormat
 
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type ExperimentalExtendedData
+        internal (diagnosticId: string, urlFormat: string) =
+        interface IFSharpDiagnosticExtendedData
+        /// Represents the DiagnosticId of the diagnostic
+        member this.DiagnosticId: string = diagnosticId
+
+        /// Represents the URL format of the diagnostic
+        member this.UrlFormat: string = urlFormat
+    
     [<Experimental("This FCS API is experimental and subject to change.")>]
     type TypeMismatchDiagnosticExtendedData
         internal (symbolEnv: SymbolEnv, dispEnv: DisplayEnv, expectedType: TType, actualType: TType, context: DiagnosticContextInfo) =
@@ -214,6 +224,9 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
             | ObsoleteDiagnostic(diagnosticId= diagnosticId; urlFormat= urlFormat) ->
                 Some(ObsoleteDiagnosticExtendedData(diagnosticId, urlFormat))
+                
+            | Experimental(diagnosticId= diagnosticId; urlFormat= urlFormat) ->
+                Some(ExperimentalExtendedData(diagnosticId, urlFormat))
             | _ -> None
 
         let msg =

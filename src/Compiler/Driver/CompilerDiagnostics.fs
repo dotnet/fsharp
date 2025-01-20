@@ -14,7 +14,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckIncrementalClasses
@@ -149,7 +148,7 @@ type Exception with
         | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
         | ObsoleteDiagnostic(_, _, _, _, m)
-        | Experimental(_, m)
+        | Experimental(range = m)
         | PossibleUnverifiableCode m
         | UserCompilerMessage(_, _, m)
         | Deprecated(_, m)
@@ -1797,7 +1796,7 @@ type Exception with
             if s <> "" then
                 os.AppendString(Obsolete2E().Format s)
 
-        | Experimental(s, _) -> os.AppendString(ExperimentalE().Format s)
+        | Experimental(message = s) -> os.AppendString(ExperimentalE().Format s)
 
         | PossibleUnverifiableCode _ -> os.AppendString(PossibleUnverifiableCodeE().Format)
 
