@@ -3305,8 +3305,9 @@ module internal ParseAndCheckFile =
 type FSharpProjectContext
     (thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions option) =
 
+    // TODO: Once API around Transparent Compiler is stabilized we should probably remove this.
     member _.ProjectOptions =
-        projectOptions |> Option.defaultWith (fun () -> failwith "not available")
+        projectOptions |> Option.defaultWith (fun () -> failwith "ProjectOptions are not available. This is expected when using FSharpChecker with useTransparentCompiler=true.")
 
     member _.GetReferencedAssemblies() = assemblies
 
