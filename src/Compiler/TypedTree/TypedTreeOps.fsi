@@ -843,6 +843,8 @@ val CollectAllNoCaching: FreeVarOptions
 
 val CollectAll: FreeVarOptions
 
+val ListMeasureVarOccs: Measure -> Typar list
+
 val accFreeInTypes: FreeVarOptions -> TType list -> FreeTyvars -> FreeTyvars
 
 val accFreeInType: FreeVarOptions -> TType -> FreeTyvars -> FreeTyvars
@@ -1183,6 +1185,9 @@ val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVar
 
 /// Get the free variables in a module definition.
 val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
+
+/// Get the free variables in an expression with accumulator
+val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
 
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars

@@ -1,6 +1,5 @@
 namespace Language
 
-open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -37,6 +36,350 @@ let c = C()
             (Warning 44, Line 7, Col 9, Line 7, Col 10, "This construct is deprecated. Use B instead")
         ]
         
+
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used with a literal`` () =
+        Fsx """
+open System
+[<Literal; Obsolete("Use lit2")>]
+let myLit = 12
+
+let myRes = myLit
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 6, Col 13, Line 6, Col 18, "This construct is deprecated. Use lit2")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error taken into account when used with a literal`` () =
+        Fsx """
+open System
+[<Literal; Obsolete("Use lit2", true)>]
+let myLit = 12
+
+let myRes = myLit
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 6, Col 13, Line 6, Col 18, "This construct is deprecated. Use lit2")
+        ]
+    
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used with a simple unit of measure`` () =
+        Fsx """
+open System
+[<Measure; Obsolete("Use cm2")>]
+type cm
+
+let myCm = 3<cm>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 6, Col 14, Line 6, Col 16, "This construct is deprecated. Use cm2")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error taken into account when used with a simple unit of measure`` () =
+        Fsx """
+open System
+[<Measure; Obsolete("Use cm2", true)>]
+type cm
+
+let myCm = 3<cm>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 6, Col 14, Line 6, Col 16, "This construct is deprecated. Use cm2")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used with a simple unit of measure type abbrev`` () =
+        Fsx """
+open System
+[<Measure; Obsolete("Use something else")>] type cm
+
+[<Measure>] type ml = cm^3
+
+type Mls = int<cm> * int<cm>
+
+type IMl2 =
+    abstract member Ml2 : x: int<cm> * y: int<cm> -> int
+    abstract member Ml3 : x: int<cm> * y: int<cm> -> int<cm>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 5, Col 23, Line 5, Col 25, "This construct is deprecated. Use something else")
+            (Warning 44, Line 7, Col 16, Line 7, Col 18, "This construct is deprecated. Use something else")
+            (Warning 44, Line 7, Col 26, Line 7, Col 28, "This construct is deprecated. Use something else")
+            (Warning 44, Line 10, Col 34, Line 10, Col 36, "This construct is deprecated. Use something else")
+            (Warning 44, Line 10, Col 47, Line 10, Col 49, "This construct is deprecated. Use something else")
+            (Warning 44, Line 11, Col 34, Line 11, Col 36, "This construct is deprecated. Use something else")
+            (Warning 44, Line 11, Col 47, Line 11, Col 49, "This construct is deprecated. Use something else")
+            (Warning 44, Line 11, Col 58, Line 11, Col 60, "This construct is deprecated. Use something else")
+        ]        
+            
+    [<Fact>]
+    let ``Obsolete attribute error taken into account when used with a simple unit of measure type abbrev`` () =
+        Fsx """
+open System
+[<Measure; Obsolete("Use something else", true)>] type cm
+
+[<Measure>] type ml = cm^3
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 5, Col 23, Line 5, Col 25, "This construct is deprecated. Use something else")
+        ]        
+
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used with a complex unit of measure definition`` () =
+        Fsx """
+open System
+[<Measure; Obsolete("Use kg2")>]
+type kg
+
+[<Measure>] type m
+
+[<Measure; Obsolete("Use s2")>]
+type s
+
+// Force, Newtons.
+[<Measure>] type N = kg m / s^2
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 12, Col 22, Line 12, Col 24, "This construct is deprecated. Use kg2");
+            (Warning 44, Line 12, Col 29, Line 12, Col 30, "This construct is deprecated. Use s2")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error taken into account when used with a complex unit of measure definition`` () =
+        Fsx """
+open System
+[<Measure; Obsolete("Use kg2", true)>]
+type kg
+
+[<Measure>] type m
+
+[<Measure; Obsolete("Use s2", true)>]
+type s
+
+// Force, Newtons.
+[<Measure>] type N = kg m / s^2
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 12, Col 22, Line 12, Col 24, "This construct is deprecated. Use kg2");
+        ]
+    
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used within a complex unit of measure`` () =
+        Fsx """
+open System
+
+[<Measure>]
+type kg
+
+[<Measure; Obsolete("Use cm2")>]
+type cm
+
+let myCm = 3<cm/kg>
+
+let cm2 = 3<cm/kg> * 3<cm/kg>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 10, Col 14, Line 10, Col 16, "This construct is deprecated. Use cm2");
+            (Warning 44, Line 12, Col 13, Line 12, Col 15, "This construct is deprecated. Use cm2");
+            (Warning 44, Line 12, Col 24, Line 12, Col 26, "This construct is deprecated. Use cm2")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used within a complex unit of measure. Define conversion constants.`` () =
+        Fsx """
+open System
+
+[<Measure; Obsolete("Use m2")>]
+type m
+
+[<Measure; Obsolete("Use cm2")>]
+type cm
+
+let cmPerMeter : float<cm/m> = 100.0<cm/m>
+let mPerCm = 0.01<m/cm>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 10, Col 24, Line 10, Col 26, "This construct is deprecated. Use cm2")
+            (Warning 44, Line 10, Col 27, Line 10, Col 28, "This construct is deprecated. Use m2")
+            (Warning 44, Line 10, Col 38, Line 10, Col 40, "This construct is deprecated. Use cm2")
+            (Warning 44, Line 10, Col 41, Line 10, Col 42, "This construct is deprecated. Use m2")
+            (Warning 44, Line 11, Col 19, Line 11, Col 20, "This construct is deprecated. Use m2")
+            (Warning 44, Line 11, Col 21, Line 11, Col 23, "This construct is deprecated. Use cm2")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning taken into account when used with a complex(multiple obsolete) unit of measure`` () =
+        Fsx """
+open System
+
+[<Measure; Obsolete("Use kg2")>]
+type kg
+
+[<Measure; Obsolete("Use cm2")>]
+type cm
+
+let myCm = 3<cm/kg>
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 10, Col 14, Line 10, Col 16, "This construct is deprecated. Use cm2");
+            (Warning 44, Line 10, Col 17, Line 10, Col 19, "This construct is deprecated. Use kg2")
+        ]
+
+    [<Fact>]
+    let ``TopLevel - Obsolete attribute warning taken into account when used with a complex(multiple obsolete) unit of measure usages`` () =
+        Fsx """
+open System
+// Distance, meters.
+[<Measure; Obsolete("Use m2")>] type m
+
+// Time, seconds.
+[<Measure; Obsolete("Use s2")>] type s
+
+let genericSumUnits (x: float<'u>) (y: float<'u>) = x + y
+
+let genericSumUnits2 (x: float<m>) (y: float<s>) = ()
+
+let genericSumUnits3 (x: float<m>) (y: float<s>) (z: float<m>) = ()
+
+let genericSumUnits4 (x: float<m>, y: float<s>) = ()
+
+let genericSumUnits5 (x: float<m>, y: float<s>, z: float<m>) = ()
+
+let v1 = 3.1<m/s>
+let v2 = 2.7<m/s>
+let x1 = 1.2<m>
+let t1 = 1.0<s>
+
+let result1 = genericSumUnits v1 v2
+
+let res = System.Collections.Generic.Dictionary<int<m>,int<s>>()
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 11, Col 32, Line 11, Col 33, "This construct is deprecated. Use m2")
+            (Warning 44, Line 11, Col 46, Line 11, Col 47, "This construct is deprecated. Use s2")
+            (Warning 44, Line 13, Col 32, Line 13, Col 33, "This construct is deprecated. Use m2")
+            (Warning 44, Line 13, Col 46, Line 13, Col 47, "This construct is deprecated. Use s2")
+            (Warning 44, Line 13, Col 60, Line 13, Col 61, "This construct is deprecated. Use m2")
+            (Warning 44, Line 15, Col 32, Line 15, Col 33, "This construct is deprecated. Use m2")
+            (Warning 44, Line 15, Col 45, Line 15, Col 46, "This construct is deprecated. Use s2")
+            (Warning 44, Line 17, Col 32, Line 17, Col 33, "This construct is deprecated. Use m2")
+            (Warning 44, Line 17, Col 45, Line 17, Col 46, "This construct is deprecated. Use s2")
+            (Warning 44, Line 17, Col 58, Line 17, Col 59, "This construct is deprecated. Use m2")
+            (Warning 44, Line 19, Col 14, Line 19, Col 15, "This construct is deprecated. Use m2")
+            (Warning 44, Line 19, Col 16, Line 19, Col 17, "This construct is deprecated. Use s2")
+            (Warning 44, Line 20, Col 14, Line 20, Col 15, "This construct is deprecated. Use m2")
+            (Warning 44, Line 20, Col 16, Line 20, Col 17, "This construct is deprecated. Use s2")
+            (Warning 44, Line 21, Col 14, Line 21, Col 15, "This construct is deprecated. Use m2")
+            (Warning 44, Line 22, Col 14, Line 22, Col 15, "This construct is deprecated. Use s2")
+            (Warning 44, Line 26, Col 53, Line 26, Col 54, "This construct is deprecated. Use m2")
+            (Warning 44, Line 26, Col 60, Line 26, Col 61, "This construct is deprecated. Use s2")
+        ]
+        
+    [<Fact>]
+    let ``Class- Obsolete attribute warning taken into account when used with a complex(multiple obsolete) unit of measure usages`` () =
+        Fsx """
+open System
+// Distance, meters.
+[<Measure; Obsolete("Use m2")>] type m
+
+// Time, seconds.
+[<Measure; Obsolete("Use s2")>] type s
+
+type MyClass() =
+    let genericSumUnits (x: float<'u>) (y: float<'u>) = x + y
+
+    let genericSumUnits2 (x: float<m>) (y: float<s>) = ()
+
+    static let genericSumUnits3 (x: float<m>) (y: float<s>) (z: float<m>) = ()
+
+    let genericSumUnits4 (x: float<m>, y: float<s>) = ()
+
+    let genericSumUnits5 (x: float<m>, y: float<s>, z: float<m>) = ()
+    
+    member this.Prop = 3.1<m/s>
+    
+    member this.Prop2 = 2.7<m/s>
+    
+    member this.Prop3 = 1.2<m>
+    
+    member this.Prop4 = 1.0<s>
+    
+    member this.GenericSumUnits (x: float<'u>) (y: float<'u>) = x + y
+    
+    member this.GenericSumUnits2 (x: float<m>) (y: float<s>) = ()
+    
+    member this.GenericSumUnits3 (x: float<m>) (y: float<s>) (z: float<m>) = ()
+    
+    member this.GenericSumUnits4 (x: float<m>, y: float<s>) = ()
+    
+    member this.GenericSumUnits5 (x: float<m>, y: float<s>, z: float<m>) = ()
+    
+type A<[<Measure>] 'u>(x: int<m>) =
+    member _.X = x
+    
+type B(x: int<m>, y: int<s>) =
+    member _.X = x
+         """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 30, Col 44, Line 30, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 30, Col 58, Line 30, Col 59, "This construct is deprecated. Use s2")
+            (Warning 44, Line 32, Col 44, Line 32, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 32, Col 58, Line 32, Col 59, "This construct is deprecated. Use s2")
+            (Warning 44, Line 32, Col 72, Line 32, Col 73, "This construct is deprecated. Use m2")
+            (Warning 44, Line 34, Col 44, Line 34, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 34, Col 57, Line 34, Col 58, "This construct is deprecated. Use s2")
+            (Warning 44, Line 36, Col 44, Line 36, Col 45, "This construct is deprecated. Use m2")
+            (Warning 44, Line 36, Col 57, Line 36, Col 58, "This construct is deprecated. Use s2")
+            (Warning 44, Line 36, Col 70, Line 36, Col 71, "This construct is deprecated. Use m2")
+            (Warning 44, Line 12, Col 36, Line 12, Col 37, "This construct is deprecated. Use m2")
+            (Warning 44, Line 12, Col 50, Line 12, Col 51, "This construct is deprecated. Use s2")
+            (Warning 44, Line 14, Col 43, Line 14, Col 44, "This construct is deprecated. Use m2")
+            (Warning 44, Line 14, Col 57, Line 14, Col 58, "This construct is deprecated. Use s2")
+            (Warning 44, Line 14, Col 71, Line 14, Col 72, "This construct is deprecated. Use m2")
+            (Warning 44, Line 16, Col 36, Line 16, Col 37, "This construct is deprecated. Use m2")
+            (Warning 44, Line 16, Col 49, Line 16, Col 50, "This construct is deprecated. Use s2")
+            (Warning 44, Line 18, Col 36, Line 18, Col 37, "This construct is deprecated. Use m2")
+            (Warning 44, Line 18, Col 49, Line 18, Col 50, "This construct is deprecated. Use s2")
+            (Warning 44, Line 18, Col 62, Line 18, Col 63, "This construct is deprecated. Use m2")
+            (Warning 44, Line 20, Col 28, Line 20, Col 29, "This construct is deprecated. Use m2")
+            (Warning 44, Line 20, Col 30, Line 20, Col 31, "This construct is deprecated. Use s2")
+            (Warning 44, Line 22, Col 29, Line 22, Col 30, "This construct is deprecated. Use m2")
+            (Warning 44, Line 22, Col 31, Line 22, Col 32, "This construct is deprecated. Use s2")
+            (Warning 44, Line 24, Col 29, Line 24, Col 30, "This construct is deprecated. Use m2")
+            (Warning 44, Line 26, Col 29, Line 26, Col 30, "This construct is deprecated. Use s2")
+            (Warning 44, Line 38, Col 31, Line 38, Col 32, "This construct is deprecated. Use m2")
+            (Warning 44, Line 41, Col 15, Line 41, Col 16, "This construct is deprecated. Use m2")
+            (Warning 44, Line 41, Col 26, Line 41, Col 27, "This construct is deprecated. Use s2")
+        ]
+    
     [<Fact>]
     let ``Obsolete attribute error taken into account when used instantiating a type`` () =
         Fsx """

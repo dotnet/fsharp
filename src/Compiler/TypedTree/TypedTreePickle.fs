@@ -67,11 +67,7 @@ type PickledDataWithReferences<'rawData> =
 //---------------------------------------------------------------------------
 
 [<NoEquality; NoComparison>]
-#if NO_CHECKNULLS
-type Table<'T> =
-#else
 type Table<'T when 'T: not null> =
-#endif
     { name: string
       tbl: Dictionary<'T, int>
       mutable rows: ResizeArray<'T>
@@ -1539,7 +1535,7 @@ let p_measure_one = p_byte 4
 // Pickle a unit-of-measure variable or constructor
 let p_measure_varcon unt st =
      match unt with
-     | Measure.Const tcref   -> p_measure_con tcref st
+     | Measure.Const(tyconRef= tcref)   -> p_measure_con tcref st
      | Measure.Var v       -> p_measure_var v st
      | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
@@ -1568,12 +1564,12 @@ let rec p_measure_power unt q st =
 let rec p_normalized_measure unt st =
      let unt = stripUnitEqnsAux false unt
      match unt with
-     | Measure.Const tcref   -> p_measure_con tcref st
+     | Measure.Const(tyconRef= tcref)   -> p_measure_con tcref st
      | Measure.Inv x       -> p_byte 1 st; p_normalized_measure x st
-     | Measure.Prod(x1, x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
+     | Measure.Prod(measure1= x1; measure2= x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
      | Measure.Var v       -> p_measure_var v st
-     | Measure.One         -> p_measure_one st
-     | Measure.RationalPower(x, q) -> p_measure_power x q st
+     | Measure.One _         -> p_measure_one st
+     | Measure.RationalPower(measure= x; power= q) -> p_measure_power x q st
 
 // By normalizing the unit-of-measure and treating integer powers as a special case,
 // we ensure that the pickle format for rational powers of units (byte 5 followed by
@@ -1589,11 +1585,11 @@ let u_rational st =
 let rec u_measure_expr st =
     let tag = u_byte st
     match tag with
-    | 0 -> let a = u_tcref st in Measure.Const a
+    | 0 -> let a = u_tcref st in Measure.Const(a, range0)
     | 1 -> let a = u_measure_expr st in Measure.Inv a
-    | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a, b)
-    | 3 -> let a = u_tpref st in Measure.Var a
-    | 4 -> Measure.One
+    | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a, b, range0)
+    | 3 -> let a = u_tpref st in Measure.Var(a)
+    | 4 -> Measure.One(range0)
     | 5 -> let a = u_measure_expr st in let b = u_rational st in Measure.RationalPower (a, b)
     | _ -> ufailwith st "u_measure_expr"
 

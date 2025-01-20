@@ -19,12 +19,11 @@
 
 ## Framework for testing
 
-The following test frameworks and libraries will be used for new test projects **[xUnit Test Framework](https://xunit.net/), [FluentAssertions](https://fluentassertions.com/) (+ [FsUnit](https://fsprojects.github.io/FsUnit/) and [FsCheck](https://github.com/fscheck/FsCheck) when needed)**.
+The following test frameworks and libraries will be used for new test projects **[xUnit Test Framework](https://xunit.net/) and [FsCheck](https://github.com/fscheck/FsCheck) when needed)**.
 
 **Justification:**
 
 * **xUnit** is an extensible, TDD adherent, testing framework, which was successfully adopted by many .NET engineering teams, including Roslyn, AspNetCore, EFcore, etc, has a "cleaner" approach for writing test suites (i.e. class constructor for setup, implementing IDisposable for teardown, as oppose to custom attributes). More info [here](https://xunit.net/docs/comparisons).
-* **FluentAssertions** makes it easier to write scoped assertions, provides better error messages.
 
 **Alternatives:** NUnit, MSBuild, Expecto
 
