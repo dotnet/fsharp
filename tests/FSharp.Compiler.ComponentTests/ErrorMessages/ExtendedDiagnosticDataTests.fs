@@ -241,3 +241,304 @@ type  Foo = {| bar: int; x: int |}
        (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
         assertRange (4,5) (4,8) fieldsData.SignatureRange
         assertRange (4,6) (4,9) fieldsData.ImplementationRange)
+
+
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning - ObsoleteDiagnosticExtendedData 01`` () =
+    FSharp """
+open System
+[<Obsolete("Message", false, DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
+
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning - ObsoleteDiagnosticExtendedData 02`` () =
+    FSharp """
+open System
+[<Obsolete("Message", false, DiagnosticId = "FS222")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 03`` () =
+    FSharp """
+open System
+[<Obsolete("Message", false)>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 04`` () =
+    FSharp """
+open System
+[<Obsolete(DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
+       
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 05`` () =
+    let CSLib =
+        CSharp """
+using System;
+[Obsolete("Use something else", false, DiagnosticId = "FS222")]
+public static class Class1
+{
+    public static string Test()
+    {
+        return "Hello";
+    }
+}
+    """
+        |> withName "CSLib"
+
+    let app =
+        FSharp """
+open MyLib
+
+let text = Class1.Test();
+    """ |> withReferences [CSLib]
+
+    app
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Use something else")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 06`` () =
+    let CSLib =
+        CSharp """
+using System;
+[Obsolete("Use something else", false, DiagnosticId = "FS222", UrlFormat = "https://example.com")]
+public static class Class1
+{
+    public static string Test()
+    {
+        return "Hello";
+    }
+}
+    """
+        |> withName "CSLib"
+
+    let app =
+        FSharp """
+open MyLib
+
+let text = Class1.Test();
+    """ |> withReferences [CSLib]
+
+    app
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Use something else")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 07`` () =
+    let CSLib =
+        CSharp """
+using System;
+[Obsolete("Use something else", false)]
+public static class Class1
+{
+    public static string Test()
+    {
+        return "Hello";
+    }
+}
+    """
+        |> withName "CSLib"
+
+    let app =
+        FSharp """
+open MyLib
+
+let text = Class1.Test();
+    """ |> withReferences [CSLib]
+
+    app
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated. Use something else")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 08`` () =
+    let CSLib =
+        CSharp """
+using System;
+[Obsolete(DiagnosticId = "FS222", UrlFormat = "https://example.com")]
+public static class Class1
+{
+    public static string Test()
+    {
+        return "Hello";
+    }
+}
+    """
+        |> withName "CSLib"
+
+    let app =
+        FSharp """
+open MyLib
+
+let text = Class1.Test();
+    """ |> withReferences [CSLib]
+
+    app
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning - ObsoleteDiagnosticExtendedData 09`` () =
+    FSharp """
+open System
+[<Obsolete>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ObsoleteDiagnosticExtendedData 10`` () =
+    let CSLib =
+        CSharp """
+using System;
+[Obsolete]
+public static class Class1
+{
+    public static string Test()
+    {
+        return "Hello";
+    }
+}
+    """
+        |> withName "CSLib"
+
+    let app =
+        FSharp """
+open MyLib
+
+let text = Class1.Test();
+    """ |> withReferences [CSLib]
+
+    app
+    |> typecheckResults
+    |> checkDiagnostic
+       (44, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Error - ObsoleteDiagnosticExtendedData 01`` () =
+    FSharp """
+open System
+[<Obsolete("Message", true, DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Error - ObsoleteDiagnosticExtendedData 02`` () =
+    FSharp """
+open System
+[<Obsolete("Message", true, DiagnosticId = "FS222")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Error -  ObsoleteDiagnosticExtendedData 03`` () =
+    FSharp """
+open System
+[<Obsolete("Message", true)>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated. Message")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("", obsoleteDiagnostic.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Error -  ObsoleteDiagnosticExtendedData 04`` () =
+    FSharp """
+open System
+[<Obsolete("", true, DiagnosticId = "FS222", UrlFormat = "https://example.com")>]
+type MyClass() = class end
+
+let x = MyClass()
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (101, "This construct is deprecated")
+       (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
+        Assert.Equal("FS222", obsoleteDiagnostic.DiagnosticId)
+        Assert.Equal("https://example.com", obsoleteDiagnostic.UrlFormat))

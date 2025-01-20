@@ -551,7 +551,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 if isLessAccessible tyconAcc valAcc then
                     let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
                     let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
-                    warning(AttributeChecking.ObsoleteWarning(warningText, m))
+                    warning(AttributeChecking.ObsoleteDiagnostic(false, "", warningText, "", m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 

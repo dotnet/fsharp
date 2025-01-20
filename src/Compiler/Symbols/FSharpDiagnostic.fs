@@ -9,6 +9,7 @@ namespace FSharp.Compiler.Diagnostics
 
 open System
 
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.SignatureConformance
@@ -18,7 +19,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 
 open FSharp.Core.Printf
 open FSharp.Compiler
@@ -66,6 +66,17 @@ module ExtendedData =
 
     [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
     type IFSharpDiagnosticExtendedData = interface end
+
+    /// Additional data for diagnostics about obsolete attributes.
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type ObsoleteDiagnosticExtendedData
+        internal (diagnosticId: string, urlFormat: string) =
+        interface IFSharpDiagnosticExtendedData
+        /// Represents the DiagnosticId of the diagnostic
+        member this.DiagnosticId: string = diagnosticId
+
+        /// Represents the URL format of the diagnostic
+        member this.UrlFormat: string = urlFormat
 
     [<Experimental("This FCS API is experimental and subject to change.")>]
     type TypeMismatchDiagnosticExtendedData
@@ -201,6 +212,8 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
             | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(implTycon = implTycon; sigTycon = sigTycon) ->
                 Some(DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData(sigTycon, implTycon))
 
+            | ObsoleteDiagnostic(diagnosticId= diagnosticId; urlFormat= urlFormat) ->
+                Some(ObsoleteDiagnosticExtendedData(diagnosticId, urlFormat))
             | _ -> None
 
         let msg =

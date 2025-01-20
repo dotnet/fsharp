@@ -2602,6 +2602,9 @@ val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
 val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
 [<return: Struct>]
+val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
+
+[<return: Struct>]
 val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
 
 [<return: Struct>]
@@ -2612,6 +2615,8 @@ val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
 
 [<return: Struct>]
 val (|AttribStringArg|_|): (AttribExpr -> string voption)
+
+val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
 
 [<return: Struct>]
 val (|Int32Expr|_|): Expr -> int32 voption
