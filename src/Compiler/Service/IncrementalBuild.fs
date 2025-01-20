@@ -277,7 +277,6 @@ type BoundModel private (
                         None,
                         TcResultsSink.WithSink sink,
                         prevTcInfo.tcState, input )
-                |> Cancellable.toAsync
 
             fileChecked.Trigger fileName
 

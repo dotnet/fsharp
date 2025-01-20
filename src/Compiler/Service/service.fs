@@ -274,6 +274,8 @@ type FSharpChecker
         let hash = sourceText.GetHashCode() |> int64
 
         async {
+            do! Cancellable.UseToken()
+
             match braceMatchCache.TryGet(AnyCallerThread, (fileName, hash, options)) with
             | Some res -> return res
             | None ->
@@ -289,7 +291,9 @@ type FSharpChecker
     member ic.MatchBraces(fileName, source: string, options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
+
         ic.MatchBraces(fileName, SourceText.ofString source, parsingOptions, userOpName)
+        |> Cancellable.UsingToken
 
     member ic.GetParsingOptionsFromProjectOptions(options) : FSharpParsingOptions * _ =
         let sourceFiles = List.ofArray options.SourceFiles
@@ -299,26 +303,33 @@ type FSharpChecker
     member _.ParseFile(fileName, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
+
         backgroundCompiler.ParseFile(fileName, sourceText, options, cache, false, userOpName)
+        |> Cancellable.UsingToken
 
     member _.ParseFile(fileName, projectSnapshot, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
+        |> Cancellable.UsingToken
 
     member ic.ParseFileInProject(fileName, source: string, options, ?cache: bool, ?userOpName: string) =
         let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
+
         ic.ParseFile(fileName, SourceText.ofString source, parsingOptions, ?cache = cache, ?userOpName = userOpName)
+        |> Cancellable.UsingToken
 
     member _.GetBackgroundParseResultsForFileInProject(fileName, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
+        |> Cancellable.UsingToken
 
     member _.GetBackgroundCheckResultsForFileInProject(fileName, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.GetBackgroundCheckResultsForFileInProject(fileName, options, userOpName)
+        |> Cancellable.UsingToken
 
     /// Try to get recent approximate type check results for a file.
     member _.TryGetRecentCheckResultsForFile(fileName: string, options: FSharpProjectOptions, ?sourceText, ?userOpName: string) =
@@ -334,6 +345,8 @@ type FSharpChecker
         use _ = Activity.start "FSharpChecker.Compile" [| Activity.Tags.userOpName, _userOpName |]
 
         async {
+            do! Cancellable.UseToken()
+
             let ctok = CompilationThreadToken()
             return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
@@ -379,12 +392,15 @@ type FSharpChecker
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member _.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
+
         backgroundCompiler.NotifyProjectCleaned(options, userOpName)
+        |> Cancellable.UsingToken
 
     member _.NotifyFileChanged(fileName: string, options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.NotifyFileChanged(fileName, options, userOpName)
+        |> Cancellable.UsingToken
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
@@ -407,6 +423,7 @@ type FSharpChecker
             options,
             userOpName
         )
+        |> Cancellable.UsingToken
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
@@ -422,6 +439,7 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)
+        |> Cancellable.UsingToken
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
@@ -436,21 +454,25 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
+        |> Cancellable.UsingToken
 
     member _.ParseAndCheckFileInProject(fileName: string, projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseAndCheckFileInProject(fileName, projectSnapshot, userOpName)
+        |> Cancellable.UsingToken
 
     member _.ParseAndCheckProject(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
+        |> Cancellable.UsingToken
 
     member _.ParseAndCheckProject(projectSnapshot: FSharpProjectSnapshot, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.ParseAndCheckProject(projectSnapshot, userOpName)
+        |> Cancellable.UsingToken
 
     member _.FindBackgroundReferencesInFile
         (
@@ -465,6 +487,8 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         async {
+            do! Cancellable.UseToken()
+
             if fastCheck <> Some true || not captureIdentifiersWhenParsing then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
@@ -483,6 +507,8 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         async {
+            do! Cancellable.UseToken()
+
             let! parseResults = backgroundCompiler.ParseFile(fileName, projectSnapshot, userOpName)
 
             if
@@ -498,11 +524,13 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.GetSemanticClassificationForFile(fileName, options, userOpName)
+        |> Cancellable.UsingToken
 
     member _.GetBackgroundSemanticClassificationForFile(fileName: string, snapshot: FSharpProjectSnapshot, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
 
         backgroundCompiler.GetSemanticClassificationForFile(fileName, snapshot, userOpName)
+        |> Cancellable.UsingToken
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member _.GetProjectOptionsFromScript

@@ -1312,8 +1312,8 @@ let CheckOneInput
         tcSink: TcResultsSink,
         tcState: TcState,
         input: ParsedInput
-    ) : Cancellable<PartialResult * TcState> =
-    cancellable {
+    ) : Async<PartialResult * TcState> =
+    async {
         try
             use _ =
                 Activity.start "ParseAndCheckInputs.CheckOneInput" [| Activity.Tags.fileName, input.FileName |]
@@ -1431,7 +1431,8 @@ let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
-    cancellable {
+    async {
+        do! Cancellable.UseToken()
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
         use _ =
             UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
@@ -1442,7 +1443,7 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
 
         return! CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
     }
-    |> Cancellable.runWithoutCancellation
+    |> Async.RunImmediate
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let CheckMultipleInputsFinish (results, tcState: TcState) =
@@ -1458,7 +1459,7 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
     (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
-    cancellable {
+    async {
         let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
         let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
         return finishedResult
@@ -1530,8 +1531,8 @@ let CheckOneInputWithCallback
       input: ParsedInput,
       _skipImplIfSigExists: bool):
         (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
-    cancellable {
+    : Async<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
+    async {
         try
             CheckSimulateException tcConfig
 
@@ -1905,7 +1906,8 @@ let CheckMultipleInputsUsingGraphMode
         : Finisher<NodeToTypeCheck, State, PartialResult> =
 
         let (Finisher(finisher = finisher)) =
-            cancellable {
+            async {
+                do! Cancellable.UseToken()
                 use _ = UseDiagnosticsLogger logger
                 let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
                 let tcSink = TcResultsSink.NoSink
@@ -1915,7 +1917,7 @@ let CheckMultipleInputsUsingGraphMode
                         node
                         (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
             }
-            |> Cancellable.runWithoutCancellation
+            |> Async.RunImmediate
 
         Finisher(
             node,
