@@ -243,6 +243,9 @@ and remapMeasureAux tyenv unt =
           | Some tpTy -> 
               match tpTy with
               | TType_measure unt -> unt
+              | TType_var(typar= typar) when tp.Kind = TyparKind.Measure ->
+                    // This is a measure typar that is not yet solved, so we can't remap it
+                    error(Error(FSComp.SR.tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute(), typar.Range))
               | _ -> failwith "remapMeasureAux: incorrect kinds"
           | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
