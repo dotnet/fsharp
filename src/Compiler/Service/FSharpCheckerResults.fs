@@ -3307,7 +3307,9 @@ type FSharpProjectContext
 
     // TODO: Once API around Transparent Compiler is stabilized we should probably remove this.
     member _.ProjectOptions =
-        projectOptions |> Option.defaultWith (fun () -> failwith "ProjectOptions are not available. This is expected when using FSharpChecker with useTransparentCompiler=true.")
+        projectOptions
+        |> Option.defaultWith (fun () ->
+            failwith "ProjectOptions are not available. This is expected when using FSharpChecker with useTransparentCompiler=true.")
 
     member _.GetReferencedAssemblies() = assemblies
 
