@@ -7,6 +7,10 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Editor
 
+open FSharp.Compiler.Diagnostics
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
 [<RequireQualifiedAccess>]
 type LogType =
     | Info
@@ -144,5 +148,13 @@ module Activity =
             )
 
         ActivitySource.AddActivityListener(listener)
+
+    let export () =
+        OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .SetResourceBuilder(
+                    ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1.0.0"))
+                .AddOtlpExporter()
+                .Build()
 
     let listenToAll () = listen ""
