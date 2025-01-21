@@ -454,7 +454,7 @@ type public FSharpCheckFileResults =
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
         builder: IncrementalBuilder option *
-        projectOptions: FSharpProjectOptions *
+        projectOptions: FSharpProjectOptions option *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *
@@ -554,7 +554,7 @@ type public FSharpCheckProjectResults =
             AccessorDomain *
             CheckedImplFile list option *
             string[] *
-            FSharpProjectOptions) option ->
+            FSharpProjectOptions option) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =
