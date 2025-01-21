@@ -6,8 +6,9 @@ open FSharp.Test
 
 module ExperimentalAttributeCheckingTests =
     
-    [<Fact>]
-    let ``Il Experimental attribute warning is taken into account(diagnosticId)`` () =
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Il Experimental(diagnosticId) attribute warning is taken into account`` () =
         let CSLib =
             CSharp """
 using System.Diagnostics.CodeAnalysis;
@@ -41,8 +42,8 @@ let text = Class1.Test()
             (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
-    [<Fact>]
-    let ``Il Experimental attribute warning is taken into account`` () =
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Il Experimental(UrlFormat) attribute warning is taken into account`` () =
         let CSLib =
             CSharp """
 using System.Diagnostics.CodeAnalysis;
@@ -76,7 +77,7 @@ let text = Class1.Test()
             (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``F# Experimental attribute warning is taken into account`` () =
         Fsx """
 [<Experimental("Use with caution")>]
