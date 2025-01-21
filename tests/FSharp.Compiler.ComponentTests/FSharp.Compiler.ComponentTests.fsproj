@@ -219,6 +219,7 @@
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
     <Compile Include="ErrorMessages\ExtendedDiagnosticDataTests.fs" />
     <Compile Include="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
+    <Compile Include="ErrorMessages\UnitOfMeasureTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
