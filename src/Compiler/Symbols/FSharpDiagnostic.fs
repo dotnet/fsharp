@@ -78,6 +78,7 @@ module ExtendedData =
         /// Represents the URL format of the diagnostic
         member this.UrlFormat: string = urlFormat
 
+    /// Additional data for diagnostics about experimental attributes.
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
     type ExperimentalExtendedData
         internal (diagnosticId: string, urlFormat: string) =

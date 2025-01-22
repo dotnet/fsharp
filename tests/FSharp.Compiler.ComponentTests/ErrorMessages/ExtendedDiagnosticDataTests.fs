@@ -607,3 +607,21 @@ let text = Class1.Test();
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal("FS222", experimental.DiagnosticId)
         Assert.Equal("https://example.com", experimental.UrlFormat))
+       
+[<FSharp.Test.FactForNETCOREAPP>]
+let ``Warning -  ExperimentalExtendedData 03`` () =
+    FSharp """
+module Test
+
+[<Experimental("Use with caution")>]
+type Class1() =
+    static member Test() = "Hello"
+
+let text = Class1.Test();
+    """
+    |> typecheckResults
+    |> checkDiagnostic
+       (57, """Use with caution. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+       (fun (experimental: ExperimentalExtendedData) ->
+        Assert.Equal("", experimental.DiagnosticId)
+        Assert.Equal("", experimental.UrlFormat))
