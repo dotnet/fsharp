@@ -242,12 +242,12 @@ let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
     | _ ->
         ErrorD (ObsoleteDiagnostic(true, "", msg, "", m))
         
+let private extractILAttribValueFrom name namedArgs   =
+    match namedArgs with 
+    | ExtractILAttributeNamedArg name (AttribElemStringArg v) -> v 
+    | _ -> ""
 
 let private extractILAttributeInfo namedArgs =
-    let extractILAttribValueFrom name namedArgs   =
-        match namedArgs with 
-        | ExtractILAttributeNamedArg name (AttribElemStringArg v) -> v 
-        | _ -> ""
     let diagnosticId = extractILAttribValueFrom "DiagnosticId" namedArgs
     let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
     (diagnosticId, urlFormat)
@@ -259,26 +259,21 @@ let private CheckILExperimentalAttributes (g: TcGlobals) cattrs m =
     // [Experimental(diagnosticId: "DiagnosticId")]
     // [Experimental("DiagnosticId", UrlFormat = "UrlFormat")]
     // [Experimental(diagnosticId = "DiagnosticId", UrlFormat = "UrlFormat")]
-    // Constructors the Message diagnosticId.
+    // Constructors deciding on DiagnosticId and UrlFormat properties.
     | Some ([ attribElement ], namedArgs) ->
-        let extractILAttribValueFrom name namedArgs   =
-            match namedArgs with 
-            | ExtractILAttributeNamedArg name (AttribElemStringArg v) -> v 
-            | _ -> ""
-        
-        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
-        
         let diagnosticId = 
             match attribElement with 
             | ILAttribElem.String (Some msg) -> msg
             | ILAttribElem.String None
             | _ -> ""
+ 
+        let urlFormat = extractILAttribValueFrom "UrlFormat" namedArgs
 
         WarnD(Experimental(FSComp.SR.experimentalConstruct (), diagnosticId, urlFormat, m))
-    | Some (_, namedArgs) ->
-        let diagnosticId, urlFormat = extractILAttributeInfo namedArgs
-        WarnD(Experimental(FSComp.SR.experimentalConstruct (), diagnosticId, urlFormat, m))
-    // No arguments
+    // Empty constructor or only UrlFormat property are not allowed.
+    // [Experimental]
+    // [Experimental(UrlFormat = "UrlFormat")]
+    | Some _
     | None -> CompleteD
 
 let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
@@ -401,10 +396,9 @@ let private CheckFSharpExperimentalAttribute g attribs m =
                     g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
             if not (isExperimentalAttributeDisabled s) then
                 do! WarnD(Experimental(s, "", "", m))
-        | Some _ ->
-            do! WarnD(Experimental(FSComp.SR.experimentalConstruct (), "", "", m))
-        | _ ->
-            ()
+        // Empty constructor is not allowed.
+        | Some _
+        | _ -> ()
     }
     
 let private CheckUnverifiableAttribute g attribs m  =
