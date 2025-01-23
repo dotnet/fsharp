@@ -1008,7 +1008,10 @@ type TypeEquivEnv with
         aenv.BindTyparsToTypes tps tys 
 
     member aenv.FromEquivTypars tps1 tps2 = 
-        aenv.BindEquivTypars tps1 tps2 
+        aenv.BindEquivTypars tps1 tps2
+
+    member anev.ResetEquiv = 
+        if anev.NullnessMustEqual then typeEquivCheckNullness else typeEquivEnvEmpty
 
 let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
    let (TTrait(tys1, nm, mf1, argTys, retTy, _, _)) = traitInfo1
@@ -1095,8 +1098,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_var (tp1, n1), _ ->
         match aenv.EquivTypars.TryFind tp1 with
         | Some tpTy1 -> 
-            let tpTy1 = addNullnessToTy n1 tpTy1
-            typeAEquivAux erasureFlag g aenv tpTy1 ty2
+            let tpTy1 = if (nullnessEqual aenv n1 g.knownWithoutNull) then tpTy1 else addNullnessToTy n1 tpTy1            
+            typeAEquivAux erasureFlag g aenv.ResetEquiv tpTy1 ty2
         | None -> false
 
     | TType_app (tcref1, tinst1, n1), TType_app (tcref2, tinst2, n2) ->

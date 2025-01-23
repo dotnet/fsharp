@@ -123,6 +123,13 @@ module NullnessMetadata =
         |> withNoWarn 52
         |> verifyCompilation DoNotOptimize
 
+    [<Fact>]
+    let ``Override missing in signature`` () =  
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "HasSignatureWithMissingOverride.fsi")
+        |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "HasSignatureWithMissingOverride.fs"))
+        |> withNoWarn 52
+        |> verifyCompilation DoNotOptimize
+
     [<Theory; FileInlineData("NullableDowncasting.fs")>]
     let ``Downcasting and typetests`` compilation =  
         compilation
