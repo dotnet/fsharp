@@ -243,6 +243,9 @@ and remapMeasureAux tyenv unt =
           | Some tpTy -> 
               match tpTy with
               | TType_measure unt -> unt
+              | TType_var(typar= typar) when tp.Kind = TyparKind.Measure ->
+                    // This is a measure typar that is not yet solved, so we can't remap it
+                    error(Error(FSComp.SR.tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute(), typar.Range))
               | _ -> failwith "remapMeasureAux: incorrect kinds"
           | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
@@ -3528,6 +3531,10 @@ let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = 
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
     args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
+    
+[<return: Struct>]
+let (|ExtractILAttributeNamedArg|_|) nm (args: ILAttributeNamedArg list) = 
+    args |> List.tryPick (function nm2, _, _, v when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
 
 [<return: Struct>]
 let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
@@ -3543,6 +3550,8 @@ let (|AttribBoolArg|_|) = function AttribExpr(_, Expr.Const (Const.Bool n, _, _)
 
 [<return: Struct>]
 let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n | _ -> ValueNone
+
+let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
