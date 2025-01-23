@@ -120,6 +120,7 @@ module Logging =
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
+#if DEBUG
 module Activity =
     let listen filter =
         let indent (activity: Activity) =
@@ -158,3 +159,4 @@ module Activity =
                 .Build()
 
     let listenToAll () = listen ""
+#endif
