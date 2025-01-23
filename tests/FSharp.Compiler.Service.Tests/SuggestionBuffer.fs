@@ -41,7 +41,7 @@ module SuggestionBuffer =
         let results = Array.ofSeq buffer
 
         Assert.shouldBeTrue buffer.Disabled
-        Assert.shouldBeEquivalentTo [||] results
+        Assert.shouldBeEmpty results
 
     [<Fact>]
     let BufferShouldOnlyTakeTop5Elements() =

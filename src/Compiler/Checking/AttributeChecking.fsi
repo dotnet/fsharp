@@ -13,9 +13,12 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-exception ObsoleteWarning of string * range
-
-exception ObsoleteError of string * range
+exception ObsoleteDiagnostic of
+    isError: bool *
+    diagnosticId: string *
+    message: string *
+    urlFormat: string *
+    range: range
 
 type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
@@ -88,6 +91,8 @@ val PropInfoIsUnseen: m: 'a -> pinfo: PropInfo -> bool
 val CheckEntityAttributes: g: TcGlobals -> tcref: TyconRef -> m: range -> OperationResult<unit>
 
 val CheckUnionCaseAttributes: g: TcGlobals -> x: UnionCaseRef -> m: range -> OperationResult<unit>
+
+val CheckUnitOfMeasureAttributes: g: TcGlobals -> measure: Measure -> unit
 
 val CheckRecdFieldAttributes: g: TcGlobals -> x: RecdFieldRef -> m: range -> OperationResult<unit>
 

@@ -328,8 +328,8 @@ type internal BackgroundCompiler
                 | FSharpReferencedProject.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            async {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
+                            cancellable {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -341,6 +341,7 @@ type internal BackgroundCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
+                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -1065,7 +1066,7 @@ type internal BackgroundCompiler
                         tcProj.TcGlobals,
                         options.IsIncompleteTypeCheckEnvironment,
                         Some builder,
-                        options,
+                        Some options,
                         Array.ofList tcDependencyFiles,
                         creationDiags,
                         parseResults.Diagnostics,
@@ -1247,7 +1248,7 @@ type internal BackgroundCompiler
                      tcEnvAtEnd.AccessRights,
                      tcAssemblyExprOpt,
                      Array.ofList tcDependencyFiles,
-                     options)
+                     Some options)
 
                 let results =
                     FSharpCheckProjectResults(

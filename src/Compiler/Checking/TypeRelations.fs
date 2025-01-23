@@ -176,7 +176,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
          let initialTy =
              match tp.Kind with
              | TyparKind.Type -> g.obj_ty_noNulls
-             | TyparKind.Measure -> TType_measure Measure.One
+             | TyparKind.Measure -> TType_measure(Measure.One m)
          // Loop through the constraints computing the lub
          (((initialTy, false), m), tp.Constraints) ||> List.fold (fun ((maxTy, isRefined), _) tpc ->
              let join m x =
@@ -226,8 +226,8 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     maxTy, m
 
 let ChooseTyparSolution g amap tp =
-    let ty, _m = ChooseTyparSolutionAndRange g amap tp
-    if tp.Rigidity = TyparRigidity.Anon && typeEquiv g ty (TType_measure Measure.One) then
+    let ty, m = ChooseTyparSolutionAndRange g amap tp
+    if tp.Rigidity = TyparRigidity.Anon && typeEquiv g ty (TType_measure(Measure.One m)) then
         warning(Error(FSComp.SR.csCodeLessGeneric(), tp.Range))
     ty
 

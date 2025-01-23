@@ -8,9 +8,10 @@ open FSharp.Test.Compiler
 
 module Null =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Null)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_notNullCompatible01.fs"|])>]
+    [<Theory; FileInlineData("E_notNullCompatible01.fs")>]
     let ``Null - E_notNullCompatible01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -18,9 +19,10 @@ module Null =
         |> withSingleDiagnostic (Error 43, Line 14, Col 7, Line 14, Col 11, "The type 'Foo' does not have 'null' as a proper value")
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Null)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"matchNull01.fs"|])>]
+    [<Theory; FileInlineData("matchNull01.fs")>]
     let ``Null - matchNull01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck

@@ -14,7 +14,15 @@ type Cancellable =
         tokenHolder.Value
         |> ValueOption.defaultWith (fun () -> if guard then failwith msg else CancellationToken.None)
 
+    static member HasCancellationToken = tokenHolder.Value.IsSome
+
     static member Token = ensureToken "Token not available outside of Cancellable computation."
+
+    static member UseToken() =
+        async {
+            let! ct = Async.CancellationToken
+            tokenHolder.Value <- ValueSome ct
+        }
 
     static member UsingToken(ct) =
         let oldCt = tokenHolder.Value
@@ -27,6 +35,11 @@ type Cancellable =
     static member CheckAndThrow() =
         let token = ensureToken "CheckAndThrow invoked outside of Cancellable computation."
         token.ThrowIfCancellationRequested()
+
+    static member TryCheckAndThrow() =
+        match tokenHolder.Value with
+        | ValueNone -> ()
+        | ValueSome token -> token.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 
