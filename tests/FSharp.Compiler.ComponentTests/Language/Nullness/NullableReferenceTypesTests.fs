@@ -17,6 +17,20 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+[<Fact>]
+let ``Warning on nullness hidden behind interface upcast`` () =
+    FSharp """module Test
+
+open System.IO
+open System
+
+// This is bad - input is nullable, output is not = must warn
+let whatisThis (s:Stream|null) : IDisposable =
+    s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 8, Col 5, Line 8, Col 6, "Nullness warning: The types 'IDisposable' and 'IDisposable | null' do not have compatible nullability."]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Report warning when applying anon record to a nullable generic return value`` () =
