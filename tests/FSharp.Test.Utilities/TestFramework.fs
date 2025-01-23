@@ -14,12 +14,12 @@ let getShortId() = Guid.NewGuid().ToString().[..7]
 
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/xxxxxxx/"
 let tempDirectoryOfThisTestRun =
-    let temp = Path.GetTempPath()
-    lazy DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{getShortId()}")
+    let temp = DirectoryInfo(Path.Combine(__SOURCE_DIRECTORY__, @"../../artifacts/Temp/FSharp.Test.Utilities", $"{getShortId()}"))
+    lazy (temp.Create(); temp)
 
 let cleanUpTemporaryDirectoryOfThisTestRun () =
     if tempDirectoryOfThisTestRun.IsValueCreated then
-        try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
+        ()//try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
 
 let createTemporaryDirectory () =
     tempDirectoryOfThisTestRun.Value
@@ -87,10 +87,13 @@ module Commands =
         psi.RedirectStandardError <- true
         psi.Arguments <- arguments
         psi.CreateNoWindow <- true
+
         // When running tests, we want to roll forward to minor versions (including previews).
         psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
         psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
-        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
+
+        // Host can sometimes add this, and it can break things
+        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")
         psi.UseShellExecute <- false
 
         use p = new Process()

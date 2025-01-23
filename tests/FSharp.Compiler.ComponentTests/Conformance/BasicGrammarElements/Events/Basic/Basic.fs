@@ -80,18 +80,15 @@ module Events =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // NoMT	SOURCE=SanityCheck02.fs				# SanityCheck02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck02.fs"|])>]
-    let ``SanityCheck02_fs`` compilation =
-        compilation
-        |> verifyCompileAndRun
-        |> shouldSucceed
-
     // SOURCE=SanityCheck02.fs PEVER=/MD		# SanityCheck02.fs - /MD
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck02.fs"|])>]
-    let ``SanityCheck02_fs_peverify`` compilation =
+    let ``SanityCheck02`` compilation =
         compilation
         |> asExe
         |> withOptions ["--nowarn:988"]
-        |> PEVerifier.verifyPEFileWithSystemDlls
-        |> PEVerifier.shouldSucceed
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*SanityCheck02.exe Verified."
+            ]
