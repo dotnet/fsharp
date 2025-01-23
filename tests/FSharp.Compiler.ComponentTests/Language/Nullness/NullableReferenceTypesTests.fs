@@ -174,6 +174,19 @@ let safeHolder : IDisposable =
     |> shouldSucceed
 
 [<Fact>]
+let ``Can _use_ a nullable IDisposable`` () =
+    FSharp """module TestLib
+open System
+let workWithResource (getD:int -> (IDisposable|null)) =
+    use _ = getD 15
+    15
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Does not duplicate warnings`` () =
     FSharp """
 module MyLib
