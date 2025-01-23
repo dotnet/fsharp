@@ -1609,7 +1609,11 @@ and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 =
     elif isSealedTy g ty1 then 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace (mkTyparTy tp) ty1
     else
-        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1, csenv.m))
+        let newConstraint = TyparConstraint.CoercesTo(ty1, csenv.m)
+        if CheckConstraintsImplication csenv tp.Constraints newConstraint then
+            CompleteD
+        else
+            AddConstraint csenv ndeep m2 trace tp newConstraint
 
 and DepthCheck ndeep m = 
     if ndeep > 300 then 
