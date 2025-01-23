@@ -871,10 +871,8 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: PropertyInfo[] MaybeNull) : ProvidedPropertyInfo[] MaybeNull = 
-        match xs with
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: PropertyInfo[]) : ProvidedPropertyInfo[] = 
+        xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 

@@ -1,8 +1,7 @@
 module SignatureWithMissingOverride
 
-[<Sealed>]
 type MyCollection(count:int) =
-    member Count =count
+    member _.Count =count
     // This changes nullable annotation from nullable to non-nullable
     override _.ToString() : string = "MyCollection"
     // This does not change anything

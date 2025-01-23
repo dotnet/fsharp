@@ -1298,7 +1298,9 @@ Actual:
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL -> CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = "" })} )
+                | false, errorMsg, _actualIL -> 
+                    eprintfn "%s" errorMsg
+                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"

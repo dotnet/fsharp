@@ -128,7 +128,7 @@ type ProvidedType =
 
     member GetField: string -> ProvidedFieldInfo MaybeNull
 
-    member GetProperties: unit -> ProvidedPropertyInfo[] MaybeNull
+    member GetProperties: unit -> ProvidedPropertyInfo[]
 
     member GetProperty: string -> ProvidedPropertyInfo MaybeNull
 
@@ -422,7 +422,7 @@ type ProvidedExprType =
 
     | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]
 
-    | ProvidedConstantExpr of obj MaybeNull * ProvidedType
+    | ProvidedConstantExpr of objnull * ProvidedType
 
     | ProvidedDefaultExpr of ProvidedType
 
