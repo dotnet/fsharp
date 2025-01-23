@@ -103,7 +103,7 @@ module internal Activity =
 
     let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
 
-    let logEvent name (tags: (string * obj) seq) =
+    let logEvent name (tags: (string * objnull) seq) =
         match Activity.Current with
         | null -> ()
         | activity when activity.Source = activitySource ->
