@@ -811,6 +811,40 @@ let doSomething () =
         ]
         
     [<Fact>]
+    let ``Allow _ in async use! _ pattern (lift FS1228 restriction). Lang version 9 output`` () =
+        FSharp """
+module Program 
+let doSomething () =
+    async {
+        use _ = { new System.IDisposable with member _.Dispose() = printfn "disposed 1" }
+        use! __ = Async.OnCancel (fun () -> printfn "disposed 2")
+        use! res2 = Async.OnCancel (fun () -> printfn "disposed 3")
+        do! Async.Sleep(100) // Add delay to allow cancellation
+        return ()
+    }
+
+[<EntryPoint>]
+let main _ =
+    let cts = new System.Threading.CancellationTokenSource()
+    Async.Start(doSomething(), cts.Token)
+    System.Threading.Thread.Sleep(100)
+    cts.Cancel()
+    0
+    """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> withOutputContainsAllInOrder [
+            "disposed 1
+disposed 3
+disposed 2
+"
+        ]
+        
+    [<Fact>]
     let ``Allow _ in async use! _ pattern (lift FS1228 restriction). Lang version preview`` () =
         Fsx """
 open System
@@ -826,6 +860,42 @@ let doSomething () =
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Allow _ in async use! _ pattern (lift FS1228 restriction). Lang version preview output`` () =
+        FSharp """
+module Program 
+let doSomething () =
+    async {
+        use _ = { new System.IDisposable with member _.Dispose() = printfn "disposed 1" }
+        use! _ = Async.OnCancel (fun () -> printfn "disposed 2")
+        use! __ = Async.OnCancel (fun () -> printfn "disposed 3")
+        use! res2 = Async.OnCancel (fun () -> printfn "disposed 4")
+        do! Async.Sleep(100) // Add delay to allow cancellation
+        return ()
+    }
+
+[<EntryPoint>]
+let main _ =
+    let cts = new System.Threading.CancellationTokenSource()
+    Async.Start(doSomething(), cts.Token)
+    System.Threading.Thread.Sleep(100)
+    cts.Cancel()
+    0
+    """
+        |> asExe
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> withOutputContainsAllInOrder [
+            "disposed 1
+disposed 4
+disposed 3
+disposed 2
+"
+        ]
     
     [<Fact>]
     let ``Error when using use! binding with wrong form. Lang version 9`` () =
