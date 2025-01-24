@@ -68,7 +68,7 @@ exception LibraryUseOnly of range: range
 
 exception Deprecated of message: string * range: range
 
-exception Experimental of message: string * diagnosticId: string * urlFormat: string * range: range
+exception Experimental of message: string option * diagnosticId: string option * urlFormat: string option * range: range
 
 exception PossibleUnverifiableCode of range: range
 
@@ -89,9 +89,9 @@ exception DiagnosticWithSuggestions of
 
 exception ObsoleteDiagnostic of
     isError: bool *
-    diagnosticId: string *
-    message: string *
-    urlFormat: string *
+    diagnosticId: string option *
+    message: string option *
+    urlFormat: string option *
     range: range
 
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*

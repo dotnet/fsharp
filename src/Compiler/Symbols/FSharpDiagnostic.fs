@@ -70,24 +70,24 @@ module ExtendedData =
     /// Additional data for diagnostics about obsolete attributes.
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
     type ObsoleteDiagnosticExtendedData
-        internal (diagnosticId: string, urlFormat: string) =
+        internal (diagnosticId: string option, urlFormat: string option) =
         interface IFSharpDiagnosticExtendedData
         /// Represents the DiagnosticId of the diagnostic
-        member this.DiagnosticId: string = diagnosticId
+        member this.DiagnosticId: string option = diagnosticId
 
         /// Represents the URL format of the diagnostic
-        member this.UrlFormat: string = urlFormat
+        member this.UrlFormat: string option = urlFormat
 
     /// Additional data for diagnostics about experimental attributes.
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
     type ExperimentalExtendedData
-        internal (diagnosticId: string, urlFormat: string) =
+        internal (diagnosticId: string option, urlFormat: string option) =
         interface IFSharpDiagnosticExtendedData
         /// Represents the DiagnosticId of the diagnostic
-        member this.DiagnosticId: string = diagnosticId
+        member this.DiagnosticId: string option = diagnosticId
 
         /// Represents the URL format of the diagnostic
-        member this.UrlFormat: string = urlFormat
+        member this.UrlFormat: string option = urlFormat
     
     [<Experimental("This FCS API is experimental and subject to change.")>]
     type TypeMismatchDiagnosticExtendedData

@@ -7,8 +7,8 @@ open FSharp.Test
 module ExperimentalAttributeCheckingTests =
     
 
-    [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Il Experimental(diagnosticId) attribute warning is taken into account`` () =
+    [<FactForNETCOREAPP>]
+    let ``C# Experimental(diagnosticId) attribute warning is taken into account`` () =
         let CSLib =
             CSharp """
 using System.Diagnostics.CodeAnalysis;
@@ -42,8 +42,8 @@ let text = Class1.Test()
             (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
-    [<FSharp.Test.FactForNETCOREAPP>]
-    let ``Il Experimental(UrlFormat) attribute warning is taken into account`` () =
+    [<FactForNETCOREAPP>]
+    let ``C# Experimental(UrlFormat) attribute warning is taken into account`` () =
         let CSLib =
             CSharp """
 using System.Diagnostics.CodeAnalysis;
@@ -77,7 +77,7 @@ let text = Class1.Test()
             (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
-    [<FSharp.Test.FactForNETCOREAPP>]
+    [<FactForNETCOREAPP>]
     let ``F# Experimental attribute warning is taken into account`` () =
         Fsx """
 [<Experimental("Use with caution")>]
@@ -89,5 +89,36 @@ let text = Class1.Test()
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 57, Line 6, Col 12, Line 6, Col 18, """Use with caution. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+            (Warning 57, Line 6, Col 12, Line 6, Col 18, """This construct is experimental. Use with caution. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
+
+    [<Fact>]
+    let ``ExperimentalAttribute nowarn when preview specified``() =
+        Fsx """
+module TestModule =
+
+    [<ExperimentalAttribute("Preview library feature, requires '--langversion:preview'")>]
+    let getString = "A string"
+
+    if getString = "A string" then ()
+    """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``ExperimentalAttribute warn when preview not specified``() =
+        Fsx """
+module TestModule =
+
+    [<ExperimentalAttribute("Preview library feature, requires '--langversion:preview'")>]
+    let getString = "A string"
+
+    if getString = "A string" then ()
+    """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 57, Line 7, Col 8, Line 7, Col 17, """This construct is experimental. Preview library feature, requires '--langversion:preview'. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+        ]
+    
