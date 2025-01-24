@@ -1,6 +1,6 @@
 # Merges any changes from servicing branches forward.
 
-name: Flow release/prerelease changes to main
+name: Flow servicing changes to main
 on:
   push:
    branches:
