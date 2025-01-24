@@ -10,6 +10,17 @@ open TestFramework
 module ILVerifierModule =
     let config = initializeSuite ()
 
+    let fsharpCoreReference = $"--reference \"{typeof<unit>.Assembly.Location}\""
+
+    let private systemDllReferences =
+        // Get the path containing mecorlib.dll or System.Core.Private.dll
+        let refs =
+            let systemPath = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+            DirectoryInfo(systemPath).GetFiles("*.dll")
+            |> Array.map (fun dll -> $"--reference \"{Path.Combine(systemPath, dll.FullName)}\"")
+            |> Array.toList
+        (fsharpCoreReference :: refs)
+
     let private exec (dotnetExe: string) args workingDirectory =
         let arguments = args |> String.concat " "
         let exitCode, _output, errors = Commands.executeProcess dotnetExe arguments workingDirectory
@@ -58,17 +69,10 @@ module ILVerifierModule =
         result
 
     let verifyPEFile compilationResult =
-        verifyPEFileAux compilationResult [||]
+        verifyPEFileAux compilationResult [| fsharpCoreReference |]
 
     let verifyPEFileWithArgs compilationResult args =
-        verifyPEFileCore compilationResult args
+        verifyPEFileAux compilationResult (fsharpCoreReference :: args)
 
     let verifyPEFileWithSystemDlls compilationResult =
-        // Get the path containing mecorlib.dll or System.Core.Private.dll
-        let fsharpCorePath = typeof<unit>.Assembly.Location
-        let systemPath = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-        let systemDllPaths =
-            DirectoryInfo(systemPath).GetFiles("*.dll")
-            |> Array.map (fun dll -> $"--reference \"{Path.Combine(systemPath, dll.FullName)}\"")
-            |> Array.toList
-        verifyPEFileAux compilationResult ($"--reference \"{fsharpCorePath}\"" :: systemDllPaths)
+        verifyPEFileAux compilationResult systemDllReferences
