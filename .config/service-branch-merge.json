@@ -1,6 +1,6 @@
 {
     "merge-flow-configurations": {
-        // regular branch flow -->
+        // regular branch flow
         "release/dev17.13": {
             "MergeToBranch": "main",
             "ExtraSwitches": "-QuietComments"
