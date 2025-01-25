@@ -876,7 +876,8 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
 
-        Activity.logEvent "DiagnosticsLogger.StackGuard.Guard"
+        Activity.logEvent
+            "DiagnosticsLogger.StackGuard.Guard"
             (seq {
                 Activity.Tags.stackGuardName, box name
                 Activity.Tags.stackGuardCurrentDepth, depth
@@ -885,7 +886,6 @@ type StackGuard(maxDepth: int, name: string) =
                 Activity.Tags.callerFilePath, path
                 Activity.Tags.callerLineNumber, line
             })
-
 
         depth <- depth + 1
 
