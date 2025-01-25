@@ -788,7 +788,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
            dprintf "tlr: packEnv unpack =%s\n" (showL (listL bindingL unpack))
 
        // result
-       (fc, { ep_etps = []      //Zset.elements env.reqdTypars
+       (fc, { ep_etps = Zset.elements env.reqdTypars
               ep_aenvs = aenvs
               ep_pack = pack
               ep_unpack = unpack}), carrierMaps
@@ -999,7 +999,6 @@ module Pass4_RewriteAssembly =
             fBind
 
         let fHatNewBinding (shortRecBinds: Bindings) (TBind(f, b, letSeqPtOpt)) =
-            printfn $"fHatNewBinding: f:{f}   b:{b}"
             let wf = Zmap.force f penv.arityM ("fHatNewBinding - arityM", nameOfVal)
             let fHat = Zmap.force f penv.fHatM  ("fHatNewBinding - fHatM", nameOfVal)
 
