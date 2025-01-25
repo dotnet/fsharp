@@ -8,8 +8,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Editor
 
 open FSharp.Compiler.Diagnostics
-open OpenTelemetry.Resources
-open OpenTelemetry.Trace
 
 [<RequireQualifiedAccess>]
 type LogType =
@@ -122,6 +120,10 @@ module Logging =
 
 #if DEBUG
 module Activity =
+    
+    open OpenTelemetry.Resources
+    open OpenTelemetry.Trace
+
     let listen filter =
         let indent (activity: Activity) =
             let rec loop (activity: Activity) n =
