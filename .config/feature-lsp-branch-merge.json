@@ -1,6 +1,5 @@
 {
     "merge-flow-configurations": {
-        // feature branches
         "main": {
             "MergeToBranch": "feature/lsp",
             "ExtraSwitches": "-QuietComments"
