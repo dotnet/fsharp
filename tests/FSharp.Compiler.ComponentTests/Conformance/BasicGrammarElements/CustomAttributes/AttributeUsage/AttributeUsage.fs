@@ -34,21 +34,23 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
-    let ``AssemblyVersion03_fs`` compilation =
-        compilation
-        |> withOptions ["--nowarn:52"]
-        |> verifyCompileAndRun
-        |> shouldSucceed
+    [<Collection(nameof NotThreadSafeResourceCollection)>]
+    module TimeCritical =
+        // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
+        [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
+        let ``AssemblyVersion03_fs`` compilation =
+            compilation
+            |> withOptions ["--nowarn:52"]
+            |> verifyCompileAndRun
+            |> shouldSucceed
 
-    // SOURCE=AssemblyVersion04.fs							# AssemblyVersion04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion04.fs"|])>]
-    let ``AssemblyVersion04_fs`` compilation =
-        compilation
-        |> withOptions ["--nowarn:52"]
-        |> verifyCompileAndRun
-        |> shouldSucceed
+        // SOURCE=AssemblyVersion04.fs							# AssemblyVersion04.fs
+        [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion04.fs"|])>]
+        let ``AssemblyVersion04_fs`` compilation =
+            compilation
+            |> withOptions ["--nowarn:52"]
+            |> verifyCompileAndRun
+            |> shouldSucceed
 
     // SOURCE=AttributeTargetsIsCtor01.fs				# AttributeTargetsIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsCtor01.fs"|])>]
