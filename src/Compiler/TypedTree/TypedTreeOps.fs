@@ -3526,11 +3526,11 @@ let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = 
 
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
-    args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
-    
+    args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
+
 [<return: Struct>]
 let (|ExtractILAttributeNamedArg|_|) nm (args: ILAttributeNamedArg list) = 
-    args |> List.tryPick (function nm2, _, _, v when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
+    args |> List.tryPick (function nm2, _, _, v when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
 
 [<return: Struct>]
 let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
