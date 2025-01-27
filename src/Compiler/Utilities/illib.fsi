@@ -576,6 +576,8 @@ module internal MultiMap =
 
     val initBy: f: ('a -> 'b) -> xs: seq<'a> -> MultiMap<'b, 'a> when 'b: comparison
 
+    val ofList: xs: ('a * 'b) list -> MultiMap<'a,'b> when 'a: comparison
+
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 
 [<AutoOpen>]

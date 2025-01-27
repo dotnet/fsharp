@@ -2380,8 +2380,6 @@ val mkCompilationSourceNameAttr: TcGlobals -> string -> ILAttribute
 
 val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
 
-val mkCompilerGeneratedAttr: TcGlobals -> int -> ILAttribute
-
 //-------------------------------------------------------------------------
 // More common type construction
 //-------------------------------------------------------------------------
