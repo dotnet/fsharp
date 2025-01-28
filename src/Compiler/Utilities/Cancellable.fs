@@ -68,8 +68,11 @@ module Cancellable =
             try
                 use _ = Cancellable.UsingToken(ct)
                 oper ct
-            with :? OperationCanceledException as e ->
-                ValueOrCancelled.Cancelled(OperationCanceledException e.CancellationToken)
+            with
+                | :? OperationCanceledException as e when e.CancellationToken = ct ->
+                    ValueOrCancelled.Cancelled e
+                | :? OperationCanceledException as e ->
+                    InvalidOperationException("Wrong cancellation token", e) |> raise
 
     let fold f acc seq =
         Cancellable(fun ct ->
