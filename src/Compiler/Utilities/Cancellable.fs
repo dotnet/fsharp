@@ -73,13 +73,11 @@ module Cancellable =
 
     let runWithStackGuard (ct, depth) oper =
         if depth % maxDepth = 0 then
-            Async.RunSynchronously(
-                async {
-                    do! Async.SwitchToNewThread()
-                    return run (ct, depth + 1) oper
-                },
-                cancellationToken = ct
-            )
+            async {
+                do! Async.SwitchToNewThread()
+                return run (ct, depth + 1) oper
+            }
+            |> Async.RunSynchronously
         else
             run (ct, depth + 1) oper
 
