@@ -40,6 +40,8 @@ module internal Cancellable =
     /// Run a cancellable computation using the given cancellation token
     val inline run: CancellationToken * int -> Cancellable<'T> -> ValueOrCancelled<'T>
 
+    val runWithStackGuard: CancellationToken * int -> (Cancellable<'T> -> ValueOrCancelled<'T>)
+
     val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a

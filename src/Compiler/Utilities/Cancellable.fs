@@ -66,19 +66,22 @@ module Cancellable =
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
             try
-                if depth % maxDepth = 0 then
-                    Async.RunSynchronously(
-                        async {
-                            do! Async.SwitchToNewThread()
-                            return oper (ct, depth + 1)
-                        },
-                        cancellationToken = ct
-                    )
-                else
-                    oper (ct, depth + 1)
+                oper (ct, depth)
             with
             | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
             | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
+
+    let runWithStackGuard (ct, depth) oper =
+        if depth % maxDepth = 0 then
+            Async.RunSynchronously(
+                async {
+                    do! Async.SwitchToNewThread()
+                    return run (ct, depth + 1) oper
+                },
+                cancellationToken = ct
+            )
+        else
+            run (ct, depth + 1) oper
 
     let fold f acc seq =
         Cancellable(fun state ->
@@ -219,7 +222,7 @@ type CancellableBuilder() =
         Cancellable(fun _ -> ValueOrCancelled.Value v)
 
     member inline _.ReturnFrom(v: Cancellable<'T>) =
-        Cancellable(fun state -> Cancellable.run state v)
+        Cancellable(fun state -> Cancellable.runWithStackGuard state v)
 
     member inline _.Zero() =
         Cancellable(fun _ -> ValueOrCancelled.Value())
