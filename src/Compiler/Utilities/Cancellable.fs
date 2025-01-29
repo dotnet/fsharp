@@ -130,7 +130,7 @@ type CancellableBuilder() =
 
             __debugPoint ""
 
-            match Cancellable.run state comp with
+            match Cancellable.runWithStackGuard state comp with
             | ValueOrCancelled.Value v1 -> Cancellable.run state (k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
@@ -139,7 +139,7 @@ type CancellableBuilder() =
 
             __debugPoint ""
 
-            match Cancellable.run state comp with
+            match Cancellable.runWithStackGuard state comp with
             | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
