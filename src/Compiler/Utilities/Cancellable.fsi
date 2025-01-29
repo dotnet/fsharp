@@ -35,6 +35,8 @@ type internal Cancellable<'T> = Cancellable of (CancellationToken * int -> Value
 
 module internal Cancellable =
 
+    val maxDepth: int
+
     /// Run a cancellable computation using the given cancellation token
     val inline run: CancellationToken * int -> Cancellable<'T> -> ValueOrCancelled<'T>
 
