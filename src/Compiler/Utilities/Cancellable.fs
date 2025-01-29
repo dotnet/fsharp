@@ -67,9 +67,9 @@ module Cancellable =
         else
             try
                 if depth % maxDepth = 0 then
-                    Async.RunImmediate(
+                    Async.RunSynchronously(
                         async {
-                            do! Async.SwitchToThreadPool()
+                            do! Async.SwitchToNewThread()
                             return oper (ct, depth + 1)
                         },
                         cancellationToken = ct
@@ -81,12 +81,12 @@ module Cancellable =
             | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
 
     let fold f acc seq =
-        Cancellable(fun (ct, depth) ->
+        Cancellable(fun state ->
             let mutable acc = ValueOrCancelled.Value acc
 
             for x in seq do
                 match acc with
-                | ValueOrCancelled.Value accv -> acc <- run (ct, depth) (f accv x)
+                | ValueOrCancelled.Value accv -> acc <- run state (f accv x)
                 | ValueOrCancelled.Cancelled _ -> ()
 
             acc)
@@ -218,7 +218,8 @@ type CancellableBuilder() =
     member inline _.Return v =
         Cancellable(fun _ -> ValueOrCancelled.Value v)
 
-    member inline _.ReturnFrom(v: Cancellable<'T>) = v
+    member inline _.ReturnFrom(v: Cancellable<'T>) =
+        Cancellable(fun state -> Cancellable.run state v)
 
     member inline _.Zero() =
         Cancellable(fun _ -> ValueOrCancelled.Value())
