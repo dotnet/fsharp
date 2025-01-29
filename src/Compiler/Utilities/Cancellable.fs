@@ -21,7 +21,7 @@ type Cancellable =
     static member UseToken() =
         async {
             let! ct = Async.CancellationToken
-            tokenHolder.Value <- ValueSome ct
+            return Cancellable.UsingToken ct
         }
 
     static member UsingToken(ct) =
@@ -47,9 +47,7 @@ open System
 open System.Threading
 open FSharp.Compiler
 
-#if !FSHARPCORE_USE_PACKAGE
 open FSharp.Core.CompilerServices.StateMachineHelpers
-#endif
 
 [<RequireQualifiedAccess; Struct>]
 type ValueOrCancelled<'TResult> =
@@ -57,34 +55,45 @@ type ValueOrCancelled<'TResult> =
     | Cancelled of ``exception``: OperationCanceledException
 
 [<Struct>]
-type Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
+type Cancellable<'T> = Cancellable of (CancellationToken * int -> ValueOrCancelled<'T>)
 
 module Cancellable =
 
-    let inline run (ct: CancellationToken) (Cancellable oper) =
+    let maxDepth = 100
+
+    let inline run (ct: CancellationToken, depth: int) (Cancellable oper) =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
             try
-                use _ = Cancellable.UsingToken(ct)
-                oper ct
+                if depth % maxDepth = 0 then
+                    Async.RunImmediate(
+                        async {
+                            do! Async.SwitchToThreadPool()
+                            return oper (ct, depth + 1)
+                        },
+                        cancellationToken = ct
+                    )
+                else
+                    oper (ct, depth + 1)
             with
             | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
             | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
 
     let fold f acc seq =
-        Cancellable(fun ct ->
+        Cancellable(fun (ct, depth) ->
             let mutable acc = ValueOrCancelled.Value acc
 
             for x in seq do
                 match acc with
-                | ValueOrCancelled.Value accv -> acc <- run ct (f accv x)
+                | ValueOrCancelled.Value accv -> acc <- run (ct, depth) (f accv x)
                 | ValueOrCancelled.Cancelled _ -> ()
 
             acc)
 
     let runWithoutCancellation comp =
-        let res = run CancellationToken.None comp
+        use _ = Cancellable.UsingToken CancellationToken.None
+        let res = run (CancellationToken.None, 1) comp
 
         match res with
         | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation"
@@ -93,7 +102,8 @@ module Cancellable =
     let toAsync c =
         async {
             let! ct = Async.CancellationToken
-            let res = run ct c
+            use! _holder = Cancellable.UseToken()
+            let res = run (ct, 1) c
 
             return!
                 Async.FromContinuations(fun (cont, _econt, ccont) ->
@@ -102,54 +112,51 @@ module Cancellable =
                     | ValueOrCancelled.Cancelled ce -> ccont ce)
         }
 
-    let token () = Cancellable(ValueOrCancelled.Value)
+    let token () =
+        Cancellable(fun (ct, _) -> ValueOrCancelled.Value ct)
 
 type CancellableBuilder() =
 
     member inline _.Delay([<InlineIfLambda>] f) =
-        Cancellable(fun ct ->
+        Cancellable(fun state ->
             let (Cancellable g) = f ()
-            g ct)
+            g state)
 
     member inline _.Bind(comp, [<InlineIfLambda>] k) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
+        Cancellable(fun state ->
 
-            match Cancellable.run ct comp with
-            | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
+            __debugPoint ""
+
+            match Cancellable.run state comp with
+            | ValueOrCancelled.Value v1 -> Cancellable.run state (k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
+        Cancellable(fun state ->
 
-            match Cancellable.run ct comp with
+            __debugPoint ""
+
+            match Cancellable.run state comp with
             | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.Combine(comp1, comp2) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
-            __debugPoint ""
-#endif
+        Cancellable(fun state ->
 
-            match Cancellable.run ct comp1 with
-            | ValueOrCancelled.Value() -> Cancellable.run ct comp2
+            __debugPoint ""
+
+            match Cancellable.run state comp1 with
+            | ValueOrCancelled.Value() -> Cancellable.run state comp2
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
+        Cancellable(fun state ->
+
             __debugPoint ""
-#endif
 
             let compRes =
                 try
-                    match Cancellable.run ct comp with
+                    match Cancellable.run state comp with
                     | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
                     | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
                 with err ->
@@ -159,19 +166,19 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value res ->
                 match res with
                 | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> Cancellable.run ct (handler err)
+                | Choice2Of2 err -> Cancellable.run state (handler err)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.Using(resource, [<InlineIfLambda>] comp) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
+        Cancellable(fun state ->
+
             __debugPoint ""
-#endif
+
             let body = comp resource
 
             let compRes =
                 try
-                    match Cancellable.run ct body with
+                    match Cancellable.run state body with
                     | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
                     | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
                 with err ->
@@ -187,14 +194,13 @@ type CancellableBuilder() =
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
-        Cancellable(fun ct ->
-#if !FSHARPCORE_USE_PACKAGE
+        Cancellable(fun state ->
+
             __debugPoint ""
-#endif
 
             let compRes =
                 try
-                    match Cancellable.run ct comp with
+                    match Cancellable.run state comp with
                     | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
                     | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
                 with err ->

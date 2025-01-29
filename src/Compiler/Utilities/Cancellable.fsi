@@ -5,7 +5,7 @@ open System.Threading
 
 [<Sealed>]
 type Cancellable =
-    static member internal UseToken: unit -> Async<unit>
+    static member internal UseToken: unit -> Async<IDisposable>
 
     /// For use in testing only. Cancellable.token should be set only by the cancellable computation.
     static member internal UsingToken: CancellationToken -> IDisposable
@@ -31,12 +31,12 @@ type internal ValueOrCancelled<'TResult> =
 /// A cancellable computation may be cancelled via a CancellationToken, which is propagated implicitly.
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
 [<Struct>]
-type internal Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
+type internal Cancellable<'T> = Cancellable of (CancellationToken * int -> ValueOrCancelled<'T>)
 
 module internal Cancellable =
 
     /// Run a cancellable computation using the given cancellation token
-    val inline run: ct: CancellationToken -> Cancellable<'T> -> ValueOrCancelled<'T>
+    val inline run: CancellationToken * int -> Cancellable<'T> -> ValueOrCancelled<'T>
 
     val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
 
