@@ -5,10 +5,8 @@ open System.Threading
 
 [<Sealed>]
 type Cancellable =
+    /// Capture the current cancellation token for use in CheckAndThrow.
     static member internal UseToken: unit -> Async<IDisposable>
-
-    /// For use in testing only. Cancellable.token should be set only by the cancellable computation.
-    static member internal UsingToken: CancellationToken -> IDisposable
 
     static member HasCancellationToken: bool
     static member Token: CancellationToken
@@ -34,8 +32,6 @@ type internal ValueOrCancelled<'TResult> =
 type internal Cancellable<'T> = Cancellable of (CancellationToken * int -> ValueOrCancelled<'T>)
 
 module internal Cancellable =
-
-    val maxDepth: int
 
     /// Run a cancellable computation using the given cancellation token
     val run: CancellationToken * int -> Cancellable<'T> -> ValueOrCancelled<'T>

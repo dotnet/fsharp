@@ -2327,6 +2327,7 @@ and [<Sealed>] TcImports
         async {
             CheckDisposed()
 
+            use! _holder = Cancellable.UseToken()
 
             let tcConfig = tcConfigP.Get ctok
 

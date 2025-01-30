@@ -61,22 +61,25 @@ module Cancellable =
 
     let maxDepth = 100
 
+    let handleCheckAndThrow (ct: CancellationToken, depth) oper =
+        try
+            oper (ct, depth)
+        with
+        | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
+        | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
+
     let run (ct: CancellationToken, depth: int) (Cancellable oper) =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
-            try
-                if depth % maxDepth = 0 then
-                    async {
-                        do! Async.SwitchToNewThread()
-                        return oper (ct, depth + 1)
-                    }
-                    |> Async.RunSynchronously
-                else 
-                    oper (ct, depth + 1)
-            with
-            | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
-            | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
+            if depth % maxDepth = 0 then
+                async {
+                    do! Async.SwitchToNewThread()
+                    return handleCheckAndThrow (ct, depth + 1) oper
+                }
+                |> Async.RunSynchronously
+            else 
+                handleCheckAndThrow (ct, depth + 1) oper
 
     let fold f acc seq =
         Cancellable(fun state ->
