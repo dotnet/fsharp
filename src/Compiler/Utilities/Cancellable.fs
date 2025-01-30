@@ -61,25 +61,22 @@ module Cancellable =
 
     let maxDepth = 100
 
-    let inline run (ct: CancellationToken, depth: int) (Cancellable oper) =
+    let run (ct: CancellationToken, depth: int) (Cancellable oper) =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
             try
-                oper (ct, depth)
+                if depth % maxDepth = 0 then
+                    async {
+                        do! Async.SwitchToNewThread()
+                        return oper (ct, depth + 1)
+                    }
+                    |> Async.RunSynchronously
+                else 
+                    oper (ct, depth + 1)
             with
             | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
             | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
-
-    let runWithStackGuard (ct, depth) oper =
-        if depth % maxDepth = 0 then
-            async {
-                do! Async.SwitchToNewThread()
-                return run (ct, depth + 1) oper
-            }
-            |> Async.RunSynchronously
-        else
-            run (ct, depth + 1) oper
 
     let fold f acc seq =
         Cancellable(fun state ->
@@ -128,7 +125,7 @@ type CancellableBuilder() =
 
             __debugPoint ""
 
-            match Cancellable.runWithStackGuard state comp with
+            match Cancellable.run state comp with
             | ValueOrCancelled.Value v1 -> Cancellable.run state (k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
@@ -137,7 +134,7 @@ type CancellableBuilder() =
 
             __debugPoint ""
 
-            match Cancellable.runWithStackGuard state comp with
+            match Cancellable.run state comp with
             | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
@@ -220,7 +217,7 @@ type CancellableBuilder() =
         Cancellable(fun _ -> ValueOrCancelled.Value v)
 
     member inline _.ReturnFrom(v: Cancellable<'T>) =
-        Cancellable(fun state -> Cancellable.runWithStackGuard state v)
+        Cancellable(fun state -> Cancellable.run state v)
 
     member inline _.Zero() =
         Cancellable(fun _ -> ValueOrCancelled.Value())

@@ -38,9 +38,7 @@ module internal Cancellable =
     val maxDepth: int
 
     /// Run a cancellable computation using the given cancellation token
-    val inline run: CancellationToken * int -> Cancellable<'T> -> ValueOrCancelled<'T>
-
-    val runWithStackGuard: CancellationToken * int -> (Cancellable<'T> -> ValueOrCancelled<'T>)
+    val run: CancellationToken * int -> Cancellable<'T> -> ValueOrCancelled<'T>
 
     val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
 
