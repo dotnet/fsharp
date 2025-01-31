@@ -45,7 +45,7 @@ module internal Activity =
 
     val addEvent: name: string -> unit
 
-    val logEvent: name: string -> tags: (string * objnull) seq -> unit
+    val addEventWithTags: name: string -> tags: (string * objnull) seq -> unit
 
     module Profiling =
         val startAndMeasureEnvironmentStats: name: string -> IDisposable

@@ -876,7 +876,7 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
 
-        Activity.logEvent
+        Activity.addEventWithTags
             "DiagnosticsLogger.StackGuard.Guard"
             (seq {
                 Activity.Tags.stackGuardName, box name

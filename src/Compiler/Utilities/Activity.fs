@@ -103,7 +103,7 @@ module internal Activity =
 
     let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
 
-    let logEvent name (tags: (string * objnull) seq) =
+    let addEventWithTags name (tags: (string * objnull) seq) =
         match Activity.Current with
         | null -> ()
         | activity when activity.Source = activitySource ->
@@ -112,7 +112,7 @@ module internal Activity =
             activity.AddEvent event |> ignore
         | _ -> ()
 
-    let addEvent name = logEvent name Seq.empty
+    let addEvent name = addEventWithTags name Seq.empty
 
     module Profiling =
 
