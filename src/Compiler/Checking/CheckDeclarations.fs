@@ -5479,7 +5479,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) (ct: CancellationToken) =
 
     if ct.IsCancellationRequested then
-        ValueOrCancelled.Cancelled (OperationCanceledException())
+        ValueOrCancelled.Cancelled(OperationCanceledException ct)
     else
         match moreDefs with
         | [] ->

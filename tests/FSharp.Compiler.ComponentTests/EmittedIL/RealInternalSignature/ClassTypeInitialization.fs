@@ -34,6 +34,7 @@ module MyModule =
         printfn "Hello from main method"
         0
         """
+        |> withName "SimpleTypesInNamespace"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -42,6 +43,11 @@ module MyModule =
             "Hello, World from MyLibrary.MySecondType"
             "Hello from main method"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*SimpleTypesInNamespace.exe Verified."
+            ]
+
 
 
     [<InlineData(true)>]        // RealSig
@@ -60,6 +66,7 @@ type MySecondType =
 
 printfn "Hello from implicit main method"
         """
+        |> withName "SimpleTypesInImplicitMain"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
@@ -68,6 +75,10 @@ printfn "Hello from implicit main method"
             "Hello, World from MyProgram.MySecondType"
             "Hello from implicit main method"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*SimpleTypesInImplicitMain.exe Verified."
+            ]
 
 
     [<InlineData(true)>]        // RealSig
@@ -91,6 +102,7 @@ module MyModule =
         printfn "Hello from main method"
         0
         """
+        |> withName "SimpleTypeOneAndTypeTwoInNamespace"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> withStdOutContainsAllInOrder [
@@ -99,6 +111,10 @@ module MyModule =
             "Hello from main method"
         ]
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*SimpleTypeOneAndTypeTwoInNamespace.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -130,12 +146,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PublicTypePublicCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PublicTypePublicCtor.exe Verified."
+            ]
 
 
     [<InlineData(true)>]        // RealSig
@@ -168,12 +189,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PublicTypeInternalCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PublicTypeInternalCtor.exe Verified."
+            ]
 
 
     [<InlineData(true)>]        // RealSig
@@ -206,12 +232,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PublicTypePrivateCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PublicTypePrivateCtor.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -243,12 +274,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PublicTypeUnspecifiedCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PublicTypeUnspecifiedCtor.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -280,13 +316,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PrivateTypePublicCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
-
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PrivateTypePublicCtor.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -318,12 +358,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PrivateTypeInternalCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PrivateTypeInternalCtor.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -362,12 +407,17 @@ type FSharpSource with
 module doit =
     printfn "Main program"
         """
+        |> withName "PrivateTypePrivateCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PrivateTypePrivateCtor.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -399,12 +449,17 @@ module doit =
     FSharpSource.CreateFromFile("Hello") |> ignore
     printfn "Main program"
         """
+        |> withName "PrivateTypeUnspecifiedCtor"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Main program"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*PrivateTypeUnspecifiedCtor.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -439,12 +494,17 @@ let message = FSharpSourceFromFile.SetIt ("Here is something")
 
 printfn $"{message}"
         """
+        |> withName "StaticInitializationNoInlinePrivateField"
         |> withRealInternalSignature realSig
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContainsAllInOrder [
             "Here is something"
         ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*StaticInitializationNoInlinePrivateField.exe Verified."
+            ]
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
@@ -476,6 +536,7 @@ type MyClass =
 
 printfn "%A" (MyClass.result())
 """
+        |> withName "ComputationExpressionAccessPrivateBinding"
         |> withRealInternalSignature realSig
         |> withNoOptimize
         |> compileExeAndRun
@@ -483,7 +544,10 @@ printfn "%A" (MyClass.result())
         |> withStdOutContainsAllInOrder [
             "Some 3"
         ]
-
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*ComputationExpressionAccessPrivateBinding.exe Verified."
+            ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
@@ -495,11 +559,16 @@ printfn "%A" (MyClass.result())
         let source = File.ReadAllText (path)
 
         FSharp source
+        |> withName "NestedGenericClosure"
         |> asExe
         |> withRealInternalSignature realSig
         |> withOptimization optimize
         |> compileAndRun
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*NestedGenericClosure.exe Verified."
+            ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
@@ -538,11 +607,16 @@ module doIt =
     for i in enumerator.MoveNext() do
         printfn "%A" i
     """
+        |> withName "GenericClassWithClosureWithConstraints"
         |> asExe
         |> withRealInternalSignature realSig
         |> withOptimization optimize
         |> compileAndRun
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*GenericClassWithClosureWithConstraints.exe Verified."
+            ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
@@ -700,11 +774,16 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         let keep = FilterAndHold(tok)
         AssignWithStrength(tok, keep)
     """
+        |> withName "AgedLookup"
         |> asLibrary
         |> withRealInternalSignature realSig
         |> withOptimization optimize
         |> compile
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*AgedLookup.dll Verified."
+            ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
@@ -718,11 +797,16 @@ namespace Equality
 
 type BigGenericTuple<'a> = BigGenericTuple of int * 'a * byte * int * 'a * byte
     """
+        |> withName "BigTuples"
         |> asLibrary
         |> withRealInternalSignature realSig
         |> withOptimization optimize
         |> compile
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*BigTuples.dll Verified."
+            ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
@@ -735,14 +819,18 @@ type BigGenericTuple<'a> = BigGenericTuple of int * 'a * byte * int * 'a * byte
 module GroupByTest
 let ``for _ in Array groupBy id [||] do ...`` () = [|for _ in Array.groupBy id [||] do 0|]
     """
+        |> withName "ArrayGroupById"
         |> asLibrary
         |> withRealInternalSignature realSig
         |> withOptimization optimize
         |> compile
         |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*ArrayGroupById.dll Verified."
+            ]
 
-
-    let roundTripWithInterfaceGeneration(realsig, optimize, implementationFile) =
+    let roundTripWithInterfaceGeneration(realsig, optimize, implementationFile, name) =
 
         let generatedSignature =
             Fs implementationFile
@@ -751,6 +839,7 @@ let ``for _ in Array groupBy id [||] do ...`` () = [|for _ in Array.groupBy id [
             |> printSignatures
 
         Fsi generatedSignature
+        |> withName name
         |> asLibrary
         |> withAdditionalSourceFile (FsSource implementationFile)
         |> withRealInternalSignature realsig
@@ -774,7 +863,11 @@ type IMonad<'a> =
         abstract bind : #IMonad<'a> -> ('a -> #IMonad<'b>) -> IMonad<'b>
     end"""
 
-        roundTripWithInterfaceGeneration(realsig, optimize, implementationFile)
+        roundTripWithInterfaceGeneration(realsig, optimize, implementationFile, "GenericParameterOrderRoundtrip")
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*GenericParameterOrderRoundtrip.dll Verified."
+            ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
@@ -803,4 +896,8 @@ namespace GenericInterfaceTest
           new(x) = { store = x }
       end"""
 
-        roundTripWithInterfaceGeneration(realsig, optimize, implementationFile)
+        roundTripWithInterfaceGeneration(realsig, optimize, implementationFile, "MembersBasicRoundtrip")
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*MembersBasicRoundtrip.dll Verified."
+            ]
