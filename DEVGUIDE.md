@@ -243,6 +243,16 @@ or
 > Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
 
 
+### Parallel execution of tests
+
+Tests utilizing xUnit framework by default run in parallel. If your tests depend on some shared state or are time-critical, you can add the module to predefined `NotThreadSafeResourceCollection` to prevent parallel execution.
+For example:
+```fsharp
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module TimeCritical =
+```
+
+
 ### Updating FCS surface area baselines
 
 ```bash

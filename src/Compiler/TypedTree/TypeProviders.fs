@@ -122,7 +122,6 @@ let CreateTypeProvider (
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
-#if FSHARPCORE_USE_PACKAGE
             TypeProviderConfig(systemRuntimeContainsType,
                 ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
@@ -131,16 +130,7 @@ let CreateTypeProvider (
                 IsInvalidationSupported=isInvalidationSupported, 
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-#else
-            TypeProviderConfig(systemRuntimeContainsType,
-                ReferencedAssemblies=getReferencedAssemblies(),
-                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
-                RuntimeAssembly=runtimeAssemblyPath, 
-                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
-                IsInvalidationSupported=isInvalidationSupported, 
-                IsHostedExecution= isInteractive, 
-                SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-#endif
+
         protect (fun () -> !!(Activator.CreateInstance(typeProviderImplementationType, [| box e|])) :?> ITypeProvider )
 
     elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
