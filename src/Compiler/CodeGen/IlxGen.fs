@@ -601,8 +601,10 @@ let voidCheck m g permits ty =
         error (InternalError("System.Void unexpectedly detected in IL code generation. This should not occur.", m))
 #endif
 
+[<Struct>]
+type DuFieldCoordinates = {CaseIdx: int; FieldIdx: int}
 /// Structure for maintaining field reuse across struct unions
-type UnionFieldReuseMap = MultiMap<string, {| CaseIdx: int; FieldIdx: int |}>
+type UnionFieldReuseMap = MultiMap<string, DuFieldCoordinates >
 
 let unionFieldReuseMapping thisUnionTy (cases: UnionCase[]) : UnionFieldReuseMap =
 
@@ -617,7 +619,7 @@ let unionFieldReuseMapping thisUnionTy (cases: UnionCase[]) : UnionFieldReuseMap
 
                 for j = 0 to fields.Length - 1 do
                     let f = fields[j]
-                    yield fieldKey f, {| CaseIdx = i; FieldIdx = j |}
+                    yield fieldKey f, {CaseIdx = i; FieldIdx = j }
         ]
         |> MultiMap.ofList
 
