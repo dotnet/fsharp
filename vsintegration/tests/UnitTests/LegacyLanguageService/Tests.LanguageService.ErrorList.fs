@@ -519,7 +519,7 @@ type staticInInterface =
                         |> List.exists(fun error -> (error.ToString().Contains("新規baProgram")))) 
 
     // In this bug, particular warns were still present after nowarn        
-    [<Fact(Skip="This needs to be re-enabled once VS is adapted to new WarnScopes")>]
+    [<Fact(Skip = "GetErrors function does not work for this case")>]
     member public this.``NoWarn.Bug5424``() =  
         let fileContent = """
             #nowarn "67" // this type test or downcast will always hold
