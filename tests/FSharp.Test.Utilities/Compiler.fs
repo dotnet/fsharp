@@ -204,6 +204,8 @@ module rec Compiler =
         with
             member this.Output = match this with Success o | Failure o -> o
             member this.RunOutput = this.Output.Output
+            member this.Compilation = this.Output.Compilation
+            member this.OutputPath = this.Output.OutputPath
 
     type ExecutionPlatform =
         | Anycpu = 0
@@ -1468,7 +1470,6 @@ Actual:
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
-
         let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
                 let mdi = reader.GetMethodDebugInformation sp
@@ -1480,7 +1481,6 @@ Actual:
             failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
 
     let private verifyDocuments (reader: MetadataReader) expectedDocuments =
-
         let documents =
             [ for doc in reader.Documents do
                 if not doc.IsNil then
@@ -1819,7 +1819,20 @@ Actual:
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
-        let private checkOutputInOrder (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
+        let private getMatch (input: string) (pattern: string) useWildcards=
+            // Escape special characters and replace wildcards with regex equivalents
+            if useWildcards then
+                let input = input.Replace("\r\n", "\n")
+                let pattern = $"""^{Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", ".")}$"""
+                let m = Regex(pattern, RegexOptions.Multiline).Match(input)
+                if m.Success then
+                    m.Index
+                else 
+                    -1
+            else
+                input.IndexOf(pattern) 
+
+        let private checkOutputInOrderCore useWildcards (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None ->
                 printfn "Execution output is missing cannot check \"%A\"" category
@@ -1827,20 +1840,23 @@ Actual:
             | Some o ->
                 match o with
                 | ExecutionOutput e ->
-                    let where = selector e
+                    let input = selector e
                     let mutable searchPos = 0
                     for substring in substrings do
-                        match where.IndexOf(substring, searchPos) with
-                        | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                        match getMatch (input.Substring(searchPos)) substring useWildcards with
+                        | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category input)
                         | pos -> searchPos <- pos + substring.Length
                 | _ -> failwith "Cannot check output on this run result."
             result
+
+        let private checkOutputInOrder category substrings selector result =
+            checkOutputInOrderCore false category substrings selector result
 
         let withOutputContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
 
         let withStdOutContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut) result
+            checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut)  result
 
         let withStdOutContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDOUT" substrings (fun o -> o.StdOut) result
@@ -1850,6 +1866,24 @@ Actual:
 
         let withStdErrContains (substring: string) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDERR" [substring] (fun o -> o.StdErr) result
+
+        let private checkOutputInOrderWithWildcards category substrings selector result =
+            checkOutputInOrderCore true category substrings selector result
+
+        let withOutputContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
+
+        let withStdOutContainsWithWildcards (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDOUT" [substring] (fun o -> o.StdOut)  result
+
+        let withStdOutContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDOUT" substrings (fun o -> o.StdOut) result
+
+        let withStdErrContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDERR" substrings (fun o -> o.StdErr) result
+
+        let withStdErrContainsWithWildcards (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with

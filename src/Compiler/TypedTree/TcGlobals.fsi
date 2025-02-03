@@ -1199,6 +1199,8 @@ type internal TcGlobals =
 
     member system_IDisposable_ty: FSharp.Compiler.TypedTree.TType
 
+    member system_IDisposableNull_ty: FSharp.Compiler.TypedTree.TType
+
     member system_IFormattable_tcref: FSharp.Compiler.TypedTree.EntityRef
 
     member system_IFormattable_ty: FSharp.Compiler.TypedTree.TType
