@@ -297,7 +297,7 @@ let mkSeqEmpty (cenv: TcFileState) env m genTy =
 
 let mkSeqUsing (cenv: TcFileState) (env: TcEnv) m resourceTy genTy resourceExpr lam =
     let g = cenv.g
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace g.system_IDisposable_ty resourceTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace g.system_IDisposableNull_ty resourceTy
     let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam
