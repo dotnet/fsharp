@@ -348,7 +348,7 @@ module RuntimeHelpers =
 
     let EnumerateUsing (resource : 'T :> System.IDisposable) (source: 'T -> #seq<'U>) =
         (FinallyEnumerable((fun () -> match box resource with null -> () | _ -> resource.Dispose()),
-                           (fun () -> source resource :> seq<_>)) :> seq<_>)
+                           (fun () -> source resource :> seq<'U>)) :> seq<'U>)
 
     let mkConcatSeq (sources: seq<'U :> seq<'T>>) =
         mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
