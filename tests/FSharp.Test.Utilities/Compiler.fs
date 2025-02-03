@@ -1586,8 +1586,8 @@ Actual:
                 if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
 
-        let consequtiveWhiteSpaceTrimmer = new Regex(@"\s\s+")
-        let trimExtraSpaces s = consequtiveWhiteSpaceTrimmer.Replace(s," ")
+        let consequtiveWhiteSpaceTrimmer = new Regex(@"(\r\n|\n|\ |\t)(\ )+")
+        let trimExtraSpaces s = consequtiveWhiteSpaceTrimmer.Replace(s,"$1")
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
 
