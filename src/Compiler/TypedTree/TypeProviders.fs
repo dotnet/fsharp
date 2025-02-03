@@ -1261,7 +1261,7 @@ let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace:
 
         // Check if the provided namespace name is an exact match of the required namespace name
         if displayName = providedNamespaceName then
-            let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.CreateNoContext(providedNamespace.ResolveTypeName typeName)), range=m) 
+            let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.Create ProvidedTypeContext.Empty (providedNamespace.ResolveTypeName typeName)), range=m) 
             match resolvedType with
             | Tainted.Null -> None
             | Tainted.NonNull result -> 
