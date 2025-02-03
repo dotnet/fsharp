@@ -316,8 +316,13 @@ module internal FileContent =
     val readFileContents: fileNames: string list -> unit
 
     type IFileContentGetLine =
-        abstract GetLine: fileName: string -> line: int -> string
-        abstract GetLineNewLineMark: fileName: string -> string
+        abstract GetLine: fileName: string * line: int -> string
+        
+    type DefaultFileContentGetLine =
+        new: unit -> DefaultFileContentGetLine
+        abstract GetLine: fileName: string * line: int -> string
+        override GetLine: fileName: string * line: int -> string
+        interface IFileContentGetLine
 
     /// Get a line string from already read files.
     ///

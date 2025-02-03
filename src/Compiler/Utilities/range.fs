@@ -703,53 +703,43 @@ module Range =
 
 module internal FileContent =
     let private fileContentDict = ConcurrentDictionary<string, string array>()
-    let private newlineMarkDict = ConcurrentDictionary<string, string>()
 
     let readFileContents (fileNames: string list) =
         for fileName in fileNames do
             if FileSystem.FileExistsShim fileName then
                 use fileStream = FileSystem.OpenFileForReadShim(fileName)
-                let text = fileStream.ReadAllText()
-
-                let newlineMark =
-                    if text.IndexOf('\n') > -1 && text.IndexOf('\r') = -1 then
-                        "\n"
-                    else
-                        "\r\n"
-
-                newlineMarkDict[fileName] <- newlineMark
-                fileContentDict[fileName] <- text.Split([| newlineMark |], StringSplitOptions.None)
+                fileContentDict[fileName] <- fileStream.ReadAllLines()
 
     type IFileContentGetLine =
-        abstract GetLine: fileName: string -> line: int -> string
-        abstract GetLineNewLineMark: fileName: string -> string
+        abstract GetLine: fileName: string * line: int -> string
 
-    let mutable getLineDynamic =
-        { new IFileContentGetLine with
-            member this.GetLine (fileName: string) (line: int) : string =
-                match fileContentDict.TryGetValue fileName with
-                | true, lines when lines.Length > line -> lines[line - 1]
-                | _ -> String.Empty
+    type DefaultFileContentGetLine() =
 
-            member this.GetLineNewLineMark(fileName: string) : string =
-                match newlineMarkDict.TryGetValue fileName with
-                | true, res -> res
-                | _ -> String.Empty
-        }
+        abstract GetLine: fileName: string * line: int -> string
+
+        default _.GetLine(fileName: string, line: int) : string =
+            match fileContentDict.TryGetValue fileName with
+            | true, lines when lines.Length > line -> lines[line - 1]
+            | _ -> String.Empty
+
+        interface IFileContentGetLine with
+            member this.GetLine(fileName: string, line: int) : string = this.GetLine(fileName, line)
+
+    let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
 
     let getCodeText (m: range) =
+        let filename, startLine, endLine =
+            if m.HasOriginalRange then
+                m.OriginalFileName, m.OriginalStartLine, m.OriginalEndLine
+            else
+                m.FileName, m.StartLine, m.EndLine
+
         let endCol = m.EndColumn - 1
         let startCol = m.StartColumn - 1
 
         let s =
-            let filename, startLine, endLine =
-                if m.HasOriginalRange then
-                    m.OriginalFileName, m.OriginalStartLine, m.OriginalEndLine
-                else
-                    m.FileName, m.StartLine, m.EndLine
-
-            [| for i in startLine..endLine -> getLineDynamic.GetLine filename i |]
-            |> String.concat (getLineDynamic.GetLineNewLineMark filename)
+            [| for i in startLine..endLine -> getLineDynamic.GetLine(filename, i) |]
+            |> String.concat "\n"
 
         if String.IsNullOrEmpty s then
             s
@@ -757,4 +747,4 @@ module internal FileContent =
             try
                 s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
             with ex ->
-                raise(System.AggregateException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))
+                raise (System.AggregateException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))

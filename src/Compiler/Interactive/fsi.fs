@@ -4677,11 +4677,12 @@ type FsiEvaluationSession
 
     do
         FileContent.getLineDynamic <-
-            { new FileContent.IFileContentGetLine with
-                member this.GetLine (fileName: string) (line: int) : string =
-                    fsiStdinSyphon.GetLineNoPrune fileName line
-
-                member this.GetLineNewLineMark _ : string = "\n"
+            { new FileContent.DefaultFileContentGetLine() with
+                override _.GetLine(fileName: string, line: int) : string =
+                    if fileName = stdinMockFileName then
+                        fsiStdinSyphon.GetLineNoPrune fileName line
+                    else
+                        base.GetLine(fileName, line)
             }
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
