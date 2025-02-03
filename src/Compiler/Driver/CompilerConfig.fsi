@@ -17,6 +17,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.BuildGraph
 
@@ -434,7 +435,7 @@ type TcConfigBuilder =
 
         mutable deterministic: bool
 
-        mutable concurrentBuild: bool
+        mutable parallelParsing: bool
 
         mutable parallelIlxGen: bool
 
@@ -525,6 +526,8 @@ type TcConfigBuilder =
         mutable dumpSignatureData: bool
 
         mutable realsig: bool
+
+        mutable compilationMode: TcGlobals.CompilationMode
     }
 
     static member CreateNew:
@@ -768,7 +771,7 @@ type TcConfig =
 
     member deterministic: bool
 
-    member concurrentBuild: bool
+    member parallelParsing: bool
 
     member parallelIlxGen: bool
 
@@ -904,6 +907,8 @@ type TcConfig =
 
     member realsig: bool
 
+    member compilationMode: TcGlobals.CompilationMode
+
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
 [<Sealed>]
@@ -922,7 +927,20 @@ val TryResolveFileUsingPaths: paths: string seq * m: range * fileName: string ->
 
 val ResolveFileUsingPaths: paths: string seq * m: range * fileName: string -> string
 
-val GetWarningNumber: m: range * warningNumber: string * prefixSupported: bool -> int option
+[<RequireQualifiedAccess>]
+type WarningNumberSource =
+    | CommandLineOption
+    | CompilerDirective
+
+[<RequireQualifiedAccess>]
+type WarningDescription =
+    | Int32 of int
+    | String of string
+    | Ident of Ident
+
+val GetWarningNumber:
+    m: range * description: WarningDescription * langVersion: LanguageVersion * source: WarningNumberSource ->
+        int option
 
 /// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName: unit -> string

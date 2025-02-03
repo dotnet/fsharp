@@ -448,6 +448,7 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.NotSupportsNull _
      | TyparConstraint.IsNonNullableStruct _
      | TyparConstraint.IsUnmanaged _
+     | TyparConstraint.AllowsRefStruct _
      | TyparConstraint.IsReferenceType _
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
@@ -550,7 +551,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 if isLessAccessible tyconAcc valAcc then
                     let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
                     let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
-                    warning(AttributeChecking.ObsoleteWarning(warningText, m))
+                    warning(AttributeChecking.ObsoleteDiagnostic(false, "", warningText, "", m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 
@@ -1957,7 +1958,8 @@ and CheckAttribArgExpr cenv env expr =
         | Const.Single _
         | Const.Char _
         | Const.Zero
-        | Const.String _  -> ()
+        | Const.String _  
+        | Const.Decimal _ -> ()
         | _ ->
             if cenv.reportErrors then
                 errorR (Error (FSComp.SR.tastNotAConstantExpression(), m))

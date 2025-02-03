@@ -15,6 +15,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.NicePrint
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open Internal.Utilities.TypeHashing
 open FSharp.Core.Printf
 open FSharp.Compiler
 open FSharp.Compiler.Syntax
@@ -347,7 +348,7 @@ type internal TypeCheckInfo
         tcAccessRights: AccessorDomain,
         projectFileName: string,
         mainInputFileName: string,
-        projectOptions: FSharpProjectOptions,
+        projectOptions: FSharpProjectOptions option,
         sResolutions: TcResolutions,
         sSymbolUses: TcSymbolUses,
         sFallback: NameResolutionEnv,
@@ -537,7 +538,7 @@ type internal TypeCheckInfo
                         // check that type of value is the same or subtype of tcref
                         // yes - allow access to protected members
                         // no - strip ability to access protected members
-                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy TypeRelations.CanCoerce ty then
+                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy Import.CanCoerce ty then
                             ad
                         else
                             AccessibleFrom(paths, None)
@@ -3288,7 +3289,7 @@ module internal ParseAndCheckFile =
                     tcEnvAtEnd.AccessRights,
                     projectFileName,
                     mainInputFileName,
-                    projectOptions,
+                    Some projectOptions,
                     sink.GetResolutions(),
                     sink.GetSymbolUses(),
                     tcEnvAtEnd.NameEnv,
@@ -3301,9 +3302,14 @@ module internal ParseAndCheckFile =
         }
 
 [<Sealed>]
-type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions) =
+type FSharpProjectContext
+    (thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions option) =
 
-    member _.ProjectOptions = projectOptions
+    // TODO: Once API around Transparent Compiler is stabilized we should probably remove this.
+    member _.ProjectOptions =
+        projectOptions
+        |> Option.defaultWith (fun () ->
+            failwith "ProjectOptions are not available. This is expected when using FSharpChecker with useTransparentCompiler=true.")
 
     member _.GetReferencedAssemblies() = assemblies
 
@@ -3536,7 +3542,7 @@ type FSharpCheckFileResults
                 |> SourceText.ofString)
 
     member internal _.CalculateSignatureHash() =
-        let visibility = Fsharp.Compiler.SignatureHash.PublicAndInternal
+        let visibility = PublicAndInternal
 
         match details with
         | None -> failwith "Typechecked details not available for CalculateSignatureHash() operation."
@@ -3712,7 +3718,7 @@ type FSharpCheckProjectResults
             AccessorDomain *
             CheckedImplFile list option *
             string[] *
-            FSharpProjectOptions) option
+            FSharpProjectOptions option) option
     ) =
 
     let getDetails () =
@@ -4008,7 +4014,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  tcState.TcEnvFromImpls.AccessRights,
                  None,
                  dependencyFiles,
-                 projectOptions)
+                 Some projectOptions)
 
             let projectResults =
                 FSharpCheckProjectResults(fileName, Some tcConfig, keepAssemblyContents, errors, Some details)

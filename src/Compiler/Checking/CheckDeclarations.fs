@@ -1090,7 +1090,7 @@ module MutRecBindingChecking =
 
                             [Phase2AIncrClassCtor (staticCtorInfo, Some incrCtorInfo)], innerState
                               
-                        | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m)), _ ->
+                        | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m, _)), _ ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
@@ -3222,34 +3222,47 @@ module EstablishTypeDefinitionCores =
                   ignore inSig 
 #endif
 
-                  // This case deals with ordinary type and measure abbreviations 
-                  if not hasMeasureableAttr then 
+                  // This case deals with ordinary type and measure abbreviations
+                  if not hasMeasureableAttr then
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
                     let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
-                    // Give a warning if `AutoOpenAttribute` is being aliased.
+
+                    // Give a warning if `AutoOpenAttribute` or `StructAttribute` is being aliased.
                     // If the user were to alias the `Microsoft.FSharp.Core.AutoOpenAttribute` type, it would not be detected by the project graph dependency resolution algorithm.
+
+                    let inline checkAttributeAliased ty (tycon: Tycon) (attrib: BuiltinAttribInfo) =
+                        match stripTyEqns g ty with
+                        | AppTy g (tcref, _) when not tcref.IsErased ->
+                            match tcref.CompiledRepresentation with
+                            | CompiledTypeRepr.ILAsmOpen _ -> ()
+                            | CompiledTypeRepr.ILAsmNamed _ ->
+                                if tcref.CompiledRepresentationForNamedType.FullName = attrib.TypeRef.FullName then
+                                    warning(Error(FSComp.SR.chkAttributeAliased(attrib.TypeRef.FullName), tycon.Id.idRange))
+                        | _ -> ()
+
+                    // Check for attributes in unit-of-measure declarations
+                    // [<Measure>] type x = 1<s>
+                    //                        ^
                     match stripTyEqns g ty with
-                    | AppTy g (tcref, _) when not tcref.IsErased ->
-                        match tcref.CompiledRepresentation with
-                        | CompiledTypeRepr.ILAsmOpen _ -> ()
-                        | CompiledTypeRepr.ILAsmNamed _ ->
-                            if tcref.CompiledRepresentationForNamedType.FullName = g.attrib_AutoOpenAttribute.TypeRef.FullName then
-                                warning(Error(FSComp.SR.chkAutoOpenAttributeInTypeAbbrev(), tycon.Id.idRange))
+                    | TType_measure tm -> CheckUnitOfMeasureAttributes g tm
                     | _ -> ()
-                    
-                    if not firstPass then 
-                        let ftyvs = freeInTypeLeftToRight g false ty 
+                        
+                    checkAttributeAliased ty tycon g.attrib_AutoOpenAttribute
+                    checkAttributeAliased ty tycon g.attrib_StructAttribute
+
+                    if not firstPass then
+                        let ftyvs = freeInTypeLeftToRight g false ty
                         let typars = tycon.Typars m
-                        if ftyvs.Length <> typars.Length then 
+                        if ftyvs.Length <> typars.Length then
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
 
                     if firstPass then
                         tycon.SetTypeAbbrev (Some ty)
 
             | _ -> ()
-        
-        with RecoverableException exn -> 
+
+        with RecoverableException exn ->
             errorRecovery exn m
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established
@@ -3322,9 +3335,8 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Record _ ->
                       if tycon.IsStructRecordOrUnionTycon then Some(g.system_Value_ty)
                       else None
-                  | SynTypeDefnSimpleRepr.General (kind, _, slotsigs, fields, isConcrete, _, _, _) ->
+                  | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, _, _, _) ->
                       let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
-                                           
                       match inheritedTys with 
                       | [] -> 
                           match kind with 
@@ -3333,18 +3345,27 @@ module EstablishTypeDefinitionCores =
                           | SynTypeDefnKind.Opaque | SynTypeDefnKind.Class | SynTypeDefnKind.Interface -> None
                           | _ -> error(InternalError("should have inferred tycon kind", m)) 
 
-                      | [(ty, m)] -> 
-                          if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then 
-                              errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), m)) 
-                          CheckSuperType cenv ty m 
+                      | [(ty, m)] ->
+                          let inheritRange =
+                              match inherits with
+                              | [] -> m
+                              | (synType, _, _) :: _ -> synType.Range
+                          if not firstPass && not (match kind with SynTypeDefnKind.Class -> true | _ -> false) then
+                              errorR (Error(FSComp.SR.tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes(), inheritRange)) 
+                          CheckSuperType cenv ty inheritRange 
                           if isTyparTy g ty then 
                               if firstPass then 
-                                  errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), m)) 
+                                  errorR(Error(FSComp.SR.tcCannotInheritFromVariableType(), inheritRange)) 
                               Some g.obj_ty_noNulls // a "super" that is a variable type causes grief later
-                          else                          
+                          else                  
                               Some ty 
-                      | _ -> 
-                          error(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), m))
+                      | _ ->
+                          match inherits with
+                          | [] -> ()
+                          | _ :: inherits -> 
+                            for synType, _, _ in inherits do
+                                errorR(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), synType.Range))
+                          None
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
                       Some(g.system_Enum_ty) 
@@ -3622,7 +3643,11 @@ module EstablishTypeDefinitionCores =
                         // Note: for a mutually recursive set we can't check this condition 
                         // until "isSealedTy" and "isClassTy" give reliable results. 
                         superTy |> Option.iter (fun ty -> 
-                            let m = match inherits with | [] -> m | (_, m, _) :: _ -> m
+                            let m =
+                                match inherits with
+                                | [] -> m
+                                | (synType, _, _) :: _ -> synType.Range
+
                             if isSealedTy g ty then 
                                 errorR(Error(FSComp.SR.tcCannotInheritFromSealedType(), m))
                             elif not (isClassTy g ty) then 
@@ -3789,11 +3814,11 @@ module EstablishTypeDefinitionCores =
 
             and accInMeasure measureTy acc =
                 match stripUnitEqns measureTy with
-                | Measure.Const tcref when ListSet.contains (===) tcref.Deref tycons ->  
+                | Measure.Const(tyconRef= tcref) when ListSet.contains (===) tcref.Deref tycons ->  
                     (tycon, tcref.Deref) :: acc
-                | Measure.Const tcref when tcref.IsTypeAbbrev ->              
+                | Measure.Const(tyconRef= tcref) when tcref.IsTypeAbbrev ->              
                     accInMeasure (reduceTyconRefAbbrevMeasureable tcref) acc
-                | Measure.Prod (ms1, ms2) -> accInMeasure ms1 (accInMeasure ms2 acc)
+                | Measure.Prod(measure1= ms1; measure2= ms2) -> accInMeasure ms1 (accInMeasure ms2 acc)
                 | Measure.Inv invTy -> accInMeasure invTy acc
                 | _ -> acc
 
@@ -4269,7 +4294,7 @@ module TcDeclarations =
     //   multiple (binding or slotsig or field or interface or inherit).
     //   i.e. not local-bindings, implicit ctor or implicit inherit (or tycon?).
     //   atMostOne inherit.
-    let private CheckMembersForm ds = 
+    let private CheckMembersForm ds m = 
         match ds with
         | d :: ds when isImplicitCtor d ->
             // Implicit construction 
@@ -4281,7 +4306,7 @@ module TcDeclarations =
             // Skip over 'let' and 'do' bindings
             let _, ds = ds |> List.takeUntil (function SynMemberDefn.LetBindings _ -> false | _ -> true) 
 
-            // Skip over 'let' and 'do' bindings
+            // Skip over member bindings, abstract slots, interfaces and auto properties
             let _, ds = ds |> List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isAutoProperty]) 
 
             match ds with
@@ -4290,9 +4315,9 @@ module TcDeclarations =
              | SynMemberDefn.Interface (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
              | SynMemberDefn.ImplicitCtor (range=m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
              | SynMemberDefn.AutoProperty (range=m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
-             | SynMemberDefn.ImplicitInherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
+             | SynMemberDefn.ImplicitInherit _ :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
-             | SynMemberDefn.Inherit (range=m) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
+             | SynMemberDefn.Inherit (trivia= { InheritKeyword = m }) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
@@ -4458,14 +4483,14 @@ module TcDeclarations =
         | SynTypeDefnRepr.ObjectModel(kind, members, m) ->
             let members = desugarGetSetMembers members
 
-            CheckMembersForm members
+            CheckMembersForm members synTyconInfo.Range
 
             let fields = members |> List.choose (function SynMemberDefn.ValField (fieldInfo = f) -> Some f | _ -> None)
             let implements2 = members |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
             let inherits =
                 members |> List.choose (function 
-                    | SynMemberDefn.Inherit (ty, idOpt, m) -> Some(ty, m, idOpt)
-                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.Inherit (Some ty, idOpt, m, _) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m, _) -> Some(ty, m, idOpt)
                     | _ -> None)
 
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
@@ -5454,7 +5479,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) (ct: CancellationToken) =
 
     if ct.IsCancellationRequested then
-        ValueOrCancelled.Cancelled (OperationCanceledException())
+        ValueOrCancelled.Cancelled(OperationCanceledException ct)
     else
         match moreDefs with
         | [] ->

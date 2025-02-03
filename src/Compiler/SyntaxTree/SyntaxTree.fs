@@ -37,7 +37,7 @@ type SynLongIdent =
 
     member this.Range =
         match this with
-        | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+        | SynLongIdent([], _, _) -> failwith "rangeOfLid"
         | SynLongIdent([ id ], [], _) -> id.idRange
         | SynLongIdent([ id ], [ m ], _) -> unionRanges id.idRange m
         | SynLongIdent(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
@@ -201,6 +201,18 @@ type SynMeasure =
     | Var of typar: SynTypar * range: range
 
     | Paren of measure: SynMeasure * range: range
+
+    member x.Range =
+        match x with
+        | SynMeasure.Named(range = m)
+        | SynMeasure.Product(range = m)
+        | SynMeasure.Seq(range = m)
+        | SynMeasure.Divide(range = m)
+        | SynMeasure.Power(range = m)
+        | SynMeasure.One(range = m)
+        | SynMeasure.Anon(range = m)
+        | SynMeasure.Var(range = m)
+        | SynMeasure.Paren(range = m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
@@ -704,9 +716,9 @@ type SynExpr =
 
     | SequentialOrImplicitYield of debugPoint: DebugPointAtSequential * expr1: SynExpr * expr2: SynExpr * ifNotStmt: SynExpr * range: range
 
-    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturn of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnTrivia
 
-    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range
+    | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
     | LetOrUseBang of
         bindDebugPoint: DebugPointAtBinding *
@@ -1046,6 +1058,10 @@ type SynMatchClause =
             match eo with
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
+
+    member this.IsTrueMatchClause =
+        let (SynMatchClause(trivia = trivia)) = this
+        trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
 
     member this.Range =
         match this with
@@ -1488,7 +1504,12 @@ type SynMemberDefn =
         range: range *
         trivia: SynMemberDefnImplicitCtorTrivia
 
-    | ImplicitInherit of inheritType: SynType * inheritArgs: SynExpr * inheritAlias: Ident option * range: range
+    | ImplicitInherit of
+        inheritType: SynType *
+        inheritArgs: SynExpr *
+        inheritAlias: Ident option *
+        range: range *
+        trivia: SynMemberDefnInheritTrivia
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
@@ -1496,7 +1517,7 @@ type SynMemberDefn =
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
-    | Inherit of baseType: SynType * asIdent: Ident option * range: range
+    | Inherit of baseType: SynType option * asIdent: Ident option * range: range * trivia: SynMemberDefnInheritTrivia
 
     | ValField of fieldInfo: SynField * range: range
 

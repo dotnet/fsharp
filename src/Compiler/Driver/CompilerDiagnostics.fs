@@ -148,8 +148,7 @@ type Exception with
         | IntfImplInExtrinsicAugmentation m
         | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
-        | ObsoleteError(_, m)
-        | ObsoleteWarning(_, m)
+        | ObsoleteDiagnostic(_, _, _, _, m)
         | Experimental(_, m)
         | PossibleUnverifiableCode m
         | UserCompilerMessage(_, _, m)
@@ -266,7 +265,7 @@ type Exception with
         | UnresolvedOverloading _ -> 41
         | LibraryUseOnly _ -> 42
         | ErrorFromAddingConstraint _ -> 43
-        | ObsoleteWarning _ -> 44
+        | ObsoleteDiagnostic(isError = false) -> 44
         | ReservedKeyword _ -> 46
         | SelfRefObjCtor _ -> 47
         | VirtualAugmentationOnNullValuedType _ -> 48
@@ -327,7 +326,7 @@ type Exception with
         | UnresolvedConversionOperator _ -> 93
 
         // avoid 94-100 for safety
-        | ObsoleteError _ -> 101
+        | ObsoleteDiagnostic(isError = true) -> 101
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange _
         | TypeProviders.ProvidedTypeResolution _ -> 103
@@ -409,47 +408,25 @@ type PhasedDiagnostic with
                 (severity = FSharpDiagnosticSeverity.Info && level > 0)
                 || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
-    /// Indicates if a diagnostic should be reported as an informational
-    member x.ReportAsInfo(options, severity) =
-        match severity with
-        | FSharpDiagnosticSeverity.Error -> false
-        | FSharpDiagnosticSeverity.Warning -> false
-        | FSharpDiagnosticSeverity.Info -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
-        | FSharpDiagnosticSeverity.Hidden -> false
+    member x.AdjustSeverity(options, severity) =
+        let n = x.Number
 
-    /// Indicates if a diagnostic should be reported as a warning
-    member x.ReportAsWarning(options, severity) =
-        match severity with
-        | FSharpDiagnosticSeverity.Error -> false
-
-        | FSharpDiagnosticSeverity.Warning -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
-
-        // Informational become warning if explicitly on and not explicitly off
-        | FSharpDiagnosticSeverity.Info ->
-            let n = x.Number
-            List.contains n options.WarnOn && not (List.contains n options.WarnOff)
-
-        | FSharpDiagnosticSeverity.Hidden -> false
-
-    /// Indicates if a diagnostic should be reported as an error
-    member x.ReportAsError(options, severity) =
+        let warnOff () = List.contains n options.WarnOff
 
         match severity with
-        | FSharpDiagnosticSeverity.Error -> true
-
-        // Warnings become errors in some situations
-        | FSharpDiagnosticSeverity.Warning ->
-            let n = x.Number
-
+        | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
-            && not (List.contains n options.WarnAsWarn)
-            && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
+            && ((options.GlobalWarnAsError && not (warnOff ()))
                 || List.contains n options.WarnAsError)
-
-        // Informational become errors if explicitly WarnAsError
-        | FSharpDiagnosticSeverity.Info -> List.contains x.Number options.WarnAsError
-
-        | FSharpDiagnosticSeverity.Hidden -> false
+            && not (List.contains n options.WarnAsWarn)
+            ->
+            FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
+        | _ -> FSharpDiagnosticSeverity.Hidden
 
 [<AutoOpen>]
 module OldStyleMessages =
@@ -460,7 +437,7 @@ module OldStyleMessages =
     let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
     let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
     let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s")
     let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
     let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
     let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
@@ -700,8 +677,7 @@ type Exception with
 
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2)
-            |> ignore
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
 
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
@@ -1813,9 +1789,7 @@ type Exception with
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
-        | ObsoleteError(s, _)
-
-        | ObsoleteWarning(s, _) ->
+        | ObsoleteDiagnostic(message = s) ->
             os.AppendString(Obsolete1E().Format)
 
             if s <> "" then
@@ -2333,12 +2307,9 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 | None -> true
 
             if report then
-                if diagnostic.ReportAsError(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
-                elif diagnostic.ReportAsInfo(diagnosticOptions, severity) then
-                    diagnosticsLogger.DiagnosticSink(diagnostic, severity)
+                match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
+                | FSharpDiagnosticSeverity.Hidden -> ()
+                | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 

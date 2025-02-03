@@ -229,11 +229,6 @@ type TcInfoExtras =
     member x.TcSymbolUses =
         x.tcSymbolUses
 
-module ValueOption =
-    let toOption = function
-        | ValueSome x -> Some x
-        | _ -> None
-
 type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
@@ -507,10 +502,12 @@ type FrameworkImportsCache(size) =
     let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<TcGlobals * TcImports>>(size, areSimilar=(fun (x, y) -> x = y))
 
     /// Reduce the size of the cache in low-memory scenarios
-    member _.Downsize() = frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
+    member _.Downsize() = lock gate <| fun () ->
+        frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
 
     /// Clear the cache
-    member _.Clear() = frameworkTcImportsCache.Clear AnyCallerThread
+    member _.Clear() = lock gate <| fun () ->
+        frameworkTcImportsCache.Clear AnyCallerThread
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member _.GetNode(tcConfig: TcConfig, frameworkDLLs: AssemblyResolution list, nonFrameworkResolutions: AssemblyResolution list) =
@@ -545,7 +542,7 @@ type FrameworkImportsCache(size) =
                     lazyWork
             )
         node
-                
+
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
@@ -575,7 +572,8 @@ type FrameworkImportsCache(size) =
                         tcGlobals.noDebugAttributes,
                         tcGlobals.pathMap,
                         tcConfig.langVersion,
-                        tcConfig.realsig
+                        tcConfig.realsig,
+                        tcConfig.compilationMode
                     )
 
             else
@@ -886,7 +884,6 @@ type IncrementalBuilderInitialState =
         defaultTimeStamp: DateTime
         mutable isImportsInvalidated: bool
         useChangeNotifications: bool
-        useSyntaxTreeCache: bool
     }
 
     static member Create
@@ -908,8 +905,7 @@ type IncrementalBuilderInitialState =
 #endif
             allDependencies,
             defaultTimeStamp: DateTime,
-            useChangeNotifications: bool,
-            useSyntaxTreeCache
+            useChangeNotifications: bool
         ) =
 
         let initialState =
@@ -935,7 +931,6 @@ type IncrementalBuilderInitialState =
                 defaultTimeStamp = defaultTimeStamp
                 isImportsInvalidated = false
                 useChangeNotifications = useChangeNotifications
-                useSyntaxTreeCache = useSyntaxTreeCache
             }
 #if !NO_TYPEPROVIDERS
         importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
@@ -1407,8 +1402,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             parallelReferenceResolution,
             captureIdentifiersWhenParsing,
             getSource,
-            useChangeNotifications,
-            useSyntaxTreeCache
+            useChangeNotifications
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1652,8 +1646,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 #endif
                     allDependencies,
                     defaultTimeStamp,
-                    useChangeNotifications,
-                    useSyntaxTreeCache
+                    useChangeNotifications
                 )
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))

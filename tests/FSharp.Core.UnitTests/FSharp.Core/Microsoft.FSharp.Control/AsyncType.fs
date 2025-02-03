@@ -11,11 +11,36 @@ open Xunit
 open System.Threading
 open System.Threading.Tasks
 
-type RunWithContinuationsTest_WhatToDo =
-    | Exit
-    | Cancel
-    | Throw
+// Cancels default token.
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
+module AsyncType =
 
+    type ExpectedContinuation = Success | Exception | Cancellation
+
+    [<Fact>]
+    let startWithContinuations() =
+
+        let cont actual expected _ =
+            if expected <> actual then
+                failwith $"expected {expected} continuation, but ran {actual}"
+
+        let onSuccess = cont Success
+        let onException = cont Exception
+        let onCancellation = cont Cancellation
+
+        let expect expected computation =
+            Async.StartWithContinuations(computation, onSuccess expected, onException expected, onCancellation expected)
+
+        async {
+            Async.CancelDefaultToken()
+            return () 
+        } |> expect Cancellation
+
+        async { failwith "computation failed" } |> expect Exception
+
+        async { return () } |> expect Success
+
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type AsyncType() =
 
     let ignoreSynchCtx f =
@@ -29,69 +54,23 @@ type AsyncType() =
         Assert.True(result, "Task did not finish after waiting for a second.")
 
     [<Fact>]
-    member _.StartWithContinuations() =
-
-        let mutable whatToDo = Exit
-
-        let asyncWorkflow() =
-            async {
-                let currentState = whatToDo
-
-                // Act
-                let result =
-                    match currentState with
-                    | Exit   -> 1
-                    | Cancel -> Async.CancelDefaultToken()
-                                sleep(1 * 1000)
-                                0
-                    | Throw  -> raise <| System.Exception("You asked me to do it!")
-
-                return result
-            }
-
-        let onSuccess x   =
-            match whatToDo with
-            | Cancel | Throw
-                -> Assert.Fail("Expected onSuccess but whatToDo was not Exit", [| whatToDo |])
-            | Exit
-                -> ()
-
-        let onException x =
-            match whatToDo with
-            | Exit | Cancel
-                -> Assert.Fail("Expected onException but whatToDo was not Throw", [| whatToDo |])
-            | Throw  -> ()
-
-        let onCancel x    =
-            match whatToDo with
-            | Exit | Throw
-                -> Assert.Fail("Expected onCancel but whatToDo was not Cancel", [| whatToDo |])
-            | Cancel -> ()
-
-        // Run it once.
-        whatToDo <- Exit
-        Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
-
-        whatToDo <- Cancel
-        Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
-
-        whatToDo <- Throw
-        Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
-
-        ()
-
-    [<Fact>]
     member _.AsyncRunSynchronouslyReusesThreadPoolThread() =
-        let action = async { async { () } |> Async.RunSynchronously }
-        let computation =
-            [| for i in 1 .. 1000 -> action |]
-            |> Async.Parallel
+        let action _ =
+            async {
+                return
+                    async { return Thread.CurrentThread.ManagedThreadId }
+                    |> Async.RunSynchronously
+            }
         // This test needs approximately 1000 ThreadPool threads
         // if Async.RunSynchronously doesn't reuse them.
-        // In such case TimeoutException is raised
-        // since ThreadPool cannot provide 1000 threads in 1 second
-        // (the number of threads in ThreadPool is adjusted slowly).
-        Async.RunSynchronously(computation, timeout = 1000) |> ignore
+        let usedThreads =
+            Seq.init 1000 action
+            |> Async.Parallel
+            |> Async.RunSynchronously
+            |> Set.ofArray
+        printfn $"RunSynchronously used {usedThreads.Count} threads. Environment.ProcessorCount is {Environment.ProcessorCount}."
+        // Some arbitrary large number but in practice it should not use more threads than there are CPU cores.
+        Assert.True(usedThreads.Count < 256, $"RunSynchronously used {usedThreads.Count} threads.")
 
     [<Theory>]
     [<InlineData("int32")>]
@@ -259,7 +238,8 @@ type AsyncType() =
         use t = Async.StartAsTask a
         let mutable exceptionThrown = false
         try
-            waitASec t
+            // waitASec t
+            t.Wait()
         with
             e -> exceptionThrown <- true
         Assert.True (t.IsFaulted)
@@ -297,7 +277,7 @@ type AsyncType() =
 //        printfn "%A" t.Status
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
@@ -330,56 +310,50 @@ type AsyncType() =
         use t = Async.StartImmediateAsTask a
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with
             e -> exceptionThrown <- true
         Assert.True (t.IsFaulted)
         Assert.True(exceptionThrown)
 
-#if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
     member _.CancellationPropagatesToImmediateTask () =
         let a = async {
-                while true do ()
+                while true do
+                    do! Async.Sleep 100
             }
         use t = Async.StartImmediateAsTask a
         Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
-#endif
 
-#if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
     member _.CancellationPropagatesToGroupImmediate () =
         let ewh = new ManualResetEvent(false)
-        let cancelled = ref false
+        let mutable cancelled = false
         let a = async {
-                use! holder = Async.OnCancel (fun _ -> cancelled := true)
+                use! holder = Async.OnCancel (fun _ -> cancelled <- true)
                 ewh.Set() |> Assert.True
-                while true do ()
+                while true do
+                    do! Async.Sleep 100
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
         use t =
             Async.StartImmediateAsTask(a, cancellationToken=token)
-//        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
-//        printfn "%A" t.Status
         let mutable exceptionThrown = false
         try
-            waitASec t
+            t.Wait()
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
-        Assert.True(!cancelled)
-#endif
+        Assert.True(cancelled)
 
     [<Fact>]
     member _.TaskAsyncValue () =
@@ -439,8 +413,7 @@ type AsyncType() =
               }
         Async.RunSynchronously(a) |> Assert.True
 
-    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
-    //[<Fact>]
+    [<Fact>]
     member _.TaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
@@ -458,9 +431,11 @@ type AsyncType() =
                    :? TaskCanceledException -> 
                       ewh.Set() |> ignore // this is ok
             }
-        Async.Start a
+        let t1 = Async.StartAsTask a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore
+        // Don't leave unobserved background tasks, because they can crash the test run.
+        t1.Wait()
 
     [<Fact>]
     member _.NonGenericTaskAsyncValue () =
@@ -501,9 +476,10 @@ type AsyncType() =
                    :? TaskCanceledException -> 
                       ewh.Set() |> ignore // this is ok
             }
-        Async.Start a
+        let t1 = Async.StartAsTask a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore
+        t1.Wait()
 
     [<Fact>]
     member _.CancellationExceptionThrown () =

@@ -24,6 +24,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
+open Import
 
 /// Use the given function to select some of the member values from the members of an F# type
 let SelectImmediateMemberVals g optFilter f withExplicitImpl (tcref: TyconRef) = 
@@ -1082,7 +1083,7 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_, delArgTys, delRetTy, _)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match delArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys, delRetTy)
+    | senderTy :: argTys when (isObjTyAnyNullness g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys, delRetTy)
     | _ -> None
 
 

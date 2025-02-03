@@ -2,7 +2,6 @@
 
 open System
 open System.IO
-open FluentAssertions
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test
 open Xunit
@@ -14,21 +13,17 @@ type Sentinel () =
 module MyModule =
     let test(x: int) = ()
 
-[<CollectionDefinition("FsiTests", DisableParallelization = true)>]
+// Running in parallel is unstable with occasional System.IO.FileLoadException: Could not load file or assembly 'FSI-ASSEMBLY...
+[<RunTestCasesInSequence>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
-        // Initialize output and input streams
-        let inStream = new StringReader("")
-        let outStream = new CompilerOutputStream()
-        let errStream = new CompilerOutputStream()
-
         // Build command line arguments & start FSI session
         let argv = [| "C:\\fsi.exe" |]
         let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--multiemit-" else "--multiemit+" |]
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, new StreamWriter(outStream), new StreamWriter(errStream), collectible = true)
+        FsiEvaluationSession.Create(fsiConfig, allArgs, stdin, stdout, stderr, collectible = true)
 
     [<Fact>]
     let ``No bound values at the start of FSI session`` () =
@@ -579,7 +574,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<int[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is an array of a built-in reference type``() =
@@ -588,7 +583,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<string[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is an array of a custom value type``() =
@@ -597,7 +592,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomStruct[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is an array of a custom reference type``() =
@@ -606,7 +601,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomType2[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a built-in value type``() =
@@ -615,7 +610,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<int[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a built-in reference type``() =
@@ -624,7 +619,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<string[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a custom value type``() =
@@ -633,7 +628,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomStruct[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a custom reference type``() =
@@ -642,7 +637,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomType2[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<TheoryForNETCOREAPP>]
     [<InlineData(true)>]

@@ -1,0 +1,8 @@
+{
+    "merge-flow-configurations": {
+        "main": {
+            "MergeToBranch": "feature/lsp",
+            "ExtraSwitches": "-QuietComments"
+        }
+    }
+}

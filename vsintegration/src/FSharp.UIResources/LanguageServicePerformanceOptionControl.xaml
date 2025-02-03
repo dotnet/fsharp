@@ -6,7 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Microsoft.VisualStudio.FSharp.UIResources"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="400">
+             d:DesignHeight="600" d:DesignWidth="400">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -48,9 +48,6 @@
                         <CheckBox x:Name="enablePartialTypeChecking"
                                   IsChecked="{Binding EnablePartialTypeChecking}"
                                   Content="{x:Static local:Strings.Enable_partial_type_checking}" />
-                        <CheckBox x:Name="enableSyntaxTreeCache"
-                                  IsChecked="{Binding UseSyntaxTreeCache}"
-                                  Content="{x:Static local:Strings.Use_syntax_tree_cache}" />
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.IntelliSense_Performance}">

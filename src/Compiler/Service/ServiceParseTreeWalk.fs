@@ -388,12 +388,6 @@ module SyntaxTraversal =
                 seq {
                     match expr with
                     | SynExpr.Sequential(expr1 = expr1; expr2 = SynExpr.Sequential _ as expr2) ->
-                        // It's a nested sequential expression.
-                        // Visit it, but make defaultTraverse do nothing,
-                        // since we're going to traverse its descendants ourselves.
-                        yield dive expr expr.Range (fun expr -> visitor.VisitExpr(path, traverseSynExpr path, (fun _ -> None), expr))
-
-                        // Now traverse its descendants.
                         let path = SyntaxNode.SynExpr expr :: path
                         yield dive expr1 expr1.Range (traverseSynExpr path)
                         yield! traverseSequentials path expr2
@@ -958,7 +952,7 @@ module SyntaxTraversal =
 
             | SynMemberDefn.ImplicitCtor(ctorArgs = pat) -> traverseSynSimplePats path pat
 
-            | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range) ->
+            | SynMemberDefn.ImplicitInherit(synType, synExpr, _identOption, range, _) ->
                 [
                     dive () synType.Range (fun () ->
                         match traverseInherit (synType, range) with
@@ -996,7 +990,8 @@ module SyntaxTraversal =
 
                         |> pick x
                 | ok -> ok
-            | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)
+            | SynMemberDefn.Inherit(Some synType, _identOption, range, _) -> traverseInherit (synType, range)
+            | SynMemberDefn.Inherit(None, _, _, _) -> None
             | SynMemberDefn.ValField _ -> None
             | SynMemberDefn.NestedType(synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
 

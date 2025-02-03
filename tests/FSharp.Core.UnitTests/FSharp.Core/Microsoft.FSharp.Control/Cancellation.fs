@@ -5,10 +5,21 @@ namespace FSharp.Core.UnitTests.Control
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
+open FSharp.Test
 open System.Threading
+open System.Threading.Tasks
 
-
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 type CancellationType() =
+
+    let ordered() =
+        let mutable current = 1
+    
+        fun n -> 
+            async {
+                SpinWait.SpinUntil(fun () -> current = n)
+                Interlocked.Increment &current |> ignore
+            }
 
     [<Fact>]
     member this.CancellationNoCallbacks() =
@@ -229,8 +240,11 @@ type CancellationType() =
             }               
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
 
+    // See https://github.com/dotnet/fsharp/issues/3254
     [<Fact>]
     member this.AwaitTaskCancellationAfterAsyncTokenCancellation() =
+        let step = ordered()
+
         let StartCatchCancellation cancellationToken (work) =
             Async.FromContinuations(fun (cont, econt, _) ->
               // When the child is cancelled, report OperationCancelled
@@ -264,25 +278,43 @@ type CancellationType() =
         let tcs = System.Threading.Tasks.TaskCompletionSource<_>()
         let t =
             async {
+                do! step 1
                 do! tcs.Task |> Async.AwaitTask
             }
             |> StartAsTaskProperCancel None (Some cts.Token)
 
         // First cancel the token, then set the task as cancelled.
-        async {
-            do! Async.Sleep 100
+        task {
+            do! step 2
             cts.Cancel()
-            do! Async.Sleep 100
+            do! step 3
             tcs.TrySetException (TimeoutException "Task timed out after token.")
-                |> ignore
-        } |> Async.Start
+            |> ignore
 
-        try
-            let res = t.Wait(2000)
-            let msg = sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res
-            printfn "failure msg: %s" msg
-            Assert.Fail (msg)
-        with :? AggregateException as agg -> ()
+            try
+                let res = t.Wait()
+                let msg = sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res
+                printfn "failure msg: %s" msg
+                Assert.Fail (msg)
+            with :? AggregateException as agg -> ()
+        }
+
+    // Simpler regression test for https://github.com/dotnet/fsharp/issues/3254
+    [<Fact>]
+    member this.AwaitTaskCancellationAfterAsyncTokenCancellation2() =
+        let tcs = new TaskCompletionSource<int>()
+        let cts = new CancellationTokenSource()
+        let _ = cts.Token.Register(fun () -> tcs.SetResult 42)
+        Assert.ThrowsAsync<TaskCanceledException>( fun () ->
+            Async.StartAsTask(
+                async {
+                    cts.CancelAfter 100
+                    let! result = tcs.Task |> Async.AwaitTask
+                    return result
+                },
+                cancellationToken = cts.Token
+            )
+        )
 
     [<Fact>]
     member this.Equality() =

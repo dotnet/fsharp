@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open Xunit
+open FSharp.Test
 
 
 module ``DefaultOf Tests`` =

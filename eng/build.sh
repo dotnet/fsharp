@@ -20,6 +20,7 @@ usage()
   echo "  --rebuild                      Rebuild all projects"
   echo "  --pack                         Build nuget packages"
   echo "  --publish                      Publish build artifacts"
+  echo "  --sign                         Sign build artifacts"
   echo "  --help                         Print help and exit"
   echo ""
   echo "Test actions:"
@@ -58,6 +59,7 @@ build=false
 rebuild=false
 pack=false
 publish=false
+sign=false
 test_core_clr=false
 test_compilercomponent_tests=false
 test_benchmarks=false
@@ -71,7 +73,7 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
-buildnorealsig=false
+buildnorealsig=true
 properties=""
 
 docker=false
@@ -128,6 +130,9 @@ while [[ $# > 0 ]]; do
       ;;
     --publish)
       publish=true
+      ;;
+    --sign)
+      sign=true
       ;;
     --testcoreclr|--test|-t)
       test_core_clr=true
@@ -214,7 +219,8 @@ function Test() {
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
+  args+=" -- xUnit.MaxParallelThreads=1"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
@@ -297,6 +303,7 @@ function BuildSolution {
       /p:Rebuild=$rebuild \
       /p:Pack=$pack \
       /p:Publish=$publish \
+      /p:Sign=$sign \
       /p:UseRoslynAnalyzers=$enable_analyzers \
       /p:ContinuousIntegrationBuild=$ci \
       /p:QuietRestore=$quiet_restore \

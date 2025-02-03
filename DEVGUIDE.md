@@ -204,6 +204,33 @@ Linux/macOS:
 export TEST_UPDATE_BSL=1
 ```
 
+## Retain Test run built artifacts
+
+When investigating tests issues it is sometimes useful to examine the artifacts built when running tests.  Those built using the newer test framework are usually,
+built in the %TEMP%\FSharp.Test.Utilities subdirectory.
+
+To tell the test framework to not cleanup these files use the: FSHARP_RETAIN_TESTBUILDS environment variable
+
+Windows:
+
+CMD:
+
+```shell
+set FSHARP_RETAIN_TESTBUILDS=1
+```
+
+PowerShell:
+
+```shell
+$env:FSHARP_RETAIN_TESTBUILDS=1
+```
+
+Linux/macOS:
+
+```shell
+export FSHARP_RETAIN_TESTBUILDS=1
+```
+
 Next, run a build script build (debug or release, desktop or coreclr, depending which baselines you need to update), and test as described [above](#Testing-from-the-command-line). For example:
 
 `./Build.cmd -c Release -testCoreClr` to update Release CoreCLR baselines.
@@ -216,6 +243,16 @@ or
 > Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
 
 
+### Parallel execution of tests
+
+Tests utilizing xUnit framework by default run in parallel. If your tests depend on some shared state or are time-critical, you can add the module to predefined `NotThreadSafeResourceCollection` to prevent parallel execution.
+For example:
+```fsharp
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module TimeCritical =
+```
+
+
 ### Updating FCS surface area baselines
 
 ```bash
@@ -225,6 +262,26 @@ dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fs
 dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
 dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --filter "SurfaceAreaTest" -c Release /p:BUILDING_USING_DOTNET=true
 ```
+
+### Updating ILVerify baselines
+
+These are IL baseline tests for the core assemblies of the compiler (FSharp.Core and FSharp.Compiler.Service). The baselines are located in the `tests/ILVerify` folder and look like:
+
+```
+ilverify_FSharp.Compiler.Service_Debug_net9.0.bsl
+ilverify_FSharp.Compiler.Service_Debug_netstandard2.0.bsl
+ilverify_FSharp.Compiler.Service_Release_net9.0.bsl
+ilverify_FSharp.Compiler.Service_Release_netstandard2.0.bsl
+ilverify_FSharp.Core_Debug_netstandard2.0.bsl
+ilverify_FSharp.Core_Debug_netstandard2.1.bsl
+ilverify_FSharp.Core_Release_netstandard2.0.bsl
+ilverify_FSharp.Core_Release_netstandard2.1.bsl
+```
+
+If you want to update them, either
+
+1. Run the [ilverify.ps1]([url](https://github.com/dotnet/fsharp/blob/main/tests/ILVerify/ilverify.ps1)) script in PowerShell. The script will create `.actual` files. If the differences make sense, replace the original baselines with the actual files.
+2. Set the `TEST_UPDATE_BSL` to `1` (please refer to "Updating baselines in tests" section in this file) **and** run `ilverify.ps1` - this will automatically replace baselines. After that, please carefully review the change and push it to your branch if it makes sense.
 
 ## Automated Source Code Formatting
 

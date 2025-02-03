@@ -122,7 +122,7 @@ module internal Utilities =
             }
         else
             let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
-            Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
+            !! Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
 
     let callStaticMethod (ty: Type) name args =
         ty.InvokeMember(
@@ -855,7 +855,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
 /// Encapsulates functions used to write to outWriter and errorWriter
 type internal FsiConsoleOutput(tcConfigB, outWriter: TextWriter, errorWriter: TextWriter) =
 
-    let nullOut = new StreamWriter(Stream.Null) :> TextWriter
+    let nullOut = TextWriter.Null
 
     let fprintfnn (os: TextWriter) fmt =
         Printf.kfprintf
@@ -907,7 +907,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
     override _.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+        | FSharpDiagnosticSeverity.Error ->
             fsiStdinSyphon.PrintDiagnostic(tcConfig, diagnostic)
             errorCount <- errorCount + 1
 
@@ -915,20 +916,14 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
+        | (FSharpDiagnosticSeverity.Warning | FSharpDiagnosticSeverity.Info) as adjustedSeverity ->
+            DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
-            DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
-                fsiConsoleOutput.Error.WriteLine()
-                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.WriteLine()
-                fsiConsoleOutput.Error.Flush())
+        | FSharpDiagnosticSeverity.Hidden -> ()
 
     override _.ErrorCount = errorCount
 
@@ -1018,6 +1013,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage (executableFileNameWithoutExtension.Value))
         Console.Write(GetCompilerOptionBlocks blocks tcConfigB.bufferWidth)
+        fprintfn fsiConsoleOutput.Out ""
+        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiDetailedHelpLink ())
         exit 0
 
     // option tags
@@ -1147,7 +1144,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                         tagNone,
                         OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),
                         None,
-                        Some(FSIstrings.SR.fsiGui ())
+                        Some(FSIstrings.SR.fsiGui (formatOptionSwitch gui))
                     )
                     CompilerOption("quiet", "", OptionUnit(fun () -> tcConfigB.noFeedback <- true), None, Some(FSIstrings.SR.fsiQuiet ()))
                     CompilerOption(
@@ -1155,28 +1152,28 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                         tagNone,
                         OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),
                         None,
-                        Some(FSIstrings.SR.fsiReadline ())
+                        Some(FSIstrings.SR.fsiReadline (formatOptionSwitch enableConsoleKeyProcessing))
                     )
                     CompilerOption(
                         "quotations-debug",
                         tagNone,
                         OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations ())
+                        Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations (formatOptionSwitch tcConfigB.emitDebugInfoInQuotations))
                     )
                     CompilerOption(
                         "shadowcopyreferences",
                         tagNone,
                         OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.shadowCopyReferences ())
+                        Some(FSIstrings.SR.shadowCopyReferences (formatOptionSwitch tcConfigB.shadowCopyReferences))
                     )
                     CompilerOption(
                         "multiemit",
                         tagNone,
                         OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),
                         None,
-                        Some(FSIstrings.SR.fsiMultiAssemblyEmitOption ())
+                        Some(FSIstrings.SR.fsiMultiAssemblyEmitOption (formatOptionSwitch tcConfigB.fsiMultiAssemblyEmit))
                     )
                 ]
             )
@@ -1211,11 +1208,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     do
         if tcConfigB.clearResultsCache then
             dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
-
-        if tcConfigB.utf8output then
-            let prev = Console.OutputEncoding
-            Console.OutputEncoding <- Encoding.UTF8
-            System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
 
     do
         let firstArg =
@@ -1814,6 +1806,9 @@ type internal FsiDynamicCompiler
 
         let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name
 
+        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
+        let dynamicAssemblyId = Interlocked.Increment &dynamicAssemblyId
+
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to
         // allow internals access by all future assemblies with the same name (and only differing in version)
         let manifest =
@@ -1828,12 +1823,9 @@ type internal FsiDynamicCompiler
             { manifest with
                 Name = multiAssemblyName
                 // Because the coreclr loader will not load a higher assembly make versions go downwards
-                Version = Some(parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId}")
+                Version = Some(parseILVersion $"0.0.0.{maxVersion - dynamicAssemblyId % maxVersion}")
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
-
-        // The name of the assembly is "FSI-ASSEMBLY" for all submissions. This number is used for the Version
-        dynamicAssemblyId <- (dynamicAssemblyId + 1) % maxVersion
 
         let ilxMainModule =
             { ilxMainModule with
@@ -3858,7 +3850,8 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective("nowarn", nowarnArguments, m) ->
-            let numbers = (parsedHashDirectiveArguments nowarnArguments tcConfigB.langVersion)
+            let numbers = (parsedHashDirectiveArgumentsNoCheck nowarnArguments)
+
             List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
@@ -4655,6 +4648,20 @@ type FsiEvaluationSession
         with e ->
             warning (e)
 
+    let restoreEncoding =
+        if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
+            let previousEncoding = Console.OutputEncoding
+            Console.OutputEncoding <- Encoding.UTF8
+
+            Some(
+                { new IDisposable with
+                    member _.Dispose() =
+                        Console.OutputEncoding <- previousEncoding
+                }
+            )
+        else
+            None
+
     do
         updateBannerText () // resetting banner text after parsing options
 
@@ -4711,7 +4718,7 @@ type FsiEvaluationSession
     let lexResourceManager = LexResourceManager()
 
     /// The lock stops the type checker running at the same time as the server intellisense implementation.
-    let tcLockObject = box 7 // any new object will do
+    let tcLockObject = box 7 |> Unchecked.nonNull // any new object will do
 
     let resolveAssemblyRef (aref: ILAssemblyRef) =
         // Explanation: This callback is invoked during compilation to resolve assembly references
@@ -4775,7 +4782,7 @@ type FsiEvaluationSession
     let makeNestedException (userExn: #Exception) =
         // clone userExn -- make userExn the inner exception, to retain the stacktrace on raise
         let arguments = [| userExn.Message :> obj; userExn :> obj |]
-        Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
+        !! Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
 
     let commitResult res =
         match res with
@@ -4807,6 +4814,7 @@ type FsiEvaluationSession
         member _.Dispose() =
             (tcImports :> IDisposable).Dispose()
             uninstallMagicAssemblyResolution.Dispose()
+            restoreEncoding |> Option.iter (fun x -> x.Dispose())
 
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.

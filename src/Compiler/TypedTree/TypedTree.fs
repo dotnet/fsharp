@@ -32,6 +32,11 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
+[<RequireQualifiedAccess>]
+module WellKnownNames =
+    /// Special name for the defensive copy of a struct, we use it in situations like when we get an address of a field in ax-assembly scenario.
+    let [<Literal>] CopyOfStruct = "copyOfStruct"
+
 type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>
@@ -2117,7 +2122,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
           |> List.tryFind (fun v -> match key.TypeForLinkage with 
                                     | None -> true
                                     | Some keyTy -> ccu.MemberSignatureEquality(keyTy, v.Type))
-          |> ValueOptionInternal.ofOption
+          |> ValueOption.ofOption
 
     /// Get a table of values indexed by logical name
     member _.AllValsByLogicalName = 
@@ -2531,6 +2536,9 @@ type TyparConstraint =
     
     /// A constraint that a type is .NET unmanaged type
     | IsUnmanaged of range: range
+    
+    /// An anti-constraint indicating that ref structs (e.g. Span<>) are allowed here
+    | AllowsRefStruct of range:range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4229,7 +4237,7 @@ type UnionCaseRef =
     /// Try to dereference the reference 
     member x.TryUnionCase =
         x.TyconRef.TryDeref 
-        |> ValueOptionInternal.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOptionInternal.ofOption)
+        |> ValueOption.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs
@@ -4265,6 +4273,19 @@ type UnionCaseRef =
 
     override x.ToString() = x.CaseName
 
+let findLogicalFieldIndexOfRecordField (tcref:TyconRef) (id:string) =
+    let arr = tcref.AllFieldsArray
+
+    // We are skipping compiler generated fields such as "init@5" from index calculation
+    let rec go originalIdx skippedItems =
+        if originalIdx >= arr.Length then error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
+        else
+            let currentItem = arr[originalIdx]
+            if currentItem.LogicalName = id then (originalIdx-skippedItems)
+            else go (originalIdx + 1) (skippedItems + (if currentItem.IsCompilerGenerated && currentItem.IsStatic then 1 else 0))
+
+    go 0 0
+
 /// Represents a reference to a field in a record, class or struct
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdFieldRef = 
@@ -4292,7 +4313,7 @@ type RecdFieldRef =
     /// Try to dereference the reference 
     member x.TryRecdField = 
         x.TyconRef.TryDeref 
-        |> ValueOptionInternal.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOptionInternal.ofOption)
+        |> ValueOption.bind (fun tcref -> tcref.GetFieldByName x.FieldName |> ValueOption.ofOption)
 
     /// Get the attributes associated with the compiled property of the record field 
     member x.PropertyAttribs = x.RecdField.PropertyAttribs
@@ -4308,11 +4329,8 @@ type RecdFieldRef =
 
     member x.Index =
         let (RecdFieldRef(tcref, id)) = x
-        try 
-            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.LogicalName = id)  
-        with :? KeyNotFoundException -> 
-            error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
+        findLogicalFieldIndexOfRecordField tcref id
+            
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4354,6 +4372,12 @@ type NullnessVar() =
        | Some soln -> soln.TryEvaluate()
 
     member nv.IsSolved = solution.IsSome
+
+    member nv.IsFullySolved = 
+        match solution with
+        | None -> false
+        | Some (Nullness.Known _) -> true
+        | Some (Nullness.Variable v) -> v.IsFullySolved
 
     member nv.Set(nullness) = 
        assert (not nv.IsSolved) 
@@ -4545,16 +4569,16 @@ type Measure =
     | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Const of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef * range: range
 
     /// A product of two units of measure
-    | Prod of measure1: Measure * measure2: Measure
+    | Prod of measure1: Measure * measure2: Measure * range: range
 
     /// An inverse of a units of measure expression
     | Inv of measure: Measure
 
     /// The unit of measure '1', e.g. float = float<1>
-    | One
+    | One of range: range
 
     /// Raising a measure to a rational power 
     | RationalPower of measure: Measure * power: Rational
@@ -4563,7 +4587,16 @@ type Measure =
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText = x.ToString()
     
-    override x.ToString() = sprintf "%+A" x 
+    override x.ToString() = sprintf "%+A" x
+    
+    member x.Range = 
+        match x with 
+        | Var(typar) -> typar.Range
+        | Const(range= m) -> m
+        | Prod(range= m) -> m
+        | Inv(m) -> m.Range
+        | One(range= m) -> m
+        | RationalPower(measure= ms) -> ms.Range
 
 type Attribs = Attrib list 
 

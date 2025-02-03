@@ -31,18 +31,20 @@ module ScriptRunner =
         let cu  = cu |> withDefines defaultDefines
         match cu with 
         | FS fsSource ->
-            File.Delete("test.ok")
+            use capture = new TestConsole.ExecutionCapture()
             let engine = createEngine (fsSource.Options |> Array.ofList,version)
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with
             | CompilationResult.Failure _ -> res
-            | CompilationResult.Success s -> 
-                if File.Exists("test.ok") then
+            | CompilationResult.Success _ ->
+                if capture.OutText |> TestFramework.outputPassed then
                     res
                 else
-                    failwith $"Results looked correct, but 'test.ok' file was not created. Result: %A{s}"       
+                    failwith $"Results looked correct, but 'TEST PASSED OK' was not printed."       
 
-        | _ -> failwith $"Compilation unit other than fsharp is not supported, cannot process %A{cu}"
+        | _ ->
+            printfn $"Cannot process %A{cu}"
+            failwith $"Compilation unit other than fsharp is not supported."
 
 /// This test file was created by porting over (slower) FsharpSuite.Tests
 /// In order to minimize human error, the test definitions have been copy-pasted and this adapter provides implementations of the test functions

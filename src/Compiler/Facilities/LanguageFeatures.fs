@@ -94,6 +94,10 @@ type LanguageFeature =
     | ParsedHashDirectiveArgumentNonQuotes
     | EmptyBodiedComputationExpressions
     | AllowObjectExpressionWithoutOverrides
+    | DontWarnOnUppercaseIdentifiersInBindingPatterns
+    | UseTypeSubsumptionCache
+    | DeprecatePlacesWhereSeqCanBeOmitted
+    | SupportValueOptionsAsOptionalParameters
     | SupportCallerArgumentExpression
 
 /// LanguageVersion management
@@ -216,10 +220,14 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EnforceAttributeTargets, languageVersion90
 
                 // F# preview
+                LanguageFeature.UseTypeSubsumptionCache, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
+                LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
+                LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
+                LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
                 LanguageFeature.SupportCallerArgumentExpression, previewVersion
             ]
 
@@ -377,6 +385,11 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
         | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
         | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
+        | LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns ->
+            FSComp.SR.featureDontWarnOnUppercaseIdentifiersInBindingPatterns ()
+        | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
+        | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
+        | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
         | LanguageFeature.SupportCallerArgumentExpression -> FSComp.SR.featureSupportCallerArgumentExpression ()
 
     /// Get a version string associated with the given feature.

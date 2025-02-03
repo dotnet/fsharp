@@ -34,21 +34,23 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
-    let ``AssemblyVersion03_fs`` compilation =
-        compilation
-        |> withOptions ["--nowarn:52"]
-        |> verifyCompileAndRun
-        |> shouldSucceed
+    [<Collection(nameof NotThreadSafeResourceCollection)>]
+    module TimeCritical =
+        // SOURCE=AssemblyVersion03.fs                          # AssemblyVersion03.fs
+        [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion03.fs"|])>]
+        let ``AssemblyVersion03_fs`` compilation =
+            compilation
+            |> withOptions ["--nowarn:52"]
+            |> verifyCompileAndRun
+            |> shouldSucceed
 
-    // SOURCE=AssemblyVersion04.fs							# AssemblyVersion04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion04.fs"|])>]
-    let ``AssemblyVersion04_fs`` compilation =
-        compilation
-        |> withOptions ["--nowarn:52"]
-        |> verifyCompileAndRun
-        |> shouldSucceed
+        // SOURCE=AssemblyVersion04.fs							# AssemblyVersion04.fs
+        [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion04.fs"|])>]
+        let ``AssemblyVersion04_fs`` compilation =
+            compilation
+            |> withOptions ["--nowarn:52"]
+            |> verifyCompileAndRun
+            |> shouldSucceed
 
     // SOURCE=AttributeTargetsIsCtor01.fs				# AttributeTargetsIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsCtor01.fs"|])>]
@@ -933,3 +935,36 @@ and [<ApplicationTenantJsonDerivedType>]
         |> verifyCompile
         |> shouldSucceed
 #endif
+
+    [<Fact>] // Regression for https://github.com/dotnet/fsharp/issues/14304
+    let ``Construct an object with default and params parameters using parameterless constructor`` () =
+        Fsx """
+open System
+open System.Runtime.InteropServices
+
+type DefaultAndParams([<Optional; DefaultParameterValue(1)>]x: int, [<ParamArray>] value: string[]) =
+    inherit Attribute()
+
+type ParamsOnly([<ParamArray>] value: string[]) =
+    inherit Attribute()
+
+type DefaultOnly([<Optional; DefaultParameterValue(1)>]x: int) =
+    inherit Attribute()
+
+[<DefaultAndParams>]
+type Q1 = struct end
+
+[<DefaultAndParams(x = 1)>] // ok
+type Q11 = struct end
+
+[<DefaultAndParams(value = [||])>] // ok
+type Q12 = struct end
+
+[<ParamsOnly>]
+type Q2 = struct end
+
+[<DefaultOnly>]
+type Q3 = struct end
+        """
+        |> typecheck
+        |> shouldSucceed

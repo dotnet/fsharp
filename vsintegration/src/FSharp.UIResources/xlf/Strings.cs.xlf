@@ -327,11 +327,6 @@
         <target state="translated">Použít transparentní kompilátor (vyžaduje se restart)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_syntax_tree_cache">
-        <source>Cache parsing results (experimental)</source>
-        <target state="translated">Výsledky analýzy mezipaměti (experimentální)</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

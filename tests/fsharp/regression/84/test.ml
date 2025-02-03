@@ -5,7 +5,7 @@ let _ =
   | true -> (System.Console.Out.WriteLine "Test Failed"; exit 1) 
   | false -> 
       (System.Console.Out.WriteLine "Test Passed"; 
-       System.IO.File.WriteAllText("test.ok", "ok"); 
+       printf "TEST PASSED OK"; 
        exit 0)
 
 let _ = (System.Console.Out.WriteLine "Test Ended"; exit 100)

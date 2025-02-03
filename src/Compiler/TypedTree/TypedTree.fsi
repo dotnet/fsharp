@@ -17,6 +17,12 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Compiler.Xml
 open FSharp.Core.CompilerServices
 
+[<RequireQualifiedAccess>]
+module WellKnownNames =
+    /// Special name for the defensive copy of a struct, we use it in situations like when we get an address of a field in ax-assembly scenario.
+    [<Literal>]
+    val CopyOfStruct: string = "copyOfStruct"
+
 val getNameOfScopeRef: sref: ILScopeRef -> string
 
 type Stamp = int64
@@ -1694,6 +1700,9 @@ type TyparConstraint =
     /// A constraint that a type is .NET unmanaged type
     | IsUnmanaged of range: range
 
+    /// An anti-constraint indicating that ref structs (e.g. Span<>) are allowed here
+    | AllowsRefStruct of range: range
+
     override ToString: unit -> string
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -3097,6 +3106,7 @@ type NullnessVar =
     member Evaluate: unit -> NullnessInfo
     member TryEvaluate: unit -> NullnessInfo voption
     member IsSolved: bool
+    member IsFullySolved: bool
     member Set: Nullness -> unit
     member Unset: unit -> unit
     member Solution: Nullness
@@ -3192,21 +3202,23 @@ type Measure =
     | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Const of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef * range: range
 
     /// A product of two units of measure
-    | Prod of measure1: Measure * measure2: Measure
+    | Prod of measure1: Measure * measure2: Measure * range: range
 
     /// An inverse of a units of measure expression
     | Inv of measure: Measure
 
     /// The unit of measure '1', e.g. float = float<1>
-    | One
+    | One of range: range
 
     /// Raising a measure to a rational power
     | RationalPower of measure: Measure * power: Rational
 
     override ToString: unit -> string
+
+    member Range: range
 
 type Attribs = Attrib list
 

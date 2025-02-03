@@ -5,7 +5,7 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
-open FsUnit
+open FSharp.Test.Assert
 open Xunit
 
 module ActivePatterns =
@@ -787,6 +787,46 @@ type T() =
 
         assertRange (9, 19) (9, 20) mProp
 
+
+    [<Fact>]
+    let ``Repr info 01`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+let f x = ()
+"""
+        let mfv = findSymbolByName "f" checkResults :?> FSharpMemberOrFunctionOrValue
+        let param = mfv.CurriedParameterGroups[0][0]
+        param.Name.Value |> shouldEqual "x"
+
+    [<Fact>]
+    let ``Repr info 02`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+do
+    let f x = ()
+    ()
+"""
+        let mfv = findSymbolByName "f" checkResults :?> FSharpMemberOrFunctionOrValue
+        let param = mfv.CurriedParameterGroups[0][0]
+        param.Name.Value |> shouldEqual "x"
+
+    [<Fact>]
+    let ``Repr info 03`` () =
+        let _, checkResults =
+            getParseAndCheckResults """
+module Module
+
+type T() =
+    let f x = ()
+"""
+        let mfv = findSymbolByName "f" checkResults :?> FSharpMemberOrFunctionOrValue
+        let param = mfv.CurriedParameterGroups[0][0]
+        param.Name.Value |> shouldEqual "x"
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
@@ -1271,3 +1311,33 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+
+module Delegates =
+    [<Fact>]
+    let ``IL metadata`` () =
+        let _, checkResults = getParseAndCheckResults """
+    module Delegates
+    open System
+
+    typeof<Delegate>
+    typeof<MulticastDelegate>
+    typeof<EventHandler>
+    typeof<Action>
+    """
+
+        let symbols =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun su -> match su.Symbol with :? FSharpEntity as entity -> Some entity | _ -> None)
+            |> Seq.map (fun su -> su.DisplayName, su)
+            |> dict
+
+        let delegateType = symbols["Delegate"]
+        delegateType.IsDelegate |> shouldEqual false
+        delegateType.IsClass |> shouldEqual true
+
+        let multicastDelegateType = symbols["MulticastDelegate"]
+        multicastDelegateType.IsDelegate |> shouldEqual false
+        multicastDelegateType.IsClass |> shouldEqual true
+
+        symbols["EventHandler"].IsDelegate |> shouldEqual true
+        symbols["Action"].IsDelegate |> shouldEqual true

@@ -1,7 +1,8 @@
 ﻿module FSharp.Compiler.Service.Tests.ExprTests
 
 open Xunit
-open FsUnit
+open FSharp.Test
+open FSharp.Test.Assert
 open System
 open System.Text
 open System.Collections.Generic
@@ -11,6 +12,8 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
+
+open TestFramework
 
 type FSharpCore =
     | FC45
@@ -592,7 +595,7 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    let createOptionsWithArgs args = createProjectOptions dirName [ fileSource1; fileSource2 ] args
+    let createOptionsWithArgs args = createProjectOptions [ fileSource1; fileSource2 ] args
 
     let createOptions() = createOptionsWithArgs []
 
@@ -656,13 +659,10 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 """
 
 /// This test is run in unison with its optimized counterpart below
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
-    let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test Unoptimized Declarations Project1`` () =
+    let options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -797,13 +797,10 @@ let ``Test Unoptimized Declarations Project1`` useTransparentCompiler =
 
     ()
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test Optimized Declarations Project1`` useTransparentCompiler =
-    let cleanup, options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test Optimized Declarations Project1`` () =
+    let options = Project1.createOptionsWithArgs [ "--langversion:preview" ]
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -941,15 +938,13 @@ let ``Test Optimized Declarations Project1`` useTransparentCompiler =
 
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
 
-    let tempFileName = getTempFileName()
-    let filePath = getTempFilePathChangeExt dirName tempFileName ".fs"
-    let dllPath =getTempFilePathChangeExt dirName tempFileName ".dll"
-    let projFilePath = getTempFilePathChangeExt dirName tempFileName ".fsproj"
+    let tempFileName = getTemporaryFileName()
+    let filePath = changeExtension tempFileName ".fs"
+    let dllPath =changeExtension tempFileName ".dll"
+    let projFilePath = changeExtension tempFileName ".fsproj"
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=true)
 
     begin
-        use _cleanup = cleanupTempFiles dirName [filePath; dllPath; projFilePath]
-        createTempDir dirName
         let source = String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
         let fileSource = excludedTests |> List.fold replace source
@@ -3131,19 +3126,16 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     """
 
 
-    let createOptions() = createProjectOptions dirName [fileSource1] []
+    let createOptions() = createProjectOptions [fileSource1] []
 
 #if !NETFRAMEWORK && DEBUG
 [<Theory(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
+[<Fact>]
 #endif
-let ``Test expressions of declarations stress big expressions`` useTransparentCompiler =
-    let cleanup, options = ProjectStressBigExpressions.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+let ``Test expressions of declarations stress big expressions`` () =
+    let options = ProjectStressBigExpressions.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
@@ -3157,14 +3149,11 @@ let ``Test expressions of declarations stress big expressions`` useTransparentCo
 #if !NETFRAMEWORK && DEBUG
 [<Theory(Skip = "Test is known to fail in DEBUG when not using NetFramework. Use RELEASE configuration or NetFramework to run it.")>]
 #else
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
+[<Fact>]
 #endif
-let ``Test expressions of optimized declarations stress big expressions`` useTransparentCompiler =
-    let cleanup, options = ProjectStressBigExpressions.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+let ``Test expressions of optimized declarations stress big expressions`` () =
+    let options = ProjectStressBigExpressions.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
@@ -3218,15 +3207,12 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test ProjectForWitnesses1`` useTransparentCompiler =
-    let cleanup, options = ProjectForWitnesses1.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test ProjectForWitnesses1`` () =
+    let options = ProjectForWitnesses1.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3266,13 +3252,10 @@ let ``Test ProjectForWitnesses1`` useTransparentCompiler =
       |> shouldEqual expected
 
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` useTransparentCompiler =
-    let cleanup, options = ProjectForWitnesses1.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
+    let options = ProjectForWitnesses1.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3346,15 +3329,12 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test ProjectForWitnesses2`` useTransparentCompiler =
-    let cleanup, options = ProjectForWitnesses2.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test ProjectForWitnesses2`` () =
+    let options = ProjectForWitnesses2.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3404,15 +3384,12 @@ let s2 = sign p1
 
     """
 
-    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test ProjectForWitnesses3`` useTransparentCompiler =
-    let cleanup, options = createProjectOptions dirName [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test ProjectForWitnesses3`` () =
+    let options = createProjectOptions [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3439,13 +3416,10 @@ let ``Test ProjectForWitnesses3`` useTransparentCompiler =
     actual
       |> shouldEqual expected
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` useTransparentCompiler =
-    let cleanup, options = ProjectForWitnesses3.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
+    let options = ProjectForWitnesses3.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3502,15 +3476,12 @@ let isNullQuoted (ts : 't[]) =
 
 """
 
-    let createOptions() = createProjectOptions dirName [fileSource1] ["--langversion:7.0"]
+    let createOptions() = createProjectOptions [fileSource1] ["--langversion:7.0"]
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` useTransparentCompiler =
-    let cleanup, options = ProjectForWitnesses4.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
+    let options = ProjectForWitnesses4.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
@@ -3542,15 +3513,12 @@ module N.M
 let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
 """
     
-    let createOptions() = createProjectOptions dirName [fileSource1] []
+    let createOptions() = createProjectOptions [fileSource1] []
     
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Test NoWarn HashDirective`` useTransparentCompiler =
-    let cleanup, options = ProjectForNoWarnHashDirective.createOptions()
-    use _holder = cleanup
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=useTransparentCompiler)
+[<Fact>]
+let ``Test NoWarn HashDirective`` () =
+    let options = ProjectForNoWarnHashDirective.createOptions()
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
