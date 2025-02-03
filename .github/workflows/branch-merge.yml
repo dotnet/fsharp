@@ -1,0 +1,22 @@
+# Merges any changes from servicing branches forward.
+
+name: Flow servicing changes to main
+on:
+  push:
+   branches:
+     - 'release/*'
+     - 'main'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  servicing-flow:
+    uses: dotnet/arcade/.github/workflows/inter-branch-merge-base.yml@main
+    with:
+      configuration_file_path: '.config/service-branch-merge.json'
+  feature-lsp-flow:
+    uses: dotnet/arcade/.github/workflows/inter-branch-merge-base.yml@main
+    with:
+      configuration_file_path: '.config/feature-lsp-branch-merge.json'

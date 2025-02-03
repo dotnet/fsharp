@@ -328,19 +328,6 @@ module Option =
             None
 
 [<RequireQualifiedAccess>]
-module ValueOption =
-
-    let inline ofOption o =
-        match o with
-        | Some v -> ValueSome v
-        | _ -> ValueNone
-
-    let inline toOption o =
-        match o with
-        | ValueSome v -> Some v
-        | _ -> None
-
-[<RequireQualifiedAccess>]
 module IEnumerator =
     let chooseV f (e: IEnumerator<'T>) =
         let mutable started = false
