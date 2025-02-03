@@ -317,7 +317,6 @@
     <Compile Include="Miscellaneous\MigratedCoreTests.fs" />
     <Compile Include="Miscellaneous\MigratedOverloadTests.fs" />
     <Compile Include="Miscellaneous\MigratedTypeCheckTests.fs" />
-    <Compile Include="Miscellaneous\MigratedTypeProviderTests.fs" />
     <Compile Include="Miscellaneous\GraphTests.fs" />
     <Compile Include="Miscellaneous\FileIndex.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />

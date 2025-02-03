@@ -1644,10 +1644,15 @@ module RegressionTests =
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
 
     [<Fact>]
+    let ``13219-bug-FSI`` () = singleTestBuildAndRun "regression/13219" FSI
+
+    [<Fact>]
     let ``4715-optimized`` () =
         let cfg = testConfig "regression/4715"
         fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
 
+    [<Fact>]
+    let ``multi-package-type-provider-test-FSI`` () = singleTestBuildAndRun "regression/13710" FSI
 
 #if NETCOREAPP
     [<Fact>]
