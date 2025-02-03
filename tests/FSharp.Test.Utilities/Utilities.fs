@@ -239,7 +239,7 @@ let main argv = 0"""
 Project directory: %s{projectDirectory}
 STDOUT: %s{output}
 STDERR: %s{errors}
-An error occurred getting netcoreapp references: %A{e}
+An error occurred getting netcoreapp references (compare the output of `dotnet --list-sdks` and/or the contents of the local `/.dotnet` directory against what is in `global.json`): %A{e}
 """
                     raise (Exception (message, e))
             finally
