@@ -221,7 +221,7 @@ namespace Microsoft.FSharp.Core
         member _.Minor = minor
         member _.Release = release
 
-    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=true)>]
     [<Sealed>]
     type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags,
                                      variantNumber:int,
