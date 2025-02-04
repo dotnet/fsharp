@@ -23,20 +23,18 @@ with :? System.ArgumentException as ex ->
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """namespace global
-module Program =
-  open System.Runtime.CompilerServices
-  type A() =
-    static member aa (
-      a,
-      [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
-      [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
-      [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
-      [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
-      a,b,c,d,e
+        FSharp """open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+type A() =
+  static member aa (
+    a,
+    [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
+    [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
+    [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
+    a,b,c,e
 
-  let stringABC = "abc"
-  assert (A.aa(stringABC) = ("abc", ".ctor", 14, "C:\Program.fs", "stringABC"))
+let stringABC = "abc"
+assert (A.aa(stringABC) = ("abc", ".cctor", 12, "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun
@@ -45,48 +43,44 @@ module Program =
 
     [<Fact>]
     let ``Can define in F# with F#-style optional arguments`` () =
-        FSharp """namespace global
-module Program =
-  open System.Runtime.CompilerServices
-  type A() =
-    static member aa (
-      a,
-      [<CallerMemberName>] ?b: string, 
-      [<CallerLineNumber>] ?c: int, 
-      [<CallerFilePath>] ?d: string, 
-      [<CallerArgumentExpressionAttribute("a")>] ?e: string) = 
-      let b = defaultArg b "no value"
-      let c = defaultArg c 0
-      let d = defaultArg d "no value"
-      let e = defaultArg e "no value"
-      a,b,c,d,e
+        FSharp """open System.Runtime.CompilerServices
+type A() =
+  static member aa (
+    a,
+    [<CallerMemberName>] ?b: string, 
+    [<CallerLineNumber>] ?c: int, 
+    [<CallerArgumentExpressionAttribute("a")>] ?e: string) = 
+    let b = defaultArg b "no value"
+    let c = defaultArg c 0
+    let e = defaultArg e "no value"
+    a,b,c,e
 
-  let stringABC = "abc"
-  assert (A.aa(stringABC) = ("abc", ".ctor", 18, "C:\Program.fs", "stringABC"))
+let stringABC = "abc"
+assert (A.aa(stringABC) = ("abc", ".cctor", 14, "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
         |> ignore
 
-        
     [<Fact>]
     let ``Can define in F# - with #line`` () =
-        FSharp """namespace global
-module Program =
+        FSharp """open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 # 1 "C:\\Program.fs"
-  open System.Runtime.CompilerServices
-  type A() =
-    static member aa (
-      a,
-      [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
-      [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
-      [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
-      [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
-      a,b,c,d,e
+type A() =
+  static member aa (
+    a,
+    [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
+    [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
+    [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
+    [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
+    a,b,c,d,e
 
-  let stringABC = "abc"
-  assert (A.aa(stringABC) = ("abc", ".ctor", 15, "C:\Program.fs", "stringABC"))
+let stringABC = "abc"
+assert (A.aa(stringABC) = ("abc", ".cctor", 11, "C:\\Program.fs", "stringABC"))
+# 1 "C:\\Program.fs"
+assert (A.aa(stringABC : string) = ("abc", ".cctor", 1, "C:\\Program.fs", "stringABC : string"))
         """
         |> withLangVersionPreview
         |> compileAndRun

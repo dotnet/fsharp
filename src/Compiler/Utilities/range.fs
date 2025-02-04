@@ -621,7 +621,7 @@ module internal FileContent =
 
         default _.GetLine(fileName: string, line: int) : string =
             match fileContentDict.TryGetValue fileName with
-            | true, lines when lines.Length > line -> lines[line - 1]
+            | true, lines when lines.Length >= line && line > 0 -> lines[line - 1]
             | _ -> String.Empty
 
         interface IFileContentGetLine with
