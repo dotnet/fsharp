@@ -72,7 +72,7 @@ type internal CancellableBuilder =
 
     member inline Using:
         resource: 'Resource|null * [<InlineIfLambda>] comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T>
-            when 'Resource :> IDisposable
+            when 'Resource :> IDisposable and 'Resource:not null and 'Resource:not struct
 
     member inline Zero: unit -> Cancellable<unit>
 
