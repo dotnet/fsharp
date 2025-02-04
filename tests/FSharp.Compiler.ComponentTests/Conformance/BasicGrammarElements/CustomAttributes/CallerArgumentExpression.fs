@@ -9,15 +9,12 @@ module CustomAttributes_CallerArgumentExpression =
 
     [<Fact>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
-        FSharp """module Program
-[<EntryPoint>]
-let main args =
-  try System.ArgumentNullException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
-    (* comment *) 
-    |> String.concat " ")
-  with :? System.ArgumentException as ex -> 
-    assert (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \""))
-  0
+        FSharp """
+try System.ArgumentNullException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
+  (* comment *) 
+  |> String.concat " ")
+with :? System.ArgumentException as ex -> 
+  assert (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \""))
 """
         |> withLangVersionPreview
         |> asExe
@@ -27,7 +24,7 @@ let main args =
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """module Program
+        FSharp """
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 type A() =
@@ -49,7 +46,7 @@ assert (A.aa(stringABC) = ("abc", ".cctor", 13, "stringABC"))
 
     [<Fact>]
     let ``Can define in F# with F#-style optional arguments`` () =
-        FSharp """module Program
+        FSharp """
 open System.Runtime.CompilerServices
 type A() =
   static member aa (
@@ -73,7 +70,7 @@ assert (A.aa(stringABC) = ("abc", ".cctor", 15, "stringABC"))
 
     [<Fact>]
     let ``Can define in F# - with #line`` () =
-        FSharp """module Program
+        FSharp """
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 # 1 "C:\\Program.fs"
