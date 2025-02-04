@@ -107,43 +107,12 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
+    /// The original range for the range
+    member OriginalRange: range option
+
     member HasOriginalRange: bool
-
-    /// The start line of the range
-    member OriginalStartLine: int
-
-    /// The start column of the range
-    member OriginalStartColumn: int
-
-    /// The line number for the end position of the range
-    member OriginalEndLine: int
-
-    /// The column number for the end position of the range
-    member OriginalEndColumn: int
-
-    /// The start position of the range
-    member OriginalStart: pos
-
-    /// The end position of the range
-    member OriginalEnd: pos
-
-    /// The empty range that is located at the start position of the range
-    member OriginalStartRange: range
-
-    /// The empty range that is located at the end position of the range
-    member OriginalEndRange: range
-
-    /// The file index for the range
-    member internal OriginalFileIndex: int
-
-    /// The file name for the file of the range
-    member OriginalFileName: string
-
-    /// Synthetic marks ranges which are produced by intermediate compilation phases. This
-    /// bit signifies that the range covers something that should not be visible to language
-    /// service operations like dot-completion.
-    member OriginalIsSynthetic: bool 
-
+            
+    member WithOriginalRange: originalRange: range option -> range
 
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range

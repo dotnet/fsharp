@@ -23,17 +23,7 @@ with :? System.ArgumentException as ex ->
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """#if !NETCOREAPP3_0_OR_GREATER
-namespace System.Runtime.CompilerServices
-open System
-[<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
-type CallerArgumentExpressionAttribute(parameterName) = 
-    inherit Attribute()
-    member val ParameterName: string = parameterName
-
-namespace global
-#endif
-
+        FSharp """
 module Program =
   open System.Runtime.CompilerServices
   type A() =
@@ -46,7 +36,7 @@ module Program =
       a,b,c,d,e
 
   let stringABC = "abc"
-  assert (A.aa(stringABC) = ("abc", ".ctor", 22, "C:\Program.fs", "stringABC"))
+  assert (A.aa(stringABC) = ("abc", ".ctor", 14, "C:\Program.fs", "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun
@@ -54,18 +44,35 @@ module Program =
         |> ignore
 
     [<Fact>]
+    let ``Can define in F# with F#-style optional arguments`` () =
+        FSharp """
+module Program =
+  open System.Runtime.CompilerServices
+  type A() =
+    static member aa (
+      a,
+      [<CallerMemberName>] ?b: string, 
+      [<CallerLineNumber>] ?c: int, 
+      [<CallerFilePath>] ?d: string, 
+      [<CallerArgumentExpressionAttribute("a")>] ?e: string) = 
+      let b = defaultArg b "no value"
+      let c = defaultArg c 0
+      let d = defaultArg d "no value"
+      let e = defaultArg e "no value"
+      a,b,c,d,e
+
+  let stringABC = "abc"
+  assert (A.aa(stringABC) = ("abc", ".ctor", 18, "C:\Program.fs", "stringABC"))
+        """
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+        
+    [<Fact>]
     let ``Can define in F# - with #line`` () =
-        FSharp """#if !NETCOREAPP3_0_OR_GREATER
-namespace System.Runtime.CompilerServices
-open System
-[<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
-type CallerArgumentExpressionAttribute(parameterName) = 
-    inherit Attribute()
-    member val ParameterName: string = parameterName
-
-namespace global
-#endif
-
+        FSharp """
 module Program =
 # 1 "C:\\Program.fs"
   open System.Runtime.CompilerServices
@@ -79,7 +86,7 @@ module Program =
       a,b,c,d,e
 
   let stringABC = "abc"
-  assert (A.aa(stringABC) = ("abc", ".ctor", 12, "C:\Program.fs", "stringABC"))
+  assert (A.aa(stringABC) = ("abc", ".ctor", 15, "C:\Program.fs", "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun

@@ -262,9 +262,11 @@ module FileIndex =
     let commandLineArgsFileName = "commandLineArgs"
 
 [<Struct; CustomEquality; NoComparison>]
-[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type _RangeBackground(code1: int64, code2: int64) =
-    static member Zero = _rangeBackground (0L, 0L)
+[<System.Diagnostics.DebuggerDisplay("{OriginalRange} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
+type Range private (code1: int64, code2: int64, originalRange: Range option) =
+    static member Zero = range (0L, 0L)
+
+    new(code1, code2) = range (code1, code2, None)
 
     new(fIdx, bl, bc, el, ec) =
         let code1 =
@@ -276,9 +278,9 @@ type _RangeBackground(code1: int64, code2: int64) =
             ((int64 bl <<< startLineShift) &&& startLineMask)
             ||| ((int64 (el - bl) <<< heightShift) &&& heightMask)
 
-        _rangeBackground (code1, code2)
+        range (code1, code2)
 
-    new(fIdx, b: pos, e: pos) = _rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column)
+    new(fIdx, b: pos, e: pos) = range (fIdx, b.Line, b.Column, e.Line, e.Column)
 
     member _.StartLine = int32 (uint64 (code2 &&& startLineMask) >>> startLineShift)
 
@@ -310,18 +312,18 @@ type _RangeBackground(code1: int64, code2: int64) =
 
     member _.FileIndex = int32 (code1 &&& fileIndexMask)
 
-    member m.StartRange = _rangeBackground (m.FileIndex, m.Start, m.Start)
+    member m.StartRange = range (m.FileIndex, m.Start, m.Start)
 
-    member m.EndRange = _rangeBackground (m.FileIndex, m.End, m.End)
+    member m.EndRange = range (m.FileIndex, m.End, m.End)
 
     member m.FileName = fileOfFileIndex m.FileIndex
 
     member m.ShortFileName = Path.GetFileName(fileOfFileIndex m.FileIndex)
 
     member _.MakeSynthetic() =
-        _rangeBackground (code1, code2 ||| isSyntheticMask)
+        range (code1, code2 ||| isSyntheticMask)
 
-    member m.IsAdjacentTo(otherRange: _RangeBackground) =
+    member m.IsAdjacentTo(otherRange: Range) =
         m.FileIndex = otherRange.FileIndex && m.End.Encoding = otherRange.Start.Encoding
 
     member _.NoteSourceConstruct(kind) =
@@ -338,7 +340,7 @@ type _RangeBackground(code1: int64, code2: int64) =
             | NotedSourceConstruct.Combine -> 8
             | NotedSourceConstruct.DelayOrQuoteOrRun -> 9
 
-        _rangeBackground (code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
+        range (code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
 
     member _.Code1 = code1
 
@@ -372,91 +374,10 @@ type _RangeBackground(code1: int64, code2: int64) =
             with e ->
                 e.ToString()
 
-    member _.Equals(m2: _rangeBackground) =
+    member _.Equals(m2: range) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         let rcode2 = m2.Code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         code1 = m2.Code1 && code2 = rcode2
-
-    override m.Equals(obj) =
-        match obj with
-        | :? _rangeBackground as m2 -> m.Equals(m2)
-        | _ -> false
-
-    override _.GetHashCode() =
-        let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
-        hash code1 + hash code2
-
-    override r.ToString() =
-        sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
-
-    member m.IsZero = m.Equals _rangeBackground.Zero
-
-and _rangeBackground = _RangeBackground
-
-[<Struct; CustomEquality; NoComparison>]
-[<System.Diagnostics.DebuggerDisplay("({OriginalStartLine},{OriginalStartColumn}-{OriginalEndLine},{OriginalEndColumn}) {OriginalShortFileName} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type Range(range1: _rangeBackground, range2: _rangeBackground) =
-    static member Zero = range (_rangeBackground.Zero, _rangeBackground.Zero)
-
-    new(fIdx, bl, bc, el, ec) = range (_rangeBackground (fIdx, bl, bc, el, ec), _RangeBackground.Zero)
-
-    new(fIdx, bl, bc, el, ec, fIdx2, bl2, bc2, el2, ec2) =
-        range (_rangeBackground (fIdx, bl, bc, el, ec), _rangeBackground (fIdx2, bl2, bc2, el2, ec2))
-
-    new(fIdx, b: pos, e: pos) = range (_rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column), _rangeBackground.Zero)
-
-    new(fIdx, b: pos, e: pos, fIdx2, b2: pos, e2: pos) =
-        range (
-            _rangeBackground (fIdx, b.Line, b.Column, e.Line, e.Column),
-            _rangeBackground (fIdx2, b2.Line, b2.Column, e2.Line, e2.Column)
-        )
-
-    member _.StartLine = range1.StartLine
-
-    member _.StartColumn = range1.StartColumn
-
-    member _.EndLine = range1.EndLine
-
-    member _.EndColumn = range1.EndColumn
-
-    member _.IsSynthetic = range1.IsSynthetic
-
-    member _.NotedSourceConstruct = range1.NotedSourceConstruct
-
-    member _.Start = range1.Start
-
-    member _.End = range1.End
-
-    member _.FileIndex = range1.FileIndex
-
-    member _.StartRange = Range(range1.StartRange, range2.StartRange)
-
-    member _.EndRange = Range(range1.EndRange, range2.EndRange)
-
-    member _.FileName = range1.FileName
-
-    member _.ShortFileName = range1.ShortFileName
-
-    member _.MakeSynthetic() =
-        range (range1.MakeSynthetic(), range2.MakeSynthetic())
-
-    member _.IsAdjacentTo(otherRange: Range) = range1.IsAdjacentTo otherRange.Range1
-
-    member _.NoteSourceConstruct(kind) =
-        range (range1.NoteSourceConstruct kind, range2.NoteSourceConstruct kind)
-
-    member _.Code1 = range1.Code1
-
-    member _.Code2 = range1.Code2
-
-    member _.Range1 = range1
-
-    member _.Range2 = range2
-
-    member _.DebugCode = range1.DebugCode
-
-    member _.Equals(m2: range) =
-        range1.Equals m2.Range1 && range2.Equals m2.Range2
 
     override m.Equals(obj) =
         match obj with
@@ -464,44 +385,28 @@ type Range(range1: _rangeBackground, range2: _rangeBackground) =
         | _ -> false
 
     override _.GetHashCode() =
-        range1.GetHashCode() + range2.GetHashCode()
+        let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        hash code1 + hash code2
 
-    override _.ToString() =
+    member _.OriginalRange = originalRange
+
+    override r.ToString() =
         let fromText =
-            if range2.IsZero then
-                String.Empty
+            if r.HasOriginalRange then
+                $" (from: %s{r.OriginalRange.Value.ToString()})"
             else
-                $"(from: {range2.ToString()})"
+                String.Empty
 
-        $"{range1} {fromText}"
+        sprintf "(%d,%d--%d,%d)%s" r.StartLine r.StartColumn r.EndLine r.EndColumn fromText
 
-    member _.HasOriginalRange = not range2.IsZero
+    member m.IsZero = m.Equals range.Zero
 
-    member _.OriginalStartLine = range2.StartLine
+    member _.WithOriginalRange(originalRange) = range (code1, code2, originalRange)
 
-    member _.OriginalStartColumn = range2.StartColumn
-
-    member _.OriginalEndLine = range2.EndLine
-
-    member _.OriginalEndColumn = range2.EndColumn
-
-    member _.OriginalIsSynthetic = range2.IsSynthetic
-
-    member _.OriginalNotedSourceConstruct = range2.NotedSourceConstruct
-
-    member _.OriginalStart = range2.Start
-
-    member _.OriginalEnd = range2.End
-
-    member _.OriginalFileIndex = range2.FileIndex
-
-    member _.OriginalStartRange = Range(range2.StartRange, range2.StartRange)
-
-    member _.OriginalEndRange = Range(range2.EndRange, range2.EndRange)
-
-    member _.OriginalFileName = range2.FileName
-
-    member _.OriginalShortFileName = range2.ShortFileName
+    member _.HasOriginalRange =
+        match originalRange with
+        | Some range2 when not range2.IsZero -> true
+        | _ -> false
 
 and range = Range
 
@@ -562,7 +467,8 @@ module Range =
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
     let mkFileIndexRangeWithOriginRange fileIndex startPos endPos fileIndex2 startPos2 endPos2 =
-        range (fileIndex, startPos, endPos, fileIndex2, startPos2, endPos2)
+        range(fileIndex, startPos, endPos)
+            .WithOriginalRange(Some(range (fileIndex2, startPos2, endPos2)))
 
     let posOrder =
         Order.orderOn (fun (p: pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
@@ -603,22 +509,15 @@ module Range =
                 else
                     m2
 
+            let originalRange =
+                match m1.OriginalRange, m2.OriginalRange with
+                | Some r1, Some r2 when r1.FileIndex = r2.FileIndex ->
+                    Some(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
+                | _ -> None
+
             let m =
-                if m1.OriginalFileIndex = m2.OriginalFileIndex then
-                    range (
-                        m1.FileIndex,
-                        start.StartLine,
-                        start.StartColumn,
-                        finish.EndLine,
-                        finish.EndColumn,
-                        m1.OriginalFileIndex,
-                        start.OriginalStartLine,
-                        start.OriginalStartColumn,
-                        finish.OriginalEndLine,
-                        finish.OriginalEndColumn
-                    )
-                else
-                    range (m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
+                range(m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
+                    .WithOriginalRange(originalRange)
 
             if m1.IsSynthetic || m2.IsSynthetic then
                 m.MakeSynthetic()
@@ -728,12 +627,9 @@ module internal FileContent =
     let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
 
     let getCodeText (m: range) =
-        let filename, startLine, endLine =
-            if m.HasOriginalRange then
-                m.OriginalFileName, m.OriginalStartLine, m.OriginalEndLine
-            else
-                m.FileName, m.StartLine, m.EndLine
+        let m = if m.HasOriginalRange then m.OriginalRange.Value else m
 
+        let filename, startLine, endLine = m.FileName, m.StartLine, m.EndLine
         let endCol = m.EndColumn - 1
         let startCol = m.StartColumn - 1
 
