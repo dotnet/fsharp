@@ -482,8 +482,8 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         | null -> nullArg name 
         | t -> ProvidedType (t, ctxt)
 
-    static member CreateArray ctxt (xs: Type[] ) : ProvidedType[]  = 
-        xs |> Array.map (ProvidedType.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs:_ ProvidedArray) = 
+        xs |> ProvidedArray.map (ProvidedType.CreateNonNull ctxt)
 
     static member CreateNoContext (x:Type) = ProvidedType.CreateNonNull ProvidedTypeContext.Empty x
 
