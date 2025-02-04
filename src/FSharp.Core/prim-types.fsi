@@ -1796,7 +1796,11 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic for the efficient compilation of sequence expressions</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val Dispose<'T when 'T :> System.IDisposable> : resource: 'T|null -> unit
+#else
             val Dispose<'T when 'T :> System.IDisposable> : resource: 'T -> unit
+#endif
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
