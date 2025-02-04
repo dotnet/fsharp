@@ -263,10 +263,10 @@ module FileIndex =
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("{OriginalRange} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type Range private (code1: int64, code2: int64, originalRange: Range option) =
+type Range private (code1: int64, code2: int64, originalRange: struct (int64 * int64) voption) =
     static member Zero = range (0L, 0L)
 
-    new(code1, code2) = range (code1, code2, None)
+    new(code1, code2) = range (code1, code2, ValueNone)
 
     new(fIdx, bl, bc, el, ec) =
         let code1 =
@@ -388,7 +388,9 @@ type Range private (code1: int64, code2: int64, originalRange: Range option) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         hash code1 + hash code2
 
-    member _.OriginalRange = originalRange
+    member _.OriginalRange =
+        originalRange
+        |> ValueOption.map (fun struct (code1, code2) -> range (code1, code2))
 
     override r.ToString() =
         let fromText =
@@ -401,11 +403,12 @@ type Range private (code1: int64, code2: int64, originalRange: Range option) =
 
     member m.IsZero = m.Equals range.Zero
 
-    member _.WithOriginalRange(originalRange) = range (code1, code2, originalRange)
+    member _.WithOriginalRange(originalRange: range voption) =
+        range (code1, code2, originalRange |> ValueOption.map (fun m -> struct (m.Code1, m.Code2)))
 
-    member _.HasOriginalRange =
-        match originalRange with
-        | Some range2 when not range2.IsZero -> true
+    member this.HasOriginalRange =
+        match this.OriginalRange with
+        | ValueSome range2 when not range2.IsZero -> true
         | _ -> false
 
 and range = Range
@@ -468,7 +471,7 @@ module Range =
 
     let mkFileIndexRangeWithOriginRange fileIndex startPos endPos fileIndex2 startPos2 endPos2 =
         range(fileIndex, startPos, endPos)
-            .WithOriginalRange(Some(range (fileIndex2, startPos2, endPos2)))
+            .WithOriginalRange(ValueSome(range (fileIndex2, startPos2, endPos2)))
 
     let posOrder =
         Order.orderOn (fun (p: pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
@@ -511,9 +514,9 @@ module Range =
 
             let originalRange =
                 match m1.OriginalRange, m2.OriginalRange with
-                | Some r1, Some r2 when r1.FileIndex = r2.FileIndex ->
-                    Some(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
-                | _ -> None
+                | ValueSome r1, ValueSome r2 when r1.FileIndex = r2.FileIndex ->
+                    ValueSome(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
+                | _ -> ValueNone
 
             let m =
                 range(m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)

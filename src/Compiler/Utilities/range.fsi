@@ -108,11 +108,11 @@ type Range =
     member IsSynthetic: bool 
 
     /// The original range for the range
-    member OriginalRange: range option
+    member OriginalRange: range voption
 
     member HasOriginalRange: bool
             
-    member WithOriginalRange: originalRange: range option -> range
+    member WithOriginalRange: originalRange: range voption -> range
 
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
