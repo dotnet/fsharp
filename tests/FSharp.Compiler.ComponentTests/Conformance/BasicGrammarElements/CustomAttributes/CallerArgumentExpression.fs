@@ -23,7 +23,7 @@ with :? System.ArgumentException as ex ->
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """
+        FSharp """namespace global
 module Program =
   open System.Runtime.CompilerServices
   type A() =
@@ -45,7 +45,7 @@ module Program =
 
     [<Fact>]
     let ``Can define in F# with F#-style optional arguments`` () =
-        FSharp """
+        FSharp """namespace global
 module Program =
   open System.Runtime.CompilerServices
   type A() =
@@ -72,7 +72,7 @@ module Program =
         
     [<Fact>]
     let ``Can define in F# - with #line`` () =
-        FSharp """
+        FSharp """namespace global
 module Program =
 # 1 "C:\\Program.fs"
   open System.Runtime.CompilerServices
