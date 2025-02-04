@@ -503,6 +503,8 @@ type internal BackgroundCompiler
         match tryGetBuilder options with
         | Some getBuilder ->
             async {
+                do! Cancellable.UseToken()
+
                 match! getBuilder with
                 | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated ->
                     return builderOpt, creationDiags

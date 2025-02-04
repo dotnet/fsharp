@@ -4273,6 +4273,19 @@ type UnionCaseRef =
 
     override x.ToString() = x.CaseName
 
+let findLogicalFieldIndexOfRecordField (tcref:TyconRef) (id:string) =
+    let arr = tcref.AllFieldsArray
+
+    // We are skipping compiler generated fields such as "init@5" from index calculation
+    let rec go originalIdx skippedItems =
+        if originalIdx >= arr.Length then error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
+        else
+            let currentItem = arr[originalIdx]
+            if currentItem.LogicalName = id then (originalIdx-skippedItems)
+            else go (originalIdx + 1) (skippedItems + (if currentItem.IsCompilerGenerated && currentItem.IsStatic then 1 else 0))
+
+    go 0 0
+
 /// Represents a reference to a field in a record, class or struct
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdFieldRef = 
@@ -4316,11 +4329,8 @@ type RecdFieldRef =
 
     member x.Index =
         let (RecdFieldRef(tcref, id)) = x
-        try 
-            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.LogicalName = id)  
-        with :? KeyNotFoundException -> 
-            error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
+        findLogicalFieldIndexOfRecordField tcref id
+            
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
