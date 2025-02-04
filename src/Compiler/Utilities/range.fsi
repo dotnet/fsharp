@@ -282,6 +282,8 @@ module Line =
 module internal FileContent =
 
     /// Read all file contents
+    ///
+    /// Used by `getCodeText` to support `CallerArgumentExpression`
     val readFileContents: fileNames: string list -> unit
 
     type IFileContentGetLine =
@@ -295,7 +297,7 @@ module internal FileContent =
 
     /// Get a line string from already read files.
     ///
-    /// Used by `getCodeText` to support `CallerArgumentExpression` in F# Interactive 
+    /// Used by `getCodeText` to support `CallerArgumentExpression`
     val mutable getLineDynamic: IFileContentGetLine
 
     /// Get code text of the specific `range`

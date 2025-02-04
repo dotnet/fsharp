@@ -10,11 +10,14 @@ module CustomAttributes_CallerArgumentExpression =
     [<Fact>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
         FSharp """module Program
-try System.ArgumentNullException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
-  (* comment *) 
-  |> String.concat " ")
-with :? System.ArgumentException as ex -> 
-  assert (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \""))
+[<EntryPoint>]
+let main args =
+  try System.ArgumentNullException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
+    (* comment *) 
+    |> String.concat " ")
+  with :? System.ArgumentException as ex -> 
+    assert (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \""))
+  0
 """
         |> withLangVersionPreview
         |> compileAndRun
@@ -23,7 +26,8 @@ with :? System.ArgumentException as ex ->
 
     [<Fact>]
     let ``Can define in F#`` () =
-        FSharp """open System.Runtime.CompilerServices
+        FSharp """module Program
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 type A() =
   static member aa (
@@ -34,7 +38,7 @@ type A() =
     a,b,c,e
 
 let stringABC = "abc"
-assert (A.aa(stringABC) = ("abc", ".cctor", 12, "stringABC"))
+assert (A.aa(stringABC) = ("abc", ".cctor", 13, "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun
@@ -43,7 +47,8 @@ assert (A.aa(stringABC) = ("abc", ".cctor", 12, "stringABC"))
 
     [<Fact>]
     let ``Can define in F# with F#-style optional arguments`` () =
-        FSharp """open System.Runtime.CompilerServices
+        FSharp """module Program
+open System.Runtime.CompilerServices
 type A() =
   static member aa (
     a,
@@ -56,7 +61,7 @@ type A() =
     a,b,c,e
 
 let stringABC = "abc"
-assert (A.aa(stringABC) = ("abc", ".cctor", 14, "stringABC"))
+assert (A.aa(stringABC) = ("abc", ".cctor", 15, "stringABC"))
         """
         |> withLangVersionPreview
         |> compileAndRun
@@ -65,7 +70,8 @@ assert (A.aa(stringABC) = ("abc", ".cctor", 14, "stringABC"))
 
     [<Fact>]
     let ``Can define in F# - with #line`` () =
-        FSharp """open System.Runtime.CompilerServices
+        FSharp """module Program
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 # 1 "C:\\Program.fs"
 type A() =
