@@ -8341,9 +8341,6 @@ let IsMatchingSignatureDataVersionAttr (version: ILVersionInfo) cattr =
         warning(Failure(FSComp.SR.tastUnexpectedDecodeOfInterfaceDataVersionAttribute()))
         false
 
-let mkCompilerGeneratedAttr (g: TcGlobals) n = 
-    mkILCustomAttribute (tref_CompilationMappingAttr g, [mkILNonGenericValueTy (tref_SourceConstructFlags g)], [ILAttribElem.Int32 n], [])
-
 //--------------------------------------------------------------------------
 // tupled lambda --> method/function with a given valReprInfo specification.
 //
