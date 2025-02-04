@@ -20,6 +20,7 @@ let main args =
   0
 """
         |> withLangVersionPreview
+        |> asExe
         |> compileAndRun
         |> shouldSucceed
         |> ignore
@@ -41,6 +42,7 @@ let stringABC = "abc"
 assert (A.aa(stringABC) = ("abc", ".cctor", 13, "stringABC"))
         """
         |> withLangVersionPreview
+        |> asExe
         |> compileAndRun
         |> shouldSucceed
         |> ignore
@@ -64,6 +66,7 @@ let stringABC = "abc"
 assert (A.aa(stringABC) = ("abc", ".cctor", 15, "stringABC"))
         """
         |> withLangVersionPreview
+        |> asExe
         |> compileAndRun
         |> shouldSucceed
         |> ignore
@@ -89,6 +92,7 @@ assert (A.aa(stringABC) = ("abc", ".cctor", 11, "C:\\Program.fs", "stringABC"))
 assert (A.aa(stringABC : string) = ("abc", ".cctor", 1, "C:\\Program.fs", "stringABC : string"))
         """
         |> withLangVersionPreview
+        |> asExe
         |> compileAndRun
         |> shouldSucceed
         |> ignore
