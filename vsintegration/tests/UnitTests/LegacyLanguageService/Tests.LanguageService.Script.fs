@@ -500,7 +500,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #nowarn seen in closed .fsx is global to the closure
-    [<Fact(Skip="#Nowarn is no longer transitive")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad16``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -518,7 +518,7 @@ type UsingMSBuild() as this =
         let script1 = OpenFile(project,"Script1.fsx")   
         MoveCursorToEndOfMarker(script1,"let y = f") 
         TakeCoffeeBreak(this.VS) 
-        AssertNoErrorsOrWarnings(project)   
+        AssertExactlyOneErrorSeenContaining(project, "This construct is deprecated. x")
 
     /// FEATURE: #r in .fsx to a .dll name works.
     [<Fact>]
