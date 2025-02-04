@@ -657,7 +657,7 @@ namespace Microsoft.FSharp.Core
     /// their original forms. It is not intended for use from user code.</remarks>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.All,AllowMultiple=true)>]  
     [<Sealed>]
     type CompilationMappingAttribute =
         inherit Attribute

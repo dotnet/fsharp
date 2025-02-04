@@ -1307,6 +1307,14 @@ module MultiMap =
     let initBy f xs : MultiMap<_, _> =
         xs |> Seq.groupBy f |> Seq.map (fun (k, v) -> (k, List.ofSeq v)) |> Map.ofSeq
 
+    let ofList (xs: ('a * 'b) list) : MultiMap<'a,'b> =
+        (Map.empty, xs)
+        ||> List.fold (fun m (k, v) ->
+            m |> Map.change k (function
+                | None -> Some [v]
+                | Some vs -> Some (v :: vs)))
+        |> Map.map (fun _ values -> List.rev values)
+
 type LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 
 [<AutoOpen>]
