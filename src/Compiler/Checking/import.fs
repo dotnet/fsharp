@@ -648,7 +648,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
 
      let genericArity =
         if mbase.PUntaint((fun x -> x.IsGenericMethod), m) then
-            mbase.PUntaint((fun x -> x.GetGenericArguments().Length), m)
+            mbase.PApplyArray((fun x -> x.GetGenericArguments()),"GetGenericArguments", m).Length
         else 0
 
      let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic), m) then ILCallingConv.Static else ILCallingConv.Instance)

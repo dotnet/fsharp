@@ -2177,7 +2177,7 @@ module TastDefinitionPrinting =
                 match tcref.TypeReprInfo with 
                 | TProvidedTypeRepr info ->
                     [ 
-                        for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes() |> Array.filter (fun t -> t.IsPublic || t.IsNestedPublic)), "GetNestedTypes", m) do 
+                        for nestedType in info.ProvidedType.PApplyFilteredArray((fun sty -> sty.GetNestedTypes()),(fun t -> t.IsPublic || t.IsNestedPublic), "GetNestedTypes", m) do 
                             yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
                     ] 
                     |> List.sortBy snd

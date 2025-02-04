@@ -859,7 +859,7 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi, _) -> mi.NumArgs
         | DefaultStructCtor _ -> [0]
 #if !NO_TYPEPROVIDERS
-        | ProvidedMeth(_, mi, _, m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length), m)] // Why is this a list? Answer: because the method might be curried
+        | ProvidedMeth(_, mi, _, m) -> [mi.PApplyArray((fun mi -> mi.GetParameters()),"GetParameters", m).Length] // Why is this a list? Answer: because the method might be curried
 #endif
 
     /// Indicates if the property is a IsABC union case tester implied by a union case definition
@@ -2030,7 +2030,7 @@ type PropInfo =
             failwith "unreachable"
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) ->
-            pi.PUntaint((fun pi -> pi.GetIndexParameters().Length), m)>0
+            pi.PApplyArray((fun pi -> pi.GetIndexParameters()),"GetIndexParameters", m).Length>0
 #endif
 
     /// Indicates if this is an F# property compiled as a CLI event, e.g. a [<CLIEvent>] property.

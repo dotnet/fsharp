@@ -1120,7 +1120,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-            let n = mbase.PUntaint((fun x -> x.GetParameters().Length), m)
+            let n = mbase.PApplyArray((fun x -> x.GetParameters()),"GetParameters", m).Length
             match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, None, methodName, n)) with 
             | true, vref -> Some vref
             | _ -> 
@@ -1863,7 +1863,7 @@ module ProvidedMethodCalls =
              allArgs: Exprs,
              paramVars: Tainted<ProvidedVar>[],
              g, amap, mut, isProp, isSuperInit, m,
-             expr: Tainted<ProvidedExpr>) = 
+             expr: Tainted<ProvidedExpr MaybeNull>) = 
 
         let varConv =
             // note: Assuming the size based on paramVars
@@ -1873,7 +1873,7 @@ module ProvidedMethodCalls =
                 dict.Add(v, (None, e))
             dict
 
-        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr>) =
+        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr MaybeNull>) =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
