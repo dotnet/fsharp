@@ -1609,7 +1609,10 @@ and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 =
     elif isSealedTy g ty1 then 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace (mkTyparTy tp) ty1
     else
-        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1, csenv.m))
+        if SubtypeConstraintImplied g tp.Constraints ty1 then
+            CompleteD
+        else
+            AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1, csenv.m))
 
 and DepthCheck ndeep m = 
     if ndeep > 300 then 
@@ -2489,6 +2492,19 @@ and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 =
         
 and CheckConstraintsImplication csenv existingConstraints newConstraint =
     existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
+
+and SubtypeConstraintImplied g existingConstraints newCoarceToTy =
+    if g.checkNullness then
+        let canBeNull t = (nullnessOfTy g t).Evaluate() = NullnessInfo.WithNull
+        let newTyIsWithoutNull = canBeNull newCoarceToTy |> not
+        let typeCoversNewConstraint existingTy = 
+            typeEquiv g existingTy newCoarceToTy
+            && not (newTyIsWithoutNull && canBeNull existingTy)   // :> T?  cannot imply :>T, since non-nullable is a stricter constraint.
+
+        existingConstraints 
+        |> List.exists (function | TyparConstraint.CoercesTo(ty2,_) when typeCoversNewConstraint ty2 -> true | _ -> false)
+    else
+        false
 
 // Ensure constraint conforms with existing constraints
 // NOTE: QUADRATIC
