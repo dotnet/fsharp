@@ -481,11 +481,11 @@ type ILAssemblyRef(data) =
     override x.GetHashCode() = uniqueStamp
 
     override x.Equals yobj =
-        ((yobj :?> ILAssemblyRef).UniqueStamp = uniqueStamp)
+        ((!!yobj :?> ILAssemblyRef).UniqueStamp = uniqueStamp)
 
     interface IComparable with
         override x.CompareTo yobj =
-            compare (yobj :?> ILAssemblyRef).UniqueStamp uniqueStamp
+            compare (!!yobj :?> ILAssemblyRef).UniqueStamp uniqueStamp
 
     static member Create(name, hash, publicKey, retargetable, version, locale) =
         ILAssemblyRef
@@ -750,7 +750,7 @@ type ILTypeRef =
     override x.GetHashCode() = x.hashCode
 
     override x.Equals yobj =
-        let y = (yobj :?> ILTypeRef)
+        let y = (!!yobj :?> ILTypeRef)
 
         (x.ApproxId = y.ApproxId)
         && (x.Scope = y.Scope)
@@ -793,7 +793,7 @@ type ILTypeRef =
     interface IComparable with
 
         override x.CompareTo yobj =
-            let y = (yobj :?> ILTypeRef)
+            let y = (!!yobj :?> ILTypeRef)
             let c = compare x.ApproxId y.ApproxId
 
             if c <> 0 then
@@ -2562,34 +2562,48 @@ let typeEncodingOfFlags flags =
     elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode
     else ILDefaultPInvokeEncoding.Ansi
 
-[<RequireQualifiedAccess>]
-type ILTypeDefKind =
-    | Class
-    | ValueType
-    | Interface
-    | Enum
-    | Delegate
+[<Flags>]
+type ILTypeDefAdditionalFlags =
+    | Class = 1
+    | ValueType = 2
+    | Interface = 4
+    | Enum = 8
+    | Delegate = 16
+    | IsKnownToBeAttribute = 32
+    /// The type can contain extension methods,
+    /// or this information may not be available at the time the ILTypeDef is created
+    | CanContainExtensionMethods = 1024
+
+let internal typeKindFlags =
+    ILTypeDefAdditionalFlags.Class |||
+    ILTypeDefAdditionalFlags.ValueType |||
+    ILTypeDefAdditionalFlags.Interface |||
+    ILTypeDefAdditionalFlags.Enum |||
+    ILTypeDefAdditionalFlags.Delegate
+
+let inline internal resetTypeKind flags =
+    flags &&& ~~~typeKindFlags
+
+let (|HasFlag|_|) (flag: ILTypeDefAdditionalFlags) flags =
+    flags &&& flag = flag
+
+let inline typeKindByNames extendsName typeName =
+    match extendsName with
+    | "System.Enum" -> ILTypeDefAdditionalFlags.Enum
+    | "System.Delegate" when typeName <> "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
+    | "System.MulticastDelegate" -> ILTypeDefAdditionalFlags.Delegate
+    | "System.ValueType" when typeName <> "System.Enum" -> ILTypeDefAdditionalFlags.ValueType
+    | _ -> ILTypeDefAdditionalFlags.Class
 
 let typeKindOfFlags nm (super: ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then
-        ILTypeDefKind.Interface
+        ILTypeDefAdditionalFlags.Interface
     else
         match super with
-        | None -> ILTypeDefKind.Class
+        | None -> ILTypeDefAdditionalFlags.Class
         | Some ty ->
             let name = ty.TypeSpec.Name
-
-            if name = "System.Enum" then
-                ILTypeDefKind.Enum
-            elif
-                (name = "System.Delegate" && nm <> "System.MulticastDelegate")
-                || name = "System.MulticastDelegate"
-            then
-                ILTypeDefKind.Delegate
-            elif name = "System.ValueType" && nm <> "System.Enum" then
-                ILTypeDefKind.ValueType
-            else
-                ILTypeDefKind.Class
+            typeKindByNames name nm
 
 let convertTypeAccessFlags access =
     match access with
@@ -2605,11 +2619,8 @@ let convertTypeAccessFlags access =
 
 let convertTypeKind kind =
     match kind with
-    | ILTypeDefKind.Class -> TypeAttributes.Class
-    | ILTypeDefKind.ValueType -> TypeAttributes.Class
-    | ILTypeDefKind.Interface -> TypeAttributes.Abstract ||| TypeAttributes.Interface
-    | ILTypeDefKind.Enum -> TypeAttributes.Class
-    | ILTypeDefKind.Delegate -> TypeAttributes.Class
+    | HasFlag ILTypeDefAdditionalFlags.Interface -> TypeAttributes.Abstract ||| TypeAttributes.Interface
+    | _ -> TypeAttributes.Class
 
 let convertLayout layout =
     match layout with
@@ -2638,13 +2649,7 @@ let convertInitSemantics (init: ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
-[<Flags>]
-type ILTypeDefAdditionalFlags =
-    | None = 0
-    | IsKnownToBeAttribute = 1
-    /// The type can contain extension methods,
-    /// or this information may not be available at the time the ILTypeDef is created
-    | CanContainExtensionMethods = 2
+let emptyILExtends = notlazy<ILType option> None
 
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeDef
@@ -2654,7 +2659,7 @@ type ILTypeDef
         layout: ILTypeDefLayout,
         implements: InterruptibleLazy<InterfaceImpl list>,
         genericParams: ILGenericParameterDefs,
-        extends: ILType option,
+        extends: InterruptibleLazy<ILType option>,
         methods: ILMethodDefs,
         nestedTypes: ILTypeDefs,
         fields: ILFieldDefs,
@@ -2693,6 +2698,42 @@ type ILTypeDef
             implements,
             genericParams,
             extends,
+            methods,
+            nestedTypes,
+            fields,
+            methodImpls,
+            events,
+            properties,
+            additionalFlags,
+            storeILSecurityDecls securityDecls,
+            customAttrs,
+            NoMetadataIdx
+        )
+
+    new(name,
+        attributes,
+        layout,
+        implements,
+        genericParams,
+        extends,
+        methods,
+        nestedTypes,
+        fields,
+        methodImpls,
+        events,
+        properties,
+        securityDecls,
+        customAttrs) =
+        let additionalFlags =
+            ILTypeDefAdditionalFlags.CanContainExtensionMethods |||
+            typeKindOfFlags name extends (int attributes)
+        ILTypeDef(
+            name,
+            attributes,
+            layout,
+            InterruptibleLazy.FromValue(implements),
+            genericParams,
+            InterruptibleLazy.FromValue(extends),
             methods,
             nestedTypes,
             fields,
@@ -2786,20 +2827,15 @@ type ILTypeDef
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
-    member x.IsClass =
-        (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Class
+    member x.IsClass = hasFlag ILTypeDefAdditionalFlags.Class
 
-    member x.IsStruct =
-        (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
+    member x.IsStruct = hasFlag ILTypeDefAdditionalFlags.ValueType
 
-    member x.IsInterface =
-        (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
+    member x.IsInterface = hasFlag ILTypeDefAdditionalFlags.Interface
 
-    member x.IsEnum =
-        (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
+    member x.IsEnum = hasFlag ILTypeDefAdditionalFlags.Enum
 
-    member x.IsDelegate =
-        (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
+    member x.IsDelegate = hasFlag ILTypeDefAdditionalFlags.Delegate
 
     member x.Access = typeAccessOfFlags (int x.Attributes)
     member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
@@ -2850,9 +2886,10 @@ type ILTypeDef
     member x.WithKind(kind) =
         x.With(
             attributes = (x.Attributes ||| convertTypeKind kind),
+            newAdditionalFlags = (resetTypeKind additionalFlags ||| kind),
             extends =
                 match kind with
-                | ILTypeDefKind.Interface -> None
+                | HasFlag ILTypeDefAdditionalFlags.Interface -> emptyILExtends
                 | _ -> x.Extends
         )
 
@@ -2864,6 +2901,9 @@ type ILTypeDef
 
     member x.WithInitSemantics(init) =
         x.With(attributes = (x.Attributes ||| convertInitSemantics init))
+
+    member x.WithIsKnownToBeAttribute() =
+        x.With(newAdditionalFlags = (additionalFlags ||| ILTypeDefAdditionalFlags.IsKnownToBeAttribute))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4208,14 +4248,25 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
             | Some x -> I_seqpoint x
             | None -> ()
             yield! preblock
-            for (n, (_pnm, nm, fieldTy)) in List.indexed flds do
+            for (n, (_pnm, nm, fieldTy,_attrs)) in List.indexed flds do
                 mkLdarg0
                 mkLdarg (uint16 (n + 1))
                 mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
         ]
 
     let body = mkMethodBody (false, [], 2, nonBranchingInstrsToCode code, tag, imports)
-    mkILCtor (access, (flds |> List.map (fun (pnm, _, ty) -> mkILParamNamed (pnm, ty))) @ extraParams, body)
+    let fieldParams = 
+        [
+            for (pnm,_,ty,attrs) in flds do
+                let ilParam = mkILParamNamed (pnm, ty)
+                let ilParam =
+                    match attrs with
+                    | [] -> ilParam
+                    | attrs -> {ilParam with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs ) }
+                yield ilParam
+        ]    
+
+    mkILCtor (access, fieldParams @ extraParams , body)
 
 let mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, flds, access, tag, imports) =
     let preblock =
@@ -4226,7 +4277,7 @@ let mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, flds, acce
     mkILStorageCtorWithParamNames (preblock, ty, extraParams, flds, access, tag, imports)
 
 let addParamNames flds =
-    flds |> List.map (fun (nm, ty) -> (nm, nm, ty))
+    flds |> List.map (fun (nm, ty, attrs) -> (nm, nm, ty, attrs))
 
 let mkILSimpleStorageCtor (baseTySpec, ty, extraParams, flds, access, tag, imports) =
     mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, addParamNames flds, access, tag, imports)
@@ -4248,7 +4299,7 @@ let mkILGenericClass (nm, access, genparams, extends, impls, methods, fields, ne
         name = nm,
         attributes = attributes,
         genericParams = genparams,
-        implements = InterruptibleLazy.FromValue(impls),
+        implements = impls,
         layout = ILTypeDefLayout.Auto,
         extends = Some extends,
         methods = methods,
@@ -4258,7 +4309,6 @@ let mkILGenericClass (nm, access, genparams, extends, impls, methods, fields, ne
         methodImpls = emptyILMethodImpls,
         properties = props,
         events = events,
-        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -4272,7 +4322,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
              ||| TypeAttributes.ExplicitLayout
              ||| TypeAttributes.BeforeFieldInit
              ||| TypeAttributes.AnsiClass),
-        implements = emptyILInterfaceImpls,
+        implements = [],
         extends = Some iltyp_ValueType,
         layout = ILTypeDefLayout.Explicit { Size = Some size; Pack = Some pack },
         methods = emptyILMethods,
@@ -4282,7 +4332,6 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
         methodImpls = emptyILMethodImpls,
         properties = emptyILProperties,
         events = emptyILEvents,
-        additionalFlags = ILTypeDefAdditionalFlags.None,
         securityDecls = emptyILSecurityDecls
     )
 
@@ -5579,7 +5628,7 @@ and refsOfILTypeDef s (td: ILTypeDef) =
     refsOfILTypeDefs s td.NestedTypes
     refsOfILGenericParams s td.GenericParams
     refsOfILTypes s (td.Implements.Value |> List.map _.Type)
-    Option.iter (refsOfILType s) td.Extends
+    Option.iter (refsOfILType s) td.Extends.Value
     refsOfILMethodDefs s td.Methods
     refsOfILFieldDefs s (td.Fields.AsList())
     refsOfILMethodImpls s (td.MethodImpls.AsList())

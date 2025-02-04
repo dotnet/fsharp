@@ -229,11 +229,6 @@ type TcInfoExtras =
     member x.TcSymbolUses =
         x.tcSymbolUses
 
-module ValueOption =
-    let toOption = function
-        | ValueSome x -> Some x
-        | _ -> None
-
 type private SingleFileDiagnostics = (PhasedDiagnostic * FSharpDiagnosticSeverity) array
 type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
 
@@ -547,7 +542,7 @@ type FrameworkImportsCache(size) =
                     lazyWork
             )
         node
-                
+
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
     member this.Get(tcConfig: TcConfig) =
@@ -577,7 +572,8 @@ type FrameworkImportsCache(size) =
                         tcGlobals.noDebugAttributes,
                         tcGlobals.pathMap,
                         tcConfig.langVersion,
-                        tcConfig.realsig
+                        tcConfig.realsig,
+                        tcConfig.compilationMode
                     )
 
             else

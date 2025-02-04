@@ -8,18 +8,20 @@ open FSharp.Test.Compiler
 
 module TypesAndTypeConstraints_IWSAMsAndSRTPs =
 
-    let typesModule =
+    let typesModule realsig =
         FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "Types.fs")))
         |> withName "Types"
         |> withLangVersion70
+        |> withRealInternalSignature realsig
         |> withOptions ["--nowarn:3535"]
 
-    let setupCompilation compilation =
+    let setupCompilation realsig compilation =
         compilation
         |> asExe
         |> withLangVersion70
-        |> withReferences [typesModule]
-        
+        |> withRealInternalSignature realsig
+        |> withReferences [typesModule realsig]
+
     let verifyCompile compilation =
         compilation
         |> asExe
@@ -71,7 +73,7 @@ let main _ =
 #endif
     let ``IWSAM test files`` compilation =
         compilation
-        |> setupCompilation
+        |> setupCompilation false
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
@@ -380,43 +382,57 @@ let main _ =
         |> withDiagnosticMessage errorMessage
         |> ignore
 
-    [<FactForNETCOREAPP>]
-    let ``IWSAM warning`` () =
-        Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
-        |> withReferences [typesModule]
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``IWSAM warning`` (realsig) =
+        Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = (realsig)"
+        |> withReferences [typesModule realsig]
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withWarningCode 3536
         |> withDiagnosticMessage """'ISinOperator<_>' is normally used as a type constraint in generic code, e.g. "'T when ISomeInterface<'T>" or "let f (x: #ISomeInterface<_>)". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn "3536"' or '--nowarn:3536'."""
         |> ignore
 
-    [<Fact>]
-    let ``Multiple support types trait error`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Multiple support types trait error`` (realsig) =
         Fsx "let inline f5 (x: 'T when ('T or int) : (static member A: int) ) = 'T.A"
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withErrorCode 3537
         |> withDiagnosticMessage "The trait 'A' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance."
         |> ignore
 
-    [<Fact>]
-    let ``SRTP Delegate conversion not supported`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``SRTP Delegate conversion not supported`` (realsig) =
         Fsx "let inline f_TraitWithDelegate<'T when 'T : (static member StaticMethod: x: System.Func<int,int> -> int) >() =
             'T.StaticMethod(fun x -> x + 1)"
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
 
-    [<Fact>]
-    let ``SRTP Expression conversion not supported`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``SRTP Expression conversion not supported`` (realsig) =
         Fsx "let inline f_TraitWithExpression<'T when 'T : (static member StaticMethod: x: System.Linq.Expressions.Expression<System.Func<int,int>> -> int) >() =
             'T.StaticMethod(fun x -> x + 1)"
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
 
-    [<FactForNETCOREAPP>]
-    let ``IWSAM Delegate conversion works`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``IWSAM Delegate conversion works`` (realsig) =
         Fsx
             """
             open Types
@@ -428,12 +444,14 @@ let main _ =
                 failwith "Unexpected result"
 
             """
-        |> setupCompilation
+        |> setupCompilation realsig
         |> compileAndRun
         |> shouldSucceed
 
-    [<FactForNETCOREAPP>]
-    let ``IWSAM Expression conversion works`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``IWSAM Expression conversion works`` (realsig) =
         Fsx
             """
             open Types
@@ -445,28 +463,36 @@ let main _ =
                 failwith "Unexpected result"
 
             """
-        |> setupCompilation
+        |> setupCompilation realsig
         |> compileAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``SRTP Byref can be passed with old syntax`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``SRTP Byref can be passed with old syntax`` (realsig) =
         Fsx "let inline f_TraitWithByref<'T when 'T : ( static member TryParse: string * byref<int> -> bool) >() =
                 let mutable result = 0
                 (^T : ( static member TryParse: x: string * byref<int> -> bool) (\"42\", &result))"
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``SRTP Byref can be passed with new syntax`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``SRTP Byref can be passed with new syntax`` (realsig) =
         Fsx "let inline f_TraitWithByref<'T when 'T : ( static member TryParse: string * byref<int> -> bool) >() =
                 let mutable result = 0
                 'T.TryParse(\"42\", &result)"
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Call with old syntax`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Call with old syntax`` (realsig) =
         Fsx """
         type C1() =
             static member X(p: C1 byref) = p
@@ -479,11 +505,14 @@ let main _ =
         if g1 <> c1 then
             failwith "Unexpected result"
         """
+        |> withRealInternalSignature realsig
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Call with new syntax`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Call with new syntax`` (realsig) =
         Fsx """
         type C2() =
             static member X(p: C2 byref) = p
@@ -495,11 +524,14 @@ let main _ =
         if g2 <> c2 then
             failwith "Unexpected result"
         """
+        |> withRealInternalSignature realsig
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Call with tuple`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Call with tuple`` (realsig) =
         Fsx """
 
         type C3() =
@@ -512,11 +544,14 @@ let main _ =
         if g3 <> c3 then
             failwith "Unexpected result"
         """
+        |> withRealInternalSignature realsig
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let test4 () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let test4 (realsig) =
         Fsx """
         type C4() =
             static member X() = C4()
@@ -527,14 +562,17 @@ let main _ =
         if g4.GetType() <> typeof<C4> then
             failwith "Unexpected result"
         """
+        |> withRealInternalSignature realsig
         |> compileExeAndRun
         |> shouldSucceed
 
     // NOTE: Trait constraints that involve byref returns currently can never be satisfied by any method. No other warning is given.
     // This is a bug that may be fixed in the future.
     // These tests are pinning down current behavior.
-    [<Fact>]
-    let ``Byref returns not allowed`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Byref returns not allowed`` (realsig) =
         Fsx """
         type C5() =
             static member X(p: C5 byref) = &p
@@ -543,12 +581,15 @@ let main _ =
         let mutable c5 = C5()
         let g5 () = callX5<C5> &c5
         """
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'byref<C5>'\\s+but here has type\\s+'C5'"
 
-    [<Fact>]
-    let ``Byref returns not allowed pt 2`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Byref returns not allowed pt 2`` (realsig) =
         Fsx """
         type C6() =
             static member X(p: C6 byref) = &p
@@ -558,11 +599,12 @@ let main _ =
         let mutable c6 = C6()
         let g6 () = callX6<C6> &c6
         """
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'byref<C6>'\\s+but here has type\\s+'C6'"
 
-    let library =
+    let library realsig=
         FSharp
             """
             module Lib
@@ -580,65 +622,79 @@ let main _ =
 
                 let add1 (x: int) = x + 1
             """
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> withOptions ["--nowarn:3535"]
 
-    [<FactForNETCOREAPP>]
-    let ``Function implicit conversion not supported on constrained type`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Function implicit conversion not supported on constrained type`` (realsig) =
         Fsx
             """
             open Lib
             let f_function_implicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
                 add1(a)
             """
-        |> withReferences [library]
+        |> withReferences [library realsig]
         |> withLangVersion70
+        |> withRealInternalSignature realsig
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
-    [<FactForNETCOREAPP>]
-    let ``Method implicit conversion not supported on constrained type`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Method implicit conversion not supported on constrained type`` (realsig) =
         Fsx
             """
             open Lib
             let f_method_implicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
                 C.TakeInt(a)
             """
-        |> withReferences [library]
+        |> withRealInternalSignature realsig
+        |> withReferences [library realsig]
         |> withLangVersion70
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
-    [<FactForNETCOREAPP>]
-    let ``Function explicit conversion works on constrained type`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Function explicit conversion works on constrained type`` (realsig) =
         Fsx
             """
             open Lib
             let f_function_explicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
                 add1(int(a))
             """
-        |> withReferences [library]
+        |> withReferences [library realsig]
         |> withLangVersion70
         |> compile
         |> shouldSucceed
 
-    [<FactForNETCOREAPP>]
-    let ``Method explicit conversion works on constrained type`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Method explicit conversion works on constrained type`` (realsig) =
         Fsx
             """
             open Lib
             let f_method_explicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
                 C.TakeInt(int(a))
             """
-        |> withReferences [library]
+        |> withRealInternalSignature realsig
+        |> withReferences [library realsig]
         |> withLangVersion70
         |> compile
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Nominal type can be used after or`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Nominal type can be used after or`` (realsig) =
         Fsx
             """
             type C() =
@@ -652,13 +708,16 @@ let main _ =
             if not (callX "A" (C()) = "A OK") then
                 failwith "Unexpected result"
             """
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> asExe
         |> compileAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``Nominal type can't be used before or`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Nominal type can't be used before or`` (realsig) =
         Fsx
             """
             type C() =
@@ -666,13 +725,16 @@ let main _ =
 
             let inline callX (x: 'T) (y: C) = ((C or ^T): (static member X : 'T * C -> string) (x, y));;
             """
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "Unexpected keyword 'static' in binding"
 
-    [<Fact>]
-    let ``Nominal type is preferred`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Nominal type is preferred`` (realsig) =
         Fsx
             """
             type C() =
@@ -691,12 +753,13 @@ let main _ =
             if not (callX2 (C()) (D()) = "C") then
                 failwith "Unexpected result"
             """
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> asExe
         |> compileAndRun
         |> shouldSucceed
 
-    let library2 =
+    let library2 realsig =
         FSharp """
         module Potato.Lib
             type IPotato<'T when 'T :> IPotato<'T>> =
@@ -713,12 +776,15 @@ let main _ =
                     static member IsGood c = false
                     static member op_Equality (a, b) = false
             """
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
-    [<FactForNETCOREAPP>]
-    let ``Active patterns- Using IWSAM in active pattern`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Active patterns- Using IWSAM in active pattern`` (realsig) =
         FSharp """
             module Potato.Test
 
@@ -729,7 +795,8 @@ let main _ =
             match Potato() with GoodPotato -> () | _ -> failwith "Unexpected result"
             match Rock() with GoodPotato -> failwith "Unexpected result" | _ -> ()
             """
-        |> withReferences [library2]
+        |> withReferences [library2 realsig]
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> compileExeAndRun
         |> shouldSucceed
@@ -746,8 +813,10 @@ let main _ =
             """
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Active patterns - Using IWSAM equality in active pattern uses generic equality intrinsic`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Active patterns - Using IWSAM equality in active pattern uses generic equality intrinsic`` (realsig) =
         FSharp """
             module Potato.Test
 
@@ -762,7 +831,8 @@ let main _ =
             | IsEqual -> failwith "Unexpected result"
             | IsNonEqual -> ()
             """
-        |> withReferences [library2]
+        |> withReferences [library2 realsig]
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> asExe
         |> compileAndRun
@@ -780,12 +850,15 @@ let main _ =
             """
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Suppression of System Numerics interfaces on unitized types`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Suppression of System Numerics interfaces on unitized types`` (realsig) =
         Fsx """
             open System.Numerics
             let f (x: 'T when 'T :> IMultiplyOperators<'T,'T,'T>) = x;;
             f 3.0 |> ignore"""
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> compile
         |> shouldSucceed
@@ -840,8 +913,10 @@ let main _ =
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
 
-    [<FactForNETCOREAPP>]
-    let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Interface A with static abstracts can be inherited in interface B and then implemented in type C which inherits B in lang version70`` (realsig) =
         Fsx """
             type IParsable<'T when 'T :> IParsable<'T>> =
                 static abstract member Parse : string -> 'T
@@ -863,12 +938,15 @@ let main _ =
                 failwith "failed"
         """
         |> withNoWarn 3535
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> compile
         |> shouldSucceed
 
-    [<FactForNETCOREAPP>]
-    let ``Static abstracts can be inherited through multiple levels in lang version70`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Static abstracts can be inherited through multiple levels in lang version70`` (realsig) =
         Fsx """
             type IParsable<'T when 'T :> IParsable<'T>> =
                 static abstract member Parse : string -> 'T
@@ -902,12 +980,15 @@ let main _ =
                 failwith "failed"
         """
         |> withNoWarn 3535
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> compile
         |> shouldSucceed
 
-    [<FactForNETCOREAPP>]
-    let ``Static abstracts from BCL can be inherited through multiple levels in lang version70`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Static abstracts from BCL can be inherited through multiple levels in lang version70`` (realsig) =
         Fsx """
             open System
             open System.Globalization
@@ -927,12 +1008,15 @@ let main _ =
                 failwith "failed"
         """
         |> withNoWarn 3535
+        |> withRealInternalSignature realsig
         |> withLangVersion70
         |> compile
         |> shouldSucceed
-        
-    [<FactForNETCOREAPP>]
-    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` () =
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IOperation =
@@ -951,19 +1035,22 @@ module StaticAbstractBug =
             member this.Property3 = 0
             member this.Property3 with set value = ()
         """
-         |> withOptions [ "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
              (Error 855, Line 12, Col 22, Line 12, Col 29, "No abstract or interface member was found that corresponds to this override")
              (Error 859, Line 14, Col 25, Line 14, Col 33, "No abstract property was found that corresponds to this override")
              (Error 859, Line 16, Col 25, Line 16, Col 34, "No abstract property was found that corresponds to this override")
              (Error 859, Line 17, Col 25, Line 17, Col 34, "No abstract property was found that corresponds to this override")
-         ]
-         
-    [<Fact>]
-    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM with multiple overloads`` () =
+        ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Produce an error when one leaves out keyword "static" in an implementation of IWSAM with multiple overloads`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IOperation =
@@ -979,11 +1066,12 @@ module StaticAbstractBug =
             member this.Property = 0
             member this.Property = false
         """
-         |> withOptions [ "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
             (Error 1, Line 11, Col 34, Line 11, Col 36, "This expression was expected to have type
     'bool'    
 but here has type
@@ -992,10 +1080,12 @@ but here has type
     'int'    
 but here has type
     'bool'    ")
-            ]
-         
-    [<Fact>]
-    let ``Produce an error for interface with static abstract member that is implemented as instance member`` () =
+        ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IFoo<'T> =
@@ -1015,19 +1105,22 @@ module StaticAbstractBug =
         member this.Property3 = 0
         member this.Property3 with set value = ()
         """
-         |> withOptions [ "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
             (Error 855, Line 14, Col 18, Line 14, Col 23, "No abstract or interface member was found that corresponds to this override");   
             (Error 859, Line 15, Col 21, Line 15, Col 29, "No abstract property was found that corresponds to this override");  
             (Error 859, Line 17, Col 21, Line 17, Col 30, "No abstract property was found that corresponds to this override");  
             (Error 859, Line 18, Col 21, Line 18, Col 30, "No abstract property was found that corresponds to this override")
-         ]
+        ]
          
-    [<Fact>]
-    let ``Produce an error for interface with static abstract member that is implemented as instance member with multiple overloads`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Produce an error for interface with static abstract member that is implemented as instance member with multiple overloads`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IFoo<'T> =
@@ -1046,11 +1139,12 @@ module StaticAbstractBug =
         member this.Property = 0
         member this.Property = false
         """
-         |> withOptions [ "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
             (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'bool' does not match the type 'int'")
             (Error 1, Line 16, Col 32, Line 16, Col 33, "This expression was expected to have type
     'bool'    
@@ -1058,8 +1152,10 @@ but here has type
     'int'    ")
          ]
 
-    [<Fact>]
-    let ``Produce an error when one leaves out keyword "static" in multiple IWSAM implementations`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Produce an error when one leaves out keyword "static" in multiple IWSAM implementations`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IOperation =
@@ -1079,17 +1175,20 @@ module StaticAbstractBug =
             member this.Execute() = 0
             member this.Execute2() = ()
         """
-         |> withOptions [ "--nowarn:3535" ]
-         |> withLangVersion80
-         |> compile
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3535" ]
+        |> withLangVersion80
+        |> withRealInternalSignature realsig
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
             (Error 855, Line 13, Col 25, Line 13, Col 32, "No abstract or interface member was found that corresponds to this override")
             (Error 855, Line 17, Col 25, Line 17, Col 32, "No abstract or interface member was found that corresponds to this override")
-         ]
+        ]
 
-    [<FactForNETCOREAPP>]
-    let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Produces errors when includes keyword "static" when implementing a generic interface in a type`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IFoo<'T> =
@@ -1109,21 +1208,24 @@ module StaticAbstractBug =
         static member Property3 = 0
         static member Property3 with set value = ()
         """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
             (Error 3855, Line 13, Col 23, Line 13, Col 27, "No static abstract member was found that corresponds to this override")
             (Error 3855, Line 14, Col 23, Line 14, Col 28, "No static abstract member was found that corresponds to this override")
             (Error 3859, Line 15, Col 23, Line 15, Col 31, "No static abstract property was found that corresponds to this override")
             (Error 3859, Line 16, Col 23, Line 16, Col 32, "No static abstract property was found that corresponds to this override")
             (Error 3859, Line 17, Col 23, Line 17, Col 32, "No static abstract property was found that corresponds to this override")
             (Error 3859, Line 18, Col 23, Line 18, Col 32, "No static abstract property was found that corresponds to this override")
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``Produces errors when includes keyword "static" when implementing an interface in a type`` () =
+        ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Produces errors when includes keyword "static" when implementing an interface in a type`` (realsig) =
         Fsx """
 module StaticAbstractBug =
     type IOperation =
@@ -1139,19 +1241,22 @@ module StaticAbstractBug =
             static member Property = 0
             static member Property = false
         """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldFail
-         |> withDiagnostics [
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
             (Error 3855, Line 11, Col 27, Line 11, Col 34, "No static abstract member was found that corresponds to this override")
             (Error 3855, Line 12, Col 27, Line 12, Col 34, "No static abstract member was found that corresponds to this override")
             (Error 3859, Line 13, Col 27, Line 13, Col 35, "No static abstract property was found that corresponds to this override")
             (Error 3859, Line 14, Col 27, Line 14, Col 35, "No static abstract property was found that corresponds to this override")
-         ]
-         
-    [<FactForNETCOREAPP>]
-    let ``No error when implementing interfaces with static members by using class types`` () =
+        ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members by using class types`` (realsig) =
         Fsx """
 type IPrintable =
     abstract member Print: unit -> unit
@@ -1170,13 +1275,16 @@ let someClass1 = SomeClass1(1, 2.0)
 someClass.Print()
 someClass1.GetPrint()
         """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldSucceed
-         
-    [<FactForNETCOREAPP>]
-    let ``No error when implementing interfaces with static members and IWSAM by using class types`` () =
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> typecheck
+        |> shouldSucceed
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``No error when implementing interfaces with static members and IWSAM by using class types`` (realsig) =
         Fsx """
 [<Interface>]
 type IPrintable =
@@ -1190,48 +1298,56 @@ type SomeClass1() =
 let someClass1 = SomeClass1()
 let execute = IPrintable.Say("hello")
         """
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> typecheck
-         |> shouldSucceed
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> typecheck
+        |> shouldSucceed
         
-    [<FactForNETCOREAPP>]
-    let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics non virtual) produces a compilation error`` (realsig) =
          Fsx """
 open System.Numerics
 
 IAdditionOperators.op_Addition (3, 6)
-         """
-          |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-          |> withLangVersion80
-          |> compile
-          |> shouldFail
-          |> withSingleDiagnostic (Error 3866, Line 4, Col 1, Line 4, Col 38, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
+        """
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3866, Line 4, Col 1, Line 4, Col 38, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.op_Addition).")
 
-    [<FactForNETCOREAPP>]
-    let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Accessing to IWSAM(System.Numerics virtual member) compiles and runs`` (realsig) =
          Fsx """
 open System.Numerics
 
 let res = IAdditionOperators.op_CheckedAddition (3, 6)
 
 printf "%A" res"""
-         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
-         |> withLangVersion80
-         |> asExe
-         |> compile
-         |> shouldSucceed
-         |> run
-         |> verifyOutput "9"
+        |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
+        |> withLangVersion80
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput "9"
 
 #if !NETCOREAPP
     [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
 #else
     // SOURCE=ConstrainedAndInterfaceCalls.fs							# ConstrainedAndInterfaceCalls.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ConstrainedAndInterfaceCalls.fs"|])>]
+    [<Theory; FileInlineData("ConstrainedAndInterfaceCalls.fs")>]
 #endif
     let ``ConstrainedAndInterfaceCalls.fs`` compilation =
-        compilation 
+        compilation
+        |> getCompilation
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
         |> verifyCompile
         |> shouldFail
@@ -1241,35 +1357,43 @@ printf "%A" res"""
             (Error 3866, Line 15, Col 82, Line 15, Col 129, "A static abstract non-virtual interface member should only be called via type parameter (for example: 'T.Parse).")
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Error message that explicitly disallows static abstract methods in abstract classes.`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error message that explicitly disallows static abstract methods in abstract classes.`` (realsig) =
         Fsx """
 [<AbstractClass>]
 type A () =
     static abstract M : unit -> unit
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3867, Line 4, Col 21, Line 4, Col 22, "Classes cannot contain static abstract members.")
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Error message that explicitly disallows static abstract methods in classes.`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error message that explicitly disallows static abstract methods in classes.`` (realsig) =
         Fsx """
 type A () =
     static abstract M : unit -> unit
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3867, Line 3, Col 21, Line 3, Col 22, "Classes cannot contain static abstract members.")
         ]
-    
-    [<Fact>]
-    let ``Access modifiers cannot be applied to an SRTP constraint in preview`` () =
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Access modifiers cannot be applied to an SRTP constraint in preview`` (realsig) =
         FSharp """
 let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
 let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
@@ -1277,6 +1401,7 @@ let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set
 let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
         """
         |> withLangVersionPreview
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -1285,9 +1410,11 @@ let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.
             (Error 3871, Line 4, Col 61, Line 4, Col 67, "Access modifiers cannot be applied to an SRTP constraint.")
             (Error 3871, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
         ]
-        
-    [<Fact>]
-    let ``Access modifiers in an SRTP constraint generate warning in F# 8.0`` () =
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``Access modifiers in an SRTP constraint generate warning in F# 8.0`` (realsig) =
         FSharp """
 let inline length (x: ^a when ^a: (member public Length: int)) = x.Length
 let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Length
@@ -1295,6 +1422,7 @@ let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set
 let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
         """
         |> withLangVersion80
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -1304,8 +1432,10 @@ let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.
             (Warning 3871, Line 5, Col 44, Line 5, Col 50, "Access modifiers cannot be applied to an SRTP constraint.")
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Error for partial implementation of interface with static abstract members`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error for partial implementation of interface with static abstract members`` (realsig) =
         Fsx """
 type IFace =
     static abstract P1 : int
@@ -1317,14 +1447,17 @@ type T =
 
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for 'static abstract IFace.P2: int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
-        
-    [<FactForNETCOREAPP>]
-    let ``Error for no implementation of interface with static abstract members`` () =
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error for no implementation of interface with static abstract members`` (realsig) =
         Fsx """
 type IFace =
     static abstract P1 : int
@@ -1334,6 +1467,7 @@ type T =
     interface IFace with
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -1343,8 +1477,10 @@ type T =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Error for partial implementation of interface with static and non static abstract members`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error for partial implementation of interface with static and non static abstract members`` (realsig) =
         Fsx """
 type IFace =
     static abstract P1 : int
@@ -1359,6 +1495,7 @@ type T =
     
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -1367,9 +1504,11 @@ type T =
 	'abstract IFace.P4: int'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
-        
-    [<FactForNETCOREAPP>]
-    let ``Error for no implementation of interface with static and non static abstract members`` () =
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error for no implementation of interface with static and non static abstract members`` (realsig) =
         Fsx """
 type IFace =
     static abstract P1 : int
@@ -1379,9 +1518,10 @@ type IFace =
 
 type T =
     interface IFace with
-    
+
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -1393,8 +1533,10 @@ type T =
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
 
-    [<FactForNETCOREAPP>]
-    let ``Error for partial implementation of interface with non static abstract members`` () =
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error for partial implementation of interface with non static abstract members`` (realsig) =
         Fsx """
 type IFace =
     abstract member P3 : int
@@ -1403,17 +1545,20 @@ type IFace =
 type T =
     interface IFace with
         member this.P3 = 3
-    
+
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 366, Line 7, Col 15, Line 7, Col 20, "No implementation was given for 'abstract IFace.P4: int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         ]
-        
-    [<FactForNETCOREAPP>]
-    let ``Error for no implementation of interface with non static abstract members`` () =
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<TheoryForNETCOREAPP>]
+    let ``Error for no implementation of interface with non static abstract members`` (realsig) =
         Fsx """
 type IFace =
     abstract member P3 : int
@@ -1424,6 +1569,7 @@ type T =
 
         """
         |> withOptions [ "--nowarn:3536" ; "--nowarn:3535" ]
+        |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
         |> withDiagnostics [

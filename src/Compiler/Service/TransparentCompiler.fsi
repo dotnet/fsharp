@@ -21,6 +21,7 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -97,45 +98,84 @@ type internal Extensions =
         fileSnapshots: #ProjectSnapshot.IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
             ICacheKey<(DependencyGraphType option * byte array), string>
 
+[<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]
+type CacheSizes =
+    { ParseFileKeepStrongly: int
+      ParseFileKeepWeakly: int
+      ParseFileWithoutProjectKeepStrongly: int
+      ParseFileWithoutProjectKeepWeakly: int
+      ParseAndCheckFileInProjectKeepStrongly: int
+      ParseAndCheckFileInProjectKeepWeakly: int
+      ParseAndCheckAllFilesInProjectKeepStrongly: int
+      ParseAndCheckAllFilesInProjectKeepWeakly: int
+      ParseAndCheckProjectKeepStrongly: int
+      ParseAndCheckProjectKeepWeakly: int
+      FrameworkImportsKeepStrongly: int
+      FrameworkImportsKeepWeakly: int
+      BootstrapInfoStaticKeepStrongly: int
+      BootstrapInfoStaticKeepWeakly: int
+      BootstrapInfoKeepStrongly: int
+      BootstrapInfoKeepWeakly: int
+      TcLastFileKeepStrongly: int
+      TcLastFileKeepWeakly: int
+      TcIntermediateKeepStrongly: int
+      TcIntermediateKeepWeakly: int
+      DependencyGraphKeepStrongly: int
+      DependencyGraphKeepWeakly: int
+      ProjectExtrasKeepStrongly: int
+      ProjectExtrasKeepWeakly: int
+      AssemblyDataKeepStrongly: int
+      AssemblyDataKeepWeakly: int
+      SemanticClassificationKeepStrongly: int
+      SemanticClassificationKeepWeakly: int
+      ItemKeyStoreKeepStrongly: int
+      ItemKeyStoreKeepWeakly: int
+      ScriptClosureKeepStrongly: int
+      ScriptClosureKeepWeakly: int }
+
+    static member Create: sizeFactor: int -> CacheSizes
+
 type internal CompilerCaches =
 
-    new: sizeFactor: int -> CompilerCaches
+    new: cacheSizes: CacheSizes -> CompilerCaches
 
-    member AssemblyData: AsyncMemoize<(string * string), (string * string), ProjectAssemblyDataResult>
+    member AssemblyData: AsyncMemoize<FSharpProjectIdentifier, (string * string), ProjectAssemblyDataResult>
 
-    member BootstrapInfo: AsyncMemoize<(string * string), string, (BootstrapInfo option * FSharpDiagnostic array)>
+    member BootstrapInfo: AsyncMemoize<FSharpProjectIdentifier, string, (BootstrapInfo option * FSharpDiagnostic array)>
 
     member BootstrapInfoStatic:
-        AsyncMemoize<(string * string), (string * string), (int * TcImports * TcGlobals * TcInfo * Event<unit>)>
+        AsyncMemoize<FSharpProjectIdentifier, (string * string), (int * TcImports * TcGlobals * TcInfo * Event<unit>)>
 
     member DependencyGraph:
         AsyncMemoize<(DependencyGraphType option * byte array), string, (Graph<NodeToTypeCheck> * Graph<FileIndex>)>
 
     member FrameworkImports: AsyncMemoize<string, FrameworkImportsCacheKey, (TcGlobals * TcImports)>
 
-    member ItemKeyStore: AsyncMemoize<(string * (string * string)), string, ItemKeyStore option>
+    member ItemKeyStore: AsyncMemoize<(string * FSharpProjectIdentifier), string, ItemKeyStore option>
 
     member ParseAndCheckAllFilesInProject: AsyncMemoizeDisabled<obj, obj, obj>
 
     member ParseAndCheckFileInProject:
-        AsyncMemoize<(string * (string * string)), string * string, (FSharpParseFileResults * FSharpCheckFileAnswer)>
+        AsyncMemoize<(string * FSharpProjectIdentifier), string * string, (FSharpParseFileResults *
+        FSharpCheckFileAnswer)>
 
-    member ParseAndCheckProject: AsyncMemoize<(string * string), string, FSharpCheckProjectResults>
+    member ParseAndCheckProject: AsyncMemoize<FSharpProjectIdentifier, string, FSharpCheckProjectResults>
 
     member ParseFile:
-        AsyncMemoize<((string * string) * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
+        AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
 
     member ParseFileWithoutProject: AsyncMemoize<string, string, FSharpParseFileResults>
 
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
-    member SemanticClassification: AsyncMemoize<(string * (string * string)), string, SemanticClassificationView option>
+    member SemanticClassification:
+        AsyncMemoize<(string * FSharpProjectIdentifier), string, SemanticClassificationView option>
 
-    member SizeFactor: int
+    member CacheSizes: CacheSizes
 
-    member TcIntermediate: AsyncMemoize<(string * (string * string)), (string * int), TcIntermediate>
+    member TcIntermediate: AsyncMemoize<(string * FSharpProjectIdentifier), (string * int), TcIntermediate>
 
-    member ScriptClosure: AsyncMemoize<(string * (string * string)), string, LoadClosure>
+    member ScriptClosure: AsyncMemoize<(string * FSharpProjectIdentifier), string, LoadClosure>
 
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 
@@ -155,7 +195,8 @@ type internal TransparentCompiler =
         parallelReferenceResolution: ParallelReferenceResolution *
         captureIdentifiersWhenParsing: bool *
         getSource: (string -> Async<ISourceText option>) option *
-        useChangeNotifications: bool ->
+        useChangeNotifications: bool *
+        ?cacheSizes: CacheSizes ->
             TransparentCompiler
 
     member FindReferencesInFile:
@@ -174,6 +215,7 @@ type internal TransparentCompiler =
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * _userOpName: 'a ->
             Async<FSharpParseFileResults>
 
+    member SetCacheSize: cacheSize: CacheSizes -> unit
     member SetCacheSizeFactor: sizeFactor: int -> unit
 
     member Caches: CompilerCaches

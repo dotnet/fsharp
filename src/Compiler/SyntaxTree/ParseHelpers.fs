@@ -16,6 +16,7 @@ open FSharp.Compiler.Xml
 open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
+open FSharp.Compiler.LexerStore
 
 //------------------------------------------------------------------------
 // Parsing: Error recovery exception for fsyacc
@@ -68,86 +69,6 @@ let rhs2 (parseState: IParseState) i j =
 /// Get the range corresponding to one of the r.h.s. symbols of a grammar rule while it is being reduced
 let rhs parseState i = rhs2 parseState i i
 
-type IParseState with
-
-    /// Get the generator used for compiler-generated argument names.
-    member x.SynArgNameGenerator =
-        let key = "SynArgNameGenerator"
-        let bls = x.LexBuffer.BufferLocalStore
-
-        let gen =
-            match bls.TryGetValue key with
-            | true, gen -> gen
-            | _ ->
-                let gen = !!(box (SynArgNameGenerator()))
-                bls[key] <- gen
-                gen
-
-        gen :?> SynArgNameGenerator
-
-    /// Reset the generator used for compiler-generated argument names.
-    member x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
-
-//------------------------------------------------------------------------
-// Parsing: grabbing XmlDoc
-//------------------------------------------------------------------------
-
-/// XmlDoc F# lexer/parser state, held in the BufferLocalStore for the lexer.
-module LexbufLocalXmlDocStore =
-    // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
-    let private xmlDocKey = "XmlDoc"
-
-    let private getCollector (lexbuf: Lexbuf) =
-        match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
-        | true, collector -> collector
-        | _ ->
-            let collector = !!(box (XmlDocCollector()))
-            lexbuf.BufferLocalStore[xmlDocKey] <- collector
-            collector
-
-        |> unbox<XmlDocCollector>
-
-    let ClearXmlDoc (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector()) |> Unchecked.nonNull
-
-    /// Called from the lexer to save a single line of XML doc comment.
-    let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
-        let collector = getCollector lexbuf
-        collector.AddXmlDocLine(lineText, range)
-
-    let AddGrabPoint (lexbuf: Lexbuf) =
-        let collector = getCollector lexbuf
-        let startPos = lexbuf.StartPos
-        collector.AddGrabPoint(mkPos startPos.Line startPos.Column)
-
-    /// Allowed cases when there are comments after XmlDoc
-    ///
-    ///    /// X xmlDoc
-    ///    // comment
-    ///    //// comment
-    ///    (* multiline comment *)
-    ///    let x = ...        // X xmlDoc
-    ///
-    /// Remember the first position when a comment (//, (* *), ////) is encountered after the XmlDoc block
-    /// then add a grab point if a new XmlDoc block follows the comments
-    let AddGrabPointDelayed (lexbuf: Lexbuf) =
-        let collector = getCollector lexbuf
-        let startPos = lexbuf.StartPos
-        collector.AddGrabPointDelayed(mkPos startPos.Line startPos.Column)
-
-    /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
-    /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
-    let GrabXmlDocBeforeMarker (lexbuf: Lexbuf, markerRange: range) =
-        match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
-        | true, collector ->
-            let collector = unbox<XmlDocCollector> (collector)
-            PreXmlDoc.CreateFromGrabPoint(collector, markerRange.Start)
-        | _ -> PreXmlDoc.Empty
-
-    let ReportInvalidXmlDocPositions (lexbuf: Lexbuf) =
-        let collector = getCollector lexbuf
-        collector.CheckInvalidXmlDocPositions()
-
 //------------------------------------------------------------------------
 // Parsing/lexing: status of #if/#endif processing in lexing, used for continuations
 // for whitespace tokens in parser specification.
@@ -165,103 +86,10 @@ type LexerIfdefStack = LexerIfdefStackEntries
 /// Specifies how the 'endline' function in the lexer should continue after
 /// it reaches end of line or eof. The options are to continue with 'token' function
 /// or to continue with 'skip' function.
+[<RequireQualifiedAccess>]
 type LexerEndlineContinuation =
     | Token
-    | Skip of int * range: range
-
-type LexerIfdefExpression =
-    | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
-    | IfdefOr of LexerIfdefExpression * LexerIfdefExpression
-    | IfdefNot of LexerIfdefExpression
-    | IfdefId of string
-
-let rec LexerIfdefEval (lookup: string -> bool) =
-    function
-    | IfdefAnd(l, r) -> (LexerIfdefEval lookup l) && (LexerIfdefEval lookup r)
-    | IfdefOr(l, r) -> (LexerIfdefEval lookup l) || (LexerIfdefEval lookup r)
-    | IfdefNot e -> not (LexerIfdefEval lookup e)
-    | IfdefId id -> lookup id
-
-/// Ifdef F# lexer/parser state, held in the BufferLocalStore for the lexer.
-/// Used to capture #if, #else and #endif as syntax trivia.
-module LexbufIfdefStore =
-    // The key into the BufferLocalStore used to hold the compiler directives
-    let private ifDefKey = "Ifdef"
-
-    let private getStore (lexbuf: Lexbuf) : ResizeArray<ConditionalDirectiveTrivia> =
-        match lexbuf.BufferLocalStore.TryGetValue ifDefKey with
-        | true, store -> store
-        | _ ->
-            let store = !!(box (ResizeArray<ConditionalDirectiveTrivia>()))
-            lexbuf.BufferLocalStore[ifDefKey] <- store
-            store
-        |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
-
-    let private mkRangeWithoutLeadingWhitespace (lexed: string) (m: range) : range =
-        let startColumn = lexed.Length - lexed.TrimStart().Length
-        mkFileIndexRange m.FileIndex (mkPos m.StartLine startColumn) m.End
-
-    let SaveIfHash (lexbuf: Lexbuf, lexed: string, expr: LexerIfdefExpression, range: range) =
-        let store = getStore lexbuf
-
-        let expr =
-            let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
-                match expr with
-                | LexerIfdefExpression.IfdefAnd(l, r) -> IfDirectiveExpression.And(visit l, visit r)
-                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
-                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
-                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
-
-            visit expr
-
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-
-        store.Add(ConditionalDirectiveTrivia.If(expr, m))
-
-    let SaveElseHash (lexbuf: Lexbuf, lexed: string, range: range) =
-        let store = getStore lexbuf
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.Else(m))
-
-    let SaveEndIfHash (lexbuf: Lexbuf, lexed: string, range: range) =
-        let store = getStore lexbuf
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.EndIf(m))
-
-    let GetTrivia (lexbuf: Lexbuf) : ConditionalDirectiveTrivia list =
-        let store = getStore lexbuf
-        Seq.toList store
-
-/// Used to capture the ranges of code comments as syntax trivia
-module LexbufCommentStore =
-    // The key into the BufferLocalStore used to hold the compiler directives
-    let private commentKey = "Comments"
-
-    let private getStore (lexbuf: Lexbuf) : ResizeArray<CommentTrivia> =
-        match lexbuf.BufferLocalStore.TryGetValue commentKey with
-        | true, store -> store
-        | _ ->
-            let store = !!(box (ResizeArray<CommentTrivia>()))
-            lexbuf.BufferLocalStore[commentKey] <- store
-            store
-        |> unbox<ResizeArray<CommentTrivia>>
-
-    let SaveSingleLineComment (lexbuf: Lexbuf, startRange: range, endRange: range) =
-        let store = getStore lexbuf
-        let m = unionRanges startRange endRange
-        store.Add(CommentTrivia.LineComment(m))
-
-    let SaveBlockComment (lexbuf: Lexbuf, startRange: range, endRange: range) =
-        let store = getStore lexbuf
-        let m = unionRanges startRange endRange
-        store.Add(CommentTrivia.BlockComment(m))
-
-    let GetComments (lexbuf: Lexbuf) : CommentTrivia list =
-        let store = getStore lexbuf
-        Seq.toList store
-
-    let ClearComments (lexbuf: Lexbuf) : unit =
-        lexbuf.BufferLocalStore.Remove(commentKey) |> ignore
+    | IfdefSkip of int * range: range
 
 //------------------------------------------------------------------------
 // Parsing: continuations for whitespace tokens
@@ -406,7 +234,7 @@ let grabXmlDocAtRangeStart (parseState: IParseState, optAttributes: SynAttribute
         | [] -> range
         | h :: _ -> h.Range
 
-    LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer, grabPoint)
+    XmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer, grabPoint)
 
 let grabXmlDoc (parseState: IParseState, optAttributes: SynAttributeList list, elemIdx) =
     grabXmlDocAtRangeStart (parseState, optAttributes, rhs parseState elemIdx)
@@ -967,7 +795,7 @@ let checkEndOfFileError t =
 
     | LexCont.MLOnly(_, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml ())
 
-    | LexCont.EndLine(_, _, LexerEndlineContinuation.Skip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
+    | LexCont.EndLine(_, _, LexerEndlineContinuation.IfdefSkip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective ())
 
     | LexCont.EndLine(endifs, nesting, LexerEndlineContinuation.Token)
     | LexCont.Token(endifs, nesting) ->
@@ -1228,3 +1056,11 @@ let mkValField
         mkSynField parseState idOpt typ isMutable access attribs mStaticOpt rangeStart (Some leadingKeyword)
 
     SynMemberDefn.ValField(field, field.Range)
+
+let leadingKeywordIsAbstract =
+    function
+    | SynLeadingKeyword.Abstract _
+    | SynLeadingKeyword.AbstractMember _
+    | SynLeadingKeyword.StaticAbstract _
+    | SynLeadingKeyword.StaticAbstractMember _ -> true
+    | _ -> false

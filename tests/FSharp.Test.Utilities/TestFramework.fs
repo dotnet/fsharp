@@ -4,33 +4,34 @@ module TestFramework
 
 open System
 open System.IO
-open System.Reflection
 open System.Diagnostics
+open System.Reflection
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
-open Xunit.Sdk
 
 let getShortId() = Guid.NewGuid().ToString().[..7]
 
-// Temporary directory is TempPath + "/FSharp.Test.Utilities/yyy-MM-dd-xxxxxxx/"
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/xxxxxxx/"
 let tempDirectoryOfThisTestRun =
-    let tempDir = Path.GetTempPath()
-    let today = DateTime.Now.ToString("yyyy-MM-dd")
-    DirectoryInfo(tempDir)
-        .CreateSubdirectory($"FSharp.Test.Utilities/{today}-{getShortId()}")
-        .FullName
+    let temp = DirectoryInfo(Path.Combine(__SOURCE_DIRECTORY__, @"../../artifacts/Temp/FSharp.Test.Utilities", $"{getShortId()}"))
+    lazy (temp.Create(); temp)
 
-let createTemporaryDirectory (part: string) =
-    DirectoryInfo(tempDirectoryOfThisTestRun)
-        .CreateSubdirectory($"{part}-{getShortId()}")
-        .FullName
+let cleanUpTemporaryDirectoryOfThisTestRun () =
+    if tempDirectoryOfThisTestRun.IsValueCreated then
+        ()//try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
+
+let createTemporaryDirectory () =
+    tempDirectoryOfThisTestRun.Value
+        .CreateSubdirectory($"{getShortId()}")
 
 let getTemporaryFileName () =
-    (createTemporaryDirectory "temp") ++ $"tmp_{getShortId()}"
+    createTemporaryDirectory().FullName ++ getShortId()
 
-let getTemporaryFileNameInDirectory (directory: string) =
-    directory ++ $"tmp_{getShortId()}"
+let changeExtension path extension = Path.ChangeExtension(path, extension)
+
+let getTemporaryFileNameInDirectory (directory: DirectoryInfo) =
+    directory.FullName ++ getShortId()
 
 // Well, this function is AI generated.
 let rec copyDirectory (sourceDir: string) (destinationDir: string) (recursive: bool) =
@@ -62,70 +63,65 @@ module Commands =
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir (timeout:int) =
-        match pathToExe with
-        | Some path ->
-            let commandLine = ResizeArray()
-            let errorsList = ResizeArray()
-            let outputList = ResizeArray()
-            let errorslock = obj()
-            let outputlock = obj()
-            let outputDataReceived (message: string) =
-                if not (isNull message) then
-                    lock outputlock (fun () -> outputList.Add(message))
+    let executeProcess pathToExe arguments workingDir =
+        let commandLine = ResizeArray()
+        let errorsList = ResizeArray()
+        let outputList = ResizeArray()
+        let errorslock = obj()
+        let outputlock = obj()
+        let outputDataReceived (message: string) =
+            if not (isNull message) then
+                lock outputlock (fun () -> outputList.Add(message))
 
-            let errorDataReceived (message: string) =
-                if not (isNull message) then
-                    lock errorslock (fun () -> errorsList.Add(message))
+        let errorDataReceived (message: string) =
+            if not (isNull message) then
+                lock errorslock (fun () -> errorsList.Add(message))
 
-            commandLine.Add $"cd {workingDir}"
-            commandLine.Add $"{path} {arguments} /bl"
+        commandLine.Add $"cd {workingDir}"
+        commandLine.Add $"{pathToExe} {arguments} /bl"
 
-            let psi = ProcessStartInfo()
-            psi.FileName <- path
-            psi.WorkingDirectory <- workingDir
-            psi.RedirectStandardOutput <- true
-            psi.RedirectStandardError <- true
-            psi.Arguments <- arguments
-            psi.CreateNoWindow <- true
-            // When running tests, we want to roll forward to minor versions (including previews).
-            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
-            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
-            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
-            psi.UseShellExecute <- false
+        let psi = ProcessStartInfo()
+        psi.FileName <- pathToExe
+        psi.WorkingDirectory <- workingDir
+        psi.RedirectStandardOutput <- true
+        psi.RedirectStandardError <- true
+        psi.Arguments <- arguments
+        psi.CreateNoWindow <- true
 
-            use p = new Process()
-            p.StartInfo <- psi
+        // When running tests, we want to roll forward to minor versions (including previews).
+        psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+        psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
 
-            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
-            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+        // Host can sometimes add this, and it can break things
+        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")
+        psi.UseShellExecute <- false
 
-            if p.Start() then
-                p.BeginOutputReadLine()
-                p.BeginErrorReadLine()
-                if not(p.WaitForExit(timeout)) then
-                    // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
-                else
-                    p.WaitForExit()
-    #if DEBUG
-            let workingDir' =
-                if workingDir = ""
-                then
-                    // Assign working dir to prevent default to C:\Windows\System32
-                    let executionLocation = Assembly.GetExecutingAssembly().Location
-                    Path.GetDirectoryName executionLocation
-                else
-                    workingDir
+        use p = new Process()
+        p.StartInfo <- psi
 
-            lock gate (fun () ->
-                File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
-                File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
-                File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
-            )
-    #endif
-            p.ExitCode, outputList.ToArray(), errorsList.ToArray()
-        | None -> -1, Array.empty, Array.empty
+        p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
+        p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+
+        if p.Start() then
+            p.BeginOutputReadLine()
+            p.BeginErrorReadLine()
+            p.WaitForExit()
+
+        let workingDir' =
+            if workingDir = ""
+            then
+                // Assign working dir to prevent default to C:\Windows\System32
+                let executionLocation = Assembly.GetExecutingAssembly().Location
+                Path.GetDirectoryName executionLocation
+            else
+                workingDir
+
+        lock gate (fun () ->
+            File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+        )
+        p.ExitCode, outputList.ToArray(), errorsList.ToArray()
 
     let getfullpath workDir (path:string) =
         let rooted =
@@ -335,7 +331,7 @@ let config configurationName envVars =
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
     //let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
-    let PEVERIFY = "dummy" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
+    let PEVERIFY = "ilverify" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
@@ -428,13 +424,12 @@ let logConfig (cfg: TestConfig) =
     log "PEVERIFY                 = %s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
-let checkOutputPassed (output: string) =
-    Assert.True(output.Contains "TEST PASSED OK", $"Output does not contain 'TEST PASSED OK':\n{output}")
+let outputPassed (output: string) = output.Contains "TEST PASSED OK"
 
 let checkResultPassed result =
     match result with
     | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
-    | CmdResult.Success output -> checkOutputPassed output
+    | CmdResult.Success output -> Assert.True(outputPassed output, "Output does not contain 'TEST PASSED OK'")
 
 let checkResult result =
     match result with
@@ -477,11 +472,8 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
     let cfg = suiteHelpers.Value
     let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
-    let description = relativePathToTestFixture.Split('\\', '/') |> String.concat "-"
-
-    let tempTestRoot = createTemporaryDirectory description
     let tempTestDir =
-        DirectoryInfo(tempTestRoot)
+        createTemporaryDirectory()
             .CreateSubdirectory(relativePathToTestFixture)
             .FullName
     copyDirectory testFixtureFullPath tempTestDir true
@@ -490,7 +482,7 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
 
 let createConfigWithEmptyDirectory() =
     let cfg = suiteHelpers.Value
-    { cfg with Directory = createTemporaryDirectory "temp" }
+    { cfg with Directory = createTemporaryDirectory().FullName }
 
 type RedirectToType =
     | Overwrite of FilePath
@@ -569,8 +561,7 @@ module Command =
             | Output r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some (toLog.Post) }
+                fCont { cmdArgs with RedirectOutput = Some (outFile.Post); RedirectError = Some ignore }
             | OutputAndError (r1,r2) ->
                 use writer1 = openWrite r1
                 use writer2 = openWrite r2
@@ -584,8 +575,7 @@ module Command =
             | Error r ->
                 use writer = openWrite r
                 use outFile = redirectTo writer
-                use toLog = redirectToLog ()
-                fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (outFile.Post) }
+                fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some (outFile.Post) }
 
         let exec cmdArgs =
             log "%s" (logExec dir path args redirect)

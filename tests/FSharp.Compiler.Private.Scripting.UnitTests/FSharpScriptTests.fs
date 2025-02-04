@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Scripting.UnitTests
 
 open System
+open System.Text
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -11,12 +12,17 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Test
 open FSharp.Test.ScriptHelpers
-open FSharp.Test.Utilities
 
 open Xunit
 
 type InteractiveTests() =
+
+    let copyHousingToTemp() =
+        let tempName = TestFramework.getTemporaryFileName()
+        File.Copy(__SOURCE_DIRECTORY__ ++ "housing.csv", tempName + ".csv")
+        tempName
 
     [<Fact>]
     member _.``ValueRestriction error message should not have type variables fully solved``() =
@@ -83,7 +89,8 @@ x
 
     [<Fact>]
     member _.``Capture console input``() =
-        use script = new FSharpScript(input = "stdin:1234\r\n")
+        use _ = new TestConsole.ProvideInput("stdin:1234\r\n")
+        use script = new FSharpScript()
         let opt = script.Eval("System.Console.ReadLine()") |> getValue
         let value = opt.Value
         Assert.Equal(typeof<string>, value.ReflectionType)
@@ -91,14 +98,11 @@ x
 
     [<Fact>]
     member _.``Capture console output/error``() =
+        use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript()
-        use sawOutputSentinel = new ManualResetEvent(false)
-        use sawErrorSentinel = new ManualResetEvent(false)
-        script.OutputProduced.Add (fun line -> if line = "stdout:1234" then sawOutputSentinel.Set() |> ignore)
-        script.ErrorProduced.Add (fun line -> if line = "stderr:5678" then sawErrorSentinel.Set() |> ignore)
         script.Eval("printfn \"stdout:1234\"; eprintfn \"stderr:5678\"") |> ignoreValue
-        Assert.True(sawOutputSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see output sentinel value written")
-        Assert.True(sawErrorSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
+        Assert.Contains("stdout:1234", capture.OutText)
+        Assert.Contains("stderr:5678", capture.ErrorText)
 
     [<Fact>]
     member _.``Maintain state between submissions``() =
@@ -248,10 +252,10 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
         if RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
             ()
         else
-        let code = @"
-#r ""nuget:Microsoft.ML,version=1.4.0-preview""
-#r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
-#r ""nuget:Microsoft.Data.Analysis,version=0.4.0""
+        let code = $"""
+#r "nuget:Microsoft.ML,version=1.4.0-preview"
+#r "nuget:Microsoft.ML.AutoML,version=0.16.0-preview"
+#r "nuget:Microsoft.Data.Analysis,version=0.4.0"
 
 open System
 open System.IO
@@ -267,7 +271,7 @@ let Shuffle (arr:int[]) =
         arr.[i] <- temp
     arr
 
-let housingPath = ""housing.csv""
+let housingPath = @"{copyHousingToTemp()}.csv"
 let housingData = DataFrame.LoadCsv(housingPath)
 let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
 let testSize = int (float (housingData.Rows.Count) * 0.1)
@@ -281,11 +285,11 @@ open Microsoft.ML.AutoML
 
 let mlContext = MLContext()
 let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
-let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let result = experiment.Execute(housing_train, labelColumnName = "median_house_value")
 let details = result.RunDetails
-printfn ""%A"" result
+printfn "{@"%A"}" result
 123
-"
+"""
         use script = new FSharpScript(additionalArgs=[| |])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
@@ -302,30 +306,26 @@ printfn ""%A"" result
 
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately``() =
+        use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript(additionalArgs=[| |])
-        let mutable found = 0
-        let outp = System.Collections.Generic.List<string>()
-        script.OutputProduced.Add(
-            fun line ->
-                if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
-                    found <- found + 1
-                outp.Add(line))
         let result, errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
-        Assert.True( (found = 0), "Did not expect to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+
+        let lines = capture.OutText.Split([| Environment.NewLine |], StringSplitOptions.None)
+        let found = lines |> Seq.exists (fun line -> line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package"))
+        Assert.False(found, "Did not expect to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("error NU1101:")), "Expect to error containing 'error NU1101:'")
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")), "Expect to error containing 'FSharp.Really.Not.A.Package'")
 
     [<Fact>]
     member _.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
+        use capture = new TestConsole.ExecutionCapture()
         use script = new FSharpScript(additionalArgs=[| |])
-        let mutable foundResolve = 0
-        script.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
         let result, errors =
             script.Eval("""
 #r "nuget:FSharp.Really.Not.A.Package"
 #r "nuget:FSharp.Really.Not.Another.Package"
                 """)
-        Assert.True( (foundResolve = 0), (sprintf "Did not expected to see 'error NU1101:' in output" ))
+        Assert.DoesNotContain("error NU1101:", capture.OutText)
         Assert.Equal(2, (errors |> Seq.filter (fun error -> error.Message.Contains("error NU1101:")) |> Seq.length))
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")) |> Seq.length))
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))
@@ -475,6 +475,7 @@ let x =
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
 
+
     [<Fact>]
     member _.``Script with nuget package that yields out of order dependencies works correctly``() =
         // regression test for: https://github.com/dotnet/fsharp/issues/9217
@@ -511,3 +512,4 @@ let add (col:IServiceCollection) =
         use script = new FSharpScript(additionalArgs=[| |])
         let _value,diag = script.Eval(code)
         Assert.Empty(diag)
+

@@ -17,6 +17,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.LexerStore
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
@@ -985,8 +986,12 @@ classMemberSpfn:
                match optLiteralValue with
                | None -> m
                | Some e -> unionRanges m e.Range
-
+        
        let flags, leadingKeyword = $3
+       if leadingKeywordIsAbstract leadingKeyword then 
+        [ $2; $5; getterAccess; setterAccess ]
+        |> List.iter (function None -> () | Some access -> errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), access.Range)))
+
        let flags = flags (getSetAdjuster arity)
        let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $4; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
@@ -1298,7 +1303,7 @@ moduleDefn:
   /* 'let' definitions in non-#light*/
   | opt_attributes opt_access defnBindings %prec decl_let
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        parseState.ResetSynArgNameGenerator()
+        (getSynArgNameGenerator parseState.LexBuffer).Reset()
         let (BindingSetPreAttrs(_, _, _, _, mWhole)) = $3
         mkDefnBindings (mWhole, $3, $1, $2, mWhole) }
 
@@ -1306,7 +1311,7 @@ moduleDefn:
   | opt_attributes opt_access hardwhiteLetBindings %prec decl_let
       { let hwlb, m, _ = $3
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        parseState.ResetSynArgNameGenerator()
+        (getSynArgNameGenerator parseState.LexBuffer).Reset()
         mkDefnBindings (m, hwlb, $1, $2, m) }
 
   /* 'do' definitions in non-#light*/
@@ -2046,10 +2051,11 @@ classDefnMember:
        let ty = SynType.FromParseError(mInterface.EndRange)
        [ SynMemberDefn.Interface(ty, None, None, rhs2 parseState 1 3) ] }
 
-  | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_ODECLEND
-     { let ty, arity = $8
-       let isInline, doc, id, explicitValTyparDecls = (Option.isSome $4), grabXmlDoc(parseState, $1, 1), $5, $6
-       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $9
+  | opt_attributes opt_access abstractMemberFlags opt_access opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_ODECLEND
+     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
+       let ty, arity = $9
+       let isInline, doc, id, explicitValTyparDecls = (Option.isSome $5), grabXmlDoc(parseState, $1, 1), $6, $7
+       let mWith, (getSet, getSetRangeOpt, getterAccess, setterAccess) = $10
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole =
            let m = rhs parseState 1
@@ -2057,10 +2063,12 @@ classDefnMember:
            | None -> unionRanges m ty.Range
            | Some gs -> unionRanges m gs.Range
            |> unionRangeWithXmlDoc doc
-       if Option.isSome $2 || Option.isSome getterAccess || Option.isSome setterAccess
-       then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
+
+       [ $2; $4; getterAccess; setterAccess ]
+       |> List.iter (function None -> () | Some access -> errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), access.Range)))
+
        let mkFlags, leadingKeyword = $3
-       let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $4; WithKeyword = mWith; EqualsRange = None }
+       let trivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $5; WithKeyword = mWith; EqualsRange = None }
        let vis2 = SynValSigAccess.Single(None)
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, None, mWhole, trivia)
        let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt }
@@ -2316,16 +2324,19 @@ opt_classDefn:
 inheritsDefn:
   | INHERIT atomTypeNonAtomicDeprecated optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $2.Range
-       SynMemberDefn.Inherit($2, $3, mDecl) }
+       let trivia = { InheritKeyword = rhs parseState 1 }
+       SynMemberDefn.Inherit(Some $2, $3, mDecl, trivia) }
 
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $4.Range
-       SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl) }
+       let trivia = { InheritKeyword = rhs parseState 1 }
+       SynMemberDefn.ImplicitInherit($2, $4, $5, mDecl, trivia) }
 
   | INHERIT ends_coming_soon_or_recover
      { let mDecl = (rhs parseState 1)
+       let trivia = { InheritKeyword = (rhs parseState 1) }
        if not $2 then errorR (Error(FSComp.SR.parsTypeNameCannotBeEmpty (), mDecl))
-       SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl) }
+       SynMemberDefn.Inherit(None, None, mDecl, trivia) }
 
 optAsSpec:
   | asSpec
@@ -5829,44 +5840,44 @@ anonLambdaExpr:
   | FUN atomicPatterns RARROW typedSequentialExprBlock
      { let mAll = unionRanges (rhs parseState 1) $4.Range
        let mArrow = Some(rhs parseState 3)
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4 }
+       mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mAll $2 mArrow $4 }
 
   | FUN atomicPatterns RARROW error
      { let mAll = rhs2 parseState 1 3
        let mArrow = Some(rhs parseState 3)
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow (arbExpr ("anonLambdaExpr1", (rhs parseState 4))) }
+       mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mAll $2 mArrow (arbExpr ("anonLambdaExpr1", (rhs parseState 4))) }
 
   | OFUN atomicPatterns RARROW typedSequentialExprBlockR OEND
       { let mArrow = rhs parseState 3
         let expr = $4 mArrow
         let mAll = unionRanges (rhs parseState 1) expr.Range
-        mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (Some mArrow) expr }
+        mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mAll $2 (Some mArrow) expr }
 
   | OFUN atomicPatterns RARROW typedSequentialExprBlockR recover
      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody ())
        let mArrow = rhs parseState 3
        let expr = $4 mArrow
        let mAll = unionRanges (rhs parseState 1) expr.Range
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (Some mArrow) expr) }
+       exprFromParseError (mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mAll $2 (Some mArrow) expr) }
 
   | OFUN atomicPatterns RARROW ORIGHT_BLOCK_END OEND
      { let mLambda = rhs2 parseState 1 3
        reportParseErrorAt mLambda (FSComp.SR.parsMissingFunctionBody())
        let mArrow = Some(rhs parseState 3)
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mLambda $2 mArrow (arbExpr ("anonLambdaExpr2", mLambda.EndRange)) }
+       mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mLambda $2 mArrow (arbExpr ("anonLambdaExpr2", mLambda.EndRange)) }
 
   | OFUN atomicPatterns RARROW recover
      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody())
        let mLambda = rhs2 parseState 1 3
        let mArrow = Some(rhs parseState 3)
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mLambda $2 mArrow (arbExpr ("anonLambdaExpr3", mLambda.EndRange))) }
+       exprFromParseError (mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mLambda $2 mArrow (arbExpr ("anonLambdaExpr3", mLambda.EndRange))) }
 
   | OFUN atomicPatterns error OEND
      { let mLambda = rhs2 parseState 1 2
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mLambda $2 None (arbExpr ("anonLambdaExpr4", mLambda.EndRange))) }
+       exprFromParseError (mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false mLambda $2 None (arbExpr ("anonLambdaExpr4", mLambda.EndRange))) }
 
   | OFUN error OEND
-     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs parseState 1) [] None (arbExpr ("anonLambdaExpr5", (rhs parseState 2)))) }
+     { exprFromParseError (mkSynFunMatchLambdas (getSynArgNameGenerator parseState.LexBuffer) false (rhs parseState 1) [] None (arbExpr ("anonLambdaExpr5", (rhs parseState 2)))) }
 
 anonMatchingExpr:
   | FUNCTION withPatternClauses %prec expr_function

@@ -8,13 +8,16 @@ open FSharp.Test.Compiler
 open System
 open System.IO
 
-module times =
+// reportTime uses global state.
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module Times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
+    [<Theory; FileInlineData("error_01.fs")>]
     let ``times - error_01_fs - --Times`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--Times"]
         |> typecheck
@@ -25,9 +28,10 @@ module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_02.fs"|])>]
+    [<Theory; FileInlineData("error_02.fs")>]
     let ``times - error_02_fs - --times-`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--times-"]
         |> typecheck
@@ -38,9 +42,10 @@ module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_03.fs"|])>]
+    [<Theory; FileInlineData("error_03.fs")>]
     let ``times - error_03_fs - --times+`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--times+"]
         |> typecheck
@@ -49,9 +54,10 @@ module times =
         |> withDiagnosticMessageMatches "Unrecognized option: '--times\+'"
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
+    [<Theory; FileInlineData("error_01.fs")>]
     let ``times - to console`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withBufferWidth 120
         |> withOptions ["--times"]
@@ -64,13 +70,15 @@ module times =
             "Duration"|]
 
 
-    [<Theory(Skip="Flaky in CI due to file being locked, disabling for now until file closure is resolved."); Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
+    [<Theory(Skip="Flaky in CI due to file being locked, disabling for now until file closure is resolved.");>]
+    [<FileInlineData("error_01.fs")>]
     let ``times - to csv file`` compilation =
         let tempPath = Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString() + ".csv")
         use _ = {new IDisposable with
                      member this.Dispose() = File.Delete(tempPath) }
 
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--times:"+tempPath]
         |> ignoreWarnings     

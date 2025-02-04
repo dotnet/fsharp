@@ -72,10 +72,10 @@ module CompileHelpers =
 
         try
             f exiter
-            0
+            None
         with e ->
             stopProcessingRecovery e range0
-            1
+            Some e
 
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag.
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator) =
@@ -100,14 +100,6 @@ module CompileHelpers =
 
         diagnostics.ToArray(), result
 
-    let setOutputStreams execute =
-        // Set the output streams, if requested
-        match execute with
-        | Some(writer, error) ->
-            Console.SetOut writer
-            Console.SetError error
-        | None -> ()
-
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
 type FSharpChecker
@@ -125,7 +117,8 @@ type FSharpChecker
         captureIdentifiersWhenParsing,
         getSource,
         useChangeNotifications,
-        useTransparentCompiler
+        useTransparentCompiler,
+        ?transparentCompilerCacheSizes
     ) =
 
     let backgroundCompiler =
@@ -143,7 +136,8 @@ type FSharpChecker
                 parallelReferenceResolution,
                 captureIdentifiersWhenParsing,
                 getSource,
-                useChangeNotifications
+                useChangeNotifications,
+                ?cacheSizes = transparentCompilerCacheSizes
             )
             :> IBackgroundCompiler
         else
@@ -206,7 +200,8 @@ type FSharpChecker
             ?parallelReferenceResolution: bool,
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
-            ?useTransparentCompiler: bool
+            ?useTransparentCompiler: bool,
+            ?transparentCompilerCacheSizes: CacheSizes
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -255,7 +250,8 @@ type FSharpChecker
              | Some(DocumentSource.Custom f) -> Some f
              | _ -> None),
             useChangeNotifications,
-            useTransparentCompiler
+            useTransparentCompiler,
+            ?transparentCompilerCacheSizes = transparentCompilerCacheSizes
         )
 
     member _.UsesTransparentCompiler = useTransparentCompiler = Some true

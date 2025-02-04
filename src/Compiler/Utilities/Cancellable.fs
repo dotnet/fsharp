@@ -2,24 +2,44 @@ namespace FSharp.Compiler
 
 open System
 open System.Threading
-open Internal.Utilities.Library
 
 [<Sealed>]
 type Cancellable =
-    static let token = AsyncLocal<CancellationToken>()
+    static let tokenHolder = AsyncLocal<CancellationToken voption>()
 
-    static member Token = token.Value
+    static let guard =
+        String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DISABLE_CHECKANDTHROW_ASSERT"))
+
+    static let ensureToken msg =
+        tokenHolder.Value
+        |> ValueOption.defaultWith (fun () -> if guard then failwith msg else CancellationToken.None)
+
+    static member HasCancellationToken = tokenHolder.Value.IsSome
+
+    static member Token = ensureToken "Token not available outside of Cancellable computation."
+
+    static member UseToken() =
+        async {
+            let! ct = Async.CancellationToken
+            tokenHolder.Value <- ValueSome ct
+        }
 
     static member UsingToken(ct) =
-        let oldCt = token.Value
-        token.Value <- ct
+        let oldCt = tokenHolder.Value
+        tokenHolder.Value <- ValueSome ct
 
         { new IDisposable with
-            member this.Dispose() = token.Value <- oldCt
+            member _.Dispose() = tokenHolder.Value <- oldCt
         }
 
     static member CheckAndThrow() =
-        token.Value.ThrowIfCancellationRequested()
+        let token = ensureToken "CheckAndThrow invoked outside of Cancellable computation."
+        token.ThrowIfCancellationRequested()
+
+    static member TryCheckAndThrow() =
+        match tokenHolder.Value with
+        | ValueNone -> ()
+        | ValueSome token -> token.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library
 
@@ -48,8 +68,9 @@ module Cancellable =
             try
                 use _ = Cancellable.UsingToken(ct)
                 oper ct
-            with :? OperationCanceledException as e ->
-                ValueOrCancelled.Cancelled(OperationCanceledException e.CancellationToken)
+            with
+            | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
+            | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
 
     let fold f acc seq =
         Cancellable(fun ct ->

@@ -8,96 +8,107 @@ open FSharp.Test.Compiler
 
 module Named =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternOutsideMatch01.fs"|])>]
+    [<Theory; FileInlineData("ActivePatternOutsideMatch01.fs")>]
     let ``Named - ActivePatternOutsideMatch01_fs - --test:ErrorRanges`` compilation =
         compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternOutsideMatch02.fs"|])>]
-    let ``Named - ActivePatternOutsideMatch02_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns01.fs"|])>]
-    let ``Named - activePatterns01_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns02.fs"|])>]
-    let ``Named - activePatterns02_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns03.fs"|])>]
-    let ``Named - activePatterns03_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns05.fs"|])>]
-    let ``Named - activePatterns05_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns06.fs"|])>]
-    let ``Named - activePatterns06_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns07.fs"|])>]
-    let ``Named - activePatterns07_fs - --test:ErrorRanges`` compilation =
-        compilation
-        |> asFs
-        |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
-        |> shouldSucceed
-        
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns08.fs"|])>]
-    let ``Named - activePatterns08_fs - --test:ErrorRanges`` compilation =
-        compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns09.fs"|])>]
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("ActivePatternOutsideMatch02.fs")>]
+    let ``Named - ActivePatternOutsideMatch02_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns01.fs")>]
+    let ``Named - activePatterns01_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns02.fs")>]
+    let ``Named - activePatterns02_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns03.fs")>]
+    let ``Named - activePatterns03_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns05.fs")>]
+    let ``Named - activePatterns05_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns06.fs")>]
+    let ``Named - activePatterns06_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns07.fs")>]
+    let ``Named - activePatterns07_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
+    [<Theory; FileInlineData("activePatterns08.fs")>]
+    let ``Named - activePatterns08_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> getCompilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("activePatterns09.fs")>]
     let ``Named - activePatterns09_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> typecheck
         |> shouldSucceed
-        
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"activePatterns10.fs"|])>]
+
+    [<Theory; FileInlineData("activePatterns10.fs")>]
     let ``Named - activePatterns10_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> typecheck
         |> shouldFail
@@ -113,66 +124,73 @@ module Named =
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ActivePatternUnconstrained01.fs"|])>]
+    [<Theory; FileInlineData("ActivePatternUnconstrained01.fs")>]
     let ``Named - ActivePatternUnconstrained01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> ignoreWarnings
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsHighOrderFunc01.fs"|])>]
+    [<Theory; FileInlineData("AsHighOrderFunc01.fs")>]
     let ``Named - AsHighOrderFunc01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"discUnion01.fs"|])>]
+    [<Theory; FileInlineData("discUnion01.fs")>]
     let ``Named - discUnion01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"discUnion02.fs"|])>]
+    [<Theory; FileInlineData("discUnion02.fs")>]
     let ``Named - _DiscUnion01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternHasNoFields.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatternHasNoFields.fs")>]
     let ``Named - E_ActivePatternHasNoFields_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 3174, Line 10, Col 24, Line 10, Col 25, "Active patterns do not have fields. This syntax is invalid.")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternNotAFunction.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatternNotAFunction.fs")>]
     let ``Named - E_ActivePatternNotAFunction_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1209, Line 5, Col 6, Line 5, Col 11, "Active pattern '|A|B|' is not a function")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatterns01.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatterns01.fs")>]
     let ``Named - E_ActivePatterns01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -187,11 +205,12 @@ module Named =
             (Error 624, Line 17, Col 9, Line 17, Col 17, "The '|' character is not permitted in active pattern case identifiers")
             (Error 623, Line 18, Col 7, Line 18, Col 9, "Active pattern case identifiers must begin with an uppercase letter")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatterns02.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatterns02.fs")>]
     let ``Named - E_ActivePatterns02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -201,9 +220,10 @@ module Named =
             (Warning 20, Line 6, Col 1, Line 6, Col 38, "The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatterns03.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatterns03.fs")>]
     let ``Named - E_ActivePatterns03_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -270,11 +290,12 @@ but here has type
             (Error 39, Line 34, Col 8, Line 34, Col 18, "The pattern discriminator 'FooB++' is not defined.")
             (Warning 25, Line 34, Col 7, Line 34, Col 22, "Incomplete pattern matches on this expression.")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternUnconstrained01.fs"|])>]
+    [<Theory; FileInlineData("E_ActivePatternUnconstrained01.fs")>]
     let ``Named - E_ActivePatternUnconstrained01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -286,9 +307,10 @@ but here has type
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_LetRec01.fs"|])>]
+    [<Theory; FileInlineData("E_Error_LetRec01.fs")>]
     let ``Named - E_Error_LetRec01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -297,11 +319,12 @@ but here has type
     'Choice<'a,'b>'    
 but here has type
     'string'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_LetRec02.fs"|])>]
+    [<Theory; FileInlineData("E_Error_LetRec02.fs")>]
     let ``Named - E_Error_LetRec02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -313,12 +336,12 @@ but here has type
 but here has type
     'string'    ")
         ]
-               
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_LetRec03.fs"|])>]
+    [<Theory; FileInlineData("E_Error_LetRec03.fs")>]
     let ``Named - E_Error_LetRec03_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -332,9 +355,10 @@ but here has type
         ]
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_LetRec04.fs"|])>]
+    [<Theory; FileInlineData("E_Error_LetRec04.fs")>]
     let ``Named - E_Error_LetRec04_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -343,11 +367,12 @@ but here has type
     ''a option'    
 but here has type
     'string'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_NonParam01.fs"|])>]
+    [<Theory; FileInlineData("E_Error_NonParam01.fs")>]
     let ``Named - E_Error_NonParam01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -356,11 +381,12 @@ but here has type
     'Choice<'a,'b>'    
 but here has type
     'string'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_NonParam02.fs"|])>]
+    [<Theory; FileInlineData("E_Error_NonParam02.fs")>]
     let ``Named - E_Error_NonParam02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -374,9 +400,10 @@ but here has type
         ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_NonParam03.fs"|])>]
+    [<Theory; FileInlineData("E_Error_NonParam03.fs")>]
     let ``Named - E_Error_NonParam03_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -388,11 +415,12 @@ but here has type
 but here has type
     'string'    ")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_NonParam04.fs"|])>]
+    [<Theory; FileInlineData("E_Error_NonParam04.fs")>]
     let ``Named - E_Error_NonParam04_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -401,11 +429,12 @@ but here has type
     ''a option'    
 but here has type
     'string'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_Param01.fs"|])>]
+    [<Theory; FileInlineData("E_Error_Param01.fs")>]
     let ``Named - E_Error_Param01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -414,11 +443,12 @@ but here has type
     'Choice<'a,'b>'    
 but here has type
     'string'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_Param02.fs"|])>]
+    [<Theory; FileInlineData("E_Error_Param02.fs")>]
     let ``Named - E_Error_Param02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -430,11 +460,12 @@ but here has type
 but here has type
     'string'    ")
         ]
-    
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_Param03.fs"|])>]
+    [<Theory; FileInlineData("E_Error_Param03.fs")>]
     let ``Named - E_Error_Param03_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -446,11 +477,12 @@ but here has type
 but here has type
     'string'    ")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Error_Param04.fs"|])>]
+    [<Theory; FileInlineData("E_Error_Param04.fs")>]
     let ``Named - E_Error_Param04_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -461,11 +493,12 @@ but here has type
 but here has type
     'string'    ")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LargeActivePat01.fs"|])>]
+    [<Theory; FileInlineData("E_LargeActivePat01.fs")>]
     let ``Named - E_LargeActivePat01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -474,11 +507,12 @@ but here has type
             (Error 265, Line 6, Col 6, Line 6, Col 47, "Active patterns cannot return more than 7 possibilities")
             (Error 265, Line 8, Col 6, Line 8, Col 23, "Active patterns cannot return more than 7 possibilities")
         ]
-    
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_MulticasePartialNotAllowed01.fs"|])>]
+    [<Theory; FileInlineData("E_MulticasePartialNotAllowed01.fs")>]
     let ``Named - E_MulticasePartialNotAllowed01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -488,21 +522,23 @@ but here has type
             (Error 3868, Line 22, Col 7, Line 22, Col 17, "This active pattern expects exactly one pattern argument, e.g., 'WhiteSpace pat'.");
             (Error 1107, Line 20, Col 7, Line 20, Col 21, "Partial active patterns may only generate one result")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ParameterRestrictions01.fs"|])>]
+    [<Theory; FileInlineData("E_ParameterRestrictions01.fs")>]
     let ``Named - E_ParameterRestrictions01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 722, Line 15, Col 23, Line 15, Col 34, "Only active patterns returning exactly one result may accept arguments")
-    
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PatternMatchRegressions02.fs"|])>]
+    [<Theory; FileInlineData("E_PatternMatchRegressions02.fs")>]
     let ``Named - E_PatternMatchRegressions02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -512,57 +548,63 @@ but here has type
             (Warning 25, Line 30, Col 11, Line 30, Col 12, "Incomplete pattern matches on this expression.")
             (Error 1210, Line 22, Col 6, Line 22, Col 38, "Active pattern '|ClientExternalTypeUse|WillFail|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MultiActivePatterns01.fs"|])>]
+    [<Theory; FileInlineData("MultiActivePatterns01.fs")>]
     let ``Named - MultiActivePatterns01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedLiteral01.fs"|])>]
+    [<Theory; FileInlineData("NamedLiteral01.fs")>]
     let ``Named - NamedLiteral01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedLiteral02.fs"|])>]
+    [<Theory; FileInlineData("NamedLiteral02.fs")>]
     let ``Named - NamedLiteral02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ParameterizedPartialActivePattern01.fs"|])>]
+    [<Theory; FileInlineData("ParameterizedPartialActivePattern01.fs")>]
     let ``Named - ParameterizedPartialActivePattern01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PatternMatchRegressions01.fs"|])>]
+    [<Theory; FileInlineData("PatternMatchRegressions01.fs")>]
     let ``Named - PatternMatchRegressions01_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 25, Line 22, Col 11, Line 22, Col 12, "Incomplete pattern matches on this expression.")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PatternMatchRegressions02.fs"|])>]
+    [<Theory; FileInlineData("PatternMatchRegressions02.fs")>]
     let ``Named - PatternMatchRegressions02_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
@@ -570,11 +612,12 @@ but here has type
         |> withDiagnostics [
             (Warning 25, Line 20, Col 11, Line 20, Col 12, "Incomplete pattern matches on this expression.")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Named)
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveActivePats.fs"|])>]
+    [<Theory; FileInlineData("RecursiveActivePats.fs")>]
     let ``Named - RecursiveActivePats_fs - --test:ErrorRanges`` compilation =
         compilation
+        |> getCompilation 
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck

@@ -24,26 +24,7 @@ type LangVersion =
     | Latest
     | SupportsMl
 
-type private EventedTextWriter() =
-    inherit TextWriter()
-    let sb = StringBuilder()
-    let sw = new StringWriter()
-    let lineWritten = Event<string>()
-    member _.LineWritten = lineWritten.Publish
-    override _.Encoding = Encoding.UTF8
-    override _.Write(c: char) =
-        if c = '\n' then
-            let line =
-                let v = sb.ToString()
-                if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
-                else v
-            sb.Clear() |> ignore
-            sw.WriteLine line
-            lineWritten.Trigger(line)
-        else sb.Append(c) |> ignore
-    override _.ToString() = sw.ToString()
-
-type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion, ?input: string) =
+type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
     let additionalArgs = defaultArg additionalArgs [||]
     let quiet = defaultArg quiet true
@@ -72,30 +53,11 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let argv = Array.append baseArgs additionalArgs
 
-    let inReader = new StringReader(defaultArg input "")
-    let outWriter = new EventedTextWriter()
-    let errorWriter = new EventedTextWriter()
-
-    let previousIn, previousOut, previousError = Console.In, Console.Out, Console.Error
-
-    do
-        Console.SetIn inReader
-        Console.SetOut outWriter
-        Console.SetError errorWriter
-
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member _.ValueBound = fsi.ValueBound
 
     member _.Fsi = fsi
-
-    member _.OutputProduced = outWriter.LineWritten
-
-    member _.ErrorProduced = errorWriter.LineWritten
-
-    member _.GetOutput() = string outWriter
-
-    member _.GetErrorOutput() = string errorWriter
 
     member this.Eval(code: string, ?cancellationToken: CancellationToken, ?desiredCulture: Globalization.CultureInfo) =
         let originalCulture = Thread.CurrentThread.CurrentCulture
@@ -127,9 +89,6 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     interface IDisposable with
         member this.Dispose() =
             ((this.Fsi) :> IDisposable).Dispose()
-            Console.SetIn previousIn
-            Console.SetOut previousOut
-            Console.SetError previousError
 
 [<AutoOpen>]
 module TestHelpers =

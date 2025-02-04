@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
@@ -12,6 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Interactive\ControlledExecution.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\RidHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />

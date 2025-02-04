@@ -9,9 +9,6 @@ module internal Utils =
     /// Return file name with one directory above it
     val shortPath: path: string -> string
 
-    [<return: Struct>]
-    val (|TaskCancelled|_|): ex: exn -> TaskCanceledException voption
-
 type internal JobEvent =
     | Requested
     | Started
@@ -39,32 +36,21 @@ type Extensions =
     [<System.Runtime.CompilerServices.Extension>]
     static member internal WithExtraVersion: cacheKey: ICacheKey<'a, 'b> * extraVersion: 'c -> ICacheKey<'a, ('b * 'c)>
 
-type internal AsyncLock =
-    interface System.IDisposable
-
-    new: unit -> AsyncLock
-
-    member Do: f: (unit -> #Task<'b>) -> Task<'b>
-
 /// <summary>
 /// A cache/memoization for computations that makes sure that the same computation will only be computed once even if it's needed
 /// at multiple places/times.
 ///
 /// Strongly holds at most one result per key.
 /// </summary>
-type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality
-#if !NO_CHECKNULLS
-    and 'TKey:not null
-    and 'TVersion:not null
-#endif
-    > =
+type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality and 'TKey:not null and 'TVersion:not null> =
 
     /// <param name="keepStrongly">Maximum number of strongly held results to keep in the cache</param>
     /// <param name="keepWeakly">Maximum number of weakly held results to keep in the cache</param>
     /// <param name="name">Name of the cache - used in tracing messages</param>
+    /// <param name="cancelUnawaitedJobs">Cancels a job when all the awaiting requests are canceled. If set to false, unawaited job will run to completion and it's result will be cached.</param>
     /// <param name="cancelDuplicateRunningJobs">If true, when a job is started, all other jobs with the same key will be canceled.</param>
     new:
-        ?keepStrongly: int * ?keepWeakly: int * ?name: string * ?cancelDuplicateRunningJobs: bool ->
+        ?keepStrongly: int * ?keepWeakly: int * ?name: string * ?cancelUnawaitedJobs: bool * ?cancelDuplicateRunningJobs: bool ->
             AsyncMemoize<'TKey, 'TVersion, 'TValue>
 
     member Clear: unit -> unit
@@ -72,8 +58,6 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     member Clear: predicate: ('TKey -> bool) -> unit
 
     member Get: key: ICacheKey<'TKey, 'TVersion> * computation: Async<'TValue> -> Async<'TValue>
-
-    member Get': key: 'TKey * computation: Async<'TValue> -> Async<'TValue>
 
     member TryGet: key: 'TKey * predicate: ('TVersion -> bool) -> 'TValue option
 

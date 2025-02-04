@@ -30,6 +30,8 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
 
 open Xunit
+open FSharp.Test.Utilities
+
 
 open OpenTelemetry
 open OpenTelemetry.Resources
@@ -224,10 +226,7 @@ let sourceFile fileId deps =
       IsPhysicalFile = false }
 
 
-let OptionsCache = ConcurrentDictionary()
-
-
-
+let OptionsCache = ConcurrentDictionary<_, Lazy<FSharpProjectOptions>>()
 
 type SyntheticProject =
     { Name: string
@@ -295,7 +294,7 @@ type SyntheticProject =
 
     member this.GetProjectOptions(checker: FSharpChecker) =
 
-        let cacheKey =
+        let key =
             this.GetAllFiles()
             |> List.collect (fun (p, f) ->
                 [ p.Name
@@ -305,53 +304,56 @@ type SyntheticProject =
             this.FrameworkReferences,
             this.NugetReferences
 
-        if not (OptionsCache.ContainsKey cacheKey) then
-            OptionsCache[cacheKey] <-
-                use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
+        let factory _ =
+            lazy
+            use _ = Activity.start "SyntheticProject.GetProjectOptions" [ "project", this.Name ]
 
-                let referenceScript =
-                    seq {
-                        yield! this.FrameworkReferences |> Seq.map getFrameworkReference
+            let referenceScript =
+                seq {
+                    yield! this.FrameworkReferences |> Seq.map getFrameworkReference
+                    if not this.NugetReferences.IsEmpty then
                         this.NugetReferences |> getNugetReferences (Some "https://api.nuget.org/v3/index.json")
-                    }
-                    |> String.concat "\n"
+                }
+                |> String.concat "\n"
 
-                let baseOptions, _ =
-                    checker.GetProjectOptionsFromScript(
-                        "file.fsx",
-                        SourceText.ofString referenceScript,
-                        assumeDotNetFramework = false
-                    )
-                    |> Async.RunSynchronously
+            let baseOptions, _ =
+                checker.GetProjectOptionsFromScript(
+                    "file.fsx",
+                    SourceText.ofString referenceScript,
+                    assumeDotNetFramework = false
+                )
+                |> Async.RunImmediate
 
-                {
-                    ProjectFileName = this.ProjectFileName
-                    ProjectId = None
-                    SourceFiles =
-                        [| for f in this.SourceFiles do
-                               if f.HasSignatureFile then
-                                   this.ProjectDir ++ f.SignatureFileName
+            {
+                ProjectFileName = this.ProjectFileName
+                ProjectId = None
+                SourceFiles =
+                    [| for f in this.SourceFiles do
+                            if f.HasSignatureFile then
+                                this.ProjectDir ++ f.SignatureFileName
 
-                               this.ProjectDir ++ f.FileName |]
-                    OtherOptions =
-                        Set [
-                           yield! baseOptions.OtherOptions
-                           "--optimize+"
-                           for p in this.DependsOn do
-                               $"-r:{p.OutputFilename}"
-                           yield! this.OtherOptions ]
-                           |> Set.toArray
-                    ReferencedProjects =
-                        [| for p in this.DependsOn do
-                               FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = this.UseScriptResolutionRules
-                    LoadTime = DateTime()
-                    UnresolvedReferences = None
-                    OriginalLoadReferences = []
-                    Stamp = None }
+                            this.ProjectDir ++ f.FileName |]
+                OtherOptions =
+                    Set [
+                        yield! baseOptions.OtherOptions
+                        "--optimize+"
+                        for p in this.DependsOn do
+                            $"-r:{p.OutputFilename}"
+                        yield! this.OtherOptions ]
+                        |> Set.toArray
+                ReferencedProjects =
+                    [| for p in this.DependsOn do
+                            FSharpReferencedProject.FSharpReference(p.OutputFilename, p.GetProjectOptions checker) |]
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = this.UseScriptResolutionRules
+                LoadTime = DateTime()
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                Stamp = None }
+       
+        OptionsCache.GetOrAdd(key, factory).Value
 
-        OptionsCache[cacheKey]
+
 
     member this.GetAllProjects() =
         [ this
@@ -959,7 +961,6 @@ type ProjectWorkflowBuilder
 
     let mutable latestProject = initialProject
     let mutable activity = None
-    let mutable tracerProvider = None
 
     let getSource f = f |> getSourceText latestProject :> ISourceText |> Some |> async.Return
 
@@ -1008,33 +1009,21 @@ type ProjectWorkflowBuilder
 
     member this.Yield _ = async {
         let! ctx = getInitialContext()
-        tracerProvider <-
-            Sdk.CreateTracerProviderBuilder()
-                .AddSource("fsc")
-                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-                .AddJaegerExporter()
-                .Build()
-            |> Some
         activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name; "UsingTransparentCompiler", useTransparentCompiler.ToString() ] |> Some
         return ctx
     }
 
     member this.DeleteProjectDir() =
         if Directory.Exists initialProject.ProjectDir then
-            try
-                Directory.Delete(initialProject.ProjectDir, true)
-            with _ -> ()
+            try Directory.Delete(initialProject.ProjectDir, true) with _ -> ()
 
     member this.Execute(workflow: Async<WorkflowContext>) =
         try
-            Async.RunSynchronously(workflow, timeout = defaultArg runTimeout 600_000)
+            Async.RunSynchronously(workflow, ?timeout = runTimeout)
         finally
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
-            activity |> Option.iter (fun x -> x.Dispose())
-            tracerProvider |> Option.iter (fun x ->
-                x.ForceFlush() |> ignore
-                x.Dispose())
+            activity |> Option.iter (fun x -> if not (isNull x) then x.Dispose())
 
     member this.Run(workflow: Async<WorkflowContext>) =
         if autoStart then
@@ -1135,13 +1124,9 @@ type ProjectWorkflowBuilder
         async {
             let! ctx = workflow
 
-            use activity =
-                Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
-
             let! results =
+                use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
                 checkFile fileId ctx.Project checker
-
-            activity.Dispose()
 
             let oldSignature = ctx.Signatures[fileId]
             let newSignature = getSignature results
@@ -1360,9 +1345,8 @@ type ProjectWorkflowBuilder
                     yield! projectOptions.OtherOptions
                     yield! projectOptions.SourceFiles
                 |]
-            let! _diagnostics, exitCode = checker.Compile(arguments)
-            if exitCode <> 0 then
-                exn $"Compilation failed with exit code {exitCode}" |> raise
+            let! _diagnostics, ex = checker.Compile(arguments)
+            if ex.IsSome then raise ex.Value
             return ctx
         }
         

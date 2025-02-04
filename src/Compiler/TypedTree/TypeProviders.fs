@@ -122,7 +122,6 @@ let CreateTypeProvider (
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
-#if FSHARPCORE_USE_PACKAGE
             TypeProviderConfig(systemRuntimeContainsType,
                 ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
@@ -131,20 +130,11 @@ let CreateTypeProvider (
                 IsInvalidationSupported=isInvalidationSupported, 
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-#else
-            TypeProviderConfig(systemRuntimeContainsType,
-                ReferencedAssemblies=getReferencedAssemblies(),
-                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
-                RuntimeAssembly=runtimeAssemblyPath, 
-                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
-                IsInvalidationSupported=isInvalidationSupported, 
-                IsHostedExecution= isInteractive, 
-                SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-#endif
-        protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
+
+        protect (fun () -> !!(Activator.CreateInstance(typeProviderImplementationType, [| box e|])) :?> ITypeProvider )
 
     elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
-        protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
+        protect (fun () -> !!(Activator.CreateInstance typeProviderImplementationType) :?> ITypeProvider )
 
     else
         // No appropriate constructor found
@@ -739,7 +729,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                 let paramsAsObj = 
                     try (!!meth).Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
                     with err -> raise (StripException (StripException err))
-                paramsAsObj :?> ParameterInfo[] 
+                !!paramsAsObj :?> ParameterInfo[] 
 
         staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
 

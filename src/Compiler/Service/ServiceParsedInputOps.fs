@@ -905,7 +905,7 @@ module ParsedInput =
             | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
                 List.tryPick walkAttribute attrs |> Option.orElseWith (fun _ -> walkPat pat)
 
-            | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
+            | SynMemberDefn.ImplicitInherit(t, e, _, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
 
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
 
@@ -913,8 +913,8 @@ module ParsedInput =
                 walkType t
                 |> Option.orElseWith (fun () -> members |> Option.bind (List.tryPick walkMember))
 
-            | SynMemberDefn.Inherit(t, _, _) -> walkType t
-
+            | SynMemberDefn.Inherit(baseType = Some baseType) -> walkType baseType
+            | SynMemberDefn.Inherit(baseType = None) -> None
             | SynMemberDefn.ValField(fieldInfo = field) -> walkField field
 
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
@@ -2233,14 +2233,15 @@ module ParsedInput =
             | SynMemberDefn.ImplicitCtor(attributes = Attributes attrs; ctorArgs = pat) ->
                 List.iter walkAttribute attrs
                 walkPat pat
-            | SynMemberDefn.ImplicitInherit(t, e, _, _) ->
+            | SynMemberDefn.ImplicitInherit(t, e, _, _, _) ->
                 walkType t
                 walkExpr e
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.iter walkBinding bindings
             | SynMemberDefn.Interface(interfaceType = t; members = members) ->
                 walkType t
                 members |> Option.iter (List.iter walkMember)
-            | SynMemberDefn.Inherit(t, _, _) -> walkType t
+            | SynMemberDefn.Inherit(baseType = Some baseType) -> walkType baseType
+            | SynMemberDefn.Inherit(baseType = None) -> ()
             | SynMemberDefn.ValField(fieldInfo = field) -> walkField field
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
             | SynMemberDefn.AutoProperty(attributes = Attributes attrs; typeOpt = t; synExpr = e) ->

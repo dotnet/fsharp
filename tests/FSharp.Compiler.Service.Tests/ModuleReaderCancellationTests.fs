@@ -1,3 +1,5 @@
+// Sequential execution because of shared mutable state.
+[<FSharp.Test.RunTestCasesInSequence>]
 module FSharp.Compiler.Service.Tests.ModuleReaderCancellationTests
 
 open System
@@ -9,7 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
-open FsUnit
+open FSharp.Test.Assert
 open Internal.Utilities.Library
 open FSharp.Compiler.Service.Tests.Common
 open Xunit
@@ -115,8 +117,8 @@ type PreTypeDefData =
                 mkILMethods []
 
         let typeAttributes = TypeAttributes.Public
-        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, emptyILInterfaceImpls, [],
-            None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [], ILTypeDefAdditionalFlags.None,
+        ILTypeDef(this.Name, typeAttributes, ILTypeDefLayout.Auto, [], [],
+            None, methodsDefs, mkILTypeDefs [], mkILFields [], emptyILMethodImpls, mkILEvents [], mkILProperties [],
             emptyILSecurityDecls, emptyILCustomAttrsStored)
 
 type PreTypeDef(data: PreTypeDefData) =
@@ -149,9 +151,15 @@ let parseAndCheck path source options =
     wasCancelled <- false
 
     try
-        match Async.RunSynchronously(checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options), cancellationToken = cts.Token) with
-        | fileResults, FSharpCheckFileAnswer.Aborted -> None
-        | fileResults, FSharpCheckFileAnswer.Succeeded results -> Some results
+        let checkFileAsync = checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options)
+        let result =
+            match Async.RunSynchronously(checkFileAsync, cancellationToken = cts.Token) with
+            | _, FSharpCheckFileAnswer.Aborted -> None
+            | _, FSharpCheckFileAnswer.Succeeded results -> Some results
+
+        Cancellable.HasCancellationToken |> shouldEqual false
+        result
+
     with :? OperationCanceledException ->
         wasCancelled <- true
         None
@@ -172,6 +180,10 @@ open Ns1.Ns2
 let t: T = T()
 """
 
+
+[<Fact>]
+let ``CheckAndThrow is not allowed to throw outside of cancellable`` () =
+    Assert.Throws<Exception>(fun () -> Cancellable.CheckAndThrow())
 
 [<Fact>]
 let ``Type defs 01 - assembly import`` () =

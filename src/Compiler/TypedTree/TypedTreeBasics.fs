@@ -62,13 +62,12 @@ let arityOfVal (v: Val) =
     | None -> ValReprInfo.emptyValData
     | Some info -> info
 
+let tryGetArityOfValForDisplay (v: Val) =
+    v.ValReprInfoForDisplay
+    |> Option.orElseWith (fun _ -> v.ValReprInfo)
+
 let arityOfValForDisplay (v: Val) =
-    match v.ValReprInfoForDisplay with
-    | Some info -> info
-    | None ->
-         match v.ValReprInfo with
-         | None -> ValReprInfo.emptyValData
-         | Some info -> info
+    tryGetArityOfValForDisplay v |> Option.defaultValue ValReprInfo.emptyValData
 
 let tupInfoRef = TupInfo.Const false
 
@@ -284,7 +283,7 @@ let tryAddNullnessToTy nullnessNew (ty:TType) =
 let addNullnessToTy (nullness: Nullness) (ty:TType) =
     match nullness with
     | Nullness.Known NullnessInfo.WithoutNull -> ty
-    | Nullness.Variable nv when nv.IsSolved && nv.Evaluate() = NullnessInfo.WithoutNull -> ty
+    | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
     | _ -> 
     match ty with
     | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)

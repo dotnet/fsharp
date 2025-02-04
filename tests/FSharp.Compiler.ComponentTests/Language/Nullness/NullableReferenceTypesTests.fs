@@ -17,6 +17,133 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+[<Fact>]
+let ``Warning on nullness hidden behind interface upcast`` () =
+    FSharp """module Test
+
+open System.IO
+open System
+
+// This is bad - input is nullable, output is not = must warn
+let whatisThis (s:Stream|null) : IDisposable =
+    s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 8, Col 5, Line 8, Col 6, "Nullness warning: The types 'IDisposable' and 'IDisposable | null' do not have compatible nullability."]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Report warning when applying anon record to a nullable generic return value`` () =
+    FSharp """
+open System.Text.Json
+type R = { x: int }
+type RA = {| x: int |}
+
+[<EntryPoint>]
+let main _args =
+    let a = JsonSerializer.Deserialize<{| x: int |}> "null"
+    let _a = a.x
+
+    let b = JsonSerializer.Deserialize<RA> "null"
+    let _b = b.x
+
+    let c = JsonSerializer.Deserialize<R> "null"
+    let _c = c.x
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 3265, Line 8, Col 13, Line 8, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 11, Col 13, Line 11, Col 50, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
+              Error 3261, Line 15, Col 14, Line 15, Col 17, "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Report warning when generic type instance creates a null-disallowed type`` () =
+    FSharp """
+open System.Text.Json
+
+[<Measure>]
+type mykg
+type mykgalias = int<mykg>
+
+[<MeasureAnnotatedAbbreviation>]  // Despite being an abbreviation, this points to a string - does not warn
+type string<[<Measure>] 'Measure> = string|null
+
+[<EntryPoint>]
+let main _args =
+    let a = JsonSerializer.Deserialize<{| x: int |}> "null"
+    let a = JsonSerializer.Deserialize<int> "null"
+    let a = JsonSerializer.Deserialize<int * float> "null"
+    let a = JsonSerializer.Deserialize<struct(int * float)> "null" 
+    let a = JsonSerializer.Deserialize<int<mykg>> "null"
+    let a = JsonSerializer.Deserialize<mykgalias> "null"
+
+    // Should be ok from here below
+    let b = JsonSerializer.Deserialize<int list> "null"
+    let b = JsonSerializer.Deserialize<mykgalias array> "null"
+    let b = JsonSerializer.Deserialize<Set<int<mykg>>> "null"
+    let b = JsonSerializer.Deserialize<string<mykg>> "null"
+
+    0"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+            [ Error 3265, Line 13, Col 13, Line 13, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 14, Col 13, Line 14, Col 51, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'System.Int32'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 15, Col 13, Line 15, Col 59, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '(int * float)'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 16, Col 13, Line 16, Col 67, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'struct (int * float)'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 17, Col 13, Line 17, Col 57, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int<mykg>'. Nullness warnings won't be reported correctly for such types."
+              Error 3265, Line 18, Col 13, Line 18, Col 57, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int<mykg>'. Nullness warnings won't be reported correctly for such types."]
+   
+
+
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Does report when null goes to DateTime Parse`` () =
+
+    FSharp """module TestLib
+open System
+let parsedDate = DateTime.Parse(null:(string|null))
+let parseDate2(s:string|null) = DateTime.Parse(s)
+let parsedDate3 = DateTime.Parse(null)
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics     
+                [Error 3261, Line 3, Col 18, Line 3, Col 52, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 4, Col 33, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+                 Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
+
+[<Fact>]
+let ``Downcasts and typetests with nullables``() = 
+    FSharp """module MyLib
+type AB = A | B
+
+let warnOnCastFromNull (o: objnull) = o :?> AB
+let warnOnCastFromNonNullToNull(o:obj) = o :?> (AB | null)
+let warnOnTypeTestNullable(o:objnull) = o :? (AB|null)
+let warnOnTypeTestRepeatedNestedNullable(o:obj) = o :? (list<((AB | null) array | null) > |null)
+
+let doNotWarnOnCastFromNullToOption(o:objnull) = o :?> Option<AB>
+let doNotWarnOnTypeTestOption(o:objnull) = o :? Option<AB>
+let doNotWarnOnGenericCastToNullableGeneric<'b when 'b:not null and 'b:not struct>(a: objnull) = a :?> ('b|null)
+let doNotWarnOnDownCastNestedNullable(o:obj) = o :? list<AB|null>
+let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null) array | null) > 
+
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics
+                [ Error 3264, Line 4, Col 39, Line 4, Col 47, "Nullness warning: Downcasting from 'objnull' into 'AB' can introduce unexpected null values. Cast to 'AB|null' instead or handle the null before downcasting."
+                  Error 3261, Line 5, Col 42, Line 5, Col 59, "Nullness warning: The types 'obj' and 'AB | null' do not have compatible nullability."
+                  Error 3060, Line 5, Col 42, Line 5, Col 59, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
+                  Error 3060, Line 6, Col 41, Line 6, Col 55, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
+                  Error 3261, Line 7, Col 51, Line 7, Col 97, "Nullness warning: The types 'obj' and 'AB | null array | null list | null' do not have compatible nullability."
+                  Error 3060, Line 7, Col 51, Line 7, Col 97, "This type test or downcast will erase the provided type 'List<AB | null array | null> | null' to the type 'List<AB array>'"]
 
 
 [<Fact>]
@@ -55,6 +182,19 @@ let safeHolder : IDisposable =
             member x.Dispose() =
                 GC.SuppressFinalize x
     }
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can _use_ a nullable IDisposable`` () =
+    FSharp """module TestLib
+open System
+let workWithResource (getD:int -> (IDisposable|null)) =
+    use _ = getD 15
+    15
+
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -100,7 +240,7 @@ Test.XString("x":(string|null))
                 Error 3261, Line 11, Col 6, Line 11, Col 7, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
                 Error 3261, Line 11, Col 1, Line 11, Col 8, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 12, Col 14, Line 12, Col 18, "Nullness warning: The type 'string' does not support 'null'."
-                Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+                Error 3261, Line 13, Col 14, Line 13, Col 31, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
 [<Fact>]
 let ``Typar infered to nonnull obj`` () =
@@ -143,7 +283,22 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> typeCheckWithStrictNullness
     |> shouldFail
     |> withDiagnostics [
-        Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+        Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
+ 
+[<Fact>]
+let ``Can have nullable prop of same type T within a custom type T``() =
+    FSharp """
+module MyLib
+type T () =
+    let mutable v : T | null = null
+    member val P : T | null = null with get, set
+    member this.M() =
+        v <- null
+        this.P <- null
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 [<Theory>]
 [<InlineData("fileExists(path)")>]
@@ -866,7 +1021,7 @@ let thisShouldAlsoWarn = MyRecord.Create(maybeNull)
     |> shouldFail
     |> withDiagnostics  
         [Error 3261, Line 7, Col 38, Line 7, Col 42, "Nullness warning: The type 'string' does not support 'null'."
-         Error 3261, Line 9, Col 42, Line 9, Col 51, "Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability."]
+         Error 3261, Line 9, Col 42, Line 9, Col 51, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
 
 [<Fact>]

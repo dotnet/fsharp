@@ -44,6 +44,8 @@ val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
 val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
 
+val inline findSynAttribute: attrName: string -> synAttrs: SynAttributes -> bool
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 [<return: Struct>]
 val (|LongOrSingleIdent|_|):
@@ -321,6 +323,8 @@ val unionBindingAndMembers: bindings: SynBinding list -> members: SynMemberDefn 
 val synExprContainsError: inpExpr: SynExpr -> bool
 
 val parsedHashDirectiveArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
+
+val parsedHashDirectiveArgumentsNoCheck: ParsedHashDirectiveArgument list -> string list
 
 val parsedHashDirectiveStringArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 

@@ -843,6 +843,8 @@ val CollectAllNoCaching: FreeVarOptions
 
 val CollectAll: FreeVarOptions
 
+val ListMeasureVarOccs: Measure -> Typar list
+
 val accFreeInTypes: FreeVarOptions -> TType list -> FreeTyvars -> FreeTyvars
 
 val accFreeInType: FreeVarOptions -> TType -> FreeTyvars -> FreeTyvars
@@ -1183,6 +1185,9 @@ val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVar
 
 /// Get the free variables in a module definition.
 val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
+
+/// Get the free variables in an expression with accumulator
+val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
 
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
@@ -1815,6 +1820,11 @@ val TypeNullIsTrueValue: TcGlobals -> TType -> bool
 
 val TypeNullIsExtraValue: TcGlobals -> range -> TType -> bool
 
+/// A type coming via interop from C# can be holding a nullness combination not supported in F#.
+/// Prime example are APIs marked as T|null applied to structs, tuples and anons.
+/// Unsupported values can also be nested within generic type arguments, e.g. a List<Tuple<string,T|null>> applied to an anon.
+val GetDisallowedNullness: TcGlobals -> TType -> TType list
+
 val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
 
 val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
@@ -1906,11 +1916,20 @@ val mkNoneCase: TcGlobals -> UnionCaseRef
 /// Create the union case 'Some(expr)' for an option type
 val mkSomeCase: TcGlobals -> UnionCaseRef
 
+/// Create the struct union case 'ValueNone' for a voption type
+val mkValueNoneCase: TcGlobals -> UnionCaseRef
+
 /// Create the struct union case 'ValueSome(expr)' for a voption type
 val mkValueSomeCase: TcGlobals -> UnionCaseRef
 
 /// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
 val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
+
+/// Create the expression 'ValueSome(expr)'
+val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
+
+/// Create the struct expression 'ValueNone' for an voption type
+val mkValueNone: TcGlobals -> TType -> range -> Expr
 
 /// Create the expression '[]' for a list type
 val mkNil: TcGlobals -> range -> TType -> Expr
@@ -2583,6 +2602,9 @@ val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
 val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
 [<return: Struct>]
+val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
+
+[<return: Struct>]
 val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
 
 [<return: Struct>]
@@ -2593,6 +2615,8 @@ val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
 
 [<return: Struct>]
 val (|AttribStringArg|_|): (AttribExpr -> string voption)
+
+val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
 
 [<return: Struct>]
 val (|Int32Expr|_|): Expr -> int32 voption
@@ -2607,6 +2631,9 @@ val (|SpecialEquatableHeadType|_|): TcGlobals -> TType -> TType list voption
 
 [<return: Struct>]
 val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit voption
+
+val (|TyparTy|NullableTypar|StructTy|NullTrueValue|NullableRefType|WithoutNullRefType|UnresolvedRefType|):
+    TType * TcGlobals -> Choice<unit, unit, unit, unit, unit, unit, unit>
 
 /// Matches if the given expression is an application
 /// of the range or range-step operator on an integral type

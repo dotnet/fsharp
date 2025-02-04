@@ -175,6 +175,13 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 // Table of all these "globals"
 //-------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type CompilationMode =
+    | Unset
+    | OneOff
+    | Service
+    | Interactive
+
 type TcGlobals(
     compilingFSharpCore: bool,
     ilg: ILGlobals,
@@ -190,10 +197,11 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion,
-    realsig: bool) =
+    realsig: bool,
+    compilationMode: CompilationMode) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
-  
+
   let v_knownWithNull =
       if v_langFeatureNullness then KnownWithNull else KnownAmbivalentToNull
 
@@ -672,8 +680,14 @@ type TcGlobals(
 
   let mkSourceDoc fileName = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=fileName)
 
+  let compute i =
+      let path = fileOfFileIndex i
+      let fullPath = FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths path
+      mkSourceDoc fullPath
+
   // Build the memoization table for files
-  let v_memoize_file = MemoizationTable<int, ILSourceDocument>((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mkSourceDoc), keyComparer=HashIdentity.Structural)
+  let v_memoize_file =
+      MemoizationTable<int, ILSourceDocument>(compute, keyComparer = HashIdentity.Structural)
 
   let v_and_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&"                      , None                 , None          , [],         mk_rel_sig v_bool_ty)
   let v_addrof_info =                makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&"                     , None                 , None          , [vara],     ([[varaTy]], mkByrefTy varaTy))
@@ -1355,6 +1369,7 @@ type TcGlobals(
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
   member val system_Object_ty = mkSysNonGenericTy sys "Object"
   member val system_IDisposable_ty = mkSysNonGenericTy sys "IDisposable"
+  member val system_IDisposableNull_ty = mkNonGenericTyWithNullness (findSysTyconRef sys "IDisposable") v_knownWithNull
   member val system_RuntimeHelpers_ty = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
   member val system_Value_ty = mkSysNonGenericTy sys "ValueType"
   member val system_Delegate_ty = mkSysNonGenericTy sys "Delegate"
@@ -1824,6 +1839,8 @@ type TcGlobals(
 
   /// Are we assuming all code gen is for F# interactive, with no static linking
   member _.isInteractive=isInteractive
+
+  member val compilationMode = compilationMode
 
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.
