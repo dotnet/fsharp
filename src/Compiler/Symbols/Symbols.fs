@@ -2991,6 +2991,8 @@ type FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member _.SimpleName = ccu.AssemblyName 
 
+    member _.IsFSharp = ccu.IsFSharp
+
 #if !NO_TYPEPROVIDERS
     member _.IsProviderGenerated = ccu.IsProviderGenerated
 #endif
