@@ -404,9 +404,9 @@ type DisposablesTracker() =
 
     /// Register some items to dispose
     member _.Register (i:#IDisposable MaybeNull) = 
-        match box i with
-        | null -> ()
-        | i -> items.Push i
+        match i with
+        | Null -> ()
+        | NonNull i -> items.Push i
 
     interface IDisposable with
 
