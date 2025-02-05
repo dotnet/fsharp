@@ -124,7 +124,20 @@ module WarnScopes =
         ns |> removeQuotes |> Option.bind removePrefix |> Option.bind parseInt
 
     let private regex =
-        Regex(""" *#(nowarn|warnon|\S+)(?: +([^ \r\n/;]+))*(?:;;)? *(\/\/.*)?$""", RegexOptions.CultureInvariant)
+        // This regex is matching the following lexer pattern that brought us here:
+        // anywhite* ("#nowarn" | "#warnon") anystring newline
+        // while extracting from "anystring" the directive arguments and the comment.
+        // A directive argument is any group of characters that is not a space, a newline, a slash or a semicolon.
+        // Both the presence and syntactic correctness of the directive arguments are checked later.
+        // For compatibility reasons, the arguments are allowed to be followed by a double semicolon.
+        // The comment is optional and starts with "//".
+        // The "(?: ...)?" is just a way to make the arguments optional while  not interfering with the capturing.
+        // Matching a directive with this regex creates 3 groups (next to the full match):
+        // 1. The directive identifier ("nowarn" or "warnon", possibly followed by additional characters).
+        // 2. The directive arguments (if any), with each argument in a separate capture.
+        // 3. The comment (if any).
+        
+        Regex(""" *#(\S+)(?: +([^ \r\n/;]+))*(?:;;)? *(\/\/.*)?$""", RegexOptions.CultureInvariant)
 
     let private parseDirective originalFileIndex lexbuf =
         let text = Lexbuf.LexemeString lexbuf

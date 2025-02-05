@@ -3219,9 +3219,6 @@ module internal ParseAndCheckFile =
 
             use _unwindBP = UseBuildPhase BuildPhase.TypeCheck
 
-            // update the error handler with the modified tcConfig
-            errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
-
             // If additional references were brought in by the preprocessor then we need to process them
             ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
 
