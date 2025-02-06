@@ -1330,3 +1330,47 @@ let myOption () : option<string> = None  """
         IL_0000:  ldnull
         IL_0001:  ret
       }"]
+
+// Regression https://github.com/dotnet/fsharp/issues/18286
+[<Fact>]
+let ``Equality and hashcode augmentation is null safe`` () =
+
+    Fsx """
+
+type Bar = { b: string | null  }
+type Foo = { f: Bar | null }
+type DUFoo = WithNull of (Foo|null)
+let a = { f = null }
+let b = { f = null }
+
+let c = WithNull(null)
+let d = WithNull(null)
+
+let e = WithNull(a)
+let f = WithNull(b)
+
+[<EntryPoint>]
+let main _ = 
+    printf "Test %A;" ({b = null} = {b = null})
+    printf ",1 %A" (a = b)
+    printf ",2 %A" (a.GetHashCode() = b.GetHashCode())
+    printf ",3 %A" (c = d)
+    printf ",4 %A" (c.GetHashCode() = d.GetHashCode())
+    printf ",5 %A" (e = f)
+    printf ",6 %A" (e = c)
+    printf ",7 %A" (e.GetHashCode() = f.GetHashCode())
+    printf ",8 %A" (e.GetHashCode() = c.GetHashCode())
+
+    printf ",9 %A" (a > b)
+    printf ",10 %A" (c > d)
+    printf ",11 %A" (e > f)
+    printf ",12 %A" (e > c)
+    0
+"""
+    |> withNullnessOptions
+    |> withOptimization false
+    |> asExe
+    |> compile
+    //|> verifyIL ["abc"]
+    |> run
+    |> verifyOutputContains [|"StringOption => Nullable / Nullable"|]
