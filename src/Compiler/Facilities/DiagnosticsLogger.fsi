@@ -207,6 +207,7 @@ type DiagnosticsLogger =
     abstract ErrorCount: int
 
     /// Checks if ErrorCount > 0
+    [<Obsolete("This also reports if a 'WarnAsError' warning occured, leading to premature abortions of compilation checks. Use CheckForRealErrorsIgnoringWarnings instead.")>]
     member CheckForErrors: unit -> bool
 
     abstract CheckForRealErrorsIgnoringWarnings: bool

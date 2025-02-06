@@ -164,7 +164,7 @@ let TypeCheck
 
         CheckClosedInputSet(
             ctok,
-            diagnosticsLogger.CheckForErrors,
+            (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
             tcConfig,
             tcImports,
             tcGlobals,

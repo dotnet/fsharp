@@ -63,7 +63,8 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m withExp
             let st = info.ProvidedType
             let meths = 
                 match optFilter with
-                | Some name ->  st.PApplyArray ((fun st -> st.GetMethods() |> Array.filter (fun mi -> mi.Name = name) ), "GetMethods", m)
+                | Some name ->  
+                    st.PApplyFilteredArray ((fun st -> st.GetMethods()),(fun mi -> mi.Name = name), "GetMethods", m)                        
                 | None -> st.PApplyArray ((fun st -> st.GetMethods()), "GetMethods", m)
             [   for mi in meths -> ProvidedMeth(amap, mi.Coerce(m), None, m) ]
 #endif

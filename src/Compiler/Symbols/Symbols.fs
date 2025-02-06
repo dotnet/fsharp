@@ -2779,7 +2779,7 @@ type FSharpType(cenv, ty:TType) =
 
 type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) = 
 
-    let rec resolveArgObj (arg: obj) =
+    let rec resolveArgObj (arg: objnull) =
         match arg with
         | :? TType as t -> box (FSharpType(cenv, t)) 
         | :? (obj[]) as a -> a |> Array.map resolveArgObj |> box
