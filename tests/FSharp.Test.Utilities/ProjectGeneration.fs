@@ -967,7 +967,6 @@ type ProjectWorkflowBuilder
 
     let mutable latestProject = initialProject
     let mutable activity = None
-    let mutable tracerProvider = None
 
     let getSource f = f |> getSourceText latestProject :> ISourceText |> Some |> async.Return
 
@@ -1016,13 +1015,6 @@ type ProjectWorkflowBuilder
 
     member this.Yield _ = async {
         let! ctx = getInitialContext()
-        tracerProvider <-
-            Sdk.CreateTracerProviderBuilder()
-                .AddSource("fsc")
-                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-                .AddJaegerExporter()
-                .Build()
-            |> Some
         activity <- Activity.start ctx.Project.Name [ Activity.Tags.project, ctx.Project.Name; "UsingTransparentCompiler", useTransparentCompiler.ToString() ] |> Some
         return ctx
     }
@@ -1038,9 +1030,6 @@ type ProjectWorkflowBuilder
             if initialContext.IsNone && not isExistingProject then
                 this.DeleteProjectDir()
             activity |> Option.iter (fun x -> if not (isNull x) then x.Dispose())
-            tracerProvider |> Option.iter (fun x ->
-                x.ForceFlush() |> ignore
-                x.Dispose())
 
     member this.Run(workflow: Async<WorkflowContext>) =
         if autoStart then

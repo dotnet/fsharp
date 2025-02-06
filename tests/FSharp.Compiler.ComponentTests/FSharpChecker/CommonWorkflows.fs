@@ -143,14 +143,6 @@ let ``Using getSource and notifications instead of filesystem`` () =
 
 [<Fact>]
 let GetAllUsesOfAllSymbols() =
-    let traceProvider =
-        Sdk.CreateTracerProviderBuilder()
-                .AddSource("fsc")
-                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-                .AddJaegerExporter()
-                .Build()
-
-    use _ = Activity.start "GetAllUsesOfAllSymbols" [  ]
 
     let result =
         async {
@@ -161,9 +153,6 @@ let GetAllUsesOfAllSymbols() =
             let! checkProjectResults = checker.ParseAndCheckProject(options)
             return checkProjectResults.GetAllUsesOfAllSymbols()
         } |> Async.RunSynchronously
-
-    traceProvider.ForceFlush() |> ignore
-    traceProvider.Dispose()
 
     if result.Length <> 79 then failwith $"Expected 81 symbolUses, got {result.Length}:\n%A{result}"
 

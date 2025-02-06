@@ -15,7 +15,7 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString (s: string MaybeNull) =
+    let ofString (s: string | null) =
         match s with
         | null -> None
         | "" -> None
@@ -607,7 +607,7 @@ type DependencyProvider
             outputDir: string,
             reportError: ResolvingErrorReport,
             path: string
-        ) : string MaybeNull * IDependencyManagerProvider MaybeNull =
+        ) : string | null * IDependencyManagerProvider | null =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers =
@@ -637,7 +637,7 @@ type DependencyProvider
             outputDir: string,
             reportError: ResolvingErrorReport,
             key: string
-        ) : IDependencyManagerProvider MaybeNull =
+        ) : IDependencyManagerProvider | null =
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
@@ -657,7 +657,7 @@ type DependencyProvider
             packageManagerTextLines: (string * string) seq,
             reportError: ResolvingErrorReport,
             executionTfm: string,
-            [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull,
+            [<Optional; DefaultParameterValue(null: string | null)>] executionRid: string | null,
             [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string,
             [<Optional; DefaultParameterValue("")>] mainScriptName: string,
             [<Optional; DefaultParameterValue("")>] fileName: string,
@@ -681,8 +681,8 @@ type DependencyProvider
                     try
                         let executionRid =
                             match executionRid with
-                            | Null -> RidHelpers.platformRid
-                            | NonNull executionRid -> executionRid
+                            | null -> RidHelpers.platformRid
+                            | executionRid -> executionRid
 
                         Ok(
                             packageManager.ResolveDependencies(

@@ -715,18 +715,6 @@ module Span =
 
         state
 
-module ValueOptionInternal =
-
-    let inline ofOption x =
-        match x with
-        | Some x -> ValueSome x
-        | None -> ValueNone
-
-    let inline bind ([<InlineIfLambda>] f) x =
-        match x with
-        | ValueSome x -> f x
-        | ValueNone -> ValueNone
-
 module String =
     let make (n: int) (c: char) : string = String(c, n)
 
@@ -1318,6 +1306,14 @@ module MultiMap =
 
     let initBy f xs : MultiMap<_, _> =
         xs |> Seq.groupBy f |> Seq.map (fun (k, v) -> (k, List.ofSeq v)) |> Map.ofSeq
+
+    let ofList (xs: ('a * 'b) list) : MultiMap<'a,'b> =
+        (Map.empty, xs)
+        ||> List.fold (fun m (k, v) ->
+            m |> Map.change k (function
+                | None -> Some [v]
+                | Some vs -> Some (v :: vs)))
+        |> Map.map (fun _ values -> List.rev values)
 
 type LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 

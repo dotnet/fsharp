@@ -18,8 +18,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <source>Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</source>
+        <target state="new">Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningWithType">
@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">In genere è consigliabile non usare identificatori di variabili scritti in maiuscolo nei criteri perché potrebbero indicare una dichiarazione OPEN mancante o un nome di criterio con ortografia errata.</target>
+        <target state="translated">In genere è consigliabile non usare identificatori di variabili scritti in maiuscolo nei criteri perché potrebbero indicare una dichiarazione OPEN mancante o un nome di criterio con ortografia errata.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

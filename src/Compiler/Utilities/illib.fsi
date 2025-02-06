@@ -243,12 +243,6 @@ module internal ResizeArray =
 module internal Span =
     val inline exists: predicate: ('T -> bool) -> span: Span<'T> -> bool
 
-module internal ValueOptionInternal =
-
-    val inline ofOption: x: 'a option -> 'a voption
-
-    val inline bind: f: ('a -> 'b voption) -> x: 'a voption -> 'b voption
-
 module internal String =
 
     val make: n: int -> c: char -> string
@@ -575,6 +569,8 @@ module internal MultiMap =
     val empty: MultiMap<'a, 'b> when 'a: comparison
 
     val initBy: f: ('a -> 'b) -> xs: seq<'a> -> MultiMap<'b, 'a> when 'b: comparison
+
+    val ofList: xs: ('a * 'b) list -> MultiMap<'a,'b> when 'a: comparison
 
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 

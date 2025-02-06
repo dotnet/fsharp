@@ -18,6 +18,12 @@ type Cancellable =
 
     static member Token = ensureToken "Token not available outside of Cancellable computation."
 
+    static member UseToken() =
+        async {
+            let! ct = Async.CancellationToken
+            tokenHolder.Value <- ValueSome ct
+        }
+
     static member UsingToken(ct) =
         let oldCt = tokenHolder.Value
         tokenHolder.Value <- ValueSome ct
@@ -62,8 +68,9 @@ module Cancellable =
             try
                 use _ = Cancellable.UsingToken(ct)
                 oper ct
-            with :? OperationCanceledException as e ->
-                ValueOrCancelled.Cancelled(OperationCanceledException e.CancellationToken)
+            with
+            | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
+            | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
 
     let fold f acc seq =
         Cancellable(fun ct ->
