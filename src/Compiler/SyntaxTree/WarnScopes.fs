@@ -136,7 +136,7 @@ module WarnScopes =
         // 1. The directive identifier ("nowarn" or "warnon", possibly followed by additional characters).
         // 2. The directive arguments (if any), with each argument in a separate capture.
         // 3. The comment (if any).
-        
+
         Regex(""" *#(\S+)(?: +([^ \r\n/;]+))*(?:;;)? *(\/\/.*)?$""", RegexOptions.CultureInvariant)
 
     let private parseDirective originalFileIndex lexbuf =
