@@ -611,6 +611,8 @@ type internal TransparentCompiler
         caches.FrameworkImports.Get(
             key,
             async {
+                use! _holder = Cancellable.UseToken()
+
                 use _ = Activity.start "ComputeFrameworkImports" []
                 let tcConfigP = TcConfigProvider.Constant tcConfig
 
@@ -635,6 +637,8 @@ type internal TransparentCompiler
         ) =
 
         async {
+            use! _holder = Cancellable.UseToken()
+
             let diagnosticsLogger =
                 CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
 
