@@ -657,7 +657,7 @@ namespace Microsoft.FSharp.Core
     /// their original forms. It is not intended for use from user code.</remarks>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.All,AllowMultiple=true)>]  
     [<Sealed>]
     type CompilationMappingAttribute =
         inherit Attribute
@@ -3587,16 +3587,16 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNullV")>]
         val inline nonNullV : value:Nullable<'T> -> 'T 
 
-        /// <summary>Asserts that the value is non-null.</summary>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <summary>Re-types a value into a nullable reference type (|null)</summary>
+        /// <param name="value">The non-nullable value.</param>
+        /// <returns>The same value re-typed as a nullable reference type.</returns>
         [<CompiledName("WithNull")>]
         val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
 
-        /// <summary>Asserts that the value is non-null.</summary>
+        /// <summary>Wraps a value type into System.Nullable</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'withNull'.</remarks>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <param name="value">The value to wrap.</param>
+        /// <returns>System.Nullable wrapper of the input argument.</returns>
         [<CompiledName("WithNullV")>]
         val inline withNullV : value:'T -> Nullable<'T> 
 #endif

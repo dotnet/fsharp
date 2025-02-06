@@ -94,14 +94,14 @@ module internal Activity =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
-        | null -> activity
+        | null -> !!activity //TODO change retTy to |null after PR #18262 is merged!!
         | activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
 
             activity.Start()
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
+    let startNoTags (name: string) : IDisposable = !! (activitySource.StartActivity name) //TODO change retTy to |null after PR #18262 is merged!!
 
     let addEventWithTags name (tags: (string * objnull) seq) =
         match Activity.Current with
@@ -128,7 +128,7 @@ module internal Activity =
 
         let private profiledSource = new ActivitySource(ActivityNames.ProfiledSourceName)
 
-        let startAndMeasureEnvironmentStats (name: string) : IDisposable = profiledSource.StartActivity(name)
+        let startAndMeasureEnvironmentStats (name: string) : IDisposable = !!(profiledSource.StartActivity(name)) //TODO change retTy to |null after PR #18262 is merged!!
 
         type private GCStats = int[]
 

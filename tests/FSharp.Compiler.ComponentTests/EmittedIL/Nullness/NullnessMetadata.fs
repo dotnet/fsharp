@@ -9,14 +9,18 @@ open FSharp.Test.Compiler
 module NullnessMetadata =
     type Optimize = Optimize | DoNotOptimize
 
-    let verifyCompilation (o:Optimize) compilation =
+    let addOptions (o:Optimize) compilation =
         compilation
         |> withOptions ["--checknulls"]
         |> (match o with | Optimize -> withOptimize | DoNotOptimize -> withNoOptimize)
         |> withNoDebug
         |> withNoInterfaceData
         |> withNoOptimizationData
-        |> asLibrary        
+        |> asLibrary
+
+    let verifyCompilation (o:Optimize) compilation =
+        compilation
+        |> addOptions o     
         |> verifyILBaseline
 
     [<Theory; FileInlineData("ModuleLevelBindings.fs")>]
@@ -122,6 +126,20 @@ module NullnessMetadata =
         |> getCompilation
         |> withNoWarn 52
         |> verifyCompilation DoNotOptimize
+
+    [<Fact>]
+    let ``Override missing in signature`` () =  
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "HasSignatureWithMissingOverride.fsi")
+        |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "HasSignatureWithMissingOverride.fs"))
+        |> withNoWarn 52
+        |> addOptions DoNotOptimize
+        |> compile
+        |> withILContains 
+            [".method public hidebysig virtual instance string ToString() cil managed"
+             ".method public hidebysig virtual instance int32 GetHashCode() cil managed"
+             "hidebysig virtual instance bool Equals(object obj) cil managed"
+             ]
+        |> shouldSucceed
 
     [<Theory; FileInlineData("NullableDowncasting.fs")>]
     let ``Downcasting and typetests`` compilation =  

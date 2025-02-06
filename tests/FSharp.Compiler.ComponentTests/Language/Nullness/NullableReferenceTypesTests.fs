@@ -17,6 +17,20 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+[<Fact>]
+let ``Warning on nullness hidden behind interface upcast`` () =
+    FSharp """module Test
+
+open System.IO
+open System
+
+// This is bad - input is nullable, output is not = must warn
+let whatisThis (s:Stream|null) : IDisposable =
+    s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 8, Col 5, Line 8, Col 6, "Nullness warning: The types 'IDisposable' and 'IDisposable | null' do not have compatible nullability."]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Report warning when applying anon record to a nullable generic return value`` () =
@@ -168,6 +182,19 @@ let safeHolder : IDisposable =
             member x.Dispose() =
                 GC.SuppressFinalize x
     }
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can _use_ a nullable IDisposable`` () =
+    FSharp """module TestLib
+open System
+let workWithResource (getD:int -> (IDisposable|null)) =
+    use _ = getD 15
+    15
+
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -976,7 +1003,45 @@ looseFunc(maybeTuple2) |> ignore
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
               Error 43, Line 40, Col 36, Line 40, Col 40, "The type 'Maybe<int * int>' does not have 'null' as a proper value"]
-                
+    
+    
+[<Fact>]
+let ``Nullness support for flexible types`` () =
+    FSharp """module MyLibrary
+open System
+let dispose (x: IDisposable | null) : unit =
+    match x with
+    | null -> ()
+    | d -> d.Dispose()
+
+let useThing (thing: #IDisposable) =
+    try
+        printfn "%O" thing
+    finally
+        dispose thing // Warning used to be here, should not warn! """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nullness support for flexible types - opposite`` () =
+    FSharp """module MyLibrary
+open System
+let dispose (x: IDisposable) : unit =
+    x.Dispose()
+
+let useThing (thing: #IDisposable | null) =
+    try
+        printfn "%O" thing
+    finally
+        dispose thing // Warning should be here, because 'thing' can be null!        
+        """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 10, Col 17, Line 10, Col 22, "Nullness warning: The types 'IDisposable' and ''a | null' do not have compatible nullability."]
+
+
 [<Fact>]
 let ``Static member on Record with null arg`` () =
     FSharp """module MyLibrary
