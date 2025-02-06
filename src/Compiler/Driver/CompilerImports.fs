@@ -2255,7 +2255,7 @@ and [<Sealed>] TcImports
             r: AssemblyResolution
         ) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
         async {
-            do! Cancellable.UseToken()
+            use! _holder = Cancellable.UseToken()
             CheckDisposed()
             let m = r.originalReference.Range
             let fileName = r.resolvedPath
