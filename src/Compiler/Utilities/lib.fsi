@@ -266,9 +266,9 @@ type DisposablesTracker =
     member Register: i:'a MaybeNull -> unit 
         when 'a:>System.IDisposable 
 #if !(NO_CHECKNULLS || BUILDING_WITH_LKG)
-        and 'a:not null and 
+        and 'a:not null  
 #endif
-        'a:not struct
+        and 'a:not struct
 
     interface System.IDisposable
 
