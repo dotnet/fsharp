@@ -3170,7 +3170,6 @@ and CanDevirtualizeApplication cenv v vref ty args =
     && isAppTy g ty 
     // Exclusion: Some unions have null as representations 
     && not (IsUnionTypeWithNullAsTrueValue g (fst(StripToNominalTyconRef cenv ty)).Deref)
-    //&& not (g.checkNullness && TypeNullIsExtraValueNew g vref.Range ty)
     // If we de-virtualize an operation on structs then we have to take the address of the object argument
     // Hence we have to actually have the object argument available to us, 
     && (not (isStructTy g ty) || not (isNil args)) 
