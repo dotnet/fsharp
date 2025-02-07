@@ -281,7 +281,7 @@ let private CheckILObsoleteAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs 
     else
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         match TryDecodeILAttribute tref cattrs with
-        // [Obsolete>]
+        // [Obsolete]
         // [Obsolete("Message")]
         // [Obsolete("Message", true)]
         // [Obsolete("Message", DiagnosticId = "DiagnosticId")]
