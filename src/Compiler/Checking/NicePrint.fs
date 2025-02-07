@@ -764,7 +764,7 @@ module PrintTypes =
             |> ListSet.setify (fun (_, cx1) (_, cx2) ->
                 match cx1, cx2 with 
                 | TyparConstraint.MayResolveMember(traitInfo1, _),
-                  TyparConstraint.MayResolveMember(traitInfo2, _) -> traitsAEquiv denv.g TypeEquivEnv.Empty traitInfo1 traitInfo2
+                  TyparConstraint.MayResolveMember(traitInfo2, _) -> traitsAEquiv denv.g (TypeEquivEnv.EmptyWithNullChecks denv.g) traitInfo1 traitInfo2
                 | _ -> false)
 
         let cxsL = List.collect (layoutConstraintWithInfo denv env) cxs
@@ -2177,7 +2177,7 @@ module TastDefinitionPrinting =
                 match tcref.TypeReprInfo with 
                 | TProvidedTypeRepr info ->
                     [ 
-                        for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes() |> Array.filter (fun t -> t.IsPublic || t.IsNestedPublic)), "GetNestedTypes", m) do 
+                        for nestedType in info.ProvidedType.PApplyFilteredArray((fun sty -> sty.GetNestedTypes()),(fun t -> t.IsPublic || t.IsNestedPublic), "GetNestedTypes", m) do 
                             yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
                     ] 
                     |> List.sortBy snd
@@ -2930,7 +2930,7 @@ let minimalStringsOfTwoTypes denv ty1 ty2 =
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function Null | NonNull "" -> "" | NonNull name -> sprintf " (%s)" name
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | "" -> "" | name -> $" (%s{name})"
             sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName ty1, makeName ty2, stringOfTyparConstraints denv tpcs)

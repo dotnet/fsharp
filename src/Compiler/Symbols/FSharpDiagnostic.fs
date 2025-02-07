@@ -200,10 +200,10 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
             | FunctionValueUnexpected(_, actualType, _) ->
                 Some(ExpressionIsAFunctionExtendedData(symbolEnv, actualType))
 
-            | FieldNotContained(_, _, implEntity, sigEntity, impl, sign, _) ->
+            | FieldNotContained(_,_, _, implEntity, sigEntity, impl, sign, _) ->
                 Some(FieldNotContainedDiagnosticExtendedData(symbolEnv, implEntity, sigEntity, sign, impl))
 
-            | ValueNotContained(_, _, _, implValue, sigValue, _) ->
+            | ValueNotContained(_,_, _, _, implValue, sigValue, _) ->
                 Some(ValueNotContainedDiagnosticExtendedData(symbolEnv, sigValue, implValue))
 
             | ArgumentsInSigAndImplMismatch(sigArg, implArg) ->
