@@ -795,8 +795,7 @@ let NewlineifyErrorString (message: string) =
 /// fixes given string by replacing all control chars with spaces.
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'),
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
-let NormalizeErrorString (text: string MaybeNull) =
-    let text = nullArgCheck "text" text
+let NormalizeErrorString (text: string) =
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()

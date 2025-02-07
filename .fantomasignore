@@ -47,6 +47,8 @@ src/FSharp.Core/tasks.fsi
 src/FSharp.Core/tasks.fs
 src/FSharp.Core/resumable.fs
 src/Compiler/DependencyManager/DependencyProvider.fs
+src/FSharp.Core/fslib-extra-pervasives.fs
+src/FSharp.Core/fslib-extra-pervasives.fsi
 
 # Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
 # This CompilerImports.fs behavior is not fixed yet, following up in  https://github.com/fsprojects/fantomas/issues/2733
@@ -128,6 +130,9 @@ src/Compiler/SyntaxTree/LexerStore.fs
 
 src/Compiler/Driver/GraphChecking/Graph.fsi
 src/Compiler/Driver/GraphChecking/Graph.fs
+
+src/Compiler/DependencyManager/NativeDllResolveHandler.fsi
+src/Compiler/DependencyManager/AssemblyResolveHandler.fsi
 
 # Fantomas limitations on implementation files  (to investigate)
 
