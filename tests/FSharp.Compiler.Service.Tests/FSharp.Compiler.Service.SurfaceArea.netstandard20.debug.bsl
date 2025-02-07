@@ -2836,10 +2836,6 @@ FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpField SignatureField
 FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpField get_ImplementationField()
 FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpField get_SignatureField()
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String DiagnosticId
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String UrlFormat
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String get_DiagnosticId()
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String get_UrlFormat()
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: DiagnosticContextInfo ContextInfo
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: DiagnosticContextInfo get_ContextInfo()
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
@@ -2865,7 +2861,6 @@ FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microso
 FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] UrlFormat
 FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DiagnosticId()
 FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_UrlFormat()
-FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] DiagnosticId
 FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] UrlFormat
 FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DiagnosticId()
