@@ -204,13 +204,16 @@ let g() =
     [<InlineData("(*13*)", ClassificationTypeNames.ClassName)>]
     [<InlineData("(*14*)", ClassificationTypeNames.TypeParameterName)>]
     [<InlineData("(*15*)", ClassificationTypeNames.TypeParameterName)>]
+    [<InlineData("(*16*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*17*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*18*)", ClassificationTypeNames.Keyword)>]
     member _.``nameof ident, nameof<'T>, match … with nameof ident``(marker: string, classificationType: string) =
         let sourceText =
             """
 module ``Normal usage of nameof should show up as a keyword`` =
     let f x = (*1*)nameof x
     let g (x : 'T) = (*2*)nameof<'T>
-    let h x y = match x with (*3*)nameof y -> () | _ -> ()
+    let h x y = match x with (*3*)nameof y -> ()
 
 module ``Redefined nameof should shadow the intrinsic one`` =
     let a x = match x with (*4*)nameof -> () | _ -> ()
@@ -229,6 +232,11 @@ module ``Redefined nameof should shadow the intrinsic one`` =
 
     let c (x : '(*14*)nameof) = x
     let d (x : (*15*)'nameof) = x
+
+module ``It should still show up as a keyword even if the type parameter is invalid`` =
+    let _ = (*16*)nameof<>
+    let a (x : 'a) (y : 'b) = (*17*)nameof<'c> // FS0039: The type parameter 'c is not defined.
+    let _ = (*18*)nameof<int> // FS3250: Expression does not have a name.
 """
 
         verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
