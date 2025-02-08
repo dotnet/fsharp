@@ -213,10 +213,10 @@ let g() =
 module ``Normal usage of nameof should show up as a keyword`` =
     let f x = (*1*)nameof x
     let g (x : 'T) = (*2*)nameof<'T>
-    let h x y = match x with (*3*)nameof y -> ()
+    let h x y = match x with (*3*)nameof y -> () | _ -> ()
 
 module ``Redefined nameof should shadow the intrinsic one`` =
-    let a x = match x with (*4*)nameof -> () | _ -> ()
+    let a x = match x with (*4*)nameof -> ()
     let b (*5*)nameof = (*6*)nameof
     let (*7*)nameof = "redefined"
     let _ = (*8*)nameof
