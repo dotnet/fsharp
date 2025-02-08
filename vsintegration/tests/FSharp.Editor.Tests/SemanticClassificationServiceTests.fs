@@ -43,8 +43,12 @@ type SemanticClassificationServiceTests() =
         match ranges |> List.tryFind (fun item -> Range.rangeContainsPos item.Range markerPos) with
         | None -> failwith "Cannot find colorization data for end of marker"
         | Some item ->
-            FSharpClassificationTypes.getClassificationTypeName item.Type
-            |> Assert.shouldBeEqualWith classificationType "Classification data doesn't match for end of marker"
+            let actual = FSharpClassificationTypes.getClassificationTypeName item.Type
+
+            actual
+            |> Assert.shouldBeEqualWith
+                classificationType
+                $"Classification data doesn't match for end of marker: {classificationType} ≠ {actual} ({item.Type})"
 
     let verifyNoClassificationDataAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
@@ -183,3 +187,48 @@ let g() =
 """
 
         verifyNoClassificationDataAtEndOfMarker (sourceText, marker, classificationType)
+
+    [<Theory>]
+    [<InlineData("(*1*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*2*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*3*)", ClassificationTypeNames.Keyword)>]
+    [<InlineData("(*4*)", ClassificationTypeNames.LocalName)>]
+    [<InlineData("(*5*)", ClassificationTypeNames.LocalName)>]
+    [<InlineData("(*6*)", ClassificationTypeNames.LocalName)>]
+    [<InlineData("(*7*)", ClassificationTypeNames.Identifier)>]
+    [<InlineData("(*8*)", ClassificationTypeNames.Identifier)>]
+    [<InlineData("(*9*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*10*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*11*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*12*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*13*)", ClassificationTypeNames.ClassName)>]
+    [<InlineData("(*14*)", ClassificationTypeNames.TypeParameterName)>]
+    [<InlineData("(*15*)", ClassificationTypeNames.TypeParameterName)>]
+    member _.``nameof ident, nameof<'T>, match … with nameof ident``(marker: string, classificationType: string) =
+        let sourceText =
+            """
+module ``Normal usage of nameof should show up as a keyword`` =
+    let f x = (*1*)nameof x
+    let g (x : 'T) = (*2*)nameof<'T>
+    let h x y = match x with (*3*)nameof y -> () | _ -> ()
+
+module ``Redefined nameof should shadow the intrinsic one`` =
+    let f x = match x with (*4*)nameof -> () | _ -> ()
+    let f (*5*)nameof = (*6*)nameof
+    let (*7*)nameof = "redefined"
+    let _ = (*8*)nameof
+
+    type (*9*)nameof () = class end
+    let _ = (*10*)nameof ()
+    let _ = new (*11*)nameof ()
+
+    module (*12*)nameof =
+        let f x = x
+
+    let _ = (*13*)nameof.f 3
+
+    let f (x : '(*14*)nameof) = x
+    let g (x : (*15*)'nameof) = x
+"""
+
+        verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
