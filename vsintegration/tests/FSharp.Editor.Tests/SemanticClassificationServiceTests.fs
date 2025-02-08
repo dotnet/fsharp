@@ -213,8 +213,8 @@ module ``Normal usage of nameof should show up as a keyword`` =
     let h x y = match x with (*3*)nameof y -> () | _ -> ()
 
 module ``Redefined nameof should shadow the intrinsic one`` =
-    let f x = match x with (*4*)nameof -> () | _ -> ()
-    let f (*5*)nameof = (*6*)nameof
+    let a x = match x with (*4*)nameof -> () | _ -> ()
+    let b (*5*)nameof = (*6*)nameof
     let (*7*)nameof = "redefined"
     let _ = (*8*)nameof
 
@@ -227,8 +227,8 @@ module ``Redefined nameof should shadow the intrinsic one`` =
 
     let _ = (*13*)nameof.f 3
 
-    let f (x : '(*14*)nameof) = x
-    let g (x : (*15*)'nameof) = x
+    let c (x : '(*14*)nameof) = x
+    let d (x : (*15*)'nameof) = x
 """
 
         verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
