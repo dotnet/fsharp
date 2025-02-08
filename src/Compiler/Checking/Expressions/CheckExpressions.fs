@@ -9270,6 +9270,13 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
                 let _tpR, tpenv = TcTypeOrMeasureParameter None cenv env ImplicitlyBoundTyparsAllowed.NoNewTypars tpenv tp
                 let vExpr = TcNameOfExprResult cenv id mExprAndTypeArgs
                 let vexpFlex = MakeApplicableExprNoFlex cenv vExpr
+
+                // Record the resolution of the `nameof` usage so that we can classify it correctly later.
+                do
+                    match afterResolution with
+                    | AfterResolution.RecordResolution (_, callSink, _, _) -> callSink emptyTyparInst
+                    | AfterResolution.DoNothing -> ()
+
                 PropagateThenTcDelayed cenv overallTy env tpenv mExprAndTypeArgs vexpFlex g.string_ty ExprAtomicFlag.Atomic otherDelayed
             | _ ->
                 error (Error(FSComp.SR.expressionHasNoName(), mExprAndTypeArgs))
