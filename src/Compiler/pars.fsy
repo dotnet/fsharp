@@ -1530,9 +1530,11 @@ attributeListElements:
   | attribute
      { [$1] }
 
-  | attributeListElements seps attribute
+  | attributeListElements SEMICOLON attribute  /* Same line requires semicolon */
      { $1 @ [$3] }
 
+  | attributeListElements OBLOCKSEP attribute  /* Different lines - no separator needed */
+     { $1 @ [$3] }
 
 /* One custom attribute */
 attribute:
