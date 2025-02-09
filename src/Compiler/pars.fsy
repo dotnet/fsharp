@@ -1530,10 +1530,10 @@ attributeListElements:
   | attribute
      { [$1] }
 
-  | attributeListElements SEMICOLON attribute  /* Same line requires semicolon */
+  | attributeListElements SEMICOLON attribute 
      { $1 @ [$3] }
 
-  | attributeListElements OBLOCKSEP attribute  /* Different lines - no separator needed */
+  | attributeListElements WHITESPACE attribute  /* new rule to handle newlines without semicolon */
      { $1 @ [$3] }
 
 /* One custom attribute */
