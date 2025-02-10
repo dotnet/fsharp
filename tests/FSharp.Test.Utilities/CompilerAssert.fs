@@ -27,17 +27,6 @@ open Xunit
 open TestFramework
 open System.Collections.Immutable
 
-type FileNames =
-    static let testFileName = AsyncLocal<string>()
-    static let mutable counter = 0
-    //static do testFileName.Value <- "test"
-    static member internal MakeTestFileNameUniqueForThisTestCase() =
-        testFileName.Value <- $"{Interlocked.Increment &counter}{Path.PathSeparator}test"
-
-    static member TestFs with get() = $"{testFileName.Value}.fs"
-    static member TestFsx with get() = $"{testFileName.Value}.fsx"
-    static member TestFsi with get() = $"{testFileName.Value}.fsi"
-    static member Test with get() = testFileName.Value
 
 #if !NETCOREAPP
 module AssemblyResolver =
@@ -418,9 +407,9 @@ module CompilerAssertHelpers =
 #endif
         |]
         {
-            ProjectFileName = "Z:\\" ++ "test.fsproj"
+            ProjectFileName = "Z:\\test.fsproj"
             ProjectId = None
-            SourceFiles = [|  FileNames.TestFs |]
+            SourceFiles = [|"test.fs"|]
             OtherOptions = Array.append testDefaults assemblies
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -753,7 +742,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.Equal(expectedOutput, output)  
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject(FileNames.TestFs, 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -763,11 +752,11 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
         Assert.Empty(typeCheckResults.Diagnostics)
 
-    static member PassWithOptions options (source: string) =       
+    static member PassWithOptions options (source: string) =
         let defaultOptions = defaultProjectOptions TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject(FileNames.TestFs, 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -883,7 +872,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             let parseResults, fileAnswer =
                 let defaultOptions = defaultProjectOptions TargetFramework.Current
                 checker.ParseAndCheckFileInProject(
-                    FileNames.TestFs,
+                    "test.fs",
                     0,
                     SourceText.ofString source,
                     { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions})
@@ -943,7 +932,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
     static member CompileExeWithOptions(options, (source: string)) =
-        compile true options (SourceCodeFileKind.Create(FileNames.TestFs, source)) (fun (errors, _, _) ->
+        compile true options (SourceCodeFileKind.Create("test.fs", source)) (fun (errors, _, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
@@ -951,40 +940,40 @@ Updated automatically, please check diffs in your pull request, changes must be 
         CompilerAssert.CompileExeWithOptions([||], source)
 
     static member CompileExe (source: string) =
-        CompilerAssert.CompileExeWithOptions([||], (SourceCodeFileKind.Create(FileNames.TestFs, source)))
+        CompilerAssert.CompileExeWithOptions([||], (SourceCodeFileKind.Create("test.fs", source)))
 
     static member CompileExeAndRunWithOptions(options, (source: SourceCodeFileKind)) =
         compileExeAndRunWithOptions options source
 
     static member CompileExeAndRunWithOptions(options, (source: string)) =
-        compileExeAndRunWithOptions options (SourceCodeFileKind.Create(FileNames.TestFs, source))
+        compileExeAndRunWithOptions options (SourceCodeFileKind.Create("test.fs", source))
 
     static member CompileExeAndRun (source: SourceCodeFileKind) =
         compileExeAndRunWithOptions [||] source
 
     static member CompileExeAndRun (source: string) =
-        compileExeAndRunWithOptions [||] (SourceCodeFileKind.Create(FileNames.TestFs, source))
+        compileExeAndRunWithOptions [||] (SourceCodeFileKind.Create("test.fs", source))
 
     static member CompileLibraryAndVerifyILWithOptions(options, (source: SourceCodeFileKind), (f: ILVerifier -> unit)) =
         compileLibraryAndVerifyILWithOptions options source f 
 
     static member CompileLibraryAndVerifyILWithOptions(options, (source: string), (f: ILVerifier -> unit)) =
-        compileLibraryAndVerifyILWithOptions options (SourceCodeFileKind.Create(FileNames.TestFs, source)) f 
+        compileLibraryAndVerifyILWithOptions options (SourceCodeFileKind.Create("test.fs", source)) f 
 
     static member CompileLibraryAndVerifyDebugInfoWithOptions(options, (expectedFile: string), (source: SourceCodeFileKind)) =
         compileLibraryAndVerifyDebugInfoWithOptions options expectedFile source
 
     static member CompileLibraryAndVerifyDebugInfoWithOptions(options, (expectedFile: string), (source: string)) =
-        compileLibraryAndVerifyDebugInfoWithOptions options expectedFile (SourceCodeFileKind.Create(FileNames.TestFs, source))
+        compileLibraryAndVerifyDebugInfoWithOptions options expectedFile (SourceCodeFileKind.Create("test.fs", source))
 
     static member CompileLibraryAndVerifyIL((source: SourceCodeFileKind), (f: ILVerifier -> unit)) =
         compileLibraryAndVerifyILWithOptions [||] source f
 
     static member CompileLibraryAndVerifyIL((source: string), (f: ILVerifier -> unit)) =
-        compileLibraryAndVerifyILWithOptions [||] (SourceCodeFileKind.Create(FileNames.TestFs, source)) f
+        compileLibraryAndVerifyILWithOptions [||] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member CompileLibraryAndVerifyILRealSig((source: string), (f: ILVerifier -> unit)) =
-        compileLibraryAndVerifyILWithOptions [|"--realsig+"|] (SourceCodeFileKind.Create(FileNames.TestFs, source)) f
+        compileLibraryAndVerifyILWithOptions [|"--realsig+"|] (SourceCodeFileKind.Create("test.fs", source)) f
 
     static member RunScriptWithOptionsAndReturnResult options (source: string) =
         // Initialize output and input streams
@@ -1031,7 +1020,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member Parse (source: string, ?langVersion: string, ?fileName: string) =
         let langVersion = defaultArg langVersion "default"
-        let sourceFileName = defaultArg fileName (FileNames.TestFsx)
+        let sourceFileName = defaultArg fileName "test.fsx"
         let parsingOptions =
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]

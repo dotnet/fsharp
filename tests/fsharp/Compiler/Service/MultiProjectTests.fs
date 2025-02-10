@@ -63,7 +63,7 @@ let test() =
             """
             |> SourceText.ofString
         let _, checkAnswer = 
-            CompilerAssert.Checker.ParseAndCheckFileInProject(FileNames.TestFs, 0, fsText, fsOptions)
+            CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
             |> Async.RunImmediate
 
 

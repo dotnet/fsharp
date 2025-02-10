@@ -193,7 +193,6 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath =
-
         match fileToIndexTable.TryGetValue filePath with
         | true, idx -> idx
         | _ ->
@@ -203,11 +202,6 @@ type FileIndexTable() =
                     FileSystem.NormalizePathShim filePath
                 else
                     filePath
-
-            
-            //match normalizedFilePath with
-            //| "test.fs" | "test.fsx" | "test.fsi" -> failwith "FileToIndex naked test file"
-            //| _ -> ()
 
             match fileToIndexTable.TryGetValue normalizedFilePath with
             | true, idx ->
