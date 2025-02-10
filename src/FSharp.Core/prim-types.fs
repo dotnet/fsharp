@@ -739,8 +739,11 @@ namespace Microsoft.FSharp.Core
             let inline TypeTestFast<'T>(source: objnull) = 
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
                 notnullPrim(isinstPrim<'T>(source)) 
-
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            let Dispose<'T when 'T :> IDisposable >(resource:'T|null) = 
+#else
             let Dispose<'T when 'T :> IDisposable >(resource:'T) = 
+#endif
                 match box resource with 
                 | null -> ()
                 | _ -> resource.Dispose()

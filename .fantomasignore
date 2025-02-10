@@ -41,6 +41,11 @@ src/Compiler/Checking/TypeHierarchy.fs
 src/Compiler/Checking/TypeRelations.fs
 
 # nullness-related problems
+src/Compiler/Utilities/lib.fsi
+src/Compiler/Utilities/Cancellable.fsi
+src/FSharp.Core/tasks.fsi
+src/FSharp.Core/tasks.fs
+src/FSharp.Core/resumable.fs
 src/Compiler/DependencyManager/DependencyProvider.fs
 src/FSharp.Core/fslib-extra-pervasives.fs
 src/FSharp.Core/fslib-extra-pervasives.fsi
