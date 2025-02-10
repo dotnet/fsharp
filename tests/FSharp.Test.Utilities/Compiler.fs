@@ -29,6 +29,7 @@ open TestFramework
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open FSharp.Compiler.CodeAnalysis
+open System.Threading
 
 module rec Compiler =
 
@@ -435,19 +436,19 @@ module rec Compiler =
         }
 
     let FsxSourceCode source =
-        SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
+        SourceCodeFileKind.Fsx({FileName=FileNames.TestFsx; SourceText=Some source})
 
     let Source source =
-        SourceCodeFileKind.Create("test.fs", source)
+        SourceCodeFileKind.Create(FileNames.TestFs, source)
 
     let SourceFromPath path =
         SourceCodeFileKind.Create(path)
 
     let FsiSource source =
-        SourceCodeFileKind.Fsi({FileName="test.fsi"; SourceText=Some source })
+        SourceCodeFileKind.Fsi({FileName= FileNames.TestFsi; SourceText=Some source })
 
     let FsSource source =
-        SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })
+        SourceCodeFileKind.Fs({FileName= FileNames.TestFs; SourceText=Some source })
 
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
@@ -998,7 +999,7 @@ module rec Compiler =
             | None -> File.ReadAllText(fsSource.Source.GetSourceFileName)
             | Some text -> text
         let options = fsSource.Options |> Array.ofList
-        let (err: FSharpDiagnostic []) = CompilerAssert.TypeCheckWithOptionsAndName options (fsSource.Name |> Option.defaultValue "test.fs") source
+        let (err: FSharpDiagnostic []) = CompilerAssert.TypeCheckWithOptionsAndName options (fsSource.Name |> Option.defaultValue FileNames.TestFs) source
         err
 
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : CompilationResult =

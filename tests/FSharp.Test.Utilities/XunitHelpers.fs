@@ -57,6 +57,7 @@ type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArgument
         task {
             use capture = new TestConsole.ExecutionCapture()
             use _ = Activity.start test.DisplayName [  ]
+            FileNames.MakeTestFileNameUniqueForThisTestCase()
             let! executionTime = this.BaseInvokeTestMethodAsync aggregator
             let output =
                 seq {

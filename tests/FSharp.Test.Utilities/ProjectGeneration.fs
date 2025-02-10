@@ -856,7 +856,7 @@ module Helpers =
 
     let internal singleFileChecker source =
 
-        let fileName = "test.fs"
+        let fileName = FileNames.TestFs
 
         let getSource _ fileName =
             FSharpFileSnapshot(
