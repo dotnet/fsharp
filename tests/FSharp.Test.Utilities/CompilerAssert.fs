@@ -758,10 +758,11 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.Empty(typeCheckResults.Diagnostics)
 
     static member PassWithOptions options (source: string) =
-        let defaultOptions = defaultProjectOptions TargetFramework.Current
+        let path = uniqueName ".fs"
+        let defaultOptions = defaultProjectOptionsForFilePath path TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject(uniqueName ".fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
