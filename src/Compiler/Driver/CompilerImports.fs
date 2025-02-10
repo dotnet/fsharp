@@ -2255,7 +2255,6 @@ and [<Sealed>] TcImports
             r: AssemblyResolution
         ) : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
         async {
-            use! _holder = Cancellable.UseToken()
             CheckDisposed()
             let m = r.originalReference.Range
             let fileName = r.resolvedPath
@@ -2325,8 +2324,9 @@ and [<Sealed>] TcImports
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
         async {
-            CheckDisposed()
+            use! _holder = Cancellable.UseToken()
 
+            CheckDisposed()
 
             let tcConfig = tcConfigP.Get ctok
 
@@ -2475,6 +2475,8 @@ and [<Sealed>] TcImports
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
     static member BuildFrameworkTcImports(tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
         async {
+            use! _holder = Cancellable.UseToken()
+
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2648,6 +2650,8 @@ and [<Sealed>] TcImports
         ) =
 
         async {
+            use! _holder = Cancellable.UseToken()
+
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
