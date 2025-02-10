@@ -110,7 +110,19 @@
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj">
+    <!--Include OTel dlls in DEBUG to allow trace collection-->
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj" Condition="'$(Configuration)'=='Debug'">
+      <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
+      <Name>FSharp.Editor</Name>
+      <IncludeOutputGroupsInVSIX>ReferenceCopyLocalPathsOutputGroup%3bBuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <Ngen>true</Ngen>
+      <NgenArchitecture>All</NgenArchitecture>
+      <NgenPriority>2</NgenPriority>
+      <Private>True</Private>
+    </ProjectReference>
+
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj" Condition="'$(Configuration)'=='Release'">
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
       <Name>FSharp.Editor</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
