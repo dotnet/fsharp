@@ -520,8 +520,7 @@ type internal BackgroundCompiler
                             checkFileInProjectCache.RemoveAnySimilar(ltok, key)))
 
                     return! createAndGetBuilder (options, userOpName)
-            | _ ->
-                return! createAndGetBuilder (options, userOpName)
+            | _ -> return! createAndGetBuilder (options, userOpName)
         }
 
     let getSimilarOrCreateBuilder (options, userOpName) =
