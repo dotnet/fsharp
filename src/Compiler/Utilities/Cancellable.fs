@@ -21,7 +21,7 @@ type Cancellable =
     static member UseToken() =
         async {
             let! ct = Async.CancellationToken
-            tokenHolder.Value <- ValueSome ct
+            return Cancellable.UsingToken ct
         }
 
     static member UsingToken(ct) =
