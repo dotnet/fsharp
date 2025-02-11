@@ -7,9 +7,6 @@ open System.Threading
 type Cancellable =
     static member internal UseToken: unit -> Async<IDisposable>
 
-    /// For use in testing only. Cancellable.token should be set only by the cancellable computation.
-    static member internal UsingToken: CancellationToken -> IDisposable
-
     static member HasCancellationToken: bool
     static member Token: CancellationToken
 
