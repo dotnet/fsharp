@@ -3,6 +3,16 @@ namespace FSharp.Compiler
 open System
 open System.Threading
 
+// This code provides two methods for handling cancellation in synchronous code:
+// 1. Explicitly, by calling Cancellable.CheckAndThrow().
+// 2. Implicitly, by wrapping the code in a cancellable computation.
+// The cancellable computation propagates the CancellationToken and checks for cancellation implicitly.
+// When it is impractical to use the cancellable computation, such as in deeply nested functions, Cancellable.CheckAndThrow() can be used.
+// It checks a CancellationToken local to the current async execution context, held in AsyncLocal.
+// Before calling Cancellable.CheckAndThrow(), this token must be set.
+// The token is guaranteed to be set during execution of cancellable computation.
+// Otherwise, it can be passed explicitly from the ambient async computation using Cancellable.UseToken().
+
 [<Sealed>]
 type Cancellable =
     static let tokenHolder = AsyncLocal<CancellationToken voption>()
