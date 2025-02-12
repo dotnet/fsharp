@@ -9265,6 +9265,12 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
         // Allow `nameof<'T>` for a generic parameter
         match vref with
         | _ when isNameOfValRef g vref && g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+            // Record the resolution of the `nameof` usage so that we can classify it correctly later.
+            do
+                match afterResolution with
+                | AfterResolution.RecordResolution (_, callSink, _, _) -> callSink emptyTyparInst
+                | AfterResolution.DoNothing -> ()
+
             match tys with
             | [SynType.Var(SynTypar(id, _, false) as tp, _m)] ->
                 let _tpR, tpenv = TcTypeOrMeasureParameter None cenv env ImplicitlyBoundTyparsAllowed.NoNewTypars tpenv tp
