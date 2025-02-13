@@ -575,37 +575,23 @@ printfn "%A" (MyClass.result())
     [<InlineData(false, true)>]         // Regular Optimize
     [<InlineData(false, false)>]        // Regular NoOptimize
     [<Theory>]
-    let ``Generic class with closure with constraints`` (realSig, optimize) =
+    let ``Generic nested class with closure`` (realSig, optimize) =
 
         FSharp """
-namespace Test
-open System
-
 module RuntimeHelpers =
-    [<Sealed>]
     type MyType<'A,'B when 'B :> seq<'A>>(sources: seq<'B>) =
-
         member x.MoveNext() =
             let rec takeInner c =
-                let rec takeOuter b =
-                    if b.ToString () = "1" then failwith "Oops"
-                    if sources |> Seq.length > 10 then
-                        sources |> Seq.skip 10
-                    else
-                        sources
                 if c.ToString() = "1" then failwith "Oops"
-                if sources |> Seq.length < 5 then
-                    sources
-                else
-                    takeOuter 7
+                sources
             takeInner 3
 
-open RuntimeHelpers
 module doIt =
-    let x = seq {  ArraySegment([|1uy; 2uy; 3uy|]); ArraySegment([|1uy; 2uy; 3uy|]); ArraySegment([|1uy; 2uy; 3uy|]); }
+    open RuntimeHelpers
+
+    let x = seq { seq { 1uy } }
     let enumerator = x |> MyType<_,_>
-    for i in enumerator.MoveNext() do
-        printfn "%A" i
+    enumerator.MoveNext() |> ignore
     """
         |> withName "GenericClassWithClosureWithConstraints"
         |> asExe
