@@ -3,12 +3,17 @@ module internal FSharp.Compiler.ReuseTcResults
 open System.Collections.Generic
 open System.IO
 
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.IO
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TypedTree
+open CompilerImports
+open FSharp.Compiler.AbstractIL.IL
 
 type TcData =
     {
@@ -139,3 +144,60 @@ type CachingDriver(tcConfig: TcConfig) =
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
             writeThisTcData thisTcData
             false
+
+    member _.ReuseTcResults inputs (tcInitialState: TcState) =
+
+        let bytes = File.ReadAllBytes("tc")
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
+
+        let byteReaderB = None
+
+        let tcInfo =
+            GetTypecheckingData(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                byteReaderB
+            )
+
+        let rawData = tcInfo.RawData
+
+        let topAttrs: TopAttribs =
+            {
+                mainMethodAttrs = rawData.MainMethodAttrs
+                netModuleAttrs = rawData.NetModuleAttrs
+                assemblyAttrs = rawData.AssemblyAttrs
+            }
+
+        // need to understand if anything can be used here, pickling state is hard
+        tcInitialState,
+        topAttrs,
+        rawData.DeclaredImpls,
+        // this is quite definitely wrong, need to figure out what to do with the environment
+        tcInitialState.TcEnvFromImpls
+
+    member _.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+        let thisTcData =
+            {
+                CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
+                Graph = getThisCompilationGraph inputs
+                References = getThisCompilationReferences tcConfig.referencedDLLs
+            }
+
+        writeThisTcData thisTcData
+
+        let tcInfo =
+            {
+                MainMethodAttrs = topAttrs.mainMethodAttrs
+                NetModuleAttrs = topAttrs.netModuleAttrs
+                AssemblyAttrs = topAttrs.assemblyAttrs
+                DeclaredImpls = declaredImpls
+            }
+
+        let encodedData =
+            EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes("tc", resource)

@@ -949,6 +949,8 @@ type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 /// below to construct/destruct these.
 [<NoComparison; NoEquality; Struct>]
 type internal ILSecurityDecls =
+    new: array: ILSecurityDecl[] -> ILSecurityDecls
+
     member AsList: unit -> ILSecurityDecl list
 
 /// Represents the efficiency-oriented storage of ILSecurityDecls in another item.
@@ -1207,6 +1209,8 @@ type ILMethodDef =
 /// name and arity.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILMethodDefs =
+    new: f: (unit -> ILMethodDef array) -> ILMethodDefs
+
     inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>
 
     interface IEnumerable<ILMethodDef>
@@ -1311,6 +1315,7 @@ type ILFieldDef =
 /// a form to allow efficient looking up fields by name.
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs =
+
     member internal AsList: unit -> ILFieldDef list
 
     member internal LookupByName: string -> ILFieldDef list
@@ -1613,6 +1618,7 @@ type ILTypeDef =
     member Encoding: ILDefaultPInvokeEncoding
     member IsKnownToBeAttribute: bool
     member CanContainExtensionMethods: bool
+    member Flags: ILTypeDefAdditionalFlags
 
     member internal WithAccess: ILTypeDefAccess -> ILTypeDef
     member internal WithNestedAccess: ILMemberAccess -> ILTypeDef

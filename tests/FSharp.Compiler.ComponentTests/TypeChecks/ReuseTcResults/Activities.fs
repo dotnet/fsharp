@@ -139,6 +139,8 @@ type Activities() =
         let cUnit =
             FsxFromPath tempPath
             |> withReuseTcResults
+            |> withOptions [ "--compressmetadata-" ]
+            |> withOptions [ "--optimize-" ]
 
         cUnit
         |> compileExisting
