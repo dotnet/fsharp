@@ -500,11 +500,11 @@ type internal BackgroundCompiler
         }
 
     let getOrCreateBuilder (options, userOpName) : Async<IncrementalBuilder option * FSharpDiagnostic[]> =
-        match tryGetBuilder options with
-        | Some getBuilder ->
-            async {
-                do! Cancellable.UseToken()
+        async {
+            use! _holder = Cancellable.UseToken()
 
+            match tryGetBuilder options with
+            | Some getBuilder ->
                 match! getBuilder with
                 | builderOpt, creationDiags when builderOpt.IsNone || not builderOpt.Value.IsReferencesInvalidated ->
                     return builderOpt, creationDiags
@@ -520,8 +520,8 @@ type internal BackgroundCompiler
                             checkFileInProjectCache.RemoveAnySimilar(ltok, key)))
 
                     return! createAndGetBuilder (options, userOpName)
-            }
-        | _ -> createAndGetBuilder (options, userOpName)
+            | _ -> return! createAndGetBuilder (options, userOpName)
+        }
 
     let getSimilarOrCreateBuilder (options, userOpName) =
         match tryGetSimilarBuilder options with

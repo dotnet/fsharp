@@ -1605,6 +1605,8 @@ type internal TransparentCompiler
         caches.ParseAndCheckFileInProject.Get(
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             async {
+                use! _holder = Cancellable.UseToken()
+
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
@@ -1854,6 +1856,7 @@ type internal TransparentCompiler
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             async {
+                use! _holder = Cancellable.UseToken()
 
                 try
 
@@ -1901,6 +1904,7 @@ type internal TransparentCompiler
         caches.ParseAndCheckProject.Get(
             projectSnapshot.FullKey,
             async {
+                use! _holder = Cancellable.UseToken()
 
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
@@ -1973,6 +1977,8 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         async {
+            use! _holder = Cancellable.UseToken()
+
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
