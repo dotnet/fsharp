@@ -4351,10 +4351,19 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 | _ -> 0
 
             let ilEnclArgTys, ilMethArgTys =
-                if ilTyArgs.Length < numEnclILTypeArgs then
-                    error (InternalError("length mismatch", m))
+                if ilTyArgs.Length < numEnclILTypeArgs then error (InternalError("length mismatch", m))
 
-                List.splitAt numEnclILTypeArgs ilTyArgs
+                // Review: We may want to use the apparent enclosing during optimization phase
+                // ApparentEnclosingEntity is set to ParentNone for optimized closures
+                // Here we split out the enclosing type args from the method args
+                // With nested generic optimized closures we reattach the typars to the 
+                // enclosing type ref
+                match g.realsig, vref.ApparentEnclosingEntity with
+                | true, ParentRef.ParentNone -> 
+                    let take = min eenv.tyenv.Count ilTyArgs.Length
+                    let result = (List.take take ilTyArgs), ilTyArgs
+                    result
+                | _ -> List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
             let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)

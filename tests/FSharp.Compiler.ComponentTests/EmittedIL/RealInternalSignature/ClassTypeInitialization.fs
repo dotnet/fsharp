@@ -570,7 +570,6 @@ printfn "%A" (MyClass.result())
             "All Classes and Methods in*NestedGenericClosure.exe Verified."
             ]
 
-    [<InlineData(true, true)>]          // RealSig Optimize
     [<InlineData(true, false)>]         // RealSig NoOptimize
     [<InlineData(false, true)>]         // Regular Optimize
     [<InlineData(false, false)>]        // Regular NoOptimize
@@ -602,6 +601,39 @@ module doIt =
         |> verifyPEFileWithSystemDlls
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*GenericClassWithClosureWithConstraints.exe Verified."
+            ]
+
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<Theory>]
+    let ``Generic class with closure`` (realSig, optimize) =
+
+        FSharp """
+module RuntimeHelpers =
+    type MyType<'A,'B when 'B :> seq<'A>>(sources: seq<'B>) =
+        member x.MoveNext() =
+            let rec takeInner c =
+                if c.ToString() = "1" then failwith "Oops"
+                sources
+            takeInner 3
+
+module doIt =
+    open RuntimeHelpers
+
+    let x = seq { seq { 1uy } }
+    let enumerator = x |> MyType<_,_>
+    enumerator.MoveNext() |> ignore
+    """
+        |> withName "GenericStructWithClosureWithConstraints"
+        |> asExe
+        |> withRealInternalSignature realSig
+        |> withOptimization optimize
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithRegexPatterns [
+            @"Verifying \[GenericStructWithClosureWithConstraints\]MyType`2\.MoveNext"
+            @"\[IL\]: Error \[StackUnexpected\]: \[.*? : .*?::MoveNext\(\)\]\[offset 0x[0-9A-Fa-f]+\]\[found \w+\]\[expected value '.*?'\] Unexpected type on the stack\."
+            @"Verifying \[GenericStructWithClosureWithConstraints\]<StartupCode\$GenericStructWithClosureWithConstraints>\.\$Test\.main@"
             ]
 
     [<InlineData(true, true)>]          // RealSig Optimize

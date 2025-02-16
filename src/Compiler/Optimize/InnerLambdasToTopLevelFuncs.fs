@@ -196,8 +196,6 @@ module Pass1_DetermineTLRAndArities =
             let arity = Operators.min nFormals nMaxApplied
             if atTopLevel then
                 Some (f, arity)
-            elif g.realsig then
-                None
             else if arity<>0 || not (isNil tps) then
                 Some (f, arity)
             else
