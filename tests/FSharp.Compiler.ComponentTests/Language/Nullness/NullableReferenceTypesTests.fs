@@ -147,6 +147,30 @@ let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null
 
 
 [<Fact>]
+let ``Can infer nullable type if first match handler returns null`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    match x with
+    | 0 -> null
+    | i -> string i
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can infer nullable type from first branch of ifthenelse`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then null else string x
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
 let ``Can convert generic value to objnull arg`` () =
     FSharp """module TestLib
 
