@@ -17,6 +17,17 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+
+[<Fact>]
+let ``Can imply notstruct for classconstraint`` () =
+    FSharp """module Foo =
+    let failIfNull<'a when 'a : null> (a : 'a) : 'a option =
+        (a |> Option.ofObj)
+    """
+    |> asLibrary
+    |> typecheck  // This has nullable off!
+    |> shouldSucceed  
+
 [<Fact>]
 let ``Warning on nullness hidden behind interface upcast`` () =
     FSharp """module Test
