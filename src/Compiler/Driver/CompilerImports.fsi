@@ -53,6 +53,19 @@ val IsReflectedDefinitionsResource: ILResource -> bool
 val GetResourceNameAndSignatureDataFuncs:
     ILResource list -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
+/// Pickling primitive
+val PickleToResource:
+    inMem: bool ->
+    file: string ->
+    g: TcGlobals ->
+    compress: bool ->
+    scope: CcuThunk ->
+    rName: string ->
+    rNameB: string ->
+    p: ('a -> WriterState -> unit) ->
+    x: 'a ->
+        ILResource * ILResource option
+
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:
     tcConfig: TcConfig *
@@ -70,23 +83,6 @@ val EncodeOptimizationData:
     exportRemapping: Remap *
     (CcuThunk * #CcuOptimizationInfo) *
     isIncrementalBuild: bool ->
-        ILResource list
-
-val GetTypecheckingData:
-    file: string *
-    ilScopeRef: ILScopeRef *
-    ilModule: ILModuleDef option *
-    byteReaderA: (unit -> ReadOnlyByteMemory) *
-    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
-        PickledDataWithReferences<PickledTcInfo>
-
-val EncodeTypecheckingData:
-    tcConfig: TcConfig *
-    tcGlobals: TcGlobals *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool *
-    tcInfo: PickledTcInfo ->
         ILResource list
 
 [<RequireQualifiedAccess>]

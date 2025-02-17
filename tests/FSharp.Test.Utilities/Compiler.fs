@@ -947,7 +947,7 @@ module rec Compiler =
                 failwith "File doesn't exist. Create it to use this function."
 
             let outputFilePath = Path.ChangeExtension(sourceFilePath, ".dll")
-            let err, _, _ = rawCompile outputFilePath false fs.Options TargetFramework.Current [ fs.Source ]
+            let err, _, _ = rawCompile outputFilePath false fs.Options TargetFramework.Current  (fs.Source :: fs.AdditionalSources)
             let diagnostics = err |> fromFSharpDiagnostic
 
             let result = {

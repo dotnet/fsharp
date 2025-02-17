@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.ReuseTcResults
+module internal FSharp.Compiler.ReuseTcResults.CachingDriver
 
 open System.Collections.Generic
 open System.IO
@@ -11,8 +11,8 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.TypedTree
-open CompilerImports
+open FSharp.Compiler.ReuseTcResults.TcResultsImport
+open FSharp.Compiler.ReuseTcResults.TcResultsPickle
 open FSharp.Compiler.AbstractIL.IL
 
 type TcData =
@@ -164,21 +164,16 @@ type CachingDriver(tcConfig: TcConfig) =
 
         let rawData = tcInfo.RawData
 
-        let topAttrs: TopAttribs =
-            {
-                mainMethodAttrs = rawData.MainMethodAttrs
-                netModuleAttrs = rawData.NetModuleAttrs
-                assemblyAttrs = rawData.AssemblyAttrs
-            }
+        let topAttribs = rawData.TopAttribs
 
         // need to understand if anything can be used here, pickling state is hard
         tcInitialState,
-        topAttrs,
+        topAttribs,
         rawData.DeclaredImpls,
         // this is quite definitely wrong, need to figure out what to do with the environment
         tcInitialState.TcEnvFromImpls
 
-    member _.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+    member _.CacheTcResults(tcState: TcState, topAttribs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
@@ -190,9 +185,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
         let tcInfo =
             {
-                MainMethodAttrs = topAttrs.mainMethodAttrs
-                NetModuleAttrs = topAttrs.netModuleAttrs
-                AssemblyAttrs = topAttrs.assemblyAttrs
+                TopAttribs = topAttribs
                 DeclaredImpls = declaredImpls
             }
 
