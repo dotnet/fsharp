@@ -333,7 +333,6 @@
     <Compile Include="TypedTree\TcGlobals.fs" />
     <Compile Include="TypedTree\TypedTreeOps.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.fs" />
-    <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fs" />
@@ -464,6 +463,8 @@
     <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
+    <Compile Include="Driver\ReuseTcResults\TcResultsPickle.fs" />
+    <Compile Include="Driver\ReuseTcResults\TcResultsImport.fs" />
     <Compile Include="Driver\ReuseTcResults\CachingDriver.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />
     <Compile Include="Driver\ScriptClosure.fs" />

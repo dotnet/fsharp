@@ -54,7 +54,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
 open FSharp.Compiler.CheckExpressionsOps
-open ReuseTcResults
+open FSharp.Compiler.ReuseTcResults.CachingDriver
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
