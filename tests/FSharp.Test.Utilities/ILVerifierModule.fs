@@ -8,7 +8,7 @@ open TestFramework
 
 [<AutoOpen>]
 module ILVerifierModule =
-    let config = initializeSuite ()
+    let config = initialConfig
 
     let fsharpCoreReference = $"--reference \"{typeof<unit>.Assembly.Location}\""
 

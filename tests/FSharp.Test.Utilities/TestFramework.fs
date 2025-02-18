@@ -410,7 +410,7 @@ let logConfig (cfg: TestConfig) =
     log "FSCOREDLLPATH            = %s" cfg.FSCOREDLLPATH
     log "FSI                      = %s" cfg.FSI
 #if NETCOREAPP
-    log "DotNetExe                =%s" cfg.DotNetExe
+    log "DotNetExe                = %s" cfg.DotNetExe
     log "DOTNET_MULTILEVEL_LOOKUP = %s" cfg.DotNetMultiLevelLookup
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
@@ -447,7 +447,7 @@ let envVars () =
     |> Seq.map (fun d -> d.Key :?> string, d.Value :?> string)
     |> Map.ofSeq
 
-let initializeSuite () =
+let initialConfig =
 
 #if DEBUG
     let configurationName = "Debug"
@@ -461,15 +461,9 @@ let initializeSuite () =
         let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC
         { c with EnvironmentVariables = usedEnvVars }
 
-    logConfig cfg
-
     cfg
 
-
-let suiteHelpers = lazy (initializeSuite ())
-
 let testConfig sourceDir (relativePathToTestFixture: string) =
-    let cfg = suiteHelpers.Value
     let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
     let tempTestDir =
@@ -478,11 +472,10 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
             .FullName
     copyDirectory testFixtureFullPath tempTestDir true
 
-    { cfg with Directory = tempTestDir }
+    { initialConfig with Directory = tempTestDir }
 
 let createConfigWithEmptyDirectory() =
-    let cfg = suiteHelpers.Value
-    { cfg with Directory = createTemporaryDirectory().FullName }
+    { initialConfig with Directory = createTemporaryDirectory().FullName }
 
 type RedirectToType =
     | Overwrite of FilePath
