@@ -36,13 +36,7 @@ let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, 
 
 let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo) =
     let r1, r2 =
-        WriteTypecheckingData(
-            tcConfig, 
-            tcGlobals,
-            outfile, 
-            isIncrementalBuild, 
-            generatedCcu,
-            tcInfo)
+        WriteTypecheckingData(tcConfig, tcGlobals, outfile, isIncrementalBuild, generatedCcu, tcInfo)
 
     let resources =
         [
