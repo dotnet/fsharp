@@ -89,7 +89,36 @@ type PrelimVal1 =
 
     member x.Ident = let (PrelimVal1(id=id)) = x in id
 
-type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
+type UnscopedTyparEnv =
+     | UnscopedTyparEnv of NameMap<Typar>
+     | UnscopedTyparWithParentEnv of NameMap<Typar> * TyconRef option
+
+     member this.asMap() =
+        match this with
+        | UnscopedTyparEnv.UnscopedTyparEnv m -> m
+        | UnscopedTyparEnv.UnscopedTyparWithParentEnv (m, _) -> m
+
+     member this.asParent() =
+        match this with
+        | UnscopedTyparEnv _ -> None
+        | UnscopedTyparWithParentEnv (_, p) -> p
+
+     member this.addTypar(name, typar) =
+        match this with
+        | UnscopedTyparEnv m -> UnscopedTyparEnv (Map.add name typar m)
+        | UnscopedTyparWithParentEnv (m, p) -> UnscopedTyparWithParentEnv ((Map.add name typar m), p)
+
+     member this.tryFindTypar(name) =
+        match this with
+        | UnscopedTyparEnv m -> Map.tryFind name m
+        | UnscopedTyparWithParentEnv (m, _) -> Map.tryFind name m
+
+     member this.hideTypars(typars) =
+        match this with
+        | UnscopedTyparEnv m -> UnscopedTyparEnv (List.fold (fun acc (tp: Typar) -> Map.remove tp.Name acc) m typars)
+        | UnscopedTyparWithParentEnv (m, p) -> UnscopedTyparWithParentEnv ((List.fold (fun acc (tp: Typar) -> Map.remove tp.Name acc) m typars), p)
+
+     static member empty = UnscopedTyparEnv Map.empty
 
 type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
 

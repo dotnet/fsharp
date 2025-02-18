@@ -4353,6 +4353,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             let ilEnclArgTys, ilMethArgTys =
                 if ilTyArgs.Length < numEnclILTypeArgs then error (InternalError("length mismatch", m))
 
+                (*@@@@@@@@@@@@@@@@@@@
                 // Review: We may want to use the apparent enclosing during optimization phase
                 // ApparentEnclosingEntity is set to ParentNone for optimized closures
                 // Here we split out the enclosing type args from the method args
@@ -4363,7 +4364,9 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                     let take = min eenv.tyenv.Count ilTyArgs.Length
                     let result = (List.take take ilTyArgs), ilTyArgs
                     result
-                | _ -> List.splitAt numEnclILTypeArgs ilTyArgs
+                | _ -> 
+                @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*)
+                List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
             let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)

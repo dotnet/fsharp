@@ -143,7 +143,16 @@ type TcEnv =
 
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
-type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
+type UnscopedTyparEnv =
+     | UnscopedTyparEnv of NameMap<Typar>
+     | UnscopedTyparWithParentEnv of NameMap<Typar> * TyconRef option
+
+     member asMap: unit -> NameMap<Typar>
+     member asParent: unit -> TyconRef option
+     member addTypar: string * Typar -> UnscopedTyparEnv
+     member tryFindTypar: string -> Typar option
+     member hideTypars: Typar list -> UnscopedTyparEnv
+     static member empty: UnscopedTyparEnv
 
 /// A type to represent information associated with values to indicate what explicit (declared) type parameters
 /// are given and what additional type parameters can be inferred, if any.

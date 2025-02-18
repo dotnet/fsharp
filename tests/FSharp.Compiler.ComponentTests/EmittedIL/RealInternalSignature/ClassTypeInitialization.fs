@@ -605,7 +605,7 @@ module doIt =
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<Theory>]
-    let ``Generic class with closure`` (realSig, optimize) =
+    let ``Generic nested class with closure optimized`` (realSig, optimize) =
 
         FSharp """
 module RuntimeHelpers =
