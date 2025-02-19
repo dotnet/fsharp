@@ -167,9 +167,13 @@ let TypeCheck
         if tcConfig.reuseTcResults = ReuseTcResults.On then
             let cachingDriver = CachingDriver(tcConfig)
 
-            if cachingDriver.CanReuseTcResults(inputs) then
+            let tcCacheState = cachingDriver.GetTcCacheState(inputs)
+
+            match tcCacheState with
+            | TcCacheState.Present files when files |> List.forall (fun (_file, canReuse) -> canReuse) ->
                 cachingDriver.ReuseTcResults inputs tcInitialState
-            else
+
+            | _ ->
                 let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
                     CheckClosedInputSet(
                         ctok,

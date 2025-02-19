@@ -1,36 +1,35 @@
 ﻿module internal FSharp.Compiler.ReuseTcResults.TcResultsPickle
 
 open FSharp.Compiler.CheckDeclarations
-open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
 
-type PickledTcInfo =
-    {
-        TopAttribs: TopAttribs
-        DeclaredImpls: CheckedImplFile list
-    }
+type TcSharedData = { TopAttribs: TopAttribs }
 
-let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
-    p_tup4
+// pickling
+
+let pickleSharedData sharedData st =
+    p_tup3
         p_attribs
         p_attribs
         p_attribs
-        (p_list p_checked_impl_file)
-        (tcInfo.TopAttribs.mainMethodAttrs, tcInfo.TopAttribs.netModuleAttrs, tcInfo.TopAttribs.assemblyAttrs, tcInfo.DeclaredImpls)
+        (sharedData.TopAttribs.mainMethodAttrs, sharedData.TopAttribs.netModuleAttrs, sharedData.TopAttribs.assemblyAttrs)
         st
 
-let unpickleTcInfo st : PickledTcInfo =
-    let mainMethodAttrs, netModuleAttrs, assemblyAttrs, declaredImpls =
-        u_tup4 u_attribs u_attribs u_attribs (u_list u_checked_impl_file) st
+let pickleCheckedImplFile checkedImplFile st = p_checked_impl_file checkedImplFile st
 
-    let attribs: TopAttribs =
+// unpickling
+
+let unpickleSharedData st =
+    let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
+        u_tup3 u_attribs u_attribs u_attribs st
+
+    let attribs =
         {
             mainMethodAttrs = mainMethodAttrs
             netModuleAttrs = netModuleAttrs
             assemblyAttrs = assemblyAttrs
         }
 
-    {
-        TopAttribs = attribs
-        DeclaredImpls = declaredImpls
-    }
+    { TopAttribs = attribs }
+
+let unpickleCheckedImplFile st = u_checked_impl_file st

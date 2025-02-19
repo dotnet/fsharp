@@ -80,3 +80,48 @@ printfn "hello world!" """>]
 
         Assert.True(outcome)
 
+    [<Fact>]
+    let ``Multiple files`` () =
+        let tempDir = createTemporaryDirectory().FullName
+
+        let code1 = """module M1
+let helloWorld = "hello world!" """
+
+        let code2 = """module M2
+printfn $"{M1.helloWorld}" """
+
+        let fileName1 = "File0"
+        let fileName2 = "File1"
+
+        let tempPath1 = tempDir ++ $"{fileName1}.fs"
+        let tempPath2 = tempDir ++ $"{fileName2}.fs"
+
+        File.WriteAllText(tempPath1, code1) 
+        File.WriteAllText(tempPath2, code2) 
+
+        let cUnit = 
+            FsFromPath tempPath1
+            |> withAdditionalSourceFile (SourceCodeFileKind.Create tempPath2)
+            |> withReuseTcResults
+            |> withOptions [ "--compressmetadata-" ]
+            |> withOptions [ "--optimize-" ]
+
+        let expected =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        let actual =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        let outcome, _msg, _actualIL = 
+            ILChecker.compareIL
+                fileName1 
+                actual 
+                [ expected ]
+
+        Assert.True(outcome)

@@ -6,7 +6,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.ReuseTcResults.TcResultsPickle
 
-let GetTypecheckingData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+let GetSharedData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 
     let memA = byteReaderA ()
 
@@ -15,9 +15,20 @@ let GetTypecheckingData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo memA memB
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleSharedData memA memB
 
-let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo) =
+let GetCheckedImplFile (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+
+    let memA = byteReaderA ()
+
+    let memB =
+        match byteReaderB with
+        | None -> ByteMemory.Empty.AsReadOnly()
+        | Some br -> br ()
+
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCheckedImplFile memA memB
+
+let WriteSharedData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, sharedData) =
 
     // need to understand the naming and if we even want two resources here...
     let rName = "FSharpTypecheckingData"
@@ -31,12 +42,43 @@ let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, 
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
-        pickleTcInfo
-        tcInfo
+        pickleSharedData
+        sharedData
 
-let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo) =
+let WriteCheckedImplFile (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, checkedImplFile) =
+
+    // need to understand the naming and if we even want two resources here...
+    let rName = "FSharpTypecheckingData"
+    let rNameB = "FSharpTypecheckingDataB"
+
+    PickleToResource
+        inMem
+        fileName
+        tcGlobals
+        tcConfig.compressMetadata
+        ccu
+        (rName + ccu.AssemblyName)
+        (rNameB + ccu.AssemblyName)
+        pickleCheckedImplFile
+        checkedImplFile
+
+let EncodeSharedData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, sharedData) =
     let r1, r2 =
-        WriteTypecheckingData(tcConfig, tcGlobals, outfile, isIncrementalBuild, generatedCcu, tcInfo)
+        WriteSharedData(tcConfig, tcGlobals, outfile, isIncrementalBuild, generatedCcu, sharedData)
+
+    let resources =
+        [
+            r1
+            match r2 with
+            | None -> ()
+            | Some r -> r
+        ]
+
+    resources
+
+let EncodeCheckedImplFile (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, checkedImplFile) =
+    let r1, r2 =
+        WriteCheckedImplFile(tcConfig, tcGlobals, outfile, isIncrementalBuild, generatedCcu, checkedImplFile)
 
     let resources =
         [

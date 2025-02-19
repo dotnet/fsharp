@@ -1,9 +1,7 @@
 module internal FSharp.Compiler.ReuseTcResults.CachingDriver
 
-open System.Collections.Generic
 open System.IO
 
-open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.GraphChecking
@@ -12,39 +10,56 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ReuseTcResults.TcResultsImport
-open FSharp.Compiler.ReuseTcResults.TcResultsPickle
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.ReuseTcResults.TcResultsPickle
 
-type TcData =
+type TcCompilationData =
     {
         CmdLine: string array
-        Graph: string array
         References: string array
     }
+
+type GraphFileLine =
+    {
+        Index: int
+        FileName: string
+        Stamp: int64
+    }
+
+type Graph =
+    {
+        Files: GraphFileLine list
+        Dependencies: string list
+    }
+
+type GraphComparisonResult = (ParsedInput * bool) list
+
+[<RequireQualifiedAccess>]
+type TcCacheState =
+    | Empty
+    | Present of GraphComparisonResult
 
 [<Sealed>]
 type CachingDriver(tcConfig: TcConfig) =
 
     let outputDir = tcConfig.outputDir |> Option.defaultValue ""
     let tcDataFilePath = Path.Combine(outputDir, FSharpTcDataResourceName)
+    let graphFilePath = Path.Combine(outputDir, "tcGraph")
+    let tcSharedDataFilePath = Path.Combine(outputDir, "tcSharedData")
+    let tcInputFilePath = Path.Combine(outputDir, "tcInput")
 
     [<Literal>]
     let CmdLineHeader = "CMDLINE"
 
     [<Literal>]
-    let GraphHeader = "GRAPH"
-
-    [<Literal>]
     let ReferencesHeader = "REFERENCES"
 
-    let writeThisTcData (tcData: TcData) =
+    let writeThisTcData tcData =
         use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFilePath
 
         let lines = ResizeArray<string>()
         lines.Add $"BEGIN {CmdLineHeader}"
         lines.AddRange tcData.CmdLine
-        lines.Add $"BEGIN {GraphHeader}"
-        lines.AddRange tcData.Graph
         lines.Add $"BEGIN {ReferencesHeader}"
         lines.AddRange tcData.References
 
@@ -55,7 +70,6 @@ type CachingDriver(tcConfig: TcConfig) =
             use tcDataFile = FileSystem.OpenFileForReadShim tcDataFilePath
 
             let cmdLine = ResizeArray<string>()
-            let graph = ResizeArray<string>()
             let refs = ResizeArray<string>()
 
             let mutable currentHeader = ""
@@ -67,17 +81,50 @@ type CachingDriver(tcConfig: TcConfig) =
                 | line ->
                     match currentHeader with
                     | CmdLineHeader -> cmdLine.Add line
-                    | GraphHeader -> graph.Add line
                     | ReferencesHeader -> refs.Add line
                     | _ -> invalidOp "broken tc cache")
 
             Some
                 {
                     CmdLine = cmdLine.ToArray()
-                    Graph = graph.ToArray()
                     References = refs.ToArray()
                 }
 
+        else
+            None
+
+    let writeThisGraph graph =
+        use tcDataFile = FileSystem.OpenFileForWriteShim graphFilePath
+
+        let formatGraphFileLine l =
+            sprintf "%i,%s,%i" l.Index l.FileName l.Stamp
+
+        (graph.Files |> List.map formatGraphFileLine) @ graph.Dependencies
+        |> tcDataFile.WriteAllLines
+
+    let readPrevGraph () =
+        if FileSystem.FileExistsShim graphFilePath then
+            use graphFile = FileSystem.OpenFileForReadShim graphFilePath
+
+            let parseGraphFileLine (l: string) =
+                let parts = l.Split(',') |> Array.toList
+
+                {
+                    Index = int parts[0]
+                    FileName = parts[1]
+                    Stamp = int64 parts[2]
+                }
+
+            let depLines, fileLines =
+                graphFile.ReadAllLines()
+                |> Array.toList
+                |> List.partition (fun l -> l.Contains "-->")
+
+            Some
+                {
+                    Files = fileLines |> List.map parseGraphFileLine
+                    Dependencies = depLines
+                }
         else
             None
 
@@ -103,28 +150,62 @@ type CachingDriver(tcConfig: TcConfig) =
         let filePairs = FilePairMap sourceFiles
         let graph, _ = DependencyResolution.mkGraph filePairs sourceFiles
 
-        let list = List<string>()
+        let graphFileLines =
+            [
+                for KeyValue(idx, _) in graph do
+                    let fileName = sourceFiles[idx].FileName
+                    let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
 
-        for KeyValue(idx, _) in graph do
-            let fileName = sourceFiles[idx].FileName
-            let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
-            list.Add(sprintf "%i,%s,%i" idx fileName lastWriteTime.Ticks)
+                    let graphFileLine =
+                        {
+                            Index = idx
+                            FileName = fileName
+                            Stamp = lastWriteTime.Ticks
+                        }
 
-        for KeyValue(idx, deps) in graph do
-            for depIdx in deps do
-                list.Add $"%i{idx} --> %i{depIdx}"
+                    yield graphFileLine
+            ]
 
-        list.ToArray()
+        let dependencies =
+            [
+                for KeyValue(idx, deps) in graph do
+                    for depIdx in deps do
+                        yield $"%i{idx} --> %i{depIdx}"
+            ]
+
+        {
+            Files = graphFileLines
+            Dependencies = dependencies
+        }
 
     let getThisCompilationReferences = Seq.map formatAssemblyReference >> Seq.toArray
 
-    member _.CanReuseTcResults inputs =
+    // TODO: don't ignore dependencies
+    let compareGraphs (inputs: ParsedInput list) thisGraph baseGraph : GraphComparisonResult =
+
+        let isPresentInBaseGraph thisLine =
+            baseGraph.Files
+            |> Seq.tryFind (fun baseLine -> baseLine.FileName = baseLine.FileName)
+            |> Option.exists (fun baseLine -> baseLine.Stamp = thisLine.Stamp)
+
+        // TODO: make this robust
+        let findMatchingInput thisLine =
+            inputs
+            |> Seq.where (fun input -> input.FileName = thisLine.FileName)
+            |> Seq.exactlyOne
+
+        thisGraph.Files
+        |> List.map (fun thisLine ->
+            let input = findMatchingInput thisLine
+            let canReuse = isPresentInBaseGraph thisLine
+            input, canReuse)
+
+    member _.GetTcCacheState inputs =
         let prevTcDataOpt = readPrevTcData ()
 
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
-                Graph = getThisCompilationGraph inputs
                 References = getThisCompilationReferences tcConfig.referencedDLLs
             }
 
@@ -133,64 +214,103 @@ type CachingDriver(tcConfig: TcConfig) =
             use _ = Activity.start Activity.Events.reuseTcResultsCachePresent []
 
             if prevTcData = thisTcData then
-                use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
-                true
+                match readPrevGraph () with
+                | Some graph ->
+                    let thisGraph = getThisCompilationGraph inputs
+
+                    let graphComparisonResult = graph |> compareGraphs inputs thisGraph
+
+                    // we'll need more events do distinguish scenarios here
+                    use _ =
+                        if graphComparisonResult |> Seq.forall (fun (_file, canUse) -> canUse) then
+                            Activity.start Activity.Events.reuseTcResultsCacheHit []
+                        else
+                            Activity.start Activity.Events.reuseTcResultsCacheMissed []
+
+                    TcCacheState.Present graphComparisonResult
+                | None ->
+                    use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
+                    TcCacheState.Empty
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
-                writeThisTcData thisTcData
-                false
+                TcCacheState.Empty
 
         | None ->
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
-            writeThisTcData thisTcData
-            false
+            TcCacheState.Empty
 
-    member _.ReuseTcResults inputs (tcInitialState: TcState) =
-
-        let bytes = File.ReadAllBytes("tc")
+    member private _.ReuseSharedData() =
+        let bytes = File.ReadAllBytes(tcSharedDataFilePath)
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
-        let byteReaderB = None
-
-        let tcInfo =
-            GetTypecheckingData(
+        let data =
+            GetSharedData(
                 "", // assembly.FileName,
                 ILScopeRef.Local, // assembly.ILScopeRef,
                 None, //assembly.RawMetadata.TryGetILModuleDef(),
                 byteReaderA,
-                byteReaderB
+                None
             )
 
-        let rawData = tcInfo.RawData
+        data.RawData
 
-        let topAttribs = rawData.TopAttribs
+    member private _.ReuseDeclaredImpl(implFile: ParsedInput) =
+        let fileName = Path.GetFileNameWithoutExtension(implFile.FileName)
+        let bytes = File.ReadAllBytes($"{tcInputFilePath}{fileName}")
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
 
-        // need to understand if anything can be used here, pickling state is hard
-        tcInitialState,
-        topAttribs,
-        rawData.DeclaredImpls,
-        // this is quite definitely wrong, need to figure out what to do with the environment
-        tcInitialState.TcEnvFromImpls
+        let data =
+            GetCheckedImplFile(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                None
+            )
 
-    member _.CacheTcResults(tcState: TcState, topAttribs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+        data.RawData
+
+    member this.ReuseTcResults (inputs: ParsedInput list) (tcInitialState: TcState) =
+        let sharedData = this.ReuseSharedData()
+        let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
+
+        tcInitialState, sharedData.TopAttribs, declaredImpls, tcInitialState.TcEnvFromImpls
+
+    member private _.CacheSharedData(tcState: TcState, sharedData, tcGlobals, outfile) =
+        let encodedData =
+            EncodeSharedData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, sharedData)
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes(tcSharedDataFilePath, resource)
+
+    member private _.CacheDeclaredImpl(tcState: TcState, impl, tcGlobals, outfile) =
+        let encodedData =
+            EncodeCheckedImplFile(tcConfig, tcGlobals, tcState.Ccu, outfile, false, impl)
+
+        // TODO: bare file name is not enough
+        let fileName =
+            Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName)
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes($"{tcInputFilePath}{fileName}", resource)
+
+    member this.CacheTcResults(tcState: TcState, topAttribs, declaredImpls, _tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
-                Graph = getThisCompilationGraph inputs
                 References = getThisCompilationReferences tcConfig.referencedDLLs
             }
 
         writeThisTcData thisTcData
 
-        let tcInfo =
-            {
-                TopAttribs = topAttribs
-                DeclaredImpls = declaredImpls
-            }
+        let thisGraph = getThisCompilationGraph inputs
+        writeThisGraph thisGraph
 
-        let encodedData =
-            EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
+        let sharedData = { TopAttribs = topAttribs }
 
-        let resource = encodedData[0].GetBytes().ToArray()
-        File.WriteAllBytes("tc", resource)
+        this.CacheSharedData(tcState, sharedData, tcGlobals, outfile)
+
+        declaredImpls
+        |> List.iter (fun impl -> this.CacheDeclaredImpl(tcState, impl, tcGlobals, outfile))
