@@ -12150,7 +12150,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
         isGeneratedEventVal
         (cenv: cenv)
         (env: TcEnv)
-        (tpenv, recBindIdx)
+        (tpenv: UnscopedTyparEnv, recBindIdx)
         (NormalizedRecBindingDefn(containerInfo, newslotsOK, declKind, binding)) =
 
     let g = cenv.g
@@ -12160,6 +12160,12 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let (NormalizedBindingRhs(_, _, bindingExpr)) = bindingRhs
     let (SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
+
+    let altActualParent =
+        // Use the tpenv Parent to get the actual parent when it is an ExpressionBinding and also has no altParent set
+        match g.realsig, declKind, altActualParent with
+        | true, ExpressionBinding, ParentNone -> tpenv.asParent()
+        | _ -> altActualParent
 
     let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 

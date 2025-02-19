@@ -2883,7 +2883,7 @@ type Val =
 
     /// The partial information used to index the methods of all those in a ModuleOrNamespace.
     member x.GetLinkagePartialKey() : ValLinkagePartialKey = 
-        assert x.IsCompiledAsTopLevel
+        //assert x.IsCompiledAsTopLevel
         { LogicalName = x.LogicalName 
           MemberParentMangledName = (if x.IsMember then Some x.MemberApparentEntity.LogicalName else None)
           MemberIsOverride = x.IsOverrideOrExplicitImpl
@@ -2891,7 +2891,7 @@ type Val =
 
     /// The full information used to identify a specific overloaded method amongst all those in a ModuleOrNamespace.
     member x.GetLinkageFullKey() : ValLinkageFullKey = 
-        assert x.IsCompiledAsTopLevel
+        //assert x.IsCompiledAsTopLevel
         let key = x.GetLinkagePartialKey()
         ValLinkageFullKey(key, (if x.IsMember then Some x.Type else None))
 

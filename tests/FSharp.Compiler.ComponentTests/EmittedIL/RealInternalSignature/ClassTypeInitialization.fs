@@ -603,6 +603,60 @@ module doIt =
             "All Classes and Methods in*GenericClassWithClosureWithConstraints.exe Verified."
             ]
 
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<InlineData(true, true)>]          // RealSig Optimize
+    [<Theory>]
+    let ``Generic nested class with interface implemented and closure`` (realSig, optimize) =
+
+        FSharp """
+module RuntimeHelpers =
+    open System
+    open System.Collections
+    open System.Collections.Generic
+
+    type MyType<'A, 'B when 'B :> seq<'A>>(_sources: seq<'B>) =
+
+        let mutable v:'B = Unchecked.defaultof<'B>
+
+        interface IEnumerator<'B> with
+             member _.Current = v
+
+        interface IEnumerator with
+            member _.Current = box v
+
+            member _.MoveNext() =
+                let rec takeInner c =
+                    if c.ToString() = "1" then failwith "Oops"
+                    true
+
+                takeInner 3
+
+            member _.Reset() = ()
+
+        interface IDisposable with
+            member _.Dispose() = ()
+
+#nowarn 760
+module doIt =
+    open RuntimeHelpers
+    open System.Collections.Generic
+
+    let x = seq { seq { 1uy } }
+    let enumerator = x |> MyType<_,_> :> IEnumerator<_>
+    enumerator.MoveNext() |> ignore"""
+        |> withName "GenericClassWithInterfaceAndClosure"
+        |> asExe
+        |> withRealInternalSignature realSig
+        |> withOptimization optimize
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*GenericClassWithInterfaceAndClosure.exe Verified."
+            ]
+
     [<InlineData(true, true)>]          // RealSig Optimize
     [<Theory>]
     let ``Generic nested class with closure optimized`` (realSig, optimize) =

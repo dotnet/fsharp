@@ -575,12 +575,17 @@ type TypeReprEnv
     member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
 
     /// Get a list of the Typars in this environment
-    member eenv.AsUserProvidedTypars() =
+    member eenv.AsTypars() =
         reprs
         |> Map.toList
         |> List.map (fun (_, (_, tp)) -> tp)
         |> List.filter (fun tp -> not tp.IsCompilerGenerated)
+
+    /// Get a Zset of the Typars in this environment
+    member eenv.AsZset() =
+        eenv.AsTypars()
         |> Zset.ofList typarOrder
+
 
 //--------------------------------------------------------------------------
 // Generate type references
@@ -1301,6 +1306,10 @@ let AddSignatureRemapInfo _msg (rpi, mhi) eenv =
     { eenv with
         sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: eenv.sigToImplRemapInfo
     }
+
+let GetTyparsAsILGenericArgs cenv (eenv: IlxGenEnv) (typars: Typars) =
+    typars |> List.map (fun tp -> GenTypeArgAux cenv tp.Range eenv.tyenv (mkTyparTy tp))
+
 
 //--------------------------------------------------------------------------
 // Augment eenv with values
@@ -4336,7 +4345,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     mspecW
 
-            let ilTyArgs = GenTypeArgs cenv m eenv.tyenv tyargs
+            let tyArgs = (eenv.tyenv.AsTypars() |> List.map mkTyparTy) @ tyargs
+
+            let ilTyArgs =
+                (GenTypeArgs cenv m eenv.tyenv tyargs)
+                |> List.distinct
 
             // For instance method calls chop off some type arguments, which are already
             // carried by the class.  Also work out if it's a virtual call.
@@ -4350,23 +4363,17 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 | Some _ when not vref.IsExtensionMember -> List.length (vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars)
                 | _ -> 0
 
+            //let convertTyparsToILGenericArgs typars = typars |> List.map (fun (tp: Typar) -> GenTypeArgAux cenv tp.Range eenv.tyenv (mkTyparTy tp))
             let ilEnclArgTys, ilMethArgTys =
                 if ilTyArgs.Length < numEnclILTypeArgs then error (InternalError("length mismatch", m))
 
-                (*@@@@@@@@@@@@@@@@@@@
-                // Review: We may want to use the apparent enclosing during optimization phase
-                // ApparentEnclosingEntity is set to ParentNone for optimized closures
-                // Here we split out the enclosing type args from the method args
-                // With nested generic optimized closures we reattach the typars to the 
-                // enclosing type ref
+                // Review: This generates MyClass<A,B>MyMethod<A,B,c> for members in generic types
+                // Ideally it should generate MyClass<A,B>MyMethod<c>
                 match g.realsig, vref.ApparentEnclosingEntity with
-                | true, ParentRef.ParentNone -> 
-                    let take = min eenv.tyenv.Count ilTyArgs.Length
-                    let result = (List.take take ilTyArgs), ilTyArgs
-                    result
-                | _ -> 
-                @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*)
-                List.splitAt numEnclILTypeArgs ilTyArgs
+                | true, Parent parent when not (vref.IsMemberOrModuleBinding) ->
+                    let length = (parent.TyparsNoRange |> DropErasedTypars).Length
+                    (List.take length ilTyArgs), ilTyArgs
+                | _ -> List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
             let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
@@ -6988,7 +6995,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             match g.realsig with
             | true ->
                 { emptyFreeTyvars with
-                    FreeTypars = eenv.tyenv.AsUserProvidedTypars()
+                    FreeTypars = eenv.tyenv.AsZset()
                 }
             | false -> emptyFreeTyvars
 

@@ -145,11 +145,12 @@ type TcEnv =
 /// (i.e. are without explicit declaration).
 type UnscopedTyparEnv =
      | UnscopedTyparEnv of NameMap<Typar>
-     | UnscopedTyparWithParentEnv of NameMap<Typar> * TyconRef option
+     | UnscopedTyparWithParentEnv of NameMap<Typar> * ParentRef
 
      member asMap: unit -> NameMap<Typar>
-     member asParent: unit -> TyconRef option
+     member asParent: unit -> ParentRef
      member addTypar: string * Typar -> UnscopedTyparEnv
+     member withParent: ParentRef -> UnscopedTyparEnv
      member tryFindTypar: string -> Typar option
      member hideTypars: Typar list -> UnscopedTyparEnv
      static member empty: UnscopedTyparEnv

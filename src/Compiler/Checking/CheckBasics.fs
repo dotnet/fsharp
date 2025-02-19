@@ -91,7 +91,7 @@ type PrelimVal1 =
 
 type UnscopedTyparEnv =
      | UnscopedTyparEnv of NameMap<Typar>
-     | UnscopedTyparWithParentEnv of NameMap<Typar> * TyconRef option
+     | UnscopedTyparWithParentEnv of NameMap<Typar> * ParentRef
 
      member this.asMap() =
         match this with
@@ -100,13 +100,18 @@ type UnscopedTyparEnv =
 
      member this.asParent() =
         match this with
-        | UnscopedTyparEnv _ -> None
+        | UnscopedTyparEnv _ -> ParentNone
         | UnscopedTyparWithParentEnv (_, p) -> p
 
      member this.addTypar(name, typar) =
         match this with
         | UnscopedTyparEnv m -> UnscopedTyparEnv (Map.add name typar m)
         | UnscopedTyparWithParentEnv (m, p) -> UnscopedTyparWithParentEnv ((Map.add name typar m), p)
+
+     member this.withParent(parent) =
+        match this with
+        | UnscopedTyparEnv m -> UnscopedTyparWithParentEnv (m, parent)
+        | UnscopedTyparWithParentEnv (m, p) -> UnscopedTyparWithParentEnv (m, p)
 
      member this.tryFindTypar(name) =
         match this with
