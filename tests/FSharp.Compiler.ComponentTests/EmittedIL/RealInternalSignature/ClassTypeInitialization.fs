@@ -570,11 +570,7 @@ printfn "%A" (MyClass.result())
             "All Classes and Methods in*NestedGenericClosure.exe Verified."
             ]
 
-    [<InlineData(true, false)>]         // RealSig NoOptimize
-    [<InlineData(false, true)>]         // Regular Optimize
-    [<InlineData(false, false)>]        // Regular NoOptimize
-    [<Theory>]
-    let ``Generic nested class with closure`` (realSig, optimize) =
+    let ``Generic nested class with closure - source`` =
 
         FSharp """
 module RuntimeHelpers =
@@ -592,6 +588,14 @@ module doIt =
     let enumerator = x |> MyType<_,_>
     enumerator.MoveNext() |> ignore
     """
+
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``Generic nested class with closure`` (realSig, optimize) =
+
+        ``Generic nested class with closure - source``
         |> withName "GenericClassWithClosureWithConstraints"
         |> asExe
         |> withRealInternalSignature realSig
@@ -603,13 +607,25 @@ module doIt =
             "All Classes and Methods in*GenericClassWithClosureWithConstraints.exe Verified."
             ]
 
-    [<InlineData(true, false)>]         // RealSig NoOptimize
-    [<InlineData(false, true)>]         // Regular Optimize
-    [<InlineData(false, false)>]        // Regular NoOptimize
     [<InlineData(true, true)>]          // RealSig Optimize
     [<Theory>]
-    let ``Generic nested class with interface implemented and closure`` (realSig, optimize) =
+    let ``Generic nested class with closure optimized`` (realSig, optimize) =
 
+        ``Generic nested class with closure - source``
+        |> withName "GenericStructWithClosureWithConstraints"
+        |> asExe
+        |> withRealInternalSignature realSig
+        |> withOptimization optimize
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithRegexPatterns [
+            @"Verifying \[GenericStructWithClosureWithConstraints\]MyType`2\.MoveNext"
+            @"\[IL\]: Error \[StackUnexpected\]: \[.*? : .*?::MoveNext\(\)\]\[offset 0x[0-9A-Fa-f]+\]\[found \w+\]\[expected value '.*?'\] Unexpected type on the stack\."
+            @"Verifying \[GenericStructWithClosureWithConstraints\]<StartupCode\$GenericStructWithClosureWithConstraints>\.\$Test\.main@"
+            ]
+
+    let ``Generic nested class with interface implemented and closure - source`` =
         FSharp """
 module RuntimeHelpers =
     open System
@@ -646,6 +662,14 @@ module doIt =
     let x = seq { seq { 1uy } }
     let enumerator = x |> MyType<_,_> :> IEnumerator<_>
     enumerator.MoveNext() |> ignore"""
+
+    [<InlineData(true, false)>]         // RealSig NoOptimize
+    [<InlineData(false, true)>]         // Regular Optimize
+    [<InlineData(false, false)>]        // Regular NoOptimize
+    [<Theory>]
+    let ``Generic nested class with interface implemented and closure`` (realSig, optimize) =
+
+        ``Generic nested class with interface implemented and closure - source``
         |> withName "GenericClassWithInterfaceAndClosure"
         |> asExe
         |> withRealInternalSignature realSig
@@ -659,26 +683,10 @@ module doIt =
 
     [<InlineData(true, true)>]          // RealSig Optimize
     [<Theory>]
-    let ``Generic nested class with closure optimized`` (realSig, optimize) =
+    let ``Generic nested class with interface implemented and closure optimized`` (realSig, optimize) =
 
-        FSharp """
-module RuntimeHelpers =
-    type MyType<'A,'B when 'B :> seq<'A>>(sources: seq<'B>) =
-        member x.MoveNext() =
-            let rec takeInner c =
-                if c.ToString() = "1" then failwith "Oops"
-                sources |> ignore
-                true
-            takeInner 3
-
-module doIt =
-    open RuntimeHelpers
-
-    let x = seq { seq { 1uy } }
-    let enumerator = x |> MyType<_,_>
-    enumerator.MoveNext() |> ignore
-    """
-        |> withName "GenericStructWithClosureWithConstraints"
+        ``Generic nested class with interface implemented and closure - source``
+        |> withName "GenericClassWithInterfaceAndClosure"
         |> asExe
         |> withRealInternalSignature realSig
         |> withOptimization optimize
@@ -686,9 +694,11 @@ module doIt =
         |> shouldSucceed
         |> verifyPEFileWithSystemDlls
         |> withOutputContainsAllInOrderWithRegexPatterns [
-            @"Verifying \[GenericStructWithClosureWithConstraints\]MyType`2\.MoveNext"
-            @"\[IL\]: Error \[StackUnexpected\]: \[.*? : .*?::MoveNext\(\)\]\[offset 0x[0-9A-Fa-f]+\]\[found \w+\]\[expected value '.*?'\] Unexpected type on the stack\."
-            @"Verifying \[GenericStructWithClosureWithConstraints\]<StartupCode\$GenericStructWithClosureWithConstraints>\.\$Test\.main@"
+            @"Verifying \[GenericClassWithInterfaceAndClosure\]MyType`2\.System\.Collections\.IEnumerator\.MoveNext"
+            @"\[IL\]: Error \[StackUnexpected\]: \[.*? : .*?::System\.Collections\.IEnumerator\.MoveNext\(\)\]\[offset 0x[0-9A-Fa-f]+\]\[found \w+\]\[expected value '.*?'\] Unexpected type on the stack\."
+            @"Verifying \[GenericClassWithInterfaceAndClosure\]MyType`2\.System\.Collections\.IEnumerator\.Reset"
+            @"Verifying \[GenericClassWithInterfaceAndClosure\]MyType`2\.System\.IDisposable\.Dispose"
+            @"1 Error\(s\) Verifying [A-Z]:\\[^\s]+\.exe"
             ]
 
     [<InlineData(true, true)>]          // RealSig Optimize

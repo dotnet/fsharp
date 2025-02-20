@@ -4352,7 +4352,6 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
             let ilTyArgs =
                 (GenTypeArgs cenv m eenv.tyenv tyargs)
-                |> List.distinct
 
             // For instance method calls chop off some type arguments, which are already
             // carried by the class.  Also work out if it's a virtual call.
