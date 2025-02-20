@@ -390,7 +390,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
-        | LanguageFeature.WarnWhenUnitPassedToObjArg ->  FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
+        | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
