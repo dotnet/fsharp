@@ -667,7 +667,8 @@ module RuntimeHelpers =
         member x.MoveNext() =
             let rec takeInner c =
                 if c.ToString() = "1" then failwith "Oops"
-                sources
+                sources |> ignore
+                true
             takeInner 3
 
 module doIt =

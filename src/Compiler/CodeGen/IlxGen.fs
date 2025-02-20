@@ -4345,7 +4345,10 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     mspecW
 
-            let tyArgs = (eenv.tyenv.AsTypars() |> List.map mkTyparTy) @ tyargs
+            let parentTyArgs =
+                match cenv.g.realsig with
+                | true -> GenTypeArgs cenv m eenv.tyenv (eenv.tyenv.AsTypars() |> List.map mkTyparTy)
+                | false -> []
 
             let ilTyArgs =
                 (GenTypeArgs cenv m eenv.tyenv tyargs)
@@ -4371,8 +4374,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 // Ideally it should generate MyClass<A,B>MyMethod<c>
                 match g.realsig, vref.ApparentEnclosingEntity with
                 | true, Parent parent when not (vref.IsMemberOrModuleBinding) ->
-                    let length = (parent.TyparsNoRange |> DropErasedTypars).Length
-                    (List.take length ilTyArgs), ilTyArgs
+                    parentTyArgs, ilTyArgs
                 | _ -> List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
@@ -6992,12 +6994,12 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
         let initialFreeTyvars =
-            match g.realsig with
+            (*match g.realsig with
             | true ->
                 { emptyFreeTyvars with
                     FreeTypars = eenv.tyenv.AsZset()
                 }
-            | false -> emptyFreeTyvars
+            | false -> *)emptyFreeTyvars
 
         ilCloTypeRef, initialFreeTyvars
 
