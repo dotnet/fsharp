@@ -273,6 +273,7 @@ open Printf
     let StringBoilerPlate fileName =
         @"
     // BEGIN BOILERPLATE
+#nowarn 3262 // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
 
     static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
