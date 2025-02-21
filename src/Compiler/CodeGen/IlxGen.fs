@@ -5679,6 +5679,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
         tp.Constraints
         |> List.exists (function
             | TyparConstraint.IsReferenceType _
+            // 'null' automatically implies 'not struct'
             | TyparConstraint.SupportsNull _ -> true
             | _ -> false)
 

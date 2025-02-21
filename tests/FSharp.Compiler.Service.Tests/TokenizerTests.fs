@@ -4,8 +4,6 @@ open FSharp.Compiler.Tokenization
 open FSharp.Test
 open Xunit
 
-let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None, None)
-
 let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
   match tokenizer.ScanToken(state.Value) with
   | Some(tok), nstate ->
@@ -17,8 +15,10 @@ let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: F
       state.Value <- nstate }
 
 let tokenizeLines (lines:string[]) =
+  let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", None, None)
   [ let state = ref FSharpTokenizerLexState.Initial
     for n, line in lines |> Seq.zip [ 0 .. lines.Length-1 ] do
+
       let tokenizer = sourceTok.CreateLineTokenizer(line)
       yield n, parseLine(line, state, tokenizer) |> List.ofSeq ]
 

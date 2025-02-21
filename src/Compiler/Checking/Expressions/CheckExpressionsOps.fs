@@ -18,6 +18,11 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.SyntaxTreeOps
 
+let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
+    match isFirst, g.checkNullness, GetTyparTyIfSupportsNull g ty with
+    | true, true, ValueSome tp -> tp.SetSupportsNullFlex(true)
+    | _ -> ()
+
 let CopyAndFixupTypars g m rigid tpsorig =
     FreshenAndFixupTypars g m rigid [] [] tpsorig
 
