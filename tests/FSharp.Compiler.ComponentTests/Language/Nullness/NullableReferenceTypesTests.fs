@@ -1253,6 +1253,31 @@ dict["ok"] <- 42
     |> shouldSucceed
 
 
+
+[<InlineData("null")>]
+[<InlineData("if false then null else []")>]
+[<InlineData("if false then [] else null")>]
+[<InlineData("[] : (_ list | null)")>]
+[<Theory>]
+let ``Nullness in inheritance chain`` (returnExp:string) = 
+    
+    FSharp $"""module MyLibrary
+
+[<AbstractClass>]
+type Generator<'T>() =
+    abstract Values: unit -> 'T
+
+[<Sealed>]
+type ListGenerator<'T>() =
+    inherit Generator<List<'T> | null>()
+
+    override _.Values() = {returnExp}
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
 [<Fact>]
 let ``Notnull constraint and inline annotated value`` () = 
     FSharp """module MyLibrary
