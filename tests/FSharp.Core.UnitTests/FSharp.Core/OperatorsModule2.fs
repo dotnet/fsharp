@@ -19,6 +19,8 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 
 #nowarn "3370"
+#nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
+// Why warned - the tests here are actually trying to test that when this happens (unit passed), it indeed results in a null
 
 /// If this type compiles without error it is correct
 /// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.

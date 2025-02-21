@@ -12,6 +12,9 @@ open Xunit
 
 open Microsoft.FSharp.Reflection
 
+#nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
+// Why warned - the tests here are testing also how APIs react to unit being passed to it.
+
 (*
 [Test Strategy]
 Make sure each method works on:
