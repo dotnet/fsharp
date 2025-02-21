@@ -17,6 +17,17 @@ let typeCheckWithStrictNullness cu =
     |> withNullnessOptions
     |> typecheck
 
+
+[<Fact>]
+let ``Can imply notstruct for classconstraint`` () =
+    FSharp """module Foo =
+    let failIfNull<'a when 'a : null> (a : 'a) : 'a option =
+        (a |> Option.ofObj)
+    """
+    |> asLibrary
+    |> typecheck  // This has nullable off!
+    |> shouldSucceed  
+
 [<Fact>]
 let ``Warning on nullness hidden behind interface upcast`` () =
     FSharp """module Test
@@ -145,6 +156,83 @@ let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null
                   Error 3261, Line 7, Col 51, Line 7, Col 97, "Nullness warning: The types 'obj' and 'AB | null array | null list | null' do not have compatible nullability."
                   Error 3060, Line 7, Col 51, Line 7, Col 97, "This type test or downcast will erase the provided type 'List<AB | null array | null> | null' to the type 'List<AB array>'"]
 
+
+[<Fact>]
+let ``Can infer nullable type if first match handler returns null`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    match x with
+    | 0 -> null
+    | i -> "x"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can NOT infer nullable type if second match handler returns null`` () =
+    FSharp """module TestLib
+
+let myFunc x defaultValue =
+    match x with
+    | 0 -> defaultValue
+    | 1 -> null
+    | i -> "y"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 7, Col 12, Line 7, Col 15, "Nullness warning: The type 'string' does not support 'null'.. See also test.fs(7,11)-(7,14)."]
+
+[<Fact>]
+let ``Can infer nullable type if first match handler returns masked null`` () =
+    FSharp """module TestLib
+
+let thisIsNull : string|null = null
+let myFunc x =
+    match x with
+    | 0 -> thisIsNull
+    | i -> "x"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can infer nullable type from first branch of ifthenelse`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then null else "x"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can NOT infer nullable type from second branch of ifthenelse`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then "x" else null
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 4, Col 28, Line 4, Col 32, "Nullness warning: The type 'string' does not support 'null'."]
+
+[<Fact>]
+let ``Can NOT infer nullable type from second branch of nested elifs`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then "x" elif x=1 then null else "y"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 4, Col 37, Line 4, Col 41, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
 let ``Can convert generic value to objnull arg`` () =

@@ -2478,6 +2478,8 @@ and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 =
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
     // comparison implies equality
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
+    // 'null' implies reference type ('not struct')
+    | TyparConstraint.SupportsNull _, TyparConstraint.IsReferenceType _
     | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
     | TyparConstraint.NotSupportsNull _, TyparConstraint.NotSupportsNull _
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
