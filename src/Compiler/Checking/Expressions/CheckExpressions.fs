@@ -10634,6 +10634,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
+            TryAllowFlexibleNullnessInControlFlow (*isFirst=*) true g overallTy.Commit
             // tailcall
             TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) ->
                 let resExpr = primMkCond spIfToThen m overallTy.Commit boolExpr thenExpr elseExpr
@@ -10697,6 +10698,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
         | DebugPointAtTarget.No -> resultEnv
 
     let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
+    TryAllowFlexibleNullnessInControlFlow isFirst cenv.g resultTy.Commit
 
     let target = TTarget(vspecs, resultExpr, None)
 
