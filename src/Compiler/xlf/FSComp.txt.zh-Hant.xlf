@@ -642,6 +642,11 @@
         <target state="translated">C# 與 F# 的非受控泛型條件約束之間的 Interop (發出額外的 modreq)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUseBangBindingValueDiscard">
+        <source>Use 'use!' binding for value discard</source>
+        <target state="new">Use 'use!' binding for value discard</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUseTypeSubsumptionCache">
         <source>Use type conversion cache during compilation</source>
         <target state="new">Use type conversion cache during compilation</target>

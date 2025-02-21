@@ -642,6 +642,11 @@
         <target state="translated">Interopérabilité entre les contraintes génériques non gérées de C# et F# (émettre un modreq supplémentaire)</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUseBangBindingValueDiscard">
+        <source>Use 'use!' binding for value discard</source>
+        <target state="new">Use 'use!' binding for value discard</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUseTypeSubsumptionCache">
         <source>Use type conversion cache during compilation</source>
         <target state="new">Use type conversion cache during compilation</target>
