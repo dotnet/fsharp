@@ -9171,7 +9171,7 @@ let isReferenceTyparTy g ty =
     | ValueNone ->
         false
 
-let IsSupportsNullTyparTy g ty = 
+let GetTyparTyIfSupportsNull g ty = 
     if isReferenceTyparTy g ty then
         let tp = destTyparTy g ty
         if tp.Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false) then
@@ -9206,7 +9206,7 @@ let TypeNullIsExtraValue g m ty =
         | ValueNone -> 
 
         // Consider type parameters
-        (IsSupportsNullTyparTy g ty).IsSome
+        (GetTyparTyIfSupportsNull g ty).IsSome
 
 // Any mention of a type with AllowNullLiteral(true) is considered to be with-null
 let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
@@ -9320,7 +9320,7 @@ let TypeNullIsExtraValueNew g m ty =
      | NullnessInfo.WithNull -> true)
     ||
     // Check if the type has a ': null' constraint
-    (IsSupportsNullTyparTy g ty).IsSome
+    (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =

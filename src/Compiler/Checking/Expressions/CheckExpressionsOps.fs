@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.SyntaxTreeOps
 
 let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
-    match isFirst, g.checkNullness, IsSupportsNullTyparTy g ty with
+    match isFirst, g.checkNullness, GetTyparTyIfSupportsNull g ty with
     | true, true, ValueSome tp -> tp.SetSupportsNullFlex(true)
     | _ -> ()
 
