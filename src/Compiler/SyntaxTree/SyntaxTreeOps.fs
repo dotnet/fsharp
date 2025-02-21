@@ -372,9 +372,9 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     match p with
     | SynPat.FromParseError(p, _) -> SimplePatsOfPat synArgNameGenerator p
 
-    | SynPat.Tuple(false, ps, commas, m)
+    | SynPat.Tuple(isStruct, ps, commas, m)
 
-    | SynPat.Paren(SynPat.Tuple(false, ps, commas, _), m) ->
+    | SynPat.Paren(SynPat.Tuple(isStruct, ps, commas, _), m) ->
         let sps = List.map (SimplePatOfPat synArgNameGenerator) ps
 
         let ps2, laterF =

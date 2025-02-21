@@ -234,6 +234,7 @@
     <Compile Include="Language\StateMachineTests.fs" />
     <Compile Include="Language\DynamicAssignmentOperatorTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
+    <Compile Include="Language\TupleTests.fs" />
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="Language\DiscriminatedUnionTests.fs" />
     <Compile Include="Language\DotLambdaTests.fs" />

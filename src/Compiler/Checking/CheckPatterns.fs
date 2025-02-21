@@ -184,7 +184,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         [v], patEnv
 
     | SynSimplePats.SimplePats (ps, _, m) ->
-        let ptys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
+        let _, ptys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty true ps
         let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat [])
         ps', patEnvR
 
