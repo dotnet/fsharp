@@ -26,6 +26,7 @@ let iAcceptNullWithNullAnnotation(arg: 'a | null when 'a: not struct) =
     else
         0
 
+// This test case emits the `class T` constraint in IL
 let iAcceptNullExplicitAnnotation(arg: 'T when 'T:null) =
     if isNull arg then
         1
