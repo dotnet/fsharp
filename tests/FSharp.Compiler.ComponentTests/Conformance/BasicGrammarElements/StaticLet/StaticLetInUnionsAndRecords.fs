@@ -95,6 +95,16 @@ init R 2
 1
 2"""
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordOptimizerRegression.fs"|])>]
+let ``Static let - record optimizer regression`` compilation =
+    compilation
+    |> withOptimize
+    |> verifyCompileAndRun
+    |> shouldSucceed
+    |> withStdOutContains """{ xyz = "" }"""
+
+
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseDuTest.fs"|])>]
 let ``Static let - lowercase DU`` compilation =
     compilation

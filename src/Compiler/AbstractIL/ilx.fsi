@@ -162,6 +162,8 @@ val mkILFormalCloRef: ILGenericParameterDefs -> IlxClosureRef -> useStaticField:
 // MS-ILX: Unions
 // --------------------------------------------------------------------
 
+val mkLowerName: nm: string -> string
+
 val actualTypOfIlxUnionField: IlxUnionSpec -> int -> int -> ILType
 
 val mkILFreeVar: string * bool * ILType -> IlxClosureFreeVar

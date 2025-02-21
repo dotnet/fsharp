@@ -583,7 +583,10 @@ and TcPatLongIdentNewDef warnOnUpperForId warnOnUpper (cenv: cenv) env ad valRep
     | [arg]
         when g.langVersion.SupportsFeature LanguageFeature.NameOf && IsNameOf cenv env ad m id ->
         match TcNameOfExpr cenv env tpenv (ConvSynPatToSynExpr arg) with
-        | Expr.Const(Const.String s, m, _) -> TcConstPat warnOnUpper cenv env vFlags patEnv ty (SynConst.String(s, SynStringKind.Regular, m)) m
+        | Expr.Const(Const.String s, m, _) ->
+            // Record the resolution of the `nameof` usage so that we can classify it correctly later.
+            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, Item.Value g.nameof_vref, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights)
+            TcConstPat warnOnUpper cenv env vFlags patEnv ty (SynConst.String(s, SynStringKind.Regular, m)) m
         | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const of type string"
 
     | _ ->

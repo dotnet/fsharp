@@ -37,6 +37,21 @@
         <target state="translated">型が一致しません。型の長さ {0} のタプルが必要です\n    {1}    \nただし、型の長さ {2} のタプルが指定された場合\n    {3}{4}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="Experimental1">
+        <source>This construct is experimental</source>
+        <target state="new">This construct is experimental</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental2">
+        <source>. {0}</source>
+        <target state="new">. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental3">
+        <source>. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
+        <target state="new">. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
         <target state="translated">読み込まれたファイル内の 1 つ以上の情報メッセージ。\n</target>
@@ -1545,11 +1560,6 @@
       <trans-unit id="Obsolete2">
         <source>. {0}</source>
         <target state="translated">。{0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Experimental">
-        <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}。この警告を無効にするには、'--nowarn:57' または '#nowarn "57"' を使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">

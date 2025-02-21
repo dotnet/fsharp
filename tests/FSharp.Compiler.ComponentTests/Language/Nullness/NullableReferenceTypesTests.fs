@@ -18,6 +18,31 @@ let typeCheckWithStrictNullness cu =
     |> typecheck
 
 
+[<Fact>]
+let ``Can imply notstruct for classconstraint`` () =
+    FSharp """module Foo =
+    let failIfNull<'a when 'a : null> (a : 'a) : 'a option =
+        (a |> Option.ofObj)
+    """
+    |> asLibrary
+    |> typecheck  // This has nullable off!
+    |> shouldSucceed  
+
+[<Fact>]
+let ``Warning on nullness hidden behind interface upcast`` () =
+    FSharp """module Test
+
+open System.IO
+open System
+
+// This is bad - input is nullable, output is not = must warn
+let whatisThis (s:Stream|null) : IDisposable =
+    s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 8, Col 5, Line 8, Col 6, "Nullness warning: The types 'IDisposable' and 'IDisposable | null' do not have compatible nullability."]
+
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``Report warning when applying anon record to a nullable generic return value`` () =
     FSharp """
@@ -133,6 +158,83 @@ let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null
 
 
 [<Fact>]
+let ``Can infer nullable type if first match handler returns null`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    match x with
+    | 0 -> null
+    | i -> "x"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can NOT infer nullable type if second match handler returns null`` () =
+    FSharp """module TestLib
+
+let myFunc x defaultValue =
+    match x with
+    | 0 -> defaultValue
+    | 1 -> null
+    | i -> "y"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 7, Col 12, Line 7, Col 15, "Nullness warning: The type 'string' does not support 'null'.. See also test.fs(7,11)-(7,14)."]
+
+[<Fact>]
+let ``Can infer nullable type if first match handler returns masked null`` () =
+    FSharp """module TestLib
+
+let thisIsNull : string|null = null
+let myFunc x =
+    match x with
+    | 0 -> thisIsNull
+    | i -> "x"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can infer nullable type from first branch of ifthenelse`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then null else "x"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can NOT infer nullable type from second branch of ifthenelse`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then "x" else null
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 4, Col 28, Line 4, Col 32, "Nullness warning: The type 'string' does not support 'null'."]
+
+[<Fact>]
+let ``Can NOT infer nullable type from second branch of nested elifs`` () =
+    FSharp """module TestLib
+
+let myFunc x =
+    if x = 0 then "x" elif x=1 then null else "y"
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 4, Col 37, Line 4, Col 41, "Nullness warning: The type 'string' does not support 'null'."]
+
+[<Fact>]
 let ``Can convert generic value to objnull arg`` () =
     FSharp """module TestLib
 
@@ -168,6 +270,19 @@ let safeHolder : IDisposable =
             member x.Dispose() =
                 GC.SuppressFinalize x
     }
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Can _use_ a nullable IDisposable`` () =
+    FSharp """module TestLib
+open System
+let workWithResource (getD:int -> (IDisposable|null)) =
+    use _ = getD 15
+    15
+
     """
     |> asLibrary
     |> typeCheckWithStrictNullness
@@ -976,7 +1091,45 @@ looseFunc(maybeTuple2) |> ignore
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
               Error 43, Line 40, Col 36, Line 40, Col 40, "The type 'Maybe<int * int>' does not have 'null' as a proper value"]
-                
+    
+    
+[<Fact>]
+let ``Nullness support for flexible types`` () =
+    FSharp """module MyLibrary
+open System
+let dispose (x: IDisposable | null) : unit =
+    match x with
+    | null -> ()
+    | d -> d.Dispose()
+
+let useThing (thing: #IDisposable) =
+    try
+        printfn "%O" thing
+    finally
+        dispose thing // Warning used to be here, should not warn! """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<Fact>]
+let ``Nullness support for flexible types - opposite`` () =
+    FSharp """module MyLibrary
+open System
+let dispose (x: IDisposable) : unit =
+    x.Dispose()
+
+let useThing (thing: #IDisposable | null) =
+    try
+        printfn "%O" thing
+    finally
+        dispose thing // Warning should be here, because 'thing' can be null!        
+        """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 10, Col 17, Line 10, Col 22, "Nullness warning: The types 'IDisposable' and ''a | null' do not have compatible nullability."]
+
+
 [<Fact>]
 let ``Static member on Record with null arg`` () =
     FSharp """module MyLibrary
@@ -1265,3 +1418,47 @@ let myOption () : option<string> = None  """
         IL_0000:  ldnull
         IL_0001:  ret
       }"]
+
+// Regression https://github.com/dotnet/fsharp/issues/18286
+[<Fact>]
+let ``Equality and hashcode augmentation is null safe`` () =
+
+    Fsx """
+
+type Bar = { b: string | null  }
+type Foo = { f: Bar | null }
+type DUFoo = WithNull of (Foo|null)
+let a = { f = null }
+let b = { f = null }
+
+let c = WithNull(null)
+let d = WithNull(null)
+
+let e = WithNull(a)
+let f = WithNull(b)
+
+[<EntryPoint>]
+let main _ = 
+    printf "Test %A;" ({b = null} = {b = null})
+    printf ",1 %A" (a = b)
+    printf ",2 %A" (a.GetHashCode() = b.GetHashCode())
+    printf ",3 %A" (c = d)
+    printf ",4 %A" (c.GetHashCode() = d.GetHashCode())
+    printf ",5 %A" (e = f)
+    printf ",6 %A" (e = c)
+    printf ",7 %A" (e.GetHashCode() = f.GetHashCode())
+    printf ",8 %A" (e.GetHashCode() = c.GetHashCode())
+
+    printf ",9 %A" (a > b)
+    printf ",10 %A" (c > d)
+    printf ",11 %A" (e > f)
+    printf ",12 %A" (e > c)
+    0
+"""
+    |> withNullnessOptions
+    |> withOptimization false
+    |> asExe
+    |> compile
+    //|> verifyIL ["abc"]
+    |> run
+    |> verifyOutputContains [|"Test true;,1 true,2 true,3 true,4 true,5 true,6 false,7 true,8 false,9 false,10 false,11 false,12 true"|]

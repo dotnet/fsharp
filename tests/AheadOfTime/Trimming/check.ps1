@@ -43,7 +43,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 # error NETSDK1124: Trimming assemblies requires .NET Core 3.0 or higher.
 
 # Check net7.0 trimmed assemblies
-CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 299008
+CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 300032
 
 # Check net8.0 trimmed assemblies
-CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9149952
+CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9150976

@@ -403,7 +403,10 @@ type DisposablesTracker() =
     let items = Stack<IDisposable>()
 
     /// Register some items to dispose
-    member _.Register i = items.Push i
+    member _.Register (i:#IDisposable MaybeNull) = 
+        match box i with
+        | null -> ()
+        | _ -> items.Push (!!i)
 
     interface IDisposable with
 

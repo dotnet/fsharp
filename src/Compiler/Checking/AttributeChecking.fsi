@@ -13,19 +13,12 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-exception ObsoleteDiagnostic of
-    isError: bool *
-    diagnosticId: string *
-    message: string *
-    urlFormat: string *
-    range: range
-
 type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
 
-    member ConstructorArguments: (TType * obj) list
-    member NamedArguments: (TType * string * bool * obj) list
+    member ConstructorArguments: (TType * objnull) list
+    member NamedArguments: (TType * string * bool * objnull) list
     member Range: range
     member TyconRef: TyconRef
 

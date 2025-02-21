@@ -206,7 +206,7 @@ module public FSharpExprPatterns =
 
     /// Matches constant expressions, including signed and unsigned integers, strings, characters, booleans, arrays
     /// of bytes and arrays of unit16.
-    val (|Const|_|): FSharpExpr -> (obj * FSharpType) option
+    val (|Const|_|): FSharpExpr -> (objnull * FSharpType) option
 
     /// Matches expressions which take the address of a location
     val (|AddressOf|_|): FSharpExpr -> FSharpExpr option

@@ -341,6 +341,7 @@ type internal FSharpPackage() as this =
     let mutable solutionEventsOpt = None
 
 #if DEBUG
+    let _traceProvider = Logging.Activity.export ()
     let _logger = Logging.Activity.listenToAll ()
     // Logging.Activity.listen "IncrementalBuild"
 #endif

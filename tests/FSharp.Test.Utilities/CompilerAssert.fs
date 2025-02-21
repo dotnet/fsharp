@@ -59,6 +59,8 @@ module AssemblyResolver =
             match found() with
             | None -> Unchecked.defaultof<Assembly>
             | Some name -> Assembly.Load(name) )
+
+    do addResolver()
 #endif
 
 type ExecutionOutcome = 

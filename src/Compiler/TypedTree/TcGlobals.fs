@@ -1369,6 +1369,7 @@ type TcGlobals(
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
   member val system_Object_ty = mkSysNonGenericTy sys "Object"
   member val system_IDisposable_ty = mkSysNonGenericTy sys "IDisposable"
+  member val system_IDisposableNull_ty = mkNonGenericTyWithNullness (findSysTyconRef sys "IDisposable") v_knownWithNull
   member val system_RuntimeHelpers_ty = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
   member val system_Value_ty = mkSysNonGenericTy sys "ValueType"
   member val system_Delegate_ty = mkSysNonGenericTy sys "Delegate"
@@ -1561,6 +1562,7 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
+  member val attrib_IlExperimentalAttribute                   = findSysAttrib "System.Diagnostics.CodeAnalysis.ExperimentalAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 

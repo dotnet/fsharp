@@ -753,7 +753,7 @@ module AsyncPrimitives =
     ///   - Cancellation check after 'entering' the implied try/finally and before running the body  (see CreateTryFinallyAsync)
     ///   - Hijack check after 'entering' the implied try/finally and before running the body  (see CreateTryFinallyAsync)
     ///   - Run 'disposeFunction' with exception protection (see CreateTryFinallyAsync)
-    let CreateUsingAsync (resource: 'T :> IDisposable) (computation: 'T -> Async<'a>) : Async<'a> =
+    let CreateUsingAsync (resource: 'T :> IDisposable | null) (computation: 'T -> Async<'a>) : Async<'a> =
         let disposeFunction () =
             Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
 

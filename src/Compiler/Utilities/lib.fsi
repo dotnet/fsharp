@@ -19,7 +19,7 @@ val isEnvVarSet: s: string -> bool
 
 val GetEnvInteger: e: string -> dflt: int -> int
 
-val dispose: x: System.IDisposable -> unit
+val dispose: x: (System.IDisposable MaybeNull) -> unit
 
 module Bits =
     /// Get the least significant byte of a 32-bit integer
@@ -263,7 +263,12 @@ type DisposablesTracker =
     new: unit -> DisposablesTracker
 
     /// Register some items to dispose
-    member Register: i: System.IDisposable -> unit
+    member Register: i:'a MaybeNull -> unit 
+        when 'a:>System.IDisposable 
+#if !(NO_CHECKNULLS || BUILDING_WITH_LKG)
+        and 'a:not null
+#endif
+        and 'a:not struct
 
     interface System.IDisposable
 

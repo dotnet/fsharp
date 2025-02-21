@@ -168,7 +168,16 @@ type FSharpXunitFramework(sink: IMessageSink) =
             cleanUpTemporaryDirectoryOfThisTestRun ()
             traceProvider.ForceFlush() |> ignore
             traceProvider.Dispose()
-            base.Dispose()        
+            base.Dispose()
+            
+    // Group test run under single activity, to make traces more readable.
+    // Otherwise this overriden method is not necessary and can be removed.
+    override this.CreateExecutor (assemblyName) = 
+        { new XunitTestFrameworkExecutor(assemblyName, this.SourceInformationProvider, this.DiagnosticMessageSink) with
+            override _.RunTestCases(testCases, executionMessageSink, executionOptions) =
+                use _ = Activity.start $"{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}" []
+                base.RunTestCases(testCases, executionMessageSink, executionOptions)
+        }
 
     override this.CreateDiscoverer (assemblyInfo) =
         { new XunitTestFrameworkDiscoverer(assemblyInfo, this.SourceInformationProvider, this.DiagnosticMessageSink) with

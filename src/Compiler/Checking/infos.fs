@@ -859,7 +859,7 @@ type MethInfo =
         | MethInfoWithModifiedReturnType(mi, _) -> mi.NumArgs
         | DefaultStructCtor _ -> [0]
 #if !NO_TYPEPROVIDERS
-        | ProvidedMeth(_, mi, _, m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length), m)] // Why is this a list? Answer: because the method might be curried
+        | ProvidedMeth(_, mi, _, m) -> [mi.PApplyArray((fun mi -> mi.GetParameters()),"GetParameters", m).Length] // Why is this a list? Answer: because the method might be curried
 #endif
 
     /// Indicates if the property is a IsABC union case tester implied by a union case definition
@@ -2030,7 +2030,7 @@ type PropInfo =
             failwith "unreachable"
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) ->
-            pi.PUntaint((fun pi -> pi.GetIndexParameters().Length), m)>0
+            pi.PApplyArray((fun pi -> pi.GetIndexParameters()),"GetIndexParameters", m).Length>0
 #endif
 
     /// Indicates if this is an F# property compiled as a CLI event, e.g. a [<CLIEvent>] property.
@@ -2503,7 +2503,7 @@ let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo
     let argTys = minfo.GetParamTypes(amap, m, fminst)
     let argTys2 = minfo2.GetParamTypes(amap, m, fminst2)
     (argTys, argTys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
-        typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
+        typeAEquivAux erasureFlag g (TypeEquivEnv.EmptyIgnoreNulls.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
 
 /// Used to hide/filter members from super classes based on signature
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
@@ -2525,7 +2525,7 @@ let MethInfosEquivByNameAndSig erasureFlag ignoreFinal g amap m minfo minfo2 =
     let (CompiledSig(_, retTy2, formalMethTypars2, _)) = CompiledSigOfMeth g amap m minfo2
     match retTy, retTy2 with
     | None, None -> true
-    | Some retTy, Some retTy2 -> typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) retTy retTy2
+    | Some retTy, Some retTy2 -> typeAEquivAux erasureFlag g (TypeEquivEnv.EmptyIgnoreNulls.FromEquivTypars formalMethTypars formalMethTypars2) retTy retTy2
     | _ -> false
 
 /// Used to hide/filter members from super classes based on signature

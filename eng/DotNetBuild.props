@@ -12,8 +12,7 @@
     the cloned source in the inner build.
   -->
   <Target Name="ConfigureInnerBuildArg"
-          BeforeTargets="GetSourceBuildCommandConfiguration"
-          Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+          BeforeTargets="GetSourceBuildCommandConfiguration">
     <PropertyGroup>
       <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
     </PropertyGroup>

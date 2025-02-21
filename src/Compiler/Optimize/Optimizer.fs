@@ -1664,7 +1664,9 @@ and OpHasEffect g m op =
     | TOp.ExnFieldGet (ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet _ -> false
     | TOp.AnonRecdGet _ -> true // conservative
-    | TOp.ValFieldGet rfref -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
+    | TOp.ValFieldGet rfref -> 
+        rfref.RecdField.IsMutable 
+        || (TryFindTyconRefBoolAttribute g range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly) -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
     | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants
@@ -3167,7 +3169,7 @@ and CanDevirtualizeApplication cenv v vref ty args =
     && not (isUnitTy g ty)
     && isAppTy g ty 
     // Exclusion: Some unions have null as representations 
-    && not (IsUnionTypeWithNullAsTrueValue g (fst(StripToNominalTyconRef cenv ty)).Deref)  
+    && not (IsUnionTypeWithNullAsTrueValue g (fst(StripToNominalTyconRef cenv ty)).Deref)
     // If we de-virtualize an operation on structs then we have to take the address of the object argument
     // Hence we have to actually have the object argument available to us, 
     && (not (isStructTy g ty) || not (isNil args)) 
@@ -3189,9 +3191,13 @@ and TakeAddressOfStructArgumentIfNeeded cenv (vref: ValRef) ty args m =
     else
         id, args
 
-and DevirtualizeApplication cenv env (vref: ValRef) ty tyargs args m =
+and DevirtualizeApplication cenv env (vref: ValRef) ty tyargs args m nullHandlerOpt =
     let g = cenv.g
-    let wrap, args = TakeAddressOfStructArgumentIfNeeded cenv vref ty args m
+    let wrap, args = 
+        match nullHandlerOpt with
+        | Some nullHandler when g.checkNullness && TypeNullIsExtraValueNew g vref.Range ty -> 
+            nullHandler g m, args
+        | _ -> TakeAddressOfStructArgumentIfNeeded cenv vref ty args m
     let transformedExpr = wrap (MakeApplicationAndBetaReduce g (exprForValRef m vref, vref.Type, (if isNil tyargs then [] else [tyargs]), args, m))
     OptimizeExpr cenv env transformedExpr
   
@@ -3212,8 +3218,10 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_comparison_inner_vref ty args ->
          
         let tcref, tyargs = StripToNominalTyconRef cenv ty
-        match tcref.GeneratedCompareToValues with 
-        | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
+        match tcref.GeneratedCompareToValues, args with 
+        | Some (_, vref), [x;y] -> 
+            let nullHandler g m = AugmentTypeDefinitions.mkBindNullComparison g m x y
+            Some (DevirtualizeApplication cenv env vref ty tyargs args m (Some nullHandler))
         | _ -> None
         
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_comparison_withc_inner_vref ty args ->
@@ -3225,7 +3233,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             // arg list, and create a tuple of y & comp
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
-            Some (DevirtualizeApplication cenv env vref ty tyargs args2 m)
+            let nullHandler g m = AugmentTypeDefinitions.mkBindNullComparison g m x y
+            Some (DevirtualizeApplication cenv env vref ty tyargs args2 m (Some nullHandler))
         | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic when type is known 
@@ -3235,8 +3244,10 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when CanDevirtualizeApplication cenv v g.generic_equality_er_inner_vref ty args ->
          
         let tcref, tyargs = StripToNominalTyconRef cenv ty 
-        match tcref.GeneratedHashAndEqualsValues with 
-        | Some (_, vref) -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)
+        match tcref.GeneratedHashAndEqualsValues, args with 
+        | Some (_, vref),[x;y] -> 
+            let nullHandler g m = AugmentTypeDefinitions.mkBindThisNullEquals g m x y
+            Some (DevirtualizeApplication cenv env vref ty tyargs args m (Some nullHandler))
         | _ -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic
@@ -3246,11 +3257,13 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         | Some (_, _, _, Some withcEqualsExactVal), [comp; x; y] -> 
             // push the comparer to the end
             let args2 = [x; mkRefTupledNoTypes g m [y; comp]]
-            Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+            let nullHandler g m = AugmentTypeDefinitions.mkBindThisNullEquals g m x y
+            Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m (Some nullHandler))
         | Some (_, _, withcEqualsVal, _ ), [comp; x; y] -> 
             // push the comparer to the end and box the argument
             let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty) ; comp]]
-            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+            let nullHandler g m = AugmentTypeDefinitions.mkBindThisNullEquals g m x y
+            Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m (Some nullHandler))
         | _ -> None 
       
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic
@@ -3259,20 +3272,23 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
        match tcref.GeneratedHashAndEqualsWithComparerValues, args with
        | Some (_, _, _, Some withcEqualsExactVal), [x; y] ->
            let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
-           Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m)
+           let nullHandler g m = AugmentTypeDefinitions.mkBindThisNullEquals g m x y
+           Some (DevirtualizeApplication cenv env withcEqualsExactVal ty tyargs args2 m (Some nullHandler))
        | Some (_, _, withcEqualsVal, _), [x; y] -> 
            let equalsExactOpt = 
                tcref.MembersOfFSharpTyconByName.TryFind("Equals")
                |> Option.map (List.where (fun x -> x.IsCompilerGenerated))
                |> Option.bind List.tryExactlyOne
 
+           let nullHandler g m = AugmentTypeDefinitions.mkBindThisNullEquals g m x y
+
            match equalsExactOpt with
            | Some equalsExact ->
                let args2 = [x; mkRefTupledNoTypes g m [y; (mkCallGetGenericPEREqualityComparer g m)]]
-               Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m)
+               Some (DevirtualizeApplication cenv env equalsExact ty tyargs args2 m (Some nullHandler))
            | None ->
                let args2 = [x; mkRefTupledNoTypes g m [mkCoerceExpr(y, g.obj_ty_ambivalent, m, ty); (mkCallGetGenericPEREqualityComparer g m)]]
-               Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m)
+               Some (DevirtualizeApplication cenv env withcEqualsVal ty tyargs args2 m (Some nullHandler))
        | _ -> None     
     
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashIntrinsic
@@ -3281,7 +3297,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, withcGetHashCodeVal, _, _), [x] -> 
             let args2 = [x; mkCallGetGenericEREqualityComparer g m]
-            Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
+            let nullHandler g m = AugmentTypeDefinitions.mkBindNullHash g m x
+            Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m (Some nullHandler))
         | _ -> None 
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic
@@ -3290,7 +3307,8 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
         match tcref.GeneratedHashAndEqualsWithComparerValues, args with
         | Some (_, withcGetHashCodeVal, _, _), [comp; x] -> 
             let args2 = [x; comp]
-            Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m)
+            let nullHandler g m = AugmentTypeDefinitions.mkBindNullHash g m x
+            Some (DevirtualizeApplication cenv env withcGetHashCodeVal ty tyargs args2 m (Some nullHandler))
         | _ -> None 
 
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
@@ -3304,7 +3322,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             | 5 -> Some g.generic_compare_withc_tuple5_vref 
             | _ -> None
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericComparer g m :: args) m)            
+        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericComparer g m :: args) m None)            
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
@@ -3318,7 +3336,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             | 5 -> Some g.generic_hash_withc_tuple5_vref 
             | _ -> None
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericEREqualityComparer g m :: args) m)            
+        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericEREqualityComparer g m :: args) m None)            
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityIntrinsic for tuple types
@@ -3334,7 +3352,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             | 5 -> Some g.generic_equals_withc_tuple5_vref 
             | _ -> None
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer g m :: args) m)            
+        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs (mkCallGetGenericPEREqualityComparer g m :: args) m None)            
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericComparisonWithComparerIntrinsic for tuple types
@@ -3348,7 +3366,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             | 5 -> Some g.generic_compare_withc_tuple5_vref 
             | _ -> None
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
+        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m None)            
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericHashWithComparerIntrinsic for tuple types
@@ -3362,7 +3380,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             | 5 -> Some g.generic_hash_withc_tuple5_vref 
             | _ -> None
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
+        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m None)            
         | None -> None
         
     // Optimize/analyze calls to LanguagePrimitives.HashCompare.GenericEqualityWithComparerIntrinsic for tuple types
@@ -3376,7 +3394,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
             | 5 -> Some g.generic_equals_withc_tuple5_vref 
             | _ -> None
         match vref with 
-        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m)            
+        | Some vref -> Some (DevirtualizeApplication cenv env vref ty tyargs args m None)            
         | None -> None
         
     // Calls to LanguagePrimitives.IntrinsicFunctions.UnboxGeneric can be optimized to calls to UnboxFast when we know that the 
@@ -3385,7 +3403,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.unbox_vref && 
                                    canUseUnboxFast g m ty ->
 
-        Some(DevirtualizeApplication cenv env g.unbox_fast_vref ty tyargs args m)
+        Some(DevirtualizeApplication cenv env g.unbox_fast_vref ty tyargs args m None)
         
     // Calls to LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric can be optimized to calls to TypeTestFast when we know that the 
     // target type isn't 'NullNotTrueValue', i.e. that the target type is not an F# union, record etc. 
@@ -3393,7 +3411,7 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     | Expr.Val (v, _, _), [ty], _ when valRefEq g v g.istype_vref && 
                                    canUseTypeTestFast g ty ->
 
-        Some(DevirtualizeApplication cenv env g.istype_fast_vref ty tyargs args m)
+        Some(DevirtualizeApplication cenv env g.istype_fast_vref ty tyargs args m None)
         
     // Don't fiddle with 'methodhandleof' calls - just remake the application
     | Expr.Val (vref, _, _), _, _ when valRefEq g vref g.methodhandleof_vref ->

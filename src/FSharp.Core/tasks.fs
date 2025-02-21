@@ -138,7 +138,7 @@ type TaskBuilderBase() =
                         false)
         )
 
-    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable>
+    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable|null>
         (
             resource: 'Resource,
             body: 'Resource -> TaskCode<'TOverall, 'T>
@@ -382,7 +382,7 @@ module LowPriority =
 
             this.Bind(task, this.Return)
 
-        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable>
+        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable|null>
             (
                 resource: 'Resource,
                 body: 'Resource -> TaskCode<'TOverall, 'T>

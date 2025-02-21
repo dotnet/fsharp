@@ -991,7 +991,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
             //if staticResInfo.NumStaticArgs > 0 then
             //    error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(), m))
             []
-        | nestedSty ->
+        | Tainted.NonNull nestedSty ->
             [AddEntityForProvidedType (amap, modref, resolutionEnvironment, nestedSty, m) ]
     | _ -> []
 #endif

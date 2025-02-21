@@ -564,7 +564,7 @@ type DependencyProvider
     new() = new DependencyProvider(None, None, true)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
-    member _.GetRegisteredDependencyManagerHelpText(compilerTools, outputDir, errorReport) =
+    member _.GetRegisteredDependencyManagerHelpText(compilerTools, outputDir : string | null, errorReport) =
         [|
             let managers =
                 RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
@@ -575,7 +575,7 @@ type DependencyProvider
         |]
 
     /// Clear the DependencyManager results caches
-    member _.ClearResultsCache(compilerTools, outputDir, errorReport) =
+    member _.ClearResultsCache(compilerTools, outputDir : string | null, errorReport) =
         let managers =
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
 

@@ -37,6 +37,21 @@
         <target state="translated">Tür uyuşmazlığı. {0} uzunluğunda türü\n {1} \nolan bir demet bekleniyordu ancak {2} uzunluğunda türü\n    {3}{4}\nolan bir demet verildi</target>
         <note />
       </trans-unit>
+      <trans-unit id="Experimental1">
+        <source>This construct is experimental</source>
+        <target state="new">This construct is experimental</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental2">
+        <source>. {0}</source>
+        <target state="new">. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental3">
+        <source>. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
+        <target state="new">. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
         <target state="translated">Yüklenen dosyada bir veya daha fazla bilgi mesajı.\n</target>
@@ -1545,11 +1560,6 @@
       <trans-unit id="Obsolete2">
         <source>. {0}</source>
         <target state="translated">. {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Experimental">
-        <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}. Bu uyarı, '--nowarn:57' veya '#nowarn "57"' kullanılarak devre dışı bırakılabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">

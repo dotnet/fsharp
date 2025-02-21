@@ -15,6 +15,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
 
 type TypeProviderDesignation = TypeProviderDesignation of string
+type 'a ProvidedArray= ('a[]) MaybeNull
 
 /// Raised when a type provider has thrown an exception.
 exception ProvidedTypeResolution of range * exn
@@ -104,41 +105,41 @@ type ProvidedType =
 
     member IsGenericType: bool
 
-    member Namespace: string
+    member Namespace: string MaybeNull
 
-    member FullName: string
+    member FullName: string MaybeNull
 
     member IsArray: bool
 
-    member GetInterfaces: unit -> ProvidedType[]
+    member GetInterfaces: unit -> ProvidedType ProvidedArray
 
-    member Assembly: ProvidedAssembly
+    member Assembly: ProvidedAssembly MaybeNull
 
     member BaseType: ProvidedType MaybeNull
 
-    member GetNestedType: string -> ProvidedType
+    member GetNestedType: string -> ProvidedType MaybeNull
 
-    member GetNestedTypes: unit -> ProvidedType[]
+    member GetNestedTypes: unit -> ProvidedType ProvidedArray
 
-    member GetAllNestedTypes: unit -> ProvidedType[]
+    member GetAllNestedTypes: unit -> ProvidedType ProvidedArray
 
-    member GetMethods: unit -> ProvidedMethodInfo[]
+    member GetMethods: unit -> ProvidedMethodInfo ProvidedArray
 
-    member GetFields: unit -> ProvidedFieldInfo[]
+    member GetFields: unit -> ProvidedFieldInfo ProvidedArray
 
-    member GetField: string -> ProvidedFieldInfo
+    member GetField: string -> ProvidedFieldInfo MaybeNull
 
-    member GetProperties: unit -> ProvidedPropertyInfo[]
+    member GetProperties: unit -> ProvidedPropertyInfo ProvidedArray
 
-    member GetProperty: string -> ProvidedPropertyInfo
+    member GetProperty: string -> ProvidedPropertyInfo MaybeNull
 
-    member GetEvents: unit -> ProvidedEventInfo[]
+    member GetEvents: unit -> ProvidedEventInfo ProvidedArray
 
-    member GetEvent: string -> ProvidedEventInfo
+    member GetEvent: string -> ProvidedEventInfo MaybeNull
 
-    member GetConstructors: unit -> ProvidedConstructorInfo[]
+    member GetConstructors: unit -> ProvidedConstructorInfo ProvidedArray
 
-    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo[]
+    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo ProvidedArray
 
     member GetGenericTypeDefinition: unit -> ProvidedType
 
@@ -170,9 +171,9 @@ type ProvidedType =
 
     member GenericParameterPosition: int
 
-    member GetElementType: unit -> ProvidedType
+    member GetElementType: unit -> ProvidedType MaybeNull
 
-    member GetGenericArguments: unit -> ProvidedType[]
+    member GetGenericArguments: unit -> ProvidedType ProvidedArray
 
     member GetArrayRank: unit -> int
 
@@ -275,11 +276,11 @@ type ProvidedMethodBase =
 
     member IsConstructor: bool
 
-    member GetParameters: unit -> ProvidedParameterInfo[]
+    member GetParameters: unit -> ProvidedParameterInfo ProvidedArray
 
-    member GetGenericArguments: unit -> ProvidedType[]
+    member GetGenericArguments: unit -> ProvidedType ProvidedArray
 
-    member GetStaticParametersForMethod: ITypeProvider -> ProvidedParameterInfo[]
+    member GetStaticParametersForMethod: ITypeProvider -> ProvidedParameterInfo ProvidedArray
 
     static member TaintedGetHashCode: Tainted<ProvidedMethodBase> -> int
 
@@ -335,7 +336,7 @@ type ProvidedFieldInfo =
 
     member IsLiteral: bool
 
-    member GetRawConstantValue: unit -> obj
+    member GetRawConstantValue: unit -> objnull
 
     member FieldType: ProvidedType
 
@@ -359,11 +360,11 @@ type ProvidedPropertyInfo =
 
     inherit ProvidedMemberInfo
 
-    member GetGetMethod: unit -> ProvidedMethodInfo
+    member GetGetMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetSetMethod: unit -> ProvidedMethodInfo
+    member GetSetMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetIndexParameters: unit -> ProvidedParameterInfo[]
+    member GetIndexParameters: unit -> ProvidedParameterInfo ProvidedArray
 
     member CanRead: bool
 
@@ -383,9 +384,9 @@ type ProvidedEventInfo =
 
     inherit ProvidedMemberInfo
 
-    member GetAddMethod: unit -> ProvidedMethodInfo
+    member GetAddMethod: unit -> ProvidedMethodInfo MaybeNull
 
-    member GetRemoveMethod: unit -> ProvidedMethodInfo
+    member GetRemoveMethod: unit -> ProvidedMethodInfo MaybeNull
 
     member EventHandlerType: ProvidedType
 
@@ -402,13 +403,13 @@ type ProvidedConstructorInfo =
 
 type ProvidedExprType =
 
-    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
+    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr ProvidedArray
 
-    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
+    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr ProvidedArray
 
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
 
-    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
+    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar ProvidedArray * ProvidedExpr
 
     | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
 
@@ -420,13 +421,13 @@ type ProvidedExprType =
 
     | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
 
-    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]
+    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr ProvidedArray
 
-    | ProvidedConstantExpr of obj * ProvidedType
+    | ProvidedConstantExpr of objnull * ProvidedType
 
     | ProvidedDefaultExpr of ProvidedType
 
-    | ProvidedNewTupleExpr of ProvidedExpr[]
+    | ProvidedNewTupleExpr of ProvidedExpr ProvidedArray
 
     | ProvidedTupleGetExpr of ProvidedExpr * int
 
@@ -467,12 +468,10 @@ type ProvidedVar =
 
     member IsMutable: bool
 
-    override Equals: obj -> bool
-
     override GetHashCode: unit -> int
 
 /// Get the provided expression for a particular use of a method.
-val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr
+val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr MaybeNull
 
 /// Validate that the given provided type meets some of the rules for F# provided types
 val ValidateProvidedTypeAfterStaticInstantiation:
@@ -497,7 +496,7 @@ val TryLinkProvidedType:
     Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string -> string list
+val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string MaybeNull -> string list
 
 /// Decompose the enclosing name of a type (including any class nestings) into a list of parts.
 /// e.g. System.Object -> ["System"; "Object"]

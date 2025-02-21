@@ -138,6 +138,12 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
+    member this.PApplyFilteredArray(factory, filter, methodName, range:range) =        
+        let a : 'U[] MaybeNull = this.Protect factory range
+        match a with 
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | NonNull a -> a |> Array.filter filter |> Array.map (fun u -> Tainted(context,u))
+
     member this.PApplyOption(f, range: range) =        
         let a = this.Protect f range
         match a with 

@@ -2548,7 +2548,7 @@ let EmitDynamicAssemblyFragment
             ignore (typB.InvokeMemberAndLog(methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [||]))
             None
         with :? TargetInvocationException as exn ->
-            Some exn.InnerException
+            Option.ofObj exn.InnerException
 
     let emEnv, entryPts = envPopEntryPts emEnv
     let execs = List.map execEntryPtFun entryPts

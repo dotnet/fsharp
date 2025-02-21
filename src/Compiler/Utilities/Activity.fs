@@ -7,6 +7,7 @@ open System.Diagnostics
 open System.IO
 open System.Text
 open Internal.Utilities.Library
+open System.Collections.Generic
 
 
 module ActivityNames =
@@ -89,24 +90,29 @@ module internal Activity =
 
     let private activitySource = new ActivitySource(ActivityNames.FscSourceName)
 
-    let start (name: string) (tags: (string * string) seq) : IDisposable =
+    let start (name: string) (tags: (string * string) seq) : IDisposable MaybeNull =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
-        | null -> activity
+        | null -> activity 
         | activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
 
             activity.Start()
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
+    let startNoTags (name: string) : IDisposable MaybeNull = activitySource.StartActivity name
 
-    let addEvent name =
+    let addEventWithTags name (tags: (string * objnull) seq) =
         match Activity.Current with
         | null -> ()
-        | activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
+        | activity when activity.Source = activitySource ->
+            let collection = tags |> Seq.map KeyValuePair |> ActivityTagsCollection
+            let event = new ActivityEvent(name, tags = collection)
+            activity.AddEvent event |> ignore
         | _ -> ()
+
+    let addEvent name = addEventWithTags name Seq.empty
 
     module Profiling =
 
@@ -122,7 +128,7 @@ module internal Activity =
 
         let private profiledSource = new ActivitySource(ActivityNames.ProfiledSourceName)
 
-        let startAndMeasureEnvironmentStats (name: string) : IDisposable = profiledSource.StartActivity(name)
+        let startAndMeasureEnvironmentStats (name: string) : IDisposable MaybeNull = profiledSource.StartActivity(name)
 
         type private GCStats = int[]
 
