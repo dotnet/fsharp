@@ -14,7 +14,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 
 #nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
-// Why warned - the tests here are actually trying to test  that when this happens (unit passed), in indeed results in a null
+// Why warned - the tests here are actually trying to test that when this happens (unit passed), it indeed results in a null
 
 type OperatorsModule1() =
 
