@@ -217,3 +217,91 @@ module ForLoop =
         compilation
         |> getCompilation
         |> verifyCompilation
+
+    // SOURCE=ForLoopSByte.fs SCFLAGS="--optimize+"	# ForLoopSByte.fs --optimize+
+    [<Theory; FileInlineData("ForLoopSByte.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopSByte_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopByte.fs SCFLAGS="--optimize+"	# ForLoopByte.fs --optimize+
+    [<Theory; FileInlineData("ForLoopByte.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopByte_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopChar.fs SCFLAGS="--optimize+"	# ForLoopChar.fs --optimize+
+    [<Theory; FileInlineData("ForLoopChar.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopChar_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopInt16.fs SCFLAGS="--optimize+"	# ForLoopInt16.fs --optimize+
+    [<Theory; FileInlineData("ForLoopInt16.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopInt16_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopUInt16.fs SCFLAGS="--optimize+"	# ForLoopUInt16.fs --optimize+
+    [<Theory; FileInlineData("ForLoopUInt16.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopUInt16_`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopInt32.fs SCFLAGS="--optimize+"	# ForLoopInt32.fs --optimize+
+    [<Theory; FileInlineData("ForLoopInt32.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopInt32_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopUInt32.fs SCFLAGS="--optimize+"	# ForLoopUInt32.fs --optimize+
+    [<Theory; FileInlineData("ForLoopUInt32.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopUInt32_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopInt64.fs SCFLAGS="--optimize+"	# ForLoopInt64.fs --optimize+
+    [<Theory; FileInlineData("ForLoopInt64.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopInt64_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopUInt64.fs SCFLAGS="--optimize+"	# ForLoopUInt64.fs --optimize+
+    [<Theory; FileInlineData("ForLoopUInt64.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopUInt64_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopIntPtr.fs SCFLAGS="--optimize+"	# ForLoopIntPtr.fs --optimize+
+    [<Theory; FileInlineData("ForLoopIntPtr.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopIntPtr_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
+
+    // SOURCE=ForLoopUIntPtr.fs SCFLAGS="--optimize+"	# ForLoopUIntPtr.fs --optimize+
+    [<Theory; FileInlineData("ForLoopUIntPtr.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.True)>]
+    let ``ForLoopUIntPtr_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompilation
