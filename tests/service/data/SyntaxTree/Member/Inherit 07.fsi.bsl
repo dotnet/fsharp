@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/Member/Inherit 07.fsi", QualifiedNameOfFile Module, [], [],
+     ("/root/Member/Inherit 07.fsi", QualifiedNameOfFile Module, [],
       [SynModuleOrNamespaceSig
          ([Module], false, NamedModule,
           [Types
@@ -38,6 +38,7 @@ SigFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,17), { LeadingKeyword = Module (1,0--1,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (4,12)-(6,4) parse error Incomplete structured construct at or before this point in member signature

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/Param - Missing type 03.fs", false,
-      QualifiedNameOfFile Module, [], [],
+      QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr
@@ -25,6 +25,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,16), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,8)-(3,9) parse error Unexpected symbol ')' in pattern

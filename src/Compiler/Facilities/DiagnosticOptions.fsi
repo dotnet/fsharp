@@ -19,7 +19,9 @@ type FSharpDiagnosticOptions =
       WarnOff: int list
       WarnOn: int list
       WarnAsError: int list
-      WarnAsWarn: int list }
+      WarnAsWarn: int list
+      WarnScopesFeatureIsSupported: bool
+      mutable WarnScopeData: obj option }
 
     static member Default: FSharpDiagnosticOptions
 

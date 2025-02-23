@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/DestructedLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile DestructedLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile DestructedLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([DestructedLambdaHasArrowRange], false, AnonModule,
           [Expr
@@ -64,4 +64,5 @@ ImplFile
                  { ArrowRange = Some (2,14--2,16) }), (2,0--2,22))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

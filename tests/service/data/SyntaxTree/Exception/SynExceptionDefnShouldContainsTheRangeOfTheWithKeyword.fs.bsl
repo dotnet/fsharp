@@ -3,7 +3,7 @@ ImplFile
      ("/root/Exception/SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword.fs",
       false,
       QualifiedNameOfFile SynExceptionDefnShouldContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([X], false, DeclaredNamespace,
           [Exception
@@ -41,4 +41,5 @@ ImplFile
                  (4,0--5,22)), (4,0--5,22))], PreXmlDocEmpty, [], None,
           (2,0--5,22), { LeadingKeyword = Namespace (2,0--2,9) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

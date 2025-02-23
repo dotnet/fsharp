@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/AnonymousRecords-02.fs", false,
-      QualifiedNameOfFile AnonymousRecords-02, [], [],
+      QualifiedNameOfFile AnonymousRecords-02, [],
       [SynModuleOrNamespace
          ([AnonymousRecords-02], false, AnonModule,
           [Expr
@@ -12,6 +12,7 @@ ImplFile
                  { OpeningBraceRange = (1,0--1,2) }), (1,0--2,0))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,0)-(1,2) parse error Unmatched '{|'

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/AbstractClassProperty.fs", false,
-      QualifiedNameOfFile AbstractClassProperty, [], [],
+      QualifiedNameOfFile AbstractClassProperty, [],
       [SynModuleOrNamespace
          ([AbstractClassProperty], false, AnonModule,
           [Types
@@ -57,4 +57,5 @@ ImplFile
                     WithKeyword = None })], (1,0--3,51))], PreXmlDocEmpty, [],
           None, (1,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

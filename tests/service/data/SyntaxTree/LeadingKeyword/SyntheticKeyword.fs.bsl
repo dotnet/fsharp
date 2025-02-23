@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/SyntheticKeyword.fs", false,
-      QualifiedNameOfFile SyntheticKeyword, [], [],
+      QualifiedNameOfFile SyntheticKeyword, [],
       [SynModuleOrNamespace
          ([SyntheticKeyword], false, AnonModule,
           [Expr
@@ -21,4 +21,5 @@ ImplFile
                  (2,0--3,12)), (2,0--3,12))], PreXmlDocEmpty, [], None,
           (2,0--3,12), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

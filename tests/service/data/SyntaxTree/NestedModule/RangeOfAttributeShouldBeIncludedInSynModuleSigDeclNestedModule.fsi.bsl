@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/NestedModule/RangeOfAttributeShouldBeIncludedInSynModuleSigDeclNestedModule.fsi",
       QualifiedNameOfFile
-        RangeOfAttributeShouldBeIncludedInSynModuleSigDeclNestedModule, [], [],
+        RangeOfAttributeShouldBeIncludedInSynModuleSigDeclNestedModule, [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [NestedModule
@@ -30,4 +30,5 @@ SigFile
                 EqualsRange = Some (5,14--5,15) })], PreXmlDocEmpty, [], None,
           (2,0--6,15), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
