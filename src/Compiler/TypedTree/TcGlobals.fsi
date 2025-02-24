@@ -724,6 +724,8 @@ type internal TcGlobals =
 
     member generic_hash_withc_outer_info: IntrinsicValRef
 
+    member generic_one_vref: FSharp.Compiler.TypedTree.ValRef
+
     member generic_hash_withc_tuple2_vref: FSharp.Compiler.TypedTree.ValRef
 
     member generic_hash_withc_tuple3_vref: FSharp.Compiler.TypedTree.ValRef
