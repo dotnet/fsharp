@@ -1824,9 +1824,13 @@ Actual:
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
-        let private getMatch (input: string) (pattern: string) useWildcards=
+        [<RequireQualifiedAccess>]
+        type MatchStyle = | Standard | Wildcards | RegexPatterns
+
+        let private getMatch (input: string) (pattern: string) (matchStyle: MatchStyle) =
             // Escape special characters and replace wildcards with regex equivalents
-            if useWildcards then
+            match matchStyle with
+            | MatchStyle.Wildcards ->
                 let input = input.Replace("\r\n", "\n")
                 let pattern = $"""^{Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", ".")}$"""
                 let m = Regex(pattern, RegexOptions.Multiline).Match(input)
@@ -1834,10 +1838,17 @@ Actual:
                     m.Index
                 else 
                     -1
-            else
+            | MatchStyle.RegexPatterns ->
+                let input = input.Replace("\r\n", "\n")
+                let m = Regex(pattern, RegexOptions.Multiline).Match(input)
+                if m.Success then
+                    m.Index
+                else 
+                    -1
+            | MatchStyle.Standard ->
                 input.IndexOf(pattern) 
 
-        let private checkOutputInOrderCore useWildcards (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
+        let private checkOutputInOrderCore matchStyle (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None ->
                 printfn "Execution output is missing cannot check \"%A\"" category
@@ -1848,14 +1859,17 @@ Actual:
                     let input = selector e
                     let mutable searchPos = 0
                     for substring in substrings do
-                        match getMatch (input.Substring(searchPos)) substring useWildcards with
+                        match getMatch (input.Substring(searchPos)) substring matchStyle with
                         | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category input)
                         | pos -> searchPos <- pos + substring.Length
                 | _ -> failwith "Cannot check output on this run result."
             result
 
+        let private checkMatchedOutputInOrder matchStyle category substrings selector result =
+            checkOutputInOrderCore matchStyle category substrings selector result
+
         let private checkOutputInOrder category substrings selector result =
-            checkOutputInOrderCore false category substrings selector result
+            checkMatchedOutputInOrder MatchStyle.Standard category substrings selector result
 
         let withOutputContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
@@ -1873,7 +1887,10 @@ Actual:
             checkOutputInOrder "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private checkOutputInOrderWithWildcards category substrings selector result =
-            checkOutputInOrderCore true category substrings selector result
+            checkOutputInOrderCore MatchStyle.Wildcards category substrings selector result
+
+        let private checkOutputInOrderWithRegexPatterns category substrings selector result =
+            checkOutputInOrderCore MatchStyle.RegexPatterns category substrings selector result
 
         let withOutputContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrderWithWildcards "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
@@ -1889,6 +1906,21 @@ Actual:
 
         let withStdErrContainsWithWildcards (substring: string) (result: CompilationResult) : CompilationResult =
             checkOutputInOrderWithWildcards "STDERR" [substring] (fun o -> o.StdErr) result
+
+        let withOutputContainsAllInOrderWithRegexPatterns (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
+
+        let withStdOutContainsWithRegexPatterns (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDOUT" [substring] (fun o -> o.StdOut)  result
+
+        let withStdOutContainsAllInOrderWithRegexPatterns (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDOUT" substrings (fun o -> o.StdOut) result
+
+        let withStdErrContainsAllInOrderWithRegexPatterns (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDERR" substrings (fun o -> o.StdErr) result
+
+        let withStdErrContainsWithRegexPatterns (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
