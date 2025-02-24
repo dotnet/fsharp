@@ -106,11 +106,9 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 193, Line 10, Col 3, Line 10, Col 59, """Type constraint mismatch. The type 
-                                                            'unit' 
-                                                            is not compatible with type
-                                                            'int array' 
-                                                            """)
+            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int array'    \nbut here has type\n    'unit'    ")
+            (Error 267, Line 10, Col 3, Line 10, Col 59, "This is not a valid constant expression or custom attribute value")
+            (Error 850, Line 10, Col 3, Line 10, Col 59, "This attribute cannot be used in this version of F#")
             (Error 850, Line 13, Col 3, Line 13, Col 101, "This attribute cannot be used in this version of F#")
             (Error 850, Line 16, Col 3, Line 16, Col 50, "This attribute cannot be used in this version of F#")
         ]

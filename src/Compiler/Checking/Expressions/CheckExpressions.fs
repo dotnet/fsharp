@@ -9787,8 +9787,6 @@ and GetNewInferenceTypeForMethodArg (cenv: cenv) x =
         | SynExpr.Quote (_, raw, a, _, _) ->
             if raw then cont (0, mkRawQuotedExprTy g)
             else loopExpr a (cont << fun struct (depth, ty) -> depth + 1, mkQuotedExprTy g ty)
-        | SynExpr.Const (SynConst.Unit, _) -> 
-            cont (0, g.unit_ty)
         | _ -> cont (0, NewInferenceType g)
 
     let struct (_depth, ty) = loopExpr x id

@@ -35,12 +35,9 @@ module MemberDefinitions_OptionalDefaultParamArgs =
         compilation
         |> verifyCompile
         |> shouldFail
-        |> withDiagnostics 
-                [(Error 193, Line 13, Col 18, Line 13, Col 20, "Type constraint mismatch. The type 
-                'unit' 
-                is not compatible with type
-                'int' 
-                ")]
+        |> withDiagnostics [
+            (Error 1, Line 13, Col 18, Line 13, Col 20, "This expression was expected to have type\n    'int'    \nbut here has type\n    'unit'    ")
+        ]
 
     // SOURCE=InterfaceMethod.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InterfaceMethod.fs"|])>]
@@ -80,12 +77,11 @@ module MemberDefinitions_OptionalDefaultParamArgs =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics 
-                [(Warning 3211, Line 10, Col 62, Line 10, Col 63, "The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'.");
-                (Error 193, Line 13, Col 25, Line 13, Col 27, "Type constraint mismatch. The type 
-                'unit' 
-                is not compatible with type
-                'string' 
-                ")]
+                      [ Warning 3211, Line 10, Col 62, Line 10, Col 63, "The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'."
+                        Error 1, Line 13, Col 25, Line 13, Col 27, "This expression was expected to have type
+                        'string' 
+                        but here has type
+                        'unit' "]
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_WrongDefaultObj.fs"|])>]
     let ``W_WrongDefaultObjType_fs`` compilation =
