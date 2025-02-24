@@ -473,7 +473,7 @@ type IProvidedNamespace =
 
     abstract GetTypes: unit -> Type array
 
-    abstract ResolveTypeName: typeName: string -> Type
+    abstract ResolveTypeName: typeName: string -> (Type|null)
 
 type ITypeProvider =
     inherit System.IDisposable

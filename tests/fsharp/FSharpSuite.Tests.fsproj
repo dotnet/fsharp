@@ -45,7 +45,6 @@
     <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
-    <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
     <Compile Include="Compiler\Language\InitOnlyPropertyConsumptionTests.fs" />
@@ -113,6 +112,9 @@
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" >
+        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->

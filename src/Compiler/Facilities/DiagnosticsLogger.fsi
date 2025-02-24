@@ -68,7 +68,7 @@ exception LibraryUseOnly of range: range
 
 exception Deprecated of message: string * range: range
 
-exception Experimental of message: string * range: range
+exception Experimental of message: string option * diagnosticId: string option * urlFormat: string option * range: range
 
 exception PossibleUnverifiableCode of range: range
 
@@ -86,6 +86,13 @@ exception DiagnosticWithSuggestions of
     range: range *
     identifier: string *
     suggestions: Suggestions
+
+exception ObsoleteDiagnostic of
+    isError: bool *
+    diagnosticId: string option *
+    message: string option *
+    urlFormat: string option *
+    range: range
 
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
@@ -207,6 +214,7 @@ type DiagnosticsLogger =
     abstract ErrorCount: int
 
     /// Checks if ErrorCount > 0
+    [<Obsolete("This also reports if a 'WarnAsError' warning occured, leading to premature abortions of compilation checks. Use CheckForRealErrorsIgnoringWarnings instead.")>]
     member CheckForErrors: unit -> bool
 
     abstract CheckForRealErrorsIgnoringWarnings: bool

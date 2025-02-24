@@ -3097,7 +3097,7 @@ let BuildDisposableCleanup (cenv: cenv) env m (v: Val) =
         else
             mkUnit g m
     else
-        let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
+        let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposableNull_ty
         let disposeExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
         let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty_ambivalent, m, v.Type)
         mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
@@ -6811,7 +6811,7 @@ and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt ite
     match item, args with
     | Item.CtorGroup(methodName, minfos), _ ->
         let meths = List.map (fun minfo -> minfo, None) minfos
-        if isNaked && TypeFeasiblySubsumesType 0 g cenv.amap mWholeCall g.system_IDisposable_ty NoCoerce objTy then
+        if isNaked && TypeFeasiblySubsumesType 0 g cenv.amap mWholeCall g.system_IDisposableNull_ty NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
 
         // Check the type is not abstract
@@ -9265,6 +9265,12 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
         // Allow `nameof<'T>` for a generic parameter
         match vref with
         | _ when isNameOfValRef g vref && g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+            // Record the resolution of the `nameof` usage so that we can classify it correctly later.
+            do
+                match afterResolution with
+                | AfterResolution.RecordResolution (_, callSink, _, _) -> callSink emptyTyparInst
+                | AfterResolution.DoNothing -> ()
+
             match tys with
             | [SynType.Var(SynTypar(id, _, false) as tp, _m)] ->
                 let _tpR, tpenv = TcTypeOrMeasureParameter None cenv env ImplicitlyBoundTyparsAllowed.NoNewTypars tpenv tp
@@ -10628,6 +10634,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
+            TryAllowFlexibleNullnessInControlFlow (*isFirst=*) true g overallTy.Commit
             // tailcall
             TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) ->
                 let resExpr = primMkCond spIfToThen m overallTy.Commit boolExpr thenExpr elseExpr
@@ -10691,6 +10698,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
         | DebugPointAtTarget.No -> resultEnv
 
     let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
+    TryAllowFlexibleNullnessInControlFlow isFirst cenv.g resultTy.Commit
 
     let target = TTarget(vspecs, resultExpr, None)
 
@@ -11603,7 +11611,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
                 let isDiscarded = match checkedPat2 with TPat_wild _ -> true | _ -> false
                 let allValsDefinedByPattern = if isDiscarded then [patternInputTmp] else allValsDefinedByPattern
                 (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
-                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace g.system_IDisposable_ty v.Type
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace g.system_IDisposableNull_ty v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
                     mkTryFinally g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.No, DebugPointAtFinally.No), bodyExprTy)
             else
@@ -12687,7 +12695,7 @@ and FixupLetrecBind (cenv: cenv) denv generalizedTyparsForRecursiveBlock (bind: 
     | Some _ ->
        match PartitionValTyparsForApparentEnclosingType g vspec with
        | Some(parentTypars, memberParentTypars, _, _, _) ->
-          ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.Empty memberParentTypars parentTypars)
+          ignore(SignatureConformance.Checker(g, cenv.amap, denv, SignatureRepackageInfo.Empty, false).CheckTypars vspec.Range TypeEquivEnv.EmptyIgnoreNulls memberParentTypars parentTypars)
        | None ->
           errorR(Error(FSComp.SR.tcMemberIsNotSufficientlyGeneric(), vspec.Range))
     | _ -> ()

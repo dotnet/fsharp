@@ -25,15 +25,17 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeProviders
 #endif
 
+type TypeMismatchSource = NullnessOnlyMismatch | RegularMismatch
+
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
-exception ValueNotContained of DisplayEnv * InfoReader * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
+exception ValueNotContained of kind:TypeMismatchSource * DisplayEnv * InfoReader * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
 exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
 
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
-exception FieldNotContained of DisplayEnv * InfoReader * Tycon * Tycon * RecdField * RecdField * (string * string -> string)
+exception FieldNotContained of kind:TypeMismatchSource * DisplayEnv * InfoReader * Tycon * Tycon * RecdField * RecdField * (string * string -> string)
 
 exception InterfaceNotRevealed of DisplayEnv * TType * range
 
@@ -338,8 +340,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             implVal.SetOtherRange (sigVal.Range, false)
             implVal.SetOtherXmlDoc(sigVal.XmlDoc)
 
-            let mk_err denv f = ValueNotContained(denv, infoReader, implModRef, implVal, sigVal, f)
-            let err denv f = errorR(mk_err denv f); false
+            let mk_err kind denv f = ValueNotContained(kind,denv, infoReader, implModRef, implVal, sigVal, f)
+            let err denv f = errorR(mk_err RegularMismatch denv f); false
             let m = implVal.Range
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
@@ -352,14 +354,22 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             else 
                 let implTypars, implValTy = implVal.GeneralizedType
                 let sigTypars, sigValTy = sigVal.GeneralizedType
-                if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) else
-                let aenv = aenv.BindEquivTypars implTypars sigTypars 
-                checkTypars m aenv implTypars sigTypars &&
-                if not (typeAEquiv g aenv implValTy sigValTy) then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer
-                elif not (checkValInfo aenv (err denv) implVal sigVal) then false
-                elif implVal.IsExtensionMember <> sigVal.IsExtensionMember then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
-                elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
-                else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
+                if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) 
+                else
+                    let aenv = aenv.BindEquivTypars implTypars sigTypars 
+                    checkTypars m aenv implTypars sigTypars &&
+                        let strictTyEquals = typeAEquiv g aenv implValTy sigValTy
+                        let onlyDiffersInNullness = not(strictTyEquals) && g.checkNullness && typeAEquiv g {aenv with NullnessMustEqual = false} implValTy sigValTy
+
+                        // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
+                        if onlyDiffersInNullness then
+                            warning(mk_err NullnessOnlyMismatch denv FSComp.SR.ValueNotContainedMutabilityTypesDifferNullness)
+
+                        if not strictTyEquals && not onlyDiffersInNullness then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer                          
+                        elif not (checkValInfo aenv (err denv) implVal sigVal) then false
+                        elif implVal.IsExtensionMember <> sigVal.IsExtensionMember then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
+                        elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false
+                        else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
 
 
         and checkExnInfo err aenv (infoReader: InfoReader) (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) implTypeRepr sigTypeRepr =
@@ -394,7 +404,21 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkField aenv infoReader (enclosingImplTycon: Tycon) (enclosingSigTycon: Tycon) implField sigField =
             implField.SetOtherXmlDoc(sigField.XmlDoc)
 
-            let err f = errorR(FieldNotContained(denv, infoReader, enclosingImplTycon, enclosingSigTycon, implField, sigField, f)); false
+            let diag kind f = FieldNotContained(kind,denv, infoReader, enclosingImplTycon, enclosingSigTycon, implField, sigField, f)
+            let err f = errorR(diag RegularMismatch f); false
+
+            let areTypesDifferent() =
+                let strictTyEquals = typeAEquiv g aenv implField.FormalType sigField.FormalType
+                let onlyDiffersInNullness = not(strictTyEquals) && g.checkNullness &&  typeAEquiv g {aenv with NullnessMustEqual = false} implField.FormalType sigField.FormalType
+
+                // The types would be equal if we did not have nullness checks => lets just generate a warning, not an error
+                if onlyDiffersInNullness then
+                    warning(diag NullnessOnlyMismatch FSComp.SR.FieldNotContainedTypesDifferNullness)
+                    false
+                else
+                    not strictTyEquals  
+
+
             sigField.rfield_other_range <- Some (implField.Range, true)
             implField.rfield_other_range <- Some (sigField.Range, false)
             if implField.rfield_id.idText <> sigField.rfield_id.idText then err FSComp.SR.FieldNotContainedNamesDiffer
@@ -402,7 +426,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             elif implField.IsStatic <> sigField.IsStatic then err FSComp.SR.FieldNotContainedStaticsDiffer
             elif implField.IsMutable <> sigField.IsMutable then err FSComp.SR.FieldNotContainedMutablesDiffer
             elif implField.LiteralValue <> sigField.LiteralValue then err FSComp.SR.FieldNotContainedLiteralsDiffer
-            elif not (typeAEquiv g aenv implField.FormalType sigField.FormalType) then err FSComp.SR.FieldNotContainedTypesDiffer
+            elif areTypesDifferent() then err FSComp.SR.FieldNotContainedTypesDiffer
             else 
                 checkAttribs aenv implField.FieldAttribs sigField.FieldAttribs (fun attribs -> implField.rfield_fattribs <- attribs) &&
                 checkAttribs aenv implField.PropertyAttribs sigField.PropertyAttribs (fun attribs -> implField.rfield_pattribs <- attribs)

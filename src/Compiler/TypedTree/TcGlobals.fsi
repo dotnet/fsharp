@@ -506,6 +506,8 @@ type internal TcGlobals =
 
     member attrib_WarnOnWithoutNullArgumentAttribute: BuiltinAttribInfo
 
+    member attrib_IlExperimentalAttribute: BuiltinAttribInfo
+
     member attribs_Unsupported: FSharp.Compiler.TypedTree.TyconRef list
 
     member bitwise_and_info: IntrinsicValRef
@@ -1198,6 +1200,8 @@ type internal TcGlobals =
     member system_GenericIEquatable_tcref: FSharp.Compiler.TypedTree.EntityRef
 
     member system_IDisposable_ty: FSharp.Compiler.TypedTree.TType
+
+    member system_IDisposableNull_ty: FSharp.Compiler.TypedTree.TType
 
     member system_IFormattable_tcref: FSharp.Compiler.TypedTree.EntityRef
 
