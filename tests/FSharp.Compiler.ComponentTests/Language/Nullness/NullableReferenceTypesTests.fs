@@ -1257,6 +1257,7 @@ dict["ok"] <- 42
 [<InlineData("null")>]
 [<InlineData("if false then null else []")>]
 [<InlineData("if false then [] else null")>]
+[<InlineData("(if false then [] else null) : (_ list | null)")>]
 [<InlineData("[] : (_ list | null)")>]
 [<Theory>]
 let ``Nullness in inheritance chain`` (returnExp:string) = 
