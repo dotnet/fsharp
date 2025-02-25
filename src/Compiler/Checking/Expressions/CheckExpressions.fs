@@ -1890,7 +1890,11 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 
     // Work out the required type of the member
     let argTysFromAbsSlot = argTys |> List.mapSquared (instType typarInstFromAbsSlot)
-    let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
+
+    let retTyFromAbsSlot = 
+        retTy 
+        |> GetFSharpViewOfReturnType g        
+        |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
 let CheckRecdExprDuplicateFields (elems: Ident list) =
@@ -11774,6 +11778,15 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                  match uniqueAbstractMethSigs with
                  | uniqueAbstractMeth :: _ ->
 
+                    // Overrides can narrow the retTy from nullable to not-null.
+                     // By changing nullness to be variable we do not get in the way of eliminating nullness (=good).
+                     // We only keep a WithNull nullness if it was part of an explicit type instantiation
+                     let canChangeNullableRetTy = 
+                        match g.checkNullness, renaming with
+                        | false, _ -> false
+                        | true, [] -> true
+                        | true, _ -> not(uniqueAbstractMeth.HasGenericRetTy())
+
                      let uniqueAbstractMeth = uniqueAbstractMeth.Instantiate(cenv.amap, m, renaming)
 
                      let typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot =
@@ -11781,9 +11794,10 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
                      let declaredTypars = (if typarsFromAbsSlotAreRigid then typarsFromAbsSlot else declaredTypars)
 
-                     // Overrides can narrow the retTy from nullable to not-null.
-                     // By changing nullness to be variable we do not get in the way of eliminating nullness (=good).
-                     let retTyFromAbsSlot = retTyFromAbsSlot |> changeWithNullReqTyToVariable g
+                     let retTyFromAbsSlot = 
+                        if canChangeNullableRetTy then
+                            retTyFromAbsSlot |> changeWithNullReqTyToVariable g
+                        else retTyFromAbsSlot 
 
                      let absSlotTy = mkMethodTy g argTysFromAbsSlot retTyFromAbsSlot
 
