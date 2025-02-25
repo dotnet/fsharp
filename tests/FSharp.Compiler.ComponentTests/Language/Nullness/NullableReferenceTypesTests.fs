@@ -1381,6 +1381,20 @@ dict["ok"] <- 42
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+[<InlineData("t :?> 'T")>]
+[<InlineData("(downcast t) : 'T")>]
+[<InlineData("t |> unbox<'T>")>]
+[<InlineData("(t : objnull) :?> 'T")>]
+[<Theory>]
+let ``Unsafe cast should not insist on not null constraint``(castOp:string) =
+
+    FSharp $"""module MyLibrary
+let test<'T> () =
+    let t = obj()
+    {castOp}"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 [<Fact>]
 let ``Notnull constraint and inline annotated value`` () = 
