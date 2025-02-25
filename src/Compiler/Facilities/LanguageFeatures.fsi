@@ -89,6 +89,7 @@ type LanguageFeature =
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
+    | WarnWhenUnitPassedToObjArg
     | ScopedNowarn
 
 /// LanguageVersion management

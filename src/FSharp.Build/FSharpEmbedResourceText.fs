@@ -268,12 +268,13 @@ open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Text
 open Microsoft.FSharp.Collections
 open Printf
+
+#nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
 "
 
     let StringBoilerPlate fileName =
         @"
     // BEGIN BOILERPLATE
-
     static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
     static let getTypeInfo (t: System.Type) = t

@@ -98,6 +98,7 @@ type LanguageFeature =
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
+    | WarnWhenUnitPassedToObjArg
     | ScopedNowarn
 
 /// LanguageVersion management
@@ -228,6 +229,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
+                LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
                 LanguageFeature.ScopedNowarn, previewVersion
             ]
 
@@ -390,6 +392,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
+        | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
 
     /// Get a version string associated with the given feature.
