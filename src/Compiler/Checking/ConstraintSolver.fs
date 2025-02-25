@@ -345,7 +345,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       eContextInfo = contextInfo
       MatchingOnly = false
       ErrorOnFailedMemberConstraintResolution = false
-      EquivEnv = TypeEquivEnv.Empty 
+      EquivEnv = TypeEquivEnv.EmptyIgnoreNulls
       DisplayEnv = denv
       IsSpeculativeForMethodOverloading = false
       IsSupportsNullFlex = false
@@ -2478,6 +2478,8 @@ and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 =
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
     // comparison implies equality
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
+    // 'null' implies reference type ('not struct')
+    | TyparConstraint.SupportsNull _, TyparConstraint.IsReferenceType _
     | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
     | TyparConstraint.NotSupportsNull _, TyparConstraint.NotSupportsNull _
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
@@ -3175,6 +3177,7 @@ and ArgsMustSubsumeOrConvert
     trackErrors {
         let g = csenv.g
         let m = callerArg.Range
+        let callerTy = callerArg.CallerArgumentType
         let calledArgTy, usesTDC, eqn = AdjustCalledArgType csenv.InfoReader ad isConstraint enforceNullableOptionalsKnownTypes calledArg callerArg
 
         match eqn with 
@@ -3186,8 +3189,10 @@ and ArgsMustSubsumeOrConvert
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
-        if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerTy
+        if g.langVersion.SupportsFeature(LanguageFeature.WarnWhenUnitPassedToObjArg) && isUnitTy g callerTy && isObjTyAnyNullness g calledArgTy then
+            do! WarnD(Error(FSComp.SR.tcUnitToObjSubsumption(), m))
+        if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerTy) then 
             return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
         else 
             return usesTDC

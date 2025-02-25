@@ -1796,7 +1796,11 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic for the efficient compilation of sequence expressions</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+            val Dispose<'T when 'T :> System.IDisposable> : resource: 'T|null -> unit
+#else
             val Dispose<'T when 'T :> System.IDisposable> : resource: 'T -> unit
+#endif
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -3587,16 +3591,16 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNullV")>]
         val inline nonNullV : value:Nullable<'T> -> 'T 
 
-        /// <summary>Asserts that the value is non-null.</summary>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <summary>Re-types a value into a nullable reference type (|null)</summary>
+        /// <param name="value">The non-nullable value.</param>
+        /// <returns>The same value re-typed as a nullable reference type.</returns>
         [<CompiledName("WithNull")>]
         val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
 
-        /// <summary>Asserts that the value is non-null.</summary>
+        /// <summary>Wraps a value type into System.Nullable</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'withNull'.</remarks>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <param name="value">The value to wrap.</param>
+        /// <returns>System.Nullable wrapper of the input argument.</returns>
         [<CompiledName("WithNullV")>]
         val inline withNullV : value:'T -> Nullable<'T> 
 #endif
