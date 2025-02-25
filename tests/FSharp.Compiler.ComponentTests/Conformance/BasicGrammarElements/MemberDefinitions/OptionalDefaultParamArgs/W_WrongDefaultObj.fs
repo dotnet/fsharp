@@ -7,9 +7,7 @@
 open System.Runtime.InteropServices
 
 type Class() =
-    static member WrongType([<Optional;DefaultParameterValue(1)>]b:string) = b
+    static member WrongType([<Optional;DefaultParameterValue("xxx")>]b:obj) = printfn "%A" b
 
-let r = Class.WrongType("123")
-let r2 = Class.WrongType()
-
-do ()
+do Class.WrongType()
+do Class.WrongType("")

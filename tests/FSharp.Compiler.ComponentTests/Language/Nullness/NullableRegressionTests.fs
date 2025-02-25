@@ -42,7 +42,8 @@ let ``Signature conformance`` langVersion checknulls =
     |> compile
     |> shouldFail
     |> withDiagnostics
-        [(Warning 3261, Line 4, Col 5, Line 4, Col 10, "Nullness warning: Module 'M' contains
+        [Warning 3262, Line 18, Col 48, Line 18, Col 60, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+         (Warning 3261, Line 4, Col 5, Line 4, Col 10, "Nullness warning: Module 'M' contains
             val test2: x: string | null -> unit    
         but its signature specifies
             val test2: string -> unit    

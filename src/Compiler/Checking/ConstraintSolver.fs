@@ -3177,6 +3177,7 @@ and ArgsMustSubsumeOrConvert
     trackErrors {
         let g = csenv.g
         let m = callerArg.Range
+        let callerTy = callerArg.CallerArgumentType
         let calledArgTy, usesTDC, eqn = AdjustCalledArgType csenv.InfoReader ad isConstraint enforceNullableOptionalsKnownTypes calledArg callerArg
 
         match eqn with 
@@ -3188,8 +3189,10 @@ and ArgsMustSubsumeOrConvert
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
-        if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerTy
+        if g.langVersion.SupportsFeature(LanguageFeature.WarnWhenUnitPassedToObjArg) && isUnitTy g callerTy && isObjTyAnyNullness g calledArgTy then
+            do! WarnD(Error(FSComp.SR.tcUnitToObjSubsumption(), m))
+        if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerTy) then 
             return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
         else 
             return usesTDC

@@ -538,6 +538,8 @@ type MethInfo =
     /// Get the signature of an abstract method slot.
     member GetSlotSig: amap: ImportMap * m: range -> SlotSig
 
+    member HasGenericRetTy: unit -> bool
+
     /// Get the ParamData objects for the parameters of a MethInfo
     member HasParamArrayArg: amap: ImportMap * m: range * minst: TType list -> bool
 
