@@ -1829,6 +1829,8 @@ val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
 
 val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
 
+val GetTyparTyIfSupportsNull: TcGlobals -> TType -> Typar voption
+
 val TypeNullNever: TcGlobals -> TType -> bool
 
 val TypeHasDefaultValue: TcGlobals -> range -> TType -> bool
