@@ -86,8 +86,8 @@ let isDelayedRepr (f: Val) e =
 
 // REVIEW: these should just be replaced by direct calls to mkLocal, mkCompGenLocal etc.
 // REVIEW: However these set an arity whereas the others don't
-let mkLocalNameTypeArity compgen m name ty valReprInfo =
-    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+let mkLocalNameTypeArity compgen m name ty valReprInfo parentref =
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, parentref)
 
 //-------------------------------------------------------------------------
 // definitions: TLR, arity, arity-met, arity-short
@@ -196,8 +196,8 @@ module Pass1_DetermineTLRAndArities =
             let arity = Operators.min nFormals nMaxApplied
             if atTopLevel then
                 Some (f, arity)
-            elif g.realsig then
-                None
+            //elif g.realsig then
+            //    None
             else if arity<>0 || not (isNil tps) then
                 Some (f, arity)
             else
@@ -843,7 +843,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
             assert(g.CompilerGlobalState |> Option.isSome)
             g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(name, m)
 
-        let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity)
+        let fHat = mkLocalNameTypeArity f.IsCompilerGenerated m fHatName fHatTy (Some fHatArity) f.ApparentEnclosingEntity
         fHat
 
     let fs = Zset.elements tlrS

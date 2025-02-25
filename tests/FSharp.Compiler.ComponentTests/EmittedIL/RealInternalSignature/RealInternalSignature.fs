@@ -1287,3 +1287,14 @@ module M =
         |> compile
         |> compileExeAndRun
         |> shouldFail
+
+    [<Fact>]
+    let ``ForLoop`` () =
+        FSharp """
+        """
+        |> withLangVersionPreview
+        |> withRealInternalSignature false
+        |> asLibrary
+        |> compile
+        |> compileExeAndRun
+        |> shouldFail

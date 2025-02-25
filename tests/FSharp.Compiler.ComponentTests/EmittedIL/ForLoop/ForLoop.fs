@@ -15,6 +15,60 @@ module ForLoop =
         |> ignoreWarnings
         |> verifyILBaseline
 
+
+
+
+    let withRealInternalSignature realSig compilation =
+        compilation
+        |> withOptions [if realSig then "--realsig+" else "--realsig-" ]
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``printString5GenericArgs`` (realSig) =
+
+        FSharp """
+let printString (s:string) = System.Console.Write s
+type ('a,'b,'c,'d,'e) a5 = A5 of 'a * 'b * 'c * 'd * 'e
+let result = A5([],2,3,4,5) = A5([],2,3,4,5)
+let _ = printString $"printString5GenericArgs: {result}"
+        """
+        |> withName "printString5GenericArgs"
+        |> withRealInternalSignature realSig
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContainsAllInOrder [
+            "printString5GenericArgs: True"
+        ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*printString5GenericArgs.exe Verified."
+            ]
+
+
+    [<InlineData(true)>]        // RealSig
+    [<InlineData(false)>]       // Regular
+    [<Theory>]
+    let ``printString6GenericArgs`` (realSig) =
+
+        FSharp """
+let printString (s:string) = System.Console.Write s
+type ('a,'b,'c,'d,'e, 'f) a6 = A6 of 'a * 'b * 'c * 'd * 'e * 'f
+let result = A6([],2,3,4,5,6) = A6([],2,3,4,5,6)
+let _ = printString $"printString6GenericArgs: {result}"
+        """
+        |> withName "printString6GenericArgs"
+        |> withRealInternalSignature realSig
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContainsAllInOrder [
+            "printString6GenericArgs: True"
+        ]
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*printString6GenericArgs.exe Verified."
+            ]
+
     // SOURCE=ForLoop01.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop01.exe"	# ForLoop01.fs -
     [<Theory; FileInlineData("ForLoop01.fs", Realsig=BooleanOptions.Both, Optimize=BooleanOptions.False)>]
     let ``ForLoop01_fs`` compilation =
@@ -214,6 +268,14 @@ module ForLoop =
     // SOURCE=ForEachRangeStep_UnitsOfMeasure.fs SCFLAGS="--optimize+"	# ForEachRangeStep_UnitsOfMeasure.fs --optimize+
     [<Theory; FileInlineData("ForEachRangeStep_UnitsOfMeasure.fs", Realsig=BooleanOptions.Both, Optimize=BooleanOptions.True)>]
     let ``ForEachRangeStep_UnitsOfMeasure_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+
+    // SOURCE=ForEachOnList01.fs       SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForEachOnList01.dll"       # ForEachOnList01.fs
+    [<Theory; FileInlineData("ForEachOnList01.fs", Realsig=BooleanOptions.Both, Optimize=BooleanOptions.True)>]
+    let ``ForEachOnList01_extract_fs`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation
