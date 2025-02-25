@@ -171,10 +171,48 @@ let TypeCheck
 
             match tcCacheState with
             | TcCacheState.Present files when files |> List.forall (fun (_file, canReuse) -> canReuse) ->
-                cachingDriver.ReuseTcResults inputs tcInitialState
+                // TODO: last state should be sent back here, not the initial state
+                let _lastState, topAttrs, declaredImpls, tcEnvFromImpls =
+                    cachingDriver.ReuseTcResults inputs
+
+                tcInitialState, topAttrs, declaredImpls, tcEnvFromImpls
+            | TcCacheState.Present files when files |> List.exists (fun (_file, canReuse) -> canReuse) ->
+                let canReuse, cannotReuse =
+                    files
+                    |> List.partition (fun (_file, canReuse) -> canReuse)
+                    |> fun (a, b) -> a |> List.map fst, b |> List.map fst
+
+                let tcCurrentState, _, reusedImpls, _ = cachingDriver.ReuseTcResults canReuse
+
+                let lastState, topAttrs, newImpls, tcEnvAtEndOfLastFile, tcStates =
+                    CheckClosedInputSet(
+                        ctok,
+                        diagnosticsLogger.CheckForErrors,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        None,
+                        tcCurrentState,
+                        eagerFormat,
+                        cannotReuse
+                    )
+
+                let _tcResults =
+                    List.zip3 cannotReuse newImpls tcStates
+                    |> List.map (fun (input, impl, state) ->
+                        {
+                            Input = input
+                            DeclaredImpl = impl
+                            State = state
+                        })
+
+                // TODO: cache new stuff
+                // cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
+
+                lastState, topAttrs, reusedImpls @ newImpls, tcEnvAtEndOfLastFile
 
             | _ ->
-                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                let lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcStates =
                     CheckClosedInputSet(
                         ctok,
                         diagnosticsLogger.CheckForErrors,
@@ -187,20 +225,32 @@ let TypeCheck
                         inputs
                     )
 
-                cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
-                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+                let tcResults =
+                    List.zip3 inputs declaredImpls tcStates
+                    |> List.map (fun (input, impl, state) ->
+                        {
+                            Input = input
+                            DeclaredImpl = impl
+                            State = state
+                        })
+
+                cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
+                lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
-            CheckClosedInputSet(
-                ctok,
-                (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
-                tcConfig,
-                tcImports,
-                tcGlobals,
-                None,
-                tcInitialState,
-                eagerFormat,
-                inputs
-            )
+            let lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _ =
+                CheckClosedInputSet(
+                    ctok,
+                    (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    None,
+                    tcInitialState,
+                    eagerFormat,
+                    inputs
+                )
+
+            lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
     with exn ->
         errorRecovery exn rangeStartup
         exiter.Exit 1

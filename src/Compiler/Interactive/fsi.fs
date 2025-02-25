@@ -2200,7 +2200,7 @@ type internal FsiDynamicCompiler
 
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
-        let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
+        let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput, _ =
             lock tcLockObject (fun _ ->
                 CheckClosedInputSet(
                     ctok,

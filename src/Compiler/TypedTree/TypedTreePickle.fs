@@ -1067,7 +1067,8 @@ let u_ILTypeDef st : ILTypeDef =
     let properties = Unchecked.defaultof<_>
     let additionalFlags = u_ILTypeDefAdditionalFlags st
     let securityDeclsStored = ILSecurityDecls([||])
-    let customAttrsStored = Unchecked.defaultof<_>
+    // TODO: fill this in
+    let customAttrsStored = ILAttributesStored.Given (ILAttributes.Empty)
 
     ILTypeDef(name,
         attributes,
