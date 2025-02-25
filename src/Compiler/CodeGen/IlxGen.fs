@@ -5679,6 +5679,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
         tp.Constraints
         |> List.exists (function
             | TyparConstraint.IsReferenceType _
+            // 'null' automatically implies 'not struct'
             | TyparConstraint.SupportsNull _ -> true
             | _ -> false)
 
@@ -12227,7 +12228,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
         // Lookup the compiled v value (as an object).
         match StorageForVal v.Range v eenv with
         | StaticPropertyWithField(fspec, _, hasLiteralAttr, ilContainerTy, _, _, ilGetterMethRef, _, _) ->
-            let obj =
+            let obj: objnull =
                 if hasLiteralAttr then
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
                     // Checked: This FieldInfo (FieldBuilder) supports GetValue().
@@ -12245,7 +12246,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
             Some(obj, objTyp ())
 
         | StaticProperty(ilGetterMethSpec, _) ->
-            let obj =
+            let obj: objnull =
                 let staticTy = ctxt.LookupTypeRef ilGetterMethSpec.MethodRef.DeclaringTypeRef
                 // We can't call .Invoke on the ILMethodRef's MethodInfo,
                 // because it is the MethodBuilder and that does not support Invoke.
@@ -12373,7 +12374,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
     member _.ClearGeneratedValue(ctxt, v) = ClearGeneratedValue ctxt ilxGenEnv v
 
     /// Invert the compilation of the given value and set the storage of the value, even if it is immutable
-    member _.ForceSetGeneratedValue(ctxt, v, value: obj) =
+    member _.ForceSetGeneratedValue(ctxt, v, value: objnull) =
         SetGeneratedValue ctxt ilxGenEnv true v value
 
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type

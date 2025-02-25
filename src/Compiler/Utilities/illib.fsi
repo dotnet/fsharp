@@ -94,6 +94,10 @@ module internal Order =
 #endif
 
     val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
+#if !NO_CHECKNULLS
+        when 'T:not null
+        and 'T:not struct
+#endif
 
     val toFunction: pxOrder: IComparer<'U> -> x: 'U -> y: 'U -> int
 
@@ -280,7 +284,7 @@ module internal String =
 
     val (|StartsWith|_|): pattern: string -> value: string -> unit option
 
-    val (|Contains|_|): pattern: string -> value: string -> unit option
+    val (|Contains|_|): pattern: string -> value: string|null -> unit option
 
     val getLines: str: string -> string[]
 

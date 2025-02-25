@@ -399,7 +399,7 @@ module ResumableCode =
         (
             resource: 'Resource,
             body: 'Resource -> ResumableCode<'Data, 'T>
-        ) : ResumableCode<'Data, 'T> when 'Resource :> IDisposable =
+        ) : ResumableCode<'Data, 'T> when 'Resource :> IDisposable|null =
         // A using statement is just a try/finally with the finally block disposing if non-null.
         TryFinally(
             ResumableCode<'Data, 'T>(fun sm -> (body resource).Invoke(&sm)),

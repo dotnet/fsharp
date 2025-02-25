@@ -12,6 +12,9 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open FsCheck
 
+#nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
+// Why warned - the tests here are actually trying to assert that Async<unit> still works.
+
 module Utils =
     let internal memoizeAsync f =
         let cache = System.Collections.Concurrent.ConcurrentDictionary<'a, System.Threading.Tasks.Task<'b>>()
