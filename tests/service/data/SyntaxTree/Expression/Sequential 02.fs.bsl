@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Sequential 02.fs", false,
-      QualifiedNameOfFile Sequential 02, [], [],
+      QualifiedNameOfFile Sequential 02, [],
       [SynModuleOrNamespace
          ([Sequential 02], false, AnonModule,
           [Expr
@@ -12,6 +12,7 @@ ImplFile
               (1,0--1,11))], PreXmlDocEmpty, [], None, (1,0--2,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'Sequential 02' based on the file name 'Sequential 02.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

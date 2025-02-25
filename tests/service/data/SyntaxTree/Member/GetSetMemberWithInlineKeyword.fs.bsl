@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/GetSetMemberWithInlineKeyword.fs", false,
-      QualifiedNameOfFile GetSetMemberWithInlineKeyword, [], [],
+      QualifiedNameOfFile GetSetMemberWithInlineKeyword, [],
       [SynModuleOrNamespace
          ([GetSetMemberWithInlineKeyword], false, AnonModule,
           [Types
@@ -83,4 +83,5 @@ ImplFile
                     WithKeyword = None })], (2,0--5,29))], PreXmlDocEmpty, [],
           None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

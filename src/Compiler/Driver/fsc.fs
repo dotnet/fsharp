@@ -235,11 +235,6 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
             references
             |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
-            // Also record the other declarations from the script.
-            closure.NoWarns
-            |> List.collect (fun (n, ms) -> ms |> List.map (fun m -> m, n))
-            |> List.iter (fun (x, m) -> tcConfigB.TurnWarningOff(x, m))
-
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
 
@@ -656,7 +651,6 @@ let main1
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
 
-    // Apply any nowarn flags
     let tcConfig =
         (tcConfig, inputs)
         ||> List.fold (fun z (input, sourceFileDirectory) ->
@@ -747,13 +741,7 @@ let main2
     let oldLogger = diagnosticsLogger
 
     let diagnosticsLogger =
-        let scopedPragmas =
-            [
-                for CheckedImplFile(pragmas = pragmas) in typedImplFiles do
-                    yield! pragmas
-            ]
-
-        GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+        GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfig.diagnosticsOptions, oldLogger)
 
     SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 

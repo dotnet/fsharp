@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Extern/ExternKeywordIsPresentInTrivia.fs", false,
-      QualifiedNameOfFile ExternKeywordIsPresentInTrivia, [], [],
+      QualifiedNameOfFile ExternKeywordIsPresentInTrivia, [],
       [SynModuleOrNamespace
          ([ExternKeywordIsPresentInTrivia], false, AnonModule,
           [Let
@@ -42,4 +42,5 @@ ImplFile
                     EqualsRange = None })], (2,0--2,28))], PreXmlDocEmpty, [],
           None, (2,0--2,28), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

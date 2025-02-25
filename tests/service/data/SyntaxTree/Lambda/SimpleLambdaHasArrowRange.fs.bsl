@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/SimpleLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile SimpleLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile SimpleLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([SimpleLambdaHasArrowRange], false, AnonModule,
           [Expr
@@ -16,4 +16,5 @@ ImplFile
               (2,0--2,10))], PreXmlDocEmpty, [], None, (2,0--3,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

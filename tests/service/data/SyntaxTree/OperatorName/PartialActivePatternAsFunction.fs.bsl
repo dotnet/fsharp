@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/PartialActivePatternAsFunction.fs", false,
-      QualifiedNameOfFile PartialActivePatternAsFunction, [], [],
+      QualifiedNameOfFile PartialActivePatternAsFunction, [],
       [SynModuleOrNamespace
          ([PartialActivePatternAsFunction], false, AnonModule,
           [Expr
@@ -16,4 +16,5 @@ ImplFile
               (2,0--2,11))], PreXmlDocEmpty, [], None, (2,0--2,11),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
