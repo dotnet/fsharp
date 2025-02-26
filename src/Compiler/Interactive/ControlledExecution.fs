@@ -6,6 +6,8 @@
 // because we continue to support older coreclrs and the windows desktop framework through netstandard2.0
 // we access the features using reflection
 
+#nowarn "3262" // The `Option.ofObj (Type.GetType..) construct warns in ns20, because Type.GetType is not annotated as nullable
+
 namespace FSharp.Compiler.Interactive
 
 open System
