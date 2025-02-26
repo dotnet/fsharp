@@ -61,6 +61,13 @@ let DropErasedTyargs tys =
         | TType_measure _ -> false
         | _ -> true)
 
+let rec stripPrefix (a: 'a list) (b: 'b list) (compare: 'a * 'b -> bool)=
+    match a, b with
+    | [], _ -> b
+    | _, [] -> []
+    | ah::at, bh::bt when compare(ah, bh) -> stripPrefix at bt compare
+    | _ -> b
+
 let AddNonUserCompilerGeneratedAttribs (g: TcGlobals) (mdef: ILMethodDef) = g.AddMethodGeneratedAttributes mdef
 
 let debugDisplayMethodName = "__DebugDisplay"
@@ -575,12 +582,11 @@ type TypeReprEnv
     member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
 
     /// Get a list of the Typars in this environment
-    member eenv.AsUserProvidedTypars() =
+    member eenv.AsTypars() =
         reprs
         |> Map.toList
         |> List.map (fun (_, (_, tp)) -> tp)
         |> List.filter (fun tp -> not tp.IsCompilerGenerated)
-        |> Zset.ofList typarOrder
 
 //--------------------------------------------------------------------------
 // Generate type references
@@ -4336,6 +4342,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     mspecW
 
+            let envTypeArgs =
+                match cenv.g.realsig with
+                | true -> GenTypeArgs cenv m eenv.tyenv (eenv.tyenv.AsTypars() |> List.map mkTyparTy)
+                | false -> []
+
             let ilTyArgs = GenTypeArgs cenv m eenv.tyenv tyargs
 
             // For instance method calls chop off some type arguments, which are already
@@ -4354,7 +4365,11 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 if ilTyArgs.Length < numEnclILTypeArgs then
                     error (InternalError("length mismatch", m))
 
-                List.splitAt numEnclILTypeArgs ilTyArgs
+                match g.realsig, vref.ApparentEnclosingEntity with
+                | true, Parent parent when not (vref.IsMemberOrModuleBinding) ->
+//@@@@@                    let ilTyArgs = stripPrefix envTypeArgs ilTyArgs (fun (a, b) -> a = b)
+                    envTypeArgs, ilTyArgs
+                | _ -> List.splitAt numEnclILTypeArgs ilTyArgs
 
             let boxity = mspec.DeclaringType.Boxity
             let mspec = mkILMethSpec (mspec.MethodRef, boxity, ilEnclArgTys, ilMethArgTys)
@@ -6953,7 +6968,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
         | _ -> newUnique ()
 
     // Choose a name for the closure
-    let ilCloTypeRef, initialFreeTyvars =
+    let ilCloTypeRef =
         let boundvar =
             eenv.letBoundVars |> List.tryFind (fun v -> not v.IsCompilerGenerated)
 
@@ -6972,15 +6987,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
 
         let ilCloTypeRef = NestedTypeRefForCompLoc eenv.cloc cloName
 
-        let initialFreeTyvars =
-            match g.realsig with
-            | true ->
-                { emptyFreeTyvars with
-                    FreeTypars = eenv.tyenv.AsUserProvidedTypars()
-                }
-            | false -> emptyFreeTyvars
-
-        ilCloTypeRef, initialFreeTyvars
+        ilCloTypeRef
 
     // Collect the free variables of the closure
     let cloFreeVarResults =
@@ -6991,12 +6998,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenv takenNames 
             | None -> opts
             | Some(tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
 
-        accFreeInExpr
-            opts
-            expr
-            { emptyFreeVars with
-                FreeTyvars = initialFreeTyvars
-            }
+        accFreeInExpr opts expr emptyFreeVars
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
@@ -9412,7 +9414,14 @@ and GenMethodForBinding
             | _ -> ()
         ]
 
-    let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
+    let ilTypars =
+        (*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        match cenv.g.realsig, v.ApparentEnclosingEntity with
+        | true, Parent apparentEnclosingEntity ->
+            GenGenericParams cenv eenvUnderMethLambdaTypars (stripPrefix apparentEnclosingEntity.TyparsNoRange methLambdaTypars (fun (a:Typar, b:Typar) -> a.Stamp = b.Stamp))
+        | _ ->
+        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*)
+            GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
 
     let ilParams =
         GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)

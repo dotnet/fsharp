@@ -122,6 +122,9 @@ val mkLocal: range -> string -> TType -> Val * Expr
 /// Make a new compiler-generated local value and build an expression to reference it
 val mkCompGenLocal: range -> string -> TType -> Val * Expr
 
+/// Make a new compiler-generated local value and build an expression to reference it include parent reference
+val mkCompGenLocalWithParentRef: range -> string -> TType -> ParentRef -> Val * Expr
+
 /// Make a new mutable compiler-generated local value and build an expression to reference it
 val mkMutableCompGenLocal: range -> string -> TType -> Val * Expr
 

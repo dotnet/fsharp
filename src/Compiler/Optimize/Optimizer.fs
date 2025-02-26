@@ -3984,7 +3984,12 @@ and ConsiderSplitToMethod flag threshold cenv env (e, einfo) =
             match env.latestBoundId with 
             | Some id -> id.idText+suffixForVariablesThatMayNotBeEliminated 
             | None -> suffixForVariablesThatMayNotBeEliminated 
-        let fv, fe = mkCompGenLocal m nm (mkFunTy g g.unit_ty ty)
+        let fv, fe =
+            let parentRef =
+                match g.realsig, env.functionVal with
+                | true, Some (v, _) -> v.ApparentEnclosingEntity
+                | _ -> ParentNone
+            mkCompGenLocalWithParentRef m nm (mkFunTy g g.unit_ty ty) parentRef
         mkInvisibleLet m fv (mkLambda m uv (e, ty)) 
           (primMkApp (fe, (mkFunTy g g.unit_ty ty)) [] [mkUnit g m] m), 
         {einfo with FunctionSize=callSize }

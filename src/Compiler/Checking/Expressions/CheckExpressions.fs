@@ -286,13 +286,6 @@ let AddDeclaredTypars check typars env =
 
 let emptyUnscopedTyparEnv: UnscopedTyparEnv = UnscopedTyparEnv Map.empty
 
-let AddUnscopedTypar name typar (UnscopedTyparEnv tab) = UnscopedTyparEnv (Map.add name typar tab)
-
-let TryFindUnscopedTypar name (UnscopedTyparEnv tab) = Map.tryFind name tab
-
-let HideUnscopedTypars typars (UnscopedTyparEnv tab) =
-    UnscopedTyparEnv (List.fold (fun acc (tp: Typar) -> Map.remove tp.Name acc) tab typars)
-
 type OverridesOK =
     | OverridesOK
     | WarnOnOverrides
@@ -4358,7 +4351,7 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
 /// If kindOpt=Some kind, then this is the kind we're expecting (we're in *analysis* mode)
 /// If kindOpt=None, we need to determine the kind (we're in *synthesis* mode)
 ///
-and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id, _, _) as tp) =
+and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk (tpenv: UnscopedTyparEnv) (SynTypar(id, _, _) as tp) =
     let checkRes (res: Typar) =
         match kindOpt, res.Kind with
         | Some TyparKind.Measure, TyparKind.Type -> error (Error(FSComp.SR.tcExpectedUnitOfMeasureMarkWithAttribute(), id.idRange)); res, tpenv
@@ -4375,7 +4368,7 @@ and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id,
     | _ ->
 
     // Check if it is already in the implicitly scoped environment
-    match TryFindUnscopedTypar key tpenv with
+    match tpenv.tryFindTypar(key) with
     | Some res -> checkRes res
     | None ->
 
@@ -4385,11 +4378,7 @@ and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id,
             let suggestTypeParameters (addToBuffer: string -> unit) =
                 for p in env.eNameResEnv.eTypars do
                     addToBuffer ("'" + p.Key)
-
-                match tpenv with
-                | UnscopedTyparEnv elements ->
-                    for p in elements do
-                        addToBuffer ("'" + p.Key)
+                tpenv.asMap() |> Map.iter (fun k _ -> addToBuffer ("'" + k)) 
 
             let reportedId = Ident("'" + id.idText, id.idRange)
             error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, suggestTypeParameters))
@@ -4402,7 +4391,7 @@ and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id,
 
         CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.UseInType, env.AccessRights)
 
-        tpR, AddUnscopedTypar key tpR tpenv
+        tpR, tpenv.addTypar(key, tpR)
 
 and TcTypar (cenv: cenv) env newOk tpenv tp : Typar * UnscopedTyparEnv =
     TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv tp
@@ -11528,7 +11517,7 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
 
         // REVIEW: this scopes generalized type variables. Ensure this is handled properly
         // on all other paths.
-        let tpenv = HideUnscopedTypars generalizedTypars tpenv
+        let tpenv = tpenv.hideTypars(generalizedTypars)
         let valSchemes = NameMap.map (UseCombinedValReprInfo g declKind rhsExpr) prelimValSchemes2
         let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, xmlDoc, literalValue)
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
@@ -12161,7 +12150,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
         isGeneratedEventVal
         (cenv: cenv)
         (env: TcEnv)
-        (tpenv, recBindIdx)
+        (tpenv: UnscopedTyparEnv, recBindIdx)
         (NormalizedRecBindingDefn(containerInfo, newslotsOK, declKind, binding)) =
 
     let g = cenv.g
@@ -12171,6 +12160,12 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let (NormalizedBindingRhs(_, _, bindingExpr)) = bindingRhs
     let (SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
+
+    let altActualParent =
+        // Use the tpenv Parent to get the actual parent when it is an ExpressionBinding and also has no altParent set
+        match g.realsig, declKind, altActualParent with
+        | true, ExpressionBinding, ParentNone -> tpenv.asParent()
+        | _ -> altActualParent
 
     let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
@@ -12515,7 +12510,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
 
                 // Generalize the bindings.
                 let newGeneralizedRecBinds = (generalizedTyparsL, newGeneralizableBindings) ||> List.map2 (TcLetrecGeneralizeBinding cenv denv )
-                let tpenv = HideUnscopedTypars (List.concat generalizedTyparsL) tpenv
+                let tpenv = tpenv.hideTypars(List.concat generalizedTyparsL)
                 newGeneralizedRecBinds, tpenv
 
 
@@ -12854,7 +12849,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let valscheme2 = GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTypars valscheme1
 
-        let tpenv = HideUnscopedTypars generalizedTypars tpenv
+        let tpenv = tpenv.hideTypars(generalizedTypars)
 
         let valscheme = BuildValScheme declKind (Some prelimValReprInfo) valscheme2
 

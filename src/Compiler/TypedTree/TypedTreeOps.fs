@@ -1360,13 +1360,14 @@ let mkCond spBind m ty e1 e2 e3 =
 
 let exprForValRef m vref = Expr.Val (vref, NormalValUse, m)
 let exprForVal m v = exprForValRef m (mkLocalValRef v)
-let mkLocalAux m s ty mut compgen =
-    let thisv = Construct.NewVal(s, m, None, ty, mut, compgen, None, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
+let mkLocalAux m s ty mut compgen parentRef =
+    let thisv = Construct.NewVal(s, m, None, ty, mut, compgen, None, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, parentRef) 
     thisv, exprForVal m thisv
 
-let mkLocal m s ty = mkLocalAux m s ty Immutable false
-let mkCompGenLocal m s ty = mkLocalAux m s ty Immutable true
-let mkMutableCompGenLocal m s ty = mkLocalAux m s ty Mutable true
+let mkLocal m s ty = mkLocalAux m s ty Immutable false ParentNone
+let mkCompGenLocal m s ty = mkLocalAux m s ty Immutable true ParentNone
+let mkCompGenLocalWithParentRef m s ty parentRef = mkLocalAux m s ty Immutable true parentRef
+let mkMutableCompGenLocal m s ty = mkLocalAux m s ty Mutable true ParentNone
 
 // Type gives return type. For type-lambdas this is the formal return type. 
 let mkMultiLambda m vs (body, bodyTy) = Expr.Lambda (newUnique(), None, None, vs, body, m, bodyTy)
@@ -6845,6 +6846,7 @@ let mkExprAppAux g f fty argsl m =
                        | None -> false
                    | _ -> false)) &&
                  not (isExpansiveUnderInstantiation g fty0 tyargs pargs argsl) ->
+            let _x = f.ToString()
             primMkApp (f0, fty0) tyargs (pargs@argsl) (unionRanges m2 m)
 
         | _ -> 
