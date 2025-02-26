@@ -7,7 +7,7 @@ open FSharp.Test.Compiler
 
 module CustomAttributes_CallerArgumentExpression =
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
@@ -22,7 +22,7 @@ with :? System.ArgumentException as ex ->
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Can define in F#`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
@@ -44,7 +44,7 @@ assertEqual (A.aa(stringABC)) ("abc", ".cctor", 13, "stringABC")
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Can define in F# with F#-style optional arguments`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
@@ -69,7 +69,7 @@ assertEqual (A.aa(stringABC)) ("abc", ".cctor", 16, "stringABC")
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Can define in F# - with #line`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
