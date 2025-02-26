@@ -1,5 +1,7 @@
 module internal FSharp.Compiler.ReuseTcResults.CachingDriver
 
+#nowarn "3261"
+
 open System.IO
 
 open FSharp.Compiler.CompilerConfig
@@ -12,6 +14,7 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ReuseTcResults.TcResultsImport
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ReuseTcResults.TcResultsPickle
+open FSharp.Compiler.TypedTree
 
 type TcCompilationData =
     {
@@ -39,6 +42,13 @@ type TcCacheState =
     | Empty
     | Present of GraphComparisonResult
 
+type TcResult =
+    {
+        Input: ParsedInput
+        DeclaredImpl: CheckedImplFile
+        State: TcState
+    }
+
 [<Sealed>]
 type CachingDriver(tcConfig: TcConfig) =
 
@@ -47,6 +57,7 @@ type CachingDriver(tcConfig: TcConfig) =
     let graphFilePath = Path.Combine(outputDir, "tcGraph")
     let tcSharedDataFilePath = Path.Combine(outputDir, "tcSharedData")
     let tcInputFilePath = Path.Combine(outputDir, "tcInput")
+    let tcStateFilePath = Path.Combine(outputDir, "tcState")
 
     [<Literal>]
     let CmdLineHeader = "CMDLINE"
@@ -185,7 +196,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
         let isPresentInBaseGraph thisLine =
             baseGraph.Files
-            |> Seq.tryFind (fun baseLine -> baseLine.FileName = baseLine.FileName)
+            |> Seq.tryFind (fun baseLine -> baseLine.FileName = thisLine.FileName)
             |> Option.exists (fun baseLine -> baseLine.Stamp = thisLine.Stamp)
 
         // TODO: make this robust
@@ -272,11 +283,31 @@ type CachingDriver(tcConfig: TcConfig) =
 
         data.RawData
 
-    member this.ReuseTcResults (inputs: ParsedInput list) (tcInitialState: TcState) =
+    member private _.ReuseTcState(name: string) : TcState =
+        let bytes = File.ReadAllBytes($"{tcStateFilePath}{name}")
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
+
+        let data =
+            GetTypecheckingDataTcState(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                None
+            )
+
+        data.RawData
+
+    member this.ReuseTcResults inputs =
         let sharedData = this.ReuseSharedData()
         let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
-        tcInitialState, sharedData.TopAttribs, declaredImpls, tcInitialState.TcEnvFromImpls
+        let lastInput = inputs |> List.last
+        let fileName = Path.GetFileNameWithoutExtension(lastInput.FileName)
+        let lastState = this.ReuseTcState fileName
+
+        lastState, sharedData.TopAttribs, declaredImpls, lastState.TcEnvFromImpls
 
     member private _.CacheSharedData(tcState: TcState, sharedData, tcGlobals, outfile) =
         let encodedData =
@@ -285,18 +316,21 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcSharedDataFilePath, resource)
 
-    member private _.CacheDeclaredImpl(tcState: TcState, impl, tcGlobals, outfile) =
+    member private _.CacheDeclaredImpl(fileName: string, tcState: TcState, impl, tcGlobals, outfile) =
         let encodedData =
             EncodeCheckedImplFile(tcConfig, tcGlobals, tcState.Ccu, outfile, false, impl)
-
-        // TODO: bare file name is not enough
-        let fileName =
-            Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes($"{tcInputFilePath}{fileName}", resource)
 
-    member this.CacheTcResults(tcState: TcState, topAttribs, declaredImpls, _tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+    member private _.CacheTcState(fileName: string, tcState: TcState, tcGlobals, outfile) =
+        let encodedData =
+            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcState)
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes($"{tcStateFilePath}{fileName}", resource)
+
+    member this.CacheTcResults(tcResults, topAttribs, _tcEnvAtEndOfLastFile, tcGlobals, outfile) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
@@ -305,12 +339,18 @@ type CachingDriver(tcConfig: TcConfig) =
 
         writeThisTcData thisTcData
 
+        let inputs = tcResults |> List.map (fun r -> r.Input)
         let thisGraph = getThisCompilationGraph inputs
         writeThisGraph thisGraph
 
         let sharedData = { TopAttribs = topAttribs }
 
-        this.CacheSharedData(tcState, sharedData, tcGlobals, outfile)
+        let lastState = tcResults |> List.map (fun r -> r.State) |> List.last
+        this.CacheSharedData(lastState, sharedData, tcGlobals, outfile)
 
-        declaredImpls
-        |> List.iter (fun impl -> this.CacheDeclaredImpl(tcState, impl, tcGlobals, outfile))
+        tcResults
+        |> List.iter (fun r ->
+            // TODO: bare file name is not enough
+            let fileName = Path.GetFileNameWithoutExtension(r.Input.FileName)
+            this.CacheDeclaredImpl(fileName, r.State, r.DeclaredImpl, tcGlobals, outfile)
+            this.CacheTcState(fileName, r.State, tcGlobals, outfile))
