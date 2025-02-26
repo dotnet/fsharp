@@ -262,9 +262,11 @@ module FileIndex =
     let commandLineArgsFileName = "commandLineArgs"
 
 [<Struct; CustomEquality; NoComparison>]
-[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type Range(code1: int64, code2: int64) =
+[<System.Diagnostics.DebuggerDisplay("{OriginalRange} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
+type Range private (code1: int64, code2: int64, originalRange: struct (int64 * int64) voption) =
     static member Zero = range (0L, 0L)
+
+    new(code1, code2) = range (code1, code2, ValueNone)
 
     new(fIdx, bl, bc, el, ec) =
         let code1 =
@@ -386,8 +388,28 @@ type Range(code1: int64, code2: int64) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         hash code1 + hash code2
 
+    member _.OriginalRange =
+        originalRange
+        |> ValueOption.map (fun struct (code1, code2) -> range (code1, code2))
+
     override r.ToString() =
-        sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
+        let fromText =
+            if r.HasOriginalRange then
+                $" (from: %s{r.OriginalRange.Value.ToString()})"
+            else
+                String.Empty
+
+        sprintf "(%d,%d--%d,%d)%s" r.StartLine r.StartColumn r.EndLine r.EndColumn fromText
+
+    member m.IsZero = m.Equals range.Zero
+
+    member _.WithOriginalRange(originalRange: range voption) =
+        range (code1, code2, originalRange |> ValueOption.map (fun m -> struct (m.Code1, m.Code2)))
+
+    member this.HasOriginalRange =
+        match this.OriginalRange with
+        | ValueSome range2 when not range2.IsZero -> true
+        | _ -> false
 
 and range = Range
 
@@ -447,6 +469,10 @@ module Range =
 
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
+    let mkFileIndexRangeWithOriginRange fileIndex startPos endPos fileIndex2 startPos2 endPos2 =
+        range(fileIndex, startPos, endPos)
+            .WithOriginalRange(ValueSome(range (fileIndex2, startPos2, endPos2)))
+
     let posOrder =
         let pairOrder = Pair.order (Int32.order, Int32.order)
         let lineAndColumn = fun (p: pos) -> p.Line, p.Column
@@ -498,8 +524,15 @@ module Range =
                 else
                     m2
 
+            let originalRange =
+                match m1.OriginalRange, m2.OriginalRange with
+                | ValueSome r1, ValueSome r2 when r1.FileIndex = r2.FileIndex ->
+                    ValueSome(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
+                | _ -> ValueNone
+
             let m =
-                range (m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
+                range(m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
+                    .WithOriginalRange(originalRange)
 
             if m1.IsSynthetic || m2.IsSynthetic then
                 m.MakeSynthetic()
@@ -581,3 +614,48 @@ module Range =
                     | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
+
+module internal FileContent =
+    let private fileContentDict = ConcurrentDictionary<string, string array>()
+
+    let readFileContents (fileNames: string list) =
+        for fileName in fileNames do
+            if FileSystem.FileExistsShim fileName then
+                use fileStream = FileSystem.OpenFileForReadShim(fileName)
+                fileContentDict[fileName] <- fileStream.ReadAllLines()
+
+    type IFileContentGetLine =
+        abstract GetLine: fileName: string * line: int -> string
+
+    type DefaultFileContentGetLine() =
+
+        abstract GetLine: fileName: string * line: int -> string
+
+        default _.GetLine(fileName: string, line: int) : string =
+            match fileContentDict.TryGetValue fileName with
+            | true, lines when lines.Length >= line && line > 0 -> lines[line - 1]
+            | _ -> String.Empty
+
+        interface IFileContentGetLine with
+            member this.GetLine(fileName: string, line: int) : string = this.GetLine(fileName, line)
+
+    let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
+
+    let getCodeText (m: range) =
+        let m = if m.HasOriginalRange then m.OriginalRange.Value else m
+
+        let filename, startLine, endLine = m.FileName, m.StartLine, m.EndLine
+        let endCol = m.EndColumn - 1
+        let startCol = m.StartColumn - 1
+
+        let s =
+            [| for i in startLine..endLine -> getLineDynamic.GetLine(filename, i) |]
+            |> String.concat "\n"
+
+        if String.IsNullOrEmpty s then
+            s
+        else
+            try
+                s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+            with ex ->
+                raise (System.AggregateException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))

@@ -41,14 +41,28 @@ let warningStringOfPos (p: pos) = warningStringOfCoords p.Line p.Column
 
 /// Get an F# compiler position from a lexer position
 let posOfLexPosition (p: Position) = mkPos p.Line p.Column
+let posOfLexOriginalPosition (p: Position) = mkPos p.OriginalLine p.Column
 
 /// Get an F# compiler range from a lexer range
 let mkSynRange (p1: Position) (p2: Position) =
-    if p1.FileIndex = p2.FileIndex then
-        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
+    let p2' =
+        if p1.FileIndex = p2.FileIndex then
+            p2
+        else
+            // This means we had a #line directive in the middle of this syntax element.
+            (p1.ShiftColumnBy 1)
+
+    // TODO need tests
+    if p1.OriginalFileIndex <> p1.FileIndex || p1.OriginalLine <> p1.Line then
+        mkFileIndexRangeWithOriginRange
+            p1.FileIndex
+            (posOfLexPosition p1)
+            (posOfLexPosition p2')
+            p1.OriginalFileIndex
+            (posOfLexOriginalPosition p1)
+            (posOfLexOriginalPosition p2)
     else
-        // This means we had a #line directive in the middle of this syntax element.
-        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition (p1.ShiftColumnBy 1))
+        mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2')
 
 type LexBuffer<'Char> with
 

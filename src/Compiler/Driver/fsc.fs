@@ -630,6 +630,8 @@ let main1
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
 
+    FileContent.readFileContents sourceFiles
+
     // Parse sourceFiles
     ReportTime tcConfig "Parse inputs"
     use unwindParsePhase = UseBuildPhase BuildPhase.Parse

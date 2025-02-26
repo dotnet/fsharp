@@ -51,7 +51,7 @@ printfn ""
     """
 
     [<Theory>]
-    [<InlineData(1, case1, "xyz.fs:(1,0--3,1)")>]
+    [<InlineData(1, case1, "xyz.fs:(1,0--3,1) (from: (3,0--5,1))")>]
     [<InlineData(2, case2, "Line.fs:(2,0--2,1)")>]
     [<InlineData(3, case3, "Line.fs:(2,0--2,1)")>]
     let ``check expr range interacting with line directive`` (case, source, expectedRange) =

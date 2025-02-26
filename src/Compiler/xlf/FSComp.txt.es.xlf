@@ -622,6 +622,11 @@
         <target state="translated">representación de struct para modelos activos</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportCallerArgumentExpression">
+        <source>Support `CallerArgumentExpression`</source>
+        <target state="new">Support `CallerArgumentExpression`</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
@@ -1350,6 +1355,16 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Los atributos no se pueden aplicar a las extensiones de tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionHasInvalidParameterName">
+        <source>This CallerArgumentExpression with argument '{0}' will have no effect because it's applied with an invalid parameter name.</source>
+        <target state="new">This CallerArgumentExpression with argument '{0}' will have no effect because it's applied with an invalid parameter name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionSelfReferential">
+        <source>This CallerArgumentExpression with argument '{0}' will have no effect because it's self-referential.</source>
+        <target state="new">This CallerArgumentExpression with argument '{0}' will have no effect because it's self-referential.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">
