@@ -66,6 +66,7 @@ type Context =
     // Indicates we're processing the second part of a match, after the 'with'
     // First bool indicates "was this 'with' followed immediately by a '|'"?
     | CtxtMatchClauses of bool * Position
+    | CtxtAttribute of Position * bool
 
     member c.StartPos =
         match c with
@@ -75,6 +76,7 @@ type Context =
         | CtxtWithAsAugment p
         | CtxtMatchClauses (_, p) | CtxtIf p | CtxtMatch p | CtxtFor p | CtxtWhile p | CtxtWhen p | CtxtFunction p | CtxtFun p | CtxtTry p | CtxtThen p | CtxtElse p | CtxtVanilla (p, _)
         | CtxtSeqBlock (_, p, _) -> p
+        | CtxtAttribute(position, b) -> position
 
     member c.StartCol = c.StartPos.Column
 
@@ -96,6 +98,7 @@ type Context =
         | CtxtMemberBody _ -> "body"
         | CtxtSeqBlock (b, p, _addBlockEnd) -> sprintf "seqblock(%s, %s)" (match b with FirstInSeqBlock -> "first" | NotFirstInSeqBlock -> "subsequent") (stringOfPos p)
         | CtxtMatchClauses _ -> "matching"
+        | CtxtAttribute _ -> "attribute"
 
         | CtxtIf _ -> "if"
         | CtxtMatch _ -> "match"
@@ -774,6 +777,11 @@ type LexFilterImpl (
                 PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
             | _, CtxtSeqBlock _ :: rest when not strict -> undentationLimit strict rest
+            // Add special handling for attribute contexts
+            | _, CtxtAttribute(attrPos, _) :: _ ->
+                // For content inside attribute lists, just require they're at the
+                // same level or indented from the attribute start
+                PositionWithColumn(attrPos, attrPos.Column)
             | _, CtxtParen _ :: rest when not strict -> undentationLimit strict rest
 
             // 'begin match' limited by minimum of two
@@ -1529,6 +1537,43 @@ type LexFilterImpl (
             returnToken tokenLexbufState token
 
         match token, offsideStack with
+        // Handle attribute start - push new attribute context
+        | LBRACK_LESS, _ ->
+            if debug then dprintf "LBRACK_LESS, pushing CtxtAttribute, tokenStartPos = %a\n" outputPos tokenStartPos
+            pushCtxt tokenTup (CtxtAttribute(tokenStartPos, false))
+            pushCtxtSeqBlock tokenTup NoAddBlockEnd
+            returnToken tokenLexbufState token
+
+        // Handle semicolons in attribute lists
+        | SEMICOLON, CtxtAttribute(attrPos, _) :: _ ->
+            // Update the attribute context to indicate we've seen a semicolon
+            replaceCtxt tokenTup (CtxtAttribute(attrPos, true))
+            returnToken tokenLexbufState token
+
+        // Handle implicit semicolons between attributes on separate lines
+        | token, CtxtAttribute(attrPos, hadSemicolon) :: _ when 
+            (match token with IDENT _ -> true | _ -> false) && // Is an identifier (start of attribute)
+            not hadSemicolon &&                               // No explicit semicolon
+            tokenStartPos.OriginalLine > attrPos.OriginalLine && // On a new line
+            tokenStartCol >= attrPos.Column ->                // Properly aligned
+                if debug then dprintf "Attribute on new line without semicolon at col %d, inserting implicit SEMICOLON\n" tokenStartCol
+                // Record that we're inserting a semicolon
+                replaceCtxt tokenTup (CtxtAttribute(attrPos, true))
+                // Insert a semicolon before the attribute
+                delayToken tokenTup
+                insertTokenFromPrevPosToCurrentPos SEMICOLON
+
+        // Handle end of attribute list
+        | GREATER_RBRACK, CtxtAttribute _ :: _ ->
+            if debug then dprintf "GREATER_RBRACK, popping CtxtAttribute\n"
+            popCtxt()
+            returnToken tokenLexbufState token
+
+        // Offside rule for attributes
+        | _, CtxtAttribute(attrPos, _) :: _ when tokenStartCol < attrPos.Column ->
+            if debug then dprintf "Token at column %d is offside from ATTRIBUTE with attrPos %a! popping context\n" tokenStartCol outputPos attrPos
+            popCtxt()
+            reprocess()
         // inserted faux tokens need no other processing
         | _ when tokensThatNeedNoProcessingCount > 0 ->
             tokensThatNeedNoProcessingCount <- tokensThatNeedNoProcessingCount - 1
