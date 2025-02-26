@@ -10,7 +10,7 @@ module CustomAttributes_CallerArgumentExpression =
     [<Fact>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
-try System.ArgumentNullException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
+try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
   (* comment *) 
   |> String.concat " ")
 with :? System.ArgumentException as ex -> 
@@ -48,6 +48,7 @@ assertEqual (A.aa(stringABC)) ("abc", ".cctor", 13, "stringABC")
     let ``Can define in F# with F#-style optional arguments`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 type A() =
   static member aa (
     a,
@@ -60,7 +61,7 @@ type A() =
     a,b,c,e
 
 let stringABC = "abc"
-assertEqual (A.aa(stringABC)) ("abc", ".cctor", 15, "stringABC")
+assertEqual (A.aa(stringABC)) ("abc", ".cctor", 16, "stringABC")
         """
         |> withLangVersionPreview
         |> asExe
@@ -73,7 +74,7 @@ assertEqual (A.aa(stringABC)) ("abc", ".cctor", 15, "stringABC")
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-# 1 "C:\\Program.fs"
+# 1 "test.fs"
 type A() =
   static member aa (
     a,
@@ -84,9 +85,9 @@ type A() =
     a,b,c,d,e
 
 let stringABC = "abc"
-assertEqual (A.aa(stringABC)) ("abc", ".cctor", 11, "C:\\Program.fs", "stringABC")
-# 1 "C:\\Program.fs"
-assertEqual (A.aa(stringABC : string)) ("abc", ".cctor", 1, "C:\\Program.fs", "stringABC : string")
+assertEqual (A.aa(stringABC)) ("abc", ".cctor", 11, System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs"), "stringABC")
+# 1 "test.fs"
+assertEqual (A.aa(stringABC : string)) ("abc", ".cctor", 1, System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs"), "stringABC : string")
         """
         |> withLangVersionPreview
         |> asExe
