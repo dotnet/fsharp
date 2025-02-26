@@ -14,7 +14,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckIncrementalClasses
@@ -149,7 +148,7 @@ type Exception with
         | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
         | ObsoleteDiagnostic(_, _, _, _, m)
-        | Experimental(_, m)
+        | Experimental(range = m)
         | PossibleUnverifiableCode m
         | UserCompilerMessage(_, _, m)
         | Deprecated(_, m)
@@ -158,8 +157,8 @@ type Exception with
         | IndeterminateType m
         | TyconBadArgs(_, _, _, m) -> Some m
 
-        | FieldNotContained(_, _, _, _, arf, _, _) -> Some arf.Range
-        | ValueNotContained(_, _, _, aval, _, _) -> Some aval.Range
+        | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
+        | ValueNotContained(_, _, _, _, aval, _, _) -> Some aval.Range
         | UnionCaseNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
         | FSharpExceptionNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
@@ -255,6 +254,8 @@ type Exception with
         | LetRecUnsound _ -> 31
         | FieldsFromDifferentTypes _ -> 32
         | TyconBadArgs _ -> 33
+        | FieldNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
+        | ValueNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
         | ValueNotContained _ -> 34
         | Deprecated _ -> 35
         | UnionCaseNotContained _ -> 36
@@ -566,7 +567,9 @@ module OldStyleMessages =
     let ValNotLocalE () = Message("ValNotLocal", "")
     let Obsolete1E () = Message("Obsolete1", "")
     let Obsolete2E () = Message("Obsolete2", "%s")
-    let ExperimentalE () = Message("Experimental", "%s")
+    let Experimental1E () = Message("Experimental1", "")
+    let Experimental2E () = Message("Experimental2", "%s")
+    let Experimental3E () = Message("Experimental3", "")
     let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
     let DeprecatedE () = Message("Deprecated", "%s")
     let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
@@ -1616,7 +1619,7 @@ type Exception with
 
         | UnionPatternsBindDifferentNames _ -> os.AppendString(UnionPatternsBindDifferentNamesE().Format)
 
-        | ValueNotContained(denv, infoReader, mref, implVal, sigVal, f) ->
+        | ValueNotContained(_, denv, infoReader, mref, implVal, sigVal, f) ->
             let text1, text2 =
                 NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
 
@@ -1640,7 +1643,7 @@ type Exception with
                 )
             )
 
-        | FieldNotContained(denv, infoReader, enclosingTycon, _, v1, v2, f) ->
+        | FieldNotContained(_, denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
             os.AppendString(
@@ -1789,13 +1792,21 @@ type Exception with
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
-        | ObsoleteDiagnostic(message = s) ->
+        | ObsoleteDiagnostic(message = message) ->
             os.AppendString(Obsolete1E().Format)
 
-            if s <> "" then
-                os.AppendString(Obsolete2E().Format s)
+            match message with
+            | Some message when message <> "" -> os.AppendString(Obsolete2E().Format message)
+            | _ -> ()
 
-        | Experimental(s, _) -> os.AppendString(ExperimentalE().Format s)
+        | Experimental(message = message) ->
+            os.AppendString(Experimental1E().Format)
+
+            match message with
+            | Some message when message <> "" -> os.AppendString(Experimental2E().Format message)
+            | _ -> ()
+
+            os.AppendString(Experimental3E().Format)
 
         | PossibleUnverifiableCode _ -> os.AppendString(PossibleUnverifiableCodeE().Format)
 

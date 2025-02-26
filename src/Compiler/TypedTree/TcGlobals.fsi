@@ -508,6 +508,8 @@ type internal TcGlobals =
 
     member attrib_WarnOnWithoutNullArgumentAttribute: BuiltinAttribInfo
 
+    member attrib_IlExperimentalAttribute: BuiltinAttribInfo
+
     member attribs_Unsupported: FSharp.Compiler.TypedTree.TyconRef list
 
     member bitwise_and_info: IntrinsicValRef

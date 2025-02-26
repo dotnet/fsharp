@@ -345,7 +345,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       eContextInfo = contextInfo
       MatchingOnly = false
       ErrorOnFailedMemberConstraintResolution = false
-      EquivEnv = TypeEquivEnv.Empty 
+      EquivEnv = TypeEquivEnv.EmptyIgnoreNulls
       DisplayEnv = denv
       IsSpeculativeForMethodOverloading = false
       IsSupportsNullFlex = false
@@ -1609,7 +1609,10 @@ and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 =
     elif isSealedTy g ty1 then 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace (mkTyparTy tp) ty1
     else
-        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1, csenv.m))
+        if SubtypeConstraintImplied g tp.Constraints ty1 then
+            CompleteD
+        else
+            AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1, csenv.m))
 
 and DepthCheck ndeep m = 
     if ndeep > 300 then 
@@ -2475,6 +2478,8 @@ and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 =
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
     // comparison implies equality
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
+    // 'null' implies reference type ('not struct')
+    | TyparConstraint.SupportsNull _, TyparConstraint.IsReferenceType _
     | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
     | TyparConstraint.NotSupportsNull _, TyparConstraint.NotSupportsNull _
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
@@ -2489,6 +2494,19 @@ and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 =
         
 and CheckConstraintsImplication csenv existingConstraints newConstraint =
     existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
+
+and SubtypeConstraintImplied g existingConstraints newCoarceToTy =
+    if g.checkNullness then
+        let canBeNull t = (nullnessOfTy g t).Evaluate() = NullnessInfo.WithNull
+        let newTyIsWithoutNull = canBeNull newCoarceToTy |> not
+        let typeCoversNewConstraint existingTy = 
+            typeEquiv g existingTy newCoarceToTy
+            && not (newTyIsWithoutNull && canBeNull existingTy)   // :> T?  cannot imply :>T, since non-nullable is a stricter constraint.
+
+        existingConstraints 
+        |> List.exists (function | TyparConstraint.CoercesTo(ty2,_) when typeCoversNewConstraint ty2 -> true | _ -> false)
+    else
+        false
 
 // Ensure constraint conforms with existing constraints
 // NOTE: QUADRATIC
@@ -3159,6 +3177,7 @@ and ArgsMustSubsumeOrConvert
     trackErrors {
         let g = csenv.g
         let m = callerArg.Range
+        let callerTy = callerArg.CallerArgumentType
         let calledArgTy, usesTDC, eqn = AdjustCalledArgType csenv.InfoReader ad isConstraint enforceNullableOptionalsKnownTypes calledArg callerArg
 
         match eqn with 
@@ -3170,8 +3189,10 @@ and ArgsMustSubsumeOrConvert
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
-        if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerTy
+        if g.langVersion.SupportsFeature(LanguageFeature.WarnWhenUnitPassedToObjArg) && isUnitTy g callerTy && isObjTyAnyNullness g calledArgTy then
+            do! WarnD(Error(FSComp.SR.tcUnitToObjSubsumption(), m))
+        if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerTy) then 
             return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
         else 
             return usesTDC

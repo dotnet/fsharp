@@ -1120,7 +1120,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-            let n = mbase.PUntaint((fun x -> x.GetParameters().Length), m)
+            let n = mbase.PApplyArray((fun x -> x.GetParameters()),"GetParameters", m).Length
             match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, None, methodName, n)) with 
             | true, vref -> Some vref
             | _ -> 
@@ -1845,14 +1845,14 @@ module ProvidedMethodCalls =
         let rec loop (st: Tainted<ProvidedType>) = 
             if st.PUntaint((fun st -> st.IsGenericParameter), m) then st
             elif st.PUntaint((fun st -> st.IsArray), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 let rank = st.PUntaint((fun st -> st.GetArrayRank()), m)
                 (loop et).PApply((fun st -> if rank = 1 then st.MakeArrayType() else st.MakeArrayType(rank)), m)
             elif st.PUntaint((fun st -> st.IsByRef), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 (loop et).PApply((fun st -> st.MakeByRefType()), m)
             elif st.PUntaint((fun st -> st.IsPointer), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 (loop et).PApply((fun st -> st.MakePointerType()), m)
             else
                 let isGeneric = st.PUntaint((fun st -> st.IsGenericType), m)
@@ -1893,7 +1893,7 @@ module ProvidedMethodCalls =
              allArgs: Exprs,
              paramVars: Tainted<ProvidedVar>[],
              g, amap, mut, isProp, isSuperInit, m,
-             expr: Tainted<ProvidedExpr>) = 
+             expr: Tainted<ProvidedExpr MaybeNull>) = 
 
         let varConv =
             // note: Assuming the size based on paramVars
@@ -1903,7 +1903,7 @@ module ProvidedMethodCalls =
                 dict.Add(v, (None, e))
             dict
 
-        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr>) =
+        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr MaybeNull>) =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
@@ -2145,7 +2145,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName |> string), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif

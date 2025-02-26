@@ -268,12 +268,13 @@ open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Text
 open Microsoft.FSharp.Collections
 open Printf
+
+#nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
 "
 
     let StringBoilerPlate fileName =
         @"
     // BEGIN BOILERPLATE
-
     static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
     static let getTypeInfo (t: System.Type) = t
@@ -288,10 +289,10 @@ open Printf
         if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
     #endif
-    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-        s
-    #else
+    #if NULLABLE
         Unchecked.nonNull s
+    #else
+        s
     #endif
 
 
@@ -374,7 +375,7 @@ open Printf
             messageString <- postProcessString messageString
             createMessageString messageString fmt
 
-    static member GetTextOpt(key:string) = GetString(key) |> Option.ofObj
+    static member GetTextOpt(key:string) : string option = GetString(key) |> Option.ofObj
 
     /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
     static member SwallowResourceText with get () = swallowResourceText

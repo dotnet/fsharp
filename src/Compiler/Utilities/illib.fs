@@ -206,12 +206,12 @@ module Order =
             member _.Compare(x, xx) = compare (p !!x) (p !!xx)
         }
 
-    let orderOn p (pxOrder: IComparer<'U>) =
+    let orderOn (p:'T->'U) (pxOrder: IComparer<'U>) =
         { new IComparer<'T> with
-            member _.Compare(x, xx) = pxOrder.Compare(p x, p xx)
+            member _.Compare(x, xx) = pxOrder.Compare(p !!x, p !!xx)
         }
 
-    let toFunction (pxOrder: IComparer<'U>) x y = pxOrder.Compare(x, y)
+    let toFunction (pxOrder: IComparer<'U>) (x:'U) (y:'U) = pxOrder.Compare(x, y)
 
 //-------------------------------------------------------------------------
 // Library: arrays, lists, options, resizearrays
@@ -796,10 +796,10 @@ module String =
         elif (!!value).StartsWithOrdinal pattern then Some()
         else None
 
-    let (|Contains|_|) (pattern:string) value =
+    let (|Contains|_|) (pattern:string) (value:string|null) =
         match value with        
-        | value when String.IsNullOrWhiteSpace value -> None
         | null -> None
+        | value when String.IsNullOrWhiteSpace value -> None
         | value ->
             if value.Contains pattern then Some()
             else None
@@ -811,7 +811,7 @@ module String =
             let mutable line = reader.ReadLine()
 
             while not (isNull line) do
-                yield line
+                yield (line |> Unchecked.nonNull)
                 line <- reader.ReadLine()
 
             if str.EndsWithOrdinal("\n") then
@@ -1306,6 +1306,14 @@ module MultiMap =
 
     let initBy f xs : MultiMap<_, _> =
         xs |> Seq.groupBy f |> Seq.map (fun (k, v) -> (k, List.ofSeq v)) |> Map.ofSeq
+
+    let ofList (xs: ('a * 'b) list) : MultiMap<'a,'b> =
+        (Map.empty, xs)
+        ||> List.fold (fun m (k, v) ->
+            m |> Map.change k (function
+                | None -> Some [v]
+                | Some vs -> Some (v :: vs)))
+        |> Map.map (fun _ values -> List.rev values)
 
 type LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 

@@ -237,7 +237,7 @@ module LowPriority =
         /// </summary>
         member inline Using:
             resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
-                when 'Resource :> IDisposable
+                when 'Resource :> IDisposable|null
 
 /// <summary>
 /// Contains medium-priority overloads for the `task` computation expression builder.

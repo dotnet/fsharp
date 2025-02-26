@@ -14,6 +14,12 @@ type EqualityWithComparerAugmentation =
       EqualsWithComparer: Val
       EqualsExactWithComparer: Val }
 
+val mkBindNullComparison: TcGlobals -> Text.Range -> thise: Expr -> thate: Expr -> expr: Expr -> Expr
+
+val mkBindThisNullEquals: TcGlobals -> Text.Range -> thise: Expr -> thate: Expr -> expr: Expr -> Expr
+
+val mkBindNullHash: TcGlobals -> Text.Range -> thise: Expr -> expr: Expr -> Expr
+
 val CheckAugmentationAttribs: bool -> TcGlobals -> Import.ImportMap -> Tycon -> unit
 
 val TyconIsCandidateForAugmentationWithCompare: TcGlobals -> Tycon -> bool

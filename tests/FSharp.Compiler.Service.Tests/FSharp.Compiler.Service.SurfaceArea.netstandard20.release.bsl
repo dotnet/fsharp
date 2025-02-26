@@ -2836,10 +2836,6 @@ FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpField SignatureField
 FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpField get_ImplementationField()
 FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpField get_SignatureField()
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String DiagnosticId
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String UrlFormat
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String get_DiagnosticId()
-FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: System.String get_UrlFormat()
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: DiagnosticContextInfo ContextInfo
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: DiagnosticContextInfo get_ContextInfo()
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
@@ -2861,6 +2857,16 @@ FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedDa
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] DiagnosticId
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] UrlFormat
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DiagnosticId()
+FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_UrlFormat()
+FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData
+FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] DiagnosticId
+FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] UrlFormat
+FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DiagnosticId()
+FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_UrlFormat()
+FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ExperimentalExtendedData
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnostic Create(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Int32, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity Severity
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity get_Severity()
@@ -5102,7 +5108,9 @@ FSharp.Compiler.Symbols.FSharpAnonRecordTypeDetails: System.String CompiledName
 FSharp.Compiler.Symbols.FSharpAnonRecordTypeDetails: System.String get_CompiledName()
 FSharp.Compiler.Symbols.FSharpAnonRecordTypeDetails: System.String[] SortedFieldNames
 FSharp.Compiler.Symbols.FSharpAnonRecordTypeDetails: System.String[] get_SortedFieldNames()
+FSharp.Compiler.Symbols.FSharpAssembly: Boolean IsFSharp
 FSharp.Compiler.Symbols.FSharpAssembly: Boolean IsProviderGenerated
+FSharp.Compiler.Symbols.FSharpAssembly: Boolean get_IsFSharp()
 FSharp.Compiler.Symbols.FSharpAssembly: Boolean get_IsProviderGenerated()
 FSharp.Compiler.Symbols.FSharpAssembly: FSharp.Compiler.Symbols.FSharpAssemblySignature Contents
 FSharp.Compiler.Symbols.FSharpAssembly: FSharp.Compiler.Symbols.FSharpAssemblySignature get_Contents()
@@ -10884,9 +10892,7 @@ FSharp.Compiler.Text.PositionModule: System.String stringOfPos(FSharp.Compiler.T
 FSharp.Compiler.Text.PositionModule: System.Tuple`2[System.Int32,System.Int32] toZ(FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.PositionModule: Void outputPos(System.IO.TextWriter, FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.Range: Boolean Equals(System.Object)
-FSharp.Compiler.Text.Range: Boolean HasOriginalRange
 FSharp.Compiler.Text.Range: Boolean IsSynthetic
-FSharp.Compiler.Text.Range: Boolean get_HasOriginalRange()
 FSharp.Compiler.Text.Range: Boolean get_IsSynthetic()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position End
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position Start
@@ -10894,7 +10900,6 @@ FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_End()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_Start()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range EndRange
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range StartRange
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range WithOriginalRange(Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range Zero
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_EndRange()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_StartRange()
@@ -10908,8 +10913,6 @@ FSharp.Compiler.Text.Range: Int32 get_EndColumn()
 FSharp.Compiler.Text.Range: Int32 get_EndLine()
 FSharp.Compiler.Text.Range: Int32 get_StartColumn()
 FSharp.Compiler.Text.Range: Int32 get_StartLine()
-FSharp.Compiler.Text.Range: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Text.Range] OriginalRange
-FSharp.Compiler.Text.Range: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Text.Range] get_OriginalRange()
 FSharp.Compiler.Text.Range: System.String FileName
 FSharp.Compiler.Text.Range: System.String ToString()
 FSharp.Compiler.Text.Range: System.String get_FileName()
@@ -10921,7 +10924,6 @@ FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_range0()
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeCmdArgs()
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeStartup()
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFileIndexRange(Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFileIndexRangeWithOriginRange(Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position, Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFirstLineOfFile(System.String)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkRange(System.String, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range range0
