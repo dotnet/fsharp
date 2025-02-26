@@ -37,9 +37,9 @@
                             Content="{x:Static local:Strings.Show_all_symbols}"
                             IsChecked="{Binding IncludeSymbolsFromUnopenedNamespacesOrModules}" />
                         <CheckBox
-                            x:Name="generateBodyForOverridedMethod"
-                            Content="{x:Static local:Strings.Generate_Body_For_Overrided_Method}"
-                            IsChecked="{Binding GenerateBodyForOverridedMethod}" />
+                            x:Name="generateBodyForOverriddenMethod"
+                            Content="{x:Static local:Strings.Generate_Body_For_Overridden_Method}"
+                            IsChecked="{Binding GenerateBodyForOverriddenMethod}" />
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Enter_Key_Rule}">

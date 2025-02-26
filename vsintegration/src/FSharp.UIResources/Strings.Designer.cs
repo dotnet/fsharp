@@ -279,9 +279,9 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         /// <summary>
         ///   查找类似 Generate default implementation body for overrided method 的本地化字符串。
         /// </summary>
-        public static string Generate_Body_For_Overrided_Method {
+        public static string Generate_Body_For_Overridden_Method {
             get {
-                return ResourceManager.GetString("Generate_Body_For_Overrided_Method", resourceCulture);
+                return ResourceManager.GetString("Generate_Body_For_Overridden_Method", resourceCulture);
             }
         }
         

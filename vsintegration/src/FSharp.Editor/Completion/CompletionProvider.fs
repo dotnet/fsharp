@@ -151,7 +151,7 @@ type internal FSharpCompletionProvider
             document: Document,
             caretPosition: int,
             getAllSymbols: FSharpCheckFileResults -> AssemblySymbol array,
-            genBodyForOverridedMeth: bool
+            genBodyForOverriddenMeth: bool
         ) =
 
         cancellableTask {
@@ -191,7 +191,7 @@ type internal FSharpCompletionProvider
                     partialName,
                     getAllSymbols,
                     (completionContextPos, completionContext),
-                    genBodyForOverridedMeth
+                    genBodyForOverriddenMeth
                 )
 
             let results = List<Completion.CompletionItem>()
@@ -355,14 +355,14 @@ type internal FSharpCompletionProvider
                     else
                         Array.empty
 
-                let genBodyForOverridedMeth = settings.IntelliSense.GenerateBodyForOverridedMethod
+                let genBodyForOverriddenMeth = settings.IntelliSense.GenerateBodyForOverriddenMethod
 
                 let! results =
                     FSharpCompletionProvider.ProvideCompletionsAsyncAux(
                         context.Document,
                         context.Position,
                         getAllSymbols,
-                        genBodyForOverridedMeth
+                        genBodyForOverriddenMeth
                     )
 
                 context.AddItems results
