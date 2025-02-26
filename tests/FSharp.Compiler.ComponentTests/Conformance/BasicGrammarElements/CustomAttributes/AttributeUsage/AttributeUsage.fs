@@ -483,6 +483,7 @@ module CustomAttributes_AttributeUsage =
             (Error 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
         ]
     
+    // https://github.com/dotnet/fsharp/issues/18298#issuecomment-2685481590
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``E_AttributeTargetIsField03_fs`` compilation =
@@ -492,7 +493,6 @@ module CustomAttributes_AttributeUsage =
         |> shouldFail
         |> withDiagnostics [
             (Error 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
@@ -503,17 +503,14 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldSucceed
     
+    // https://github.com/dotnet/fsharp/issues/18298#issuecomment-2685481590
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
     let ``E_AttributeTargetIsProperty01_fs`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 842, Line 14, Col 5, Line 14, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
-        ]
+        |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
