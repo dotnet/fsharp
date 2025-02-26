@@ -52,6 +52,11 @@
         <target state="translated">書式設定</target>
         <note />
       </trans-unit>
+      <trans-unit id="Generate_Body_For_Overrided_Method">
+        <source>Generate default implementation body for overrided method</source>
+        <target state="new">Generate default implementation body for overrided method</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="translated">インラインのヒント</target>

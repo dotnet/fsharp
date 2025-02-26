@@ -290,13 +290,17 @@ type public FSharpCheckFileResults =
     /// <param name="completionContextAtPos">
     ///    Completion context for a particular position computed in advance.
     /// </param>
+    /// <param name="genBodyForOverridedMeth">
+    ///    A switch to determine whether to generate an default implementation body for overridden method when completing.
+    /// </param>
     member GetDeclarationListInfo:
         parsedFileResults: FSharpParseFileResults option *
         line: int *
         lineText: string *
         partialName: PartialLongName *
         ?getAllEntities: (unit -> AssemblySymbol list) *
-        ?completionContextAtPos: (pos * CompletionContext option) ->
+        ?completionContextAtPos: (pos * CompletionContext option) *
+        ?genBodyForOverridedMeth: bool ->
             DeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
@@ -317,12 +321,16 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
+    /// <param name="genBodyForOverridedMeth">
+    ///    A switch to determine whether to generate an default implementation body for overridden method when completing.
+    /// </param>
     member GetDeclarationListSymbols:
         parsedFileResults: FSharpParseFileResults option *
         line: int *
         lineText: string *
         partialName: PartialLongName *
-        ?getAllEntities: (unit -> AssemblySymbol list) ->
+        ?getAllEntities: (unit -> AssemblySymbol list) *
+        ?genBodyForOverridedMeth: bool ->
             FSharpSymbolUse list list
 
     /// <summary>Compute a formatted tooltip for the given keywords</summary>

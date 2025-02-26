@@ -1063,7 +1063,7 @@ type internal TypeCheckInfo
         |> Option.defaultValue completions
 
     /// Gets all methods that a type can override, but has not yet done so.
-    let GetOverridableMethods pos ctx (typeNameRange: range) spacesBeforeOverrideKeyword hasThis isStatic =
+    let GetOverridableMethods pos ctx (typeNameRange: range) newlineIndentCount hasThis isStatic genBodyForOverridedMeth =
         let checkImplementedSlotDeclareType ty slots =
             slots
             |> Option.map (List.exists (fun (TSlotSig(declaringType = ty2)) -> typeEquiv g ty ty2))
@@ -1111,8 +1111,11 @@ type internal TypeCheckInfo
         let (nenv, ad), m = GetBestEnvForPos pos
         let denv = nenv.DisplayEnv
 
+        /// Check if the method is abstract, return "raise (NotImplementedException())" if it is abstract, otherwise return the given body
         let checkMethAbstractAndGetImplementBody (meth: MethInfo) implementBody =
-            if meth.IsAbstract then
+            if not genBodyForOverridedMeth then
+                String.Empty
+            elif meth.IsAbstract then
                 if nenv.DisplayEnv.openTopPathsSorted.Force() |> List.contains [ "System" ] then
                     "raise (NotImplementedException())"
                 else
@@ -1120,8 +1123,8 @@ type internal TypeCheckInfo
             else
                 implementBody
 
-        let newlineIndent =
-            Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' '
+        let newlineIndentCount = max 1 newlineIndentCount
+        let newlineIndent = Environment.NewLine + String.make newlineIndentCount ' '
 
         let getOverridableMethods superTy (overriddenMethods: MethInfo list) overriddenProperties =
             // Do not check a method with same name twice
@@ -1197,12 +1200,6 @@ type internal TypeCheckInfo
 
                     let this = if hasThis || prop.IsStatic then String.Empty else "this."
 
-                    let getterWithBody =
-                        if String.IsNullOrWhiteSpace getterWithBody then
-                            String.Empty
-                        else
-                            getterWithBody + newlineIndent
-
                     let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
 
                     let textInCode =
@@ -1211,6 +1208,7 @@ type internal TypeCheckInfo
                         + newlineIndent
                         + "with "
                         + getterWithBody
+                        + (if String.IsNullOrEmpty keywordAnd then String.Empty else newlineIndent)
                         + keywordAnd
                         + setterWithBody
 
@@ -1721,7 +1719,8 @@ type internal TypeCheckInfo
             filterCtors,
             resolveOverloads,
             completionContextAtPos: (pos * CompletionContext option) option,
-            getAllSymbols: unit -> AssemblySymbol list
+            getAllSymbols: unit -> AssemblySymbol list,
+            genBodyForOverridedMeth
         ) : (CompletionItem list * DisplayEnv * CompletionContext option * range) option =
 
         let loc =
@@ -1957,8 +1956,21 @@ type internal TypeCheckInfo
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
 
-            | Some(CompletionContext.MethodOverride(ctx, enclosingTypeNameRange, spacesBeforeOverrideKeyword, hasThis, isStatic)) ->
-                GetOverridableMethods pos ctx enclosingTypeNameRange spacesBeforeOverrideKeyword hasThis isStatic
+            | Some(CompletionContext.MethodOverride(ctx,
+                                                    enclosingTypeNameRange,
+                                                    spacesBeforeOverrideKeyword,
+                                                    hasThis,
+                                                    isStatic,
+                                                    spacesBeforeEnclosingDefinition)) ->
+                let indent = max 1 (spacesBeforeOverrideKeyword - spacesBeforeEnclosingDefinition)
+                GetOverridableMethods
+                    pos
+                    ctx
+                    enclosingTypeNameRange
+                    (spacesBeforeOverrideKeyword + indent)
+                    hasThis
+                    isStatic
+                    genBodyForOverridedMeth
 
             // Other completions
             | cc ->
@@ -2025,7 +2037,7 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
     /// Get the auto-complete items at a location
-    member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
+    member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, genBodyForOverridedMeth) =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -2044,7 +2056,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         completionContextAtPos,
-                        getAllEntities
+                        getAllEntities,
+                        genBodyForOverridedMeth
                     )
 
                 match declItemsOpt with
@@ -2085,7 +2098,7 @@ type internal TypeCheckInfo
                 DeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities) =
+    member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities, genBodyForOverridedMeth) =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -2104,7 +2117,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        getAllEntities
+                        getAllEntities,
+                        genBodyForOverridedMeth
                     )
 
                 match declItemsOpt with
@@ -2285,7 +2299,8 @@ type internal TypeCheckInfo
                             ResolveTypeNamesToCtors,
                             ResolveOverloads.Yes,
                             None,
-                            (fun () -> [])
+                            (fun () -> []),
+                            false
                         )
 
                     match declItemsOpt with
@@ -2347,7 +2362,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.No,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2393,7 +2409,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.No,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2434,7 +2451,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.No,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2470,7 +2488,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2618,7 +2637,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2647,7 +2667,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -3348,20 +3369,40 @@ type FSharpCheckFileResults
         | Some(scope, _builderOpt) -> Some scope.TcImports
 
     /// Intellisense autocompletions
-    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos) =
+    member _.GetDeclarationListInfo
+        (
+            parsedFileResults,
+            line,
+            lineText,
+            partialName,
+            ?getAllEntities,
+            ?completionContextAtPos,
+            ?genBodyForOverridedMeth
+        ) =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
+        let genBodyForOverridedMeth = defaultArg genBodyForOverridedMeth true
 
         match details with
         | None -> DeclarationListInfo.Empty
         | Some(scope, _builderOpt) ->
-            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities)
+            scope.GetDeclarations(
+                parsedFileResults,
+                line,
+                lineText,
+                partialName,
+                completionContextAtPos,
+                getAllEntities,
+                genBodyForOverridedMeth
+            )
 
-    member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
+    member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?genBodyForOverridedMeth) =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
+        let genBodyForOverridedMeth = defaultArg genBodyForOverridedMeth true
 
         match details with
         | None -> []
-        | Some(scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
+        | Some(scope, _builderOpt) ->
+            scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities, genBodyForOverridedMeth)
 
     member _.GetKeywordTooltip(names: string list) =
         ToolTipText.ToolTipText
