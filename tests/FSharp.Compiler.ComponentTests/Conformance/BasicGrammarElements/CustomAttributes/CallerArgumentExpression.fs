@@ -4,6 +4,7 @@ namespace Conformance.BasicGrammarElements
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test
 
 module CustomAttributes_CallerArgumentExpression =
 
