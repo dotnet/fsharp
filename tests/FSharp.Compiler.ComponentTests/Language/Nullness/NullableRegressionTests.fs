@@ -135,6 +135,28 @@ let ``With new nullness syntax nullness enabled`` compilation =
     |> withVersionAndCheckNulls ("preview",true)   
     |> verifyBaseline
 
+// https://github.com/dotnet/fsharp/issues/18288
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression previewNullness`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",true)   
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression previewNoNullness`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",false)   
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression v8`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("8.0",false)   
+    |> typecheck
+    |> shouldSucceed
+
 
 
 [<Theory>]
