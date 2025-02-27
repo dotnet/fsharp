@@ -622,7 +622,7 @@ module doIt =
         |> withOutputContainsAllInOrderWithRegexPatterns [
             @"Verifying \[GenericStructWithClosureWithConstraints\]MyType`2\.MoveNext"
             @"\[IL\]: Error \[StackUnexpected\]: \[.*? : .*?::MoveNext\(\)\]\[offset 0x[0-9A-Fa-f]+\]\[found \w+\]\[expected value '.*?'\] Unexpected type on the stack\."
-            @"Verifying \[GenericStructWithClosureWithConstraints\]<StartupCode\$GenericStructWithClosureWithConstraints>\.\$Test\.main@"
+            @"2 Error\(s\) Verifying .*GenericClassWithInterfaceAndClosure\.exe"
             ]
 
     let ``Generic nested class with interface implemented and closure - source`` =
@@ -694,10 +694,10 @@ module doIt =
         |> shouldSucceed
         |> verifyPEFileWithSystemDlls
         |> withOutputContainsAllInOrderWithRegexPatterns [
-            @"Verifying [AgedLookup]Internal\.Utilities\.Collections\.AgedLookup`3\.TryPeekKeyValueImpl"
-            @"\[IL\]: Error \[StackUnexpected\]: \[([^\]]+)\] :  Internal\.Utilities\.Collections\.AgedLookup`3::TryPeekKeyValueImpl([FSharp\.Core]Microsoft\.FSharp\.Collections\.FSharpList`1<System\.Tuple`2<!1,!!0>>, !1)][offset 0x00000005][found ref '[FSharp\.Core]Microsoft\.FSharp\.Collections\.FSharpList`1<System\.Tuple`2<T1,T0>>'][expected ref '[FSharp\.Core]Microsoft\.FSharp\.Collections\.FSharpList`1<System\.Tuple`2<T1,T0>>'] Unexpected type on the stack\."
-            @"\[IL\]: Error \[StackUnexpected\]: \[([^\]]+)\] :   Internal\.Utilities\.Collections\.AgedLookup`3::TryPeekKeyValueImpl([FSharp\.Core]Microsoft\.FSharp\.Collections\.FSharpList`1<System\.Tuple`2<!1,!!0>>, !1)][offset 0x0000000A][found ref '[FSharp\.Core]Microsoft\.FSharp\.Core\.FSharpOption`1<System\.Tuple`2<T1,T0>>'][expected ref '[FSharp\.Core]Microsoft\.FSharp\.Core\.FSharpOption`1<System\.Tuple`2<T1,T0>>'] Unexpected type on the stack\."
-            @"1 Error\(s\) Verifying [A-Z]:\\[^\s]+\.exe"
+            @"Verifying \[GenericClassWithInterfaceAndClosure\]MyType`2\.System\.Collections\.IEnumerator\.MoveNext"
+            @"\[IL\]: Error \[StackUnexpected\]: \[(?:[a-zA-Z]:\\|/)?[^:]+ : Test\+RuntimeHelpers\+MyType`2::System\.Collections\.IEnumerator\.MoveNext\(\)\]\[offset 0x00000001\]\[found Int32\]\[expected value 'A'\] Unexpected type on the stack\."
+            @"Verifying \[GenericClassWithInterfaceAndClosure\]MyType`2\.System\.Collections\.IEnumerator\.Reset"
+            @"1 Error\(s\) Verifying .*\\|/GenericClassWithInterfaceAndClosure\.exe"
             ]
 
     [<InlineData(true, false)>]         // RealSig NoOptimize

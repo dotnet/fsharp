@@ -61,11 +61,11 @@ let DropErasedTyargs tys =
         | TType_measure _ -> false
         | _ -> true)
 
-let rec stripPrefix (a: 'a list) (b: 'b list) (compare: 'a * 'b -> bool)=
+let rec stripPrefix (a: 'a list) (b: 'b list) (compare: 'a * 'b -> bool) =
     match a, b with
     | [], _ -> b
     | _, [] -> []
-    | ah::at, bh::bt when compare(ah, bh) -> stripPrefix at bt compare
+    | ah :: at, bh :: bt when compare (ah, bh) -> stripPrefix at bt compare
     | _ -> b
 
 let AddNonUserCompilerGeneratedAttribs (g: TcGlobals) (mdef: ILMethodDef) = g.AddMethodGeneratedAttributes mdef
@@ -4367,7 +4367,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
                 match g.realsig, vref.ApparentEnclosingEntity with
                 | true, Parent parent when not (vref.IsMemberOrModuleBinding) ->
-//@@@@@                    let ilTyArgs = stripPrefix envTypeArgs ilTyArgs (fun (a, b) -> a = b)
+                    //@@@@@                    let ilTyArgs = stripPrefix envTypeArgs ilTyArgs (fun (a, b) -> a = b)
                     envTypeArgs, ilTyArgs
                 | _ -> List.splitAt numEnclILTypeArgs ilTyArgs
 
@@ -9421,7 +9421,7 @@ and GenMethodForBinding
             GenGenericParams cenv eenvUnderMethLambdaTypars (stripPrefix apparentEnclosingEntity.TyparsNoRange methLambdaTypars (fun (a:Typar, b:Typar) -> a.Stamp = b.Stamp))
         | _ ->
         @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*)
-            GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
+        GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
 
     let ilParams =
         GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
