@@ -622,7 +622,7 @@ module doIt =
         |> withOutputContainsAllInOrderWithRegexPatterns [
             @"Verifying \[GenericStructWithClosureWithConstraints\]MyType`2\.MoveNext"
             @"\[IL\]: Error \[StackUnexpected\]: \[.*? : .*?::MoveNext\(\)\]\[offset 0x[0-9A-Fa-f]+\]\[found \w+\]\[expected value '.*?'\] Unexpected type on the stack\."
-            @"2 Error\(s\) Verifying .*GenericClassWithInterfaceAndClosure\.exe"
+            @"1 Error\(s\) Verifying .*\\|/GenericStructWithClosureWithConstraints\.exe"
             ]
 
     let ``Generic nested class with interface implemented and closure - source`` =
@@ -1027,7 +1027,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         |> withOutputContainsAllInOrderWithRegexPatterns [
             @"\[IL\]: Error \[StackUnexpected\]: \[.* : Internal\.Utilities\.Collections\.AgedLookup`3::TryPeekKeyValueImpl\(\[.*\].*\)\].* Unexpected type on the stack\."//\[offset 0x[0-9A-Fa-f]+\]\[found ref '\[.*\]'\]\[expected ref '\[.*\]'\] Unexpected type on the stack\."
             @"\[IL\]: Error \[StackUnexpected\]: \[.* : Internal\.Utilities\.Collections\.AgedLookup`3::TryPeekKeyValueImpl\(\[.*\].*\)\].* Unexpected type on the stack\."//\[offset 0x[0-9A-Fa-f]+\]\[found ref '\[.*\]'\]\[expected ref '\[.*\]'\] Unexpected type on the stack\."
-            @"2 Error\(s\) Verifying .*AgedLookup\.dll"
+            @"2 Error\(s\) Verifying .*\\|/AgedLookup\.dll"
             ]
 
     [<InlineData(true, true)>]          // RealSig Optimize
