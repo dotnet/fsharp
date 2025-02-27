@@ -38,54 +38,6 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit f@11
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
-  {
-    .field static assembly initonly class assembly/f@11 @_instance
-    .method assembly specialname rtspecialname instance void  .ctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance int32 Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
-    {
-      
-      .maxstack  6
-      .locals init (int32 V_0,
-               class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1)
-      IL_0000:  call       int32 assembly::TestFunction1()
-      IL_0005:  stloc.0
-      IL_0006:  ldstr      "Hello"
-      IL_000b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0010:  stloc.1
-      IL_0011:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-      IL_0016:  ldloc.1
-      IL_0017:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
-                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_001c:  pop
-      IL_001d:  ldloc.0
-      IL_001e:  ldloc.0
-      IL_001f:  add
-      IL_0020:  ret
-    } 
-
-    .method private specialname rtspecialname static void  .cctor() cil managed
-    {
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void assembly/f@11::.ctor()
-      IL_0005:  stsfld     class assembly/f@11 assembly/f@11::@_instance
-      IL_000a:  ret
-    } 
-
-  } 
-
   .method public static int32  TestFunction1() cil managed
   {
     
@@ -111,21 +63,38 @@
     IL_002f:  ret
   } 
 
+  .method assembly static int32  f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (int32 V_0,
+             class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1)
+    IL_0000:  call       int32 assembly::TestFunction1()
+    IL_0005:  stloc.0
+    IL_0006:  ldstr      "Hello"
+    IL_000b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0010:  stloc.1
+    IL_0011:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+    IL_0016:  ldloc.1
+    IL_0017:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_001c:  pop
+    IL_001d:  ldloc.0
+    IL_001e:  ldloc.0
+    IL_001f:  add
+    IL_0020:  ret
+  } 
+
   .method public static int32  TestFunction6() cil managed
   {
     
-    .maxstack  5
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> V_0)
-    IL_0000:  ldsfld     class assembly/f@11 assembly/f@11::@_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldnull
-    IL_0008:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
-    IL_000d:  ldloc.0
-    IL_000e:  ldnull
-    IL_000f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::Invoke(!0)
-    IL_0014:  add
-    IL_0015:  ret
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  call       int32 assembly::f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+    IL_0006:  ldnull
+    IL_0007:  call       int32 assembly::f@10(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+    IL_000c:  add
+    IL_000d:  ret
   } 
 
 } 
