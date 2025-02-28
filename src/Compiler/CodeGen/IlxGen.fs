@@ -5675,7 +5675,9 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | _ -> None)
         |> List.map (GenTypeAux cenv tp.Range eenv.tyenv VoidNotOK PtrTypesNotOK)
 
-    let refTypeConstraint = tp |> HasConstraint (fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull) // `null` implies not struct
+    let refTypeConstraint =
+        tp |> HasConstraint(fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull) // `null` implies not struct
+
     let notNullableValueTypeConstraint = tp |> HasConstraint _.IsIsNonNullableStruct
 
     let nullnessOfTypar =
@@ -5693,7 +5695,9 @@ and GenGenericParam cenv eenv (tp: Typar) =
         else
             None
 
-    let defaultConstructorConstraint = tp |> HasConstraint _.IsRequiresDefaultConstructor
+    let defaultConstructorConstraint =
+        tp |> HasConstraint _.IsRequiresDefaultConstructor
+
     let emitUnmanagedInIlOutput =
         cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop)
         && tp |> HasConstraint _.IsIsUnmanaged

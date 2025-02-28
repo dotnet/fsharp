@@ -1736,9 +1736,10 @@ val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 /// This predicate is used to detect those type parameters.
 val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
 
-val inline HasConstraint: [<InlineIfLambda>]predicate:(TyparConstraint->bool) -> Typar -> bool
+val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
 
-val inline IsTyparTyWithConstraint: TcGlobals -> [<InlineIfLambda>]predicate:(TyparConstraint->bool) -> TType -> bool
+val inline IsTyparTyWithConstraint:
+    TcGlobals -> [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> TType -> bool
 
 /// Determine if a type is a variable type with the ': not struct' constraint.
 ///

@@ -2433,7 +2433,8 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
 
         | TyparConstraint.SupportsNull _, TyparConstraint.IsNonNullableStruct _
         | TyparConstraint.IsNonNullableStruct _, TyparConstraint.SupportsNull _   ->
-            return! ErrorD (Error(FSComp.SR.csNullStructConstraintInconsistent(), m))
+            ()
+            //return! WarnD (Error(FSComp.SR.csNullStructConstraintInconsistent(), m))
         
         | TyparConstraint.IsUnmanaged _, TyparConstraint.IsReferenceType _
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsUnmanaged _ ->

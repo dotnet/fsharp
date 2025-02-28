@@ -1,4 +1,3 @@
-
 module M
 
 type ToSeq =
@@ -7,11 +6,11 @@ type ToSeq =
         call (Unchecked.defaultof<ToSeq>, source)
 
     static member inline ToSeq (x: 'Foldable                      , _: ToSeq) = (^Foldable: (static member ToSeq : _ -> _) x)
-    static member inline ToSeq (_: 'T, _: ToSeq) = ()
+    static member inline ToSeq (_: 'T when 'T: null and 'T: struct, _: ToSeq) = ()
 
 type Append =    
     static member inline Append (x: 'AltT        , y: 'AltT           , _: obj   ) = (^AltT : (static member Append : _*_ -> _) x, y) : 'AltT
-    static member inline Append (_: ^t, _, _: obj   ) = ()
+    static member inline Append (_: ^t when ^t: null and ^t: struct, _, _: obj   ) = ()
     static member inline Append (x: Result<_,_>  , y                  , _: Append) = match x, y with Ok _, _ -> x | Error x, Error y -> Error (x + y) | _, _ -> y
 
     static member inline Invoke (x: 'AltT) (y: 'AltT) : 'AltT =
@@ -30,7 +29,7 @@ type Choice =
         res
 
     static member inline Choice (x: ref<'FAltT> , _: Choice) = (^FAltT : (static member Choice : _ -> _) x.Value) : 'AltT
-    static member inline Choice (_: ref< ^t>, _: Choice) = ()
+    static member inline Choice (_: ref< ^t> when ^t: null and ^t: struct, _: Choice) = ()
 
     static member inline Invoke (x: 'FAltT) : 'AltT =
         let inline call (mthd: ^M, input1: ^I) = ((^M or ^I) : (static member Choice : _*_ -> _) (ref input1, mthd))
