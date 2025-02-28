@@ -77,7 +77,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override x.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustSeverity(tcConfigB.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
         | FSharpDiagnosticSeverity.Error ->
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
