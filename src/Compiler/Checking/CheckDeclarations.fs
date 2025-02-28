@@ -580,19 +580,18 @@ module TcRecdUnionAndEnumDeclarations =
         let attrs =
             (*
                 The attributes of a union case decl get attached to the generated "static factory" method.
-                Enforce union-cases AttributeTargets:
-                - AttributeTargets.Method
-                    type SomeUnion =
-                    | Case1 of int // Compiles down to a static method
-                - AttributeTargets.Property
-                    type SomeUnion =
-                    | Case1 // Compiles down to a static property
-            *)
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
-                let target = if rfields.IsEmpty then AttributeTargets.Property else AttributeTargets.Method
-                TcAttributes cenv env target synAttrs
-            else
-                TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+                 Enforce union-cases AttributeTargets:
+                 - AttributeTargets.Method
+                     type SomeUnion =
+                     | Case1 of int // Compiles down to a static method so the target should be AttributeTargets.Method
+                 - AttributeTargets.Property
+                     type SomeUnion =
+                     | Case1 // Compiles down to a static property so the target should be AttributeTargets.Property
+             *)
+             // See https://github.com/dotnet/fsharp/issues/18298
+             // For backward compatibility, we can't enforce the correct the attribute targets for union case declarations.
+             // In the future, we should have a dedicated `FsharpAttributeTargets` that will help us enforce F# the attribute targets.
+             TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
         
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
