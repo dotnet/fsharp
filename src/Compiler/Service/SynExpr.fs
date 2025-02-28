@@ -845,22 +845,6 @@ module SynExpr =
         // precedence than regular function application.
         | _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(PrefixApp High) :: _ -> true
 
-        // Parens are never required around suffixed or infixed numeric literals, e.g.,
-        //
-        //     (1l).ToString()
-        //     (1uy).ToString()
-        //     (0b1).ToString()
-        //     (1e10).ToString()
-        //     (1.0).ToString()
-        | DotSafeNumericLiteral, _ -> false
-
-        // Parens are required around bare decimal ints or doubles ending
-        // in dots when being dotted into, e.g.,
-        //
-        //     (1).ToString()
-        //     (1.).ToString()
-        | SynExpr.Const(constant = SynConst.Int32 _ | SynConst.Double _), SyntaxNode.SynExpr(SynExpr.DotGet _) :: _ -> true
-
         // Parens are required around join conditions:
         //
         //     join … on (… = …)
@@ -906,6 +890,22 @@ module SynExpr =
             appChainDependsOnDotOrPseudoDotPrecedence path
             ->
             true
+
+        // Parens are never required around suffixed or infixed numeric literals, e.g.,
+        //
+        //     (1l).ToString()
+        //     (1uy).ToString()
+        //     (0b1).ToString()
+        //     (1e10).ToString()
+        //     (1.0).ToString()
+        | DotSafeNumericLiteral, _ -> false
+
+        // Parens are required around bare decimal ints or doubles ending
+        // in dots when being dotted into, e.g.,
+        //
+        //     (1).ToString()
+        //     (1.).ToString()
+        | SynExpr.Const(constant = SynConst.Int32 _ | SynConst.Double _), SyntaxNode.SynExpr(SynExpr.DotGet _) :: _ -> true
 
         // The :: operator is parsed differently from other symbolic infix operators,
         // so we need to give it special treatment.
