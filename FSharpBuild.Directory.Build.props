@@ -82,8 +82,7 @@
   <PropertyGroup>
     <NoWarn Condition="'$(Language)' == 'F#'">$(NoWarn);FS2003</NoWarn><!-- warning when AssemblyInformationalVersion looks like '1.2.3-dev' -->
     <NoCompilerStandardLib>true</NoCompilerStandardLib><!-- necessary for resource generation using csc.exe -->
-    <DebugType Condition="'$(Configuration)' == 'release'">embedded</DebugType>
-    <DebugType Condition="'$(Configuration)' == 'debug'">portable</DebugType>
+    <DebugType>embedded</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
