@@ -14,7 +14,7 @@ open Internal.Utilities.Library
 open System.Text.RegularExpressions
 
 [<RequireQualifiedAccess>]
-module WarnScopes =
+module internal WarnScopes =
 
     // *************************************
     // Temporary storage (during lexing one file) for warn scope related data
@@ -73,7 +73,7 @@ module WarnScopes =
     // Collect the line directives during lexing
     // *************************************
 
-    let internal RegisterLineDirective (lexbuf, fileIndex, line: int) =
+    let RegisterLineDirective (lexbuf, fileIndex, line: int) =
         let data = getLexbufData lexbuf
         let sectionMap = line, lexbuf.StartPos.OriginalLine + 1
 
@@ -188,7 +188,7 @@ module WarnScopes =
             WarnCmds = warnCmds
         }
 
-    let internal ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
+    let ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
         let data = getLexbufData lexbuf
         let warnDirective = parseDirective data.OriginalFileIndex lexbuf
         data.WarnDirectives <- warnDirective :: data.WarnDirectives
@@ -229,7 +229,7 @@ module WarnScopes =
     let private getScopes idx warnScopes =
         Map.tryFind idx warnScopes |> Option.defaultValue []
 
-    let internal MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (subModuleRanges: range list) (lexbuf: Lexbuf) =
+    let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) (subModuleRanges: range list) (lexbuf: Lexbuf) =
         let collectWarnCmds warnDirectives =
             if lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn then
                 warnDirectives |> List.collect _.WarnCmds
@@ -332,7 +332,7 @@ module WarnScopes =
 
         lock diagnosticOptions (fun () -> merge lexbufLineMaps lexbufWarnScopes)
 
-    let internal getDirectiveTrivia (lexbuf: Lexbuf) =
+    let getDirectiveTrivia (lexbuf: Lexbuf) =
         let mkTrivia d =
             if isWarnonDirective d then
                 WarnDirectiveTrivia.Warnon(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
@@ -341,7 +341,7 @@ module WarnScopes =
 
         (getLexbufData lexbuf).WarnDirectives |> List.rev |> List.map mkTrivia
 
-    let internal getCommentTrivia (lexbuf: Lexbuf) =
+    let getCommentTrivia (lexbuf: Lexbuf) =
         (getLexbufData lexbuf).WarnDirectives
         |> List.rev
         |> List.choose _.CommentRange
