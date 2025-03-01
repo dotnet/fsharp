@@ -397,6 +397,7 @@ module SynExpr =
         | SynExpr.DotIndexedSet _
         | SynExpr.DotNamedIndexedPropertySet _
         | SynExpr.DotSet _ -> ValueSome Set
+        | SynExpr.TypeTest _ -> ValueSome TypeTest
         | _ -> ValueNone
 
     module Dangling =
@@ -953,6 +954,7 @@ module SynExpr =
                 let rec loop =
                     function
                     | [] -> false
+                    | SynMatchClause(whenExpr = Some(SynExpr.Paren(expr = Dangling.ArrowSensitive _ & Is inner))) :: _ -> true
                     | SynMatchClause(trivia = trivia) :: clauses ->
                         trivia.BarRange |> Option.exists (problematic matchOrTryRange)
                         || trivia.ArrowRange |> Option.exists (problematic matchOrTryRange)
