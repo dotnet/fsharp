@@ -398,7 +398,7 @@ let _ =
             ",
             "
             match () with
-            | () when box x :? int
+            | () when (box x :? int)
                 -> ()
             | _ -> ()
             "
