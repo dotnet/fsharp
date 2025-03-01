@@ -542,7 +542,7 @@ module SynExpr =
 
                         if i >= 0 && i < offsidesCol then
                             let slice = line.AsSpan(i, min (offsidesCol - i) (line.Length - i))
-                            let j = slice.IndexOfAnyExcept("*/%-+:^@><=!|0$.?".AsSpan())
+                            let j = slice.IndexOfAnyExcept("*/%-+:^@><=!|$.?".AsSpan())
 
                             let lo = i + (if j >= 0 && slice[j] = ' ' then j else 0)
 
