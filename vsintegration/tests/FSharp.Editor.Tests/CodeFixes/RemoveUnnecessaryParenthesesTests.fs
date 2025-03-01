@@ -1830,6 +1830,8 @@ in x
                 f ((+) x y) z
                 "
 
+                "(Gen.map f << Gen.map g) (Gen.constant x)", "(Gen.map f << Gen.map g) (Gen.constant x)"
+
                 // TypeApp
                 "id (id<int>)", "id id<int>"
 
