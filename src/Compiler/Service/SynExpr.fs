@@ -343,6 +343,7 @@ module SynExpr =
         | PrefixApp prec -> ValueSome(prec, Non)
         | InfixApp(prec, side) -> ValueSome(prec, side)
         | SynExpr.App(argExpr = SynExpr.ComputationExpr _) -> ValueSome(UnaryPrefix, Left)
+        | SynExpr.App(argExpr = SynExpr.Paren(expr = SynExpr.App _ & Is inner)) -> ValueSome(Apply, Right)
         | SynExpr.App(funcExpr = SynExpr.Paren(expr = SynExpr.App _)) -> ValueSome(Apply, Left)
         | SynExpr.App(flag = ExprAtomicFlag.Atomic) -> ValueSome(Dot, Non)
         | SynExpr.App _ -> ValueSome(Apply, Non)
@@ -1148,6 +1149,7 @@ module SynExpr =
                                | _, MulDivMod(Mod, _)
                                | _, AddSub(Sub, _) -> true
                                | Relational _, Relational _ -> true
+                               | Apply, Apply -> true
                                | _ -> false
 
                     | c -> c > 0
