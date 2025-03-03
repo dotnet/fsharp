@@ -6295,6 +6295,8 @@ type Construct() =
         konst,
         actualParent) : Val =
 
+        do if (*logicalName.Equals("Finish") || *)logicalName.Contains("iter@272") then System.Diagnostics.Debugger.Break()
+
         let stamp = newStamp()
         let optData = 
             match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
