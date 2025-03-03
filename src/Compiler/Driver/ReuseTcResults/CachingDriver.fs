@@ -4,15 +4,14 @@ module internal FSharp.Compiler.ReuseTcResults.CachingDriver
 
 open System.IO
 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ReuseTcResults.TcResultsImport
-open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ReuseTcResults.TcResultsPickle
 open FSharp.Compiler.TypedTree
 
@@ -53,7 +52,7 @@ type TcResult =
 type CachingDriver(tcConfig: TcConfig) =
 
     let outputDir = tcConfig.outputDir |> Option.defaultValue ""
-    let tcDataFilePath = Path.Combine(outputDir, FSharpTcDataResourceName)
+    let tcDataFilePath = Path.Combine(outputDir, "tcComplilationData")
     let graphFilePath = Path.Combine(outputDir, "tcGraph")
     let tcSharedDataFilePath = Path.Combine(outputDir, "tcSharedData")
     let tcInputFilePath = Path.Combine(outputDir, "tcInput")
