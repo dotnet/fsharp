@@ -104,7 +104,7 @@ module internal Utils =
 
     /// Return file name with one directory above it
     let shortPath (path: string) =
-        let dirPath = !! Path.GetDirectoryName(path)
+        let dirPath = Path.GetDirectoryName(path) |> Option.ofObj |> Option.defaultValue ""
 
         let dir =
             dirPath.Split Path.DirectorySeparatorChar
@@ -228,7 +228,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
             |> Option.map countHit
             |> Option.defaultWith cacheSetNewJob
 
-        async {            
+        async {
             let otherVersions, job = lock cache getOrAdd
 
             log Requested key
