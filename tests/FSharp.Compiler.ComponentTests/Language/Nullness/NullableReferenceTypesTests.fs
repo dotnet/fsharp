@@ -150,10 +150,8 @@ let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null
     |> shouldFail
     |> withDiagnostics
                 [ Error 3264, Line 4, Col 39, Line 4, Col 47, "Nullness warning: Downcasting from 'objnull' into 'AB' can introduce unexpected null values. Cast to 'AB|null' instead or handle the null before downcasting."
-                  Error 3261, Line 5, Col 42, Line 5, Col 59, "Nullness warning: The types 'obj' and 'AB | null' do not have compatible nullability."
                   Error 3060, Line 5, Col 42, Line 5, Col 59, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
                   Error 3060, Line 6, Col 41, Line 6, Col 55, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
-                  Error 3261, Line 7, Col 51, Line 7, Col 97, "Nullness warning: The types 'obj' and 'AB | null array | null list | null' do not have compatible nullability."
                   Error 3060, Line 7, Col 51, Line 7, Col 97, "This type test or downcast will erase the provided type 'List<AB | null array | null> | null' to the type 'List<AB array>'"]
 
 
@@ -1381,6 +1379,20 @@ dict["ok"] <- 42
     |> typeCheckWithStrictNullness
     |> shouldSucceed
 
+[<InlineData("t :?> 'T")>]
+[<InlineData("(downcast t) : 'T")>]
+[<InlineData("t |> unbox<'T>")>]
+[<InlineData("(t : objnull) :?> 'T")>]
+[<Theory>]
+let ``Unsafe cast should not insist on not null constraint``(castOp:string) =
+
+    FSharp $"""module MyLibrary
+let test<'T> () =
+    let t = obj()
+    {castOp}"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
 
 
 [<InlineData("null")>]
