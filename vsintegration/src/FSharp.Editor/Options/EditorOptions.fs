@@ -24,6 +24,7 @@ type IntelliSenseOptions =
         ShowAfterCharIsDeleted: bool
         IncludeSymbolsFromUnopenedNamespacesOrModules: bool
         EnterKeySetting: EnterKeySetting
+        GenerateBodyForOverriddenMethod: bool
     }
 
     static member Default =
@@ -32,6 +33,7 @@ type IntelliSenseOptions =
             ShowAfterCharIsDeleted = false
             IncludeSymbolsFromUnopenedNamespacesOrModules = false
             EnterKeySetting = EnterKeySetting.NeverNewline
+            GenerateBodyForOverriddenMethod = true
         }
 
 [<RequireQualifiedAccess>]
