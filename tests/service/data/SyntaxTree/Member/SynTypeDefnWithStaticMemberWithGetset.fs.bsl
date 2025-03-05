@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/SynTypeDefnWithStaticMemberWithGetset.fs", false,
-      QualifiedNameOfFile SynTypeDefnWithStaticMemberWithGetset, [], [],
+      QualifiedNameOfFile SynTypeDefnWithStaticMemberWithGetset, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithStaticMemberWithGetset], false, AnonModule,
           [Types
@@ -109,4 +109,5 @@ ImplFile
                     WithKeyword = None })], (2,0--5,54))], PreXmlDocEmpty, [],
           None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

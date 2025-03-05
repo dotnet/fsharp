@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         MultipleDeclaredNamespacesShouldHaveARangeThatStartsAtTheNamespaceKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([TypeEquality], false, DeclaredNamespace,
           [Types
@@ -35,4 +35,5 @@ ImplFile
           PreXmlDocEmpty, [], None, (7,0--9,10),
           { LeadingKeyword = Namespace (7,0--7,9) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

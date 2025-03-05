@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/ValKeywordIsPresentInSynValSig.fsi",
-      QualifiedNameOfFile Meh, [], [],
+      QualifiedNameOfFile Meh, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Val
@@ -24,4 +24,5 @@ SigFile
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--6,11), { LeadingKeyword = Module (2,0--2,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (5,0--5,6)] }, set []))

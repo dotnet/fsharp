@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Lambda/MultilineLambdaHasArrowRange.fs", false,
-      QualifiedNameOfFile MultilineLambdaHasArrowRange, [], [],
+      QualifiedNameOfFile MultilineLambdaHasArrowRange, [],
       [SynModuleOrNamespace
          ([MultilineLambdaHasArrowRange], false, AnonModule,
           [Expr
@@ -72,4 +72,5 @@ ImplFile
                  { ArrowRange = Some (3,28--3,30) }), (2,0--4,41))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

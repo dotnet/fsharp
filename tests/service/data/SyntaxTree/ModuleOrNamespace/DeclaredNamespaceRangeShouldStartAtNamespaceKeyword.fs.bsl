@@ -3,7 +3,7 @@ ImplFile
      ("/root/ModuleOrNamespace/DeclaredNamespaceRangeShouldStartAtNamespaceKeyword.fs",
       false,
       QualifiedNameOfFile DeclaredNamespaceRangeShouldStartAtNamespaceKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([TypeEquality], false, DeclaredNamespace,
           [Types
@@ -27,4 +27,5 @@ ImplFile
                     WithKeyword = None })], (4,0--5,8))], PreXmlDocEmpty, [],
           None, (2,0--5,8), { LeadingKeyword = Namespace (2,0--2,9) })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

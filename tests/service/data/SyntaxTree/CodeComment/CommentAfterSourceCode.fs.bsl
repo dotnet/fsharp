@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/CodeComment/CommentAfterSourceCode.fs", false,
-      QualifiedNameOfFile CommentAfterSourceCode, [], [],
+      QualifiedNameOfFile CommentAfterSourceCode, [],
       [SynModuleOrNamespace
          ([CommentAfterSourceCode], false, AnonModule,
           [Expr
@@ -10,4 +10,5 @@ ImplFile
               (2,0--2,5))], PreXmlDocEmpty, [], None, (2,0--2,5),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (2,6--2,17)] }, set []))
