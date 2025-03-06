@@ -291,7 +291,7 @@ type public FSharpCheckFileResults =
     ///    Completion context for a particular position computed in advance.
     /// </param>
     /// <param name="genBodyForOverriddenMeth">
-    ///    A switch to determine whether to generate an default implementation body for overridden method when completing.
+    ///    A switch to determine whether to generate a default implementation body for overridden method when completing.
     /// </param>
     member GetDeclarationListInfo:
         parsedFileResults: FSharpParseFileResults option *
@@ -322,7 +322,7 @@ type public FSharpCheckFileResults =
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
     /// <param name="genBodyForOverriddenMeth">
-    ///    A switch to determine whether to generate an default implementation body for overridden method when completing.
+    ///    A switch to determine whether to generate a default implementation body for overridden method when completing.
     /// </param>
     member GetDeclarationListSymbols:
         parsedFileResults: FSharpParseFileResults option *
