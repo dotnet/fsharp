@@ -104,7 +104,7 @@ module CompletionProviderTests =
 
     /// Verify completion code. Only verify the expected completion items
     let VerifyCompletionCode (genBodyForOverriddenMeth, fileContents: string, marker: string, expected: Map<string, string>) =
-        let getNameInCode (item : CompletionItem) =
+        let getNameInCode (item: CompletionItem) =
             match item.Properties.TryGetValue "NameInCode" with
             | true, x -> x
             | _ -> item.DisplayText
@@ -125,7 +125,8 @@ module CompletionProviderTests =
             |> List.choose (fun x ->
                 if expected.ContainsKey x.DisplayText then
                     Some(x.DisplayText, getNameInCode x)
-                else None)
+                else
+                    None)
             |> Map.ofList
 
         if actual <> expected then
@@ -2128,7 +2129,7 @@ Ops.()
 
         VerifyCompletionList(fileContents, "Ops.Foo.(", [], [ "|>>"; "(|>>)" ])
         VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])
-    
+
     [<Fact>]
     let ``Check code generation for completion to overridable slots`` () =
         let fileContents =
@@ -2140,7 +2141,9 @@ let _ =
 """
 
         let nl = Environment.NewLine
-        let toCheckCompletionItems = [
+
+        let toCheckCompletionItems =
+            [
                 "CanRead with get (): bool"
                 "Position with get (): int64 and set (value: int64)"
                 "ToString (): string"
@@ -2150,21 +2153,26 @@ let _ =
             true,
             fileContents,
             "member x.",
-            List.zip toCheckCompletionItems [
-                $"CanRead{nl}        with get (): bool = raise (System.NotImplementedException())"
-                $"Position{nl}        with get (): int64 = raise (System.NotImplementedException()){nl}         and set (value: int64) = raise (System.NotImplementedException())"
-                $"ToString (): string = {nl}        base.ToString()"
-            ] |> Map.ofList
+            List.zip
+                toCheckCompletionItems
+                [
+                    $"CanRead{nl}        with get (): bool = raise (System.NotImplementedException())"
+                    $"Position{nl}        with get (): int64 = raise (System.NotImplementedException()){nl}         and set (value: int64) = raise (System.NotImplementedException())"
+                    $"ToString (): string = {nl}        base.ToString()"
+                ]
+            |> Map.ofList
         )
 
         VerifyCompletionCode(
             false,
             fileContents,
             "member x.",
-            List.zip toCheckCompletionItems [
-                $"CanRead{nl}        with get (): bool = "
-                $"Position{nl}        with get (): int64 = {nl}         and set (value: int64) = "
-                $"ToString (): string = {nl}        "
-            ] |> Map.ofList
+            List.zip
+                toCheckCompletionItems
+                [
+                    $"CanRead{nl}        with get (): bool = "
+                    $"Position{nl}        with get (): int64 = {nl}         and set (value: int64) = "
+                    $"ToString (): string = {nl}        "
+                ]
+            |> Map.ofList
         )
-
