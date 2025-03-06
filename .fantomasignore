@@ -131,6 +131,7 @@ src/Compiler/SyntaxTree/LexerStore.fs
 src/Compiler/Driver/GraphChecking/Graph.fsi
 src/Compiler/Driver/GraphChecking/Graph.fs
 
+src/FSharp.Compiler.LanguageServer/Common/LifecycleManager.fs
 src/Compiler/DependencyManager/NativeDllResolveHandler.fsi
 src/Compiler/DependencyManager/AssemblyResolveHandler.fsi
 
