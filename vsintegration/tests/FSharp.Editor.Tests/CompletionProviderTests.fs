@@ -34,7 +34,7 @@ module CompletionProviderTests =
 
         let results =
             let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
                 |> CancellableTask.start CancellationToken.None
 
             task.Result |> Seq.map (fun result -> result.DisplayText)
@@ -82,7 +82,7 @@ module CompletionProviderTests =
 
         let actual =
             let task =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
                 |> CancellableTask.start CancellationToken.None
 
             task.Result
@@ -101,6 +101,40 @@ module CompletionProviderTests =
 
     let VerifyCompletionListExactly (fileContents: string, marker: string, expected: string list) =
         VerifyCompletionListExactlyWithOptions(fileContents, marker, expected, [||])
+
+    /// Verify completion code. Only verify the expected completion items
+    let VerifyCompletionCode (genBodyForOverriddenMeth, fileContents: string, marker: string, expected: Map<string, string>) =
+        let getNameInCode (item: CompletionItem) =
+            match item.Properties.TryGetValue "NameInCode" with
+            | true, x -> x
+            | _ -> item.DisplayText
+
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = [||])
+            |> RoslynTestHelpers.GetSingleDocument
+
+        let actual =
+            let task =
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), genBodyForOverriddenMeth)
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result
+            |> Seq.toList
+            |> List.choose (fun x ->
+                if expected.ContainsKey x.DisplayText then
+                    Some(x.DisplayText, getNameInCode x)
+                else
+                    None)
+            |> Map.ofList
+
+        if actual <> expected then
+            failwithf
+                "Expected:\n%s,\nbut was:\n%s\nactual with DisplayText:\n%s"
+                (String.Join("\n", expected.Values |> Seq.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual.Values |> Seq.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual |> Seq.map (fun (KeyValue(fst, snd)) -> sprintf "%s => %s" fst snd)))
 
     let VerifyNoCompletionList (fileContents: string, marker: string) =
         VerifyCompletionListExactly(fileContents, marker, [])
@@ -2095,3 +2129,50 @@ Ops.()
 
         VerifyCompletionList(fileContents, "Ops.Foo.(", [], [ "|>>"; "(|>>)" ])
         VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])
+
+    [<Fact>]
+    let ``Check code generation for completion to overridable slots`` () =
+        let fileContents =
+            """
+let _ =
+  { new System.IO.Stream() with
+      member x.
+  }
+"""
+
+        let nl = Environment.NewLine
+
+        let toCheckCompletionItems =
+            [
+                "CanRead with get (): bool"
+                "Position with get (): int64 and set (value: int64)"
+                "ToString (): string"
+            ]
+
+        VerifyCompletionCode(
+            true,
+            fileContents,
+            "member x.",
+            List.zip
+                toCheckCompletionItems
+                [
+                    $"CanRead{nl}        with get (): bool = raise (System.NotImplementedException())"
+                    $"Position{nl}        with get (): int64 = raise (System.NotImplementedException()){nl}         and set (value: int64) = raise (System.NotImplementedException())"
+                    $"ToString (): string = {nl}        base.ToString()"
+                ]
+            |> Map.ofList
+        )
+
+        VerifyCompletionCode(
+            false,
+            fileContents,
+            "member x.",
+            List.zip
+                toCheckCompletionItems
+                [
+                    $"CanRead{nl}        with get (): bool = "
+                    $"Position{nl}        with get (): int64 = {nl}         and set (value: int64) = "
+                    $"ToString (): string = {nl}        "
+                ]
+            |> Map.ofList
+        )
