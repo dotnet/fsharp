@@ -7,26 +7,26 @@
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.14.0-preview-25156-07">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.14.0-preview-25157-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>353c0f3d37957cc98bfa6a76b568d70d12193fc3</Sha>
+      <Sha>00b81e71d503ae21780f97f7f5206821e696a5f9</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.14.0-preview-25156-07">
+    <Dependency Name="Microsoft.Build" Version="17.14.0-preview-25157-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>353c0f3d37957cc98bfa6a76b568d70d12193fc3</Sha>
+      <Sha>00b81e71d503ae21780f97f7f5206821e696a5f9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.14.0-preview-25156-07">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.14.0-preview-25157-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>353c0f3d37957cc98bfa6a76b568d70d12193fc3</Sha>
+      <Sha>00b81e71d503ae21780f97f7f5206821e696a5f9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.14.0-preview-25156-07">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.14.0-preview-25157-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>353c0f3d37957cc98bfa6a76b568d70d12193fc3</Sha>
+      <Sha>00b81e71d503ae21780f97f7f5206821e696a5f9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.14.0-preview-25156-07">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.14.0-preview-25157-07">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>353c0f3d37957cc98bfa6a76b568d70d12193fc3</Sha>
+      <Sha>00b81e71d503ae21780f97f7f5206821e696a5f9</Sha>
     </Dependency>
     <Dependency Name="System.Reflection.Metadata" Version="8.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
