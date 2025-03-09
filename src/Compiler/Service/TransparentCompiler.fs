@@ -1732,9 +1732,11 @@ type internal TransparentCompiler
                         |]
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
-                
+
                 let parseDiagnostics =
-                    projectSnapshot.SourceFiles |> Seq.collect (fun f -> f.ParseDiagnostics) |> Seq.toArray
+                    projectSnapshot.SourceFiles
+                    |> Seq.collect (fun f -> f.ParseDiagnostics)
+                    |> Seq.toArray
 
                 let! graph, dependencyFiles = ComputeDependencyGraphForProject bootstrapInfo.TcConfig projectSnapshot
 
@@ -1743,7 +1745,7 @@ type internal TransparentCompiler
                         graph
                         (processGraphNode projectSnapshot bootstrapInfo dependencyFiles true)
                         bootstrapInfo.InitialTcInfo
-                        
+
                 return results, tcInfo, parseDiagnostics
             }
         )
@@ -1776,8 +1778,7 @@ type internal TransparentCompiler
             projectSnapshot.SignatureKey,
             async {
 
-                let! results, finalInfo, parseDiagnostics =
-                    ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+                let! results, finalInfo, parseDiagnostics = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1946,7 +1947,7 @@ type internal TransparentCompiler
                             diagnosticsOptions,
                             true,
                             fileName,
-                            Array.concat [|parseDiagnostics; tcDiagnostics|],
+                            Array.concat [| parseDiagnostics; tcDiagnostics |],
                             suggestNamesForErrors,
                             bootstrapInfo.TcConfig.flatErrors,
                             symbolEnv
