@@ -99,6 +99,7 @@ type LanguageFeature =
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
+    | ScopedNowarn
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -229,6 +230,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
                 LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
+                LanguageFeature.ScopedNowarn, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -391,6 +393,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
         | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
+        | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

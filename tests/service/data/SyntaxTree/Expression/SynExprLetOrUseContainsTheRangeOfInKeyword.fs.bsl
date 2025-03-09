@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprLetOrUseContainsTheRangeOfInKeyword.fs", false,
-      QualifiedNameOfFile SynExprLetOrUseContainsTheRangeOfInKeyword, [], [],
+      QualifiedNameOfFile SynExprLetOrUseContainsTheRangeOfInKeyword, [],
       [SynModuleOrNamespace
          ([SynExprLetOrUseContainsTheRangeOfInKeyword], false, AnonModule,
           [Expr
@@ -23,4 +23,5 @@ ImplFile
                    InKeyword = Some (2,10--2,12) }), (2,0--2,15))],
           PreXmlDocEmpty, [], None, (2,0--2,15), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

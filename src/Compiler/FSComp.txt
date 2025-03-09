@@ -1796,3 +1796,8 @@ featureDontWarnOnUppercaseIdentifiersInBindingPatterns,"Don't warn on uppercase 
 featureDeprecatePlacesWhereSeqCanBeOmitted,"Deprecate places where 'seq' can be omitted"
 featureSupportValueOptionsAsOptionalParameters,"Support ValueOption as valid type for optional member parameters"
 featureSupportWarnWhenUnitPassedToObjArg,"Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`."
+featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules"
+3874,lexWarnDirectiveMustBeFirst,"#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
+3875,lexWarnDirectiveMustHaveArgs,"Warn directives must have warning number(s) as argument(s)"
+3876,lexWarnDirectivesMustMatch,"There is another %s for this warning already in line %d."
+3877,lexLineDirectiveMappingIsNotUnique,"The file '%s' was also pointed to in a line directive in '%s'. Proper warn directive application may not be possible."

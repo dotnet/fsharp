@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/GenericFunctionReturnTypeNotStructNull.fs", false,
-      QualifiedNameOfFile GenericFunctionReturnTypeNotStructNull, [], [],
+      QualifiedNameOfFile GenericFunctionReturnTypeNotStructNull, [],
       [SynModuleOrNamespace
          ([GenericFunctionReturnTypeNotStructNull], false, AnonModule,
           [Let
@@ -39,4 +39,5 @@ ImplFile
                     EqualsRange = Some (1,51--1,52) })], (1,0--1,57))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

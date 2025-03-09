@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/ModuleAbbreviation.fsi",
-      QualifiedNameOfFile Foo, [], [],
+      QualifiedNameOfFile Foo, [],
       [SynModuleOrNamespaceSig
          ([Foo], false, NamedModule,
           [Open
@@ -49,4 +49,5 @@ SigFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--12,13), { LeadingKeyword = Module (1,0--1,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

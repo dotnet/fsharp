@@ -9,17 +9,16 @@ open Internal.Utilities
 open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
-open FSharp.Compiler.IO
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.LexerStore
+open FSharp.Compiler.IO
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.UnicodeLexing
 
 /// The "mock" file name used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()

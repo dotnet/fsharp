@@ -23,6 +23,11 @@ and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
     | Ident of string
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
+type WarnDirectiveTrivia =
+    | Nowarn of warnNumbers: int list * range
+    | Warnon of warnNumbers: int list * range
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type CommentTrivia =
     | LineComment of range: range
     | BlockComment of range: range
@@ -31,15 +36,31 @@ type CommentTrivia =
 type ParsedImplFileInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
+        WarnDirectives: WarnDirectiveTrivia list
         CodeComments: CommentTrivia list
     }
+
+    static member Empty =
+        {
+            ConditionalDirectives = []
+            WarnDirectives = []
+            CodeComments = []
+        }
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
+        WarnDirectives: WarnDirectiveTrivia list
         CodeComments: CommentTrivia list
     }
+
+    static member Empty =
+        {
+            ConditionalDirectives = []
+            WarnDirectives = []
+            CodeComments = []
+        }
 
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =
