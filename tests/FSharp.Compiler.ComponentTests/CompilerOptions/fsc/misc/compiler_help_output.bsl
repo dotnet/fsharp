@@ -116,3 +116,4 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --highentropyva[+|-]                     Enable high-entropy ASLR (off by default)
 --subsystemversion:<string>              Specify subsystem version of this assembly
 --quotations-debug[+|-]                  Emit debug information in quotations (off by default)
+--reusetypecheckingresults               Reuse previous typechecking results for faster compilation

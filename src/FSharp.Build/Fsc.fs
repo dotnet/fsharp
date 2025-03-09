@@ -45,6 +45,7 @@ type public Fsc() as this =
     let mutable noFramework = false
     let mutable noInterfaceData = false
     let mutable noOptimizationData = false
+    let mutable reuseTcResults = false
     let mutable optimize: bool = true
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
@@ -164,6 +165,10 @@ type public Fsc() as this =
         // NoOptimizationData
         if noOptimizationData then
             builder.AppendSwitch("--nooptimizationdata")
+
+        // ReuseTypecheckingResults
+        if reuseTcResults then
+            builder.AppendSwitch("--reusetypecheckingresults")
 
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
@@ -482,6 +487,11 @@ type public Fsc() as this =
     member _.NoOptimizationData
         with get () = noOptimizationData
         and set (b) = noOptimizationData <- b
+
+    // --reusetypecheckingresults
+    member _.ReuseTcResults
+        with get () = reuseTcResults
+        and set (b) = reuseTcResults <- b
 
     // --optimize
     member _.Optimize

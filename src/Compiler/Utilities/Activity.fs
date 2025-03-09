@@ -70,6 +70,12 @@ module internal Activity =
     module Events =
         let cacheHit = "cacheHit"
 
+        let reuseTcResultsCachePrefix = "reuseTcResultsCache"
+        let reuseTcResultsCachePresent = $"{reuseTcResultsCachePrefix}Present"
+        let reuseTcResultsCacheAbsent = $"{reuseTcResultsCachePrefix}Absent"
+        let reuseTcResultsCacheHit = $"{reuseTcResultsCachePrefix}Hit"
+        let reuseTcResultsCacheMissed = $"{reuseTcResultsCachePrefix}Missed"
+
     type Diagnostics.Activity with
 
         member this.RootId =
