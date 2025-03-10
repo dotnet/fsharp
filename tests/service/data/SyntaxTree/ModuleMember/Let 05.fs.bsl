@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/ModuleMember/Let 05.fs", false, QualifiedNameOfFile Let 05, [], [],
+     ("/root/ModuleMember/Let 05.fs", false, QualifiedNameOfFile Let 05, [],
       [SynModuleOrNamespace
          ([Let 05], false, AnonModule,
           [Let
@@ -22,6 +22,7 @@ ImplFile
            Expr (Const (Unit, (3,0--3,2)), (3,0--3,2))], PreXmlDocEmpty, [],
           None, (1,0--3,2), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,0)-(3,1) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.

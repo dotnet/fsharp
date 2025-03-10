@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/StringOrNullInFunctionArg.fs", false,
-      QualifiedNameOfFile StringOrNullInFunctionArg, [], [],
+      QualifiedNameOfFile StringOrNullInFunctionArg, [],
       [SynModuleOrNamespace
          ([StringOrNullInFunctionArg], false, AnonModule,
           [Let
@@ -34,4 +34,5 @@ ImplFile
                     EqualsRange = Some (1,32--1,33) })], (1,0--1,36))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

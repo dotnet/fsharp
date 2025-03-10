@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda - _ Recovery - Casts.fsx", true,
-      QualifiedNameOfFile DotLambda - _ Recovery - Casts$fsx, [], [],
+      QualifiedNameOfFile DotLambda - _ Recovery - Casts$fsx, [],
       [SynModuleOrNamespace
          ([DotLambda - _ Recovery - Casts], false, AnonModule,
           [Let
@@ -60,6 +60,7 @@ ImplFile
                     EqualsRange = Some (3,6--3,7) })], (3,0--3,19))],
           PreXmlDocEmpty, [], None, (1,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,19)-(1,20) parse error Unexpected symbol ')' in expression. Expected '.' or other token.
