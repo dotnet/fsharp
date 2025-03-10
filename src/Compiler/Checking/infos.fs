@@ -1430,6 +1430,20 @@ type MethInfo =
                  let (ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)) = info
                  ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
 
+    member x.HasGenericRetTy() =
+        match x with
+        | ILMeth(_g, ilminfo, _) -> ilminfo.RawMetadata.Return.Type.IsTypeVar
+        | FSMeth(g, _, vref, _) ->
+            let _, _, _, retTy, _ = GetTypeOfMemberInMemberForm g vref
+            match retTy with
+            | Some retTy -> isTyparTy g retTy
+            | None -> false
+        | MethInfoWithModifiedReturnType(_,retTy) -> false
+        | DefaultStructCtor _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedMeth(amap, mi, _, m) -> false
+#endif
+
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) =
         x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg, _, _, _, _, _, _, _)) -> isParamArrayArg)
