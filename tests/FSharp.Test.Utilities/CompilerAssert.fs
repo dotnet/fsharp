@@ -309,6 +309,10 @@ and Compilation =
 
 module CompilerAssertHelpers =
 
+    let uniqueName =
+        let mutable counter = 0
+        fun (ext: string) -> $"test%x{Interlocked.Increment &counter}{ext}"
+
     let UseTransparentCompiler =
         FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
         not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
@@ -407,7 +411,7 @@ module CompilerAssertHelpers =
 #endif
         |]
         {
-            ProjectFileName = "Z:\\test.fsproj"
+            ProjectFileName = "Z:\\" ++ uniqueName ".fsproj"
             ProjectId = None
             SourceFiles = [|"test.fs"|]
             OtherOptions = Array.append testDefaults assemblies
@@ -742,7 +746,8 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.Equal(expectedOutput, output)  
 
     static member Pass (source: string) =
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions TargetFramework.Current) |> Async.RunImmediate
+        let path = uniqueName ".fs"
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, defaultProjectOptionsForFilePath path TargetFramework.Current) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -753,10 +758,11 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.Empty(typeCheckResults.Diagnostics)
 
     static member PassWithOptions options (source: string) =
-        let defaultOptions = defaultProjectOptions TargetFramework.Current
+        let path = uniqueName ".fs"
+        let defaultOptions = defaultProjectOptionsForFilePath path TargetFramework.Current
         let options = { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions}
 
-        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options) |> Async.RunImmediate
 
         Assert.Empty(parseResults.Diagnostics)
 
@@ -826,9 +832,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member TypeCheckWithOptions options (source: string) =
         let errors =
             let parseResults, fileAnswer =
-                let defaultOptions = defaultProjectOptions TargetFramework.Current
+                let path = uniqueName ".fs"
+                let defaultOptions = defaultProjectOptionsForFilePath path TargetFramework.Current
                 checker.ParseAndCheckFileInProject(
-                    "test.fs",
+                    path,
                     0,
                     SourceText.ofString source,
                     { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions})
@@ -869,10 +876,11 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         let errors =
+            let path = uniqueName ".fs"
             let parseResults, fileAnswer =
-                let defaultOptions = defaultProjectOptions TargetFramework.Current
+                let defaultOptions = defaultProjectOptionsForFilePath path TargetFramework.Current
                 checker.ParseAndCheckFileInProject(
-                    "test.fs",
+                    path,
                     0,
                     SourceText.ofString source,
                     { defaultOptions with OtherOptions = Array.append options defaultOptions.OtherOptions})
@@ -1020,7 +1028,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member Parse (source: string, ?langVersion: string, ?fileName: string) =
         let langVersion = defaultArg langVersion "default"
-        let sourceFileName = defaultArg fileName "test.fsx"
+        let sourceFileName = defaultArg fileName (uniqueName ".fsx")
         let parsingOptions =
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]
