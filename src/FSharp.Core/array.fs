@@ -1934,7 +1934,7 @@ module Array =
         let valuesArray = Seq.toArray values
 
         if valuesArray.Length = 0 then
-            source
+            source.Clone() :?> 'T array
         else
             let length = source.Length + valuesArray.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
