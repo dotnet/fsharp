@@ -364,7 +364,9 @@ let u_byteB st =
 
 type unpickler<'T> = ReaderState -> 'T
 
-let u_bool st = let b = u_byte st in (b = 1)
+let u_bool st =
+    let b = u_byte st
+    b = 1
 
 /// Unpickle an uncompressed integer from the main stream
 let prim_u_int32 st =
@@ -465,21 +467,21 @@ let u_used_space1 f st =
         None
 
 let inline u_tup2 p1 p2 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
+    let a = p1 st
+    let b = p2 st
     (a, b)
 
 let inline u_tup3 p1 p2 p3 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
     (a, b, c)
 
 let inline u_tup4 p1 p2 p3 p4 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
-    let d = p4 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
+    let d = p4 st
     (a, b, c, d)
 
 let inline u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
@@ -491,71 +493,71 @@ let inline u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
     (a, b, c, d, e)
 
 let inline u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
-    let d = p4 st in
-    let e = p5 st in
-    let f = p6 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
+    let d = p4 st
+    let e = p5 st
+    let f = p6 st
     (a, b, c, d, e, f)
 
 let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
-    let d = p4 st in
-    let e = p5 st in
-    let f = p6 st in
-    let x7 = p7 st in
-    let x8 = p8 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
+    let d = p4 st
+    let e = p5 st
+    let f = p6 st
+    let x7 = p7 st
+    let x8 = p8 st
     (a, b, c, d, e, f, x7, x8)
 
 let inline u_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
-    let d = p4 st in
-    let e = p5 st in
-    let f = p6 st in
-    let x7 = p7 st in
-    let x8 = p8 st in
-    let x9 = p9 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
+    let d = p4 st
+    let e = p5 st
+    let f = p6 st
+    let x7 = p7 st
+    let x8 = p8 st
+    let x9 = p9 st
     (a, b, c, d, e, f, x7, x8, x9)
 
 let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
-    let d = p4 st in
-    let e = p5 st in
-    let f = p6 st in
-    let x7 = p7 st in
-    let x8 = p8 st in
-    let x9 = p9 st in
-    let x10 = p10 st in
-    let x11 = p11 st in
-    let x12 = p12 st in
-    let x13 = p13 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
+    let d = p4 st
+    let e = p5 st
+    let f = p6 st
+    let x7 = p7 st
+    let x8 = p8 st
+    let x9 = p9 st
+    let x10 = p10 st
+    let x11 = p11 st
+    let x12 = p12 st
+    let x13 = p13 st
     (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13)
 
 let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st: ReaderState) =
-    let a = p1 st in
-    let b = p2 st in
-    let c = p3 st in
-    let d = p4 st in
-    let e = p5 st in
-    let f = p6 st in
-    let x7 = p7 st in
-    let x8 = p8 st in
-    let x9 = p9 st in
-    let x10 = p10 st in
-    let x11 = p11 st in
-    let x12 = p12 st in
-    let x13 = p13 st in
-    let x14 = p14 st in
-    let x15 = p15 st in
-    let x16 = p16 st in
-    let x17 = p17 st in
+    let a = p1 st
+    let b = p2 st
+    let c = p3 st
+    let d = p4 st
+    let e = p5 st
+    let f = p6 st
+    let x7 = p7 st
+    let x8 = p8 st
+    let x9 = p9 st
+    let x10 = p10 st
+    let x11 = p11 st
+    let x12 = p12 st
+    let x13 = p13 st
+    let x14 = p14 st
+    let x15 = p15 st
+    let x16 = p16 st
+    let x17 = p17 st
     (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17)
 
 //---------------------------------------------------------------------------
@@ -1305,10 +1307,12 @@ let u_ILHasThis st =
     | _ -> ufailwith st "u_ILHasThis"
 
 let u_ILCallConv st =
-    let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st in Callconv(a, b)
+    let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st
+    Callconv(a, b)
 
 let u_ILTypeRef st =
-    let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st in ILTypeRef.Create(a, b, c)
+    let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
+    ILTypeRef.Create(a, b, c)
 
 let u_ILArrayShape =
     u_wrap (ILArrayShape) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
@@ -1341,7 +1345,8 @@ and u_ILCallSig =
         (u_tup3 u_ILCallConv u_ILTypes u_ILType)
 
 and u_ILTypeSpec st =
-    let a, b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a, b)
+    let a, b = u_tup2 u_ILTypeRef u_ILTypes st
+    ILTypeSpec.Create(a, b)
 
 let p_ILMethodRef (x: ILMethodRef) st =
     p_tup6
@@ -1884,22 +1889,22 @@ let p_xmldoc (doc: XmlDoc) st =
     p_array p_string doc.UnprocessedLines st
 
 let u_pos st =
-    let a = u_int st in
-    let b = u_int st in
+    let a = u_int st
+    let b = u_int st
     mkPos a b
 
 let u_range st =
-    let a = u_string st in
-    let b = u_pos st in
-    let c = u_pos st in
+    let a = u_string st
+    let b = u_pos st
+    let c = u_pos st
     mkRange a b c
 
 // Most ranges (e.g. on optimization expressions) can be elided from stored data
 let u_dummy_range: range unpickler = fun _st -> range0
 
 let u_ident st =
-    let a = u_string st in
-    let b = u_range st in
+    let a = u_string st
+    let b = u_range st
     ident (a, b)
 
 let u_xmldoc st = XmlDoc(u_array u_string st, range0)
@@ -1935,10 +1940,12 @@ let u_tcref st =
     | _ -> ufailwith st "u_item_ref"
 
 let u_ucref st =
-    let a, b = u_tup2 u_tcref u_string st in UnionCaseRef(a, b)
+    let a, b = u_tup2 u_tcref u_string st
+    UnionCaseRef(a, b)
 
 let u_rfref st =
-    let a, b = u_tup2 u_tcref u_string st in RecdFieldRef(a, b)
+    let a, b = u_tup2 u_tcref u_string st
+    RecdFieldRef(a, b)
 
 let u_tpref st = u_local_item_ref st.itypars st
 
@@ -2236,20 +2243,29 @@ let p_measure_expr unt st =
     p_normalized_measure (normalizeMeasure st.oglobals unt) st
 
 let u_rational st =
-    let a, b = u_tup2 u_int32 u_int32 st in DivRational (intToRational a) (intToRational b)
+    let a, b = u_tup2 u_int32 u_int32 st
+    DivRational (intToRational a) (intToRational b)
 
 let rec u_measure_expr st =
     let tag = u_byte st
 
     match tag with
-    | 0 -> let a = u_tcref st in Measure.Const(a, range0)
-    | 1 -> let a = u_measure_expr st in Measure.Inv a
-    | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod(a, b, range0)
-    | 3 -> let a = u_tpref st in Measure.Var(a)
+    | 0 ->
+        let a = u_tcref st
+        Measure.Const(a, range0)
+    | 1 ->
+        let a = u_measure_expr st
+        Measure.Inv a
+    | 2 ->
+        let a, b = u_tup2 u_measure_expr u_measure_expr st
+        Measure.Prod(a, b, range0)
+    | 3 ->
+        let a = u_tpref st
+        Measure.Var(a)
     | 4 -> Measure.One(range0)
     | 5 ->
-        let a = u_measure_expr st in
-        let b = u_rational st in
+        let a = u_measure_expr st
+        let b = u_rational st
         Measure.RationalPower(a, b)
     | _ -> ufailwith st "u_measure_expr"
 
@@ -3451,7 +3467,8 @@ and u_dtree st =
     | _ -> ufailwith st "u_dtree"
 
 and u_dtree_case st =
-    let a, b = u_tup2 u_dtree_discrim u_dtree st in (TCase(a, b))
+    let a, b = u_tup2 u_dtree_discrim u_dtree st
+    TCase(a, b)
 
 and u_dtree_discrim st =
     let tag = u_byte st
@@ -3465,11 +3482,12 @@ and u_dtree_discrim st =
     | _ -> ufailwith st "u_dtree_discrim"
 
 and u_target st =
-    let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, None))
+    let a, b = u_tup2 u_Vals u_expr st
+    TTarget(a, b, None)
 
 and u_bind st =
-    let a = u_Val st in
-    let b = u_expr st in
+    let a = u_Val st
+    let b = u_expr st
     TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
 and u_lval_op_kind st =
