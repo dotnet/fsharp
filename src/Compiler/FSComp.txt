@@ -324,6 +324,8 @@ csMethodFoundButIsStatic,"The type '%s' has a method '%s' (full name '%s'), but 
 csMethodFoundButIsNotStatic,"The type '%s' has a method '%s' (full name '%s'), but the method is not static"
 472,csStructConstraintInconsistent,"The constraints 'struct' and 'not struct' are inconsistent"
 473,csUnmanagedConstraintInconsistent,"The constraints 'unmanaged' and 'not struct' are inconsistent"
+474,csComparisonDelegateConstraintInconsistent,"The constraints 'comparison' and 'delegate' are inconsistent"
+475,csNullStructConstraintInconsistent,"The constraints 'struct' and 'null' are inconsistent"
 csTypeDoesNotHaveNull,"The type '%s' does not have 'null' as a proper value"
 csNullableTypeDoesNotHaveNull,"The type '%s' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'."
 csTypeDoesNotSupportComparison1,"The type '%s' does not support the 'comparison' constraint because it has the 'NoComparison' attribute"
