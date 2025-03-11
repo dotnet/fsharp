@@ -172,7 +172,7 @@ module internal WarnScopes =
 
         let mkDirective ctor (c: Capture) =
             getNumber lexbuf.LanguageVersion (mkRange c.Index c.Length) c.Value
-            |> Option.map (fun n -> ctor (n, (mkOriginalRange c.Index c.Length)))
+            |> Option.map (fun n -> ctor (n, mkOriginalRange c.Index c.Length))
 
         let warnCmds =
             match dIdent with
