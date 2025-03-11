@@ -16,6 +16,13 @@ try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
   |> String.concat " ")
 with :? System.ArgumentException as ex -> 
   assertEqual true (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \""))
+  
+
+try System.ArgumentException.ThrowIfNullOrWhiteSpace(argument = (Seq.init 11 (fun _ -> " ")
+  (* comment *) 
+  |> String.concat " "))
+with :? System.ArgumentException as ex -> 
+  assertEqual true (ex.Message.Contains("(Parameter '(Seq.init 11 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \")"))
 """
         |> withLangVersionPreview
         |> asExe
@@ -38,6 +45,7 @@ type A() =
 
 let stringABC = "abc"
 assertEqual (A.aa(stringABC)) ("abc", ".cctor", 13, "stringABC")
+assertEqual (A.aa(a = stringABC)) ("abc", ".cctor", 14, "stringABC")
         """
         |> withLangVersionPreview
         |> asExe
@@ -63,6 +71,7 @@ type A() =
 
 let stringABC = "abc"
 assertEqual (A.aa(stringABC)) ("abc", ".cctor", 16, "stringABC")
+assertEqual (A.aa(a = stringABC)) ("abc", ".cctor", 17, "stringABC")
         """
         |> withLangVersionPreview
         |> asExe
@@ -75,6 +84,9 @@ assertEqual (A.aa(stringABC)) ("abc", ".cctor", 16, "stringABC")
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+
+let path = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs")
+
 # 1 "test.fs"
 type A() =
   static member aa (
@@ -89,6 +101,8 @@ let stringABC = "abc"
 assertEqual (A.aa(stringABC)) ("abc", ".cctor", 11, System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs"), "stringABC")
 # 1 "test.fs"
 assertEqual (A.aa(stringABC : string)) ("abc", ".cctor", 1, System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs"), "stringABC : string")
+# 1 "test.fs"
+assertEqual (A.aa(a = (stringABC : string))) ("abc", ".cctor", 1, System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs"), "(stringABC : string)")
         """
         |> withLangVersionPreview
         |> asExe
