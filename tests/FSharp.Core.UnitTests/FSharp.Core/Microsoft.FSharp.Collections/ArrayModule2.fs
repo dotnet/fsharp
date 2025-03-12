@@ -1680,3 +1680,9 @@ type ArrayModule2() =
         Assert.AreEqual([0; 0], Array.insertManyAt 0 [0; 0] [||])
         CheckThrowsArgumentException (fun () -> Array.insertManyAt -1 [0; 0] [|1|] |> ignore)
         CheckThrowsArgumentException (fun () -> Array.insertManyAt 2 [0; 0] [|1|] |> ignore)
+        
+        // Do not return the original array when inserting an empty array
+        let originalArr = [| 1; 2; 3 |]
+        let insertionEmptyResultArr = Array.insertManyAt 3 [| |] originalArr
+        insertionEmptyResultArr[0] <- 3
+        Assert.AreEqual([| 1; 2; 3 |], originalArr)
