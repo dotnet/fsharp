@@ -7,26 +7,26 @@
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.14.0-preview-25161-14">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.19-preview-25128-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>b1383be3b51da9500e9f67842f5e22efcfff419c</Sha>
+      <Sha>d87bc64f6b9eb3af9b6b785f910136cc6a309ce7</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.14.0-preview-25161-14">
+    <Dependency Name="Microsoft.Build" Version="17.13.19">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>b1383be3b51da9500e9f67842f5e22efcfff419c</Sha>
+      <Sha>d87bc64f6b9eb3af9b6b785f910136cc6a309ce7</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.14.0-preview-25161-14">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.13.19">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>b1383be3b51da9500e9f67842f5e22efcfff419c</Sha>
+      <Sha>d87bc64f6b9eb3af9b6b785f910136cc6a309ce7</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.14.0-preview-25161-14">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.19">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>b1383be3b51da9500e9f67842f5e22efcfff419c</Sha>
+      <Sha>d87bc64f6b9eb3af9b6b785f910136cc6a309ce7</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.14.0-preview-25161-14">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.19">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>b1383be3b51da9500e9f67842f5e22efcfff419c</Sha>
+      <Sha>d87bc64f6b9eb3af9b6b785f910136cc6a309ce7</Sha>
     </Dependency>
     <Dependency Name="System.Reflection.Metadata" Version="9.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
