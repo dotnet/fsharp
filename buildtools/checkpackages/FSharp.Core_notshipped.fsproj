@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildProjectDirectory)\..\..\eng\Versions.props" />
 
   <PropertyGroup>
-    <TargetFramework>ne87.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>
