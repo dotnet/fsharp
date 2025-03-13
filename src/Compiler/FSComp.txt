@@ -1799,5 +1799,5 @@ featureDeprecatePlacesWhereSeqCanBeOmitted,"Deprecate places where 'seq' can be 
 featureSupportValueOptionsAsOptionalParameters,"Support ValueOption as valid type for optional member parameters"
 featureSupportWarnWhenUnitPassedToObjArg,"Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`."
 featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`"
-3875,tcCallerArgumentExpressionSelfReferential,"This CallerArgumentExpression with argument '%s' will have no effect because it's self-referential."
-3875,tcCallerArgumentExpressionHasInvalidParameterName,"This CallerArgumentExpression with argument '%s' will have no effect because it's applied with an invalid parameter name."
+3875,tcCallerArgumentExpressionSelfReferential,"The CallerArgumentExpression on this parameter will have no effect because it's self-referential."
+3875,tcCallerArgumentExpressionHasInvalidParameterName,"The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name."

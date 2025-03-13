@@ -110,3 +110,87 @@ assertEqual (A.aa(a = (stringABC : string))) ("abc", ".cctor", 1, System.IO.Path
         |> shouldSucceed
         |> ignore
 
+    [<FactForNETCOREAPP>]
+    let ``Can receive special parameter names`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+    defaultArg n "no value"
+      
+assertEqual (A.B("abc")) "\"abc\""
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
+    [<FactForNETCOREAPP>]
+    let ``Warn when cannot find the referenced parameter`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "abc">]?n) =
+    defaultArg n "no value"
+    
+assertEqual (A.B("abc")) "no value"
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withSingleDiagnostic (Warning 3875,Line 5, Col 65, Line 5, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.")
+        
+    [<FactForNETCOREAPP>]
+    let ``Warn when self referenced`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "n">]?n) =
+    defaultArg n "no value"
+    
+assertEqual (A.B("abc")) "no value"
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withSingleDiagnostic (Warning 3875,Line 5, Col 63 , Line 5, Col 64, "The CallerArgumentExpression on this parameter will have no effect because it's self-referential.")
+        
+    [<FactForNETCOREAPP>]
+    let ``Error when not attached to optional parameters`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c">] n) =
+    defaultArg n "no value"
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1247,Line 5, Col 66, Line 5, Col 67, "'CallerArgumentExpression \"ab c\"' can only be applied to optional arguments")
+
+    [<FactForNETCOREAPP>]
+    let ``Error when parameters type not matched`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+    defaultArg n 123
+  static member C (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue 0>] n: int) =
+    n
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+          (Error 1246,Line 6, Col 66, Line 6, Col 67, "'CallerArgumentExpression \"ab c\"' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'")
+          (Error 1246,Line 8, Col 101, Line 8, Col 102, "'CallerArgumentExpression \"ab c\"' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'")
+        ]
