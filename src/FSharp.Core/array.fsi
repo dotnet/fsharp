@@ -3080,7 +3080,7 @@ module Array =
     /// <param name="values">The values to insert.</param>
     /// <param name="source">The input array.</param>
     ///
-    /// <returns>The result array.</returns>
+    /// <returns>A new array (even if values is empty).</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///

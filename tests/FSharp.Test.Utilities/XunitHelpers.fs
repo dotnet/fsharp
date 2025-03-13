@@ -29,7 +29,8 @@ type FSharpXunitFramework(sink: IMessageSink) =
         // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
         // right at the start of the test run is here in the constructor.
         // This gets executed once per test assembly.
-        MessageSink.sinkWriter |> ignore
+        logConfig initialConfig
+        log "FSharpXunitFramework installing TestConsole redirection"
         TestConsole.install()
 #if !NETCOREAPP
         AssemblyResolver.addResolver ()
@@ -144,16 +145,6 @@ type CustomTheoryTestCase =
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
-    do
-        // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
-        // right at the start of the test run is here in the constructor.
-        // This gets executed once per test assembly.
-        log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
-        TestConsole.install()
-
-#if !NETCOREAPP
-        AssemblyResolver.addResolver ()
-#endif
 
     let traceProvider =
         Sdk.CreateTracerProviderBuilder()
@@ -176,6 +167,18 @@ type FSharpXunitFramework(sink: IMessageSink) =
         { new XunitTestFrameworkExecutor(assemblyName, this.SourceInformationProvider, this.DiagnosticMessageSink) with
             override _.RunTestCases(testCases, executionMessageSink, executionOptions) =
                 use _ = Activity.start $"{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}" []
+
+                // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
+                // right at the start of the test run is here or in the FSharpXunitFramework constructor.
+                // This gets executed once per test assembly.
+                printfn $"Running tests in {assemblyName.Name} with XUNIT_EXTRAS"
+                logConfig initialConfig
+                log "Installing TestConsole redirection"
+                TestConsole.install()
+
+#if !NETCOREAPP
+                AssemblyResolver.addResolver ()
+#endif
                 base.RunTestCases(testCases, executionMessageSink, executionOptions)
         }
 

@@ -11,7 +11,7 @@
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     },
-    "xcopy-msbuild": "17.12.0"
+    "xcopy-msbuild": "17.13.0"
   },
   "native-tools": {
     "perl": "5.38.2.2"

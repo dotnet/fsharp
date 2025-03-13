@@ -2194,7 +2194,7 @@ module GeneralizationHelpers =
 
         let relevantUniqueSubtypeConstraint (tp: Typar) =
             // Find a single subtype constraint
-            match tp.Constraints |> List.partition (function TyparConstraint.CoercesTo _ -> true | _ -> false) with
+            match tp.Constraints |> List.partition _.IsCoercesTo with
             | [TyparConstraint.CoercesTo(tgtTy, _)], others ->
                  // Throw away null constraints if they are implied
                  if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeNullIsExtraValue g m tgtTy) | _ -> true)
@@ -2976,11 +2976,9 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
     if isSealedTy g srcTy then
         error(RuntimeCoercionSourceSealed(denv, srcTy, m))
 
-    if isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy) then
-        if isCast then
-            AddCxTypeMustSubsumeType (ContextInfo.RuntimeTypeTest isOperator) denv cenv.css m NoTrace srcTy tgtTy
-        else
-            AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace srcTy tgtTy
+    if (isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy)) && not (isObjTyAnyNullness g srcTy) then
+        let context = if isCast then ContextInfo.RuntimeTypeTest isOperator else ContextInfo.NoContext
+        AddCxTypeMustSubsumeType context denv cenv.css m NoTrace srcTy tgtTy
 
     if isErasedType g tgtTy then
         if isCast then

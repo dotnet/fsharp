@@ -3525,3 +3525,20 @@ let ``Test NoWarn HashDirective`` () =
         printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+
+module internal SourceForTrcParseErrors =
+
+    let fileSource1 = """
+module N.M
+#nowarn 0xy
+()
+"""
+    
+[<Fact>]
+let ``TrcParseErrors`` () =
+    let options = createProjectOptions [SourceForTrcParseErrors.fileSource1] []
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 1
+    wholeProjectResults.Diagnostics.[0].ErrorNumber |> shouldEqual 1156
+    wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
