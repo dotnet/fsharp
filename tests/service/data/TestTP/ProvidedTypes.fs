@@ -8907,7 +8907,6 @@ namespace ProviderImplementation.ProvidedTypes
         let enqueueReferencedAssemblies(asm: Assembly) = 
             do sourceAssembliesQueue.Add (fun () -> 
                 [| for referencedAssemblyName  in asm.GetReferencedAssemblies() do
-                    if not (sourceAssembliesTable_.ContainsKey referencedAssemblyName.Name) then
                       let referencedAssembly = try Assembly.Load(referencedAssemblyName) with _ -> null
                       if not (isNull referencedAssembly) then
                           yield referencedAssembly |])
@@ -8921,12 +8920,12 @@ namespace ProviderImplementation.ProvidedTypes
                 for q in qs do 
                     for asm in q() do 
                         let simpleName = asm.GetName().Name
-                        sourceAssembliesTable_.GetOrAdd(simpleName, fun k ->
+                        if not (sourceAssembliesTable_.ContainsKey(simpleName)) then 
+                            sourceAssembliesTable_[simpleName] <- asm
                             sourceAssemblies_.Add asm
                             // Find the transitive closure of all referenced assemblies
                             enqueueReferencedAssemblies asm
-                            asm
-                        ) |> ignore
+
             sourceAssemblies_
 
         /// When translating quotations, Expr.Var's are translated to new variable respecting reference equality.
