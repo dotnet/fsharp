@@ -108,7 +108,7 @@ module internal WarnScopes =
             match s.StartsWithOrdinal "FS", langVersion.SupportsFeature argFeature with
             | true, true -> Some(s.Substring 2, s)
             | true, false ->
-                errorR (Error(FSComp.SR.buildInvalidWarningNumber s, m))
+                warning (Error(FSComp.SR.buildInvalidWarningNumber s, m))
                 None
             | false, _ -> Some(s, s)
 
@@ -116,8 +116,10 @@ module internal WarnScopes =
             match System.Int32.TryParse intString with
             | true, i -> Some i
             | false, _ ->
-                if langVersion.SupportsFeature argFeature then
+                if langVersion.SupportsFeature LanguageFeature.ScopedNowarn then
                     errorR (Error(FSComp.SR.buildInvalidWarningNumber argString, m))
+                elif langVersion.SupportsFeature argFeature then
+                    warning (Error(FSComp.SR.buildInvalidWarningNumber argString, m))
 
                 None
 

@@ -62,13 +62,20 @@ module NonStringArgs =
                 (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Warning 203, Line 3, Col 24, Line 3, Col 28, "Invalid warning number 'FS'");
                 (Warning 203, Line 3, Col 29, Line 3, Col 37, "Invalid warning number 'FSBLAH'");
-            else
+            elif languageVersion = "9.0" then
                 (Warning 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'FS'");
                 (Warning 203, Line 3, Col 12, Line 3, Col 18, "Invalid warning number 'FSBLAH'");
                 (Warning 203, Line 3, Col 19, Line 3, Col 23, "Invalid warning number 'ACME'");
                 (Warning 203, Line 3, Col 24, Line 3, Col 28, "Invalid warning number 'FS'");
                 (Warning 203, Line 3, Col 29, Line 3, Col 37, "Invalid warning number 'FSBLAH'");
                 (Warning 203, Line 3, Col 38, Line 3, Col 44, "Invalid warning number 'ACME'")
+            else // preview
+                (Error 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'FS'");
+                (Error 203, Line 3, Col 12, Line 3, Col 18, "Invalid warning number 'FSBLAH'");
+                (Error 203, Line 3, Col 19, Line 3, Col 23, "Invalid warning number 'ACME'");
+                (Error 203, Line 3, Col 24, Line 3, Col 28, "Invalid warning number 'FS'");
+                (Error 203, Line 3, Col 29, Line 3, Col 37, "Invalid warning number 'FSBLAH'");
+                (Error 203, Line 3, Col 38, Line 3, Col 44, "Invalid warning number 'ACME'")
             ]
 
 
