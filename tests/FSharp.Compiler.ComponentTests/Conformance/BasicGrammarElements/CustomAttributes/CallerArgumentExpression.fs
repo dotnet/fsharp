@@ -128,6 +128,36 @@ assertEqual (A.B("abc")) "\"abc\""
         |> ignore
         
     [<FactForNETCOREAPP>]
+    let ``#line can be inserted in the argument`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+    defaultArg n "no value"
+
+A.B("abc"
+#line 1
+: string)
+|> assertEqual "\"abc\"
+#line 1
+: string"
+
+
+A.B((+) 1
+#line 1
+        123)
+|> assertEqual "(+) 1
+#line 1
+        123"
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
+    [<FactForNETCOREAPP>]
     let ``Warn when cannot find the referenced parameter`` () =
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
@@ -135,13 +165,10 @@ open System.Runtime.CompilerServices
 type A() =
   static member B (``ab c``, [<CallerArgumentExpression "abc">]?n) =
     defaultArg n "no value"
-    
-assertEqual (A.B("abc")) "no value"
         """
         |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+        |> typecheck
+        |> shouldFail
         |> withSingleDiagnostic (Warning 3875,Line 5, Col 65, Line 5, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.")
         
     [<FactForNETCOREAPP>]
@@ -156,9 +183,8 @@ type A() =
 assertEqual (A.B("abc")) "no value"
         """
         |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+        |> typecheck
+        |> shouldFail
         |> withSingleDiagnostic (Warning 3875,Line 5, Col 63 , Line 5, Col 64, "The CallerArgumentExpression on this parameter will have no effect because it's self-referential.")
         
     [<FactForNETCOREAPP>]

@@ -198,8 +198,6 @@ module Range =
     /// This view of range marks uses file indexes explicitly 
     val mkFileIndexRange: FileIndex -> pos -> pos -> range
 
-    val mkFileIndexRangeWithOriginRange: FileIndex -> pos -> pos -> FileIndex -> pos -> pos -> range
-
     /// This view hides the use of file indexes and just uses filenames 
     val mkRange: string -> pos -> pos -> range
 

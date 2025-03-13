@@ -469,10 +469,6 @@ module Range =
 
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
-    let mkFileIndexRangeWithOriginRange fileIndex startPos endPos fileIndex2 startPos2 endPos2 =
-        range(fileIndex, startPos, endPos)
-            .WithOriginalRange(ValueSome(range (fileIndex2, startPos2, endPos2)))
-
     let posOrder =
         let pairOrder = Pair.order (Int32.order, Int32.order)
         let lineAndColumn = fun (p: pos) -> p.Line, p.Column
