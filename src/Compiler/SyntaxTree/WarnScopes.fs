@@ -108,7 +108,7 @@ module internal WarnScopes =
             match s.StartsWithOrdinal "FS", langVersion.SupportsFeature argFeature with
             | true, true -> Some(s.Substring 2, s)
             | true, false ->
-                warning (Error(FSComp.SR.buildInvalidWarningNumber s, m))
+                errorR (Error(FSComp.SR.buildInvalidWarningNumber s, m))
                 None
             | false, _ -> Some(s, s)
 
@@ -117,7 +117,7 @@ module internal WarnScopes =
             | true, i -> Some i
             | false, _ ->
                 if langVersion.SupportsFeature argFeature then
-                    warning (Error(FSComp.SR.buildInvalidWarningNumber argString, m))
+                    errorR (Error(FSComp.SR.buildInvalidWarningNumber argString, m))
 
                 None
 

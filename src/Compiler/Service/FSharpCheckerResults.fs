@@ -3265,7 +3265,10 @@ module internal ParseAndCheckFile =
             // Play background errors and warnings for this file.
             do
                 for err, severity in backgroundDiagnostics do
-                    diagnosticSink (err, severity)
+                    match err.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+                    | FSharpDiagnosticSeverity.Hidden -> ()
+                    | s ->
+                        diagnosticSink (err, severity)
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 

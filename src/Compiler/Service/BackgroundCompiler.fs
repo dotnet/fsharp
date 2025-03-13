@@ -1071,7 +1071,7 @@ type internal BackgroundCompiler
                         Some options,
                         Array.ofList tcDependencyFiles,
                         creationDiags,
-                        parseResults.Diagnostics,
+                        [||],
                         tcDiagnostics,
                         keepAssemblyContents,
                         Option.get latestCcuSigForFile,
@@ -1505,7 +1505,7 @@ type internal BackgroundCompiler
 
         member _.BeforeBackgroundFileCheck = self.BeforeBackgroundFileCheck
 
-        member _.CheckFileInProject
+        member this.CheckFileInProject
             (
                 parseResults: FSharpParseFileResults,
                 fileName: string,
@@ -1514,7 +1514,13 @@ type internal BackgroundCompiler
                 options: FSharpProjectOptions,
                 userOpName: string
             ) : Async<FSharpCheckFileAnswer> =
-            self.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)
+            async {
+                ignore parseResults
+
+                let! _, result = this.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
+
+                return result
+            }
 
         member _.CheckFileInProjectAllowingStaleCachedResults
             (
