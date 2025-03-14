@@ -52,9 +52,15 @@ let mkSynRange (p1: Position) (p2: Position) =
             // This means we had a #line directive in the middle of this syntax element.
             mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition (p1.ShiftColumnBy 1))
 
-    // Check if the start position is affected by a #line directive
-    if p1.OriginalFileIndex <> p1.FileIndex || p1.OriginalLine <> p1.Line then
-        mkFileIndexRange (p1.OriginalFileIndex) (posOfLexOriginalPosition p1) (posOfLexOriginalPosition p2)
+    // Check if the start or end position is affected by a #line directive
+    if
+        p1.FileIndex <> p2.FileIndex
+        || p1.OriginalFileIndex <> p1.FileIndex
+        || p1.OriginalLine <> p1.Line
+        || p2.OriginalFileIndex <> p2.FileIndex
+        || p2.OriginalLine <> p2.Line
+    then
+        mkFileIndexRange p1.OriginalFileIndex (posOfLexOriginalPosition p1) (posOfLexOriginalPosition p2)
         |> ValueSome
         |> range.WithOriginalRange
     else

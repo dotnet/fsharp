@@ -10928,7 +10928,6 @@ FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_range0()
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeCmdArgs()
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range get_rangeStartup()
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFileIndexRange(Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFileIndexRangeWithOriginRange(Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position, Int32, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkFirstLineOfFile(System.String)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range mkRange(System.String, FSharp.Compiler.Text.Position, FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.RangeModule: FSharp.Compiler.Text.Range range0

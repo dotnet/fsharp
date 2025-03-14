@@ -522,6 +522,9 @@ module Range =
 
             let originalRange =
                 match m1.OriginalRange, m2.OriginalRange with
+                // #line is inside the syntax block
+                | ValueNone, ValueSome r2 when m1.FileIndex = r2.FileIndex -> 
+                    ValueSome(range(m1.FileIndex, m1.StartLine, m1.StartColumn, r2.EndLine, r2.EndColumn))
                 | ValueSome r1, ValueSome r2 when r1.FileIndex = r2.FileIndex ->
                     ValueSome(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
                 | _ -> ValueNone
