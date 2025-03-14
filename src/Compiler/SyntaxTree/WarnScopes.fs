@@ -134,21 +134,25 @@ module internal WarnScopes =
         // For compatibility reasons, the arguments are allowed to be followed by a double semicolon.
         // The comment is optional and starts with "//".
         // The "(?: ...)?" is just a way to make the arguments optional while  not interfering with the capturing.
-        // Matching a directive with this regex creates 3 groups (next to the full match):
-        // 1. The directive identifier ("nowarn" or "warnon", possibly followed by additional characters).
-        // 2. The directive arguments (if any), with each argument in a separate capture.
-        // 3. The comment (if any).
+        // Matching a directive with this regex creates 5 groups (next to the full match):
+        // 1. The leading whitespace.
+        // 2. The directive identifier ("nowarn" or "warnon", possibly followed by additional characters).
+        // 3. The directive arguments (if any), with each argument in a separate capture.
+        // 4. The trailing whitespace.
+        // 5. The comment (if any).
 
-        Regex(""" *#(\S+)(?: +([^ \r\n/;]+))*(?:;;)? *(\/\/.*)?$""", RegexOptions.CultureInvariant)
+        Regex("""( *)#(\S+)(?: +([^ \r\n/;]+))*(?:;;)?( *)(\/\/.*)?$""", RegexOptions.CultureInvariant)
 
     let private parseDirective originalFileIndex lexbuf =
         let text = Lexbuf.LexemeString lexbuf
         let startPos = lexbuf.StartPos
 
         let mGroups = (regex.Match text).Groups
-        let dIdent = mGroups[1].Value
-        let argCaptures = [ for c in mGroups[2].Captures -> c ]
-        let commentGroup = mGroups[3]
+        let dIdentGroup = mGroups[2]
+        let dIdent = dIdentGroup.Value
+        let argsGroup = mGroups[3]
+        let argCaptures = [ for c in argsGroup.Captures -> c ]
+        let commentGroup = mGroups[5]
 
         let positions line offset length =
             mkPos line (startPos.Column + offset), mkPos line (startPos.Column + offset + length)
@@ -161,16 +165,22 @@ module internal WarnScopes =
             positions lexbuf.StartPos.OriginalLine offset length
             ||> mkFileIndexRange originalFileIndex
 
-        let m = mkRange 0 text.Length
-
-        let directiveRange, commentRange =
-            if commentGroup.Success then
-                mkRange 0 commentGroup.Index, Some(mkRange commentGroup.Index commentGroup.Length)
+        let directiveLength =
+            if argsGroup.Success then
+                argsGroup.Index - (dIdentGroup.Index - 1) + argsGroup.Length
             else
-                m, None
+                dIdentGroup.Length + 1
+
+        let directiveRange = mkRange (dIdentGroup.Index - 1) directiveLength
+
+        let commentRange =
+            if commentGroup.Success then
+                Some(mkRange commentGroup.Index commentGroup.Length)
+            else
+                None
 
         if argCaptures.IsEmpty then
-            errorR (Error(FSComp.SR.lexWarnDirectiveMustHaveArgs (), m))
+            errorR (Error(FSComp.SR.lexWarnDirectiveMustHaveArgs (), directiveRange))
 
         let mkDirective ctor (c: Capture) =
             getNumber lexbuf.LanguageVersion (mkRange c.Index c.Length) c.Value
@@ -181,7 +191,7 @@ module internal WarnScopes =
             | "warnon" -> argCaptures |> List.choose (mkDirective WarnCmd.Warnon)
             | "nowarn" -> argCaptures |> List.choose (mkDirective WarnCmd.Nowarn)
             | _ ->
-                errorR (Error(FSComp.SR.fsiInvalidDirective ($"#{dIdent}", ""), m))
+                errorR (Error(FSComp.SR.fsiInvalidDirective ($"#{dIdent}", ""), directiveRange))
                 []
 
         {
