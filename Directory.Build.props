@@ -89,6 +89,11 @@
     </Otherwise>
   </Choose>
 
+  <!-- It's important we set TFM before this, since FSharpTests.Directory.Build.props uses it.
+       TODO(vlza): this build props looks outdated, since we only use $(FSharpTestCompilerVersion) in TP tests or cambridge suite (which we slowly want to migrate to xUnit).
+                   We probably should remove or revisit it. -->
+  <Import Project="FSharpTests.Directory.Build.props" Condition=" '$(FSharpTestCompilerVersion)' != '' " />
+
   <ItemGroup>
     <!-- If there is a README.md next to a project file, include it (for easier access in the IDE) -->
     <None Include="README.md" Condition="Exists('README.md')" />
