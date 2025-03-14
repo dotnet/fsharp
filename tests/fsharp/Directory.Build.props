@@ -4,7 +4,7 @@
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharpTests.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
 </Project>
