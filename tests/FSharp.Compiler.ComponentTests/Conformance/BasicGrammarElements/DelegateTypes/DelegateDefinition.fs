@@ -46,3 +46,26 @@ namespace FSharpTest
         """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Delegate with optional parameter`` () =
+        FSharp """open System.Runtime.CompilerServices
+type A = delegate of [<CallerLineNumber>] ?a: int -> unit
+let f = fun (a: int option) -> defaultArg a 100 |> printfn "line: %d"
+let a = A f
+a.Invoke()"""
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyOutput "line: 5"
+        
+    [<Fact>]
+    let ``Delegate with struct optional parameter`` () =
+        FSharp """open System.Runtime.CompilerServices
+type A = delegate of [<CallerLineNumber; Struct>] ?a: int -> unit
+let f = fun (a: int voption) -> defaultArg a 100 |> printfn "line: %d"
+let a = A f
+a.Invoke()"""
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyOutput "line: 5" 
