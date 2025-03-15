@@ -615,46 +615,71 @@ module Range =
             mkRange file (mkPos 1 0) (mkPos 1 80)
 
 module internal FileContent =
-    let private fileContentDict = ConcurrentDictionary<string, string array>()
+    let private fileContentDict = ConcurrentDictionary<string, string>()
 
     let readFileContents (fileNames: string list) =
         for fileName in fileNames do
             if FileSystem.FileExistsShim fileName then
                 use fileStream = FileSystem.OpenFileForReadShim(fileName)
-                fileContentDict[fileName] <- fileStream.ReadAllLines()
+                fileContentDict[fileName] <- fileStream.ReadAllText()
+
+    let substring (input: string) (startLine, startCol) (endLine, endCol) =
+        let findLineEnd lineStart =
+            if lineStart >= input.Length then
+                input.Length - 1
+            else
+                let idx = input.IndexOfAny([| '\r'; '\n' |], lineStart)
+
+                if idx = -1 then
+                    input.Length - 1
+                elif input.[idx] = '\r' && idx + 1 < input.Length && input.[idx + 1] = '\n' then
+                    idx + 1
+                else
+                    idx
+
+        if startLine < 1 || startLine > endLine || startCol < 0 || endCol < 0 then
+            ""
+        else
+            let result = System.Text.StringBuilder()
+
+            let rec loop lineCount startIndex endIndex =
+                if lineCount > endLine then
+                    result.ToString()
+                elif lineCount < startLine then
+                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+                elif lineCount = startLine && startLine = endLine then
+                    input.[startCol..endCol]
+                elif lineCount = startLine then
+                    if startCol < endIndex - startIndex + 1 then
+                        result.Append(input.AsSpan(startIndex + startCol, endIndex - startIndex + 1 - startCol))
+                        |> ignore
+
+                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+                elif lineCount = endLine then
+                    let len = min endCol (endIndex - startIndex + 1)
+                    result.Append(input.AsSpan(startIndex, len)).ToString()
+                else
+                    result.Append(input.AsSpan(startIndex, endIndex - startIndex + 1)) |> ignore
+                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+
+            loop 1 0 (findLineEnd 0)
 
     type IFileContentGetLine =
-        abstract GetLine: fileName: string * line: int -> string
+        abstract GetRangeText: range: range -> string
 
     type DefaultFileContentGetLine() =
+        abstract GetRangeText: range: range -> string
 
-        abstract GetLine: fileName: string * line: int -> string
-
-        default _.GetLine(fileName: string, line: int) : string =
-            match fileContentDict.TryGetValue fileName with
-            | true, lines when lines.Length >= line && line > 0 -> lines[line - 1]
+        default _.GetRangeText(range: range) : string =
+            match fileContentDict.TryGetValue range.FileName with
+            | true, text -> substring text (range.StartLine, range.StartColumn) (range.EndLine, range.EndColumn)
             | _ -> String.Empty
 
         interface IFileContentGetLine with
-            member this.GetLine(fileName: string, line: int) : string = this.GetLine(fileName, line)
+            member this.GetRangeText(range: range) : string = this.GetRangeText(range)
 
     let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
 
     let getCodeText (m: range) =
         let m = if m.HasOriginalRange then m.OriginalRange.Value else m
-
-        let filename, startLine, endLine = m.FileName, m.StartLine, m.EndLine
-        let endCol = m.EndColumn - 1
-        let startCol = m.StartColumn - 1
-
-        let s =
-            [| for i in startLine..endLine -> getLineDynamic.GetLine(filename, i) |]
-            |> String.concat "\n"
-
-        if String.IsNullOrEmpty s then
-            s
-        else
-            try
-                s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
-            with ex ->
-                raise (System.AggregateException($"ex: {ex}; (s: {s}, startCol: {startCol}, endCol: {endCol})", ex))
+        getLineDynamic.GetRangeText(m)

@@ -4684,11 +4684,35 @@ type FsiEvaluationSession
     do
         FileContent.getLineDynamic <-
             { new FileContent.DefaultFileContentGetLine() with
-                override _.GetLine(fileName: string, line: int) : string =
-                    if fileName = stdinMockFileName then
-                        fsiStdinSyphon.GetLineNoPrune fileName line
+                override _.GetRangeText(range) : string =
+                    if range.FileName = stdinMockFileName then
+                        if range.StartLine = range.EndLine then
+                            let line = fsiStdinSyphon.GetLineNoPrune stdinMockFileName range.StartLine
+                            let start = min range.StartColumn (line.Length - 1)
+                            line.[start .. range.EndColumn - 1]
+                        else
+                            let result = StringBuilder()
+
+                            for i in range.StartLine .. range.EndLine do
+                                let line = (fsiStdinSyphon.GetLineNoPrune stdinMockFileName i).AsSpan()
+
+                                let line =
+                                    if i = range.StartLine then
+                                        let start = min range.StartColumn (line.Length - 1)
+                                        line.Slice(start)
+                                    elif i = range.EndLine then
+                                        let len = min range.EndColumn line.Length
+                                        line.Slice(0, len)
+                                    else
+                                        line
+
+                                result.Append(line) |> ignore
+                                if i = range.EndLine then
+                                    result.Append(Environment.NewLine) |> ignore
+
+                            result.ToString()
                     else
-                        base.GetLine(fileName, line)
+                        base.GetRangeText(range)
             }
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)

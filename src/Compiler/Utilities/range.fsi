@@ -279,18 +279,18 @@ module Line =
 /// Store code file content. Use to implement `CallerArgumentExpression`
 module internal FileContent =
 
-    /// Read all file contents
+    /// Read all file contents.
     ///
     /// Used by `getCodeText` to support `CallerArgumentExpression`
     val readFileContents: fileNames: string list -> unit
 
     type IFileContentGetLine =
-        abstract GetLine: fileName: string * line: int -> string
+        abstract GetRangeText: range: range -> string
         
     type DefaultFileContentGetLine =
         new: unit -> DefaultFileContentGetLine
-        abstract GetLine: fileName: string * line: int -> string
-        override GetLine: fileName: string * line: int -> string
+        abstract GetRangeText: range: range -> string
+        override GetRangeText: range: range -> string
         interface IFileContentGetLine
 
     /// Get a line string from already read files.
