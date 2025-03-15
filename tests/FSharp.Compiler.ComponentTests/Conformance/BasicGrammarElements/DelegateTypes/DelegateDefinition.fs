@@ -60,11 +60,10 @@ a.Invoke()"""
         
     [<Fact>]
     let ``Delegate with struct optional parameter`` () =
-        FSharp """open System.Runtime.CompilerServices
-type A = delegate of [<CallerLineNumber; Struct>] ?a: int -> unit
+        FSharp """type A = delegate of [<Struct>] ?a: int -> unit
 let f = fun (a: int voption) -> defaultValueArg a 100 |> printf "line: %d"
 let a = A f
-a.Invoke()"""
+a.Invoke(5)"""
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
