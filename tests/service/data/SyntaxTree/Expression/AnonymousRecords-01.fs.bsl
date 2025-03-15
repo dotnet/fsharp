@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/AnonymousRecords-01.fs", false,
-      QualifiedNameOfFile AnonymousRecords-01, [], [],
+      QualifiedNameOfFile AnonymousRecords-01, [],
       [SynModuleOrNamespace
          ([AnonymousRecords-01], false, AnonModule,
           [Expr
@@ -34,6 +34,7 @@ ImplFile
                  (6,0--6,17), { OpeningBraceRange = (6,7--6,9) }), (6,0--6,17))],
           PreXmlDocEmpty, [], None, (1,0--6,17), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (5,3)-(5,7) parse error Field bindings must have the form 'id = expr;'

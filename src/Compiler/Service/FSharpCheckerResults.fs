@@ -3076,7 +3076,7 @@ module internal ParseAndCheckFile =
 
     let ApplyLoadClosure
         (
-            tcConfig,
+            tcConfig: TcConfig,
             parsedMainInput,
             mainInputFileName: string,
             loadClosure: LoadClosure option,
@@ -3219,13 +3219,6 @@ module internal ParseAndCheckFile =
 
             use _unwindBP = UseBuildPhase BuildPhase.TypeCheck
 
-            // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-            let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
-
-            // update the error handler with the modified tcConfig
-            errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
-
             // If additional references were brought in by the preprocessor then we need to process them
             ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
 
@@ -3272,7 +3265,9 @@ module internal ParseAndCheckFile =
             // Play background errors and warnings for this file.
             do
                 for err, severity in backgroundDiagnostics do
-                    diagnosticSink (err, severity)
+                    match err.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+                    | FSharpDiagnosticSeverity.Hidden -> ()
+                    | s -> diagnosticSink (err, severity)
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 

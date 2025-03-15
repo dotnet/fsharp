@@ -3540,5 +3540,7 @@ let ``TrcParseErrors`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     wholeProjectResults.Diagnostics.Length |> shouldEqual 1
-    wholeProjectResults.Diagnostics.[0].ErrorNumber |> shouldEqual 1156
-    wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
+    let diagnostic = wholeProjectResults.Diagnostics.[0]
+    diagnostic.ErrorNumber |> shouldEqual 203
+    diagnostic.Range.StartLine |> shouldEqual 3
+    diagnostic.Severity |> shouldEqual FSharpDiagnosticSeverity.Error

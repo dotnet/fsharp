@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionOneLinerOptionType.fs", false,
-      QualifiedNameOfFile RegressionOneLinerOptionType, [], [],
+      QualifiedNameOfFile RegressionOneLinerOptionType, [],
       [SynModuleOrNamespace
          ([RegressionOneLinerOptionType], false, AnonModule,
           [Types
@@ -35,4 +35,5 @@ ImplFile
                     WithKeyword = None })], (1,0--1,41))], PreXmlDocEmpty, [],
           None, (1,0--1,41), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

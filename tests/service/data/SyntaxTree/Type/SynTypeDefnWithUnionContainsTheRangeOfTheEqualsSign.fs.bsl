@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeDefnWithUnionContainsTheRangeOfTheEqualsSign.fs", false,
       QualifiedNameOfFile SynTypeDefnWithUnionContainsTheRangeOfTheEqualsSign,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithUnionContainsTheRangeOfTheEqualsSign], false,
           AnonModule,
@@ -52,4 +52,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,28))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

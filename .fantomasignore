@@ -126,7 +126,8 @@ src/Compiler/Utilities/HashMultiMap.fs
 src/Compiler/Facilities/AsyncMemoize.fsi
 src/Compiler/Facilities/AsyncMemoize.fs
 src/Compiler/AbstractIL/il.fs
-src/Compiler/SyntaxTree/LexerStore.fs
+src/Compiler/SyntaxTree/UnicodeLexing.fsi
+src/Compiler/SyntaxTree/UnicodeLexing.fs
 
 src/Compiler/Driver/GraphChecking/Graph.fsi
 src/Compiler/Driver/GraphChecking/Graph.fs

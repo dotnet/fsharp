@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding.fs",
       false,
       QualifiedNameOfFile
-        RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding, [], [],
+        RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInSynModuleDeclLetBinding], false,
           AnonModule,
@@ -21,4 +21,5 @@ ImplFile
                     EqualsRange = Some (2,6--2,7) })], (2,0--2,10))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

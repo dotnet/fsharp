@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/NullAnnotatedExpression.fs", false,
-      QualifiedNameOfFile NullAnnotatedExpression, [], [],
+      QualifiedNameOfFile NullAnnotatedExpression, [],
       [SynModuleOrNamespace
          ([NullAnnotatedExpression], false, AnonModule,
           [Let
@@ -70,4 +70,5 @@ ImplFile
                     EqualsRange = Some (1,64--1,65) })], (1,0--1,70))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

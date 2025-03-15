@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/NameofOperator.fs", false,
-      QualifiedNameOfFile NameofOperator, [], [],
+      QualifiedNameOfFile NameofOperator, [],
       [SynModuleOrNamespace
          ([NameofOperator], false, AnonModule,
           [Expr
@@ -17,4 +17,5 @@ ImplFile
                  (2,0--2,9)), (2,0--2,9))], PreXmlDocEmpty, [], None, (2,0--2,9),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

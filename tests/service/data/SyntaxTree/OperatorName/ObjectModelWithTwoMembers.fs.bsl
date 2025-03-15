@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/ObjectModelWithTwoMembers.fs", false,
-      QualifiedNameOfFile ObjectModelWithTwoMembers, [], [],
+      QualifiedNameOfFile ObjectModelWithTwoMembers, [],
       [SynModuleOrNamespace
          ([ObjectModelWithTwoMembers], false, AnonModule,
           [Types
@@ -111,4 +111,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,79))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
