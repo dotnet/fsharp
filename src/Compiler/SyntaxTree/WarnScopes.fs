@@ -428,7 +428,7 @@ module internal WarnScopes =
     let IsNowarn (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
         let data = getWarnScopeData diagnosticOptions
 
-        if List.contains warningNumber data.ScriptNowarns then  // this happens only for legacy language versions
+        if List.contains warningNumber data.ScriptNowarns then // this happens only for legacy language versions
             true
         else
             match mo with
