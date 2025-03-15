@@ -4307,8 +4307,8 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
                             ((List.mapSquared fst curriedArgTys), valSynInfo.CurriedArgInfos)
                             ||> List.map2 (fun argTys argInfos ->
                                  (argTys, argInfos)
-                                 ||> List.map2 (fun argTy argInfo ->
-                                     if SynInfo.IsOptionalArg argInfo then mkOptionTy g argTy
+                                 ||> List.map2 (fun argTy (SynArgInfo(attribs, _, _) as argInfo) ->
+                                     if SynInfo.IsOptionalArg argInfo then mkOptionalParamTyBasedOnAttribute g argTy attribs
                                      else argTy))
                         mkIteratedFunTy g (List.map (mkRefTupledTy g) curriedArgTys) returnTy
                     else tyR
