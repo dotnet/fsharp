@@ -318,7 +318,18 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
     let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
     let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
-    let callerArgumentExpressionArg = TryFindFSharpAttributeOpt g g.attrib_CallerArgumentExpressionAttribute argInfo.Attribs
+    let callerArgumentExpressionArg = 
+        TryFindFSharpAttributeOpt g g.attrib_CallerArgumentExpressionAttribute argInfo.Attribs
+        // find user defined CallerArgumentExpressionAttribute
+        |> Option.orElseWith (fun () -> 
+            argInfo.Attribs
+            |> List.tryFind (fun (Attrib(tcref2, _, _, _, _, _, _)) -> 
+                match tcref2.TryDeref with
+                | ValueNone -> false
+                | ValueSome x ->
+                    x.CompilationPath.MangledPath = ["System"; "Runtime"; "CompilerServices"] && 
+                    x.CompiledName = "CallerArgumentExpressionAttribute")
+        )
 
     let callerInfo =
         match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, callerArgumentExpressionArg with
@@ -1284,21 +1295,18 @@ type MethInfo =
                  let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
                  let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
                  let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
-                 let isCallerArgumentExpressionArg = TryFindILAttributeOpt g.attrib_CallerArgumentExpressionAttribute attrs
+                 let isCallerArgumentExpressionArg =
+                     g.attrib_CallerArgumentExpressionAttribute
+                     |> Option.bind (fun (AttribInfo(tref, _)) -> TryDecodeILAttribute tref attrs)
 
                  let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, isCallerArgumentExpressionArg with
-                    | false, false, false, false -> NoCallerInfo
-                    | true, false, false, false -> CallerLineNumber
-                    | false, true, false, false -> CallerFilePath
-                    | false, false, true, false -> CallerMemberName            
-                    | false, false, false, true ->
-                        match g.attrib_CallerArgumentExpressionAttribute with
-                        | Some (AttribInfo(tref,_)) ->
-                            match TryDecodeILAttribute tref attrs with
-                            | Some ([ILAttribElem.String (Some name) ], _) -> CallerArgumentExpression(name)
-                            | _ -> NoCallerInfo
-                        | None -> NoCallerInfo
+                    | false, false, false, None -> NoCallerInfo
+                    | true, false, false, None -> CallerLineNumber
+                    | false, true, false, None -> CallerFilePath
+                    | false, false, true, None -> CallerMemberName            
+                    | false, false, false, Some ([ILAttribElem.String (Some name) ], _) -> CallerArgumentExpression(name)
+                    | false, false, false, _ -> NoCallerInfo
                     | _, _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
