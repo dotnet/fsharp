@@ -262,9 +262,11 @@ module FileIndex =
     let commandLineArgsFileName = "commandLineArgs"
 
 [<Struct; CustomEquality; NoComparison>]
-[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type Range(code1: int64, code2: int64) =
+[<System.Diagnostics.DebuggerDisplay("{OriginalRange} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
+type Range private (code1: int64, code2: int64, originalRange: struct (int64 * int64) voption) =
     static member Zero = range (0L, 0L)
+
+    new(code1, code2) = range (code1, code2, ValueNone)
 
     new(fIdx, bl, bc, el, ec) =
         let code1 =
@@ -386,8 +388,28 @@ type Range(code1: int64, code2: int64) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         hash code1 + hash code2
 
+    member _.OriginalRange =
+        originalRange
+        |> ValueOption.map (fun struct (code1, code2) -> range (code1, code2))
+
     override r.ToString() =
-        sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
+        let fromText =
+            if r.HasOriginalRange then
+                $" (from: %s{r.OriginalRange.Value.ToString()})"
+            else
+                String.Empty
+
+        sprintf "(%d,%d--%d,%d)%s" r.StartLine r.StartColumn r.EndLine r.EndColumn fromText
+
+    member m.IsZero = m.Equals range.Zero
+
+    member _.WithOriginalRange(originalRange: range voption) =
+        range (code1, code2, originalRange |> ValueOption.map (fun m -> struct (m.Code1, m.Code2)))
+
+    member this.HasOriginalRange =
+        match this.OriginalRange with
+        | ValueSome range2 when not range2.IsZero -> true
+        | _ -> false
 
 and range = Range
 
@@ -498,8 +520,18 @@ module Range =
                 else
                     m2
 
+            let originalRange =
+                match m1.OriginalRange, m2.OriginalRange with
+                // #line is inside the syntax block
+                | ValueNone, ValueSome r2 when m1.FileIndex = r2.FileIndex ->
+                    ValueSome(range (m1.FileIndex, m1.StartLine, m1.StartColumn, r2.EndLine, r2.EndColumn))
+                | ValueSome r1, ValueSome r2 when r1.FileIndex = r2.FileIndex ->
+                    ValueSome(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
+                | _ -> ValueNone
+
             let m =
-                range (m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
+                range(m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
+                    .WithOriginalRange(originalRange)
 
             if m1.IsSynthetic || m2.IsSynthetic then
                 m.MakeSynthetic()
@@ -581,3 +613,73 @@ module Range =
                     | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
+
+module internal FileContent =
+    let private fileContentDict = ConcurrentDictionary<string, string>()
+
+    let readFileContents (fileNames: string list) =
+        for fileName in fileNames do
+            if FileSystem.FileExistsShim fileName then
+                use fileStream = FileSystem.OpenFileForReadShim(fileName)
+                fileContentDict[fileName] <- fileStream.ReadAllText()
+
+    let substring (input: string) (startLine, startCol) (endLine, endCol) =
+        let findLineEnd lineStart =
+            if lineStart >= input.Length then
+                input.Length - 1
+            else
+                let idx = input.IndexOfAny([| '\r'; '\n' |], lineStart)
+
+                if idx = -1 then
+                    input.Length - 1
+                elif input.[idx] = '\r' && idx + 1 < input.Length && input.[idx + 1] = '\n' then
+                    idx + 1
+                else
+                    idx
+
+        if startLine < 1 || startLine > endLine || startCol < 0 || endCol < 0 then
+            ""
+        else
+            let result = System.Text.StringBuilder()
+
+            let rec loop lineCount startIndex endIndex =
+                if lineCount > endLine then
+                    result.ToString()
+                elif lineCount < startLine then
+                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+                elif lineCount = startLine && startLine = endLine then
+                    input.[startIndex + startCol.. startIndex + endCol - 1]
+                elif lineCount = startLine then
+                    if startCol < endIndex - startIndex + 1 then
+                        result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
+                        |> ignore
+
+                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+                elif lineCount = endLine then
+                    let len = min endCol (endIndex - startIndex + 1)
+                    result.Append(input.Substring(startIndex, len)).ToString()
+                else
+                    result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
+                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+
+            loop 1 0 (findLineEnd 0)
+
+    type IFileContentGetLine =
+        abstract GetRangeText: range: range -> string
+
+    type DefaultFileContentGetLine() =
+        abstract GetRangeText: range: range -> string
+
+        default _.GetRangeText(range: range) : string =
+            match fileContentDict.TryGetValue range.FileName with
+            | true, text -> substring text (range.StartLine, range.StartColumn) (range.EndLine, range.EndColumn)
+            | _ -> String.Empty
+
+        interface IFileContentGetLine with
+            member this.GetRangeText(range: range) : string = this.GetRangeText(range)
+
+    let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
+
+    let getCodeText (m: range) =
+        let m = if m.HasOriginalRange then m.OriginalRange.Value else m
+        getLineDynamic.GetRangeText(m)

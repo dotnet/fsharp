@@ -632,6 +632,11 @@
         <target state="translated">представление структуры для активных шаблонов</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportCallerArgumentExpression">
+        <source>Support `CallerArgumentExpression`</source>
+        <target state="new">Support `CallerArgumentExpression`</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
         <source>Support ValueOption as valid type for optional member parameters</source>
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
@@ -1360,6 +1365,16 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Атрибуты не могут быть применены к расширениям типа.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionHasInvalidParameterName">
+        <source>The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.</source>
+        <target state="new">The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionSelfReferential">
+        <source>The CallerArgumentExpression on this parameter will have no effect because it's self-referential.</source>
+        <target state="new">The CallerArgumentExpression on this parameter will have no effect because it's self-referential.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

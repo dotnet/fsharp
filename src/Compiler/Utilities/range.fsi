@@ -107,6 +107,13 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
+    /// The original range for the range
+    member OriginalRange: range voption
+
+    member HasOriginalRange: bool
+            
+    member WithOriginalRange: originalRange: range voption -> range
+
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
 
@@ -269,4 +276,27 @@ module Line =
     /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toZ: int -> Line0 
 
+/// Store code file content. Use to implement `CallerArgumentExpression`
+module internal FileContent =
 
+    /// Read all file contents.
+    ///
+    /// Used by `getCodeText` to support `CallerArgumentExpression`
+    val readFileContents: fileNames: string list -> unit
+
+    type IFileContentGetLine =
+        abstract GetRangeText: range: range -> string
+        
+    type DefaultFileContentGetLine =
+        new: unit -> DefaultFileContentGetLine
+        abstract GetRangeText: range: range -> string
+        override GetRangeText: range: range -> string
+        interface IFileContentGetLine
+
+    /// Get a line string from already read files.
+    ///
+    /// Used by `getCodeText` to support `CallerArgumentExpression`
+    val mutable getLineDynamic: IFileContentGetLine
+
+    /// Get code text of the specific `range`
+    val getCodeText: range -> string

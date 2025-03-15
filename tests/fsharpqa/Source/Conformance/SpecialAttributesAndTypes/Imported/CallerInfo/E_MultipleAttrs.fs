@@ -1,7 +1,7 @@
-//<Expects id="FS1246" span="(11,19-11,20)" status="error">'CallerFilePath' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'</Expects>
-//<Expects id="FS1246" span="(14,19-14,20)" status="error">'CallerFilePath' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'</Expects>
-//<Expects id="FS1246" span="(17,19-17,20)" status="error">'CallerLineNumber' must be applied to an argument of type 'int', but has been applied to an argument of type 'string'</Expects>
-//<Expects id="FS1246" span="(20,19-20,20)" status="error">'CallerLineNumber' must be applied to an argument of type 'int', but has been applied to an argument of type 'string'</Expects>
+//<Expects id="FS1246" span="(11,62-11,63)" status="error">'CallerFilePath' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'</Expects>
+//<Expects id="FS1246" span="(14,62-14,63)" status="error">'CallerFilePath' must be applied to an argument of type 'string', but has been applied to an argument of type 'int'</Expects>
+//<Expects id="FS1246" span="(17,62-17,63)" status="error">'CallerLineNumber' must be applied to an argument of type 'int', but has been applied to an argument of type 'string'</Expects>
+//<Expects id="FS1246" span="(20,62-20,63)" status="error">'CallerLineNumber' must be applied to an argument of type 'int', but has been applied to an argument of type 'string'</Expects>
 
 namespace Test
 

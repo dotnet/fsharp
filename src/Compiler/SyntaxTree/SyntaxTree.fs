@@ -777,7 +777,9 @@ type SynExpr =
         match e with
         | SynExpr.Paren(_, leftParenRange, rightParenRange, r) ->
             match rightParenRange with
-            | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
+            | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex ->
+                if r.HasOriginalRange then r
+                else leftParenRange
             | _ -> r
         | SynExpr.Quote(range = m)
         | SynExpr.Const(range = m)

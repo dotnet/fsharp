@@ -2391,16 +2391,45 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then
                 errorR(Error(FSComp.SR.chkDuplicateMethodCurried(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
 
+            let paramDatas = minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+
             if numCurriedArgSets > 1 &&
-               (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
+               (paramDatas
                 |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _, reflArgInfo, ty)) ->
                     isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
-                minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
-                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, _, _, ty)) ->
+                let errorIfNotStringTy m ty callerInfo = 
+                    if not (typeEquiv g g.string_ty ty) then
+                        errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                        
+                let errorIfNotStringOptionTy m ty callerInfo =
+                    if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
+                        errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+
+                let paramNames = HashSet()
+                paramDatas
+                |> List.iterSquared (fun (ParamData(_, _, _, _, _, nameOpt, _, _)) ->
+                    nameOpt |> Option.iter (fun name -> paramNames.Add name.idText |> ignore))
+
+                let checkArgOfCallerArgumentExpression m arg (nameOpt: Ident option) =
+                    match nameOpt with
+                    | Some ident when arg = ident.idText -> 
+                        warning(Error(FSComp.SR.tcCallerArgumentExpressionSelfReferential(), m))
+                    | _ when not (paramNames.Contains arg) -> 
+                        warning(Error(FSComp.SR.tcCallerArgumentExpressionHasInvalidParameterName(), m))
+                    | _ -> ()
+
+                paramDatas
+                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
                     ignore isInArg
+
+                    let m =
+                        match nameOpt with
+                        | Some name -> name.idRange
+                        | None -> m
+
                     match (optArgInfo, callerInfo) with
                     | _, NoCallerInfo -> ()
                     | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo |> string), m))
@@ -2410,18 +2439,17 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | CalleeSide, CallerLineNumber ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.int32_ty (destOptionTy g ty))) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
-                    | CallerSide _, CallerFilePath ->
-                        if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
-                    | CalleeSide, CallerFilePath ->
-                        if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
-                    | CallerSide _, CallerMemberName ->
-                        if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
-                    | CalleeSide, CallerMemberName ->
-                        if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
+                    | CallerSide _, (CallerFilePath | CallerMemberName) -> errorIfNotStringTy m ty callerInfo
+                    | CalleeSide, (CallerFilePath | CallerMemberName) -> errorIfNotStringOptionTy m ty callerInfo
+                    | CallerSide _, CallerArgumentExpression arg ->
+                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportCallerArgumentExpression m
+                        errorIfNotStringTy m ty callerInfo
+                        checkArgOfCallerArgumentExpression m arg nameOpt
+                    | CalleeSide, CallerArgumentExpression arg ->
+                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportCallerArgumentExpression m
+                        errorIfNotStringOptionTy m ty callerInfo
+                        checkArgOfCallerArgumentExpression m arg nameOpt
+                )
 
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName

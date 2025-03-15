@@ -5,6 +5,7 @@
 * Added type conversions cache, only enabled for compiler runs ([PR#17668](https://github.com/dotnet/fsharp/pull/17668))
 * Support ValueOption + Struct attribute as optional parameter for methods ([Language suggestion #1136](https://github.com/fsharp/fslang-suggestions/issues/1136), [PR #18098](https://github.com/dotnet/fsharp/pull/18098))
 * Warn when `unit` is passed to an `obj`-typed argument  ([PR #18330](https://github.com/dotnet/fsharp/pull/18330))
+* Support `CallerArgumentExpression` ([Language Suggestion #966](https://github.com/fsharp/fslang-suggestions/issues/966), [PR #17519](https://github.com/dotnet/fsharp/pull/17519))
 
 ### Fixed
 
