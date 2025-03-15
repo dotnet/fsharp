@@ -339,7 +339,10 @@ module internal WarnScopes =
             setWarnScopeData diagnosticOptions newWarnScopeData
 
         let lexbufData = getLexbufData lexbuf
-        let scopedNowarnFeatureIsSupported = lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn
+
+        let scopedNowarnFeatureIsSupported =
+            lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn
+
         let globalNowarns = lexbufData.ScriptNowarns
 
         let lexbufWarnScopes =
