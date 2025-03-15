@@ -4706,7 +4706,8 @@ type FsiEvaluationSession
                                     else
                                         line
 
-                                result.Append(line) |> ignore
+                                result.Append(line.ToString()) |> ignore
+
                                 if i = range.EndLine then
                                     result.Append(Environment.NewLine) |> ignore
 

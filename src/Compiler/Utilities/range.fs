@@ -651,15 +651,15 @@ module internal FileContent =
                     input.[startCol..endCol]
                 elif lineCount = startLine then
                     if startCol < endIndex - startIndex + 1 then
-                        result.Append(input.AsSpan(startIndex + startCol, endIndex - startIndex + 1 - startCol))
+                        result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
                         |> ignore
 
                     loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
                 elif lineCount = endLine then
                     let len = min endCol (endIndex - startIndex + 1)
-                    result.Append(input.AsSpan(startIndex, len)).ToString()
+                    result.Append(input.Substring(startIndex, len)).ToString()
                 else
-                    result.Append(input.AsSpan(startIndex, endIndex - startIndex + 1)) |> ignore
+                    result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
                     loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
 
             loop 1 0 (findLineEnd 0)
