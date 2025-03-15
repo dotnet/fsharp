@@ -3697,7 +3697,20 @@ module EstablishTypeDefinitionCores =
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
                                   let ttps = thisTyconRef.Typars m
-                                  let fparams = curriedArgInfos.Head |> List.map MakeSlotParam 
+                                  let fparams =
+                                      curriedArgInfos.Head
+                                      |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            let ty =
+                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
+                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                  | Some (Attrib(range=m)) ->
+                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                      mkValueOptionTy g ty
+                                                  | _ ->
+                                                      mkOptionTy g ty            
+                                              else ty
+
+                                            MakeSlotParam(ty, argInfo)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
