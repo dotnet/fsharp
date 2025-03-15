@@ -648,7 +648,7 @@ module internal FileContent =
                 elif lineCount < startLine then
                     loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
                 elif lineCount = startLine && startLine = endLine then
-                    input.[startCol..endCol]
+                    input.[startIndex + startCol.. startIndex + endCol - 1]
                 elif lineCount = startLine then
                     if startCol < endIndex - startIndex + 1 then
                         result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
