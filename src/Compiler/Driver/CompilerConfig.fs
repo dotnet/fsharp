@@ -644,7 +644,6 @@ type TcConfigBuilder =
 
         mutable pathMap: PathMap
 
-        /// do not set directly, but only through member 'SetLangVersion'
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
@@ -875,14 +874,6 @@ type TcConfigBuilder =
             strictIndentation = None
             compilationMode = TcGlobals.CompilationMode.Unset
         }
-
-    member tcConfigB.SetLangVersion v =
-        tcConfigB.langVersion <- v
-
-        tcConfigB.diagnosticsOptions <-
-            { tcConfigB.diagnosticsOptions with
-                WarnScopesFeatureIsSupported = v.SupportsFeature LanguageFeature.ScopedNowarn
-            }
 
     member tcConfigB.FxResolver =
         // We compute the FxResolver on-demand.  It depends on some configuration parameters
