@@ -266,7 +266,10 @@ let PostParseModuleImpls
         identifiers: Set<string>
     ) =
 
-    lexbuf |> WarnScopes.MergeInto diagnosticOptions (getImplSubmoduleRanges impls)
+    let isScript = IsScript fileName
+
+    lexbuf
+    |> WarnScopes.MergeInto diagnosticOptions isScript (getImplSubmoduleRanges impls)
 
     let trivia: ParsedImplFileInputTrivia =
         {
@@ -291,7 +294,6 @@ let PostParseModuleImpls
         |> List.mapi (fun i x -> PostParseModuleImpl(i, defaultNamespace, isLastCompiland, fileName, x))
 
     let qualName = QualFileNameOfImpls fileName impls
-    let isScript = IsScript fileName
 
     ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, hashDirectives, impls, isLastCompiland, trivia, identifiers))
 
@@ -306,7 +308,8 @@ let PostParseModuleSpecs
         identifiers: Set<string>
     ) =
 
-    lexbuf |> WarnScopes.MergeInto diagnosticOptions (getSpecSubmoduleRanges specs)
+    lexbuf
+    |> WarnScopes.MergeInto diagnosticOptions false (getSpecSubmoduleRanges specs)
 
     let trivia: ParsedSigFileInputTrivia =
         {

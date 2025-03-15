@@ -3694,7 +3694,7 @@ type FsiInteractionProcessor
 
                     Parser.interaction lexerWhichSavesLastToken tokenizer.LexBuffer)
 
-            WarnScopes.MergeInto diagnosticOptions [] tokenizer.LexBuffer
+            WarnScopes.MergeInto diagnosticOptions false [] tokenizer.LexBuffer
 
             Some input
         with e ->

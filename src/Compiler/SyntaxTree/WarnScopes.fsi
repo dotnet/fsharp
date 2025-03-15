@@ -17,7 +17,8 @@ module internal WarnScopes =
 
     /// To be called after lexing a file to create warn scopes from the stored line and
     /// warn directives and to add them to the warn scopes from other files in the diagnostics options.
-    val MergeInto: FSharpDiagnosticOptions -> range list -> Lexbuf -> unit
+    /// Note that isScript and subModuleRanges are needed only to avoid breaking changes for previous language versions.
+    val MergeInto: FSharpDiagnosticOptions -> isScript: bool -> subModuleRanges: range list -> Lexbuf -> unit
 
     /// Get the collected ranges of the warn directives
     val getDirectiveTrivia: Lexbuf -> WarnDirectiveTrivia list

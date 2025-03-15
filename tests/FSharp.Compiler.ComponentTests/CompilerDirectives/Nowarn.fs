@@ -85,6 +85,7 @@ module Nowarn =
         vp, [], [fsx ["module A"; make20; nowarn 20; make20; warnon 20; make20]], []  // 20 is not checked in scripts
         vp, [], [fsx ["module A"; make25; nowarn 25; make25; warnon 25; make25]], [Warning 25, 2; Warning 25, 6]
         v9, [], [fsx ["module A"; make25; nowarn 25; make25; warnon 25; make25]], [Error 3350, 5]
+        v9, [], [fsx ["module A"; make25; nowarn 25; make25]], []
         vp, [], [fsMod ["let x ="; nowarn 20; "    1"; warnon 20; "    2"; "    3"; "4"]], [W20, 6; W20, 8]
         vp, [], [fsMod [nowarn 20; nowarn 20; warnon 20; make20]], [Information 3876, 3; W20, 5]
         vp, [], [fsMod [nowarn 20; warnon 20; warnon 20; make20]], [Warning 3876, 4; W20, 5]
