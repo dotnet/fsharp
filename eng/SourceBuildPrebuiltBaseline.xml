@@ -26,4 +26,8 @@
     <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
     <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
   </IgnorePatterns>
+
+  <Usages>
+    <Usage Id="System.Formats.Asn1" Version="8.0.1" />
+  </Usages>
 </UsageData>

@@ -9150,38 +9150,34 @@ let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
+let inline HasConstraint ([<InlineIfLambda>] predicate) (tp:Typar)  = 
+    tp.Constraints |> List.exists predicate
+
+let inline tryGetTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp as x when HasConstraint predicate tp -> x
+    | _ -> ValueNone
+
+let inline IsTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp -> HasConstraint predicate tp
+    | ValueNone -> false
+
 // Note, isStructTy does not include type parameters with the ': struct' constraint
 // This predicate is used to detect those type parameters.
-let isNonNullableStructTyparTy g ty = 
-    match tryDestTyparTy g ty with 
-    | ValueSome tp -> 
-        tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
-    | ValueNone ->
-        false
+let IsNonNullableStructTyparTy g ty = ty |> IsTyparTyWithConstraint g _.IsIsNonNullableStruct
 
 // Note, isRefTy does not include type parameters with the ': not struct' or ': null' constraints
 // This predicate is used to detect those type parameters.
-let isReferenceTyparTy g ty = 
-    match tryDestTyparTy g ty with 
-    | ValueSome tp -> 
-        tp.Constraints |> List.exists (function
-            | TyparConstraint.IsReferenceType _ -> true
-            | TyparConstraint.SupportsNull _ -> true
-            | _ -> false)
-    | ValueNone ->
-        false
+let IsReferenceTyparTy g ty = ty |> IsTyparTyWithConstraint g (fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull)
 
-let isSupportsNullTyparTy g ty = 
-    if isReferenceTyparTy g ty then
-        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
-    else
-        false
+let GetTyparTyIfSupportsNull g ty = ty |> tryGetTyparTyWithConstraint g _.IsSupportsNull
 
 let TypeNullNever g ty = 
     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
     isStructTy g underlyingTy ||
     isByrefTy g underlyingTy ||
-    isNonNullableStructTyparTy g ty
+    IsNonNullableStructTyparTy g ty
 
 /// The pre-nullness logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
@@ -9203,7 +9199,7 @@ let TypeNullIsExtraValue g m ty =
         | ValueNone -> 
 
         // Consider type parameters
-        isSupportsNullTyparTy g ty
+        (GetTyparTyIfSupportsNull g ty).IsSome
 
 // Any mention of a type with AllowNullLiteral(true) is considered to be with-null
 let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
@@ -9241,7 +9237,7 @@ let changeWithNullReqTyToVariable g reqTy =
 let reqTyForArgumentNullnessInference g actualTy reqTy =
     // Only change reqd nullness if actualTy is an inference variable
     match tryDestTyparTy g actualTy with
-    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
+    | ValueSome t when t.IsCompilerGenerated && not(t |> HasConstraint _.IsSupportsNull) ->
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
@@ -9317,7 +9313,7 @@ let TypeNullIsExtraValueNew g m ty =
      | NullnessInfo.WithNull -> true)
     ||
     // Check if the type has a ': null' constraint
-    isSupportsNullTyparTy g ty
+    (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
@@ -9363,8 +9359,9 @@ let rec TypeHasDefaultValueAux isNew g m ty =
             true))
     || 
       // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
-      (isNonNullableStructTyparTy g ty &&
-        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
+      ( match ty |> tryGetTyparTyWithConstraint g _.IsIsNonNullableStruct with
+        | ValueSome tp -> tp |> HasConstraint _.IsRequiresDefaultConstructor
+        | ValueNone -> false)        
 
 let TypeHasDefaultValue (g: TcGlobals) m ty = TypeHasDefaultValueAux false g m ty  
 
@@ -9981,7 +9978,7 @@ let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx =
 // FSharpTypeFunc, but rather bake a "local type function" for each TyLambda abstraction.
 let IsGenericValWithGenericConstraints g (v: Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists (isCompiledOrWitnessPassingConstraint g) tp.Constraints)
+    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> HasConstraint (isCompiledOrWitnessPassingConstraint g) tp)
 
 // Does a type support a given interface? 
 type Entity with 

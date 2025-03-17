@@ -42,7 +42,8 @@ let ``Signature conformance`` langVersion checknulls =
     |> compile
     |> shouldFail
     |> withDiagnostics
-        [(Warning 3261, Line 4, Col 5, Line 4, Col 10, "Nullness warning: Module 'M' contains
+        [Warning 3262, Line 18, Col 48, Line 18, Col 60, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+         (Warning 3261, Line 4, Col 5, Line 4, Col 10, "Nullness warning: Module 'M' contains
             val test2: x: string | null -> unit    
         but its signature specifies
             val test2: string -> unit    
@@ -131,8 +132,33 @@ let ``DefaultValueBug when checknulls is disabled`` compilation =
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"using-nullness-syntax-positive.fs"|])>]
 let ``With new nullness syntax nullness enabled`` compilation =
     compilation
-    |> withVersionAndCheckNulls ("preview",true)   
+    |> withVersionAndCheckNulls ("preview",true)
     |> verifyBaseline
+
+// https://github.com/dotnet/fsharp/issues/18288
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression previewNullness`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",true)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression previewNoNullness`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",false)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression v8`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("8.0",false)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
 
 
 

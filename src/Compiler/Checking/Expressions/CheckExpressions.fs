@@ -1890,7 +1890,11 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 
     // Work out the required type of the member
     let argTysFromAbsSlot = argTys |> List.mapSquared (instType typarInstFromAbsSlot)
-    let retTyFromAbsSlot = retTy |> GetFSharpViewOfReturnType g |> instType typarInstFromAbsSlot
+
+    let retTyFromAbsSlot = 
+        retTy 
+        |> GetFSharpViewOfReturnType g        
+        |> instType typarInstFromAbsSlot
     typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
 
 let CheckRecdExprDuplicateFields (elems: Ident list) =
@@ -2190,7 +2194,7 @@ module GeneralizationHelpers =
 
         let relevantUniqueSubtypeConstraint (tp: Typar) =
             // Find a single subtype constraint
-            match tp.Constraints |> List.partition (function TyparConstraint.CoercesTo _ -> true | _ -> false) with
+            match tp.Constraints |> List.partition _.IsCoercesTo with
             | [TyparConstraint.CoercesTo(tgtTy, _)], others ->
                  // Throw away null constraints if they are implied
                  if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeNullIsExtraValue g m tgtTy) | _ -> true)
@@ -2972,11 +2976,9 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
     if isSealedTy g srcTy then
         error(RuntimeCoercionSourceSealed(denv, srcTy, m))
 
-    if isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy) then
-        if isCast then
-            AddCxTypeMustSubsumeType (ContextInfo.RuntimeTypeTest isOperator) denv cenv.css m NoTrace srcTy tgtTy
-        else
-            AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace srcTy tgtTy
+    if (isSealedTy g tgtTy || isTyparTy g tgtTy || not (isInterfaceTy g srcTy)) && not (isObjTyAnyNullness g srcTy) then
+        let context = if isCast then ContextInfo.RuntimeTypeTest isOperator else ContextInfo.NoContext
+        AddCxTypeMustSubsumeType context denv cenv.css m NoTrace srcTy tgtTy
 
     if isErasedType g tgtTy then
         if isCast then
@@ -4305,8 +4307,8 @@ and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOp
                             ((List.mapSquared fst curriedArgTys), valSynInfo.CurriedArgInfos)
                             ||> List.map2 (fun argTys argInfos ->
                                  (argTys, argInfos)
-                                 ||> List.map2 (fun argTy argInfo ->
-                                     if SynInfo.IsOptionalArg argInfo then mkOptionTy g argTy
+                                 ||> List.map2 (fun argTy (SynArgInfo(attribs, _, _) as argInfo) ->
+                                     if SynInfo.IsOptionalArg argInfo then mkOptionalParamTyBasedOnAttribute g argTy attribs
                                      else argTy))
                         mkIteratedFunTy g (List.map (mkRefTupledTy g) curriedArgTys) returnTy
                     else tyR
@@ -8566,29 +8568,21 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
                 | _ -> synArg
 
-            let (arg, tpenv), cenv =
+            let (arg, tpenv) =
                 // treat left and right of '||' and '&&' as control flow, so for example
                 //     f expr1 && g expr2
                 // will have debug points on "f expr1" and "g expr2"
-                let env,cenv =
+                let env =
                     match leftExpr with
                     | ApplicableExpr(expr=Expr.Val (vref, _, _))
                     | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
                          when valRefEq g vref g.and_vref
                            || valRefEq g vref g.and2_vref
                            || valRefEq g vref g.or_vref
-                           || valRefEq g vref g.or2_vref ->
-                        { env with eIsControlFlow = true },cenv
-                    | ApplicableExpr(expr=Expr.Val (valRef=vref))
-                    | ApplicableExpr(expr=Expr.App (funcExpr=Expr.Val (valRef=vref))) ->
-                        match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
-                        | Some _ as msg -> env,{ cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}
-                        | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
-                               env, { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None}
-                        | None -> env,cenv
-                    | _ -> env,cenv
+                           || valRefEq g vref g.or2_vref -> { env with eIsControlFlow = true }
+                    | _ -> env
 
-                TcExprFlex2 cenv domainTy env false tpenv synArg, cenv
+                TcExprFlex2 cenv domainTy env false tpenv synArg
 
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
@@ -9287,6 +9281,7 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
         PropagateThenTcDelayed cenv overallTy env tpenv mExprAndTypeArgs vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic otherDelayed
 
     // Value get
+    
     | _ ->
         let _, vExpr, isSpecial, _, _, tpenv = TcVal cenv env tpenv vref None (Some afterResolution) mItem
 
@@ -9294,6 +9289,19 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
             match vExpr with
             | Expr.Const (Const.String value, _, _) -> TcConstStringExpr cenv overallTy env mItem tpenv value LiteralArgumentType.StaticField
             | _ -> vExpr, tpenv
+
+        let getCenvForVref cenv (vref:ValRef) = 
+            match TryFindLocalizedFSharpStringAttribute g g.attrib_WarnOnWithoutNullArgumentAttribute vref.Attribs with
+            | Some _ as msg -> { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = msg}
+            | None when cenv.css.WarnWhenUsingWithoutNullOnAWithNullTarget <> None ->
+                        // We need to reset the warning back to default once in a nested call, to prevent false warnings e.g. in `Option.ofObj (Path.GetDirectoryName "")`
+                        { cenv with css.WarnWhenUsingWithoutNullOnAWithNullTarget = None}
+            | None -> cenv
+
+        let cenv =
+            match vExpr with
+            | Expr.App (funcExpr=Expr.Val (valRef=vref)) -> getCenvForVref cenv vref
+            | _ -> cenv
 
         let vexpFlex = if isSpecial then MakeApplicableExprNoFlex cenv vExpr else MakeApplicableExprWithFlex cenv env vExpr
 
@@ -10632,6 +10640,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
+            TryAllowFlexibleNullnessInControlFlow (*isFirst=*) true g overallTy.Commit
             // tailcall
             TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) ->
                 let resExpr = primMkCond spIfToThen m overallTy.Commit boolExpr thenExpr elseExpr
@@ -10695,6 +10704,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
         | DebugPointAtTarget.No -> resultEnv
 
     let resultExpr, tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv synResultExpr
+    TryAllowFlexibleNullnessInControlFlow isFirst cenv.g resultTy.Commit
 
     let target = TTarget(vspecs, resultExpr, None)
 
@@ -11758,6 +11768,15 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
                  match uniqueAbstractMethSigs with
                  | uniqueAbstractMeth :: _ ->
 
+                    // Overrides can narrow the retTy from nullable to not-null.
+                     // By changing nullness to be variable we do not get in the way of eliminating nullness (=good).
+                     // We only keep a WithNull nullness if it was part of an explicit type instantiation
+                     let canChangeNullableRetTy = 
+                        match g.checkNullness, renaming with
+                        | false, _ -> false
+                        | true, [] -> true
+                        | true, _ -> not(uniqueAbstractMeth.HasGenericRetTy())
+
                      let uniqueAbstractMeth = uniqueAbstractMeth.Instantiate(cenv.amap, m, renaming)
 
                      let typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot =
@@ -11765,9 +11784,10 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
 
                      let declaredTypars = (if typarsFromAbsSlotAreRigid then typarsFromAbsSlot else declaredTypars)
 
-                     // Overrides can narrow the retTy from nullable to not-null.
-                     // By changing nullness to be variable we do not get in the way of eliminating nullness (=good).
-                     let retTyFromAbsSlot = retTyFromAbsSlot |> changeWithNullReqTyToVariable g
+                     let retTyFromAbsSlot = 
+                        if canChangeNullableRetTy then
+                            retTyFromAbsSlot |> changeWithNullReqTyToVariable g
+                        else retTyFromAbsSlot 
 
                      let absSlotTy = mkMethodTy g argTysFromAbsSlot retTyFromAbsSlot
 
