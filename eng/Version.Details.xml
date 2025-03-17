@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.25081.6">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.25163.3">
       <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
-      <Sha>1cec3b4a8fb07138136a1ca1e04763bfcf7841db</Sha>
+      <Sha>27dfbb8d8a0344d845948109a5a1f0d9c7f17fa9</Sha>
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.11.0-preview-24178-03">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.20-preview-25162-14">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
+      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.11.0-preview-24178-03">
+    <Dependency Name="Microsoft.Build" Version="17.13.20">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
+      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.11.0-preview-24178-03">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.13.20">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
+      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.11.0-preview-24178-03">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.20">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
+      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.11.0-preview-24178-03">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.20">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>2d02daa886f279e2ee749cad03db4b1b75bb9adb</Sha>
+      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
     </Dependency>
     <Dependency Name="System.Reflection.Metadata" Version="8.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
