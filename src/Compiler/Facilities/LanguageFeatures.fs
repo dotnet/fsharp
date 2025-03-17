@@ -218,9 +218,9 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
-                LanguageFeature.EnforceAttributeTargets, languageVersion90
 
                 // F# preview
+                LanguageFeature.EnforceAttributeTargets, previewVersion // Not enabled due to a number of external library dependencies on unenforced attributes
                 LanguageFeature.UseTypeSubsumptionCache, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
