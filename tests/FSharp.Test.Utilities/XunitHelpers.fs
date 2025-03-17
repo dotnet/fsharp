@@ -156,7 +156,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 TestConsole.install()
               
                 begin
-                    use _ = Activity.startNoTags $"{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
+                    use _ = Activity.startNoTags $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
                     // We can't just call base.RunTestCases here, because it's implementation is async void.
                     use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
                     runner.RunAsync().Wait()
