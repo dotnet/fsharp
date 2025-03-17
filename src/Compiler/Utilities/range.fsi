@@ -269,27 +269,25 @@ module Line =
     /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toZ: int -> Line0 
 
-/// Store code file content. Use to implement `CallerArgumentExpression`
+/// Store code file content. Used to implement `CallerArgumentExpression`
 module internal FileContent =
 
     /// Read all file contents.
     ///
     /// Used by `getCodeText` to support `CallerArgumentExpression`
     val readFileContents: fileNames: string list -> unit
-
-    type IFileContentGetLine =
-        abstract GetRangeText: range: range -> string
+    
+    val substring: input: string -> range: range -> string    
         
-    type DefaultFileContentGetLine =
-        new: unit -> DefaultFileContentGetLine
+    type DefaultGetRangeText =
+        new: unit -> DefaultGetRangeText
         abstract GetRangeText: range: range -> string
         override GetRangeText: range: range -> string
-        interface IFileContentGetLine
 
-    /// Get a line string from already read files.
+    /// Get the code text of the specific `range` from already read files.
     ///
     /// Used by `getCodeText` to support `CallerArgumentExpression`
-    val mutable getLineDynamic: IFileContentGetLine
+    val mutable getRangeTextDynamic: DefaultGetRangeText
 
-    /// Get code text of the specific `range`
+    /// Get the code text of the specific `range`
     val getCodeText: range -> string

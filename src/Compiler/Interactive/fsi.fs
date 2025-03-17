@@ -807,6 +807,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
 type internal FsiStdinSyphon(errorWriter: TextWriter) =
     let syphonText = StringBuilder()
 
+    /// Get the current syphon text
+    member _.SyphonText = syphonText.ToString()
+
     /// Clears the syphon text
     member _.Reset() = syphonText.Clear() |> ignore
 
@@ -834,15 +837,6 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
                     text
 
             let text = prune text
-            let lines = text.Split '\n'
-            if 0 < i && i <= lines.Length then lines[i - 1] else ""
-
-    /// Gets the indicated line in the syphon text
-    member _.GetLineNoPrune fileName i =
-        if fileName <> stdinMockFileName then
-            ""
-        else
-            let text = syphonText.ToString()
             let lines = text.Split '\n'
             if 0 < i && i <= lines.Length then lines[i - 1] else ""
 
@@ -4682,36 +4676,11 @@ type FsiEvaluationSession
             fsiConsolePrompt.PrintAhead()
 
     do
-        FileContent.getLineDynamic <-
-            { new FileContent.DefaultFileContentGetLine() with
+        FileContent.getRangeTextDynamic <-
+            { new FileContent.DefaultGetRangeText() with
                 override _.GetRangeText(range) : string =
                     if range.FileName = stdinMockFileName then
-                        if range.StartLine = range.EndLine then
-                            let line = fsiStdinSyphon.GetLineNoPrune stdinMockFileName range.StartLine
-                            let start = min range.StartColumn (line.Length - 1)
-                            line.[start .. range.EndColumn - 1]
-                        else
-                            let result = StringBuilder()
-
-                            for i in range.StartLine .. range.EndLine do
-                                let line = (fsiStdinSyphon.GetLineNoPrune stdinMockFileName i).AsSpan()
-
-                                let line =
-                                    if i = range.StartLine then
-                                        let start = min range.StartColumn (line.Length - 1)
-                                        line.Slice(start)
-                                    elif i = range.EndLine then
-                                        let len = min range.EndColumn line.Length
-                                        line.Slice(0, len)
-                                    else
-                                        line
-
-                                result.Append(line.ToString()) |> ignore
-
-                                if i = range.EndLine then
-                                    result.Append(Environment.NewLine) |> ignore
-
-                            result.ToString()
+                        FileContent.substring fsiStdinSyphon.SyphonText range
                     else
                         base.GetRangeText(range)
             }

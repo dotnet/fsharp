@@ -588,64 +588,81 @@ module internal FileContent =
     let readFileContents (fileNames: string list) =
         for fileName in fileNames do
             if FileSystem.FileExistsShim fileName then
-                use fileStream = FileSystem.OpenFileForReadShim(fileName)
-                fileContentDict[fileName] <- fileStream.ReadAllText()
+                try
+                    use fileStream = FileSystem.OpenFileForReadShim(fileName)
+                    fileContentDict[fileName] <- fileStream.ReadAllText()
+                with _ ->
+                    ()
 
-    let substring (input: string) (startLine, startCol) (endLine, endCol) =
-        let findLineEnd lineStart =
-            if lineStart >= input.Length then
-                input.Length - 1
-            else
-                let idx = input.IndexOfAny([| '\r'; '\n' |], lineStart)
+    let private seperators = [| '\r'; '\n' |]
 
-                if idx = -1 then
-                    input.Length - 1
-                elif input.[idx] = '\r' && idx + 1 < input.Length && input.[idx + 1] = '\n' then
-                    idx + 1
-                else
-                    idx
-
-        if startLine < 1 || startLine > endLine || startCol < 0 || endCol < 0 then
-            ""
+    /// Find the index of the nearest line separator in the given string and offset.
+    let findLineEnd (input: string) lineStart =
+        if lineStart >= input.Length then
+            input.Length - 1
         else
-            let result = System.Text.StringBuilder()
+            let idx = input.IndexOfAny(seperators, lineStart)
 
-            let rec loop lineCount startIndex endIndex =
-                if lineCount > endLine then
-                    result.ToString()
-                elif lineCount < startLine then
-                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
-                elif lineCount = startLine && startLine = endLine then
-                    input.[startIndex + startCol.. startIndex + endCol - 1]
-                elif lineCount = startLine then
-                    if startCol < endIndex - startIndex + 1 then
-                        result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
-                        |> ignore
+            if idx = -1 then
+                input.Length - 1
+            elif input.[idx] = '\r' && idx + 1 < input.Length && input.[idx + 1] = '\n' then
+                idx + 1
+            else
+                idx
 
-                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+    let substring (input: string) (range: range) =
+        let startLine, startCol = range.StartLine, range.StartColumn
+        let endLine, endCol = range.EndLine, range.EndColumn
+
+        if
+            startLine < 1
+            || (startLine = endLine && startCol > endCol)
+            || startLine > endLine
+            || startCol < 0
+            || endCol < 0
+        then
+            System.String.Empty
+        else
+            // Here the loop was splited into two functions to avoid the non necessary allocation of the StringBuilder
+
+            let rec loopEnd (result: System.Text.StringBuilder) lineCount (startIndex, endIndex) =
+                if lineCount < endLine then
+                    result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
+                    loopEnd result (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
                 elif lineCount = endLine then
                     let len = min endCol (endIndex - startIndex + 1)
                     result.Append(input.Substring(startIndex, len)).ToString()
                 else
-                    result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
-                    loop (lineCount + 1) (endIndex + 1) (findLineEnd (endIndex + 1))
+                    result.ToString()
 
-            loop 1 0 (findLineEnd 0)
+            let rec loopStart lineCount (startIndex, endIndex) =
+                if lineCount < startLine then
+                    loopStart (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
+                elif lineCount = startLine && startLine = endLine then
+                    let endCol = min (endCol - 1) endIndex
+                    input.Substring(startIndex + startCol, endCol - startCol + 1)
+                else
+                    let result = System.Text.StringBuilder()
 
-    type IFileContentGetLine =
-        abstract GetRangeText: range: range -> string
+                    if lineCount = startLine then
+                        if startCol < endIndex - startIndex + 1 then
+                            result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
+                            |> ignore
 
-    type DefaultFileContentGetLine() =
+                        loopEnd result (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
+                    else
+                        loopEnd result lineCount (startIndex, endIndex)
+
+            loopStart 1 (0, findLineEnd input 0)
+
+    type DefaultGetRangeText() =
         abstract GetRangeText: range: range -> string
 
         default _.GetRangeText(range: range) : string =
             match fileContentDict.TryGetValue range.FileName with
-            | true, text -> substring text (range.StartLine, range.StartColumn) (range.EndLine, range.EndColumn)
+            | true, text -> substring text range
             | _ -> String.Empty
 
-        interface IFileContentGetLine with
-            member this.GetRangeText(range: range) : string = this.GetRangeText(range)
+    let mutable getRangeTextDynamic = DefaultGetRangeText()
 
-    let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
-
-    let getCodeText (m: range) = getLineDynamic.GetRangeText(m)
+    let getCodeText (m: range) = getRangeTextDynamic.GetRangeText(m)
