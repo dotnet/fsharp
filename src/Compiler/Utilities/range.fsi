@@ -107,13 +107,6 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
-    /// The original range for the range
-    member OriginalRange: range voption
-
-    member HasOriginalRange: bool
-            
-    member WithOriginalRange: originalRange: range voption -> range
-
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
 

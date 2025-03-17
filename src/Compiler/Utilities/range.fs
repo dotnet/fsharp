@@ -262,11 +262,9 @@ module FileIndex =
     let commandLineArgsFileName = "commandLineArgs"
 
 [<Struct; CustomEquality; NoComparison>]
-[<System.Diagnostics.DebuggerDisplay("{OriginalRange} -> ({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
-type Range private (code1: int64, code2: int64, originalRange: struct (int64 * int64) voption) =
+[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
+type Range(code1: int64, code2: int64) =
     static member Zero = range (0L, 0L)
-
-    new(code1, code2) = range (code1, code2, ValueNone)
 
     new(fIdx, bl, bc, el, ec) =
         let code1 =
@@ -388,28 +386,8 @@ type Range private (code1: int64, code2: int64, originalRange: struct (int64 * i
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
         hash code1 + hash code2
 
-    member _.OriginalRange =
-        originalRange
-        |> ValueOption.map (fun struct (code1, code2) -> range (code1, code2))
-
     override r.ToString() =
-        let fromText =
-            if r.HasOriginalRange then
-                $" (from: %s{r.OriginalRange.Value.ToString()})"
-            else
-                String.Empty
-
-        sprintf "(%d,%d--%d,%d)%s" r.StartLine r.StartColumn r.EndLine r.EndColumn fromText
-
-    member m.IsZero = m.Equals range.Zero
-
-    member _.WithOriginalRange(originalRange: range voption) =
-        range (code1, code2, originalRange |> ValueOption.map (fun m -> struct (m.Code1, m.Code2)))
-
-    member this.HasOriginalRange =
-        match this.OriginalRange with
-        | ValueSome range2 when not range2.IsZero -> true
-        | _ -> false
+        sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
 and range = Range
 
@@ -520,18 +498,8 @@ module Range =
                 else
                     m2
 
-            let originalRange =
-                match m1.OriginalRange, m2.OriginalRange with
-                // #line is inside the syntax block
-                | ValueNone, ValueSome r2 when m1.FileIndex = r2.FileIndex ->
-                    ValueSome(range (m1.FileIndex, m1.StartLine, m1.StartColumn, r2.EndLine, r2.EndColumn))
-                | ValueSome r1, ValueSome r2 when r1.FileIndex = r2.FileIndex ->
-                    ValueSome(range (r1.FileIndex, r1.StartLine, r1.StartColumn, r2.EndLine, r2.EndColumn))
-                | _ -> ValueNone
-
             let m =
-                range(m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
-                    .WithOriginalRange(originalRange)
+                range (m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
 
             if m1.IsSynthetic || m2.IsSynthetic then
                 m.MakeSynthetic()
@@ -680,6 +648,4 @@ module internal FileContent =
 
     let mutable getLineDynamic = DefaultFileContentGetLine() :> IFileContentGetLine
 
-    let getCodeText (m: range) =
-        let m = if m.HasOriginalRange then m.OriginalRange.Value else m
-        getLineDynamic.GetRangeText(m)
+    let getCodeText (m: range) = getLineDynamic.GetRangeText(m)

@@ -72,8 +72,6 @@ type internal Position =
     /// The file index for the file associated with the input stream, use <c>fileOfFileIndex</c> to decode
     val FileIndex: int
 
-    val OriginalFileIndex: int
-
     /// The line number in the input stream, assuming fresh positions have been updated
     /// for the new line by modifying the EndPos property of the LexBuffer.
     val Line: int
