@@ -52,6 +52,11 @@
         <target state="translated">Biçimlendirme</target>
         <note />
       </trans-unit>
+      <trans-unit id="Generate_Body_For_Overridden_Method">
+        <source>Generate default implementation body for overridden method</source>
+        <target state="new">Generate default implementation body for overridden method</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="translated">Satır İçi İpuçları</target>
