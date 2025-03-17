@@ -384,3 +384,12 @@ let compileSeqExprMatchClauses (cenv: TcFileState) env inputExprMark (pat: Patte
         bindPatTy
         genInnerTy
         tclauses
+
+let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attribs =
+    if
+        g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
+        && findSynAttribute "StructAttribute" attribs
+    then
+        mkValueOptionTy g tyarg
+    else
+        mkOptionTy g tyarg
