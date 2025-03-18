@@ -5676,32 +5676,14 @@ and GenGenericParam cenv eenv (tp: Typar) =
         |> List.map (GenTypeAux cenv tp.Range eenv.tyenv VoidNotOK PtrTypesNotOK)
 
     let refTypeConstraint =
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.IsReferenceType _
-            // 'null' automatically implies 'not struct'
-            | TyparConstraint.SupportsNull _ -> true
-            | _ -> false)
+        tp |> HasConstraint(fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull) // `null` implies not struct
 
-    let notNullableValueTypeConstraint =
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.IsNonNullableStruct _ -> true
-            | _ -> false)
+    let notNullableValueTypeConstraint = tp |> HasConstraint _.IsIsNonNullableStruct
 
     let nullnessOfTypar =
         if g.langFeatureNullness && g.checkNullness then
-            let hasNotSupportsNull =
-                tp.Constraints
-                |> List.exists (function
-                    | TyparConstraint.NotSupportsNull _ -> true
-                    | _ -> false)
-
-            let hasSupportsNull () =
-                tp.Constraints
-                |> List.exists (function
-                    | TyparConstraint.SupportsNull _ -> true
-                    | _ -> false)
+            let hasNotSupportsNull = tp |> HasConstraint _.IsNotSupportsNull
+            let hasSupportsNull () = tp |> HasConstraint _.IsSupportsNull
 
             if hasNotSupportsNull || notNullableValueTypeConstraint then
                 NullnessInfo.WithoutNull
@@ -5714,17 +5696,11 @@ and GenGenericParam cenv eenv (tp: Typar) =
             None
 
     let defaultConstructorConstraint =
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.RequiresDefaultConstructor _ -> true
-            | _ -> false)
+        tp |> HasConstraint _.IsRequiresDefaultConstructor
 
     let emitUnmanagedInIlOutput =
         cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop)
-        && tp.Constraints
-           |> List.exists (function
-               | TyparConstraint.IsUnmanaged _ -> true
-               | _ -> false)
+        && tp |> HasConstraint _.IsIsUnmanaged
 
     let tpName =
         // use the CompiledName if given
