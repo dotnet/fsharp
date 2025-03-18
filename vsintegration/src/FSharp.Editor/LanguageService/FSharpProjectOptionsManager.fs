@@ -16,6 +16,13 @@ open System.Threading
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
 open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Extensions
+open System.Windows
+open Microsoft.VisualStudio
+open FSharp.Compiler.Text
+open Microsoft.VisualStudio.TextManager.Interop
+
+#nowarn 57
 
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
@@ -118,7 +125,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
 
     let singleFileCache =
-        ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+        ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
@@ -193,22 +200,32 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
-
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct)
+                let getProjectOptionsFromScript textViewAndCaret =
+                    match textViewAndCaret with
+                    | None ->
+                        checker.GetProjectOptionsFromScript(
+                            document.FilePath,
+                            sourceText.ToFSharpSourceText(),
+                            previewEnabled = SessionsProperties.fsiPreview,
+                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                            userOpName = userOpName
+                        )
 
-                let! scriptProjectOptions, _ =
-                    checker.GetProjectOptionsFromScript(
-                        document.FilePath,
-                        sourceText.ToFSharpSourceText(),
-                        previewEnabled = SessionsProperties.fsiPreview,
-                        assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
-                        userOpName = userOpName
-                    )
-
+                    | Some (_, caret) ->
+                            checker.GetProjectOptionsFromScript(
+                                document.FilePath,
+                                sourceText.ToFSharpSourceText(),
+                                caret,
+                                previewEnabled = SessionsProperties.fsiPreview,
+                                assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                                userOpName = userOpName
+                            )
+                let textViewAndCaret = document.TryGetTextViewAndCaretPos()
+                let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
                 let project = document.Project
-
                 let otherOptions =
                     if project.IsFSharpMetadata then
                         project.ProjectReferences
@@ -243,13 +260,30 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                singleFileCache.[document.Id] <- (document.Project, fileStamp, parsingOptions, projectOptions)
+                let updateProjectOptions () =
+                    async {
+                        let! scriptProjectOptions, _ = getProjectOptionsFromScript None
+                        checker.NotifyFileChanged(document.FilePath, scriptProjectOptions) |> Async.Start
+                    } |> Async.Start
+
+                let onChangeCaretHandler (_view: IVsTextView, _newline: int, _oldline: int) = updateProjectOptions ()
+                let onKillFocus(_view: IVsTextView) = updateProjectOptions ()
+                let onSetFocus(_view: IVsTextView) = updateProjectOptions ()
+
+                let subscription =
+                    match textViewAndCaret with
+                    | Some (textView, _) -> subscribeToTextViewEvents(textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
+                    | None -> None
+
+                singleFileCache.[document.Id] <- (document.Project, fileStamp, parsingOptions, projectOptions, subscription)
 
                 return ValueSome(parsingOptions, projectOptions)
 
-            | true, (oldProject, oldFileStamp, parsingOptions, projectOptions) ->
+            | true, (oldProject, oldFileStamp, parsingOptions, projectOptions, _) ->
                 if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
-                    singleFileCache.TryRemove(document.Id) |> ignore
+                    match singleFileCache.TryRemove(document.Id) with
+                    | true, (_, _, _, _, Some subscription) -> subscription.Dispose()
+                    | _ -> ()
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
                 else
                     return ValueSome(parsingOptions, projectOptions)
@@ -460,9 +494,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, _, projectOptions) ->
+                    | true, (_, _, _, projectOptions, subscription) ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
                         checker.ClearCache([ projectOptions ])
+                        subscription |> Option.iter (fun handler -> handler.Dispose())
                     | _ -> ()
         }
 
