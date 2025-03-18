@@ -312,4 +312,7 @@
   <data name="TransparentCompiler_Disclaimer3" xml:space="preserve">
     <value>By checking this you also opt-in for additional performance telemetry</value>
   </data>
+  <data name="Generate_Body_For_Overridden_Method" xml:space="preserve">
+    <value>Generate default implementation body for overridden method</value>
+  </data>
 </root>
