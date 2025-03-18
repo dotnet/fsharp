@@ -1071,7 +1071,7 @@ type internal BackgroundCompiler
                         Some options,
                         Array.ofList tcDependencyFiles,
                         creationDiags,
-                        parseResults.Diagnostics,
+                        [||],
                         tcDiagnostics,
                         keepAssemblyContents,
                         Option.get latestCcuSigForFile,

@@ -2138,17 +2138,13 @@ module TyconConstraintInference =
                 
                 // Is the field type a type parameter?
                 match tryDestTyparTy g ty with
-                | ValueSome tp ->
-                    // Look for an explicit 'comparison' constraint
-                    if tp.Constraints |> List.exists (function TyparConstraint.SupportsComparison _ -> true | _ -> false) then 
-                        true
-                    
+                | ValueSome tp when tp |> HasConstraint _.IsSupportsComparison -> true
+                | ValueSome tp ->                    
                     // Within structural types, type parameters can be optimistically assumed to have comparison
                     // We record the ones for which we have made this assumption.
-                    elif tycon.TyparsNoRange |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
+                    if tycon.TyparsNoRange |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
                         assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
-                        true
-                    
+                        true                    
                     else
                         false
                 | _ ->
@@ -2267,14 +2263,11 @@ module TyconConstraintInference =
             // and type parameters.
             let rec checkIfFieldTypeSupportsEquality (tycon: Tycon) (ty: TType) =
                 match tryDestTyparTy g ty with
+                | ValueSome tp when tp |> HasConstraint _.IsSupportsEquality -> true
                 | ValueSome tp ->
-                    // Look for an explicit 'equality' constraint
-                    if tp.Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then 
-                        true
-
                     // Within structural types, type parameters can be optimistically assumed to have equality
                     // We record the ones for which we have made this assumption.
-                    elif tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
+                    if tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
                         assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true
                     else
@@ -3704,7 +3697,20 @@ module EstablishTypeDefinitionCores =
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
                                   let ttps = thisTyconRef.Typars m
-                                  let fparams = curriedArgInfos.Head |> List.map MakeSlotParam 
+                                  let fparams =
+                                      curriedArgInfos.Head
+                                      |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            let ty =
+                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
+                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
+                                                  | Some (Attrib(range=m)) ->
+                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
+                                                      mkValueOptionTy g ty
+                                                  | _ ->
+                                                      mkOptionTy g ty            
+                                              else ty
+
+                                            MakeSlotParam(ty, argInfo)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
