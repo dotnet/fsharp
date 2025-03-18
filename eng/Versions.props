@@ -71,19 +71,11 @@
     <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
-  <!-- Packages that come from https://github.com/dotnet/maintenance-packages need to be conditionally selected: https://github.com/dotnet/sdk/issues/45155 -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+  <!-- Dependencies from maintenance-packages -->
+  <PropertyGroup>
     <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
+    <SystemMemoryVersion>4.6.1</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.1</SystemRuntimeCompilerServicesUnsafeVersion>
-    <SystemValueTupleVersion>4.6.0</SystemValueTupleVersion>
-  </PropertyGroup>
-  <!-- Packages that come from https://github.com/dotnet/maintenance-packages need to be conditionally selected: https://github.com/dotnet/sdk/issues/45155 -->
-  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
-    <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
-    <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
   </PropertyGroup>
   <PropertyGroup>
     <!-- System.* packages -->
