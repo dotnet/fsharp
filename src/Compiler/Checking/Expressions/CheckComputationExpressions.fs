@@ -1624,6 +1624,14 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
+                        let m =
+                            match innerComp2 with
+                            | SynExpr.App(argExpr = e1; funcExpr = e2) -> unionRanges e1.Range e2.Range
+                            | SynExpr.YieldOrReturn(trivia = synExprYieldOrReturnTrivia) -> synExprYieldOrReturnTrivia.YieldOrReturnKeyword
+                            | SynExpr.YieldOrReturnFrom(trivia = synExprYieldOrReturnFromTrivia) ->
+                                synExprYieldOrReturnFromTrivia.YieldOrReturnFromKeyword
+                            | _ -> innerComp1.Range
+
                         error (Error(FSComp.SR.tcRequireBuilderMethod ("Combine"), m))
 
                     if
