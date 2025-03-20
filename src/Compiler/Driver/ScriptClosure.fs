@@ -716,7 +716,7 @@ module ScriptPreprocessClosure =
         let closureFiles, tcConfig, packageReferences =
             FindClosureFiles(fileName, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
 
-        GetLoadClosure(fileName, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics) //@@@@@@@@@@@@@@@@@@@@@
+        GetLoadClosure(fileName, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
 
     /// Given source file fileName, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line

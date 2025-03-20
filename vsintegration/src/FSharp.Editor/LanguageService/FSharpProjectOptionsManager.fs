@@ -223,6 +223,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
                                 userOpName = userOpName
                             )
+
                 let textViewAndCaret = document.TryGetTextViewAndCaretPos()
                 let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
                 let project = document.Project
@@ -266,16 +267,25 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         checker.NotifyFileChanged(document.FilePath, scriptProjectOptions) |> Async.Start
                     } |> Async.Start
 
-                let onChangeCaretHandler (_view: IVsTextView, _newline: int, _oldline: int) = updateProjectOptions ()
-                let onKillFocus(_view: IVsTextView) = updateProjectOptions ()
-                let onSetFocus(_view: IVsTextView) = updateProjectOptions ()
+                let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
+                let onKillFocus(_) = updateProjectOptions ()
+                let onSetFocus(_) = updateProjectOptions ()
 
-                let subscription =
-                    match textViewAndCaret with
-                    | Some (textView, _) -> subscribeToTextViewEvents(textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
-                    | None -> None
+                let addToCacheAndSubscribe value =
+                    match value with
+                    | projectId, fileStamp, parsingOptions, projectOptions, _ ->
+                        let subscription =
+                            match textViewAndCaret with
+                            | Some (textView, _) -> subscribeToTextViewEvents(textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
+                            | None -> None
+                        (projectId, fileStamp, parsingOptions, projectOptions, subscription)
 
-                singleFileCache.[document.Id] <- (document.Project, fileStamp, parsingOptions, projectOptions, subscription)
+                singleFileCache.AddOrUpdate(
+                    document.Id,                                                            // The key to the cache
+                    (fun _ value -> addToCacheAndSubscribe value),                          // Function to add the cached value if the key does not exist
+                    (fun _ _ value -> value),                                               // Function to update the value if the key exists
+                    (document.Project, fileStamp, parsingOptions, projectOptions, None)     // The value to add or update
+                ) |> ignore
 
                 return ValueSome(parsingOptions, projectOptions)
 

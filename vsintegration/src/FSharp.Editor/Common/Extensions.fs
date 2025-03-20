@@ -101,9 +101,9 @@ type TextViewEventsHandler
 
 type ConnectionPointSubscription = System.IDisposable option
 
-// Usage example
-//  let textView: IVsTextView = // Obtain the IVsTextView instance
-//  let subscription = subscribeToTextViewEvents textView
+// Usage example:
+//  If a handler is None, to not handle that event
+//  let subscription = subscribeToTextViewEvents (textView, onChangeCaretHandler, onKillFocus, OnSetFocus)
 //  Unsubscribe using subscription.Dispose()
 let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKillFocus, OnSetFocus) : ConnectionPointSubscription =
     let handler = TextViewEventsHandler(onChangeCaretHandler, onKillFocus, OnSetFocus)
@@ -115,14 +115,7 @@ let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKi
 
         match cpContainer.FindConnectionPoint(ref riid) with
         | null -> None
-        | cp ->
-            Some(
-                cp.Advise(handler, &cookie)
-
-                { new IDisposable with
-                    member _.Dispose() = cp.Unadvise(cookie)
-                }
-            )
+        | cp -> Some(cp.Advise(handler, &cookie); { new IDisposable with member _.Dispose() = cp.Unadvise(cookie) })
     | _ -> None
 
 type Document with
