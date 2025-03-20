@@ -90,7 +90,8 @@ type public CompletionContext =
         enclosingTypeNameRange: range *
         spacesBeforeOverrideKeyword: int *
         hasThis: bool *
-        isStatic: bool
+        isStatic: bool *
+        spacesBeforeEnclosingDefinition: int
 
 type public ModuleKind =
     { IsAutoOpen: bool
