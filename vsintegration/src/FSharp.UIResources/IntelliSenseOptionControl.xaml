@@ -1,16 +1,18 @@
-﻿<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.IntelliSenseOptionControl"
-             x:ClassModifier="internal"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:Microsoft.VisualStudio.FSharp.UIResources"
-             mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="400">
+﻿<UserControl
+    x:Class="Microsoft.VisualStudio.FSharp.UIResources.IntelliSenseOptionControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Microsoft.VisualStudio.FSharp.UIResources"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="300"
+    d:DesignWidth="400"
+    x:ClassModifier="internal"
+    mc:Ignorable="d">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="OptionPageStyle.xaml"/>
+                <ResourceDictionary Source="OptionPageStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -19,21 +21,32 @@
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.Completion_Lists}">
                     <StackPanel>
-                        <CheckBox x:Name="charTyped" IsChecked="{Binding ShowAfterCharIsTyped}"
-                      Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_typed}"/>
-                        <StackPanel Margin="15 0 0 0">
-                            <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}"
-                        Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_deleted}"/>
+                        <CheckBox
+                            x:Name="charTyped"
+                            Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_typed}"
+                            IsChecked="{Binding ShowAfterCharIsTyped}" />
+                        <StackPanel Margin="15,0,0,0">
+                            <CheckBox
+                                x:Name="charDeleted"
+                                Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_deleted}"
+                                IsChecked="{Binding ShowAfterCharIsDeleted}"
+                                IsEnabled="{Binding IsChecked, ElementName=charTyped}" />
                         </StackPanel>
-                        <CheckBox x:Name="showAllSymbols" IsChecked="{Binding IncludeSymbolsFromUnopenedNamespacesOrModules}"
-                      Content="{x:Static local:Strings.Show_all_symbols}"/>
+                        <CheckBox
+                            x:Name="showAllSymbols"
+                            Content="{x:Static local:Strings.Show_all_symbols}"
+                            IsChecked="{Binding IncludeSymbolsFromUnopenedNamespacesOrModules}" />
+                        <CheckBox
+                            x:Name="generateBodyForOverriddenMethod"
+                            Content="{x:Static local:Strings.Generate_Body_For_Overridden_Method}"
+                            IsChecked="{Binding GenerateBodyForOverriddenMethod}" />
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.Enter_Key_Rule}">
                     <StackPanel>
-                        <RadioButton x:Name="nevernewline" Content="{x:Static local:Strings.Enter_key_never}"/>
-                        <RadioButton x:Name="newlinecompleteline" Content="{x:Static local:Strings.Enter_key_only}"/>
-                        <RadioButton x:Name="alwaysnewline" Content="{x:Static local:Strings.Enter_key_always}"/>
+                        <RadioButton x:Name="nevernewline" Content="{x:Static local:Strings.Enter_key_never}" />
+                        <RadioButton x:Name="newlinecompleteline" Content="{x:Static local:Strings.Enter_key_only}" />
+                        <RadioButton x:Name="alwaysnewline" Content="{x:Static local:Strings.Enter_key_always}" />
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
