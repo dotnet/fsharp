@@ -161,6 +161,15 @@ let ``Inference problem limit regression v8`` compilation =
     |> shouldSucceed
 
 
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-small.fs"|])>]
+let ``Inference problem functional regression`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("8.0",false)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
+
+
 
 [<Theory>]
 [<InlineData("preview",true,true)>]
