@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/Tuple - HeadPat 02.fs", false, QualifiedNameOfFile Tuple,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Tuple], false, NamedModule,
           [Let
@@ -27,4 +27,5 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,18), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

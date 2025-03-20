@@ -3,7 +3,7 @@ ImplFile
      ("/root/Type/SynTypeDefnWithRecordContainsTheRangeOfTheWithKeyword.fs",
       false,
       QualifiedNameOfFile SynTypeDefnWithRecordContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithRecordContainsTheRangeOfTheWithKeyword], false,
           AnonModule,
@@ -77,4 +77,5 @@ ImplFile
               (2,0--5,46))], PreXmlDocEmpty, [], None, (2,0--6,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

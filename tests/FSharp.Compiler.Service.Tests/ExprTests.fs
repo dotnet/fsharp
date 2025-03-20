@@ -3538,7 +3538,7 @@ let ``RegressionTestForMissingParseError(TransparentCompiler)`` () =
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     wholeProjectResults.Diagnostics.Length |> shouldEqual 1
-    wholeProjectResults.Diagnostics.[0].ErrorNumber |> shouldEqual 1156
+    wholeProjectResults.Diagnostics.[0].ErrorNumber |> shouldEqual 203
     wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
 
 [<Fact>]
@@ -3549,6 +3549,6 @@ let ``RegressionTestForDuplicateParseError(BackgroundCompiler)`` () =
     let _wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     let _, checkResults = exprChecker.GetBackgroundCheckResultsForFileInProject(sourceName, options) |> Async.RunImmediate
     checkResults.Diagnostics.Length |> shouldEqual 1
-    checkResults.Diagnostics.[0].ErrorNumber |> shouldEqual 1156
+    checkResults.Diagnostics.[0].ErrorNumber |> shouldEqual 203
     checkResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
 

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_TopLevelStandaloneDotLambda.fs", false,
-      QualifiedNameOfFile DotLambda_TopLevelStandaloneDotLambda, [], [],
+      QualifiedNameOfFile DotLambda_TopLevelStandaloneDotLambda, [],
       [SynModuleOrNamespace
          ([DotLambda_TopLevelStandaloneDotLambda], false, AnonModule,
           [Expr
@@ -23,4 +23,5 @@ ImplFile
                  (1,0--1,17)), (1,0--1,17))], PreXmlDocEmpty, [], None,
           (1,0--1,17), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

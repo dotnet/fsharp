@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SimplePats/SimplePats - Recover 01.fs", false,
-      QualifiedNameOfFile SimplePats, [], [],
+      QualifiedNameOfFile SimplePats, [],
       [SynModuleOrNamespace
          ([SimplePats], false, NamedModule,
           [Let
@@ -202,6 +202,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,27), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,19)-(3,20) parse error Expecting pattern
