@@ -596,7 +596,7 @@ module internal FileContent =
 
     let private seperators = [| '\r'; '\n' |]
 
-    /// Find the index of the nearest line separator in the given string and offset.
+    /// Find the index of the nearest line separator (\r or \r\n or \n) in the given string and offset.
     let findLineEnd (input: string) lineStart =
         if lineStart >= input.Length then
             input.Length - 1
@@ -610,6 +610,8 @@ module internal FileContent =
             else
                 idx
 
+    /// Get the substring of the given range.
+    /// This can retain the line seperators in the source string, whilst `FSharp.Compiler.Text.StringText.GetSubTextFromRange` does not.
     let substring (input: string) (range: range) =
         let startLine, startCol = range.StartLine, range.StartColumn
         let endLine, endCol = range.EndLine, range.EndColumn
@@ -625,22 +627,40 @@ module internal FileContent =
         else
             // Here the loop was splited into two functions to avoid the non necessary allocation of the StringBuilder
 
+            /// Take text until reach the end line of the range.
             let rec loopEnd (result: System.Text.StringBuilder) lineCount (startIndex, endIndex) =
                 if lineCount < endLine then
                     result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
-                    loopEnd result (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
+
+                    let nextLineEnd = findLineEnd input (endIndex + 1)
+
+                    if nextLineEnd = endIndex then
+                        result.ToString()
+                    else
+                        loopEnd result (lineCount + 1) (endIndex + 1, nextLineEnd)
                 elif lineCount = endLine then
                     let len = min endCol (endIndex - startIndex + 1)
                     result.Append(input.Substring(startIndex, len)).ToString()
                 else
                     result.ToString()
 
+            /// Go to the start line of the range.
             let rec loopStart lineCount (startIndex, endIndex) =
                 if lineCount < startLine then
-                    loopStart (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
+                    let nextLineEnd = findLineEnd input (endIndex + 1)
+
+                    if nextLineEnd = endIndex then
+                        System.String.Empty
+                    else
+                        loopStart (lineCount + 1) (endIndex + 1, nextLineEnd)
+
+                // reach the start line
                 elif lineCount = startLine && startLine = endLine then
-                    let endCol = min (endCol - 1) endIndex
-                    input.Substring(startIndex + startCol, endCol - startCol + 1)
+                    if startIndex + startCol <= endIndex then
+                        let endCol = min (endCol - 1) (endIndex - startIndex)
+                        input.Substring(startIndex + startCol, endCol - startCol + 1)
+                    else
+                        System.String.Empty
                 else
                     let result = System.Text.StringBuilder()
 
@@ -651,6 +671,7 @@ module internal FileContent =
 
                         loopEnd result (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
                     else
+                        // Should not go into here
                         loopEnd result lineCount (startIndex, endIndex)
 
             loopStart 1 (0, findLineEnd input 0)

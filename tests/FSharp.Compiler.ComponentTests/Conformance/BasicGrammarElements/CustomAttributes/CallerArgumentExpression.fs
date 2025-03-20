@@ -170,7 +170,8 @@ type A() =
         """ 
           |> withLangVersionPreview
 
-        CSharp """Lib.assertEqual(A.B("abc"), "\"abc\"");"""
+        CSharp """Lib.assertEqual(Lib.A.B("abc"), "\"abc\"");"""
+        |> withName "CSLib"
         |> withReferences [fs]
         |> asExe
         |> compileAndRun
