@@ -15,14 +15,18 @@ try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
   (* comment *) 
   |> String.concat " ")
 with :? System.ArgumentException as ex -> 
-  assertEqual true (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \""))
+  assertEqual true (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")
+  (* comment *) 
+  |> String.concat \" \""))
   
 
 try System.ArgumentException.ThrowIfNullOrWhiteSpace(argument = (Seq.init 11 (fun _ -> " ")
   (* comment *) 
   |> String.concat " "))
 with :? System.ArgumentException as ex -> 
-  assertEqual true (ex.Message.Contains("(Parameter '(Seq.init 11 (fun _ -> \" \")\n  (* comment *) \n  |> String.concat \" \")"))
+  assertEqual true (ex.Message.Contains("(Parameter '(Seq.init 11 (fun _ -> \" \")
+  (* comment *) 
+  |> String.concat \" \")"))
 """
         |> withLangVersionPreview
         |> asExe
@@ -154,6 +158,26 @@ assertEqual (A.B("abc")) "\"abc\""
         |> ignore
         
     [<FactForNETCOREAPP>]
+    let ``C# can consume methods using CallerArgumentExpression receiving special parameter names`` () =
+        let fs =
+          FSharp """module Lib
+let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+    defaultArg n "no value"
+        """ 
+          |> withLangVersionPreview
+
+        CSharp """Lib.assertEqual(A.B("abc"), "\"abc\"");"""
+        |> withReferences [fs]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
+    [<FactForNETCOREAPP>]
     let ``test Warns when cannot find the referenced parameter or self-referential`` () =
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
@@ -196,7 +220,7 @@ type A() =
         ]
         
     [<Fact>]
-    let ``Can self define CallerArgumentExpression`` () =
+    let ``User can define the CallerArgumentExpression`` () =
       FSharp """namespace System.Runtime.CompilerServices
 
 open System
@@ -288,7 +312,6 @@ match <@ a.Invoke(123 - 7) @> with
         |> shouldSucceed
         |> ignore
       
-   
     [<FactForNETCOREAPP>]
     let ``Can use with Interface and Object Expression`` =
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b

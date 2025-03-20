@@ -1437,6 +1437,7 @@ let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledA
 /// matter what order they are applied in as long as they are all composed together.
 let emptyPreBinder (e: Expr) = e
 
+/// Try to pick the code text of an argument with the given parameter name from a list of assigned arguments.
 let tryPickArgumentCodeText assignedArgs paramName =
     assignedArgs
     |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
