@@ -58,6 +58,7 @@ module FSharpDependencyManager =
                 UsePackageTargets = usePackageTargets
             } =
             p
+
         let usePackageTargets =
             match usePackageTargets with
             | false -> "ExcludeAssets='build;buildTransitive;buildMultitargeting'"
@@ -65,10 +66,19 @@ module FSharpDependencyManager =
 
         seq {
             match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
-            | true, true, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' %s /></ItemGroup>" inc ver usePackageTargets
-            | true, true, true -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' %s /></ItemGroup>" inc ver script usePackageTargets
+            | true, true, false ->
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' %s /></ItemGroup>" inc ver usePackageTargets
+            | true, true, true ->
+                yield
+                    sprintf
+                        @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' %s /></ItemGroup>"
+                        inc
+                        ver
+                        script
+                        usePackageTargets
             | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' %s /></ItemGroup>" inc usePackageTargets
-            | true, false, true -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' %s /></ItemGroup>" inc script usePackageTargets
+            | true, false, true ->
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' %s /></ItemGroup>" inc script usePackageTargets
             | _ -> ()
 
             match not (String.IsNullOrEmpty(src)) with
@@ -118,7 +128,9 @@ module FSharpDependencyManager =
                     Some { current with Include = v }
 
                 let setVersion v = Some { current with Version = v }
-                let setUsePackageTargets v = Some { current with UsePackageTargets = v }
+
+                let setUsePackageTargets v =
+                    Some { current with UsePackageTargets = v }
 
                 match opt with
                 | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
@@ -154,6 +166,7 @@ module FSharpDependencyManager =
                         else
                             raise (ArgumentException(SR.invalidTimeoutValue (v)))
                     | _ -> setTimeout None // auto-generated logging location
+
                     parsePackageReferenceOption' rest implicitArgumentCount packageReference
                 | Some "bl", value ->
                     match value with
