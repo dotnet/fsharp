@@ -172,6 +172,11 @@
         <target state="translated">Verfügbare Überladungen:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csComparisonDelegateConstraintInconsistent">
+        <source>The constraints 'comparison' and 'delegate' are inconsistent</source>
+        <target state="new">The constraints 'comparison' and 'delegate' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">"{0}" unterstützt den Typ "{1}" nicht, da letzteres nicht das erforderliche (echte oder integrierte) Element "{2}" aufweist.</target>
@@ -210,6 +215,11 @@
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNullStructConstraintInconsistent">
+        <source>The constraints 'struct' and 'null' are inconsistent</source>
+        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">

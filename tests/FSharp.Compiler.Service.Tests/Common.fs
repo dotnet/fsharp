@@ -484,5 +484,5 @@ let createProjectOptions fileSources extraArgs =
                 let fileName = changeExtension (getTemporaryFileNameInDirectory tempDir) ".fs"
                 FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
                 fileName |]
-    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, []) |]
+    let args = [| yield! mkProjectCommandLineArgs (dllName, []); yield! extraArgs |]
     { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = sourceFiles }

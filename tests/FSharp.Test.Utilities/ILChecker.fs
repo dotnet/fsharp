@@ -11,7 +11,7 @@ open TestFramework
 
 [<RequireQualifiedAccess>]
 module ILChecker =
-    let config = initializeSuite ()
+    let config = initialConfig
 
     let private exec exe args =
         let arguments = args |> String.concat " "
