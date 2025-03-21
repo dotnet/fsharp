@@ -22,7 +22,7 @@ open Microsoft.VisualStudio
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.TextManager.Interop
 
-#nowarn 57
+#nowarn "57"
 
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
@@ -200,9 +200,11 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
+
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct)
+
                 let getProjectOptionsFromScript textViewAndCaret =
                     match textViewAndCaret with
                     | None ->
@@ -214,19 +216,20 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             userOpName = userOpName
                         )
 
-                    | Some (_, caret) ->
-                            checker.GetProjectOptionsFromScript(
-                                document.FilePath,
-                                sourceText.ToFSharpSourceText(),
-                                caret,
-                                previewEnabled = SessionsProperties.fsiPreview,
-                                assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
-                                userOpName = userOpName
-                            )
+                    | Some(_, caret) ->
+                        checker.GetProjectOptionsFromScript(
+                            document.FilePath,
+                            sourceText.ToFSharpSourceText(),
+                            caret,
+                            previewEnabled = SessionsProperties.fsiPreview,
+                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                            userOpName = userOpName
+                        )
 
                 let textViewAndCaret = document.TryGetTextViewAndCaretPos()
                 let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
                 let project = document.Project
+
                 let otherOptions =
                     if project.IsFSharpMetadata then
                         project.ProjectReferences
@@ -264,28 +267,34 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 let updateProjectOptions () =
                     async {
                         let! scriptProjectOptions, _ = getProjectOptionsFromScript None
-                        checker.NotifyFileChanged(document.FilePath, scriptProjectOptions) |> Async.Start
-                    } |> Async.Start
+
+                        checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
+                        |> Async.Start
+                    }
+                    |> Async.Start
 
                 let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
-                let onKillFocus(_) = updateProjectOptions ()
-                let onSetFocus(_) = updateProjectOptions ()
+                let onKillFocus (_) = updateProjectOptions ()
+                let onSetFocus (_) = updateProjectOptions ()
 
                 let addToCacheAndSubscribe value =
                     match value with
                     | projectId, fileStamp, parsingOptions, projectOptions, _ ->
                         let subscription =
                             match textViewAndCaret with
-                            | Some (textView, _) -> subscribeToTextViewEvents(textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
+                            | Some(textView, _) ->
+                                subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
                             | None -> None
+
                         (projectId, fileStamp, parsingOptions, projectOptions, subscription)
 
                 singleFileCache.AddOrUpdate(
-                    document.Id,                                                            // The key to the cache
-                    (fun _ value -> addToCacheAndSubscribe value),                          // Function to add the cached value if the key does not exist
-                    (fun _ _ value -> value),                                               // Function to update the value if the key exists
-                    (document.Project, fileStamp, parsingOptions, projectOptions, None)     // The value to add or update
-                ) |> ignore
+                    document.Id, // The key to the cache
+                    (fun _ value -> addToCacheAndSubscribe value), // Function to add the cached value if the key does not exist
+                    (fun _ _ value -> value), // Function to update the value if the key exists
+                    (document.Project, fileStamp, parsingOptions, projectOptions, None) // The value to add or update
+                )
+                |> ignore
 
                 return ValueSome(parsingOptions, projectOptions)
 
@@ -294,6 +303,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     match singleFileCache.TryRemove(document.Id) with
                     | true, (_, _, _, _, Some subscription) -> subscription.Dispose()
                     | _ -> ()
+
                     return! tryComputeOptionsBySingleScriptOrFile document userOpName
                 else
                     return ValueSome(parsingOptions, projectOptions)
