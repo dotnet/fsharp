@@ -681,8 +681,7 @@ module internal FileContent =
     /// Get the code text of the specific `range` from already read files.
     /// This is mutable because it may be replace by a reader that can access the `stdin` file in the `fsi.exe`.
     let mutable private getRangeTextDynamic = DefaultGetRangeText()
-    
-    let updateGetRangeTextDynamic (getter: #DefaultGetRangeText) =
-        getRangeTextDynamic <- getter
+
+    let updateGetRangeTextDynamic (getter: #DefaultGetRangeText) = getRangeTextDynamic <- getter
 
     let getCodeText (m: range) = getRangeTextDynamic.GetRangeText(m)

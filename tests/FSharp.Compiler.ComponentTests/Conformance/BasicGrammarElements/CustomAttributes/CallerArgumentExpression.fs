@@ -158,28 +158,6 @@ assertEqual (A.B("abc")) "\"abc\""
         |> ignore
         
     [<FactForNETCOREAPP>]
-    let ``C# can consume methods using CallerArgumentExpression receiving special parameter names`` () =
-        let fs =
-          FSharp """module Lib
-let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
-
-type A() =
-  static member B (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue "no value">]n: string) =
-    n
-        """ 
-          |> withLangVersionPreview
-
-        CSharp """Lib.assertEqual(Lib.A.B("abc"), "\"abc\"");"""
-        |> withName "CSLib"
-        |> withReferences [fs]
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
-        
-    [<FactForNETCOREAPP>]
     let ``test Warns when cannot find the referenced parameter or self-referential`` () =
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
@@ -336,3 +314,66 @@ type Interface1 =
         |> shouldSucceed
         |> ignore
       
+    (* ------------ C# Interop tests ------------- *)
+    [<FactForNETCOREAPP>]
+    let ``C# can consume methods using CallerArgumentExpression receiving special parameter names`` () =
+        let fs =
+          FSharp """module Lib
+let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue "no value">]n: string) =
+    n
+        """ 
+          |> withLangVersionPreview
+
+        CSharp """Lib.assertEqual(Lib.A.B("abc"), "\"abc\"");"""
+        |> withName "CSLib"
+        |> withReferences [fs]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
+    [<FactForDESKTOP>]
+    let ``Can recognize CallerArgumentExpression defined in C#`` () =
+        let cs =
+          CSharp """using System.Runtime.CompilerServices;
+public class AInCs
+{
+    static string B(int param, [CallerArgumentExpression("param")] string expr = null) => expr;
+}
+
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Parameter)]
+    sealed class CallerArgumentExpressionAttribute : Attribute
+    {
+        public CallerArgumentExpressionAttribute(string param)
+        {
+            Param = param;
+        }
+
+        public string Param { get; }
+    }
+}
+""" |> withName "CSLib"
+
+        FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+    defaultArg n "no value"
+
+A.B "abc" |> assertEqual "\"abc\""
+AInCs.B (123 - 7) |> assertEqual "123 - 7"
+      """ 
+        |> withLangVersionPreview
+        |> withReferences [cs]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
