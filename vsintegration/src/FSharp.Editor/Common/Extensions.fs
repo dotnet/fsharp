@@ -115,7 +115,14 @@ let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKi
 
         match cpContainer.FindConnectionPoint(ref riid) with
         | null -> None
-        | cp -> Some(cp.Advise(handler, &cookie); { new IDisposable with member _.Dispose() = cp.Unadvise(cookie) })
+        | cp ->
+            Some(
+                cp.Advise(handler, &cookie)
+
+                { new IDisposable with
+                    member _.Dispose() = cp.Unadvise(cookie)
+                }
+            )
     | _ -> None
 
 type Document with
