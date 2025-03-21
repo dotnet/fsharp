@@ -998,6 +998,34 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         ]
 
     [<Fact>]
+    let ``Sequence 10 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: (string -> R)) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.For(s : seq<int>, rest: (int -> unit)) = S("")
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] do ()
+      0 |> ignore
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 17, Col 7, Line 17, Col 18, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
     let ``Type constraint mismatch when using return!`` () =
         Fsx """
 open System.Threading.Tasks
