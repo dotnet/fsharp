@@ -581,3 +581,107 @@ module Range =
                     | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
+
+module internal FileContent =
+    let private fileContentDict = ConcurrentDictionary<string, string>()
+
+    let update (fileName: string) (fileContent: string) =
+        fileContentDict[fileName] <- fileContent
+
+    let private seperators = [| '\r'; '\n' |]
+
+    /// Find the index of the nearest line separator (\r or \r\n or \n) in the given string and offset.
+    let findLineEnd (input: string) lineStart =
+        if lineStart >= input.Length then
+            input.Length - 1
+        else
+            let idx = input.IndexOfAny(seperators, lineStart)
+
+            if idx = -1 then
+                input.Length - 1
+            elif input.[idx] = '\r' && idx + 1 < input.Length && input.[idx + 1] = '\n' then
+                idx + 1
+            else
+                idx
+
+    /// Get the substring of the given range.
+    /// This can retain the line seperators in the source string.
+    let substring (input: string) (range: range) =
+        let startLine, startCol = range.StartLine, range.StartColumn
+        let endLine, endCol = range.EndLine, range.EndColumn
+
+        if
+            startLine < 1
+            || (startLine = endLine && startCol > endCol)
+            || startLine > endLine
+            || startCol < 0
+            || endCol < 0
+        then
+            System.String.Empty
+        else
+            // Here the loop was splited into two functions to avoid the non necessary allocation of the StringBuilder
+
+            /// Take text until reach the end line of the range.
+            let rec loopEnd (result: System.Text.StringBuilder) lineCount (startIndex, endIndex) =
+                if lineCount < endLine then
+                    result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
+
+                    let nextLineEnd = findLineEnd input (endIndex + 1)
+
+                    if nextLineEnd = endIndex then
+                        result.ToString()
+                    else
+                        loopEnd result (lineCount + 1) (endIndex + 1, nextLineEnd)
+                elif lineCount = endLine then
+                    let len = min endCol (endIndex - startIndex + 1)
+                    result.Append(input.Substring(startIndex, len)).ToString()
+                else
+                    result.ToString()
+
+            /// Go to the start line of the range.
+            let rec loopStart lineCount (startIndex, endIndex) =
+                if lineCount < startLine then
+                    let nextLineEnd = findLineEnd input (endIndex + 1)
+
+                    if nextLineEnd = endIndex then
+                        System.String.Empty
+                    else
+                        loopStart (lineCount + 1) (endIndex + 1, nextLineEnd)
+
+                // reach the start line
+                elif lineCount = startLine && startLine = endLine then
+                    if startIndex + startCol <= endIndex then
+                        let endCol = min (endCol - 1) (endIndex - startIndex)
+                        input.Substring(startIndex + startCol, endCol - startCol + 1)
+                    else
+                        System.String.Empty
+                else
+                    let result = System.Text.StringBuilder()
+
+                    if lineCount = startLine then
+                        if startCol < endIndex - startIndex + 1 then
+                            result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
+                            |> ignore
+
+                        loopEnd result (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
+                    else
+                        // Should not go into here
+                        loopEnd result lineCount (startIndex, endIndex)
+
+            loopStart 1 (0, findLineEnd input 0)
+
+    type DefaultGetRangeText() =
+        abstract GetRangeText: range: range -> string
+
+        default _.GetRangeText(range: range) : string =
+            match fileContentDict.TryGetValue range.FileName with
+            | true, text -> substring text range
+            | _ -> String.Empty
+
+    /// Get the code text of the specific `range` from already read files.
+    /// This is mutable because it may be replace by a reader that can access the `stdin` file in the `fsi.exe`.
+    let mutable private getRangeTextDynamic = DefaultGetRangeText()
+
+    let updateGetRangeTextDynamic (getter: #DefaultGetRangeText) = getRangeTextDynamic <- getter
+
+    let getCodeText (m: range) = getRangeTextDynamic.GetRangeText(m)

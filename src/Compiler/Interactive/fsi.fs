@@ -807,6 +807,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
 type internal FsiStdinSyphon(errorWriter: TextWriter) =
     let syphonText = StringBuilder()
 
+    /// Get the current syphon text
+    member _.SyphonText = syphonText.ToString()
+
     /// Clears the syphon text
     member _.Reset() = syphonText.Clear() |> ignore
 
@@ -2913,6 +2916,16 @@ type internal FsiDynamicCompiler
 
             let istate = fsiDynamicCompiler.ProcessDelayedReferences(ctok, istate)
 
+            // Read the source file content for the `CallerArgumentExpression` feature
+            for fileName in sourceFiles do
+                if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+                    try
+                        use fileStream = FileSystem.OpenFileForReadShim fileName
+                        use reader = fileStream.GetReader(tcConfig.inputCodePage)
+                        FileContent.update fileName (reader.ReadToEnd())
+                    with _ ->
+                        ()
+
             fsiDynamicCompiler.EvalParsedSourceFiles(ctok, diagnosticsLogger, istate, inputs, m)
 
     member _.GetBoundValues istate =
@@ -4671,6 +4684,16 @@ type FsiEvaluationSession
     do
         if List.isEmpty fsiOptions.SourceFiles then
             fsiConsolePrompt.PrintAhead()
+
+    do
+        FileContent.updateGetRangeTextDynamic
+            { new FileContent.DefaultGetRangeText() with
+                override _.GetRangeText(range) : string =
+                    if range.FileName = stdinMockFileName then
+                        FileContent.substring fsiStdinSyphon.SyphonText range
+                    else
+                        base.GetRangeText(range)
+            }
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
