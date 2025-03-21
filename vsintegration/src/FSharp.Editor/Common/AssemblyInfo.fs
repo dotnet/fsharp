@@ -8,6 +8,4 @@ open Microsoft.VisualStudio.Shell
 // This adds $PackageFolder$ to the directories probed for assemblies to load.
 // The attribute is inexplicably class-targeted, hence the dummy class.
 [<ProvideBindingPath>]
-type private BindingPathForUIResources =
-    class
-    end
+type private BindingPathForUIResources = class end

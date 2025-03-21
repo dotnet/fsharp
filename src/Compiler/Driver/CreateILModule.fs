@@ -523,7 +523,7 @@ module MainModuleBuilder =
                               $"%d{fileVersionInfo.Major}.%d{fileVersionInfo.Minor}.%d{fileVersionInfo.Build}.%d{fileVersionInfo.Revision}")
                              ("ProductVersion", productVersionString)
                              match tcConfig.outputFile with
-                             | Some f -> ("OriginalFilename", !! Path.GetFileName(f))
+                             | Some f -> ("OriginalFilename", !!Path.GetFileName(f))
                              | None -> ()
                              yield! FindAttribute "Comments" "System.Reflection.AssemblyDescriptionAttribute"
                              yield! FindAttribute "FileDescription" "System.Reflection.AssemblyTitleAttribute"

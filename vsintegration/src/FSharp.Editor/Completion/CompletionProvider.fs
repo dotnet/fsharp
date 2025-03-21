@@ -71,8 +71,7 @@ type internal FSharpCompletionProvider
     // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
     static let noCommitOnSpaceRules =
         let noCommitChars =
-            [| ' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|' |]
-                .ToImmutableArray()
+            [| ' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|' |].ToImmutableArray()
 
         CompletionItemRules.Default.WithCommitCharacterRules(
             ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, noCommitChars))
@@ -203,9 +202,7 @@ type internal FSharpCompletionProvider
                     if n <> 0 then
                         n
                     else
-                        n <-
-                            (CompletionUtils.getKindPriority x.Kind)
-                                .CompareTo(CompletionUtils.getKindPriority y.Kind)
+                        n <- (CompletionUtils.getKindPriority x.Kind).CompareTo(CompletionUtils.getKindPriority y.Kind)
 
                         if n <> 0 then
                             n
@@ -371,11 +368,8 @@ type internal FSharpCompletionProvider
         |> CancellableTask.startAsTask context.CancellationToken
 
     override _.GetDescriptionAsync
-        (
-            document: Document,
-            completionItem: Completion.CompletionItem,
-            _cancellationToken: CancellationToken
-        ) : Task<CompletionDescription> =
+        (document: Document, completionItem: Completion.CompletionItem, _cancellationToken: CancellationToken)
+        : Task<CompletionDescription> =
 
         match completionItem.Properties.TryGetValue IndexPropName with
         | true, completionItemIndexStr when int completionItemIndexStr >= declarationItems.Length ->
@@ -495,9 +489,6 @@ type internal FSharpCompletionProvider
 
                     let changedText = finalSourceText.ToString(changedSpan)
 
-                    return
-                        CompletionChange
-                            .Create(TextChange(fullChangingSpan, changedText))
-                            .WithNewPosition(Nullable(changedSpan.End))
+                    return CompletionChange.Create(TextChange(fullChangingSpan, changedText)).WithNewPosition(Nullable(changedSpan.End))
         }
         |> CancellableTask.start cancellationToken

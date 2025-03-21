@@ -436,15 +436,18 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
             ((projectFileName, outputFileNameValue.Value |> Option.defaultValue "")
              |> FSharpProjectIdentifier)
 
-    new(projectFileName: string,
-        outputFileName: string option,
-        referencesOnDisk: string seq,
-        otherOptions: string seq,
-        ?isIncompleteTypeCheckEnvironment: bool,
-        ?useScriptResolutionRules: bool,
-        ?loadTime: DateTime,
-        ?stamp: int64,
-        ?projectId: string) =
+    new
+        (
+            projectFileName: string,
+            outputFileName: string option,
+            referencesOnDisk: string seq,
+            otherOptions: string seq,
+            ?isIncompleteTypeCheckEnvironment: bool,
+            ?useScriptResolutionRules: bool,
+            ?loadTime: DateTime,
+            ?stamp: int64,
+            ?projectId: string
+        ) =
 
         let referencesOnDisk =
             referencesOnDisk
@@ -469,7 +472,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] Proj
             projectId = projectId
         )
 
-    member val ProjectDirectory = !! Path.GetDirectoryName(projectFileName)
+    member val ProjectDirectory = !!Path.GetDirectoryName(projectFileName)
     member _.OutputFileName = outputFileNameValue.Value
     member _.Identifier = identifier.Value
     member _.Version = fullHash.Value
@@ -726,13 +729,8 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         )
 
     static member FromOptions
-        (
-            options: FSharpProjectOptions,
-            fileName: string,
-            fileVersion: int,
-            sourceText: ISourceText,
-            documentSource: DocumentSource
-        ) =
+        (options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText, documentSource: DocumentSource)
+        =
 
         let getFileSnapshot _ fName =
             if fName = fileName then

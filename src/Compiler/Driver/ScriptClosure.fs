@@ -159,7 +159,7 @@ module ScriptPreprocessClosure =
             reduceMemoryUsage
         ) =
 
-        let projectDir = !! Path.GetDirectoryName(fileName)
+        let projectDir = !!Path.GetDirectoryName(fileName)
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
@@ -259,12 +259,8 @@ module ScriptPreprocessClosure =
             []
 
     let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn
-        (
-            tcConfig: TcConfig,
-            inp: ParsedInput,
-            pathOfMetaCommandSource,
-            dependencyProvider
-        ) =
+        (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider)
+        =
 
         let tcConfigB = tcConfig.CloneToBuilder()
         let mutable nowarns = []
@@ -460,7 +456,7 @@ module ScriptPreprocessClosure =
 
                         let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
                         use _ = UseDiagnosticsLogger diagnosticsLogger
-                        let pathOfMetaCommandSource = !! Path.GetDirectoryName(fileName)
+                        let pathOfMetaCommandSource = !!Path.GetDirectoryName(fileName)
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
                         let tcConfigResult, noWarns =
@@ -710,13 +706,8 @@ module ScriptPreprocessClosure =
     /// Given source file fileName, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles
-        (
-            tcConfig: TcConfig,
-            files: (string * range) list,
-            codeContext,
-            lexResourceManager: Lexhelp.LexResourceManager,
-            dependencyProvider
-        ) =
+        (tcConfig: TcConfig, files: (string * range) list, codeContext, lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider)
+        =
 
         let mainFile, _mainFileRange = List.last files
 

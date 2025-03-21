@@ -199,12 +199,8 @@ module FSharpDependencyManager =
         |> (fun l -> l, binLogPath, timeout)
 
     let computeHashForResolutionInputs
-        (
-            scriptExt: string,
-            directiveLines: (string * string) seq,
-            targetFrameworkMoniker: string,
-            runtimeIdentifier: string
-        ) : string option =
+        (scriptExt: string, directiveLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string)
+        : string option =
 
         let packageReferences, _, _ =
             directiveLines |> List.ofSeq |> parsePackageDirective scriptExt

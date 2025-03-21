@@ -45,9 +45,7 @@ module SignatureHelpProvider =
                 |> CancellableTask.runSynchronously ct
 
             let paramInfoLocations =
-                parseResults
-                    .FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
-                    .Value
+                parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value
 
             let triggered =
                 FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(

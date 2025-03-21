@@ -34,9 +34,7 @@ type internal MakeOuterBindingRecursiveCodeFixProvider [<ImportingConstructor>] 
                         |> ValueOption.ofOption
                         |> ValueOption.map (fun bindingRange -> RoslynHelpers.FSharpRangeToTextSpan(sourceText, bindingRange))
                         |> ValueOption.filter (fun bindingSpan ->
-                            sourceText
-                                .GetSubText(bindingSpan)
-                                .ContentEquals(sourceText.GetSubText context.Span))
+                            sourceText.GetSubText(bindingSpan).ContentEquals(sourceText.GetSubText context.Span))
                         |> ValueOption.map (fun bindingSpan ->
                             let title =
                                 String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(bindingSpan).ToString())

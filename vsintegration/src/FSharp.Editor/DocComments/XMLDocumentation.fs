@@ -281,9 +281,7 @@ module internal XmlDocumentation =
                         collector.Add TaggedText.space
                         WriteNodes collector (p.Nodes())
 
-    type VsThreadToken() =
-        class
-        end
+    type VsThreadToken() = class end
 
     let vsToken = VsThreadToken()
 
@@ -334,15 +332,8 @@ module internal XmlDocumentation =
         interface IDocumentationBuilder with
             /// Append the given processed XML formatted into the string builder
             override _.AppendDocumentationFromProcessedXML
-                (
-                    xmlCollector,
-                    exnCollector,
-                    processedXml,
-                    showExceptions,
-                    showParameters,
-                    showRemarks,
-                    paramName
-                ) =
+                (xmlCollector, exnCollector, processedXml, showExceptions, showParameters, showRemarks, paramName)
+                =
                 match XmlDocReader.TryCreate processedXml with
                 | Some xmlDocReader ->
                     match paramName with
@@ -449,12 +440,8 @@ module internal XmlDocumentation =
         }
 
     let BuildSingleTipText
-        (
-            documentationProvider: IDocumentationBuilder,
-            dataTipElement: ToolTipElement,
-            limits: LineLimits,
-            showRemarks: bool
-        ) =
+        (documentationProvider: IDocumentationBuilder, dataTipElement: ToolTipElement, limits: LineLimits, showRemarks: bool)
+        =
 
         let {
                 LineLimit = lineLimit

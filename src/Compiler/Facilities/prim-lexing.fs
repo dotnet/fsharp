@@ -192,7 +192,7 @@ module SourceTextNew =
 
             member _.GetChecksum() =
                 // TODO: something better...
-                !! sourceText.ToString()
+                !!sourceText.ToString()
                 |> Md5Hasher.hashString
                 |> fun byteArray -> ImmutableArray.Create<byte>(byteArray, 0, byteArray.Length)
         }
@@ -356,12 +356,8 @@ and [<Sealed>] internal LexBuffer<'Char>
         FSharp.Compiler.DiagnosticsLogger.checkLanguageFeatureAndRecover langVersion featureId range
 
     static member FromFunction
-        (
-            reportLibraryOnlyFeatures,
-            langVersion,
-            strictIndentation,
-            f: 'Char[] * int * int -> int
-        ) : LexBuffer<'Char> =
+        (reportLibraryOnlyFeatures, langVersion, strictIndentation, f: 'Char[] * int * int -> int)
+        : LexBuffer<'Char> =
         let extension = Array.zeroCreate 4096
 
         let filler (lexBuffer: LexBuffer<'Char>) =
@@ -385,8 +381,7 @@ and [<Sealed>] internal LexBuffer<'Char>
     static member FromArray(reportLibraryOnlyFeatures, langVersion, strictIndentation, s: 'Char[]) : LexBuffer<'Char> =
         let buffer = Array.copy s
 
-        LexBuffer<'Char>
-            .FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, buffer)
+        LexBuffer<'Char>.FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, buffer)
 
     // Important: This method takes ownership of the array
     static member FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, arr: char[]) =

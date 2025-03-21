@@ -653,8 +653,7 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
         for i = 0 to (nResNodes - 1) do
             size <-
                 size
-                + pResNodes[i]
-                    .Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0)
+                + pResNodes[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0)
 
     let pResBuffer = Bytes.zeroCreate size
 
@@ -670,7 +669,6 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
         for i = 0 to (nResNodes - 1) do
             resBufferOffset <-
                 resBufferOffset
-                + pResNodes[i]
-                    .Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
+                + pResNodes[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
 
     pResBuffer

@@ -83,13 +83,8 @@ module FSharpFindUsagesService =
             }
 
     let findReferencedSymbolsAsync
-        (
-            document: Document,
-            position: int,
-            context: IFSharpFindUsagesContext,
-            allReferences: bool,
-            userOp: string
-        ) : CancellableTask<unit> =
+        (document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOp: string)
+        : CancellableTask<unit> =
         cancellableTask {
             let! cancellationToken = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync(cancellationToken)

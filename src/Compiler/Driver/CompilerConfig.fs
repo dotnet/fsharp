@@ -218,7 +218,7 @@ type VersionFlag =
             else
                 use fs = FileSystem.OpenFileForReadShim(s)
                 use is = new StreamReader(fs)
-                !! is.ReadLine()
+                !!is.ReadLine()
         | VersionNone -> "0.0.0.0"
 
 /// Represents a reference to an assembly. May be backed by a real assembly on disk, or a cross-project
@@ -680,7 +680,7 @@ type TcConfigBuilder =
 
             yield!
                 (tcConfigB.referencedDLLs
-                 |> Seq.map (fun ref -> !! Path.GetDirectoryName(ref.Text)))
+                 |> Seq.map (fun ref -> !!Path.GetDirectoryName(ref.Text)))
 
             tcConfigB.implicitIncludeDir
         }
@@ -1203,7 +1203,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
 
             try
-                let clrRoot = Some(!! Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
+                let clrRoot = Some(!!Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
                 clrRoot, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
@@ -1504,7 +1504,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
-            let dirName = !! Path.GetDirectoryName(fileName)
+            let dirName = !!Path.GetDirectoryName(fileName)
             let baseName = FileSystemUtils.fileNameWithoutExtension fileName
 
             FileSystem.FileExistsShim fileName

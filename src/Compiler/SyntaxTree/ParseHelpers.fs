@@ -275,15 +275,8 @@ let mkSynMemberDefnGetSet
     let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, rangeStart)
 
     let tryMkSynMemberDefnMember
-        (
-            mOptInline: range option,
-            optAttrs: SynAttributeList list,
-            (bindingPat, mBindLhs),
-            optReturnType,
-            mEquals,
-            expr,
-            mExpr
-        ) : (SynMemberDefn * Ident option) option =
+        (mOptInline: range option, optAttrs: SynAttributeList list, (bindingPat, mBindLhs), optReturnType, mEquals, expr, mExpr)
+        : (SynMemberDefn * Ident option) option =
         let optInline = Option.isSome opt_inline || Option.isSome mOptInline
         // optional attributes are only applied to getters and setters
         // the "top level" attrs will be applied to both
@@ -810,13 +803,8 @@ let checkEndOfFileError t =
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 
 let mkClassMemberLocalBindings
-    (
-        isStatic,
-        initialRangeOpt,
-        attrs,
-        vis,
-        BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange)
-    ) =
+    (isStatic, initialRangeOpt, attrs, vis, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange))
+    =
     let ignoredFreeAttrs, decls = declsPreAttrs attrs vis
 
     let mWhole =

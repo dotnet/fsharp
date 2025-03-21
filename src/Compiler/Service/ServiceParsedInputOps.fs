@@ -1520,11 +1520,8 @@ module ParsedInput =
                     | _ -> None
 
                 member _.VisitBinding
-                    (
-                        path,
-                        defaultTraverse,
-                        (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
-                    ) =
+                    (path, defaultTraverse, (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding))
+                    =
 
                     let isOverrideOrMember leadingKeyword =
                         match leadingKeyword with

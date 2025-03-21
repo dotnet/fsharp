@@ -1336,8 +1336,7 @@ type FSharpValue =
     static member PreComputeTupleConstructor(tupleType: Type) =
         checkTupleType ("tupleType", tupleType)
 
-        (compileTupleConstructor tupleEncField getTupleConstructorMethod tupleType)
-            .Invoke
+        (compileTupleConstructor tupleEncField getTupleConstructorMethod tupleType).Invoke
 
     static member PreComputeTupleConstructorInfo(tupleType: Type) =
         checkTupleType ("tupleType", tupleType)
@@ -1445,10 +1444,8 @@ module FSharpReflectionExtensions =
             FSharpValue.GetRecordFields(record, bindingFlags)
 
         static member PreComputeRecordReader
-            (
-                recordType: Type,
-                ?allowAccessToPrivateRepresentation
-            ) : (obj -> objnull array) =
+            (recordType: Type, ?allowAccessToPrivateRepresentation)
+            : (obj -> objnull array) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeRecordReader(recordType, bindingFlags)
 
@@ -1481,18 +1478,14 @@ module FSharpReflectionExtensions =
             FSharpValue.GetUnionFields(value, unionType, bindingFlags)
 
         static member PreComputeUnionTagReader
-            (
-                unionType: Type,
-                ?allowAccessToPrivateRepresentation
-            ) : (objnull -> int) =
+            (unionType: Type, ?allowAccessToPrivateRepresentation)
+            : (objnull -> int) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionTagReader(unionType, bindingFlags)
 
         static member PreComputeUnionReader
-            (
-                unionCase: UnionCaseInfo,
-                ?allowAccessToPrivateRepresentation
-            ) : (objnull -> objnull array) =
+            (unionCase: UnionCaseInfo, ?allowAccessToPrivateRepresentation)
+            : (objnull -> objnull array) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionReader(unionCase, bindingFlags)
 
