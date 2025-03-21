@@ -135,3 +135,5 @@ positive.exe
 
 # ilverify baseline result files
 *.bsl.actual
+/src/FSharp.DependencyManager.Nuget/StandardError.txt
+/src/FSharp.DependencyManager.Nuget/StandardOutput.txt

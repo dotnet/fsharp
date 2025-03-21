@@ -11,6 +11,7 @@ type PackageReference =
         Version: string
         RestoreSources: string
         Script: string
+        UsePackageTargets: bool
     }
 
 module internal ProjectFile =

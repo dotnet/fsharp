@@ -509,6 +509,7 @@ type FSharpChecker
         (
             fileName,
             source,
+            ?caret,
             ?previewEnabled,
             ?loadedTimeStamp,
             ?otherFlags,
@@ -524,6 +525,7 @@ type FSharpChecker
         backgroundCompiler.GetProjectOptionsFromScript(
             fileName,
             source,
+            caret,
             previewEnabled,
             loadedTimeStamp,
             otherFlags,
@@ -540,6 +542,7 @@ type FSharpChecker
         (
             fileName,
             source,
+            ?caret,
             ?documentSource,
             ?previewEnabled,
             ?loadedTimeStamp,
@@ -557,6 +560,7 @@ type FSharpChecker
         backgroundCompiler.GetProjectSnapshotFromScript(
             fileName,
             source,
+            caret,
             documentSource,
             previewEnabled,
             loadedTimeStamp,
