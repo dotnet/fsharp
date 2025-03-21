@@ -277,6 +277,11 @@ module internal FileContent =
     /// Used by `getCodeText` to support `CallerArgumentExpression`
     val readFileContents: fileNames: string list -> unit
     
+    /// Save the file content.
+    val setFileContent: fileName: string -> fileContent: string -> unit
+    
+    /// Get the substring of the given range.
+    /// This can retain the line seperators in the source string.
     val substring: input: string -> range: range -> string    
         
     type DefaultGetRangeText =

@@ -163,9 +163,10 @@ assertEqual (A.B("abc")) "\"abc\""
           FSharp """module Lib
 let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
 type A() =
-  static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue "no value">]n: string) =
     defaultArg n "no value"
         """ 
           |> withLangVersionPreview

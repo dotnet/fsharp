@@ -702,6 +702,25 @@ let checkInputFile (tcConfig: TcConfig) fileName =
     else
         error (Error(FSComp.SR.buildInvalidSourceFileExtension (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup))
 
+let parseInputSourceTextAux
+    (
+        tcConfig: TcConfig,
+        lexResourceManager,
+        fileName,
+        isLastCompiland,
+        diagnosticsLogger,
+        sourceText: ISourceText
+    ) =
+    if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+        FSharp.Compiler.Text.FileContent.setFileContent fileName (sourceText.GetSubTextString(0, sourceText.Length))
+    
+    // Set up the LexBuffer for the file
+    let lexbuf =
+        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
+
+    // Parse the file drawing tokens from the lexbuf
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+
 let parseInputStreamAux
     (
         tcConfig: TcConfig,
@@ -713,41 +732,14 @@ let parseInputStreamAux
         stream: Stream
     ) =
     use reader = stream.GetReader(tcConfig.inputCodePage, retryLocked)
-
-    // Set up the LexBuffer for the file
-    let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, reader)
-
-    // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
-
-let parseInputSourceTextAux
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        sourceText: ISourceText
-    ) =
-    // Set up the LexBuffer for the file
-    let lexbuf =
-        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
-
-    // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+    let text = reader.ReadToEnd()
+    let sourceText = SourceText.ofString text
+    parseInputSourceTextAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
 
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked) =
     // Get a stream reader for the file
     use fileStream = FileSystem.OpenFileForReadShim(fileName)
-    use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
-
-    // Set up the LexBuffer for the file
-    let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, reader)
-
-    // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+    parseInputStreamAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, fileStream)
 
 /// Parse an input from stream
 let ParseOneInputStream

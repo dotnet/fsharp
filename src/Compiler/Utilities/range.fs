@@ -587,12 +587,17 @@ module internal FileContent =
 
     let readFileContents (fileNames: string list) =
         for fileName in fileNames do
+        // if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+        
             if FileSystem.FileExistsShim fileName then
                 try
                     use fileStream = FileSystem.OpenFileForReadShim(fileName)
                     fileContentDict[fileName] <- fileStream.ReadAllText()
                 with _ ->
                     ()
+                    
+    let setFileContent (fileName: string) (fileContent: string) =
+        fileContentDict[fileName] <- fileContent
 
     let private seperators = [| '\r'; '\n' |]
 
@@ -611,7 +616,7 @@ module internal FileContent =
                 idx
 
     /// Get the substring of the given range.
-    /// This can retain the line seperators in the source string, whilst `FSharp.Compiler.Text.StringText.GetSubTextFromRange` does not.
+    /// This can retain the line seperators in the source string.
     let substring (input: string) (range: range) =
         let startLine, startCol = range.StartLine, range.StartColumn
         let endLine, endCol = range.EndLine, range.EndColumn
