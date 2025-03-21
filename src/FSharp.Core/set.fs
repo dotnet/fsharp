@@ -990,13 +990,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             let txt1 = LanguagePrimitives.anyToStringShowingNull h1
             let txt2 = LanguagePrimitives.anyToStringShowingNull h2
 
-            StringBuilder()
-                .Append("set [")
-                .Append(txt1)
-                .Append("; ")
-                .Append(txt2)
-                .Append("]")
-                .ToString()
+            StringBuilder().Append("set [").Append(txt1).Append("; ").Append(txt2).Append("]").ToString()
         | [ h1; h2; h3 ] ->
             let txt1 = LanguagePrimitives.anyToStringShowingNull h1
             let txt2 = LanguagePrimitives.anyToStringShowingNull h2

@@ -56,12 +56,8 @@ type SyntaxVisitorBase<'T>() =
             'T option
 
     default _.VisitExpr
-        (
-            path: SyntaxVisitorPath,
-            traverseSynExpr: SynExpr -> 'T option,
-            defaultTraverse: SynExpr -> 'T option,
-            synExpr: SynExpr
-        ) =
+        (path: SyntaxVisitorPath, traverseSynExpr: SynExpr -> 'T option, defaultTraverse: SynExpr -> 'T option, synExpr: SynExpr)
+        =
         ignore (path, traverseSynExpr, defaultTraverse, synExpr)
         None
 

@@ -14,9 +14,7 @@ module internal SR =
 
     let GetString (name: string) =
         let s =
-            resources
-                .Force()
-                .GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
+            resources.Force().GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
 #if DEBUG
         if isNull s then
             System.Diagnostics.Debug.Assert(false, sprintf "**RESOURCE ERROR**: Resource token %s does not exist!" name)

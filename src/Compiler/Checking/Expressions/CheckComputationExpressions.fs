@@ -3083,9 +3083,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         TranslateComputationExpression ceenv CompExprTranslationPass.Initial hasCustomOperations (LazyWithContext.NotLazy([], env)) comp id
 
     let mDelayOrQuoteOrRun =
-        mBuilderVal
-            .NoteSourceConstruct(NotedSourceConstruct.DelayOrQuoteOrRun)
-            .MakeSynthetic()
+        mBuilderVal.NoteSourceConstruct(NotedSourceConstruct.DelayOrQuoteOrRun).MakeSynthetic()
 
     // Add a call to 'Delay' if the method is present
     let delayedExpr =

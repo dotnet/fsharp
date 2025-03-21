@@ -95,9 +95,7 @@ module internal Utilities =
     let getResolutionsFromFile resolutionsFile =
         let lines =
             try
-                File
-                    .ReadAllText(resolutionsFile)
-                    .Split([| '\r'; '\n' |], StringSplitOptions.None)
+                File.ReadAllText(resolutionsFile).Split([| '\r'; '\n' |], StringSplitOptions.None)
                 |> Array.filter (String.IsNullOrEmpty >> not)
             with _ ->
                 [||]

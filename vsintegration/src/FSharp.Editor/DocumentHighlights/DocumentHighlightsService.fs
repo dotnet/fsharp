@@ -110,12 +110,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
 
     interface IFSharpDocumentHighlightsService with
         member _.GetDocumentHighlightsAsync
-            (
-                document,
-                position,
-                _documentsToSearch,
-                cancellationToken
-            ) : Task<ImmutableArray<FSharpDocumentHighlights>> =
+            (document, position, _documentsToSearch, cancellationToken)
+            : Task<ImmutableArray<FSharpDocumentHighlights>> =
             cancellableTask {
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
 

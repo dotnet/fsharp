@@ -112,9 +112,7 @@ type public Fsi() as this =
         let warningsAsErrorsArray =
             match warningsAsErrors with
             | Null -> [| "76" |]
-            | NonNull warningsAsErrors ->
-                (warningsAsErrors + " 76 ")
-                    .Split([| ' '; ';'; ',' |], StringSplitOptions.RemoveEmptyEntries)
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([| ' '; ';'; ',' |], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 

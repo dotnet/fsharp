@@ -9,16 +9,13 @@ open Internal.Utilities.Text.Lexing
 type Lexbuf = LexBuffer<char>
 
 let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, s: string) =
-    LexBuffer<char>
-        .FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, s.ToCharArray())
+    LexBuffer<char>.FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, s.ToCharArray())
 
 let FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller) =
-    LexBuffer<char>
-        .FromFunction(reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller)
+    LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller)
 
 let SourceTextAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, sourceText) =
-    LexBuffer<char>
-        .FromSourceText(reportLibraryOnlyFeatures, langVersion, strictIndentation, sourceText)
+    LexBuffer<char>.FromSourceText(reportLibraryOnlyFeatures, langVersion, strictIndentation, sourceText)
 
 let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, reader: StreamReader) =
     let mutable isFinished = false

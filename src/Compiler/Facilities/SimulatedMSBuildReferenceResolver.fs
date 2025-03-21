@@ -82,7 +82,7 @@ let private SimulatedMSBuildResolver =
             if Environment.OSVersion.Platform = PlatformID.Win32NT then
                 let PF =
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
-                    | null -> !! Environment.GetEnvironmentVariable("ProgramFiles") // if PFx86 is null, then we are 32-bit and just get PF
+                    | null -> !!Environment.GetEnvironmentVariable("ProgramFiles") // if PFx86 is null, then we are 32-bit and just get PF
                     | s -> s
 
                 PF + @"\Reference Assemblies\Microsoft\Framework\.NETFramework"
@@ -150,7 +150,7 @@ let private SimulatedMSBuildResolver =
                         let fscoreDir0 =
                             let PF =
                                 match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
-                                | null -> !! Environment.GetEnvironmentVariable("ProgramFiles")
+                                | null -> !!Environment.GetEnvironmentVariable("ProgramFiles")
                                 | s -> s
 
                             PF
@@ -198,7 +198,7 @@ let private SimulatedMSBuildResolver =
                         let netFx = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
                         let gac =
-                            Path.Combine(!! Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
+                            Path.Combine(!!Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
 
                         match n.Version, n.GetPublicKeyToken() with
                         | null, _
