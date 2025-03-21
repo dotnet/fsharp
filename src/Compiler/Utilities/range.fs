@@ -585,18 +585,7 @@ module Range =
 module internal FileContent =
     let private fileContentDict = ConcurrentDictionary<string, string>()
 
-    let readFileContents (fileNames: string list) =
-        for fileName in fileNames do
-        // if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-        
-            if FileSystem.FileExistsShim fileName then
-                try
-                    use fileStream = FileSystem.OpenFileForReadShim(fileName)
-                    fileContentDict[fileName] <- fileStream.ReadAllText()
-                with _ ->
-                    ()
-                    
-    let setFileContent (fileName: string) (fileContent: string) =
+    let update (fileName: string) (fileContent: string) =
         fileContentDict[fileName] <- fileContent
 
     let private seperators = [| '\r'; '\n' |]
@@ -689,6 +678,11 @@ module internal FileContent =
             | true, text -> substring text range
             | _ -> String.Empty
 
-    let mutable getRangeTextDynamic = DefaultGetRangeText()
+    /// Get the code text of the specific `range` from already read files.
+    /// This is mutable because it may be replace by a reader that can access the `stdin` file in the `fsi.exe`.
+    let mutable private getRangeTextDynamic = DefaultGetRangeText()
+    
+    let updateGetRangeTextDynamic (getter: #DefaultGetRangeText) =
+        getRangeTextDynamic <- getter
 
     let getCodeText (m: range) = getRangeTextDynamic.GetRangeText(m)

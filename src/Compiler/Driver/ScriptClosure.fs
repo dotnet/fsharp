@@ -134,8 +134,6 @@ module ScriptPreprocessClosure =
         tcConfigB.conditionalDefines <- defines @ tcConfig.conditionalDefines
         let tcConfig = TcConfig.Create(tcConfigB, false)
 
-        FSharp.Compiler.Text.FileContent.setFileContent fileName (sourceText.GetSubTextString(0, sourceText.Length))
-
         let lexbuf =
             UnicodeLexing.SourceTextAsLexbuf(true, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
 

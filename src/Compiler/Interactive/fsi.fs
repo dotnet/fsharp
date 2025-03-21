@@ -2916,6 +2916,16 @@ type internal FsiDynamicCompiler
 
             let istate = fsiDynamicCompiler.ProcessDelayedReferences(ctok, istate)
 
+            // Read the source file content for the `CallerArgumentExpression` feature
+            for fileName in sourceFiles do
+                if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+                    try
+                        use fileStream = FileSystem.OpenFileForReadShim fileName
+                        use reader = fileStream.GetReader(tcConfig.inputCodePage)
+                        FileContent.update fileName (reader.ReadToEnd())
+                    with _ ->
+                        ()
+
             fsiDynamicCompiler.EvalParsedSourceFiles(ctok, diagnosticsLogger, istate, inputs, m)
 
     member _.GetBoundValues istate =
@@ -4676,7 +4686,7 @@ type FsiEvaluationSession
             fsiConsolePrompt.PrintAhead()
 
     do
-        FileContent.getRangeTextDynamic <-
+        FileContent.updateGetRangeTextDynamic
             { new FileContent.DefaultGetRangeText() with
                 override _.GetRangeText(range) : string =
                     if range.FileName = stdinMockFileName then

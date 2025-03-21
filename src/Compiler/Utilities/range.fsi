@@ -272,13 +272,8 @@ module Line =
 /// Store code file content. Used to implement `CallerArgumentExpression`
 module internal FileContent =
 
-    /// Read all file contents.
-    ///
-    /// Used by `getCodeText` to support `CallerArgumentExpression`
-    val readFileContents: fileNames: string list -> unit
-    
-    /// Save the file content.
-    val setFileContent: fileName: string -> fileContent: string -> unit
+    /// Update the file content.
+    val update: fileName: string -> fileContent: string -> unit
     
     /// Get the substring of the given range.
     /// This can retain the line seperators in the source string.
@@ -289,10 +284,8 @@ module internal FileContent =
         abstract GetRangeText: range: range -> string
         override GetRangeText: range: range -> string
 
-    /// Get the code text of the specific `range` from already read files.
-    ///
-    /// Used by `getCodeText` to support `CallerArgumentExpression`
-    val mutable getRangeTextDynamic: DefaultGetRangeText
+    /// Update the function to get the code text of the specific `range`
+    val updateGetRangeTextDynamic: getter: #DefaultGetRangeText -> unit
 
     /// Get the code text of the specific `range`
     val getCodeText: range -> string

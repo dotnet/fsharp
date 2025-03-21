@@ -167,7 +167,7 @@ open System.Runtime.InteropServices
 
 type A() =
   static member B (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue "no value">]n: string) =
-    defaultArg n "no value"
+    n
         """ 
           |> withLangVersionPreview
 

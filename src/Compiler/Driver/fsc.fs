@@ -683,6 +683,16 @@ let main1
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
 
+    // Read the source file content for the `CallerArgumentExpression` feature
+    for fileName in sourceFiles do
+        if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+            try
+                use fileStream = FileSystem.OpenFileForReadShim fileName
+                use reader = fileStream.GetReader(tcConfig.inputCodePage)
+                FileContent.update fileName (reader.ReadToEnd())
+            with _ ->
+                ()
+
     use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
