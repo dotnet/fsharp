@@ -208,11 +208,7 @@ module private SourceText =
 type SourceText with
 
     member this.ToFSharpSourceText() =
-        SourceText.weakTable.GetValue(
-            this,
-            Runtime.CompilerServices.ConditionalWeakTable<_, _>
-                .CreateValueCallback(SourceText.create)
-        )
+        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback(SourceText.create))
 
 type NavigationItem with
 
