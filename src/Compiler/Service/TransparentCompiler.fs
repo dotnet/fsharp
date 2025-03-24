@@ -496,6 +496,7 @@ type internal TransparentCompiler
                 defaultFSharpBinariesDir,
                 fileName,
                 source,
+                None,
                 CodeContext.Editing,
                 useSimpleResolution,
                 useFsiAuxLib,
@@ -2315,6 +2316,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceText,
+                caret: Position option,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -2332,6 +2334,7 @@ type internal TransparentCompiler
                     bc.GetProjectSnapshotFromScript(
                         fileName,
                         SourceTextNew.ofISourceText sourceText,
+                        caret,
                         DocumentSource.FileSystem,
                         previewEnabled,
                         loadedTimeStamp,
@@ -2352,6 +2355,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                caret: Position option,
                 documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,

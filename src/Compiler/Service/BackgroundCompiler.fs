@@ -112,6 +112,7 @@ type internal IBackgroundCompiler =
     abstract member GetProjectOptionsFromScript:
         fileName: string *
         sourceText: ISourceText *
+        caret: Position option *
         previewEnabled: bool option *
         loadedTimeStamp: System.DateTime option *
         otherFlags: string array option *
@@ -126,6 +127,7 @@ type internal IBackgroundCompiler =
     abstract GetProjectSnapshotFromScript:
         fileName: string *
         sourceText: ISourceTextNew *
+        caret: Position option *
         documentSource: DocumentSource *
         previewEnabled: bool option *
         loadedTimeStamp: System.DateTime option *
@@ -1276,6 +1278,7 @@ type internal BackgroundCompiler
         (
             fileName,
             sourceText,
+            caret,
             previewEnabled,
             loadedTimeStamp,
             otherFlags,
@@ -1326,6 +1329,7 @@ type internal BackgroundCompiler
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
                     fileName,
                     sourceText,
+                    caret,
                     CodeContext.Editing,
                     useSimpleResolution,
                     useFsiAuxLib,
@@ -1543,6 +1547,7 @@ type internal BackgroundCompiler
             (
                 fileName: string,
                 sourceText: ISourceText,
+                caret: Position option,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -1556,6 +1561,7 @@ type internal BackgroundCompiler
             self.GetProjectOptionsFromScript(
                 fileName,
                 sourceText,
+                caret,
                 previewEnabled,
                 loadedTimeStamp,
                 otherFlags,
@@ -1571,6 +1577,7 @@ type internal BackgroundCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                caret: Position option,
                 documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
@@ -1587,6 +1594,7 @@ type internal BackgroundCompiler
                     self.GetProjectOptionsFromScript(
                         fileName,
                         sourceText,
+                        caret,
                         previewEnabled,
                         loadedTimeStamp,
                         otherFlags,
