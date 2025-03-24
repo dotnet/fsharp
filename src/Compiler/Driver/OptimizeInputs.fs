@@ -28,9 +28,7 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
             let fileName = outfile + ".terms"
 
             use f =
-                FileSystem
-                    .OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create)
-                    .GetWriter()
+                FileSystem.OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
 
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL expr))
@@ -306,17 +304,8 @@ let optimizeFilesSequentially optEnv (phases: PhaseInfo[]) implFiles =
     results, optEnvFirstLoop
 
 let ApplyAllOptimizations
-    (
-        tcConfig: TcConfig,
-        tcGlobals,
-        tcVal,
-        outfile,
-        importMap,
-        isIncrementalFragment,
-        optEnv,
-        ccu: CcuThunk,
-        implFiles
-    ) =
+    (tcConfig: TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu: CcuThunk, implFiles)
+    =
     // NOTE: optEnv - threads through
     //
     // Always optimize once - the results of this step give the x-module optimization
@@ -562,15 +551,7 @@ let CreateIlxAssemblyGenerator (_tcConfig: TcConfig, tcImports: TcImports, tcGlo
     ilxGenerator
 
 let GenerateIlxCode
-    (
-        ilxBackend,
-        isInteractiveItExpr,
-        tcConfig: TcConfig,
-        topAttrs: TopAttribs,
-        optimizedImpls,
-        fragName,
-        ilxGenerator: IlxAssemblyGenerator
-    ) =
+    (ilxBackend, isInteractiveItExpr, tcConfig: TcConfig, topAttrs: TopAttribs, optimizedImpls, fragName, ilxGenerator: IlxAssemblyGenerator) =
 
     let mainMethodInfo =
         if

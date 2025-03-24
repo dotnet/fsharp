@@ -48,11 +48,8 @@ type internal FSharpBreakpointResolutionService [<ImportingConstructor>] () =
 
     interface IFSharpBreakpointResolutionService with
         member _.ResolveBreakpointAsync
-            (
-                document: Document,
-                textSpan: TextSpan,
-                cancellationToken: CancellationToken
-            ) : Task<FSharpBreakpointResolutionResult> =
+            (document: Document, textSpan: TextSpan, cancellationToken: CancellationToken)
+            : Task<FSharpBreakpointResolutionResult> =
             cancellableTask {
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(document, textSpan)
 
