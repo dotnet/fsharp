@@ -188,7 +188,7 @@ and FSharpProjectOptions =
             && options1.ReferencedProjects = options2.ReferencedProjects
             && options1.LoadTime = options2.LoadTime
 
-    member po.ProjectDirectory = !! Path.GetDirectoryName(po.ProjectFileName)
+    member po.ProjectDirectory = !!Path.GetDirectoryName(po.ProjectFileName)
 
     override this.ToString() =
         "FSharpProjectOptions(" + this.ProjectFileName + ")"
@@ -2042,15 +2042,8 @@ type internal TypeCheckInfo
 
     /// Get the auto-complete items at a location
     member _.GetDeclarations
-        (
-            parseResultsOpt,
-            line,
-            lineStr,
-            partialName,
-            completionContextAtPos,
-            getAllEntities,
-            genBodyForOverriddenMeth
-        ) =
+        (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, genBodyForOverriddenMeth)
+        =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -3204,7 +3197,7 @@ module internal ParseAndCheckFile =
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
                 parsedMainInput,
-                !! Path.GetDirectoryName(mainInputFileName),
+                !!Path.GetDirectoryName(mainInputFileName),
                 tcImports.DependencyProvider
             )
             |> ignore
@@ -3378,15 +3371,8 @@ type FSharpCheckFileResults
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo
-        (
-            parsedFileResults,
-            line,
-            lineText,
-            partialName,
-            ?getAllEntities,
-            ?completionContextAtPos,
-            ?genBodyForOverriddenMeth
-        ) =
+        (parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos, ?genBodyForOverriddenMeth)
+        =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
         let genBodyForOverriddenMeth = defaultArg genBodyForOverriddenMeth true
 
@@ -3633,12 +3619,7 @@ type FSharpCheckFileResults
         FSharpCheckFileResults(fileName, creationErrors, None, [||], None, keepAssemblyContents)
 
     static member JoinErrors
-        (
-            isIncompleteTypeCheckEnvironment,
-            creationErrors: FSharpDiagnostic[],
-            parseErrors: FSharpDiagnostic[],
-            tcErrors: FSharpDiagnostic[]
-        ) =
+        (isIncompleteTypeCheckEnvironment, creationErrors: FSharpDiagnostic[], parseErrors: FSharpDiagnostic[], tcErrors: FSharpDiagnostic[]) =
         [|
             yield! creationErrors
             yield! parseErrors
@@ -4001,6 +3982,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     defaultFSharpBinariesDir,
                     fileName,
                     sourceText,
+                    None,
                     CodeContext.Editing,
                     tcConfig.useSimpleResolution,
                     tcConfig.useFsiAuxLib,

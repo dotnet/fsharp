@@ -83,7 +83,7 @@ type CvtResFile() =
                     pAdditional.DataSize <- cbData
                     pAdditional.pstringType <- CvtResFile.ReadStringOrID reader
                     pAdditional.pstringName <- CvtResFile.ReadStringOrID reader
-                    stream.Position <- stream.Position + 3L &&& ~~~ 3L
+                    stream.Position <- stream.Position + 3L &&& ~~~3L
                     pAdditional.DataVersion <- reader.ReadUInt32()
                     pAdditional.MemoryFlags <- reader.ReadUInt16()
                     pAdditional.LanguageId <- reader.ReadUInt16()
@@ -91,7 +91,7 @@ type CvtResFile() =
                     pAdditional.Characteristics <- reader.ReadUInt32()
                     pAdditional.data <- Array.zeroCreate (int pAdditional.DataSize)
                     reader.Read(pAdditional.data, 0, pAdditional.data.Length) |> ignore<int>
-                    stream.Position <- stream.Position + 3L &&& ~~~ 3L
+                    stream.Position <- stream.Position + 3L &&& ~~~3L
 
                     if
                         pAdditional.pstringType.theString = Unchecked.defaultof<_>
@@ -174,6 +174,7 @@ type SectionCharacteristics =
 type ResourceSection() =
     new(sectionBytes: byte[], relocations: uint32[]) as this =
         (ResourceSection())
+
         then
             Debug.Assert(sectionBytes :> obj <> Unchecked.defaultof<_>)
             Debug.Assert(relocations :> obj <> Unchecked.defaultof<_>)
@@ -374,13 +375,8 @@ type VersionHelper() =
     ///
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
     static member private TryParse
-        (
-            s: string,
-            allowWildcard: bool,
-            maxValue: uint16,
-            allowPartialParse: bool,
-            [<Out>] version: byref<Version>
-        ) =
+        (s: string, allowWildcard: bool, maxValue: uint16, allowPartialParse: bool, [<Out>] version: byref<Version>)
+        =
         Debug.Assert(not allowWildcard || maxValue < UInt16.MaxValue)
 
         if String.IsNullOrWhiteSpace s then
@@ -520,20 +516,24 @@ type VersionResourceSerializer() =
 
     member val private _isDll = Unchecked.defaultof<bool> with get, set
 
-    new(isDll: bool,
-        comments: string,
-        companyName: string,
-        fileDescription: string,
-        fileVersion: string,
-        internalName: string,
-        legalCopyright: string,
-        legalTrademark: string,
-        originalFileName: string,
-        productName: string,
-        productVersion: string,
-        assemblyVersion: Version) as this =
+    new
+        (
+            isDll: bool,
+            comments: string,
+            companyName: string,
+            fileDescription: string,
+            fileVersion: string,
+            internalName: string,
+            legalCopyright: string,
+            legalTrademark: string,
+            originalFileName: string,
+            productName: string,
+            productVersion: string,
+            assemblyVersion: Version
+        ) as this =
 
         VersionResourceSerializer()
+
         then
             this._isDll <- isDll
             this._commentsContents <- comments
@@ -620,7 +620,7 @@ type VersionResourceSerializer() =
     static member private PadKeyLen(cb: int) =
         VersionResourceSerializer.PadToDword(cb + 3 * sizeof<WORD>) - 3 * sizeof<WORD>
 
-    static member private PadToDword(cb: int) = cb + 3 &&& ~~~ 3
+    static member private PadToDword(cb: int) = cb + 3 &&& ~~~3
 
     static member val private HDRSIZE = (int (3 * sizeof<uint16>)) with get, set
 
@@ -667,7 +667,7 @@ type VersionResourceSerializer() =
         let mutable (sum: int) = 0
 
         for verString in this.GetVerStrings() do
-            sum <- sum + 3 &&& ~~~ 3
+            sum <- sum + 3 &&& ~~~3
             sum <- sum + VersionResourceSerializer.SizeofVerString(verString.Key, verString.Value)
 
         sum
@@ -801,7 +801,7 @@ type VersionResourceSerializer() =
 
         for entry in this.GetVerStrings() do
             let mutable writerPos = writer.BaseStream.Position
-            writer.Write(Array.zeroCreate (int ((writerPos + 3L) &&& ~~~ 3L - writerPos)): byte[])
+            writer.Write(Array.zeroCreate (int ((writerPos + 3L) &&& ~~~3L - writerPos)): byte[])
             Debug.Assert(entry.Value <> Unchecked.defaultof<_>)
             VersionResourceSerializer.WriteVersionString(entry, writer)
 
@@ -861,7 +861,7 @@ type Win32ResourceConversions() =
             let mutable (i: uint16) = 0us
 
             while (i < count) do
-                resStream.Position <- resStream.Position + 3L &&& ~~~ 3L
+                resStream.Position <- resStream.Position + 3L &&& ~~~3L
                 resWriter.Write iconDirEntries[(int i)].dwBytesInRes
                 resWriter.Write 0x00000020u
                 resWriter.Write 0xFFFFus
@@ -878,7 +878,7 @@ type Win32ResourceConversions() =
                 i <- i + 1us
 
         let mutable (RT_GROUP_ICON: WORD) = (RT_ICON + 11us)
-        resStream.Position <- resStream.Position + 3L &&& ~~~ 3L
+        resStream.Position <- resStream.Position + 3L &&& ~~~3L
         resWriter.Write(uint32 (3 * sizeof<WORD> + int count * 14))
         resWriter.Write 0x00000020u
         resWriter.Write 0xFFFFus
@@ -933,7 +933,7 @@ type Win32ResourceConversions() =
         let comments = (defaultArg comments) Unchecked.defaultof<_>
         let companyName = (defaultArg companyName) Unchecked.defaultof<_>
         let mutable resWriter = new BinaryWriter(resStream, Encoding.Unicode)
-        resStream.Position <- resStream.Position + 3L &&& ~~~ 3L
+        resStream.Position <- resStream.Position + 3L &&& ~~~3L
         let mutable (RT_VERSION: DWORD) = 16u
 
         let mutable ver =
@@ -970,7 +970,7 @@ type Win32ResourceConversions() =
         Debug.Assert(resStream.Position - startPos = int64 dataSize + int64 headerSize)
 
     static member AppendManifestToResourceStream(resStream: Stream, manifestStream: Stream, isDll: bool) =
-        resStream.Position <- resStream.Position + 3L &&& ~~~ 3L (* ERROR UnknownPrefixOperator "~" *)
+        resStream.Position <- resStream.Position + 3L &&& ~~~3L (* ERROR UnknownPrefixOperator "~" *)
         let mutable (RT_MANIFEST: WORD) = 24us
         let mutable resWriter = new BinaryWriter(resStream)
         resWriter.Write(uint32 manifestStream.Length)

@@ -18,9 +18,7 @@ type internal FSharpCompletionService
     inherit FSharpCompletionServiceWithProviders(workspace)
 
     let projectInfoManager =
-        workspace.Services
-            .GetRequiredService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager
+        workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
     let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
@@ -38,10 +36,7 @@ type internal FSharpCompletionService
             | NewlineOnCompleteWord -> EnterKeyRule.AfterFullyTypedWord
             | AlwaysNewline -> EnterKeyRule.Always
 
-        CompletionRules.Default
-            .WithDismissIfEmpty(true)
-            .WithDismissIfLastCharacterDeleted(true)
-            .WithDefaultEnterKeyRule(enterKeyRule)
+        CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(enterKeyRule)
 
     /// Indicates the text span to be replaced by a committed completion list item.
     override _.GetDefaultCompletionListSpan(sourceText, caretIndex) =
