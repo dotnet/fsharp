@@ -93,9 +93,6 @@ type ProvidedTypeContext =
     member RemapTyconRefs: (obj -> obj) -> ProvidedTypeContext
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedType =
     inherit ProvidedMemberInfo
 
@@ -209,9 +206,6 @@ type ProvidedType =
 
     static member TaintedEquals: Tainted<ProvidedType> * Tainted<ProvidedType> -> bool
 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type IProvidedCustomAttributeProvider =
     abstract GetHasTypeProviderEditorHideMethodsAttribute: provider: ITypeProvider -> bool
 
@@ -223,9 +217,6 @@ type IProvidedCustomAttributeProvider =
         provider: ITypeProvider * attribName: string -> (obj option list * (string * obj option) list) option
     
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedAssembly = 
     member GetName: unit -> System.Reflection.AssemblyName
 
@@ -236,9 +227,6 @@ type ProvidedAssembly =
     member Handle: System.Reflection.Assembly
 
 [<AbstractClass>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMemberInfo = 
 
     member Name: string
@@ -248,9 +236,6 @@ type ProvidedMemberInfo =
     interface IProvidedCustomAttributeProvider 
 
 [<AbstractClass>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMethodBase = 
     inherit ProvidedMemberInfo
 
@@ -287,9 +272,6 @@ type ProvidedMethodBase =
     static member TaintedEquals: Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMethodInfo = 
 
     inherit ProvidedMethodBase
@@ -299,9 +281,6 @@ type ProvidedMethodInfo =
     member MetadataToken: int
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedParameterInfo = 
 
     member Name: string
@@ -321,9 +300,6 @@ type ProvidedParameterInfo =
     interface IProvidedCustomAttributeProvider
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedFieldInfo = 
 
     inherit ProvidedMemberInfo
@@ -353,9 +329,6 @@ type ProvidedFieldInfo =
     static member TaintedEquals: Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedPropertyInfo = 
 
     inherit ProvidedMemberInfo
@@ -377,9 +350,6 @@ type ProvidedPropertyInfo =
     static member TaintedEquals: Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedEventInfo = 
 
     inherit ProvidedMemberInfo
@@ -395,9 +365,6 @@ type ProvidedEventInfo =
     static member TaintedEquals: Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool
 
 [<Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedConstructorInfo = 
     inherit ProvidedMethodBase
 
@@ -444,9 +411,6 @@ type ProvidedExprType =
     | ProvidedVarExpr of ProvidedVar
     
 [<RequireQualifiedAccess; Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedExpr =
 
     member Type: ProvidedType
@@ -457,9 +421,6 @@ type ProvidedExpr =
     member GetExprType: unit -> ProvidedExprType option
 
 [<RequireQualifiedAccess; Sealed; Class>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedVar =
 
     member Type: ProvidedType

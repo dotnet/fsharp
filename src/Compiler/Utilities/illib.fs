@@ -941,11 +941,7 @@ module ResultOrException =
         | Exception _err -> f ()
 
 /// Generates unique stamps
-type UniqueStampGenerator<'T when 'T: equality
-#if !NO_CHECKNULLS
-    and 'T:not null
-#endif
-    >() =
+type UniqueStampGenerator<'T when 'T: equality and 'T:not null>() =
     let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
@@ -957,11 +953,7 @@ type UniqueStampGenerator<'T when 'T: equality
     member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
-type MemoizationTable<'T, 'U
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    >(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
+type MemoizationTable<'T, 'U when 'T:not null>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
 
     let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
     let computeFunc = Func<_, _>(fun key -> lazy (compute key))
@@ -977,11 +969,7 @@ type MemoizationTable<'T, 'U
             compute x
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    >(keyComparer: IEqualityComparer<'T>) =
+type internal StampedDictionary<'T, 'U when 'T:not null>(keyComparer: IEqualityComparer<'T>) =
     let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
     let mutable count = -1
 

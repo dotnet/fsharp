@@ -122,16 +122,6 @@ type IEnvironment =
     abstract MaxColumns: int
     abstract MaxRows: int
 
-#if NO_CHECKNULLS
-[<AutoOpen>]
-module NullShim =
-    // Shim to match nullness checking library support in preview
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit, 'T> =
-        match x with
-        | null -> Null
-        | v -> NonNull v
-#endif
-
 [<AutoOpen>]
 module TaggedText =
     let mkTag tag text = TaggedText(tag, text)

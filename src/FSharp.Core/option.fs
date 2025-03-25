@@ -152,19 +152,6 @@ module Option =
         else
             None
 
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    [<CompiledName("OfObj")>]
-    let inline ofObj value =
-        match value with
-        | null -> None
-        | _ -> Some value
-
-    [<CompiledName("ToObj")>]
-    let inline toObj value =
-        match value with
-        | None -> null
-        | Some x -> x
-#else
     [<CompiledName("OfObj")>]
     let inline ofObj (value: 'T | null) : 'T option when 'T: not struct and 'T: not null =
         match value with
@@ -172,11 +159,10 @@ module Option =
         | _ -> Some value
 
     [<CompiledName("ToObj")>]
-    let inline toObj (value: 'T option) : 'T | null when 'T: not struct (* and 'T : not null *) =
+    let inline toObj (value: 'T option) : 'T | null when 'T: not struct =
         match value with
         | None -> null
         | Some x -> x
-#endif
 
     [<CompiledName("OfValueOption")>]
     let inline ofValueOption (voption: 'T voption) =
@@ -342,19 +328,6 @@ module ValueOption =
         else
             ValueNone
 
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    [<CompiledName("OfObj")>]
-    let inline ofObj value =
-        match value with
-        | null -> ValueNone
-        | _ -> ValueSome value
-
-    [<CompiledName("ToObj")>]
-    let inline toObj value =
-        match value with
-        | ValueNone -> null
-        | ValueSome x -> x
-#else
     [<CompiledName("OfObj")>]
     let inline ofObj (value: 'T | null) : 'T voption when 'T: not struct and 'T: not null =
         match value with
@@ -362,11 +335,10 @@ module ValueOption =
         | _ -> ValueSome value
 
     [<CompiledName("ToObj")>]
-    let inline toObj (value: 'T voption) : 'T | null when 'T: not struct (* and 'T : not null *) =
+    let inline toObj (value: 'T voption) : 'T | null when 'T: not struct =
         match value with
         | ValueNone -> null
         | ValueSome x -> x
-#endif
 
     [<CompiledName("OfOption")>]
     let inline ofOption (option: 'T option) =

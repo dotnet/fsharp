@@ -88,16 +88,12 @@ module internal Order =
 
     val orderBy: p: ('T -> 'U) -> IComparer<'T> 
         when 'U: comparison
-#if !NO_CHECKNULLS
         and 'T:not null
         and 'T:not struct
-#endif
 
     val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
-#if !NO_CHECKNULLS
         when 'T:not null
         and 'T:not struct
-#endif
 
     val toFunction: pxOrder: IComparer<'U> -> x: 'U -> y: 'U -> int
 
@@ -381,11 +377,7 @@ module internal ResultOrException =
     val otherwise: f: (unit -> ResultOrException<'a>) -> x: ResultOrException<'a> -> ResultOrException<'a>
 
 /// Generates unique stamps
-type internal UniqueStampGenerator<'T when 'T: equality
-#if !NO_CHECKNULLS
-    and 'T:not null
-#endif
-    > =
+type internal UniqueStampGenerator<'T when 'T: equality and 'T:not null> =
 
     new: unit -> UniqueStampGenerator<'T>
 
@@ -394,11 +386,7 @@ type internal UniqueStampGenerator<'T when 'T: equality
     member Table: ICollection<'T>
 
 /// Memoize tables (all entries cached, never collected unless whole table is collected)
-type internal MemoizationTable<'T, 'U
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    > =
+type internal MemoizationTable<'T, 'U when 'T:not null> =
 
     new:
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
@@ -406,11 +394,7 @@ type internal MemoizationTable<'T, 'U
     member Apply: x: 'T -> 'U
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    > =
+type internal StampedDictionary<'T, 'U when 'T:not null> =
 
     new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
 
@@ -445,7 +429,7 @@ type internal LazyWithContext<'T, 'ctxt> =
 module internal Tables =
     val memoize: f: ('a -> 'b) -> ('a -> 'b) 
         when 'a: equality
-#if !NO_CHECKNULLS && NET8_0_OR_GREATER
+#if NET8_0_OR_GREATER
         and 'a:not null
 #endif
 
@@ -457,10 +441,8 @@ type internal IPartialEqualityComparer<'T> =
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
     val On: f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
-#if !NO_CHECKNULLS
         when 'a:not null
         and 'a:not struct
-#endif
 
     /// Like Seq.distinctBy but only filters out duplicates for some of the elements
     val partialDistinctBy: per: IPartialEqualityComparer<'T> -> seq: 'T list -> 'T list
