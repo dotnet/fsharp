@@ -5,8 +5,7 @@ open System.Threading
 
 [<Sealed>]
 type Cancellable =
-    /// For use in testing only. Cancellable.token should be set only by the cancellable computation.
-    static member internal UsingToken: CancellationToken -> IDisposable
+    static member internal UseToken: unit -> Async<IDisposable>
 
     static member HasCancellationToken: bool
     static member Token: CancellationToken
@@ -69,8 +68,12 @@ type internal CancellableBuilder =
         comp: Cancellable<'T> * [<InlineIfLambda>] handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
 
     member inline Using:
-        resource: 'Resource * [<InlineIfLambda>] comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T>
+        resource: 'Resource MaybeNull * [<InlineIfLambda>] comp: ('Resource MaybeNull -> Cancellable<'T>) -> Cancellable<'T>
             when 'Resource :> IDisposable
+            and 'Resource:not struct
+#if !(NO_CHECKNULLS || BUILDING_WITH_LKG)
+            and 'Resource:not null 
+#endif
 
     member inline Zero: unit -> Cancellable<unit>
 

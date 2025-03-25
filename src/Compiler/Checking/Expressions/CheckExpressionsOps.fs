@@ -18,6 +18,11 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.SyntaxTreeOps
 
+let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
+    match isFirst, g.checkNullness, GetTyparTyIfSupportsNull g ty with
+    | true, true, ValueSome tp -> tp.SetSupportsNullFlex(true)
+    | _ -> ()
+
 let CopyAndFixupTypars g m rigid tpsorig =
     FreshenAndFixupTypars g m rigid [] [] tpsorig
 
@@ -297,7 +302,7 @@ let mkSeqEmpty (cenv: TcFileState) env m genTy =
 
 let mkSeqUsing (cenv: TcFileState) (env: TcEnv) m resourceTy genTy resourceExpr lam =
     let g = cenv.g
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace g.system_IDisposable_ty resourceTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace g.system_IDisposableNull_ty resourceTy
     let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam
@@ -379,3 +384,12 @@ let compileSeqExprMatchClauses (cenv: TcFileState) env inputExprMark (pat: Patte
         bindPatTy
         genInnerTy
         tclauses
+
+let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attribs =
+    if
+        g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
+        && findSynAttribute "StructAttribute" attribs
+    then
+        mkValueOptionTy g tyarg
+    else
+        mkOptionTy g tyarg

@@ -766,8 +766,8 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            async {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
+                            cancellable {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -779,6 +779,7 @@ type internal TransparentCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
+                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -1609,6 +1610,8 @@ type internal TransparentCompiler
         caches.ParseAndCheckFileInProject.Get(
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             async {
+                use! _holder = Cancellable.UseToken()
+
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
@@ -1695,7 +1698,7 @@ type internal TransparentCompiler
                             bootstrapInfo.TcGlobals,
                             projectSnapshot.IsIncompleteTypeCheckEnvironment,
                             None,
-                            projectSnapshot.ToOptions(),
+                            None,
                             Array.ofList tcInfo.tcDependencyFiles,
                             creationDiags,
                             parseResults.Diagnostics,
@@ -1730,13 +1733,20 @@ type internal TransparentCompiler
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
+                let parseDiagnostics =
+                    projectSnapshot.SourceFiles
+                    |> Seq.collect (fun f -> f.ParseDiagnostics)
+                    |> Seq.toArray
+
                 let! graph, dependencyFiles = ComputeDependencyGraphForProject bootstrapInfo.TcConfig projectSnapshot
 
-                return!
+                let! results, tcInfo =
                     processTypeCheckingGraph
                         graph
                         (processGraphNode projectSnapshot bootstrapInfo dependencyFiles true)
                         bootstrapInfo.InitialTcInfo
+
+                return results, tcInfo, parseDiagnostics
             }
         )
 
@@ -1767,7 +1777,6 @@ type internal TransparentCompiler
         caches.ProjectExtras.Get(
             projectSnapshot.SignatureKey,
             async {
-
                 use _ =
                     Activity.start
                         "ComputeProjectExtras"
@@ -1775,7 +1784,7 @@ type internal TransparentCompiler
                             Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                         |]
 
-                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+                let! results, finalInfo, parseDiagnostics = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1859,7 +1868,7 @@ type internal TransparentCompiler
                         errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true
 
-                return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles
+                return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics
             }
         )
 
@@ -1873,6 +1882,8 @@ type internal TransparentCompiler
                         [|
                             Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                         |]
+
+                use! _holder = Cancellable.UseToken()
 
                 try
 
@@ -1906,7 +1917,7 @@ type internal TransparentCompiler
 
                             let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                            let! _, _, assemblyDataResult, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                            let! _, _, assemblyDataResult, _, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
                             Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                             return assemblyDataResult
@@ -1920,6 +1931,7 @@ type internal TransparentCompiler
         caches.ParseAndCheckProject.Get(
             projectSnapshot.FullKey,
             async {
+                use! _holder = Cancellable.UseToken()
 
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
@@ -1927,7 +1939,8 @@ type internal TransparentCompiler
                 | Some bootstrapInfo, creationDiags ->
                     let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                    let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                    let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics =
+                        ComputeProjectExtras bootstrapInfo snapshotWithSources
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
                     let fileName = DummyFileNameForRangesWithoutASpecificLocation
@@ -1942,18 +1955,18 @@ type internal TransparentCompiler
                         SymbolEnv(bootstrapInfo.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, bootstrapInfo.TcImports)
                         |> Some
 
-                    let tcDiagnostics =
+                    let diagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
                             true,
                             fileName,
-                            tcDiagnostics,
+                            Array.concat [| parseDiagnostics; tcDiagnostics |],
                             suggestNamesForErrors,
                             bootstrapInfo.TcConfig.flatErrors,
                             symbolEnv
                         )
 
-                    let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+                    let diagnostics = [| yield! creationDiags; yield! diagnostics |]
 
                     let getAssemblyData () =
                         match assemblyDataResult with
@@ -1975,7 +1988,7 @@ type internal TransparentCompiler
                          tcEnvAtEnd.AccessRights,
                          Some checkedImplFiles,
                          Array.ofList tcDependencyFiles,
-                         projectSnapshot.ToOptions())
+                         None)
 
                     let results =
                         FSharpCheckProjectResults(
@@ -1992,6 +2005,8 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         async {
+            use! _holder = Cancellable.UseToken()
+
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->

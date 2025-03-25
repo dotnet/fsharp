@@ -130,7 +130,7 @@
     <value>A type parameter is missing a constraint '{0}'</value>
   </data>
   <data name="ConstraintSolverNullnessWarningEquivWithTypes" xml:space="preserve">
-    <value>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</value>
+    <value>Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</value>
   </data>
   <data name="ConstraintSolverNullnessWarningWithTypes" xml:space="preserve">
     <value>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability.</value>
@@ -1029,8 +1029,14 @@
   <data name="Obsolete2" xml:space="preserve">
     <value>. {0}</value>
   </data>
-  <data name="Experimental" xml:space="preserve">
-    <value>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</value>
+  <data name="Experimental1" xml:space="preserve">
+    <value>This construct is experimental</value>
+  </data>
+  <data name="Experimental2" xml:space="preserve">
+    <value>. {0}</value>
+  </data>
+  <data name="Experimental3" xml:space="preserve">
+    <value>. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</value>
   </data>
   <data name="PossibleUnverifiableCode" xml:space="preserve">
     <value>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</value>

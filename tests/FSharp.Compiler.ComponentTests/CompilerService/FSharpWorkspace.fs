@@ -19,13 +19,13 @@ open System.IO
 // System.Diagnostics.DiagnosticSource seems to be missing in NET FW. Might investigate this later
 #if !NETFRAMEWORK
 
-type FilteredJaegerExporter(predicate) =
+//type FilteredJaegerExporter(predicate) =
 
-    inherit SimpleActivityExportProcessor(new JaegerExporter(new JaegerExporterOptions()))
+//    inherit SimpleActivityExportProcessor(new JaegerExporter(new JaegerExporterOptions()))
 
-    override _.OnEnd(activity: System.Diagnostics.Activity) =
-        if predicate activity then
-            base.OnEnd activity
+//    override _.OnEnd(activity: System.Diagnostics.Activity) =
+//        if predicate activity then
+//            base.OnEnd activity
 
 /// Wrapper for FSharpWorkspace to use in tests. Provides OpenTelemetry tracing.
 type TestingWorkspace(testName) as _this =
@@ -33,13 +33,13 @@ type TestingWorkspace(testName) as _this =
 
     let debugGraphPath = __SOURCE_DIRECTORY__ ++ $"{testName}.md"
 
-    let tracerProvider =
-        Sdk
-            .CreateTracerProviderBuilder()
-            .AddSource("fsc")
-            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
-            .AddProcessor(new FilteredJaegerExporter(_.DisplayName >> (<>) "DiagnosticsLogger.StackGuard.Guard"))
-            .Build()
+    //let tracerProvider =
+    //    Sdk
+    //        .CreateTracerProviderBuilder()
+    //        .AddSource("fsc")
+    //        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+    //        .AddProcessor(new FilteredJaegerExporter(_.DisplayName >> (<>) "DiagnosticsLogger.StackGuard.Guard"))
+    //        .Build()
 
     let activity = Activity.start $"Test FSharpWorkspace {testName}" []
 
@@ -50,8 +50,8 @@ type TestingWorkspace(testName) as _this =
     interface IDisposable with
         member _.Dispose() =
             activity.Dispose()
-            tracerProvider.ForceFlush() |> ignore
-            tracerProvider.Dispose()
+            //tracerProvider.ForceFlush() |> ignore
+            //tracerProvider.Dispose()
 
 [<Fact>]
 let ``Add project to workspace`` () =

@@ -204,6 +204,8 @@ module rec Compiler =
         with
             member this.Output = match this with Success o | Failure o -> o
             member this.RunOutput = this.Output.Output
+            member this.Compilation = this.Output.Compilation
+            member this.OutputPath = this.Output.OutputPath
 
     type ExecutionPlatform =
         | Anycpu = 0
@@ -228,42 +230,43 @@ module rec Compiler =
         | true -> Some (File.ReadAllText path)
         | _ -> None
 
-    let createCompilationUnit baselineSuffix directoryPath filename =
+    let createCompilationUnit sourceBaselineSuffix ilBaselineSuffixes directoryPath filename =
 
         let outputDirectoryPath = createTemporaryDirectory().FullName
         let sourceFilePath = normalizePathSeparator (directoryPath ++ filename)
-        let fsBslFilePath = sourceFilePath + baselineSuffix + ".err.bsl"
+        let fsBslFilePath = sourceFilePath + sourceBaselineSuffix + ".err.bsl"
         let ilBslFilePath =
             let ilBslPaths = [|
+                for baselineSuffix in ilBaselineSuffixes do
 #if DEBUG
     #if NETCOREAPP
-                yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #else
     #if NETCOREAPP
-                yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + baselineSuffix + ".il.release.bsl"
-                yield sourceFilePath + baselineSuffix + ".il.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.release.bsl"
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #endif
-            |]
+                |]
 
             let findBaseline =
                 ilBslPaths
                 |> Array.tryPick(fun p -> if File.Exists(p) then Some p else None)
             match findBaseline with
             | Some s -> s
-            | None -> sourceFilePath + baselineSuffix + ".il.bsl"
+            | None -> sourceFilePath + sourceBaselineSuffix + ".il.bsl"
 
         let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
         let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
@@ -314,7 +317,7 @@ module rec Compiler =
 
         let results =
             fsFiles
-            |> Array.map (fun fs -> (createCompilationUnit baselineSuffix directoryPath fs) :> obj)
+            |> Array.map (fun fs -> (createCompilationUnit baselineSuffix [baselineSuffix] directoryPath fs) :> obj)
             |> Seq.map (fun c -> [| c |])
 
         results
@@ -1297,7 +1300,8 @@ Actual:
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL -> CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = "" })} )
+                | false, errorMsg, _actualIL -> 
+                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"
@@ -1467,7 +1471,6 @@ Actual:
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
-
         let sequencePoints =
             [ for sp in reader.MethodDebugInformation do
                 let mdi = reader.GetMethodDebugInformation sp
@@ -1479,7 +1482,6 @@ Actual:
             failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
 
     let private verifyDocuments (reader: MetadataReader) expectedDocuments =
-
         let documents =
             [ for doc in reader.Documents do
                 if not doc.IsNil then
@@ -1583,11 +1585,15 @@ Actual:
                 if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
 
+        let consequtiveWhiteSpaceTrimmer = new Regex(@"(\r\n|\n|\ |\t)(\ )+")
+        let trimExtraSpaces s = consequtiveWhiteSpaceTrimmer.Replace(s,"$1")
+
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
 
             // (Error 67, Line 14, Col 3, Line 14, Col 24, "This type test or downcast will always hold")
             let errorMessage error =
                 let { Error = err; Range = range; Message = message } = error
+                let message = trimExtraSpaces message
                 let errorType =
                     match err with
                     | ErrorType.Error n -> $"Error {n}"
@@ -1818,7 +1824,20 @@ Actual:
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
-        let private checkOutputInOrder (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
+        let private getMatch (input: string) (pattern: string) useWildcards=
+            // Escape special characters and replace wildcards with regex equivalents
+            if useWildcards then
+                let input = input.Replace("\r\n", "\n")
+                let pattern = $"""^{Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", ".")}$"""
+                let m = Regex(pattern, RegexOptions.Multiline).Match(input)
+                if m.Success then
+                    m.Index
+                else 
+                    -1
+            else
+                input.IndexOf(pattern) 
+
+        let private checkOutputInOrderCore useWildcards (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None ->
                 printfn "Execution output is missing cannot check \"%A\"" category
@@ -1826,20 +1845,23 @@ Actual:
             | Some o ->
                 match o with
                 | ExecutionOutput e ->
-                    let where = selector e
+                    let input = selector e
                     let mutable searchPos = 0
                     for substring in substrings do
-                        match where.IndexOf(substring, searchPos) with
-                        | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                        match getMatch (input.Substring(searchPos)) substring useWildcards with
+                        | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category input)
                         | pos -> searchPos <- pos + substring.Length
                 | _ -> failwith "Cannot check output on this run result."
             result
+
+        let private checkOutputInOrder category substrings selector result =
+            checkOutputInOrderCore false category substrings selector result
 
         let withOutputContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
 
         let withStdOutContains (substring: string) (result: CompilationResult) : CompilationResult =
-            checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut) result
+            checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut)  result
 
         let withStdOutContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDOUT" substrings (fun o -> o.StdOut) result
@@ -1849,6 +1871,24 @@ Actual:
 
         let withStdErrContains (substring: string) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDERR" [substring] (fun o -> o.StdErr) result
+
+        let private checkOutputInOrderWithWildcards category substrings selector result =
+            checkOutputInOrderCore true category substrings selector result
+
+        let withOutputContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
+
+        let withStdOutContainsWithWildcards (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDOUT" [substring] (fun o -> o.StdOut)  result
+
+        let withStdOutContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDOUT" substrings (fun o -> o.StdOut) result
+
+        let withStdErrContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDERR" substrings (fun o -> o.StdErr) result
+
+        let withStdErrContainsWithWildcards (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithWildcards "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with

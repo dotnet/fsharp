@@ -204,6 +204,33 @@ Linux/macOS:
 export TEST_UPDATE_BSL=1
 ```
 
+## Retain Test run built artifacts
+
+When investigating tests issues it is sometimes useful to examine the artifacts built when running tests.  Those built using the newer test framework are usually,
+built in the %TEMP%\FSharp.Test.Utilities subdirectory.
+
+To tell the test framework to not cleanup these files use the: FSHARP_RETAIN_TESTBUILDS environment variable
+
+Windows:
+
+CMD:
+
+```shell
+set FSHARP_RETAIN_TESTBUILDS=1
+```
+
+PowerShell:
+
+```shell
+$env:FSHARP_RETAIN_TESTBUILDS=1
+```
+
+Linux/macOS:
+
+```shell
+export FSHARP_RETAIN_TESTBUILDS=1
+```
+
 Next, run a build script build (debug or release, desktop or coreclr, depending which baselines you need to update), and test as described [above](#Testing-from-the-command-line). For example:
 
 `./Build.cmd -c Release -testCoreClr` to update Release CoreCLR baselines.
@@ -214,6 +241,16 @@ or
 
 > **Note**
 > Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
+
+
+### Parallel execution of tests
+
+Tests utilizing xUnit framework by default run in parallel. If your tests depend on some shared state or are time-critical, you can add the module to predefined `NotThreadSafeResourceCollection` to prevent parallel execution.
+For example:
+```fsharp
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module TimeCritical =
+```
 
 
 ### Updating FCS surface area baselines

@@ -94,6 +94,10 @@ module internal Order =
 #endif
 
     val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
+#if !NO_CHECKNULLS
+        when 'T:not null
+        and 'T:not struct
+#endif
 
     val toFunction: pxOrder: IComparer<'U> -> x: 'U -> y: 'U -> int
 
@@ -243,12 +247,6 @@ module internal ResizeArray =
 module internal Span =
     val inline exists: predicate: ('T -> bool) -> span: Span<'T> -> bool
 
-module internal ValueOptionInternal =
-
-    val inline ofOption: x: 'a option -> 'a voption
-
-    val inline bind: f: ('a -> 'b voption) -> x: 'a voption -> 'b voption
-
 module internal String =
 
     val make: n: int -> c: char -> string
@@ -286,7 +284,7 @@ module internal String =
 
     val (|StartsWith|_|): pattern: string -> value: string -> unit option
 
-    val (|Contains|_|): pattern: string -> value: string -> unit option
+    val (|Contains|_|): pattern: string -> value: string|null -> unit option
 
     val getLines: str: string -> string[]
 
@@ -575,6 +573,8 @@ module internal MultiMap =
     val empty: MultiMap<'a, 'b> when 'a: comparison
 
     val initBy: f: ('a -> 'b) -> xs: seq<'a> -> MultiMap<'b, 'a> when 'b: comparison
+
+    val ofList: xs: ('a * 'b) list -> MultiMap<'a,'b> when 'a: comparison
 
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 

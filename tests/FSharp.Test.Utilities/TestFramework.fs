@@ -14,12 +14,12 @@ let getShortId() = Guid.NewGuid().ToString().[..7]
 
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/xxxxxxx/"
 let tempDirectoryOfThisTestRun =
-    let temp = Path.GetTempPath()
-    lazy DirectoryInfo(temp).CreateSubdirectory($"FSharp.Test.Utilities/{getShortId()}")
+    let temp = DirectoryInfo(Path.Combine(__SOURCE_DIRECTORY__, @"../../artifacts/Temp/FSharp.Test.Utilities", $"{getShortId()}"))
+    lazy (temp.Create(); temp)
 
 let cleanUpTemporaryDirectoryOfThisTestRun () =
     if tempDirectoryOfThisTestRun.IsValueCreated then
-        try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
+        ()//try tempDirectoryOfThisTestRun.Value.Delete(true) with _ -> ()
 
 let createTemporaryDirectory () =
     tempDirectoryOfThisTestRun.Value
@@ -87,10 +87,13 @@ module Commands =
         psi.RedirectStandardError <- true
         psi.Arguments <- arguments
         psi.CreateNoWindow <- true
+
         // When running tests, we want to roll forward to minor versions (including previews).
         psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
         psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
-        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
+
+        // Host can sometimes add this, and it can break things
+        psi.EnvironmentVariables.Remove("MSBuildSDKsPath")
         psi.UseShellExecute <- false
 
         use p = new Process()
@@ -103,7 +106,7 @@ module Commands =
             p.BeginOutputReadLine()
             p.BeginErrorReadLine()
             p.WaitForExit()
-#if DEBUG
+
         let workingDir' =
             if workingDir = ""
             then
@@ -118,7 +121,6 @@ module Commands =
             File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
             File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
         )
-#endif
         p.ExitCode, outputList.ToArray(), errorsList.ToArray()
 
     let getfullpath workDir (path:string) =
@@ -329,7 +331,7 @@ let config configurationName envVars =
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
     //let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
-    let PEVERIFY = "dummy" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
+    let PEVERIFY = "ilverify" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
@@ -408,7 +410,7 @@ let logConfig (cfg: TestConfig) =
     log "FSCOREDLLPATH            = %s" cfg.FSCOREDLLPATH
     log "FSI                      = %s" cfg.FSI
 #if NETCOREAPP
-    log "DotNetExe                =%s" cfg.DotNetExe
+    log "DotNetExe                = %s" cfg.DotNetExe
     log "DOTNET_MULTILEVEL_LOOKUP = %s" cfg.DotNetMultiLevelLookup
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
@@ -445,7 +447,7 @@ let envVars () =
     |> Seq.map (fun d -> d.Key :?> string, d.Value :?> string)
     |> Map.ofSeq
 
-let initializeSuite () =
+let initialConfig =
 
 #if DEBUG
     let configurationName = "Debug"
@@ -459,15 +461,9 @@ let initializeSuite () =
         let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC
         { c with EnvironmentVariables = usedEnvVars }
 
-    logConfig cfg
-
     cfg
 
-
-let suiteHelpers = lazy (initializeSuite ())
-
 let testConfig sourceDir (relativePathToTestFixture: string) =
-    let cfg = suiteHelpers.Value
     let testFixtureFullPath = Path.GetFullPath(sourceDir ++ relativePathToTestFixture)
 
     let tempTestDir =
@@ -476,11 +472,10 @@ let testConfig sourceDir (relativePathToTestFixture: string) =
             .FullName
     copyDirectory testFixtureFullPath tempTestDir true
 
-    { cfg with Directory = tempTestDir }
+    { initialConfig with Directory = tempTestDir }
 
 let createConfigWithEmptyDirectory() =
-    let cfg = suiteHelpers.Value
-    { cfg with Directory = createTemporaryDirectory().FullName }
+    { initialConfig with Directory = createTemporaryDirectory().FullName }
 
 type RedirectToType =
     | Overwrite of FilePath

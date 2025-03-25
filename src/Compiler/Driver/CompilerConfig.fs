@@ -317,14 +317,15 @@ type AssemblyReference =
 
     member x.ProjectReference = (let (AssemblyReference(_, _, contents)) = x in contents)
 
-    member x.SimpleAssemblyNameIs name =
+    member x.SimpleAssemblyNameIs(name: string) =
         (String.Compare(FileSystemUtils.fileNameWithoutExtensionWithValidate false x.Text, name, StringComparison.OrdinalIgnoreCase) = 0)
         || not (x.Text.Contains "/")
            && not (x.Text.Contains "\\")
            && not (x.Text.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
            && not (x.Text.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase))
            && (try
-                   let aname = System.Reflection.AssemblyName x.Text in aname.Name = name
+                   let aname = System.Reflection.AssemblyName x.Text
+                   aname.Name = name
                with _ ->
                    false)
 
@@ -698,9 +699,6 @@ type TcConfigBuilder =
             sdkDirOverride,
             rangeForErrors
         ) =
-
-        let defaultFSharpBinariesDir =
-            nullArgCheck "defaultFSharpBinariesDir" defaultFSharpBinariesDir
 
         // These are all default values, many can be overridden using the command line switch
         {

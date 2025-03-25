@@ -551,7 +551,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 if isLessAccessible tyconAcc valAcc then
                     let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
                     let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
-                    warning(AttributeChecking.ObsoleteWarning(warningText, m))
+                    warning(ObsoleteDiagnostic(false, None, Some warningText, None, m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 
@@ -2398,9 +2398,23 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
+                let errorIfNotStringTy m ty callerInfo = 
+                    if not (typeEquiv g g.string_ty ty) then
+                        errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                        
+                let errorIfNotStringOptionTy m ty callerInfo =
+                    if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
+                        errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
-                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, _, _, ty)) ->
+                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
                     ignore isInArg
+
+                    let m =
+                        match nameOpt with
+                        | Some name -> name.idRange
+                        | None -> m
+
                     match (optArgInfo, callerInfo) with
                     | _, NoCallerInfo -> ()
                     | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo |> string), m))
@@ -2410,18 +2424,9 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | CalleeSide, CallerLineNumber ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.int32_ty (destOptionTy g ty))) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
-                    | CallerSide _, CallerFilePath ->
-                        if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
-                    | CalleeSide, CallerFilePath ->
-                        if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
-                    | CallerSide _, CallerMemberName ->
-                        if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
-                    | CalleeSide, CallerMemberName ->
-                        if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m)))
+                    | CallerSide _, (CallerFilePath | CallerMemberName) -> errorIfNotStringTy m ty callerInfo
+                    | CalleeSide, (CallerFilePath | CallerMemberName) -> errorIfNotStringOptionTy m ty callerInfo
+                )
 
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName

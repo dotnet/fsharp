@@ -806,6 +806,77 @@ printf $"{result1};{result2}"
         |> verifyOutput "333;666"
 
     [<Fact>]
+    let ``Struct DU with field overlap can be reflected`` ()  =
+        Fsx """module Test
+open Microsoft.FSharp.Reflection
+
+[<Struct>]
+type MySharedStructDu =
+    | A of a:int64
+    | B of a:int64
+    | C of a:int64 * s:char
+    | D of s:char * a:int64
+
+printf "Size=%i;" (sizeof<MySharedStructDu>)
+for value in [A 1L; B 2L;D('x',3L)] do
+    let caseInfo, inner = FSharpValue.GetUnionFields(value, typeof<MySharedStructDu>)
+    printf $"%s{caseInfo.Name}=%A{inner};"
+
+        """
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> verifyOutput """Size=16;A=[|1L|];B=[|2L|];D=[|'x'; 3L|];"""
+
+    [<Fact>]
+    let ``Field overlap does carry attributes for all cases`` ()  =
+        Fsx """module Test
+
+[<Struct;NoComparison;NoEquality>]
+type MySharedStructDu =
+    | A of a:int64
+    | B of a:int64
+    | C of a:int64 * s:char
+    | D of s:char * a:int64
+
+        """
+        |> asLibrary
+        |> compile
+        |> verifyIL [ // Prop "a" is mapped 4x, for cases 0,1,2,3. For case 3/D, it comes at position one. Prop "s" is mapped to two cases.
+     """
+        .property instance int64 a()
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 02 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 03 00 00 00 01 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .get instance int64 Test/MySharedStructDu::get_a()
+    } 
+    .property instance char s()
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 02 00 00 00 01 00 00 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32,
+                                                                                                  int32) = ( 01 00 04 00 00 00 03 00 00 00 00 00 00 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .get instance char Test/MySharedStructDu::get_s()
+    }   """ ]
+
+    [<Fact>]
     let ``Custom ValueOption keeps working`` () = 
         Fsx """
 module XX

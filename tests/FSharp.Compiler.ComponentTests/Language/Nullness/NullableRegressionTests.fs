@@ -28,6 +28,47 @@ let ``Micro compilation`` langVersion checknulls =
     |> compile
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData("preview",true)>]
+let ``Signature conformance`` langVersion checknulls =
+
+    FsFromPath (__SOURCE_DIRECTORY__ ++ "signatures.fsi")
+    |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "signatures.fs"))
+    |> withLangVersion langVersion
+    |> fun x -> 
+        if checknulls then 
+            x |> withCheckNulls |> withDefines ["CHECKNULLS"]
+        else x
+    |> compile
+    |> shouldFail
+    |> withDiagnostics
+        [Warning 3262, Line 18, Col 48, Line 18, Col 60, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+         (Warning 3261, Line 4, Col 5, Line 4, Col 10, "Nullness warning: Module 'M' contains
+            val test2: x: string | null -> unit    
+        but its signature specifies
+            val test2: string -> unit    
+        The types differ in their nullness annotations");
+        (Warning 3261, Line 3, Col 5, Line 3, Col 10, "Nullness warning: Module 'M' contains
+            val test1: x: string -> unit    
+        but its signature specifies
+            val test1: string | null -> unit    
+        The types differ in their nullness annotations");
+        (Warning 3261, Line 6, Col 5, Line 6, Col 17, "Nullness warning: Module 'M' contains
+            val iRejectNulls: x: string | null -> string    
+        but its signature specifies
+            val iRejectNulls: string -> string    
+        The types differ in their nullness annotations");
+        (Warning 3261, Line 14, Col 14, Line 14, Col 21, "Nullness warning: Module 'M' contains
+            member GenericContainer.GetNull: unit -> 'T    
+        but its signature specifies
+            member GenericContainer.GetNull: unit -> 'T | null    
+        The types differ in their nullness annotations");
+        (Warning 3261, Line 15, Col 14, Line 15, Col 24, "Nullness warning: Module 'M' contains
+            member GenericContainer.GetNotNull: unit -> 'T | null    
+        but its signature specifies
+            member GenericContainer.GetNotNull: unit -> 'T    
+        The types differ in their nullness annotations")]
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"existing-positive.fs"|])>]
 let ``Existing positive v8 disabled`` compilation =
     compilation
@@ -91,8 +132,33 @@ let ``DefaultValueBug when checknulls is disabled`` compilation =
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"using-nullness-syntax-positive.fs"|])>]
 let ``With new nullness syntax nullness enabled`` compilation =
     compilation
-    |> withVersionAndCheckNulls ("preview",true)   
+    |> withVersionAndCheckNulls ("preview",true)
     |> verifyBaseline
+
+// https://github.com/dotnet/fsharp/issues/18288
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression previewNullness`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",true)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression previewNoNullness`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("preview",false)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
+
+[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"inference-problem-size-explosion.fs"|])>]
+let ``Inference problem limit regression v8`` compilation =
+    compilation
+    |> withVersionAndCheckNulls ("8.0",false)
+    |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
+    |> typecheck
+    |> shouldSucceed
 
 
 
