@@ -343,13 +343,13 @@ type A() =
         CSharp """using System.Runtime.CompilerServices;
 public class AInCs
 {
-    static string B(int param, [CallerArgumentExpression("param")] string expr = null) => expr;
+    public static string B(int param, [CallerArgumentExpression("param")] string expr = null) => expr;
 }
 
 namespace System.Runtime.CompilerServices
 {
     [AttributeUsage(AttributeTargets.Parameter)]
-    sealed class CallerArgumentExpressionAttribute : Attribute
+    public sealed class CallerArgumentExpressionAttribute : Attribute
     {
         public CallerArgumentExpressionAttribute(string param)
         {
