@@ -15,7 +15,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
 
 type TypeProviderDesignation = TypeProviderDesignation of string
-type 'a ProvidedArray= ('a[]) MaybeNull
+type 'a ProvidedArray = ('a[]) MaybeNull
 
 /// Raised when a type provider has thrown an exception.
 exception ProvidedTypeResolution of range * exn
@@ -92,7 +92,7 @@ type ProvidedTypeContext =
     /// Map the TyconRef objects, if any
     member RemapTyconRefs: (obj -> obj) -> ProvidedTypeContext
 
-[<Sealed; Class>] 
+[<Sealed; Class>]
 type ProvidedType =
     inherit ProvidedMemberInfo
 
@@ -215,9 +215,9 @@ type IProvidedCustomAttributeProvider =
 
     abstract GetAttributeConstructorArgs:
         provider: ITypeProvider * attribName: string -> (obj option list * (string * obj option) list) option
-    
-[<Sealed; Class>] 
-type ProvidedAssembly = 
+
+[<Sealed; Class>]
+type ProvidedAssembly =
     member GetName: unit -> System.Reflection.AssemblyName
 
     member FullName: string
@@ -226,17 +226,17 @@ type ProvidedAssembly =
 
     member Handle: System.Reflection.Assembly
 
-[<AbstractClass>] 
-type ProvidedMemberInfo = 
+[<AbstractClass>]
+type ProvidedMemberInfo =
 
     member Name: string
 
     member DeclaringType: ProvidedType MaybeNull
 
-    interface IProvidedCustomAttributeProvider 
+    interface IProvidedCustomAttributeProvider
 
-[<AbstractClass>] 
-type ProvidedMethodBase = 
+[<AbstractClass>]
+type ProvidedMethodBase =
     inherit ProvidedMemberInfo
 
     member IsGenericMethod: bool
@@ -271,8 +271,8 @@ type ProvidedMethodBase =
 
     static member TaintedEquals: Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool
 
-[<Sealed; Class>] 
-type ProvidedMethodInfo = 
+[<Sealed; Class>]
+type ProvidedMethodInfo =
 
     inherit ProvidedMethodBase
 
@@ -280,8 +280,8 @@ type ProvidedMethodInfo =
 
     member MetadataToken: int
 
-[<Sealed; Class>] 
-type ProvidedParameterInfo = 
+[<Sealed; Class>]
+type ProvidedParameterInfo =
 
     member Name: string
 
@@ -299,8 +299,8 @@ type ProvidedParameterInfo =
 
     interface IProvidedCustomAttributeProvider
 
-[<Sealed; Class>] 
-type ProvidedFieldInfo = 
+[<Sealed; Class>]
+type ProvidedFieldInfo =
 
     inherit ProvidedMemberInfo
 
@@ -328,8 +328,8 @@ type ProvidedFieldInfo =
 
     static member TaintedEquals: Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool
 
-[<Sealed; Class>] 
-type ProvidedPropertyInfo = 
+[<Sealed; Class>]
+type ProvidedPropertyInfo =
 
     inherit ProvidedMemberInfo
 
@@ -349,8 +349,8 @@ type ProvidedPropertyInfo =
 
     static member TaintedEquals: Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool
 
-[<Sealed; Class>] 
-type ProvidedEventInfo = 
+[<Sealed; Class>]
+type ProvidedEventInfo =
 
     inherit ProvidedMemberInfo
 
@@ -364,8 +364,8 @@ type ProvidedEventInfo =
 
     static member TaintedEquals: Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool
 
-[<Sealed; Class>] 
-type ProvidedConstructorInfo = 
+[<Sealed; Class>]
+type ProvidedConstructorInfo =
     inherit ProvidedMethodBase
 
 type ProvidedExprType =
@@ -409,8 +409,8 @@ type ProvidedExprType =
     | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
 
     | ProvidedVarExpr of ProvidedVar
-    
-[<RequireQualifiedAccess; Sealed; Class>] 
+
+[<RequireQualifiedAccess; Sealed; Class>]
 type ProvidedExpr =
 
     member Type: ProvidedType
@@ -420,7 +420,7 @@ type ProvidedExpr =
 
     member GetExprType: unit -> ProvidedExprType option
 
-[<RequireQualifiedAccess; Sealed; Class>] 
+[<RequireQualifiedAccess; Sealed; Class>]
 type ProvidedVar =
 
     member Type: ProvidedType
@@ -442,7 +442,10 @@ val ValidateProvidedTypeAfterStaticInstantiation:
 /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
 /// after other checks are made).
 val TryApplyProvidedType:
-    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: objnull[] * range ->
+    typeBeforeArguments: Tainted<ProvidedType> *
+    optGeneratedTypePath: string list option *
+    staticArgs: objnull[] *
+    range ->
         (Tainted<ProvidedType> * (unit -> unit)) option
 
 /// Try to apply a provided method to the given static arguments.

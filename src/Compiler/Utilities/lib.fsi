@@ -263,11 +263,7 @@ type DisposablesTracker =
     new: unit -> DisposablesTracker
 
     /// Register some items to dispose
-    member Register:
-        i: 'a MaybeNull -> unit
-            when 'a :> System.IDisposable
-            and 'a: not struct
-            and 'a: not null          
+    member Register: i: 'a MaybeNull -> unit when 'a :> System.IDisposable and 'a: not struct and 'a: not null
 
     interface System.IDisposable
 
