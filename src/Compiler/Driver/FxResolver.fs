@@ -98,13 +98,9 @@ type internal FxResolver
                     p.WaitForExit()
 #if DEBUG
             if workingDir.IsSome then
-                FileSystem
-                    .OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardOutput.txt"))
-                    .WriteAllLines(outputList)
+                FileSystem.OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardOutput.txt")).WriteAllLines(outputList)
 
-                FileSystem
-                    .OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardError.txt"))
-                    .WriteAllLines(errorsList)
+                FileSystem.OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardError.txt")).WriteAllLines(errorsList)
 #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         else
@@ -284,10 +280,7 @@ type internal FxResolver
             try
                 let asm = typeof<System.ValueTuple<int, int>>.Assembly
 
-                if
-                    (!!asm.FullName)
-                        .StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase)
-                then
+                if (!!asm.FullName).StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
                     Some asm.Location
                 else
                     let valueTuplePath =
@@ -498,7 +491,7 @@ type internal FxResolver
                 try
                     if FileSystem.FileExistsShim(reference) then
                         // Reference is a path to a file on disk
-                        !! Path.GetFileNameWithoutExtension(reference), reference
+                        !!Path.GetFileNameWithoutExtension(reference), reference
                     else
                         // Reference is a SimpleAssembly name
                         reference, frameworkPathFromSimpleName reference

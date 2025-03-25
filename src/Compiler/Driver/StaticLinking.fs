@@ -104,13 +104,8 @@ let debugStaticLinking = isEnvVarSet "FSHARP_DEBUG_STATIC_LINKING"
 #endif
 
 let StaticLinkILModules
-    (
-        tcConfig: TcConfig,
-        ilGlobals,
-        tcImports,
-        ilxMainModule,
-        dependentILModules: (CcuThunk option * ILModuleDef) list
-    ) =
+    (tcConfig: TcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list)
+    =
     if isNil dependentILModules then
         ilxMainModule, id
     else
