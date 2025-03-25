@@ -148,7 +148,7 @@ module Option =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            Some (value.GetValueOrDefault())
+            Some(value.GetValueOrDefault())
         else
             None
 
@@ -165,14 +165,14 @@ module Option =
         | None -> null
         | Some x -> x
 #else
-    [<CompiledName("OfObj")>]  
-    let inline ofObj (value: 'T | null) : 'T option when 'T: not struct and 'T : not null = 
+    [<CompiledName("OfObj")>]
+    let inline ofObj (value: 'T | null) : 'T option when 'T: not struct and 'T: not null =
         match value with
         | null -> None
         | _ -> Some value
 
     [<CompiledName("ToObj")>]
-    let inline toObj (value: 'T option) : 'T | null when 'T: not struct (* and 'T : not null *)  =
+    let inline toObj (value: 'T option) : 'T | null when 'T: not struct (* and 'T : not null *) =
         match value with
         | None -> null
         | Some x -> x
@@ -338,7 +338,7 @@ module ValueOption =
     [<CompiledName("OfNullable")>]
     let inline ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
-            ValueSome (value.GetValueOrDefault())
+            ValueSome(value.GetValueOrDefault())
         else
             ValueNone
 
@@ -355,14 +355,14 @@ module ValueOption =
         | ValueNone -> null
         | ValueSome x -> x
 #else
-    [<CompiledName("OfObj")>]  
-    let inline ofObj (value: 'T | null) : 'T voption when 'T: not struct and 'T : not null  = 
+    [<CompiledName("OfObj")>]
+    let inline ofObj (value: 'T | null) : 'T voption when 'T: not struct and 'T: not null =
         match value with
         | null -> ValueNone
         | _ -> ValueSome value
 
     [<CompiledName("ToObj")>]
-    let inline toObj (value : 'T voption) : 'T | null when 'T: not struct (* and 'T : not null *) = 
+    let inline toObj (value: 'T voption) : 'T | null when 'T: not struct (* and 'T : not null *) =
         match value with
         | ValueNone -> null
         | ValueSome x -> x

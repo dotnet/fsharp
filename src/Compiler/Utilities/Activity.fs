@@ -9,7 +9,6 @@ open System.Text
 open Internal.Utilities.Library
 open System.Collections.Generic
 
-
 module ActivityNames =
     [<Literal>]
     let FscSourceName = "fsc"
@@ -94,7 +93,7 @@ module internal Activity =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
-        | null -> activity 
+        | null -> activity
         | activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
@@ -210,7 +209,11 @@ module internal Activity =
             match o with
             | null -> ""
             | o ->
-                let mutable txtVal = match o.ToString() with | null -> "" | s -> s
+                let mutable txtVal =
+                    match o.ToString() with
+                    | null -> ""
+                    | s -> s
+
                 let hasComma = txtVal.IndexOf(',') > -1
                 let hasQuote = txtVal.IndexOf('"') > -1
 
@@ -243,7 +246,7 @@ module internal Activity =
 
             sb.ToString()
 
-        let addCsvFileListener (pathToFile:string) =
+        let addCsvFileListener (pathToFile: string) =
             if pathToFile |> File.Exists |> not then
                 File.WriteAllLines(
                     pathToFile,
@@ -265,7 +268,7 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a ->ActivityNames.AllRelevantNames |> Array.contains a.Name),
+                    ShouldListenTo = (fun a -> ActivityNames.AllRelevantNames |> Array.contains a.Name),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )

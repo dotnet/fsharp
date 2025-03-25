@@ -24,11 +24,11 @@ module Utils =
 
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
-    type MaybeNull<'T when 'T : null> = 'T
+    type MaybeNull<'T when 'T: null> = 'T
 #else
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
-    type MaybeNull<'T when 'T : not null and 'T : not struct> = 'T | null
+    type MaybeNull<'T when 'T: not null and 'T: not struct> = 'T | null
 #endif
 
 type FSharpCommandLineBuilder() =

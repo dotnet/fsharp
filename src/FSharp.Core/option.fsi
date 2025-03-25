@@ -441,11 +441,11 @@ module Option =
     /// </example>
     [<CompiledName("OfObj")>]
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    val inline ofObj: value: 'T -> 'T option  when 'T : null
+    val inline ofObj: value: 'T -> 'T option when 'T: null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    [<WarnOnWithoutNullArgument("tcPassingWithoutNullToOptionOfObj", Localize=true)>]
-    val inline ofObj: value: 'T | null -> 'T option  when 'T : not null and 'T : not struct
+    [<WarnOnWithoutNullArgument("tcPassingWithoutNullToOptionOfObj", Localize = true)>]
+    val inline ofObj: value: 'T | null -> 'T option when 'T: not null and 'T: not struct
 #endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
@@ -462,10 +462,10 @@ module Option =
     /// </example>
     [<CompiledName("ToObj")>]
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    val inline toObj: value: 'T option -> 'T when 'T : null
+    val inline toObj: value: 'T option -> 'T when 'T: null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    val inline toObj: value: 'T option -> 'T | null when 'T : not struct (* and 'T : not null *)
+    val inline toObj: value: 'T option -> 'T | null when 'T: not struct
 #endif
 
     /// <summary>Convert a value option to an option.</summary>
@@ -930,11 +930,11 @@ module ValueOption =
     /// </example>
     [<CompiledName("OfObj")>]
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    val inline ofObj: value: 'T -> 'T voption  when 'T : null
+    val inline ofObj: value: 'T -> 'T voption when 'T: null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    [<WarnOnWithoutNullArgument("tcPassingWithoutNullToValueOptionOfObj", Localize=true)>]
-    val inline ofObj: value: 'T | null -> 'T voption  when 'T : not struct and 'T : not null
+    [<WarnOnWithoutNullArgument("tcPassingWithoutNullToValueOptionOfObj", Localize = true)>]
+    val inline ofObj: value: 'T | null -> 'T voption when 'T: not struct and 'T: not null
 #endif
 
     /// <summary>Convert an option to a potentially null value.</summary>
@@ -951,10 +951,10 @@ module ValueOption =
     /// </example>
     [<CompiledName("ToObj")>]
 #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-    val inline toObj: value: 'T voption -> 'T when 'T : null
+    val inline toObj: value: 'T voption -> 'T when 'T: null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
-    val inline toObj: value: 'T voption -> 'T | null when 'T : not struct (* and 'T : not null *)
+    val inline toObj: value: 'T voption -> 'T | null when 'T: not struct
 #endif
 
     /// <summary>Convert an option to a value option.</summary>

@@ -2196,14 +2196,20 @@ module Array =
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex predicate (array: _ array) =
             let i = tryFindIndexAux predicate array
-            if i.HasValue then Some (int (i.GetValueOrDefault()))
-            else None
+
+            if i.HasValue then
+                Some(int (i.GetValueOrDefault()))
+            else
+                None
 
         [<CompiledName("TryFind")>]
         let tryFind predicate (array: _ array) =
             let i = tryFindIndexAux predicate array
-            if i.HasValue then Some array[int (i.GetValueOrDefault())]
-            else None
+
+            if i.HasValue then
+                Some array[int (i.GetValueOrDefault())]
+            else
+                None
 
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _ array) =
@@ -2222,8 +2228,10 @@ module Array =
                             pState.Break())
                 )
 
-            if pResult.LowestBreakIteration.HasValue then allChosen[int (pResult.LowestBreakIteration.GetValueOrDefault())]
-            else None
+            if pResult.LowestBreakIteration.HasValue then
+                allChosen[int (pResult.LowestBreakIteration.GetValueOrDefault())]
+            else
+                None
 
         [<CompiledName("Choose")>]
         let choose chooser (array: 'T array) =

@@ -7,11 +7,9 @@ open System.Collections.Generic
 /// Hash tables, by default based on F# structural "hash" and (=) functions.
 /// The table may map a single key to multiple bindings.
 [<Sealed>]
-type internal HashMultiMap<'Key, 'Value
+type internal HashMultiMap<'Key, 'Value> =
 #if !NO_CHECKNULLS
-    when 'Key:not null
 #endif
-    > =
     /// Create a new empty mutable HashMultiMap with the given key hash/equality functions.
     new: comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
 
@@ -20,7 +18,9 @@ type internal HashMultiMap<'Key, 'Value
     new: size: int * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
 
     /// Build a map that contains the bindings of the given IEnumerable.
-    new: entries: seq<'Key * 'Value> * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool -> HashMultiMap<'Key, 'Value>
+    new:
+        entries: seq<'Key * 'Value> * comparer: IEqualityComparer<'Key> * ?useConcurrentDictionary: bool ->
+            HashMultiMap<'Key, 'Value>
 
     /// Make a shallow copy of the collection.
     member Copy: unit -> HashMultiMap<'Key, 'Value>
