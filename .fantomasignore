@@ -90,8 +90,6 @@ src/FSharp.Core/seqcore.fs
 **/tainted.fsi
 
 # uses nullness features - leads to invalid F# code
-src/Compiler/Utilities/LruCache.fs
-
 src/Compiler/Utilities/illib.fsi
 src/Compiler/Utilities/illib.fs
 

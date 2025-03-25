@@ -14,9 +14,6 @@ type internal CacheEvent =
 /// Older versions are kept weakly and can be collected by GC.
 type internal LruCache<'TKey, 'TVersion, 'TValue
     when 'TKey: equality and 'TVersion: equality and 'TValue: not struct and 'TKey: not null and 'TVersion: not null> =
-#if !NO_CHECKNULLS
-#endif
-
     /// <param name="keepStrongly">Maximum number of strongly held results to keep in the cache</param>
     /// <param name="keepWeakly">Maximum number of weakly held results to keep in the cache</param>
     /// <param name="requiredToKeep">A predicate that determines if a value should be kept strongly (no matter what)</param>
