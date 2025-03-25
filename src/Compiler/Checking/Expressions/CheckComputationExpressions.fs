@@ -1616,9 +1616,7 @@ let rec TryTranslateComputationExpression
                         match innerComp2 with
                         | SynExpr.YieldOrReturn(trivia = yieldOrReturn) -> yieldOrReturn.YieldOrReturnKeyword
                         | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
-                        | SynExpr.ForEach(range = m) -> m
-                        | SynExpr.App(range = m) -> m
-                        | _ -> m
+                        | expr -> expr.Range
 
                     if
                         isNil (
