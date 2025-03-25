@@ -1539,3 +1539,14 @@ type TcConfigProvider =
         TcConfigProvider(fun _ctok -> TcConfig.Create(tcConfigB, validate = false))
 
 let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
+
+/// Read and store the source file content for the `CallerArgumentExpression` feature
+let readAndStoreFileContents (tcConfig: TcConfig) (sourceFiles: #seq<string>) =
+    for fileName in sourceFiles do
+        if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+            try
+                use fileStream = FileSystem.OpenFileForReadShim fileName
+                use reader = fileStream.GetReader(tcConfig.inputCodePage)
+                FileContent.update fileName (reader.ReadToEnd())
+            with _ ->
+                ()

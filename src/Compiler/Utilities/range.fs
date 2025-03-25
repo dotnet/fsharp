@@ -586,7 +586,7 @@ module internal FileContent =
     let private fileContentDict = ConcurrentDictionary<string, string>()
 
     let update (fileName: string) (fileContent: string) =
-        fileContentDict[fileName] <- fileContent
+        fileContentDict.AddOrUpdate(fileName, (fun _ -> fileContent), (fun _ _ -> fileContent)) |> ignore
 
     let private seperators = [| '\r'; '\n' |]
 
@@ -670,18 +670,7 @@ module internal FileContent =
 
             loopStart 1 (0, findLineEnd input 0)
 
-    type DefaultGetRangeText() =
-        abstract GetRangeText: range: range -> string
-
-        default _.GetRangeText(range: range) : string =
-            match fileContentDict.TryGetValue range.FileName with
-            | true, text -> substring text range
-            | _ -> String.Empty
-
-    /// Get the code text of the specific `range` from already read files.
-    /// This is mutable because it may be replace by a reader that can access the `stdin` file in the `fsi.exe`.
-    let mutable private getRangeTextDynamic = DefaultGetRangeText()
-
-    let updateGetRangeTextDynamic (getter: #DefaultGetRangeText) = getRangeTextDynamic <- getter
-
-    let getCodeText (m: range) = getRangeTextDynamic.GetRangeText(m)
+    let getCodeText (m: range) = 
+        match fileContentDict.TryGetValue m.FileName with
+        | true, text -> substring text m
+        | _ -> String.Empty

@@ -278,14 +278,6 @@ module internal FileContent =
     /// Get the substring of the given range.
     /// This can retain the line seperators in the source string.
     val substring: input: string -> range: range -> string    
-        
-    type DefaultGetRangeText =
-        new: unit -> DefaultGetRangeText
-        abstract GetRangeText: range: range -> string
-        override GetRangeText: range: range -> string
-
-    /// Update the function to get the code text of the specific `range`
-    val updateGetRangeTextDynamic: getter: #DefaultGetRangeText -> unit
 
     /// Get the code text of the specific `range`
     val getCodeText: range -> string

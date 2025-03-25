@@ -961,3 +961,6 @@ val FSharpMLCompatFileSuffixes: string list
 
 /// Indicates whether experimental features should be enabled automatically
 val FSharpExperimentalFeaturesEnabledAutomatically: bool
+
+/// Read and store the source file content for the `CallerArgumentExpression` feature
+val readAndStoreFileContents: tcConfig: TcConfig -> sourceFiles: #seq<string> -> unit

@@ -339,8 +339,8 @@ type A() =
         
     [<FactForDESKTOP>]
     let ``Can recognize CallerArgumentExpression defined in C#`` () =
-        let cs =
-          CSharp """using System.Runtime.CompilerServices;
+      let cs =
+        CSharp """using System.Runtime.CompilerServices;
 public class AInCs
 {
     static string B(int param, [CallerArgumentExpression("param")] string expr = null) => expr;
@@ -359,9 +359,10 @@ namespace System.Runtime.CompilerServices
         public string Param { get; }
     }
 }
-""" |> withName "CSLib"
+"""
+        |> withName "CSLib"
 
-        FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
 
 type A() =
@@ -371,9 +372,34 @@ type A() =
 A.B "abc" |> assertEqual "\"abc\""
 AInCs.B (123 - 7) |> assertEqual "123 - 7"
       """ 
+      |> withLangVersionPreview
+      |> withReferences [cs]
+      |> asExe
+      |> compileAndRun
+      |> shouldSucceed
+      |> ignore
+      
+    [<FactForNETCOREAPP>]
+    let ``Check in fsi`` () =
+        Fsx """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
+  (* comment *) 
+  |> String.concat " ")
+with :? System.ArgumentException as ex -> 
+  assertEqual true (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")
+  (* comment *) 
+  |> String.concat \" \""))
+  
+
+try System.ArgumentException.ThrowIfNullOrWhiteSpace(argument = (Seq.init 11 (fun _ -> " ")
+  (* comment *) 
+  |> String.concat " "))
+with :? System.ArgumentException as ex -> 
+  assertEqual true (ex.Message.Contains("(Parameter '(Seq.init 11 (fun _ -> \" \")
+  (* comment *) 
+  |> String.concat \" \")"))
+"""
         |> withLangVersionPreview
-        |> withReferences [cs]
-        |> asExe
-        |> compileAndRun
+        |> runFsi
         |> shouldSucceed
         |> ignore

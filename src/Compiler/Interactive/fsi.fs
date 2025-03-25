@@ -2917,14 +2917,7 @@ type internal FsiDynamicCompiler
             let istate = fsiDynamicCompiler.ProcessDelayedReferences(ctok, istate)
 
             // Read the source file content for the `CallerArgumentExpression` feature
-            for fileName in sourceFiles do
-                if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                    try
-                        use fileStream = FileSystem.OpenFileForReadShim fileName
-                        use reader = fileStream.GetReader(tcConfig.inputCodePage)
-                        FileContent.update fileName (reader.ReadToEnd())
-                    with _ ->
-                        ()
+            readAndStoreFileContents tcConfig sourceFiles
 
             fsiDynamicCompiler.EvalParsedSourceFiles(ctok, diagnosticsLogger, istate, inputs, m)
 
@@ -3538,7 +3531,10 @@ type FsiStdinLexerProvider
                 |> Option.iter (fun t ->
                     match t with
                     | Null -> ()
-                    | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
+                    | NonNull t -> 
+                        fsiStdinSyphon.Add(t + "\n")
+                        // Update the stdin file content for the `CallerArgumentExpression` feature
+                        FileContent.update stdinMockFileName fsiStdinSyphon.SyphonText)
 
                 match inputOption with
                 | Some Null
@@ -4235,6 +4231,9 @@ type FsiInteractionProcessor
 
                 ProcessStepStatus status None (fun _ istate -> run istate)
 
+            // Read the source file content for the `CallerArgumentExpression` feature
+            readAndStoreFileContents tcConfig [sourceFile]
+            
             run istate)
 
     /// Load the source files, one by one. Called on the main thread.
@@ -4312,6 +4311,10 @@ type FsiInteractionProcessor
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = ParseInteraction tokenizer
+            
+            // Update the file content for the `CallerArgumentExpression` feature
+            FileContent.update scriptFileName sourceText
+            
             ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
 
@@ -4345,6 +4348,9 @@ type FsiInteractionProcessor
                     m,
                     SynExprSequentialTrivia.Zero
                 )
+            
+            // Update the file content for the `CallerArgumentExpression` feature
+            FileContent.update scriptFileName sourceText
 
             ExecuteParsedExpressionOnMainThread(ctok, diagnosticsLogger, exprWithSeq, istate))
         |> commitResult
@@ -4684,16 +4690,6 @@ type FsiEvaluationSession
     do
         if List.isEmpty fsiOptions.SourceFiles then
             fsiConsolePrompt.PrintAhead()
-
-    do
-        FileContent.updateGetRangeTextDynamic
-            { new FileContent.DefaultGetRangeText() with
-                override _.GetRangeText(range) : string =
-                    if range.FileName = stdinMockFileName then
-                        FileContent.substring fsiStdinSyphon.SyphonText range
-                    else
-                        base.GetRangeText(range)
-            }
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
