@@ -78,7 +78,7 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.1</SystemRuntimeCompilerServicesUnsafeVersion>
   </PropertyGroup>
   <!-- Dependencies from maintenance-packages, everything else -->
-  <PropertyGroupCondition="'$(DotNetBuildSourceOnly)' != 'true'">
+  <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
     <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
     <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
