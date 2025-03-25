@@ -742,12 +742,14 @@ let mkMethodsAndPropertiesForFields
     basicProps, basicMethods
 
 let convAlternativeDef
-    (addMethodGeneratedAttrs,
-     addPropertyGeneratedAttrs,
-     addPropertyNeverAttrs,
-     addFieldGeneratedAttrs,
-     addFieldNeverAttrs,
-     mkDebuggerTypeProxyAttribute)
+    (
+        addMethodGeneratedAttrs,
+        addPropertyGeneratedAttrs,
+        addPropertyNeverAttrs,
+        addFieldGeneratedAttrs,
+        addFieldNeverAttrs,
+        mkDebuggerTypeProxyAttribute
+    )
     (g: TcGlobals)
     num
     (td: ILTypeDef)
@@ -1255,12 +1257,14 @@ let convAlternativeDef
     baseMakerMeths, baseMakerProps, altUniqObjMeths, typeDefs, altDebugTypeDefs, altNullaryFields
 
 let mkClassUnionDef
-    (addMethodGeneratedAttrs,
-     addPropertyGeneratedAttrs,
-     addPropertyNeverAttrs,
-     addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef,
-     addFieldNeverAttrs: ILFieldDef -> ILFieldDef,
-     mkDebuggerTypeProxyAttribute)
+    (
+        addMethodGeneratedAttrs,
+        addPropertyGeneratedAttrs,
+        addPropertyNeverAttrs,
+        addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef,
+        addFieldNeverAttrs: ILFieldDef -> ILFieldDef,
+        mkDebuggerTypeProxyAttribute
+    )
     (g: TcGlobals)
     tref
     (td: ILTypeDef)
