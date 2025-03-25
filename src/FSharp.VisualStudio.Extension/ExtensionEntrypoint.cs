@@ -2,6 +2,8 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Extensibility;
+using System.Threading;
+using System;
 using Extension = Microsoft.VisualStudio.Extensibility.Extension;
 
 /// <summary>

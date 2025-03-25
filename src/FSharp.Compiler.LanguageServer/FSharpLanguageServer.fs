@@ -30,11 +30,18 @@ type Extensions =
         Async.StartAsTask(this, cancellationToken = ct)
 
 type FSharpLanguageServer
-    (jsonRpc: JsonRpc, logger: ILspLogger, ?initialWorkspace: FSharpWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
+    (
+        jsonRpc: JsonRpc,
+        logger: ILspLogger,
+        ?initialWorkspace: FSharpWorkspace,
+        ?addExtraHandlers: Action<IServiceCollection>,
+        ?config: FSharpLanguageServerConfig
+    ) =
 
     // TODO: Switch to SystemTextJsonLanguageServer
     inherit NewtonsoftLanguageServer<FSharpRequestContext>(jsonRpc, Newtonsoft.Json.JsonSerializer.CreateDefault(), logger)
 
+    let config = defaultArg config FSharpLanguageServerConfig.Default
     let initialWorkspace = defaultArg initialWorkspace (FSharpWorkspace())
 
     do
@@ -50,6 +57,7 @@ type FSharpLanguageServer
             serviceCollection
                 .AddSingleton(initialWorkspace)
                 .AddSingleton<ContextHolder>()
+                .AddSingleton<FSharpLanguageServerConfig>(config)
                 .AddSingleton<IMethodHandler, InitializeHandler<InitializeParams, InitializeResult, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, InitializedHandler<InitializedParams, FSharpRequestContext>>()
                 .AddSingleton<IMethodHandler, DocumentStateHandler>()
@@ -77,7 +85,16 @@ type FSharpLanguageServer
     static member Create(initialWorkspace, addExtraHandlers: Action<IServiceCollection>) =
         FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers)
 
-    static member Create(logger: ILspLogger, initialWorkspace, ?addExtraHandlers: Action<IServiceCollection>) =
+    static member Create(initialWorkspace, config: FSharpLanguageServerConfig, addExtraHandlers: Action<IServiceCollection>) =
+        FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers, config)
+
+    static member Create
+        (
+            logger: ILspLogger,
+            initialWorkspace,
+            ?addExtraHandlers: Action<IServiceCollection>,
+            ?config: FSharpLanguageServerConfig
+        ) =
 
         let struct (clientStream, serverStream) = FullDuplexStream.CreatePair()
 
@@ -96,7 +113,7 @@ type FSharpLanguageServer
         jsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
         let server =
-            new FSharpLanguageServer(jsonRpc, logger, initialWorkspace, ?addExtraHandlers = addExtraHandlers)
+            new FSharpLanguageServer(jsonRpc, logger, initialWorkspace, ?addExtraHandlers = addExtraHandlers, ?config = config)
 
         jsonRpc.StartListening()
 
