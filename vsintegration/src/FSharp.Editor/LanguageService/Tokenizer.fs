@@ -508,12 +508,8 @@ module internal Tokenizer =
         | _ -> ClassificationTypeNames.Text
 
     let private scanSourceLine
-        (
-            sourceTokenizer: FSharpSourceTokenizer,
-            textLine: TextLine,
-            lineContents: string,
-            lexState: FSharpTokenizerLexState
-        ) : SourceLineData =
+        (sourceTokenizer: FSharpSourceTokenizer, textLine: TextLine, lineContents: string, lexState: FSharpTokenizerLexState)
+        : SourceLineData =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray<SavedTokenInfo>()
