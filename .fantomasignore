@@ -93,10 +93,6 @@ src/FSharp.Core/seqcore.fs
 src/Compiler/Utilities/illib.fsi
 src/Compiler/Utilities/illib.fs
 
-src/Compiler/Utilities/HashMultiMap.fs
-
-src/Compiler/Utilities/Cancellable.fsi
-
 src/Compiler/AbstractIL/il.fs
 
 # Fantomas limitations on implementation files  (to investigate)
