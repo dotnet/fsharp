@@ -156,11 +156,7 @@ module Activity =
         OpenTelemetry.Sdk
             .CreateTracerProviderBuilder()
             .AddSource(ActivityNames.FscSourceName)
-            .SetResourceBuilder(
-                ResourceBuilder
-                    .CreateDefault()
-                    .AddService(serviceName = "F#", serviceVersion = "1.0.0")
-            )
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName = "F#", serviceVersion = "1.0.0"))
             .AddOtlpExporter()
             .Build()
 

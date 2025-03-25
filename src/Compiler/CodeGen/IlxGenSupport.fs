@@ -83,12 +83,8 @@ let getFieldMemberAccess =
     | EncapsulatedProperties -> ILMemberAccess.Private
 
 let mkLocalPrivateAttributeWithPropertyConstructors
-    (
-        g: TcGlobals,
-        name: string,
-        attrProperties: (string * ILType) list option,
-        codegenStyle: AttrDataGenerationStyle
-    ) =
+    (g: TcGlobals, name: string, attrProperties: (string * ILType) list option, codegenStyle: AttrDataGenerationStyle)
+    =
     let ilTypeRef = mkILTyRef (ILScopeRef.Local, name)
     let ilTy = mkILFormalNamedTy ILBoxity.AsObject ilTypeRef []
 
@@ -227,8 +223,7 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
         |> Array.map (fun (name, value) -> mkILStaticLiteralField (name, ilType, ILFieldInit.Int32 value, None, ILMemberAccess.Public))
         |> Array.append
             [|
-                (mkILInstanceField ("value__", g.ilg.typ_Int32, None, ILMemberAccess.Public))
-                    .WithSpecialName(true)
+                (mkILInstanceField ("value__", g.ilg.typ_Int32, None, ILMemberAccess.Public)).WithSpecialName(true)
             |]
         |> Array.toList
 
@@ -290,9 +285,7 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
                         ("Interfaces", 8192)
                     |]
 
-                (mkLocalPrivateInt32Enum (g, tref, values))
-                    .WithSerializable(true)
-                    .WithSealed(true))
+                (mkLocalPrivateInt32Enum (g, tref, values)).WithSerializable(true).WithSealed(true))
         )
 
     ILType.Value(mkILNonGenericTySpec (tref))

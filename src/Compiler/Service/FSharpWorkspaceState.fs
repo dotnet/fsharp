@@ -148,10 +148,8 @@ module internal WorkspaceDependencyGraphExtensions =
 
         [<Extension>]
         static member AddProjectWithoutFiles
-            (
-                this: GraphBuilder<_, _, (ProjectConfig * FSharpProjectSnapshot seq), _>,
-                computeProjectWithoutFiles
-            ) =
+            (this: GraphBuilder<_, _, (ProjectConfig * FSharpProjectSnapshot seq), _>, computeProjectWithoutFiles)
+            =
             this.AddDependentNode(
                 WorkspaceNodeKey.ProjectWithoutFiles this.State,
                 computeProjectWithoutFiles >> WorkspaceNodeValue.ProjectWithoutFiles,
@@ -174,10 +172,8 @@ module internal WorkspaceDependencyGraphExtensions =
 
         [<Extension>]
         static member AddProjectSnapshot
-            (
-                this: GraphBuilder<_, _, (ProjectWithoutFiles * FSharpFileSnapshot seq), _>,
-                computeProjectSnapshot
-            ) =
+            (this: GraphBuilder<_, _, (ProjectWithoutFiles * FSharpFileSnapshot seq), _>, computeProjectSnapshot)
+            =
 
             this.AddDependentNode(
                 WorkspaceNodeKey.ProjectSnapshot this.State,
@@ -199,9 +195,7 @@ module internal WorkspaceDependencyGraphExtensions =
 
         [<Extension>]
         static member GetProjectSnapshot(this: IDependencyGraph<_, _>, project) =
-            this
-                .GetValue(WorkspaceNodeKey.ProjectSnapshot project)
-                .Unpack(WorkspaceNode.projectSnapshot)
+            this.GetValue(WorkspaceNodeKey.ProjectSnapshot project).Unpack(WorkspaceNode.projectSnapshot)
 
         [<Extension>]
         static member GetProjectReferencesOf(this: IDependencyGraph<_, _>, project) =
@@ -212,9 +206,7 @@ module internal WorkspaceDependencyGraphExtensions =
 
         [<Extension>]
         static member GetProjectsThatReference(this: IDependencyGraph<_, _>, dllPath) =
-            this
-                .GetDependentsOf(WorkspaceNodeKey.ReferenceOnDisk dllPath)
-                .UnpackMany(WorkspaceNode.projectConfigKey)
+            this.GetDependentsOf(WorkspaceNodeKey.ReferenceOnDisk dllPath).UnpackMany(WorkspaceNode.projectConfigKey)
 
         [<Extension>]
         static member GetProjectsContaining(this: IDependencyGraph<_, _>, file) =
