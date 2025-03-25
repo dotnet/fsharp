@@ -34,11 +34,6 @@ module internal WarnScopes =
             | Nowarn(n, _)
             | Warnon(n, _) -> n
 
-        member w.tryNowarnNumber =
-            match w with
-            | Nowarn(n, _) -> Some n
-            | _ -> None
-
     type private WarnDirective =
         {
             DirectiveRange: range
@@ -50,25 +45,26 @@ module internal WarnScopes =
         match w.WarnCmds with
         | [] -> false
         | h :: _ -> h.IsWarnon
-
-    /// Information about the mapping implied by the #line directives.
-    /// The Map key is the file index of the surrogate source (the source file pointed to by the line directive).
-    /// The Map value contains the file index of the original source (the one just being parsed) and
-    /// a list of mapped sections (surrogate and original start lines).
-    type private LineMaps = Map<FileIndex, FileIndex * (LineNumber * LineNumber) list>
+    
+    type private LineDirective =
+        {
+            SurrogateFileIndex: FileIndex
+            SurrogateLine: LineNumber
+            OriginalLine: LineNumber
+        }
 
     type private LexbufData =
         {
             OriginalFileIndex: int
             mutable WarnDirectives: WarnDirective list
-            mutable LineMaps: LineMaps
+            mutable LineDirectives: LineDirective list
         }
 
     let private initialData (lexbuf: Lexbuf) =
         {
             OriginalFileIndex = lexbuf.StartPos.FileIndex
             WarnDirectives = []
-            LineMaps = Map.empty
+            LineDirectives = []
         }
 
     let private getLexbufData (lexbuf: Lexbuf) =
@@ -78,18 +74,10 @@ module internal WarnScopes =
     // Collect the line directives during lexing
     // *************************************
 
-    let RegisterLineDirective (lexbuf, fileIndex, line: int) =
+    let RegisterLineDirective (lexbuf, fileIndex, line: int) =  //TODO: send OriginalLine i.o. lexbuf
         let data = getLexbufData lexbuf
-        let sectionMap = line, lexbuf.StartPos.OriginalLine + 1
-
-        let changer entry =
-            match entry with
-            | None -> Some(data.OriginalFileIndex, [ sectionMap ])
-            | Some(originalFileIndex, maps) ->
-                assert (originalFileIndex = data.OriginalFileIndex) // same lexbuf
-                Some(originalFileIndex, sectionMap :: maps)
-
-        data.LineMaps <- data.LineMaps.Change(fileIndex, changer)
+        let lineDirective = { SurrogateFileIndex = fileIndex; SurrogateLine = line; OriginalLine = lexbuf.StartPos.OriginalLine + 1 }
+        data.LineDirectives <- lineDirective :: data.LineDirectives
 
     // *************************************
     // Collect the warn scopes during lexing
@@ -221,6 +209,12 @@ module internal WarnScopes =
         | OpenOff of range
         | OpenOn of range
 
+    /// Information about the mapping implied by the #line directives.
+    /// The Map key is the file index of the surrogate source (the source file pointed to by the line directive).
+    /// The Map value contains the file index of the original source (the one just being parsed) and
+    /// a list of mapped sections (surrogate and original start lines).
+    type private LineMaps = Map<FileIndex, FileIndex * (LineNumber * LineNumber) list>
+
     type private WarnScopeData =
         {
             ScopedNowarnFeatureIsSupported: bool
@@ -247,10 +241,17 @@ module internal WarnScopes =
     // Create the warn scopes from the directives and store them in diagnosticOptions.
     // *************************************
 
-    let MergeInto (diagnosticOptions: FSharpDiagnosticOptions) isScript (subModuleRanges: range list) (lexbuf: Lexbuf) =
-        let collectWarnCmds warnDirectives =
-            if lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn then
-                warnDirectives |> List.collect _.WarnCmds
+    let MergeInto diagnosticOptions isScript subModuleRanges lexbuf =
+        let lexbufData = getLexbufData lexbuf
+        let fileIndex = lexbufData.OriginalFileIndex
+
+        let scopedNowarnFeatureIsSupported =
+            lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn
+
+        let fileWarnCmds, fileScriptNowarns =
+            let warnDirectives = lexbufData.WarnDirectives |> List.rev
+            if scopedNowarnFeatureIsSupported then
+                List.collect _.WarnCmds warnDirectives, []
             else
                 let isInSubmodule (warnDirective: WarnDirective) =
                     List.exists (fun mRange -> rangeContainsRange mRange warnDirective.DirectiveRange) subModuleRanges
@@ -262,38 +263,35 @@ module internal WarnScopes =
                 subModuleWarnDirectives
                 |> List.iter (fun wd -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), wd.DirectiveRange)))
 
-                let topLevelWarnons, topLevelNowarns =
+                let topLevelWarnonDirectives, topLevelNowarnDirectives =
                     List.partition isWarnonDirective topLevelWarnDirectives
 
                 // "feature not available in this language version" error for top-level #nowarn
-                topLevelWarnons
+                topLevelWarnonDirectives
                 |> List.iter (fun wd ->
-                    checkLanguageFeatureAndRecover lexbuf.LanguageVersion LanguageFeature.ScopedNowarn wd.DirectiveRange)
+                    errorR (languageFeatureError lexbuf.LanguageVersion LanguageFeature.ScopedNowarn wd.DirectiveRange))
 
-                topLevelNowarns |> List.collect _.WarnCmds
+                let nowarnCmds = List.collect _.WarnCmds topLevelNowarnDirectives
+                nowarnCmds, if isScript then nowarnCmds |> List.map _.WarningNumber else []
 
-        let processWarnCmd (langVersion: LanguageVersion) (warnScopeMap: Map<WarningNumber,WarnScope list>) (wd: WarnCmd) =
+        let processWarnCmd warnScopeMap warnCmd =
             let getScopes warningNumber warnScopes =
                 Map.tryFind warningNumber warnScopes |> Option.defaultValue []
 
             let mkScope (m1: range) (m2: range) =
                 mkFileIndexRange m1.FileIndex m1.Start m2.End
 
-            match wd with
+            match warnCmd with
             | WarnCmd.Nowarn(n, m) ->
-
                 match getScopes n warnScopeMap with
                 | WarnScope.OpenOn m' :: t -> warnScopeMap.Add(n, WarnScope.On(mkScope m' m) :: t)
                 | WarnScope.OpenOff m' :: _
                 | WarnScope.On m' :: _ ->
-                    if langVersion.SupportsFeature LanguageFeature.ScopedNowarn then
+                    if scopedNowarnFeatureIsSupported then
                         informationalWarning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
-
                     warnScopeMap
                 | scopes -> warnScopeMap.Add(n, WarnScope.OpenOff(mkScope m m) :: scopes)
             | WarnCmd.Warnon(n, m) ->
-                let idx = m.FileIndex, n
-
                 match getScopes n warnScopeMap with
                 | WarnScope.OpenOff m' :: t -> warnScopeMap.Add(n, WarnScope.Off(mkScope m' m) :: t)
                 | WarnScope.OpenOn m' :: _
@@ -302,21 +300,29 @@ module internal WarnScopes =
                     warnScopeMap
                 | scopes -> warnScopeMap.Add(n, WarnScope.OpenOn(mkScope m m) :: scopes)
 
-        let merge fileIndex scopedNowarnFeatureIsSupported scriptNowarns lexbufLineMap lexbufWarnScopes =
-            let data = getWarnScopeData diagnosticOptions
+        let fileWarnScopes = fileWarnCmds |> List.fold processWarnCmd Map.empty
 
-            // Note that, if the same file is parsed again (same fileIndex), we replace the warn scopes.
-            let configWarnScopes = data.WarnScopes.Add(fileIndex, lexbufWarnScopes)
+        let fileLineMaps: LineMaps =
+            let sortedSectionMaps = List.map (fun ld -> ld.SurrogateLine, ld.OriginalLine) >> List.sortBy fst
+            lexbufData.LineDirectives
+            |> List.groupBy _.SurrogateFileIndex
+            |> List.map (fun (surrIdx, lineDirectives) -> surrIdx, (fileIndex, sortedSectionMaps lineDirectives))
+            |> Map
 
-            // Note that, if the same surrogate file has entries already (from another parse),
-            // we replace the line maps.
+        let merge () =
+            let projectData = getWarnScopeData diagnosticOptions
+
+            // If the same file is parsed again (same fileIndex), we replace the warn scopes.
+            let projectWarnScopes = projectData.WarnScopes.Add(fileIndex, fileWarnScopes)
+
+            // If the same surrogate file has entries already (from another parse), we replace the line maps.
             // However, if it was referred to from a different original file before, we issue a warning.
             // (Because it means the maps are not reliable.)
-            let configLineMaps =
-                let checkAndAdd previousLinemaps surrIdx ((newOrigIdx, linePairList) as newLinemaps) =
+            let projectLineMaps =
+                let checkAndAdd previousLinemaps surrIdx (newOrigIdx, linePairList as newLinemaps) =
                     match Map.tryFind surrIdx previousLinemaps with
                     | Some(origIdx, _) when origIdx <> newOrigIdx ->
-                        let (_, origLine) = List.head linePairList
+                        let _, origLine = List.head linePairList
                         let m = mkFileIndexRange origIdx (mkPos origLine 0) (mkPos origLine 4)
 
                         let getName idx =
@@ -327,43 +333,19 @@ module internal WarnScopes =
 
                     Map.add surrIdx newLinemaps previousLinemaps
 
-                Map.fold checkAndAdd data.LineMaps lexbufLineMap
+                Map.fold checkAndAdd projectData.LineMaps fileLineMaps
 
             let newWarnScopeData =
                 {
                     ScopedNowarnFeatureIsSupported = scopedNowarnFeatureIsSupported
-                    ScriptNowarns = List.distinct (data.ScriptNowarns @ scriptNowarns)
-                    WarnScopes = configWarnScopes
-                    LineMaps = configLineMaps
+                    ScriptNowarns = List.distinct (projectData.ScriptNowarns @ fileScriptNowarns)
+                    WarnScopes = projectWarnScopes
+                    LineMaps = projectLineMaps
                 }
 
             setWarnScopeData diagnosticOptions newWarnScopeData
 
-        let lexbufData = getLexbufData lexbuf
-
-        let scopedNowarnFeatureIsSupported =
-            lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn
-
-        let lexbufScriptNowarns =   //TODO: combine with collectWarnCmds
-            if not scopedNowarnFeatureIsSupported && isScript then
-                lexbufData.WarnDirectives
-                |> List.collect (_.WarnCmds >> List.choose _.tryNowarnNumber)
-            else
-                []
-        
-        let fileIndex = lexbufData.OriginalFileIndex
-
-        let lexbufWarnScopes =
-            lexbufData.WarnDirectives
-            |> List.rev
-            |> collectWarnCmds
-            |> List.fold (processWarnCmd lexbuf.LanguageVersion) Map.empty
-
-        let lexbufLineMaps =
-            lexbufData.LineMaps
-            |> Map.map (fun _ (oidx, sectionMaps) -> oidx, List.rev sectionMaps)
-
-        lock diagnosticOptions (fun () -> merge fileIndex scopedNowarnFeatureIsSupported lexbufScriptNowarns lexbufLineMaps lexbufWarnScopes)
+        lock diagnosticOptions merge
 
     let getDirectiveTrivia (lexbuf: Lexbuf) =
         let mkTrivia d =
