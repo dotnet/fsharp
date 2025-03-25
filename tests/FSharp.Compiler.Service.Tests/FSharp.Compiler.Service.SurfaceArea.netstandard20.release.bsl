@@ -10893,9 +10893,7 @@ FSharp.Compiler.Text.PositionModule: System.String stringOfPos(FSharp.Compiler.T
 FSharp.Compiler.Text.PositionModule: System.Tuple`2[System.Int32,System.Int32] toZ(FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.PositionModule: Void outputPos(System.IO.TextWriter, FSharp.Compiler.Text.Position)
 FSharp.Compiler.Text.Range: Boolean Equals(System.Object)
-FSharp.Compiler.Text.Range: Boolean HasOriginalRange
 FSharp.Compiler.Text.Range: Boolean IsSynthetic
-FSharp.Compiler.Text.Range: Boolean get_HasOriginalRange()
 FSharp.Compiler.Text.Range: Boolean get_IsSynthetic()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position End
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position Start
@@ -10903,7 +10901,6 @@ FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_End()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_Start()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range EndRange
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range StartRange
-FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range WithOriginalRange(Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range Zero
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_EndRange()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range get_StartRange()
@@ -10917,8 +10914,6 @@ FSharp.Compiler.Text.Range: Int32 get_EndColumn()
 FSharp.Compiler.Text.Range: Int32 get_EndLine()
 FSharp.Compiler.Text.Range: Int32 get_StartColumn()
 FSharp.Compiler.Text.Range: Int32 get_StartLine()
-FSharp.Compiler.Text.Range: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Text.Range] OriginalRange
-FSharp.Compiler.Text.Range: Microsoft.FSharp.Core.FSharpValueOption`1[FSharp.Compiler.Text.Range] get_OriginalRange()
 FSharp.Compiler.Text.Range: System.String FileName
 FSharp.Compiler.Text.Range: System.String ToString()
 FSharp.Compiler.Text.Range: System.String get_FileName()

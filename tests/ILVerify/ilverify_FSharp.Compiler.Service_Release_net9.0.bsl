@@ -5,7 +5,6 @@
 [IL]: Error [UnmanagedPointer]: : FSharp.Compiler.IO.RawByteMemory::.ctor(uint8*, int32, object)][offset 0x00000009] Unmanaged pointers are not a verifiable type.
 [IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::get_Item(int32)][offset 0x0000001A][found Native Int] Expected ByRef on the stack.
 [IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::set_Item(int32, uint8)][offset 0x0000001B][found Native Int] Expected ByRef on the stack.
-[IL]: Error [CallVirtOnValueType]: : FSharp.Compiler.Text.Range::ToString()][offset 0x0000001F] Callvirt on a value type method.
 [IL]: Error [ReturnPtrToStack]: : Internal.Utilities.Text.Lexing.LexBuffer`1::get_LexemeView()][offset 0x00000017] Return type is ByRef, TypedReference, ArgHandle, or ArgIterator.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.Text.Lexing.UnicodeTables::scanUntilSentinel([FSharp.Compiler.Service]Internal.Utilities.Text.Lexing.LexBuffer`1<char>, int32)][offset 0x0000008D][found Short] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Xml.XmlDoc::processLines([FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>)][offset 0x0000002C][found Char] Unexpected type on the stack.
@@ -22,7 +21,7 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CodeAnalysis.Hosted.CompilerHelpers::fscCompile([FSharp.Compiler.Service]FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver, string, string[])][offset 0x00000082][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CodeAnalysis.Hosted.CompilerHelpers::fscCompile([FSharp.Compiler.Service]FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver, string, string[])][offset 0x0000008B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Interactive.Shell+MagicAssemblyResolution::ResolveAssemblyCore([FSharp.Compiler.Service]Internal.Utilities.Library.CompilationThreadToken, [FSharp.Compiler.Service]FSharp.Compiler.Text.Range, [FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, [FSharp.Compiler.Service]FSharp.Compiler.CompilerImports+TcImports, [FSharp.Compiler.Service]FSharp.Compiler.Interactive.Shell+FsiDynamicCompiler, [FSharp.Compiler.Service]FSharp.Compiler.Interactive.Shell+FsiConsoleOutput, string)][offset 0x00000015][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.Interactive.Shell+clo@3502-849::Invoke([S.P.CoreLib]System.Tuple`3<char[],int32,int32>)][offset 0x000001C7][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Interactive.Shell+clo@3508-849::Invoke([S.P.CoreLib]System.Tuple`3<char[],int32,int32>)][offset 0x000001E5][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharpCheckerResults+GetReferenceResolutionStructuredToolTipText@2225::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x00000076][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo@921-530::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x00000032][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$ServiceLexing+clo@921-530::Invoke([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<System.Tuple`3<FSharp.Compiler.Parser+token,int32,int32>,Microsoft.FSharp.Core.Unit>)][offset 0x0000003B][found Char] Unexpected type on the stack.
@@ -86,7 +85,9 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.IL::parseILVersion(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.IL::parseILVersion(string)][offset 0x00000021][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharp.Compiler.DiagnosticsLogger::.cctor()][offset 0x000000B6][found Char] Unexpected type on the stack.
-[IL]: Error [CallVirtOnValueType]: : FSharp.Compiler.Text.RangeModule+comparer@587::System.Collections.Generic.IEqualityComparer<FSharp.Compiler.Text.Range>.GetHashCode([FSharp.Compiler.Service]FSharp.Compiler.Text.Range)][offset 0x00000002] Callvirt on a value type method.
+[IL]: Error [CallVirtOnValueType]: : FSharp.Compiler.Text.RangeModule+comparer@558::System.Collections.Generic.IEqualityComparer<FSharp.Compiler.Text.Range>.GetHashCode([FSharp.Compiler.Service]FSharp.Compiler.Text.Range)][offset 0x00000002] Callvirt on a value type method.
+[IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$Range::.cctor()][offset 0x000000F0][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$Range::.cctor()][offset 0x000000F9][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.PathMapModule::applyDir([FSharp.Compiler.Service]Internal.Utilities.PathMap, string)][offset 0x00000035][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.PathMapModule::applyDir([FSharp.Compiler.Service]Internal.Utilities.PathMap, string)][offset 0x00000041][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$Internal.Utilities.XmlAdapters::.cctor()][offset 0x0000000A][found Char] Unexpected type on the stack.

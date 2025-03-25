@@ -360,7 +360,6 @@ namespace System.Runtime.CompilerServices
     }
 }
 """
-        |> withName "CSLib"
 
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
