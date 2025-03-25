@@ -3531,7 +3531,7 @@ type FsiStdinLexerProvider
                 |> Option.iter (fun t ->
                     match t with
                     | Null -> ()
-                    | NonNull t -> 
+                    | NonNull t ->
                         fsiStdinSyphon.Add(t + "\n")
                         // Update the stdin file content for the `CallerArgumentExpression` feature
                         FileContent.update stdinMockFileName fsiStdinSyphon.SyphonText)
@@ -4232,8 +4232,8 @@ type FsiInteractionProcessor
                 ProcessStepStatus status None (fun _ istate -> run istate)
 
             // Read the source file content for the `CallerArgumentExpression` feature
-            readAndStoreFileContents tcConfig [sourceFile]
-            
+            readAndStoreFileContents tcConfig [ sourceFile ]
+
             run istate)
 
     /// Load the source files, one by one. Called on the main thread.
@@ -4311,10 +4311,10 @@ type FsiInteractionProcessor
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = ParseInteraction tokenizer
-            
+
             // Update the file content for the `CallerArgumentExpression` feature
             FileContent.update scriptFileName sourceText
-            
+
             ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
 
@@ -4348,7 +4348,7 @@ type FsiInteractionProcessor
                     m,
                     SynExprSequentialTrivia.Zero
                 )
-            
+
             // Update the file content for the `CallerArgumentExpression` feature
             FileContent.update scriptFileName sourceText
 

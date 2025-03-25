@@ -586,7 +586,8 @@ module internal FileContent =
     let private fileContentDict = ConcurrentDictionary<string, string>()
 
     let update (fileName: string) (fileContent: string) =
-        fileContentDict.AddOrUpdate(fileName, (fun _ -> fileContent), (fun _ _ -> fileContent)) |> ignore
+        fileContentDict.AddOrUpdate(fileName, (fun _ -> fileContent), (fun _ _ -> fileContent))
+        |> ignore
 
     let private seperators = [| '\r'; '\n' |]
 
@@ -670,7 +671,7 @@ module internal FileContent =
 
             loopStart 1 (0, findLineEnd input 0)
 
-    let getCodeText (m: range) = 
+    let getCodeText (m: range) =
         match fileContentDict.TryGetValue m.FileName with
         | true, text -> substring text m
         | _ -> String.Empty
