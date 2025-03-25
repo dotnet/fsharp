@@ -81,14 +81,8 @@ type TextViewEventsHandler
             |> Option.iter (fun handler -> handler (view, newline, oldline))
 
         member this.OnChangeScrollInfo
-            (
-                _view: IVsTextView,
-                _iBar: int,
-                _iMinUnit: int,
-                _iMaxUnits: int,
-                _iVisibleUnits: int,
-                _iFirstVisibleUnit: int
-            ) =
+            (_view: IVsTextView, _iBar: int, _iMinUnit: int, _iMaxUnits: int, _iVisibleUnits: int, _iFirstVisibleUnit: int)
+            =
             ()
 
         member this.OnKillFocus(view: IVsTextView) =
