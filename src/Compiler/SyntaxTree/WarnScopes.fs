@@ -45,7 +45,7 @@ module internal WarnScopes =
         match w.WarnCmds with
         | [] -> false
         | h :: _ -> h.IsWarnon
-    
+
     type private LineDirective =
         {
             SurrogateFileIndex: FileIndex
@@ -74,9 +74,16 @@ module internal WarnScopes =
     // Collect the line directives during lexing
     // *************************************
 
-    let RegisterLineDirective (lexbuf, fileIndex, line: int) =  //TODO: send OriginalLine i.o. lexbuf
+    let RegisterLineDirective (lexbuf, fileIndex, line: int) = //TODO: send OriginalLine i.o. lexbuf
         let data = getLexbufData lexbuf
-        let lineDirective = { SurrogateFileIndex = fileIndex; SurrogateLine = line; OriginalLine = lexbuf.StartPos.OriginalLine + 1 }
+
+        let lineDirective =
+            {
+                SurrogateFileIndex = fileIndex
+                SurrogateLine = line
+                OriginalLine = lexbuf.StartPos.OriginalLine + 1
+            }
+
         data.LineDirectives <- lineDirective :: data.LineDirectives
 
     // *************************************
@@ -250,6 +257,7 @@ module internal WarnScopes =
 
         let fileWarnCmds, fileScriptNowarns =
             let warnDirectives = lexbufData.WarnDirectives |> List.rev
+
             if scopedNowarnFeatureIsSupported then
                 List.collect _.WarnCmds warnDirectives, []
             else
@@ -268,11 +276,15 @@ module internal WarnScopes =
 
                 // "feature not available in this language version" error for top-level #nowarn
                 topLevelWarnonDirectives
-                |> List.iter (fun wd ->
-                    errorR (languageFeatureError lexbuf.LanguageVersion LanguageFeature.ScopedNowarn wd.DirectiveRange))
+                |> List.iter (fun wd -> errorR (languageFeatureError lexbuf.LanguageVersion LanguageFeature.ScopedNowarn wd.DirectiveRange))
 
                 let nowarnCmds = List.collect _.WarnCmds topLevelNowarnDirectives
-                nowarnCmds, if isScript then nowarnCmds |> List.map _.WarningNumber else []
+
+                nowarnCmds,
+                if isScript then
+                    nowarnCmds |> List.map _.WarningNumber
+                else
+                    []
 
         let processWarnCmd warnScopeMap warnCmd =
             let getScopes warningNumber warnScopes =
@@ -289,6 +301,7 @@ module internal WarnScopes =
                 | WarnScope.On m' :: _ ->
                     if scopedNowarnFeatureIsSupported then
                         informationalWarning (Error(FSComp.SR.lexWarnDirectivesMustMatch ("#nowarn", m'.StartLine), m))
+
                     warnScopeMap
                 | scopes -> warnScopeMap.Add(n, WarnScope.OpenOff(mkScope m m) :: scopes)
             | WarnCmd.Warnon(n, m) ->
@@ -303,7 +316,9 @@ module internal WarnScopes =
         let fileWarnScopes = fileWarnCmds |> List.fold processWarnCmd Map.empty
 
         let fileLineMaps: LineMaps =
-            let sortedSectionMaps = List.map (fun ld -> ld.SurrogateLine, ld.OriginalLine) >> List.sortBy fst
+            let sortedSectionMaps =
+                List.map (fun ld -> ld.SurrogateLine, ld.OriginalLine) >> List.sortBy fst
+
             lexbufData.LineDirectives
             |> List.groupBy _.SurrogateFileIndex
             |> List.map (fun (surrIdx, lineDirectives) -> surrIdx, (fileIndex, sortedSectionMaps lineDirectives))
