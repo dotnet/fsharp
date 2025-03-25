@@ -958,13 +958,6 @@ let rec SolveTyparEqualsTypePart1 (csenv: ConstraintSolverEnv) m2 (trace: Option
         // Record the solution before we solve the constraints, since 
         // We may need to make use of the equation when solving the constraints. 
         // Record a entry in the undo trace if one is provided 
-
-        //let ty1AllowsNull = r.Constraints |> List.exists (function | TyparConstraint.SupportsNull _ -> true | _ -> false )
-        //let tyAllowsNull() = TypeNullIsExtraValueNew csenv.g m2 ty
-        //if ty1AllowsNull && not (tyAllowsNull()) then
-        //     trace.Exec (fun () -> r.typar_solution <- Some (ty |> replaceNullnessOfTy csenv.g.knownWithNull)) (fun () -> r.typar_solution <- None)
-        //else
-        //    trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
         trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
     }  
 
@@ -1295,8 +1288,9 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
                 SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2)
             | ValueSome NullnessInfo.WithoutNull, ValueSome NullnessInfo.WithoutNull when 
                 csenv.IsSupportsNullFlex && 
-                isAppTy g sty2 && 
-                tp1.Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false) ->
+                isAppTy g sty2 &&
+                tp1 |> HasConstraint _.IsSupportsNull  &&
+                not(tp1 |> HasConstraint _.IsIsNonNullableStruct)->
                     let tpNew = NewCompGenTypar(TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)               
                     trackErrors {                    
                         do! SolveTypeEqualsType csenv ndeep m2 trace cxsln (TType_var(tpNew, g.knownWithoutNull)) sty2
@@ -1614,10 +1608,10 @@ and SolveTyparSubtypeOfType (csenv: ConstraintSolverEnv) ndeep m2 trace tp ty1 =
         else
             AddConstraint csenv ndeep m2 trace tp (TyparConstraint.CoercesTo(ty1, csenv.m))
 
-and DepthCheck ndeep m = 
-    if ndeep > 300 then 
-        error(Error(FSComp.SR.csTypeInferenceMaxDepth(), m)) 
-    else 
+and DepthCheck ndeep m =
+    if ndeep > 300 then
+        error(Error(FSComp.SR.csTypeInferenceMaxDepth(), m))
+    else
         CompleteD
 
 // If this is a type that's parameterized on a unit-of-measure (expected to be numeric), unify its measure with 1
@@ -2426,7 +2420,9 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
             return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy1 retTy2
 
         | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _
-        | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _
+        | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _ ->
+            return! ErrorD (Error(FSComp.SR.csComparisonDelegateConstraintInconsistent(), m))
+
         | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
             return! ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
@@ -2434,6 +2430,11 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
         | TyparConstraint.SupportsNull _, TyparConstraint.NotSupportsNull _
         | TyparConstraint.NotSupportsNull _, TyparConstraint.SupportsNull _   ->
             return! ErrorD (Error(FSComp.SR.csNullNotNullConstraintInconsistent(), m))
+
+        | TyparConstraint.SupportsNull _, TyparConstraint.IsNonNullableStruct _
+        | TyparConstraint.IsNonNullableStruct _, TyparConstraint.SupportsNull _   ->
+            ()
+            //return! WarnD (Error(FSComp.SR.csNullStructConstraintInconsistent(), m))
         
         | TyparConstraint.IsUnmanaged _, TyparConstraint.IsReferenceType _
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsUnmanaged _ ->
@@ -2640,7 +2641,7 @@ and SolveTypeUseSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                     | ValueSome NullnessInfo.WithoutNull ->                      
                         return! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
                     | _ ->
-                        if tp.Constraints |> List.exists (function | TyparConstraint.IsReferenceType _ -> true | _ -> false) |> not then
+                        if not (tp |> HasConstraint _.IsIsReferenceType) then
                             do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.IsReferenceType m)
                         return! SolveNullnessSupportsNull csenv ndeep m2 trace ty nullness
                 | _ ->
@@ -2737,7 +2738,7 @@ and SolveTypeCanCarryNullness (csenv: ConstraintSolverEnv)  ty nullness =
         let strippedTy = stripTyEqnsA g true ty
         match tryAddNullnessToTy nullness strippedTy with
         | Some _ -> 
-            if isTyparTy g strippedTy && not (isReferenceTyparTy g strippedTy) then
+            if isTyparTy g strippedTy && not (IsReferenceTyparTy g strippedTy) then
                 return! AddConstraint csenv 0 m NoTrace (destTyparTy g strippedTy) (TyparConstraint.IsReferenceType m)
         | None -> 
             let tyString = NicePrint.minimalStringOfType csenv.DisplayEnv strippedTy
@@ -2978,10 +2979,11 @@ and SolveTypeRequiresDefaultValue (csenv: ConstraintSolverEnv) ndeep m2 trace or
     let g = csenv.g
     let m = csenv.m
     let ty = stripTyEqnsAndMeasureEqns g origTy
+
     if isTyparTy g ty then
-        if isNonNullableStructTyparTy g ty then
+        if IsNonNullableStructTyparTy g ty then
             SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
-        elif isReferenceTyparTy g ty then
+        elif IsReferenceTyparTy g ty then
             SolveTypeUseSupportsNull csenv ndeep m2 trace ty
         else
             ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructOrReferenceConstraint(), m, m2))

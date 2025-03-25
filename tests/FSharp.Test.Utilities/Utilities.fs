@@ -138,7 +138,7 @@ module Utilities =
     [<RequireQualifiedAccess>]
     module public TargetFrameworkUtil =
 
-        let private config = TestFramework.initializeSuite ()
+        let private config = initialConfig
 
         // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
         let private projectFile = """
