@@ -272,7 +272,7 @@ module Line =
 /// Store code file content. Used to implement `CallerArgumentExpression`
 module internal FileContent =
 
-    /// Update the file content.
+    /// Update the file content. Should be called before the code file/expression is typechecked.
     val update: fileName: string -> fileContent: string -> unit
     
     /// Get the substring of the given range.

@@ -3519,11 +3519,24 @@ let HasILAttribute tref (attrs: ILAttributes) =
 let TryDecodeILAttribute tref (attrs: ILAttributes) = 
     attrs.AsArray() |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
 
+let TryDecodeILAttributeByName nm (attrs: ILAttributes) = 
+    attrs.AsArray() |> Array.tryPick (fun x -> if isILAttribByName ([], nm) x then Some(decodeILAttribData x) else None)
+
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
 let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
+
+let TryFindFSharpAttributeByName nm attrs = 
+    let path, typeName = splitILTypeName nm
+    attrs
+    |> List.tryFind (fun (Attrib(tcref2, _, _, _, _, _, _)) -> 
+        match tcref2.TryDeref with
+        | ValueNone -> false
+        | ValueSome x ->
+            x.CompilationPath.MangledPath = path && 
+            x.CompiledName = typeName)
 
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = match attrOpt with Some (AttribInfo(_, tcref)) -> tyconRefEq g tcref tcref2 | _ -> false

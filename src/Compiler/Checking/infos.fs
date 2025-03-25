@@ -320,16 +320,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
     let callerArgumentExpressionArg = 
         TryFindFSharpAttributeOpt g g.attrib_CallerArgumentExpressionAttribute argInfo.Attribs
-        // find user defined CallerArgumentExpressionAttribute
-        |> Option.orElseWith (fun () -> 
-            argInfo.Attribs
-            |> List.tryFind (fun (Attrib(tcref2, _, _, _, _, _, _)) -> 
-                match tcref2.TryDeref with
-                | ValueNone -> false
-                | ValueSome x ->
-                    x.CompilationPath.MangledPath = ["System"; "Runtime"; "CompilerServices"] && 
-                    x.CompiledName = "CallerArgumentExpressionAttribute")
-        )
+        |> Option.orElseWith (fun () -> TryFindFSharpAttributeByName "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" argInfo.Attribs)
 
     let callerInfo =
         match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, callerArgumentExpressionArg with
@@ -1298,6 +1289,7 @@ type MethInfo =
                  let isCallerArgumentExpressionArg =
                      g.attrib_CallerArgumentExpressionAttribute
                      |> Option.bind (fun (AttribInfo(tref, _)) -> TryDecodeILAttribute tref attrs)
+                     |> Option.orElseWith (fun () -> TryDecodeILAttributeByName "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" attrs)
 
                  let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, isCallerArgumentExpressionArg with
