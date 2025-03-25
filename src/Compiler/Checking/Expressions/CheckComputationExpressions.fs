@@ -1612,6 +1612,14 @@ let rec TryTranslateComputationExpression
                     // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
                     let m1 = rangeForCombine innerComp1
 
+                    let combineDelayRange =
+                        match innerComp2 with
+                        | SynExpr.YieldOrReturn(trivia = yieldOrReturn) -> yieldOrReturn.YieldOrReturnKeyword
+                        | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
+                        | SynExpr.ForEach(range = m) -> m
+                        | SynExpr.App(range = m) -> m
+                        | _ -> m
+
                     if
                         isNil (
                             TryFindIntrinsicOrExtensionMethInfo
@@ -1624,14 +1632,8 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
-                        let combineRange =
-                            match innerComp2 with
-                            | SynExpr.YieldOrReturn(trivia = yieldOrReturn) -> yieldOrReturn.YieldOrReturnKeyword
-                            | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
-                            | SynExpr.App(range = m) -> m
-                            | _ -> m
 
-                        error (Error(FSComp.SR.tcRequireBuilderMethod "Combine", combineRange))
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Combine", combineDelayRange))
 
                     if
                         isNil (
@@ -1645,7 +1647,7 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
-                        error (Error(FSComp.SR.tcRequireBuilderMethod ("Delay"), m))
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Delay", combineDelayRange))
 
                     let combineCall =
                         mkSynCall

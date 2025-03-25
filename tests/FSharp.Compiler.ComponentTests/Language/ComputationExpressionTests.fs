@@ -1026,6 +1026,80 @@ module Test =
         ]
 
     [<Fact>]
+    let ``Sequence 11 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: string -> R) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.For(s: seq<int>, rest: (int -> R)) = 
+        let folder state item =
+            match state with
+            | S(str) ->
+                match rest item with
+                | S(itemStr) -> S(str + itemStr)
+        Seq.fold folder (S("")) s
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] do
+          ()
+      for x in [1] do
+          ()
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 24, Col 7, Line 25, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
+    let ``Sequence 12 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: string -> R) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.Yield(value: 'a) = S(string value)
+      member x.For(s: seq<int>, rest: (int -> R)) = 
+        let folder state item =
+            match state with
+            | S(str) ->
+                match rest item with
+                | S(itemStr) -> S(str + itemStr)
+        Seq.fold folder (S("")) s
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] ->
+          ()
+      for x in [1] ->
+          ()
+    }
+    
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 25, Col 7, Line 26, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
     let ``Type constraint mismatch when using return!`` () =
         Fsx """
 open System.Threading.Tasks
