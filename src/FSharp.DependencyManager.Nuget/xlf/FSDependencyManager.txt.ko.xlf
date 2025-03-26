@@ -12,6 +12,11 @@
         <target state="translated">최상위 버전으로</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidBooleanValue">
+        <source>Invalid value for boolean '{0}', valid values: true or false</source>
+        <target state="new">Invalid value for boolean '{0}', valid values: true or false</target>
+        <note />
+      </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
         <target state="translated">시간 제한 '{0}'의 값이 잘못되었습니다. 유효한 값: 없음, -1 및 정수 대기 시간(밀리초)</target>

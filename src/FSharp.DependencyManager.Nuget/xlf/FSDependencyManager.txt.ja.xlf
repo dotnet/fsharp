@@ -12,6 +12,11 @@
         <target state="translated">最新バージョン</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidBooleanValue">
+        <source>Invalid value for boolean '{0}', valid values: true or false</source>
+        <target state="new">Invalid value for boolean '{0}', valid values: true or false</target>
+        <note />
+      </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
         <target state="translated">タイムアウト '{0}' の値が無効です。有効な値: なし、-1、および整数 (待機するミリ秒)</target>
