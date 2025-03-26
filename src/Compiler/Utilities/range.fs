@@ -583,95 +583,81 @@ module Range =
             mkRange file (mkPos 1 0) (mkPos 1 80)
 
 module internal FileContent =
-    let private fileContentDict = ConcurrentDictionary<string, string>()
+    [<RequireQualifiedAccess>]
+    type FileCacheType =
+        | AlreadyRead of lines: string array
+        | NotYetRead of codePage: int option
 
-    let update (fileName: string) (fileContent: string) =
+        static member FromString(s: string) = AlreadyRead(s.Split '\n')
+
+    let private fileContentDict = ConcurrentDictionary<string, FileCacheType>()
+
+    let update (fileName: string) (fileContent: FileCacheType) =
         fileContentDict.AddOrUpdate(fileName, (fun _ -> fileContent), (fun _ _ -> fileContent))
         |> ignore
 
-    let private seperators = [| '\r'; '\n' |]
-
-    /// Find the index of the nearest line separator (\r or \r\n or \n) in the given string and offset.
-    let findLineEnd (input: string) lineStart =
-        if lineStart >= input.Length then
-            input.Length - 1
-        else
-            let idx = input.IndexOfAny(seperators, lineStart)
-
-            if idx = -1 then
-                input.Length - 1
-            elif input.[idx] = '\r' && idx + 1 < input.Length && input.[idx + 1] = '\n' then
-                idx + 1
-            else
-                idx
+    let clear () = fileContentDict.Clear()
 
     /// Get the substring of the given range.
-    /// This can retain the line seperators in the source string.
-    let substring (input: string) (range: range) =
+    let private substring (input: string array) (range: range) =
         let startLine, startCol = range.StartLine, range.StartColumn
         let endLine, endCol = range.EndLine, range.EndColumn
 
         if
-            startLine < 1
-            || (startLine = endLine && startCol > endCol)
+            (startCol < 0 || endCol < 0)
+            || startLine < 1
             || startLine > endLine
-            || startCol < 0
-            || endCol < 0
+            || startLine > input.Length
+            || (startLine = endLine
+                && (startCol > endCol || startCol >= input.[startLine - 1].Length))
         then
             System.String.Empty
+        elif startLine = endLine then
+            let line = input.[startLine - 1]
+            let endCol = min (endCol - 1) (line.Length - 1)
+            let result = line.Substring(startCol, endCol - startCol + 1)
+
+            if endCol = line.Length - 1 && line[endCol] = '\r' then
+                result + "\n"
+            else
+                result
         else
-            // Here the loop was splited into two functions to avoid the non necessary allocation of the StringBuilder
+            let appendNewLineMark sb =
+                (sb: System.Text.StringBuilder).Append '\n' |> ignore
 
-            /// Take text until reach the end line of the range.
-            let rec loopEnd (result: System.Text.StringBuilder) lineCount (startIndex, endIndex) =
-                if lineCount < endLine then
-                    result.Append(input.Substring(startIndex, endIndex - startIndex + 1)) |> ignore
+            let startCol = min startCol (input.[startLine - 1].Length - 1)
+            let result = System.Text.StringBuilder()
+            result.Append(input.[startLine - 1].Substring(startCol)) |> ignore
+            appendNewLineMark result
 
-                    let nextLineEnd = findLineEnd input (endIndex + 1)
+            let upperBound = min (endLine - 2) (input.Length - 1)
 
-                    if nextLineEnd = endIndex then
-                        result.ToString()
-                    else
-                        loopEnd result (lineCount + 1) (endIndex + 1, nextLineEnd)
-                elif lineCount = endLine then
-                    let len = min endCol (endIndex - startIndex + 1)
-                    result.Append(input.Substring(startIndex, len)).ToString()
-                else
-                    result.ToString()
+            for i in startLine..upperBound do
+                result.Append(input.[i]) |> ignore
+                appendNewLineMark result
 
-            /// Go to the start line of the range.
-            let rec loopStart lineCount (startIndex, endIndex) =
-                if lineCount < startLine then
-                    let nextLineEnd = findLineEnd input (endIndex + 1)
+            if endLine < input.Length then
+                let line = input.[endLine - 1]
+                let endCol = min endCol line.Length
+                result.Append(line.Substring(0, endCol)) |> ignore
 
-                    if nextLineEnd = endIndex then
-                        System.String.Empty
-                    else
-                        loopStart (lineCount + 1) (endIndex + 1, nextLineEnd)
+                if endCol = line.Length - 1 && line[endCol] = '\r' then
+                    appendNewLineMark result
 
-                // reach the start line
-                elif lineCount = startLine && startLine = endLine then
-                    if startIndex + startCol <= endIndex then
-                        let endCol = min (endCol - 1) (endIndex - startIndex)
-                        input.Substring(startIndex + startCol, endCol - startCol + 1)
-                    else
-                        System.String.Empty
-                else
-                    let result = System.Text.StringBuilder()
-
-                    if lineCount = startLine then
-                        if startCol < endIndex - startIndex + 1 then
-                            result.Append(input.Substring(startIndex + startCol, endIndex - startIndex + 1 - startCol))
-                            |> ignore
-
-                        loopEnd result (lineCount + 1) (endIndex + 1, findLineEnd input (endIndex + 1))
-                    else
-                        // Should not go into here
-                        loopEnd result lineCount (startIndex, endIndex)
-
-            loopStart 1 (0, findLineEnd input 0)
+            result.ToString()
 
     let getCodeText (m: range) =
-        match fileContentDict.TryGetValue m.FileName with
-        | true, text -> substring text m
+        let fileName = m.FileName
+
+        match fileContentDict.TryGetValue fileName with
+        | true, FileCacheType.AlreadyRead lines -> substring lines m
+        | true, FileCacheType.NotYetRead codePage ->
+            try
+                use fileStream = FileSystem.OpenFileForReadShim fileName
+                use reader = fileStream.GetReader(codePage)
+                let lines = reader.ReadToEnd().Split('\n')
+                update fileName (FileCacheType.AlreadyRead lines)
+                substring lines m
+            with _ ->
+                String.Empty
         | _ -> String.Empty

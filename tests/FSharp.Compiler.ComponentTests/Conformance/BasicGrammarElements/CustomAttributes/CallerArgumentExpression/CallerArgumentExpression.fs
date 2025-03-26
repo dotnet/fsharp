@@ -7,32 +7,16 @@ open FSharp.Test.Compiler
 open FSharp.Test
 
 module CustomAttributes_CallerArgumentExpression =
-
+    let scriptPath = __SOURCE_DIRECTORY__ ++ "test script.fsx"
+  
     [<FactForNETCOREAPP>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
-        FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
-try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
-  (* comment *) 
-  |> String.concat " ")
-with :? System.ArgumentException as ex -> 
-  assertEqual true (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")
-  (* comment *) 
-  |> String.concat \" \""))
-  
-
-try System.ArgumentException.ThrowIfNullOrWhiteSpace(argument = (Seq.init 11 (fun _ -> " ")
-  (* comment *) 
-  |> String.concat " "))
-with :? System.ArgumentException as ex -> 
-  assertEqual true (ex.Message.Contains("(Parameter '(Seq.init 11 (fun _ -> \" \")
-  (* comment *) 
-  |> String.concat \" \")"))
-"""
-        |> withLangVersionPreview
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
-        |> ignore
+      FsFromPath scriptPath
+      |> withLangVersionPreview
+      |> asExe
+      |> compileAndRun
+      |> shouldSucceed
+      |> ignore
 
     [<FactForNETCOREAPP>]
     let ``Can define methods using CallerArgumentExpression with C#-style optional arguments`` () =
@@ -377,28 +361,22 @@ AInCs.B (123 - 7) |> assertEqual "123 - 7"
       |> compileAndRun
       |> shouldSucceed
       |> ignore
-      
+        
+    (* ------------ FSI tests ------------- *)
+    
     [<FactForNETCOREAPP>]
     let ``Check in fsi`` () =
-        Fsx """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
-try System.ArgumentException.ThrowIfNullOrWhiteSpace(Seq.init 50 (fun _ -> " ")
-  (* comment *) 
-  |> String.concat " ")
-with :? System.ArgumentException as ex -> 
-  assertEqual true (ex.Message.Contains("(Parameter 'Seq.init 50 (fun _ -> \" \")
-  (* comment *) 
-  |> String.concat \" \""))
-  
+      FsxFromPath scriptPath
+      |> withLangVersionPreview
+      |> runFsi
+      |> shouldSucceed
+      |> ignore
 
-try System.ArgumentException.ThrowIfNullOrWhiteSpace(argument = (Seq.init 11 (fun _ -> " ")
-  (* comment *) 
-  |> String.concat " "))
-with :? System.ArgumentException as ex -> 
-  assertEqual true (ex.Message.Contains("(Parameter '(Seq.init 11 (fun _ -> \" \")
-  (* comment *) 
-  |> String.concat \" \")"))
-"""
-        |> withLangVersionPreview
-        |> runFsi
-        |> shouldSucceed
-        |> ignore
+
+    [<FactForNETCOREAPP>]
+    let ``Check fsi #load`` () =
+      Fsx $"""#load @"{scriptPath}" """
+      |> withLangVersionPreview
+      |> runFsi
+      |> shouldSucceed
+      |> ignore

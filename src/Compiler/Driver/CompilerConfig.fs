@@ -1540,13 +1540,13 @@ type TcConfigProvider =
 
 let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
 
-/// Read and store the source file content for the `CallerArgumentExpression` feature
+/// Read and store the source file content for the `CallerArgumentExpression` feature.
+/// This should only be called in `fsc` or `fsi` processing.
 let readAndStoreFileContents (tcConfig: TcConfig) (sourceFiles: #seq<string>) =
-    for fileName in sourceFiles do
-        if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            try
-                use fileStream = FileSystem.OpenFileForReadShim fileName
-                use reader = fileStream.GetReader(tcConfig.inputCodePage)
-                FileContent.update fileName (reader.ReadToEnd())
-            with _ ->
-                ()
+    if
+        tcConfig.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression
+        && (tcConfig.compilationMode.IsOneOff || tcConfig.isInteractive)
+    then
+        for fileName in sourceFiles do
+            if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+                FileContent.update fileName (FileContent.FileCacheType.NotYetRead tcConfig.inputCodePage)

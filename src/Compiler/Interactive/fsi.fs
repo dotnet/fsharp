@@ -3520,7 +3520,8 @@ type FsiStdinLexerProvider
                     | NonNull t ->
                         fsiStdinSyphon.Add(t + "\n")
                         // Update the stdin file content for the `CallerArgumentExpression` feature
-                        FileContent.update stdinMockFileName fsiStdinSyphon.SyphonText)
+                        FileContent.clear ()
+                        FileContent.update stdinMockFileName (FileContent.FileCacheType.FromString fsiStdinSyphon.SyphonText))
 
                 match inputOption with
                 | Some Null
@@ -4299,7 +4300,8 @@ type FsiInteractionProcessor
             let expr = ParseInteraction tokenizer
 
             // Update the file content for the `CallerArgumentExpression` feature
-            FileContent.update scriptFileName sourceText
+            FileContent.clear ()
+            FileContent.update scriptFileName (FileContent.FileCacheType.FromString sourceText)
 
             ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
@@ -4336,7 +4338,8 @@ type FsiInteractionProcessor
                 )
 
             // Update the file content for the `CallerArgumentExpression` feature
-            FileContent.update scriptFileName sourceText
+            FileContent.clear ()
+            FileContent.update scriptFileName (FileContent.FileCacheType.FromString sourceText)
 
             ExecuteParsedExpressionOnMainThread(ctok, diagnosticsLogger, exprWithSeq, istate))
         |> commitResult

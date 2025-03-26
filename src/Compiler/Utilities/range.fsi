@@ -271,13 +271,19 @@ module Line =
 
 /// Store code file content. Used to implement `CallerArgumentExpression`
 module internal FileContent =
+    [<RequireQualifiedAccess>]
+    type FileCacheType =
+        | AlreadyRead of lines: string array
+        | NotYetRead of codePage: int option
+        
+        static member FromString: s: string -> FileCacheType
 
     /// Update the file content. Should be called before the code file/expression is typechecked.
-    val update: fileName: string -> fileContent: string -> unit
+    val update: fileName: string -> fileContent: FileCacheType -> unit
     
-    /// Get the substring of the given range.
-    /// This can retain the line seperators in the source string.
-    val substring: input: string -> range: range -> string    
-
+    /// Clean up all the file contents. 
+    /// May be called in `fsi` processing, to avoid holding the source files which were compiled.
+    val clear: unit -> unit
+    
     /// Get the code text of the specific `range`
     val getCodeText: range -> string
