@@ -1,5 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.ProjectAnalysisTests
 
+open System.Threading.Tasks
+
 #nowarn "57" // Experimental stuff
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
@@ -128,8 +130,20 @@ module ClearLanguageServiceRootCachesTest =
         let weakTcImports = test ()
         checker.InvalidateConfiguration Project1.options
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        GC.Collect()
-        System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
+
+        task {
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+            // Try collecting many times, because GC has some problems, especially on Linux.
+            // See for example: https://github.com/dotnet/runtime/discussions/108081
+            let mutable attempt = 1
+            while weakTcImports.IsAlive && attempt < 10 do
+                GC.Collect()
+                GC.WaitForPendingFinalizers()
+                attempt <- attempt + 1
+                do! Task.Delay(attempt * 1000)
+            Assert.False weakTcImports.IsAlive
+        }
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
