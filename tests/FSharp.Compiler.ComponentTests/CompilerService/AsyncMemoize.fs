@@ -430,7 +430,7 @@ let ``Cancel running jobs with the same key`` () =
     let current = eventsWhen events (received Requested)
     Assert.Equal(0, current |> countOf Canceled)
 
-    waitUntil events (countOf Canceled >> (=) 10)
+    // waitUntil events (countOf Canceled >> (=) 10)
 
     waitUntil events (received Started)
 
@@ -442,6 +442,7 @@ let ``Cancel running jobs with the same key`` () =
 
     Assert.Equal(0, events |> countOf Failed)
 
+    // All outdated jobs should have been canceled by now.
     Assert.Equal(10, events |> countOf Canceled)
 
     Assert.Equal(1, events |> countOf Finished)
