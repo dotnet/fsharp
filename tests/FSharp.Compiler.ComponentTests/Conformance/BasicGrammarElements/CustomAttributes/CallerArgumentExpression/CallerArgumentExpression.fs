@@ -7,11 +7,11 @@ open FSharp.Test.Compiler
 open FSharp.Test
 
 module CustomAttributes_CallerArgumentExpression =
-    let scriptPath = __SOURCE_DIRECTORY__ ++ "test script.fsx"
-  
+
     [<FactForNETCOREAPP>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
-      FsFromPath scriptPath
+      let path = __SOURCE_DIRECTORY__ ++ "test script.fsx"
+      FsFromPath path
       |> withLangVersionPreview
       |> asExe
       |> compileAndRun
@@ -366,7 +366,8 @@ AInCs.B (123 - 7) |> assertEqual "123 - 7"
     
     [<FactForNETCOREAPP>]
     let ``Check in fsi`` () =
-      FsxFromPath scriptPath
+      let path = __SOURCE_DIRECTORY__ ++ "test script.fsx"
+      FsxFromPath path
       |> withLangVersionPreview
       |> runFsi
       |> shouldSucceed
@@ -375,7 +376,8 @@ AInCs.B (123 - 7) |> assertEqual "123 - 7"
 
     [<FactForNETCOREAPP>]
     let ``Check fsi #load`` () =
-      Fsx $"""#load @"{scriptPath}" """
+      let path = __SOURCE_DIRECTORY__ ++ "test script.fsx"
+      Fsx $"""#load @"{path}" """
       |> withLangVersionPreview
       |> runFsi
       |> shouldSucceed
