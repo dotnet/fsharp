@@ -64,13 +64,8 @@ module internal QuickInfoViewProvider =
     let encloseRuns runs : obj = ClassifiedTextElement(runs |> List.rev)
 
     let provideContent
-        (
-            imageId: ImageId option,
-            description: TaggedText list,
-            documentation: TaggedText list,
-            navigation: FSharpNavigation,
-            getTooltip
-        ) =
+        (imageId: ImageId option, description: TaggedText list, documentation: TaggedText list, navigation: FSharpNavigation, getTooltip)
+        =
 
         let encloseText text =
             let rec loop text runs stack =

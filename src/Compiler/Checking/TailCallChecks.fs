@@ -792,7 +792,12 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                     // warn for recursive calls in TryWith/TryFinally operations
                     exprs |> Seq.iter (checkTailCall true)
                 | Expr.Op(args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBindingOrTry)
-                | Expr.Sequential(expr2 = expr2) -> checkTailCall insideSubBindingOrTry expr2
+                | Expr.Sequential(expr1 = expr1; expr2 = expr2) ->
+                    match expr1 with
+                    | Expr.Op(args = exprs; op = TOp.IntegerForLoop _) -> checkTailCall insideSubBindingOrTry expr1
+                    | _ -> ()
+
+                    checkTailCall insideSubBindingOrTry expr2
                 | _ -> ()
 
             checkTailCall false bodyExpr
