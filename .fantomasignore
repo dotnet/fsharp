@@ -40,19 +40,6 @@ src/Compiler/Checking/SignatureConformance.fs
 src/Compiler/Checking/TypeHierarchy.fs
 src/Compiler/Checking/TypeRelations.fs
 
-# nullness-related problems
-src/Compiler/Utilities/lib.fsi
-src/Compiler/Utilities/Cancellable.fsi
-src/FSharp.Core/tasks.fsi
-src/FSharp.Core/tasks.fs
-src/FSharp.Core/resumable.fs
-src/Compiler/DependencyManager/DependencyProvider.fs
-src/FSharp.Core/fslib-extra-pervasives.fs
-src/FSharp.Core/fslib-extra-pervasives.fsi
-
-# Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
-# This CompilerImports.fs behavior is not fixed yet, following up in  https://github.com/fsprojects/fantomas/issues/2733
-src/Compiler/Driver/CompilerImports.fs
 # The following files were formatted, but the "format, --check" loop is not stable.
 # Fantomas formats them, but still thinks they need formatting
 src/Compiler/Optimize/DetupleArgs.fs
@@ -95,45 +82,6 @@ src/FSharp.Core/prim-types.fs
 src/FSharp.Core/printf.fs
 src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
-
-
-# fsharp  (to investigate)
-
-**/TypeProviders.fsi
-**/tainted.fsi
-
-# uses nullness features
-
-**/DependencyProvider.fsi
-src/FSharp.Core/array.fs
-src/FSharp.Core/option.fsi
-src/FSharp.Core/option.fs
-src/fsi/console.fs
-src/FSharp.Build/FSharpCommandLineBuilder.fs
-
-src/Compiler/Utilities/Activity.fs
-src/Compiler/Utilities/sformat.fs
-src/Compiler/Utilities/illib.fsi
-src/Compiler/Utilities/illib.fs
-
-
-src/Compiler/Utilities/NullnessShims.fs
-src/Compiler/Utilities/DependencyGraph.fs
-src/Compiler/Utilities/LruCache.fsi
-src/Compiler/Utilities/LruCache.fs
-src/Compiler/Utilities/HashMultiMap.fsi
-src/Compiler/Utilities/HashMultiMap.fs
-src/Compiler/Facilities/AsyncMemoize.fsi
-src/Compiler/Facilities/AsyncMemoize.fs
-src/Compiler/AbstractIL/il.fs
-src/Compiler/SyntaxTree/UnicodeLexing.fsi
-src/Compiler/SyntaxTree/UnicodeLexing.fs
-
-src/Compiler/Driver/GraphChecking/Graph.fsi
-src/Compiler/Driver/GraphChecking/Graph.fs
-
-src/Compiler/DependencyManager/NativeDllResolveHandler.fsi
-src/Compiler/DependencyManager/AssemblyResolveHandler.fsi
 
 # Fantomas limitations on implementation files  (to investigate)
 

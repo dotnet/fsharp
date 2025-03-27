@@ -1211,7 +1211,6 @@ let convAlternativeDef
                         let basicCtorFields =
                             basicFields
                             |> List.map (fun fdef ->
-                                let existingAttrs = fdef.CustomAttrs.AsArray()
                                 let nullableAttr = getFieldsNullability g fdef |> Option.toList
                                 fdef.Name, fdef.FieldType, nullableAttr)
 

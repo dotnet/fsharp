@@ -3294,7 +3294,7 @@ module internal ParseAndCheckFile =
                 for err, severity in backgroundDiagnostics do
                     match err.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
                     | FSharpDiagnosticSeverity.Hidden -> ()
-                    | s -> diagnosticSink (err, severity)
+                    | s -> diagnosticSink (err, s)
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 
