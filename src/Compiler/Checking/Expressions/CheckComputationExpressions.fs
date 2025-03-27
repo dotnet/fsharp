@@ -1612,6 +1612,12 @@ let rec TryTranslateComputationExpression
                     // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
                     let m1 = rangeForCombine innerComp1
 
+                    let combineDelayRange =
+                        match innerComp2 with
+                        | SynExpr.YieldOrReturn(trivia = yieldOrReturn) -> yieldOrReturn.YieldOrReturnKeyword
+                        | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
+                        | expr -> expr.Range
+
                     if
                         isNil (
                             TryFindIntrinsicOrExtensionMethInfo
@@ -1624,7 +1630,8 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
-                        error (Error(FSComp.SR.tcRequireBuilderMethod ("Combine"), m))
+
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Combine", combineDelayRange))
 
                     if
                         isNil (
@@ -1638,7 +1645,7 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
-                        error (Error(FSComp.SR.tcRequireBuilderMethod ("Delay"), m))
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Delay", combineDelayRange))
 
                     let combineCall =
                         mkSynCall
