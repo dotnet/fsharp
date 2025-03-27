@@ -183,7 +183,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
     when 'TKey: equality and 'TVersion: equality and 'TKey: not null and 'TVersion: not null>
     (?keepStrongly, ?keepWeakly, ?name: string, ?cancelUnawaitedJobs: bool, ?cancelDuplicateRunningJobs: bool) =
 
-    let name = defaultArg name "N/A"
+    let _name = defaultArg name "N/A"
     let cancelUnawaitedJobs = defaultArg cancelUnawaitedJobs true
     let cancelDuplicateRunningJobs = defaultArg cancelDuplicateRunningJobs false
 
