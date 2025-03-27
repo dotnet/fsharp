@@ -309,6 +309,10 @@ and Compilation =
 
 module CompilerAssertHelpers =
 
+    let uniqueName =
+        let mutable counter = 0
+        fun (ext: string) -> $"test%x{Interlocked.Increment &counter}{ext}"
+
     let UseTransparentCompiler =
         FSharp.Compiler.CompilerConfig.FSharpExperimentalFeaturesEnabledAutomatically ||
         not (String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_TRANSPARENT_COMPILER")))
@@ -407,7 +411,7 @@ module CompilerAssertHelpers =
 #endif
         |]
         {
-            ProjectFileName = "Z:\\test.fsproj"
+            ProjectFileName = "Z:\\" ++ uniqueName ".fsproj"
             ProjectId = None
             SourceFiles = [|"test.fs"|]
             OtherOptions = Array.append testDefaults assemblies

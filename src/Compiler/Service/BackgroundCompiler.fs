@@ -1350,8 +1350,6 @@ type internal BackgroundCompiler
                     yield! otherFlags
                     for r in loadClosure.References do
                         yield "-r:" + fst r
-                    for code, _ in loadClosure.NoWarns do
-                        yield "--nowarn:" + code
                 |]
 
             let options =
@@ -1479,7 +1477,7 @@ type internal BackgroundCompiler
 
         member _.BeforeBackgroundFileCheck = self.BeforeBackgroundFileCheck
 
-        member _.CheckFileInProject
+        member this.CheckFileInProject
             (
                 parseResults: FSharpParseFileResults,
                 fileName: string,
@@ -1488,7 +1486,13 @@ type internal BackgroundCompiler
                 options: FSharpProjectOptions,
                 userOpName: string
             ) : Async<FSharpCheckFileAnswer> =
-            self.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)
+            async {
+                ignore parseResults
+
+                let! _, result = this.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
+
+                return result
+            }
 
         member _.CheckFileInProjectAllowingStaleCachedResults
             (

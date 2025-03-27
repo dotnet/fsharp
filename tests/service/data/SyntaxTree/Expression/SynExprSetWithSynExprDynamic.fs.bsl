@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprSetWithSynExprDynamic.fs", false,
-      QualifiedNameOfFile SynExprSetWithSynExprDynamic, [], [],
+      QualifiedNameOfFile SynExprSetWithSynExprDynamic, [],
       [SynModuleOrNamespace
          ([SynExprSetWithSynExprDynamic], false, AnonModule,
           [Expr
@@ -10,4 +10,5 @@ ImplFile
                  Const (Int32 2, (2,7--2,8)), (2,0--2,8)), (2,0--2,8))],
           PreXmlDocEmpty, [], None, (2,0--2,8), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

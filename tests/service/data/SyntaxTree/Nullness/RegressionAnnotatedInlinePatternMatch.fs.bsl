@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/RegressionAnnotatedInlinePatternMatch.fs", false,
-      QualifiedNameOfFile RegressionAnnotatedInlinePatternMatch, [], [],
+      QualifiedNameOfFile RegressionAnnotatedInlinePatternMatch, [],
       [SynModuleOrNamespace
          ([RegressionAnnotatedInlinePatternMatch], false, AnonModule,
           [Expr
@@ -26,4 +26,5 @@ ImplFile
                                 WithKeyword = (1,8--1,12) }), (1,0--2,37))],
           PreXmlDocEmpty, [], None, (1,0--2,37), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
