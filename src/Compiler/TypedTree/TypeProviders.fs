@@ -220,13 +220,8 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
         [||]
 
 /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-#if NO_CHECKNULLS
-let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
-    match TryTypeMember(st, fullName, memberName, m, recover, f) with 
-#else
 let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U | null)) : Tainted<'U> =
     match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with 
-#endif
     | Tainted.Null -> 
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
         st.PApplyNoFailure(fun _ -> recover)
@@ -339,9 +334,6 @@ type ProvidedTypeContext =
             ))
 
 [<Sealed>]
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -506,9 +498,6 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type IProvidedCustomAttributeProvider =
     abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string MaybeNull * int * int) option 
 
@@ -569,9 +558,6 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
             |> Seq.toArray
 
 [<AbstractClass>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
@@ -594,9 +580,6 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
             provide().GetAttributeConstructorArgs (provider, attribName)
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
@@ -645,9 +628,6 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedAssembly (x: Assembly) = 
 
     member _.GetName() = x.GetName()
@@ -665,9 +645,6 @@ type ProvidedAssembly (x: Assembly) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 [<AbstractClass>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMethodBase (x: MethodBase, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -762,9 +739,6 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
 
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedFieldInfo (x: FieldInfo, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -812,9 +786,6 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMethodInfo (x: MethodInfo, ctxt) = 
     inherit ProvidedMethodBase(x, ctxt)
 
@@ -841,9 +812,6 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedPropertyInfo (x: PropertyInfo, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -885,9 +853,6 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedEventInfo (x: EventInfo, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -923,9 +888,6 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) = 
     inherit ProvidedMethodBase(x, ctxt)
 
@@ -967,11 +929,8 @@ type ProvidedExprType =
     | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
     | ProvidedVarExpr of ProvidedVar
 
-#if NO_CHECKNULLS
-[<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-#else
+
 [<RequireQualifiedAccess; Class; Sealed>]
-#endif
 type ProvidedExpr (x: Expr, ctxt) =
 
     member _.Type = x.Type |> ProvidedType.CreateNonNull ctxt
@@ -1043,11 +1002,7 @@ type ProvidedExpr (x: Expr, ctxt) =
 
     override _.GetHashCode() = x.GetHashCode()
 
-#if NO_CHECKNULLS
-[<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-#else
 [<RequireQualifiedAccess; Class; Sealed>]
-#endif
 type ProvidedVar (x: Var, ctxt) =
     member _.Type = x.Type |> ProvidedType.CreateNonNull ctxt
     member _.Name = x.Name
@@ -1097,11 +1052,9 @@ let ValidateExpectedName m expectedPath expectedName (st: Tainted<ProvidedType>)
     if name <> expectedName then
         raise (TypeProviderError(FSComp.SR.etProvidedTypeHasUnexpectedName(expectedName, name), st.TypeProviderDesignation, m))
 
-#if NO_CHECKNULLS
-    let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
-#else
-    let namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
-#endif
+
+    let namespaceName = TryTypeMember(st, name, "Namespace", m, ("":_|null), fun st -> st.Namespace) |> unmarshal
+
 
     let rec declaringTypes (st: Tainted<ProvidedType>) accu =
         match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
@@ -1124,11 +1077,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
     // Do all the calling into st up front with recovery
     let fullName, namespaceName, usedMembers =
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
-#if NO_CHECKNULLS
-        let namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#else
         let namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#endif
         let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
         ValidateExpectedName m expectedPath expectedName st
         // Must be able to call (GetMethods|GetEvents|GetProperties|GetNestedTypes|GetConstructors)(bindingFlags).
@@ -1233,11 +1182,7 @@ let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: s
 
     // Validate the Name, Namespace and FullName properties
     let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
-#if NO_CHECKNULLS
-    let _namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#else
     let _namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#endif
     let _fullname = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName)  |> unmarshal
     ValidateExpectedName m expectedPath expectedName st
 

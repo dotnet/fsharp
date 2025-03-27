@@ -739,11 +739,8 @@ namespace Microsoft.FSharp.Core
             let inline TypeTestFast<'T>(source: objnull) = 
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
                 notnullPrim(isinstPrim<'T>(source)) 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
+
             let Dispose<'T when 'T :> IDisposable >(resource:'T|null) = 
-#else
-            let Dispose<'T when 'T :> IDisposable >(resource:'T) = 
-#endif
                 match box resource with 
                 | null -> ()
                 | _ -> resource.Dispose()
@@ -4419,8 +4416,6 @@ namespace Microsoft.FSharp.Core
             | null -> false 
             | _ -> true
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
-
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
@@ -4473,13 +4468,6 @@ namespace Microsoft.FSharp.Core
             match value with 
             | null -> raise (new ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
-#else
-        [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T) : Choice<unit, 'T> when 'T : null and 'T : not struct = 
-            match value with 
-            | null -> Null () 
-            | _ -> NonNull (# "" value : 'T #)
-#endif
 
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) =
@@ -4573,7 +4561,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         [<CompiledName("DefaultIfNull")>]
         let inline defaultIfNull defaultValue (arg: 'T | null when 'T : not null and 'T : not struct) = 
             match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
@@ -4581,7 +4568,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultIfNullV")>]
         let inline defaultIfNullV defaultValue (arg: Nullable<'T>) = 
             if arg.HasValue then arg.Value else defaultValue
-#endif
 
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~-) (n: ^T) : ^T = 
@@ -5527,23 +5513,11 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("Hash")>]
             let inline hash x = GenericHash x
 
-            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
-
             [<CompiledName("NonNull")>]
             let inline nonNull (x: 'T | null when 'T : not null and 'T : not struct) : 'T = (# "" x : 'T #)
 
             [<CompiledName("NonNullQuickPattern")>]
             let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) = nonNull value
-
-            #else
-
-            [<CompiledName("NonNull")>]
-            let inline nonNull (x: 'T ) : 'T = x
-
-            [<CompiledName("NonNullQuickPattern")>]
-            let inline (|NonNullQuick|) (value) = nonNull value
-
-            #endif
 
         module Checked = 
         

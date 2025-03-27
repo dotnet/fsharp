@@ -69,7 +69,6 @@ type public Fsc() as this =
     let mutable tailcalls: bool = true
     let mutable targetProfile: string MaybeNull = null
     let mutable targetType: string MaybeNull = null
-    let mutable toolExe: string = "fsc.exe"
 
     let defaultToolPath =
         let locationOfThisDll =
@@ -733,8 +732,6 @@ type public Fsc() as this =
             match host with
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
-                let sources = sources |> Array.map (fun i -> i.ItemSpec)
-
                 let invokeCompiler baseCallDelegate =
                     try
                         let ret =
@@ -765,7 +762,7 @@ type public Fsc() as this =
                         ->
                         fsc.Log.LogError(tie.InnerException.Message, [||])
                         -1
-                    | e -> reraise ()
+                    | _ -> reraise ()
 
                 let baseCallDelegate =
                     Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands))

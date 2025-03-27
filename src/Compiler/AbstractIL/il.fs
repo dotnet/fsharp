@@ -170,11 +170,8 @@ let splitTypeNameRight nm =
 // --------------------------------------------------------------------
 
 /// This is used to store event, property and field maps.
-type LazyOrderedMultiMap<'Key, 'Data when 'Key: equality
-#if !NO_CHECKNULLS
-    and 'Key:not null
-#endif
-    >(keyf: 'Data -> 'Key, lazyItems: InterruptibleLazy<'Data list>) =
+type LazyOrderedMultiMap<'Key, 'Data when 'Key: equality and 'Key: not null>(keyf: 'Data -> 'Key, lazyItems: InterruptibleLazy<'Data list>)
+    =
 
     let quickMap =
         lazyItems
@@ -519,7 +516,11 @@ type ILAssemblyRef(data) =
 
         let retargetable = aname.Flags = AssemblyNameFlags.Retargetable
 
-        let name = match aname.Name with | null -> aname.FullName | name -> name
+        let name =
+            match aname.Name with
+            | null -> aname.FullName
+            | name -> name
+
         ILAssemblyRef.Create(name, None, publicKey, retargetable, version, locale)
 
     member aref.QualifiedName =
@@ -1862,7 +1863,7 @@ type ILGenericParameterDef =
         Name: string
         Constraints: ILTypes
         Variance: ILGenericVariance
-        HasReferenceTypeConstraint: bool        
+        HasReferenceTypeConstraint: bool
         HasNotNullableValueTypeConstraint: bool
         HasDefaultConstructorConstraint: bool
         HasAllowsRefStruct: bool
@@ -1910,7 +1911,11 @@ let inline conditionalAdd condition flagToAdd source =
 let NoMetadataIdx = -1
 
 type InterfaceImpl =
-    { Idx: int; Type: ILType; mutable CustomAttrsStored: ILAttributesStored }
+    {
+        Idx: int
+        Type: ILType
+        mutable CustomAttrsStored: ILAttributesStored
+    }
 
     member x.CustomAttrs =
         match x.CustomAttrsStored with
@@ -1919,12 +1924,16 @@ type InterfaceImpl =
             x.CustomAttrsStored <- ILAttributesStored.Given res
             res
         | ILAttributesStored.Given attrs -> attrs
-        
+
     static member Create(ilType: ILType, customAttrsStored: ILAttributesStored) =
-        { Idx = NoMetadataIdx; Type = ilType; CustomAttrsStored = customAttrsStored }
+        {
+            Idx = NoMetadataIdx
+            Type = ilType
+            CustomAttrsStored = customAttrsStored
+        }
 
-    static member Create(ilType: ILType) = InterfaceImpl.Create(ilType, emptyILCustomAttrsStored)
-
+    static member Create(ilType: ILType) =
+        InterfaceImpl.Create(ilType, emptyILCustomAttrsStored)
 
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodDef
@@ -2575,17 +2584,15 @@ type ILTypeDefAdditionalFlags =
     | CanContainExtensionMethods = 1024
 
 let internal typeKindFlags =
-    ILTypeDefAdditionalFlags.Class |||
-    ILTypeDefAdditionalFlags.ValueType |||
-    ILTypeDefAdditionalFlags.Interface |||
-    ILTypeDefAdditionalFlags.Enum |||
-    ILTypeDefAdditionalFlags.Delegate
+    ILTypeDefAdditionalFlags.Class
+    ||| ILTypeDefAdditionalFlags.ValueType
+    ||| ILTypeDefAdditionalFlags.Interface
+    ||| ILTypeDefAdditionalFlags.Enum
+    ||| ILTypeDefAdditionalFlags.Delegate
 
-let inline internal resetTypeKind flags =
-    flags &&& ~~~typeKindFlags
+let inline internal resetTypeKind flags = flags &&& ~~~typeKindFlags
 
-let (|HasFlag|_|) (flag: ILTypeDefAdditionalFlags) flags =
-    flags &&& flag = flag
+let (|HasFlag|_|) (flag: ILTypeDefAdditionalFlags) flags = flags &&& flag = flag
 
 let inline typeKindByNames extendsName typeName =
     match extendsName with
@@ -2676,21 +2683,24 @@ type ILTypeDef
 
     let hasFlag flag = additionalFlags &&& flag = flag
 
-    new(name,
-        attributes,
-        layout,
-        implements,
-        genericParams,
-        extends,
-        methods,
-        nestedTypes,
-        fields,
-        methodImpls,
-        events,
-        properties,
-        additionalFlags,
-        securityDecls,
-        customAttrs) =
+    new
+        (
+            name,
+            attributes,
+            layout,
+            implements,
+            genericParams,
+            extends,
+            methods,
+            nestedTypes,
+            fields,
+            methodImpls,
+            events,
+            properties,
+            additionalFlags,
+            securityDecls,
+            customAttrs
+        ) =
         ILTypeDef(
             name,
             attributes,
@@ -2710,23 +2720,27 @@ type ILTypeDef
             NoMetadataIdx
         )
 
-    new(name,
-        attributes,
-        layout,
-        implements,
-        genericParams,
-        extends,
-        methods,
-        nestedTypes,
-        fields,
-        methodImpls,
-        events,
-        properties,
-        securityDecls,
-        customAttrs) =
+    new
+        (
+            name,
+            attributes,
+            layout,
+            implements,
+            genericParams,
+            extends,
+            methods,
+            nestedTypes,
+            fields,
+            methodImpls,
+            events,
+            properties,
+            securityDecls,
+            customAttrs
+        ) =
         let additionalFlags =
-            ILTypeDefAdditionalFlags.CanContainExtensionMethods |||
-            typeKindOfFlags name extends (int attributes)
+            ILTypeDefAdditionalFlags.CanContainExtensionMethods
+            ||| typeKindOfFlags name extends (int attributes)
+
         ILTypeDef(
             name,
             attributes,
@@ -2955,10 +2969,10 @@ and [<NoEquality; NoComparison>] ILPreTypeDef =
 and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) =
     let stored =
         lazy
-        match storage with
-        | ILTypeDefStored.Given td -> td
-        | ILTypeDefStored.Computed f -> f ()
-        | ILTypeDefStored.Reader f -> f metadataIndex
+            match storage with
+            | ILTypeDefStored.Given td -> td
+            | ILTypeDefStored.Computed f -> f ()
+            | ILTypeDefStored.Reader f -> f metadataIndex
 
     interface ILPreTypeDef with
         member _.Namespace = nameSpace
@@ -4248,25 +4262,31 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
             | Some x -> I_seqpoint x
             | None -> ()
             yield! preblock
-            for (n, (_pnm, nm, fieldTy,_attrs)) in List.indexed flds do
+            for (n, (_pnm, nm, fieldTy, _attrs)) in List.indexed flds do
                 mkLdarg0
                 mkLdarg (uint16 (n + 1))
                 mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
         ]
 
     let body = mkMethodBody (false, [], 2, nonBranchingInstrsToCode code, tag, imports)
-    let fieldParams = 
+
+    let fieldParams =
         [
-            for (pnm,_,ty,attrs) in flds do
+            for (pnm, _, ty, attrs) in flds do
                 let ilParam = mkILParamNamed (pnm, ty)
+
                 let ilParam =
                     match attrs with
                     | [] -> ilParam
-                    | attrs -> {ilParam with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs ) }
-                yield ilParam
-        ]    
+                    | attrs ->
+                        { ilParam with
+                            CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
+                        }
 
-    mkILCtor (access, fieldParams @ extraParams , body)
+                yield ilParam
+        ]
+
+    mkILCtor (access, fieldParams @ extraParams, body)
 
 let mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, flds, access, tag, imports) =
     let preblock =

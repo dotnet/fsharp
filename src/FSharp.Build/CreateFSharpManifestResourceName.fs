@@ -18,7 +18,7 @@ type CreateFSharpManifestResourceName public () =
             linkFileName: string,
             rootNamespace: string, // may be null
             dependentUponFileName: string, // may be null
-            binaryStream: Stream // may be null
+            _binaryStream: Stream // may be null
         ) : string =
 
         // The Visual CSharp and XBuild CSharp toolchains transform resource names like this:

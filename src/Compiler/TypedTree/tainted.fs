@@ -171,13 +171,8 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
 
 module internal Tainted =
 
-#if NO_CHECKNULLS
-    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct =
-        if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
-#else
     let (|Null|NonNull|) (p:Tainted<'T | null>) : Choice<unit, Tainted<'T>> when 'T : not null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
-#endif
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 

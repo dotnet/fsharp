@@ -678,7 +678,7 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let t1, _t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
 

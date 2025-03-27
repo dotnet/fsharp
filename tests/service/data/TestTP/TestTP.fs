@@ -5,6 +5,8 @@ open Microsoft.FSharp.Core.CompilerServices
 open System.Reflection
 open FSharp.Quotations
 
+#nowarn "1182"  // Lot of unused "args","x","y","c" around this test file
+
 module Helper =
     let doNothing() = ()
     let doNothingOneArg(x:int) = ()
