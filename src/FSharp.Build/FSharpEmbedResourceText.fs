@@ -270,6 +270,9 @@ open Microsoft.FSharp.Collections
 open Printf
 
 #nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
+#if BUILDING_WITH_LKG
+#nowarn ""3261"" // Nullness warnings can happen due to LKG not having latest fixes
+#endif
 "
 
     let StringBoilerPlate fileName =
@@ -319,7 +322,7 @@ open Printf
         // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
         mkFunctionValue tys (fun inp -> impl rty inp)
 
-    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    #if !NULLABLE
     static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
     #else
     static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
@@ -345,7 +348,7 @@ open Printf
             if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
                 let b = new System.Text.StringBuilder()
                 b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    #if !NULLABLE
                 box(b.ToString())
     #else
                 box(b.ToString()) |> Unchecked.nonNull

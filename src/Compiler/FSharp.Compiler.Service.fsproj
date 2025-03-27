@@ -15,7 +15,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <CheckNulls>true</CheckNulls>
+	<Nullable>enable</Nullable>
 	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
 	     Therefore we want to use the latest BCL APIs from NetCurrent.
 		 We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
@@ -35,6 +35,9 @@
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+	<!-- 3261: Nullness warning - not equivalent - currently triggers when proto builds source files like Fscomp.fs -->
+	<OtherFlags Condition="'$(Configuration)' == 'Proto'">$(OtherFlags) --nowarn:3261</OtherFlags>
+	  
 	<!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
     <OtherFlags>$(OtherFlags) --generate-filter-blocks</OtherFlags>
 	<Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
