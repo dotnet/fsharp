@@ -57,6 +57,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Update="FSCore.resx">
       <GenerateSource>true</GenerateSource>
       <GenerateLegacyCode>true</GenerateLegacyCode>
@@ -161,6 +169,9 @@
     </Compile>
     <Compile Include="array3.fs">
       <Link>Collections/array3.fs</Link>
+    </Compile>
+    <Compile Include="immutablearray.fs">
+      <Link>Collections/immutablearray.fs</Link>
     </Compile>
     <Compile Include="map.fsi">
       <Link>Collections/map.fsi</Link>
