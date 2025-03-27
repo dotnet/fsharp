@@ -96,16 +96,17 @@ let ``ParseAndCheckFileInProjectTest`` langVersion =
 [<Theory>]
 let ``CheckFileInProjectTest`` langVersion =
     let projectOptions, exprChecker = mkProjectOptionsAndChecker langVersion
-    let source = SourceText.ofString onOffTest.source
     let sourceName = projectOptions.SourceFiles[0]
     let parsingOptions = {FSharpParsingOptions.Default with SourceFiles = [|sourceName|]; LangVersionText = langVersion}
-    let parseResults = exprChecker.ParseFile(sourceName, source, parsingOptions) |> Async.RunImmediate
-    let diagnosticsOptions = parsingOptions.DiagnosticOptions
-    let checkAnswer = exprChecker.CheckFileInProject(parseResults, sourceName, 0, source, projectOptions) |> Async.RunImmediate
-    match checkAnswer with
-    | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Expected error, got Aborted")
-    | FSharpCheckFileAnswer.Succeeded checkResults ->
-        checkDiagnostics onOffTest.errors[langVersion] (Array.toList checkResults.Diagnostics)
+    let checkFileInProject testDef =
+        let source = SourceText.ofString testDef.source
+        let parseResults = exprChecker.ParseFile(sourceName, source, parsingOptions) |> Async.RunImmediate
+        let checkAnswer = exprChecker.CheckFileInProject(parseResults, sourceName, 0, source, projectOptions) |> Async.RunImmediate
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Expected error, got Aborted")
+        | FSharpCheckFileAnswer.Succeeded checkResults ->
+            checkDiagnostics testDef.errors[langVersion] (Array.toList checkResults.Diagnostics)
+    [justNowarnTest; noNowarnTest; onOffTest] |> List.iter checkFileInProject
 
 [<InlineData("9.0")>]
 [<InlineData("preview")>]
