@@ -141,7 +141,7 @@ module FSharpDependencyManager =
                     match v with
                     | Some v when v.ToLowerInvariant() = "true" -> setUsePackageTargets true
                     | Some v when v.ToLowerInvariant() = "false" -> setUsePackageTargets false
-                    | _ -> raise (ArgumentException(SR.invalidBooleanValue ("usepackagetargets")))
+                    | _ -> raise (ArgumentException(ArgumentOutOfRangeException("usepackagetargets").Message))
                     |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "restoresources", Some v ->
                     Some
