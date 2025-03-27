@@ -20,7 +20,7 @@ type LexBuffer<'char> with
 
     member lexbuf.TryGetLocalData<'T when 'T: not null>(key: string) =
         match lexbuf.BufferLocalStore.TryGetValue key with
-        | true, data -> Some (data :?> 'T)
+        | true, data -> Some(data :?> 'T)
         | _ -> None
 
 let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, strictIndentation, s: string) =

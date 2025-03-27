@@ -55,7 +55,7 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+ResponseFile+parseLine@239::Invoke(string)][offset 0x00000031][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+Pipe #1 stage #1 at line 1788@1788::Invoke(int32)][offset 0x00000030][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+Pipe #1 stage #1 at line 1788@1788::Invoke(int32)][offset 0x00000039][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+line@560-1::Invoke(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+line@570-1::Invoke(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000062B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x00000634][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.PatternMatchCompilation::isProblematicClause([FSharp.Compiler.Service]FSharp.Compiler.PatternMatchCompilation+MatchClause)][offset 0x00000065][found Byte] Unexpected type on the stack.
