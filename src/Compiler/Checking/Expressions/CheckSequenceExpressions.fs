@@ -270,7 +270,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             let tclauses, tpenv =
                 (tpenv, clauses)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, trivia) as clause) ->
+                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, _trivia) as clause) ->
                     let isTrueMatchClause =
                         if clause.IsTrueMatchClause then
                             TcTrueMatchClause.Yes
@@ -319,7 +319,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             // Compile the pattern twice, once as a filter with all succeeding targets returning "1", and once as a proper catch block.
             let clauses, tpenv =
                 (tpenv, withList)
-                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, trivia) as clause) ->
+                ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, m, sp, _trivia) as clause) ->
                     let isTrueMatchClause =
                         if clause.IsTrueMatchClause then
                             TcTrueMatchClause.Yes

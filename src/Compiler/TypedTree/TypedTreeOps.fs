@@ -9241,7 +9241,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 | None -> []
                 | Some t -> hasWithNullAnyWhere t withNull
 
-            | TType_app (tcr, tinst, nullnessOrig) -> 
+            | TType_app (tcr, tinst, _) -> 
                 let tyArgs = tinst |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 
                 match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
@@ -9260,7 +9260,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 let inner = tupTypes |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
 
-            | TType_anon (anon,tys) -> 
+            | TType_anon (tys=tys) -> 
                 let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
             | TType_fun (d, r, _) ->

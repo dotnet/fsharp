@@ -794,7 +794,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 | Expr.Op(args = exprs) -> exprs |> Seq.iter (checkTailCall insideSubBindingOrTry)
                 | Expr.Sequential(expr1 = expr1; expr2 = expr2) ->
                     match expr1 with
-                    | Expr.Op(args = exprs; op = TOp.IntegerForLoop _) -> checkTailCall insideSubBindingOrTry expr1
+                    | Expr.Op(op = TOp.IntegerForLoop _) -> checkTailCall insideSubBindingOrTry expr1
                     | _ -> ()
 
                     checkTailCall insideSubBindingOrTry expr2

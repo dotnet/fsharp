@@ -447,7 +447,7 @@ open Printf
                 let lines =
                     File.ReadAllLines(fileName)
                     |> Array.mapi (fun i s -> i, s) // keep line numbers
-                    |> Array.filter (fun (i, s) -> not (s.StartsWith "#")) // filter out comments
+                    |> Array.filter (fun (_i, s) -> not (s.StartsWith "#")) // filter out comments
 
                 printMessage "Parsing %s" fileName
                 let stringInfos = lines |> Array.map (fun (i, s) -> ParseLine fileName i s)
@@ -511,7 +511,7 @@ open Printf
                 printMessage "Generating resource methods for %s" outFileName
                 // gen each resource method
                 stringInfos
-                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, _netFormatString) ->
                     let formalArgs = new System.Text.StringBuilder()
                     let actualArgs = new System.Text.StringBuilder()
                     let mutable firstTime = true
@@ -589,7 +589,7 @@ open Printf
                 fprintfn outSignature "    static member RunStartupValidation: unit -> unit"
 
                 stringInfos
-                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                |> Seq.iter (fun (_lineNum, (_optErrNum, ident), _str, _holes, _netFormatString) ->
                     fprintfn out "        ignore(GetString(\"%s\"))" ident)
 
                 fprintfn out "        ()" // in case there are 0 strings, we need the generated code to parse
@@ -598,7 +598,7 @@ open Printf
                 xd.LoadXml(xmlBoilerPlateString)
 
                 stringInfos
-                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                |> Seq.iter (fun (_lineNum, (_optErrNum, ident), _str, _holes, netFormatString) ->
                     let xn = xd.CreateElement("data")
                     xn.SetAttribute("name", ident) |> ignore
                     xn.SetAttribute("xml:space", "preserve") |> ignore
