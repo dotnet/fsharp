@@ -9,6 +9,8 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
+#nowarn "1182" // Unused bindings when ignored parsed results etc.
+
 let stringMethods =
     [
         "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
