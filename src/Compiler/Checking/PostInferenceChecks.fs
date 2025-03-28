@@ -532,8 +532,9 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
+
                 if isLessAccessible tyconAcc valAcc then
-                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 
@@ -2057,8 +2058,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then
-        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
-        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
+        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) vref.Accessibility v.Range v.Type
 
     if cenv.reportErrors  then
 
