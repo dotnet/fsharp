@@ -1940,6 +1940,10 @@ type internal TypeCheckInfo
                 |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 
             | Some(CompletionContext.TypeProviderStaticArgumentList(endPos, fields)) ->
+#if NO_TYPEPROVIDERS
+                getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
+#else
                 let cnrs = GetCapturedNameResolutions endPos ResolveOverloads.No
 
                 if cnrs.Count = 0 then
@@ -1980,6 +1984,7 @@ type internal TypeCheckInfo
                     | _ ->
                         getDeclaredItemsNotInRangeOpWithAllSymbols ()
                         |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
+#endif
 
             | Some(CompletionContext.Pattern patternContext) ->
                 match patternContext with
