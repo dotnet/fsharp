@@ -149,12 +149,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
         member _.AddLexicalClassifications(_: SourceText, _: TextSpan, _: List<ClassifiedSpan>, _: CancellationToken) = ()
 
         member _.AddSyntacticClassificationsAsync
-            (
-                document: Document,
-                textSpan: TextSpan,
-                result: List<ClassifiedSpan>,
-                cancellationToken: CancellationToken
-            ) =
+            (document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken)
+            =
             cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
@@ -201,12 +197,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             |> CancellableTask.startAsTask cancellationToken
 
         member _.AddSemanticClassificationsAsync
-            (
-                document: Document,
-                textSpan: TextSpan,
-                result: List<ClassifiedSpan>,
-                cancellationToken: CancellationToken
-            ) =
+            (document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken)
+            =
             cancellableTask {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 

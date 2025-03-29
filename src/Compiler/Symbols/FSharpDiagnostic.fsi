@@ -46,9 +46,7 @@ module public ExtendedData =
 
     /// Contextually-relevant data to each particular diagnostic
     [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
-    type public IFSharpDiagnosticExtendedData =
-        interface
-        end
+    type public IFSharpDiagnosticExtendedData = interface end
 
     /// Additional data for diagnostics about obsolete attributes.
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]

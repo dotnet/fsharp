@@ -32,8 +32,6 @@ let private tryGetStoreData<'T when 'T: not null> (lexbuf: Lexbuf) key =
     | true, data -> Some(data :?> 'T)
     | _ -> None
 
-let private setStoreData (lexbuf: Lexbuf) key data = lexbuf.BufferLocalStore[key] <- data
-
 //------------------------------------------------------------------------
 // A SynArgNameGenerator for the current file, used by the parser
 //------------------------------------------------------------------------

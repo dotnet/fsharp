@@ -41,7 +41,7 @@ module internal CodeGenerationUtils =
         member _.Unindent i =
             indentWriter.Indent <- max 0 (indentWriter.Indent - i)
 
-        member _.Dump() = !! indentWriter.InnerWriter.ToString()
+        member _.Dump() = !!indentWriter.InnerWriter.ToString()
 
         interface IDisposable with
             member _.Dispose() =

@@ -478,8 +478,7 @@ module Internal =
             static member Bind(g: Generator<'T>, cont) =
                 match g with
                 | :? GenerateThen<'T> as g ->
-                    GenerateThen<_>
-                        .Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
+                    GenerateThen<_>.Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
                 | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
 
         let bindG g cont =
@@ -854,7 +853,7 @@ module Seq =
             seq {
                 use e = source.GetEnumerator()
 
-                for x in count .. - 1 .. 1 do
+                for x in count .. -1 .. 1 do
                     if not (e.MoveNext()) then
                         invalidOpFmt
                             "{0}: tried to take {1} {2} past the end of the seq. Use Seq.truncate to get {3} or less elements"
