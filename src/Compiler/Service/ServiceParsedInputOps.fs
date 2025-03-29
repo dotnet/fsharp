@@ -121,7 +121,7 @@ type CompletionContext =
         isStatic: bool *
         spacesBeforeEnclosingDefinition: int
 
-    | TypeProviderStaticArgumentList of typeNameEndPos: pos * settedParams: HashSet<string>
+    | TypeProviderStaticArgumentList of typeNameEndPos: pos * assignedParams: HashSet<string>
 
 type ShortIdent = string
 
