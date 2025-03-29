@@ -123,14 +123,8 @@ type internal ImplementInterfaceCodeFixProvider [<ImportingConstructor>] () =
         | None -> [ stubChange ]
 
     let getSuggestions
-        (
-            sourceText: SourceText,
-            results: FSharpCheckFileResults,
-            state: InterfaceState,
-            displayContext,
-            entity,
-            indentSize
-        ) =
+        (sourceText: SourceText, results: FSharpCheckFileResults, state: InterfaceState, displayContext, entity, indentSize)
+        =
         if InterfaceStubGenerator.HasNoInterfaceMember entity then
             CancellableTask.singleton Seq.empty
         else
