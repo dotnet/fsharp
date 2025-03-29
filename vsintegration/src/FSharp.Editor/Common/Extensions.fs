@@ -81,14 +81,8 @@ type TextViewEventsHandler
             |> Option.iter (fun handler -> handler (view, newline, oldline))
 
         member this.OnChangeScrollInfo
-            (
-                _view: IVsTextView,
-                _iBar: int,
-                _iMinUnit: int,
-                _iMaxUnits: int,
-                _iVisibleUnits: int,
-                _iFirstVisibleUnit: int
-            ) =
+            (_view: IVsTextView, _iBar: int, _iMinUnit: int, _iMaxUnits: int, _iVisibleUnits: int, _iFirstVisibleUnit: int)
+            =
             ()
 
         member this.OnKillFocus(view: IVsTextView) =
@@ -103,10 +97,10 @@ type ConnectionPointSubscription = System.IDisposable option
 
 // Usage example:
 //  If a handler is None, to not handle that event
-//  let subscription = subscribeToTextViewEvents (textView, onChangeCaretHandler, onKillFocus, OnSetFocus)
+//  let subscription = subscribeToTextViewEvents (textView, onChangeCaretHandler, onKillFocus, onSetFocus)
 //  Unsubscribe using subscription.Dispose()
-let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKillFocus, OnSetFocus) : ConnectionPointSubscription =
-    let handler = TextViewEventsHandler(onChangeCaretHandler, onKillFocus, OnSetFocus)
+let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKillFocus, onSetFocus) : ConnectionPointSubscription =
+    let handler = TextViewEventsHandler(onChangeCaretHandler, onKillFocus, onSetFocus)
 
     match textView with
     | :? IConnectionPointContainer as cpContainer ->
