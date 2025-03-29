@@ -26,6 +26,15 @@ module Tuple =
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Tuple)
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"tuples02.fs"|])>]
+    let ``Tuple - tuples02_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldSucceed
+        
+    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Tuple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"W_IncompleteMatches01.fs"|])>]
     let ``Tuple - W_IncompleteMatches01_fs - --test:ErrorRanges`` compilation =
         compilation
