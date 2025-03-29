@@ -1939,12 +1939,12 @@ type internal TypeCheckInfo
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 
-            | Some(CompletionContext.TypeProviderStaticArgumentList(endPos, fields)) ->
+            | Some(CompletionContext.TypeProviderStaticArgumentList(_endPos, _fields)) ->
 #if NO_TYPEPROVIDERS
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 #else
-                let cnrs = GetCapturedNameResolutions endPos ResolveOverloads.No
+                let cnrs = GetCapturedNameResolutions _endPos ResolveOverloads.No
 
                 if cnrs.Count = 0 then
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
@@ -1961,7 +1961,7 @@ type internal TypeCheckInfo
                             |> Array.choose (fun sp ->
                                 let name = sp.PUntaint((fun sp -> sp.Name), m)
 
-                                if fields.Contains name then
+                                if _fields.Contains name then
                                     None
                                 else
                                     let ty =
