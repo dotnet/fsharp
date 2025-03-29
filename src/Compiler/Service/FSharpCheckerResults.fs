@@ -1939,6 +1939,53 @@ type internal TypeCheckInfo
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 
+            | Some(CompletionContext.TypeProviderStaticArgumentList(_endPos, _fields)) ->
+#if NO_TYPEPROVIDERS
+                getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
+#else
+                let cnrs = GetCapturedNameResolutions _endPos ResolveOverloads.No
+
+                if cnrs.Count = 0 then
+                    getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                    |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
+                else
+                    let cnr = cnrs[cnrs.Count - 1]
+                    let m = cnr.Range
+
+                    match cnr with
+                    // If the type is a type provider, return the static parameter names
+                    | CNR((Item.Types(_, containerTy :: _) & ItemIsProvidedTypeWithStaticArguments m g staticParameters), _, denv, _, _, _) ->
+                        let staticParameters =
+                            staticParameters
+                            |> Array.choose (fun sp ->
+                                let name = sp.PUntaint((fun sp -> sp.Name), m)
+
+                                if _fields.Contains name then
+                                    None
+                                else
+                                    let ty =
+                                        Import.ImportProvidedType amap m (sp.PApply((fun sp -> sp.ParameterType), m))
+
+                                    Item.OtherName(
+                                        Some(Ident(name, m)),
+                                        ty,
+                                        None,
+                                        Some(containerTy |> tcrefOfAppTy g |> ArgumentContainer.Type),
+                                        m
+                                    )
+                                    |> ItemWithNoInst
+                                    |> Some)
+                            |> Array.toList
+
+                        Some(toCompletionItems (staticParameters, denv, m))
+
+                    // If the type is not type provider, return the types
+                    | _ ->
+                        getDeclaredItemsNotInRangeOpWithAllSymbols ()
+                        |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
+#endif
+
             | Some(CompletionContext.Pattern patternContext) ->
                 match patternContext with
                 | PatternContext.UnionCaseFieldIdentifier(referencedFields, caseIdRange) ->
