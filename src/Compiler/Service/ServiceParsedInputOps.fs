@@ -121,6 +121,8 @@ type CompletionContext =
         isStatic: bool *
         spacesBeforeEnclosingDefinition: int
 
+    | TypeProviderStaticArgumentList of typeNameEndPos: pos * settedParams: HashSet<string>
+
 type ShortIdent = string
 
 type ShortIdents = ShortIdent[]
@@ -1454,6 +1456,19 @@ module ParsedInput =
 
                         | SynExpr.Record(None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
+                        // TypeProvider<$>.
+                        | SynExpr.TypeApp(expr, _, args, _, _, typeArgsRange, _) when
+                            rangeContainsPos typeArgsRange pos && args |> List.forall isStaticArg
+                            ->
+                            let argNames =
+                                args
+                                |> List.choose (function
+                                    | SynType.StaticConstantNamed(SynType.LongIdent lid, _, _) -> Some lid.LongIdent.Head.idText
+                                    | _ -> None)
+                                |> HashSet
+
+                            Some(CompletionContext.TypeProviderStaticArgumentList(expr.Range.End, argNames))
+
                         // Unchecked.defaultof<str$>
                         | SynExpr.TypeApp(typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.Type
 
@@ -1815,9 +1830,19 @@ module ParsedInput =
                             // The value expression should still get completions
                             None)
 
-                member _.VisitTypeAbbrev(_, _, range) =
+                member _.VisitTypeAbbrev(_, ty, range) =
                     if rangeContainsPos range pos then
-                        Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
+                        match ty with
+                        | SynType.App(SynType.LongIdent lid, _, args, _, _, false, _) when args |> List.forall isStaticArg ->
+                            let argNames =
+                                args
+                                |> List.choose (function
+                                    | SynType.StaticConstantNamed(SynType.LongIdent lid, _, _) -> Some lid.LongIdent.Head.idText
+                                    | _ -> None)
+                                |> HashSet
+
+                            Some(CompletionContext.TypeProviderStaticArgumentList(lid.Range.End, argNames))
+                        | _ -> Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
                     else
                         None
 
