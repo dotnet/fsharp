@@ -93,6 +93,9 @@ type public CompletionContext =
         isStatic: bool *
         spacesBeforeEnclosingDefinition: int
 
+    /// Completing static named parameters of a type provider. `NonProviderType<$>` will also match this.
+    | TypeProviderStaticArgumentList of typeNameEndPos: pos * assignedParams: HashSet<string>
+
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }

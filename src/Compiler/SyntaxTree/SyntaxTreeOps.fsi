@@ -198,6 +198,8 @@ val stripParenTypes: synType: SynType -> SynType
 
 val (|StripParenTypes|): synType: SynType -> SynType
 
+val isStaticArg: SynType -> bool
+
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 module SynInfo =
     /// The argument information for an argument without a name
