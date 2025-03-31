@@ -864,7 +864,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
              iILModule = ilModule }
         let res = u st1
         check viewedScope st1.ientities
-        check viewedScope st1.ientities
+        check viewedScope st1.ianoninfos
         check viewedScope st1.ivals
         check viewedScope st1.itypars
         res
