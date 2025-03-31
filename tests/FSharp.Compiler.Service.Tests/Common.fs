@@ -129,7 +129,7 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
      |]
 #endif
 
-let mkTestFileAndOptions source additionalArgs =
+let mkTestFileAndOptions additionalArgs =
     let fileName = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let project = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(project, ".dll")
@@ -193,7 +193,7 @@ let parseSourceCode (name: string, code: string) =
     let filePath = Path.Combine(location, name)
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
-    let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     parseResults.ParseTree
 
@@ -203,7 +203,7 @@ let matchBraces (name: string, code: string) =
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
-    let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     braces
 
@@ -265,7 +265,7 @@ let attribsOfSymbol (symbol: FSharpSymbol) =
             if v.IsStatic then yield "static"
             if v.IsLiteral then yield sprintf "%A" v.LiteralValue.Value
             if v.IsAnonRecordField then
-                let info, tys, i = v.AnonRecordFieldDetails
+                let info, _tys, i = v.AnonRecordFieldDetails
                 yield "anon(" + string i + ", [" + info.Assembly.QualifiedName + "/" + String.concat "+" info.EnclosingCompiledTypeNames + "/" + info.CompiledName + "]" + String.concat "," info.SortedFieldNames + ")"
 
 

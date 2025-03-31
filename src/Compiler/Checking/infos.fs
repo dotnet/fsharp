@@ -1438,10 +1438,10 @@ type MethInfo =
             match retTy with
             | Some retTy -> isTyparTy g retTy
             | None -> false
-        | MethInfoWithModifiedReturnType(_,retTy) -> false
+        | MethInfoWithModifiedReturnType _ -> false
         | DefaultStructCtor _ -> false
 #if !NO_TYPEPROVIDERS
-        | ProvidedMeth(amap, mi, _, m) -> false
+        | ProvidedMeth _ -> false
 #endif
 
     /// Get the ParamData objects for the parameters of a MethInfo

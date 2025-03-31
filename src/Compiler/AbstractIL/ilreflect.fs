@@ -164,7 +164,7 @@ type TypeBuilder with
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
 
         //Buggy annotation in ns20, will not be fixed.
-#if NETSTANDARD && !NO_CHECKNULLS
+#if NETSTANDARD
         !!(typB.CreateTypeInfo()) :> Type
 #else
         typB.CreateTypeInfo() :> Type

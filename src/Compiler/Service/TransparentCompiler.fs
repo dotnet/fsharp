@@ -2355,7 +2355,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
-                caret: Position option,
+                _caret: Position option,
                 documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
