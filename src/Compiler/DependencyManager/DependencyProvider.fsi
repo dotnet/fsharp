@@ -39,9 +39,6 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 /// Wraps access to a DependencyManager implementation
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type IDependencyManagerProvider =
 
     /// Name of the dependency manager
@@ -123,7 +120,7 @@ type DependencyProvider =
         packageManagerTextLines: (string * string) seq *
         reportError: ResolvingErrorReport *
         executionTfm: string *
-        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull*
+        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull *
         [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string *
         [<Optional; DefaultParameterValue("")>] mainScriptName: string *
         [<Optional; DefaultParameterValue("")>] fileName: string *

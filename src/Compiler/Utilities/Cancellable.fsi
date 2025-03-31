@@ -68,12 +68,9 @@ type internal CancellableBuilder =
         comp: Cancellable<'T> * [<InlineIfLambda>] handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
 
     member inline Using:
-        resource: 'Resource MaybeNull * [<InlineIfLambda>] comp: ('Resource MaybeNull -> Cancellable<'T>) -> Cancellable<'T>
-            when 'Resource :> IDisposable
-            and 'Resource:not struct
-#if !(NO_CHECKNULLS || BUILDING_WITH_LKG)
-            and 'Resource:not null 
-#endif
+        resource: 'Resource MaybeNull * [<InlineIfLambda>] comp: ('Resource MaybeNull -> Cancellable<'T>) ->
+            Cancellable<'T>
+            when 'Resource :> IDisposable and 'Resource: not struct and 'Resource: not null
 
     member inline Zero: unit -> Cancellable<unit>
 

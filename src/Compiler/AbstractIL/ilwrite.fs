@@ -362,11 +362,7 @@ let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.De
 //---------------------------------------------------------------------
 
 [<NoEquality; NoComparison>]
-type MetadataTable<'T
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    > =
+type MetadataTable<'T when 'T:not null> =
     { name: string
       dict: Dictionary<'T, int> // given a row, find its entry number
       mutable rows: ResizeArray<'T> }
