@@ -13,6 +13,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 open TestFramework
 
+#nowarn "1182" // Unused bindings when ignored parsed results etc.
+
 let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10, useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
