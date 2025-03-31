@@ -7,6 +7,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;58;75;3005;1182</NoWarn><!-- 1182 - unused bindings, too many of them here -->
+    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
