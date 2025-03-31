@@ -9,17 +9,11 @@ type Project with
 
     /// Returns the projectIds of all projects within the same solution that directly reference this project
     member this.GetDependentProjectIds() =
-        this.Solution
-            .GetProjectDependencyGraph()
-            .GetProjectsThatDirectlyDependOnThisProject
-            this.Id
+        this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject this.Id
 
     /// Returns all projects within the same solution that directly reference this project.
     member this.GetDependentProjects() =
-        this.Solution
-            .GetProjectDependencyGraph()
-            .GetProjectsThatDirectlyDependOnThisProject
-            this.Id
+        this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject this.Id
         |> Seq.map this.Solution.GetProject
 
     /// Returns the ProjectIds of all of the projects that this project directly or transitively depends on

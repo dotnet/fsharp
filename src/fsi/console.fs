@@ -30,14 +30,14 @@ type internal History() =
         list.Clear()
         current <- -1
 
-    member _.Add (line: string | null) = 
-        match line with 
+    member _.Add(line: string | null) =
+        match line with
         | null
         | "" -> ()
         | _ -> list.Add(line)
 
-    member _.AddLast (line: string | null) =  
-        match line with 
+    member _.AddLast(line: string | null) =
+        match line with
         | null
         | "" -> ()
         | _ ->

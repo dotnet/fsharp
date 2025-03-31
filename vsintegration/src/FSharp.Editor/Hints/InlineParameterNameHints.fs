@@ -88,8 +88,7 @@ type InlineParameterNameHints(parseResults: FSharpParseFileResults) =
         symbol.HasAttribute<CustomOperationAttribute>()
 
     let getSourceTextAtRange (sourceText: SourceText) (range: range) =
-        (RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) |> sourceText.GetSubText)
-            .ToString()
+        (RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) |> sourceText.GetSubText).ToString()
 
     let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
 

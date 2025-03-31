@@ -496,6 +496,7 @@ type internal TransparentCompiler
                 defaultFSharpBinariesDir,
                 fileName,
                 source,
+                None,
                 CodeContext.Editing,
                 useSimpleResolution,
                 useFsiAuxLib,
@@ -907,7 +908,7 @@ type internal TransparentCompiler
                 { new IXmlDocumentationInfoLoader with
                     /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
                     member _.TryLoad(assemblyFileName) =
-                        let xmlFileName = !! Path.ChangeExtension(assemblyFileName, ".xml")
+                        let xmlFileName = !!Path.ChangeExtension(assemblyFileName, ".xml")
 
                         // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                         XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
@@ -1393,7 +1394,7 @@ type internal TransparentCompiler
 
                 // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
                 let tcConfig =
-                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
+                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !!Path.GetDirectoryName(mainInputFileName))
 
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
@@ -1751,11 +1752,8 @@ type internal TransparentCompiler
         )
 
     let TryGetRecentCheckResultsForFile
-        (
-            fileName: string,
-            projectSnapshot: FSharpProjectSnapshot,
-            userOpName: string
-        ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
+        (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+        : (FSharpParseFileResults * FSharpCheckFileResults) option =
         ignore userOpName
 
         let cacheKey =
@@ -1872,7 +1870,7 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) fileName =
+    let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) _fileName =
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             async {
@@ -1887,11 +1885,11 @@ type internal TransparentCompiler
 
                 try
 
-                    let availableOnDiskModifiedTime =
-                        if FileSystem.FileExistsShim fileName then
-                            Some <| FileSystem.GetLastWriteTimeShim fileName
-                        else
-                            None
+                    //let availableOnDiskModifiedTime =
+                    //    if FileSystem.FileExistsShim fileName then
+                    //        Some <| FileSystem.GetLastWriteTimeShim fileName
+                    //    else
+                    //        None
 
                     // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode
                     //  - some file needs to be edited (this triggers a re-check, but LastModifiedTimeOnDisk won't change)
@@ -2111,14 +2109,8 @@ type internal TransparentCompiler
         }
 
     member _.ParseFileWithoutProject
-        (
-            fileName: string,
-            sourceText: ISourceText,
-            options: FSharpParsingOptions,
-            cache: bool,
-            flatErrors: bool,
-            userOpName: string
-        ) : Async<FSharpParseFileResults> =
+        (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
+        : Async<FSharpParseFileResults> =
         let parseFileAsync =
             async {
                 let! ct = Async.CancellationToken
@@ -2272,13 +2264,8 @@ type internal TransparentCompiler
         member _.ProjectChecked = projectChecked.Publish
 
         member this.FindReferencesInFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                symbol: FSharpSymbol,
-                canInvalidateProject: bool,
-                userOpName: string
-            ) : Async<seq<range>> =
+            (fileName: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string)
+            : Async<seq<range>> =
             async {
                 ignore canInvalidateProject
 
@@ -2301,19 +2288,13 @@ type internal TransparentCompiler
             }
 
         member this.GetAssemblyData
-            (
-                projectSnapshot: FSharpProjectSnapshot,
-                fileName,
-                userOpName: string
-            ) : Async<ProjectAssemblyDataResult> =
+            (projectSnapshot: FSharpProjectSnapshot, fileName, userOpName: string)
+            : Async<ProjectAssemblyDataResult> =
             this.GetAssemblyData(projectSnapshot.ProjectSnapshot, fileName, userOpName)
 
         member this.GetBackgroundCheckResultsForFileInProject
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileResults> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileResults> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
@@ -2323,11 +2304,8 @@ type internal TransparentCompiler
             }
 
         member this.GetBackgroundParseResultsForFileInProject
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
@@ -2335,12 +2313,8 @@ type internal TransparentCompiler
             }
 
         member this.GetCachedCheckFileResult
-            (
-                builder: IncrementalBuilder,
-                fileName: string,
-                sourceText: ISourceText,
-                options: FSharpProjectOptions
-            ) : Async<(FSharpParseFileResults * FSharpCheckFileResults) option> =
+            (builder: IncrementalBuilder, fileName: string, sourceText: ISourceText, options: FSharpProjectOptions)
+            : Async<(FSharpParseFileResults * FSharpCheckFileResults) option> =
             async {
                 ignore builder
 
@@ -2355,6 +2329,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceText,
+                caret: Position option,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -2372,6 +2347,7 @@ type internal TransparentCompiler
                     bc.GetProjectSnapshotFromScript(
                         fileName,
                         SourceTextNew.ofISourceText sourceText,
+                        caret,
                         DocumentSource.FileSystem,
                         previewEnabled,
                         loadedTimeStamp,
@@ -2392,6 +2368,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                _caret: Position option,
                 documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
@@ -2535,11 +2512,8 @@ type internal TransparentCompiler
             }
 
         member this.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<EditorServices.SemanticClassificationView option> =
             async {
                 ignore userOpName
 
@@ -2561,13 +2535,8 @@ type internal TransparentCompiler
             backgroundCompiler.NotifyProjectCleaned(options, userOpName)
 
         member this.ParseAndCheckFileInProject
-            (
-                fileName: string,
-                fileVersion: int,
-                sourceText: ISourceText,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            (fileName: string, fileVersion: int, sourceText: ISourceText, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
 
@@ -2596,29 +2565,16 @@ type internal TransparentCompiler
             this.ParseFile(fileName, projectSnapshot.ProjectSnapshot, userOpName)
 
         member this.ParseFile
-            (
-                fileName: string,
-                sourceText: ISourceText,
-                options: FSharpParsingOptions,
-                cache: bool,
-                flatErrors: bool,
-                userOpName: string
-            ) : Async<FSharpParseFileResults> =
+            (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
+            : Async<FSharpParseFileResults> =
             this.ParseFileWithoutProject(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member this.TryGetRecentCheckResultsForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                sourceText: ISourceText option,
-                userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+            (fileName: string, options: FSharpProjectOptions, sourceText: ISourceText option, userOpName: string)
+            : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
 
         member this.TryGetRecentCheckResultsForFile
-            (
-                fileName: string,
-                projectSnapshot: FSharpProjectSnapshot,
-                userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
+            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+            : (FSharpParseFileResults * FSharpCheckFileResults) option =
             TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)

@@ -41,9 +41,7 @@ module HeyHo =
     let navigateToSearch pattern =
         let service: IFSharpNavigateToSearchService = provider.GetExportedValue()
 
-        service
-            .SearchProjectAsync(project, [] |> Seq.toImmutableArray, pattern, service.KindsProvided, CancellationToken.None)
-            .Result
+        service.SearchProjectAsync(project, [] |> Seq.toImmutableArray, pattern, service.KindsProvided, CancellationToken.None).Result
 
     let assertResultsContain pattern expected =
         navigateToSearch pattern

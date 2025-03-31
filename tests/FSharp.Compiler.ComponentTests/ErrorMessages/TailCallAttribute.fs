@@ -774,17 +774,17 @@ namespace N
         |> shouldFail
         |> withResults [
             { Error = Warning 3569
-              Range = { StartLine = 21
-                        StartColumn = 27
-                        EndLine = 21
-                        EndColumn = 35 }
-              Message =
-                "The member or function 'instType' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
               Range = { StartLine = 17
                         StartColumn = 32
                         EndLine = 17
                         EndColumn = 77 }
+              Message =
+                "The member or function 'instType' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+            { Error = Warning 3569
+              Range = { StartLine = 21
+                        StartColumn = 27
+                        EndLine = 21
+                        EndColumn = 35 }
               Message =
                 "The member or function 'instType' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
@@ -1769,3 +1769,72 @@ module M =
         |> withLangVersion80
         |> compile
         |> shouldSucceed
+
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn successfully in Array-mapped recursive call`` () =
+        """
+namespace N
+
+module M =
+
+    type Value =
+        { Code: string }
+
+    [<TailCall>]
+    let rec fooArray (values: Value[], code: string) =
+        match values with
+        | [||] -> seq { code }
+        | values ->
+            let replicatedValues =
+                values
+                |> Array.map (fun value -> fooArray (values, value.Code))
+            replicatedValues |> Seq.concat
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 16
+                        StartColumn = 20
+                        EndLine = 16
+                        EndColumn = 74 }
+              Message =
+               "The member or function 'fooArray' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]
+        
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Warn successfully in Seq-mapped recursive call`` () =
+        """
+namespace N
+
+module M =
+
+    type Value =
+        { Code: string }
+
+    [<TailCall>]
+    let rec fooSeq (values: Value[], code: string) =
+        match values with
+        | [||] -> seq { code }
+        | values ->
+            let replicatedValues =
+                values
+                |> Seq.map (fun value -> fooSeq (values, value.Code))
+                |> Seq.toArray
+            replicatedValues |> Seq.concat
+        """
+        |> FSharp
+        |> withLangVersion80
+        |> compile
+        |> shouldFail
+        |> withResults [
+            { Error = Warning 3569
+              Range = { StartLine = 16
+                        StartColumn = 42
+                        EndLine = 16
+                        EndColumn = 48 }
+              Message =
+               "The member or function 'fooSeq' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
+        ]

@@ -188,7 +188,7 @@ and FSharpProjectOptions =
             && options1.ReferencedProjects = options2.ReferencedProjects
             && options1.LoadTime = options2.LoadTime
 
-    member po.ProjectDirectory = !! Path.GetDirectoryName(po.ProjectFileName)
+    member po.ProjectDirectory = !!Path.GetDirectoryName(po.ProjectFileName)
 
     override this.ToString() =
         "FSharpProjectOptions(" + this.ProjectFileName + ")"
@@ -2042,15 +2042,8 @@ type internal TypeCheckInfo
 
     /// Get the auto-complete items at a location
     member _.GetDeclarations
-        (
-            parseResultsOpt,
-            line,
-            lineStr,
-            partialName,
-            completionContextAtPos,
-            getAllEntities,
-            genBodyForOverriddenMeth
-        ) =
+        (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, genBodyForOverriddenMeth)
+        =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -3109,14 +3102,8 @@ module internal ParseAndCheckFile =
         errHandler.CollectedDiagnostics(None), parseResult, errHandler.AnyErrors
 
     let ApplyLoadClosure
-        (
-            tcConfig,
-            parsedMainInput,
-            mainInputFileName: string,
-            loadClosure: LoadClosure option,
-            tcImports: TcImports,
-            backgroundDiagnostics
-        ) =
+        (tcConfig, parsedMainInput, mainInputFileName: string, loadClosure: LoadClosure option, tcImports: TcImports, backgroundDiagnostics)
+        =
 
         // If additional references were brought in by the preprocessor then we need to process them
         match loadClosure with
@@ -3204,7 +3191,7 @@ module internal ParseAndCheckFile =
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
                 parsedMainInput,
-                !! Path.GetDirectoryName(mainInputFileName),
+                !!Path.GetDirectoryName(mainInputFileName),
                 tcImports.DependencyProvider
             )
             |> ignore
@@ -3255,7 +3242,7 @@ module internal ParseAndCheckFile =
 
             // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
             let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
+                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !!Path.GetDirectoryName(mainInputFileName))
 
             // update the error handler with the modified tcConfig
             errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
@@ -3383,15 +3370,8 @@ type FSharpCheckFileResults
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo
-        (
-            parsedFileResults,
-            line,
-            lineText,
-            partialName,
-            ?getAllEntities,
-            ?completionContextAtPos,
-            ?genBodyForOverriddenMeth
-        ) =
+        (parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos, ?genBodyForOverriddenMeth)
+        =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
         let genBodyForOverriddenMeth = defaultArg genBodyForOverriddenMeth true
 
@@ -3638,12 +3618,7 @@ type FSharpCheckFileResults
         FSharpCheckFileResults(fileName, creationErrors, None, [||], None, keepAssemblyContents)
 
     static member JoinErrors
-        (
-            isIncompleteTypeCheckEnvironment,
-            creationErrors: FSharpDiagnostic[],
-            parseErrors: FSharpDiagnostic[],
-            tcErrors: FSharpDiagnostic[]
-        ) =
+        (isIncompleteTypeCheckEnvironment, creationErrors: FSharpDiagnostic[], parseErrors: FSharpDiagnostic[], tcErrors: FSharpDiagnostic[]) =
         [|
             yield! creationErrors
             yield! parseErrors
@@ -4006,6 +3981,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     defaultFSharpBinariesDir,
                     fileName,
                     sourceText,
+                    None,
                     CodeContext.Editing,
                     tcConfig.useSimpleResolution,
                     tcConfig.useFsiAuxLib,

@@ -77,15 +77,8 @@ type LongUnicodeLexResult =
     | Invalid
 
 let mkLexargs
-    (
-        conditionalDefines,
-        indentationSyntaxStatus,
-        resourceManager,
-        ifdefStack,
-        diagnosticsLogger,
-        pathMap: PathMap,
-        applyLineDirectives
-    ) =
+    (conditionalDefines, indentationSyntaxStatus, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap, applyLineDirectives)
+    =
     {
         conditionalDefines = conditionalDefines
         ifdefStack = ifdefStack
@@ -499,7 +492,7 @@ module Keywords =
                 else
                     PathMap.applyDir args.pathMap dirname
                 |> fun dir -> KEYWORD_STRING(s, dir)
-            | "__SOURCE_FILE__" -> KEYWORD_STRING(s, !! System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
+            | "__SOURCE_FILE__" -> KEYWORD_STRING(s, !!System.IO.Path.GetFileName(FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))
             | "__LINE__" -> KEYWORD_STRING(s, string lexbuf.StartPos.Line)
             | _ -> IdentifierToken args lexbuf s
 

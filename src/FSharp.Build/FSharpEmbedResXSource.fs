@@ -72,8 +72,7 @@ module internal {1} =
                 printMessage "Generating code for target framework %s" _targetFramework
 
                 let sb =
-                    StringBuilder()
-                        .AppendLine(String.Format(boilerplate, namespaceName, moduleName, justFileName))
+                    StringBuilder().AppendLine(String.Format(boilerplate, namespaceName, moduleName, justFileName))
 
                 if generateGetObject then
                     sb.AppendLine(boilerplateGetObject) |> ignore
@@ -103,9 +102,7 @@ module internal {1} =
                                     "_" + name
 
                             let commentBody =
-                                XElement(xname "summary", docComment)
-                                    .ToString()
-                                    .Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
+                                XElement(xname "summary", docComment).ToString().Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
                                 |> Array.fold (fun (sb: StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
                             // add the resource
                             let accessorBody =

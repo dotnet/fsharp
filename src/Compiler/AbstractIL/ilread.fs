@@ -4180,16 +4180,8 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader) =
 
 // Note, pectxtEager and pevEager must not be captured by the results of this function
 let openMetadataReader
-    (
-        fileName,
-        mdfile: BinaryFile,
-        metadataPhysLoc,
-        peinfo,
-        pectxtEager: PEReader,
-        pevEager,
-        pectxtCaptured,
-        reduceMemoryUsage
-    ) =
+    (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, pectxtEager: PEReader, pevEager, pectxtCaptured, reduceMemoryUsage)
+    =
     let mdv = mdfile.GetView()
     let magic = seekReadUInt16AsInt32 mdv metadataPhysLoc
 

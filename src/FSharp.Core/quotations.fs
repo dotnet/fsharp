@@ -2531,13 +2531,8 @@ type Expr with
         mkStaticMethodCallW (methodInfo, methodInfoWithWitnesses, List.length witnesses, witnesses @ arguments)
 
     static member CallWithWitnesses
-        (
-            obj: Expr,
-            methodInfo: MethodInfo,
-            methodInfoWithWitnesses: MethodInfo,
-            witnesses,
-            arguments
-        ) =
+        (obj: Expr, methodInfo: MethodInfo, methodInfoWithWitnesses: MethodInfo, witnesses, arguments)
+        =
         checkNonNull "methodInfo" methodInfo
         checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
         mkInstanceMethodCallW (obj, methodInfo, methodInfoWithWitnesses, List.length witnesses, witnesses @ arguments)

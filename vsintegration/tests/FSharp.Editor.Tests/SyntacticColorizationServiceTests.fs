@@ -13,13 +13,8 @@ open FSharp.Test
 type SyntacticClassificationServiceTests() =
 
     member private this.ExtractMarkerData
-        (
-            fileContents: string,
-            marker: string,
-            defines: string list,
-            langVersion: string option,
-            isScriptFile: Option<bool>
-        ) =
+        (fileContents: string, marker: string, defines: string list, langVersion: string option, isScriptFile: Option<bool>)
+        =
         let textSpan = TextSpan(0, fileContents.Length)
 
         let fileName =
@@ -49,14 +44,8 @@ type SyntacticClassificationServiceTests() =
         (tokens, markerPosition)
 
     member private this.VerifyColorizerAtStartOfMarker
-        (
-            fileContents: string,
-            marker: string,
-            defines: string list,
-            classificationType: string,
-            ?isScriptFile: bool,
-            ?langVersion: string
-        ) =
+        (fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool, ?langVersion: string)
+        =
         let langVersion = langVersion |> Option.orElse (Some "preview")
 
         let (tokens, markerPosition) =
@@ -69,14 +58,8 @@ type SyntacticClassificationServiceTests() =
             |> Assert.shouldBeEqualWith classificationType "Classification data doesn't match for start of marker"
 
     member private this.VerifyColorizerAtEndOfMarker
-        (
-            fileContents: string,
-            marker: string,
-            defines: string list,
-            classificationType: string,
-            ?isScriptFile: bool,
-            ?langVersion: string
-        ) =
+        (fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool, ?langVersion: string)
+        =
         let langVersion = langVersion |> Option.orElse (Some "preview")
 
         let (tokens, markerPosition) =

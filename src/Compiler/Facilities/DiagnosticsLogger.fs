@@ -435,8 +435,7 @@ module DiagnosticsLoggerExtensions =
         try
             if not tryAndDetectDev15 then
                 let preserveStackTrace =
-                    !!typeof<Exception>
-                        .GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    !!typeof<Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
                 preserveStackTrace.Invoke(exn, null) |> ignore
         with _ ->

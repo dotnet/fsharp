@@ -86,18 +86,9 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
 module internal Order =
 
-    val orderBy: p: ('T -> 'U) -> IComparer<'T> 
-        when 'U: comparison
-#if !NO_CHECKNULLS
-        and 'T:not null
-        and 'T:not struct
-#endif
+    val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison and 'T: not null and 'T: not struct
 
-    val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
-#if !NO_CHECKNULLS
-        when 'T:not null
-        and 'T:not struct
-#endif
+    val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T> when 'T: not null and 'T: not struct
 
     val toFunction: pxOrder: IComparer<'U> -> x: 'U -> y: 'U -> int
 
@@ -230,7 +221,11 @@ module internal List =
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
 
-    val vMapFold<'T,'State,'Result> : mapping:('State -> 'T -> struct('Result * 'State)) -> state:'State -> list:'T list -> struct('Result list * 'State)
+    val vMapFold<'T, 'State, 'Result> :
+        mapping: ('State -> 'T -> struct ('Result * 'State)) ->
+        state: 'State ->
+        list: 'T list ->
+            struct ('Result list * 'State)
 
 module internal ResizeArray =
 
@@ -284,7 +279,7 @@ module internal String =
 
     val (|StartsWith|_|): pattern: string -> value: string -> unit option
 
-    val (|Contains|_|): pattern: string -> value: string|null -> unit option
+    val (|Contains|_|): pattern: string -> value: string | null -> unit option
 
     val getLines: str: string -> string[]
 
@@ -306,9 +301,7 @@ module internal Lazy =
     val force: x: Lazy<'T> -> 'T
 
 /// Represents a permission active at this point in execution
-type internal ExecutionToken =
-    interface
-    end
+type internal ExecutionToken = interface end
 
 /// Represents a token that indicates execution on the compilation thread, i.e.
 ///   - we have full access to the (partially mutable) TAST and TcImports data structures
@@ -381,11 +374,7 @@ module internal ResultOrException =
     val otherwise: f: (unit -> ResultOrException<'a>) -> x: ResultOrException<'a> -> ResultOrException<'a>
 
 /// Generates unique stamps
-type internal UniqueStampGenerator<'T when 'T: equality
-#if !NO_CHECKNULLS
-    and 'T:not null
-#endif
-    > =
+type internal UniqueStampGenerator<'T when 'T: equality and 'T: not null> =
 
     new: unit -> UniqueStampGenerator<'T>
 
@@ -394,11 +383,7 @@ type internal UniqueStampGenerator<'T when 'T: equality
     member Table: ICollection<'T>
 
 /// Memoize tables (all entries cached, never collected unless whole table is collected)
-type internal MemoizationTable<'T, 'U
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    > =
+type internal MemoizationTable<'T, 'U when 'T: not null> =
 
     new:
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
@@ -406,11 +391,7 @@ type internal MemoizationTable<'T, 'U
     member Apply: x: 'T -> 'U
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U
-#if !NO_CHECKNULLS
-    when 'T:not null
-#endif
-    > =
+type internal StampedDictionary<'T, 'U when 'T: not null> =
 
     new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
 
@@ -443,10 +424,10 @@ type internal LazyWithContext<'T, 'ctxt> =
 
 /// Intern tables to save space.
 module internal Tables =
-    val memoize: f: ('a -> 'b) -> ('a -> 'b) 
-        when 'a: equality
-#if !NO_CHECKNULLS && NET8_0_OR_GREATER
-        and 'a:not null
+#if NET8_0_OR_GREATER
+    val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality and 'a: not null
+#else
+    val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality
 #endif
 
 /// Interface that defines methods for comparing objects using partial equality relation
@@ -456,11 +437,9 @@ type internal IPartialEqualityComparer<'T> =
 
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
-    val On: f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
-#if !NO_CHECKNULLS
-        when 'a:not null
-        and 'a:not struct
-#endif
+    val On:
+        f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
+            when 'a: not null and 'a: not struct
 
     /// Like Seq.distinctBy but only filters out duplicates for some of the elements
     val partialDistinctBy: per: IPartialEqualityComparer<'T> -> seq: 'T list -> 'T list
@@ -574,7 +553,7 @@ module internal MultiMap =
 
     val initBy: f: ('a -> 'b) -> xs: seq<'a> -> MultiMap<'b, 'a> when 'b: comparison
 
-    val ofList: xs: ('a * 'b) list -> MultiMap<'a,'b> when 'a: comparison
+    val ofList: xs: ('a * 'b) list -> MultiMap<'a, 'b> when 'a: comparison
 
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 

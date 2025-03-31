@@ -94,7 +94,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <Import Project="Microsoft.FSharp.Core.NetSdk.props" />                       <!-- Sets initial value of FSharp.Core -->
 
   <PropertyGroup>
-    <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
+    <ValueTupleImplicitPackageVersion>4.6.1</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

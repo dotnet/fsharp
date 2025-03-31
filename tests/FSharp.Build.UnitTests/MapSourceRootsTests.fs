@@ -9,6 +9,8 @@ open Xunit
 open System.Collections.Generic
 open FSharp.Test
 
+#nowarn "1182" //Unused arguments
+
 type MockEngine() =
     member val Errors = ResizeArray() with get
     member val Warnings = ResizeArray() with get

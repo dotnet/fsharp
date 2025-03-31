@@ -16,14 +16,15 @@ type LanguageFeaturesHandler() =
     interface IMethodHandler with
         member _.MutatesSolutionState = false
 
-    interface IRequestHandler<DocumentDiagnosticParams, SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>, FSharpRequestContext> with
+    interface IRequestHandler<
+        DocumentDiagnosticParams,
+        SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>,
+        FSharpRequestContext
+     > with
         [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync
-            (
-                request: DocumentDiagnosticParams,
-                context: FSharpRequestContext,
-                cancellationToken: CancellationToken
-            ) =
+            (request: DocumentDiagnosticParams, context: FSharpRequestContext, cancellationToken: CancellationToken)
+            =
             cancellableTask {
 
                 let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri

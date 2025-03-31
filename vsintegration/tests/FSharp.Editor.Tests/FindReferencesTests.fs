@@ -73,9 +73,7 @@ module FindReferences =
             solution.TryGetDocumentFromPath documentPath
             |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
-        findUsagesService
-            .FindReferencesAsync(document, getPositionOf "funcParam" documentPath, context)
-            .Wait()
+        findUsagesService.FindReferencesAsync(document, getPositionOf "funcParam" documentPath, context).Wait()
 
         // We cannot easily inspect what exactly was found here, but that should be verified
         // in FSharp.Compiler.ComponentTests.FSharpChecker.FindReferences
@@ -96,9 +94,7 @@ module FindReferences =
             solution.TryGetDocumentFromPath documentPath
             |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
-        findUsagesService
-            .FindReferencesAsync(document, getPositionOf "funcParam" documentPath, context)
-            .Wait()
+        findUsagesService.FindReferencesAsync(document, getPositionOf "funcParam" documentPath, context).Wait()
 
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
@@ -118,9 +114,7 @@ module FindReferences =
             solution.TryGetDocumentFromPath documentPath
             |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
-        findUsagesService
-            .FindReferencesAsync(document, getPositionOf "sharedFunc" documentPath, context)
-            .Wait()
+        findUsagesService.FindReferencesAsync(document, getPositionOf "sharedFunc" documentPath, context).Wait()
 
         if foundDefinitions.Count <> 1 then
             failwith $"Expected 1 definition but found {foundDefinitions.Count}"
@@ -159,9 +153,7 @@ module FindReferences =
             solution2.TryGetDocumentFromPath documentPath
             |> ValueOption.defaultWith (fun _ -> failwith "Document not found")
 
-        findUsagesService
-            .FindReferencesAsync(document, getPositionOf operator documentPath, context)
-            .Wait()
+        findUsagesService.FindReferencesAsync(document, getPositionOf operator documentPath, context).Wait()
 
         // We cannot easily inspect what exactly was found here, but that should be verified
         // in FSharp.Compiler.ComponentTests.FSharpChecker.FindReferences

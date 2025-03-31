@@ -58,36 +58,28 @@ type TaskBuilderBase() =
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline _.Combine
-        (
-            task1: TaskCode<'TOverall, unit>,
-            task2: TaskCode<'TOverall, 'T>
-        ) : TaskCode<'TOverall, 'T> =
+        (task1: TaskCode<'TOverall, unit>, task2: TaskCode<'TOverall, 'T>)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.Combine(task1, task2)
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline _.While
-        (
-            [<InlineIfLambda>] condition: unit -> bool,
-            body: TaskCode<'TOverall, unit>
-        ) : TaskCode<'TOverall, unit> =
+        ([<InlineIfLambda>] condition: unit -> bool, body: TaskCode<'TOverall, unit>)
+        : TaskCode<'TOverall, unit> =
         ResumableCode.While(condition, body)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryWith
-        (
-            body: TaskCode<'TOverall, 'T>,
-            catch: exn -> TaskCode<'TOverall, 'T>
-        ) : TaskCode<'TOverall, 'T> =
+        (body: TaskCode<'TOverall, 'T>, catch: exn -> TaskCode<'TOverall, 'T>)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.TryWith(body, catch)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryFinally
-        (
-            body: TaskCode<'TOverall, 'T>,
-            [<InlineIfLambda>] compensation: unit -> unit
-        ) : TaskCode<'TOverall, 'T> =
+        (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation: unit -> unit)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinally(
             body,
             ResumableCode<_, _>(fun _sm ->
@@ -100,10 +92,8 @@ type TaskBuilderBase() =
 
 #if NETSTANDARD2_1
     member inline internal this.TryFinallyAsync
-        (
-            body: TaskCode<'TOverall, 'T>,
-            compensation: unit -> ValueTask
-        ) : TaskCode<'TOverall, 'T> =
+        (body: TaskCode<'TOverall, 'T>, compensation: unit -> ValueTask)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinallyAsync(
             body,
             ResumableCode<_, _>(fun sm ->
@@ -138,11 +128,9 @@ type TaskBuilderBase() =
                         false)
         )
 
-    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable|null>
-        (
-            resource: 'Resource,
-            body: 'Resource -> TaskCode<'TOverall, 'T>
-        ) : TaskCode<'TOverall, 'T> =
+    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable | null>
+        (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>)
+        : TaskCode<'TOverall, 'T> =
         this.TryFinallyAsync(
             (fun sm -> (body resource).Invoke(&sm)),
             (fun () ->
@@ -310,11 +298,8 @@ module LowPriority =
             and ^Awaiter :> ICriticalNotifyCompletion
             and ^Awaiter: (member get_IsCompleted: unit -> bool)
             and ^Awaiter: (member GetResult: unit -> 'TResult1)>
-            (
-                sm: byref<_>,
-                task: ^TaskLike,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : bool =
+            (sm: byref<_>, task: ^TaskLike, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : bool =
 
             let mutable awaiter = (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) (task))
 
@@ -337,10 +322,8 @@ module LowPriority =
             and ^Awaiter :> ICriticalNotifyCompletion
             and ^Awaiter: (member get_IsCompleted: unit -> bool)
             and ^Awaiter: (member GetResult: unit -> 'TResult1)>
-            (
-                task: ^TaskLike,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : TaskCode<'TOverall, 'TResult2> =
+            (task: ^TaskLike, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<'TOverall, _>(fun sm ->
                 if __useResumableCode then
@@ -382,11 +365,9 @@ module LowPriority =
 
             this.Bind(task, this.Return)
 
-        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable|null>
-            (
-                resource: 'Resource,
-                body: 'Resource -> TaskCode<'TOverall, 'T>
-            ) =
+        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable | null>
+            (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>)
+            =
             ResumableCode.Using(resource, body)
 
 module HighPriority =
@@ -394,11 +375,8 @@ module HighPriority =
     type TaskBuilderBase with
 
         static member BindDynamic
-            (
-                sm: byref<_>,
-                task: Task<'TResult1>,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : bool =
+            (sm: byref<_>, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : bool =
             let mutable awaiter = task.GetAwaiter()
 
             let cont =
@@ -415,10 +393,8 @@ module HighPriority =
                 false
 
         member inline _.Bind
-            (
-                task: Task<'TResult1>,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : TaskCode<'TOverall, 'TResult2> =
+            (task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<'TOverall, _>(fun sm ->
                 if __useResumableCode then
@@ -455,10 +431,8 @@ module MediumPriority =
     type TaskBuilderBase with
 
         member inline this.Bind
-            (
-                computation: Async<'TResult1>,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : TaskCode<'TOverall, 'TResult2> =
+            (computation: Async<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : TaskCode<'TOverall, 'TResult2> =
             this.Bind(Async.StartImmediateAsTask computation, continuation)
 
         member inline this.ReturnFrom(computation: Async<'T>) : TaskCode<'T, 'T> =

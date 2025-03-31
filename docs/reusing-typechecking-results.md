@@ -25,7 +25,7 @@ Here are some assumptions I am coming with after tinkering with the topic and in
 
 ### Premise 1: current compiler design
 
-The heart of the compiler, [fsc.fs](src\Compiler\Driver\fsc.fs), is split into 6 phases (`main1` - `main6`). The code is designed to pass minimum information between phases, using the `Args` structure, which is essentially a data bag. The first phase takes info from the program arguments.
+The heart of the compiler, [fsc.fs](../src/Compiler/Driver/fsc.fs), is split into 6 phases (`main1` - `main6`). The code is designed to pass minimum information between phases, using the `Args` structure, which is essentially a data bag. The first phase takes info from the program arguments.
 
 ```fsharp
 main1 (...args...)

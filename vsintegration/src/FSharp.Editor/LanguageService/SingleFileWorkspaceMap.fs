@@ -18,9 +18,7 @@ type internal FSharpMiscellaneousFileService
         ConcurrentDictionary<string, Lazy<IFSharpWorkspaceProjectContext>>(StringComparer.OrdinalIgnoreCase)
 
     let optionsManager =
-        workspace.Services
-            .GetRequiredService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager
+        workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
     static let createSourceCodeKind (filePath: string) =
         if isScriptFile filePath then

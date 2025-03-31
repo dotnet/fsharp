@@ -156,8 +156,11 @@ type internal CompilerCaches =
     member ParseAndCheckAllFilesInProject: AsyncMemoizeDisabled<obj, obj, obj>
 
     member ParseAndCheckFileInProject:
-        AsyncMemoize<(string * FSharpProjectIdentifier), string * string, (FSharpParseFileResults *
-        FSharpCheckFileAnswer)>
+        AsyncMemoize<
+            (string * FSharpProjectIdentifier),
+            string * string,
+            (FSharpParseFileResults * FSharpCheckFileAnswer)
+         >
 
     member ParseAndCheckProject: AsyncMemoize<FSharpProjectIdentifier, string, FSharpCheckProjectResults>
 

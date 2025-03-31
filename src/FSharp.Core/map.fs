@@ -1001,13 +1001,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
             let txt1 = LanguagePrimitives.anyToStringShowingNull h1
             let txt2 = LanguagePrimitives.anyToStringShowingNull h2
 
-            StringBuilder()
-                .Append("map [")
-                .Append(txt1)
-                .Append("; ")
-                .Append(txt2)
-                .Append("]")
-                .ToString()
+            StringBuilder().Append("map [").Append(txt1).Append("; ").Append(txt2).Append("]").ToString()
         | [ KeyValue h1; KeyValue h2; KeyValue h3 ] ->
             let txt1 = LanguagePrimitives.anyToStringShowingNull h1
             let txt2 = LanguagePrimitives.anyToStringShowingNull h2

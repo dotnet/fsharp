@@ -26,7 +26,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
     let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
-        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+        let _, projectOptions = mkTestFileAndOptions Array.empty
 
         { projectOptions with
             SourceFiles = [| "A.fsi"; "A.fs" |] }
@@ -274,7 +274,7 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
     let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
-        let _, projectOptions = mkTestFileAndOptions "" Array.empty
+        let _, projectOptions = mkTestFileAndOptions Array.empty
 
         { projectOptions with
             SourceFiles = [| "A.fs" |] }
@@ -394,7 +394,6 @@ c.Abc
 let getCheckResults source options =
     let fileName, options =
         mkTestFileAndOptions
-            source
             options
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults
@@ -455,7 +454,7 @@ let exists() = System.IO.Path.Exists(null:string)
     let checkResults = getCheckResults source [|"--checknulls+";"--langversion:preview"|]
     checkResults.GetToolTip(2, 36, "let exists() = System.IO.Path.Exists(null:string)", [ "Exists" ], FSharpTokenTag.Identifier)
     |> assertAndExtractTooltip
-    |> fun (text,xml,remarks) ->
+    |> fun (text,xml,_remarks) ->
             text |> Assert.shouldBeEquivalentTo "System.IO.Path.Exists([<NotNullWhenAttribute (true)>] path: string | null) : bool"
             match xml with
             | FSharpXmlDoc.FromXmlFile (_dll,sigPath) -> sigPath |> Assert.shouldBeEquivalentTo "M:System.IO.Path.Exists(System.String)"

@@ -108,10 +108,7 @@ type internal XmlDocCommandFilter(wpfTextView: IWpfTextView, filePath: string, w
 
                                     paramNames
                                     |> List.iter (fun p ->
-                                        toInsert
-                                            .AppendLine()
-                                            .Append(' ', indent)
-                                            .Append(sprintf "/// <param name=\"%s\"></param>" p)
+                                        toInsert.AppendLine().Append(' ', indent).Append(sprintf "/// <param name=\"%s\"></param>" p)
                                         |> ignore)
 
                                     let _newSS =
