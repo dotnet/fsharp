@@ -5,8 +5,7 @@
     <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);1182</NoWarn> <!-- suppress warning for unused values in FSharp.Compiler.Service.Tests tests, very often checker results are needed, but not used -->
-    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
