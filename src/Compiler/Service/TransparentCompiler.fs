@@ -2070,22 +2070,20 @@ type internal TransparentCompiler
 
             // TODO: might need to deal with exceptions here:
             use _ = new CompilationGlobalsScope(DiscardErrorsLogger, BuildPhase.Parse)
-            let! tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
 
-            let tcConfig = TcConfig.Create(tcConfigB, validate = true)
+            match! ComputeBootstrapInfo projectSnapshot with
+            | None, creationDiags -> return emptyParseResult fileName creationDiags
+            | Some bootstrapInfo, _ ->
+                let tcConfig = bootstrapInfo.TcConfig
 
-            let _index, fileSnapshot =
-                projectSnapshot.SourceFiles
-                |> Seq.mapi pair
-                |> Seq.tryFind (fun (_, f) -> f.FileName = fileName)
-                |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
+                let fileSnapshot =
+                    projectSnapshot.SourceFiles |> List.find (fun f -> f.FileName = fileName)
 
-            let isExe = tcConfig.target.IsExe
-            let isLastCompiland = fileName = (sourceFileNames |> List.last)
-
-            let! file = LoadSource fileSnapshot isExe isLastCompiland
-            let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
-            return parseResult
+                let isExe = tcConfig.target.IsExe
+                let isLastCompiland = fileName = List.last projectSnapshot.SourceFileNames
+                let! file = LoadSource fileSnapshot isExe isLastCompiland
+                let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
+                return parseResult
         }
 
     member _.ParseFileWithoutProject
