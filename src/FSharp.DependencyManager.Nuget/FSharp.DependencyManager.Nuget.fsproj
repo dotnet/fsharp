@@ -8,7 +8,6 @@
     <AssemblyName>FSharp.DependencyManager.Nuget</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>

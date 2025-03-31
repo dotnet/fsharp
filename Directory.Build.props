@@ -10,11 +10,6 @@
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- TODO: These need to be removed once we merge/release the new SDK with noward and line fixes. -->
-    <NoWarn>$(NoWarn);FS0064;FS1182</NoWarn>
-  </PropertyGroup>
-
   <!--
    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local FSharp.Core project.
@@ -62,7 +57,7 @@
          since it's a non-arcade and non-sourcebuild scenario -->
     <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fslex.dll</FsLexPath>
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fsyacc.dll</FsYaccPath>
-    <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />

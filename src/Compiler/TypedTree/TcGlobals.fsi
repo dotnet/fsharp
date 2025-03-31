@@ -835,7 +835,10 @@ type internal TcGlobals =
     member knownFSharpCoreModules: System.Collections.Generic.IDictionary<string, FSharp.Compiler.TypedTree.EntityRef>
 
     member knownIntrinsics:
-        System.Collections.Concurrent.ConcurrentDictionary<(string * string option * string * int), FSharp.Compiler.TypedTree.ValRef>
+        System.Collections.Concurrent.ConcurrentDictionary<
+            (string * string option * string * int),
+            FSharp.Compiler.TypedTree.ValRef
+         >
 
     member knownWithNull: FSharp.Compiler.TypedTree.Nullness
 
