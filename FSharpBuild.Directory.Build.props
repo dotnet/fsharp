@@ -29,8 +29,6 @@
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarnOn>$(WarnOn);1182</WarnOn>
     <WarningsAsErrors>0025;$(WarningsAsErrors)</WarningsAsErrors>
-    <WarningsAsErrors Condition="$(TolerateUnusedBindings) != 'true'">1182;$(WarningsAsErrors)</WarningsAsErrors>
-    <WarningsNotAsErrors Condition="$(TolerateUnusedBindings) == 'true'">1182;$(WarningsNotAsErrors)</WarningsNotAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
     <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
     <OtherFlags Condition="$(AdditionalFscCmdFlags) != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
