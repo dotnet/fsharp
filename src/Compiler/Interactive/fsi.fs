@@ -77,7 +77,7 @@ open FSharp.Compiler.CheckExpressionsOps
 // For the FSI as a service methods...
 //----------------------------------------------------------------------------
 
-type FsiValue(reflectionValue: obj, reflectionType: Type, fsharpType: FSharpType) =
+type FsiValue(reflectionValue: objnull, reflectionType: Type, fsharpType: FSharpType) =
     member _.ReflectionValue = reflectionValue
 
     member _.ReflectionType = reflectionType
@@ -93,15 +93,15 @@ type FsiBoundValue(name: string, value: FsiValue) =
 [<AutoOpen>]
 module internal Utilities =
     type IAnyToLayoutCall =
-        abstract AnyToLayout: FormatOptions * obj * Type -> Layout
-        abstract FsiAnyToLayout: FormatOptions * obj * Type -> Layout
+        abstract AnyToLayout: FormatOptions * objnull * Type -> Layout
+        abstract FsiAnyToLayout: FormatOptions * objnull * Type -> Layout
 
     type private AnyToLayoutSpecialization<'T>() =
         interface IAnyToLayoutCall with
-            member _.AnyToLayout(options, o: obj, ty: Type) =
+            member _.AnyToLayout(options, o: objnull, ty: Type) =
                 Display.any_to_layout options ((Unchecked.unbox o: 'T), ty)
 
-            member _.FsiAnyToLayout(options, o: obj, ty: Type) =
+            member _.FsiAnyToLayout(options, o: objnull, ty: Type) =
                 Display.fsi_any_to_layout options ((Unchecked.unbox o: 'T), ty)
 
     let getAnyToLayoutCall (ty: Type) =
@@ -112,17 +112,23 @@ module internal Utilities =
                 |> NativeInterop.NativePtr.toNativeInt
 
             { new IAnyToLayoutCall with
-                member _.AnyToLayout(options, o: obj, ty: Type) =
-                    let n = pointerToNativeInt o
-                    Display.any_to_layout options (n, n.GetType())
+                member _.AnyToLayout(options, o: objnull, ty: Type) =
+                    match o with
+                    | null -> Display.any_to_layout options (o, ty)
+                    | o ->
+                        let n = pointerToNativeInt o
+                        Display.any_to_layout options (n, n.GetType())
 
-                member _.FsiAnyToLayout(options, o: obj, ty: Type) =
-                    let n = pointerToNativeInt o
-                    Display.any_to_layout options (n, n.GetType())
+                member _.FsiAnyToLayout(options, o: objnull, ty: Type) =
+                    match o with
+                    | null -> Display.any_to_layout options (o, ty)
+                    | o ->
+                        let n = pointerToNativeInt o
+                        Display.any_to_layout options (n, n.GetType())
             }
         else
             let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
-            !! Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
+            !!Activator.CreateInstance(specialized) :?> IAnyToLayoutCall
 
     let callStaticMethod (ty: Type) name args =
         ty.InvokeMember(
@@ -389,7 +395,7 @@ type ILMultiInMemoryAssemblyEmitEnv
 
     and convTypeAux ty =
         match ty with
-        | ILType.Void -> !! Type.GetType("System.Void")
+        | ILType.Void -> !!Type.GetType("System.Void")
         | ILType.Array(shape, eltType) ->
             let baseT = convTypeAux eltType
 
@@ -436,7 +442,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         let ltref = mkRefForNestedILTypeDef ILScopeRef.Local (enc, tdef)
         let tref = mkRefForNestedILTypeDef ilScopeRef (enc, tdef)
         let key = tref.BasicQualifiedName
-        let typ = !! asm.GetType(key)
+        let typ = !!asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
         let rtref = rescopeILTypeRef dynamicCcuScopeRef tref
         typeMap.Add(ltref, (typ, tref))
@@ -677,7 +683,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
             }
 
     /// Generate a layout for an actual F# value, where we know the value has the given static type.
-    member _.PrintValue(printMode, opts: FormatOptions, x: obj, ty: Type) =
+    member _.PrintValue(printMode, opts: FormatOptions, x: objnull, ty: Type) =
         // We do a dynamic invoke of any_to_layout with the right System.Type parameter for the static type of the saved value.
         // In principle this helps any_to_layout do the right thing as it descends through terms. In practice it means
         // it at least does the right thing for top level 'null' list and option values (but not for nested ones).
@@ -1575,7 +1581,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 
     let elementOrItemTref =
         if reflectionTy.HasElementType then
-            !! reflectionTy.GetElementType()
+            !!reflectionTy.GetElementType()
         else
             reflectionTy
         |> ConvReflectionTypeToILTypeRef
@@ -1898,7 +1904,7 @@ type internal FsiDynamicCompiler
                     if edef.ArgCount = 0 then
                         yield
                             (fun () ->
-                                let typ = !! asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
+                                let typ = !!asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
 
                                 try
                                     ignore (
@@ -2198,7 +2204,7 @@ type internal FsiDynamicCompiler
             lock tcLockObject (fun _ ->
                 CheckClosedInputSet(
                     ctok,
-                    diagnosticsLogger.CheckForErrors,
+                    (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
                     tcConfig,
                     tcImports,
                     tcGlobals,
@@ -2432,14 +2438,8 @@ type internal FsiDynamicCompiler
 
     /// Evaluate the given definitions and produce a new interactive state.
     member _.EvalParsedDefinitions
-        (
-            ctok,
-            diagnosticsLogger: DiagnosticsLogger,
-            istate,
-            showTypes,
-            isInteractiveItExpr,
-            defs: SynModuleDecl list
-        ) =
+        (ctok, diagnosticsLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list)
+        =
         let fileName = stdinMockFileName
 
         let m =
@@ -2675,12 +2675,8 @@ type internal FsiDynamicCompiler
     member _.HasDelayedDependencyManagerText = hasDelayedDependencyManagerText
 
     member fsiDynamicCompiler.ProcessDelayedDependencyManagerText
-        (
-            ctok,
-            istate: FsiDynamicCompilerState,
-            lexResourceManager,
-            diagnosticsLogger
-        ) =
+        (ctok, istate: FsiDynamicCompilerState, lexResourceManager, diagnosticsLogger)
+        =
         if not hasDelayedDependencyManagerText then
             istate
         else
@@ -2822,12 +2818,8 @@ type internal FsiDynamicCompiler
 
     /// Scrape #r, #I and package manager commands from a #load
     member fsiDynamicCompiler.ProcessMetaCommandsFromParsedInputAsInteractiveCommands
-        (
-            ctok,
-            istate: FsiDynamicCompilerState,
-            sourceFile,
-            input
-        ) =
+        (ctok, istate: FsiDynamicCompilerState, sourceFile, input)
+        =
         WithImplicitHome (tcConfigB, directoryName sourceFile) (fun () ->
             ProcessMetaCommandsFromInput
                 ((fun st (m, nm) ->
@@ -2839,7 +2831,7 @@ type internal FsiDynamicCompiler
 
                      st),
                  (fun _ _ -> ()))
-                (tcConfigB, input, !! Path.GetDirectoryName(sourceFile), istate))
+                (tcConfigB, input, !!Path.GetDirectoryName(sourceFile), istate))
 
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
@@ -4462,11 +4454,8 @@ let internal SpawnThread name f =
     th.Start()
 
 let internal SpawnInteractiveServer
-    (
-        fsi: FsiEvaluationSessionHostConfig,
-        fsiOptions: FsiCommandLineOptions,
-        fsiConsoleOutput: FsiConsoleOutput
-    ) =
+    (fsi: FsiEvaluationSessionHostConfig, fsiOptions: FsiCommandLineOptions, fsiConsoleOutput: FsiConsoleOutput)
+    =
     //printf "Spawning fsi server on channel '%s'" !fsiServerName;
     SpawnThread "ServerThread" (fun () ->
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
@@ -4480,11 +4469,8 @@ let internal SpawnInteractiveServer
 ///
 /// This gives us a last chance to catch an abort on the main execution thread.
 let internal DriveFsiEventLoop
-    (
-        fsi: FsiEvaluationSessionHostConfig,
-        fsiInterruptController: FsiInterruptController,
-        fsiConsoleOutput: FsiConsoleOutput
-    ) =
+    (fsi: FsiEvaluationSessionHostConfig, fsiInterruptController: FsiInterruptController, fsiConsoleOutput: FsiConsoleOutput)
+    =
 
     if progress then
         fprintfn fsiConsoleOutput.Out "GUI thread runLoop"
@@ -4764,7 +4750,7 @@ type FsiEvaluationSession
     let makeNestedException (userExn: #Exception) =
         // clone userExn -- make userExn the inner exception, to retain the stacktrace on raise
         let arguments = [| userExn.Message :> obj; userExn :> obj |]
-        !! Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
+        !!Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
 
     let commitResult res =
         match res with
@@ -5191,7 +5177,7 @@ module Settings =
             and set v = args <- v
 
         member _.AddPrinter(printer: 'T -> string) =
-            addedPrinters <- Choice1Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
+            addedPrinters <- Choice1Of2(typeof<'T>, (fun (x: objnull) -> printer (unbox x))) :: addedPrinters
 
         member _.EventLoop
             with get () = evLoop
@@ -5199,8 +5185,8 @@ module Settings =
                 evLoop.ScheduleRestart()
                 evLoop <- x
 
-        member _.AddPrintTransformer(printer: 'T -> obj) =
-            addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
+        member _.AddPrintTransformer(printer: 'T -> objnull) =
+            addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: objnull) -> printer (unbox x))) :: addedPrinters
 
     let fsi = InteractiveSettings()
 

@@ -266,108 +266,103 @@ module internal Impl =
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
-    let tryFindCompilationMappingAttribute (attrs: obj array) =
+    let findCompilationMappingAttributeAllowMultiple (attrs: obj array) =
         match attrs with
-        | null
-        | [||] -> None
-        | [| res |] ->
-            let a = (res :?> CompilationMappingAttribute)
-            Some(a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
-        | _ -> invalidOp (SR.GetString(SR.multipleCompilationMappings))
-
-    let findCompilationMappingAttribute (attrs: obj array) =
-        match tryFindCompilationMappingAttribute attrs with
-        | None -> failwith "no compilation mapping attribute"
-        | Some a -> a
+        | null -> [||]
+        | attrs ->
+            attrs
+            |> Array.map (fun res ->
+                let a = (res :?> CompilationMappingAttribute)
+                (a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber))
 
     let cmaName = typeof<CompilationMappingAttribute>.FullName
     let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name
     let _ = assert (assemblyName = "FSharp.Core")
 
-    let tryFindCompilationMappingAttributeFromData (attrs: IList<CustomAttributeData>) =
+    let findCompilationMappingAttributeFromDataAllowMultiple (attrs: IList<CustomAttributeData>) =
         match attrs with
-        | null -> None
+        | null -> [||]
         | _ ->
-            let mutable res = None
+            let filtered =
+                attrs
+                |> Array.ofSeq
+                |> Array.filter (fun a -> a.Constructor.DeclaringType.FullName = cmaName)
 
-            for a in attrs do
-                if a.Constructor.DeclaringType.FullName = cmaName then
-                    let args = a.ConstructorArguments
+            filtered
+            |> Array.map (fun a ->
+                let args = a.ConstructorArguments
 
-                    let flags =
-                        match args.Count with
-                        | 1 ->
-                            let arg0 = args.[0]
-                            let v0 = arg0.Value :?> SourceConstructFlags
-                            (v0, 0, 0)
-                        | 2 ->
-                            let arg0 = args.[0]
-                            let v0 = arg0.Value :?> SourceConstructFlags
-                            let arg1 = args.[1]
-                            let v1 = arg1.Value :?> int
-                            (v0, v1, 0)
-                        | 3 ->
-                            let arg0 = args.[0]
-                            let v0 = arg0.Value :?> SourceConstructFlags
-                            let arg1 = args.[1]
-                            let v1 = arg1.Value :?> int
-                            let arg2 = args.[2]
-                            let v2 = arg2.Value :?> int
-                            (v0, v1, v2)
-                        | _ -> (enum 0, 0, 0)
-
-                    res <- Some flags
-
-            res
-
-    let findCompilationMappingAttributeFromData attrs =
-        match tryFindCompilationMappingAttributeFromData attrs with
-        | None -> failwith "no compilation mapping attribute"
-        | Some a -> a
+                match args.Count with
+                | 1 ->
+                    let arg0 = args.[0]
+                    let v0 = arg0.Value :?> SourceConstructFlags
+                    (v0, 0, 0)
+                | 2 ->
+                    let arg0 = args.[0]
+                    let v0 = arg0.Value :?> SourceConstructFlags
+                    let arg1 = args.[1]
+                    let v1 = arg1.Value :?> int
+                    (v0, v1, 0)
+                | 3 ->
+                    let arg0 = args.[0]
+                    let v0 = arg0.Value :?> SourceConstructFlags
+                    let arg1 = args.[1]
+                    let v1 = arg1.Value :?> int
+                    let arg2 = args.[2]
+                    let v2 = arg2.Value :?> int
+                    (v0, v1, v2)
+                | _ -> (enum 0, 0, 0))
 
     let tryFindCompilationMappingAttributeFromType (typ: Type) =
         let assem = typ.Assembly
 
         if (not (isNull assem)) && assem.ReflectionOnly then
-            tryFindCompilationMappingAttributeFromData (typ.GetCustomAttributesData())
+            findCompilationMappingAttributeFromDataAllowMultiple (typ.GetCustomAttributesData())
         else
-            tryFindCompilationMappingAttribute (typ.GetCustomAttributes(typeof<CompilationMappingAttribute>, false))
-
-    let tryFindCompilationMappingAttributeFromMemberInfo (info: MemberInfo) =
-        let assem = info.DeclaringType.Assembly
-
-        if (not (isNull assem)) && assem.ReflectionOnly then
-            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
-        else
-            tryFindCompilationMappingAttribute (info.GetCustomAttributes(typeof<CompilationMappingAttribute>, false))
+            findCompilationMappingAttributeAllowMultiple (
+                typ.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
+            )
 
     let findCompilationMappingAttributeFromMemberInfo (info: MemberInfo) =
         let assem = info.DeclaringType.Assembly
 
         if (not (isNull assem)) && assem.ReflectionOnly then
-            findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
+            findCompilationMappingAttributeFromDataAllowMultiple (info.GetCustomAttributesData())
         else
-            findCompilationMappingAttribute (info.GetCustomAttributes(typeof<CompilationMappingAttribute>, false))
+            findCompilationMappingAttributeAllowMultiple (
+                info.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
+            )
 
     let sequenceNumberOfMember (x: MemberInfo) =
-        let (_, n, _) = findCompilationMappingAttributeFromMemberInfo x in n
+        let (_, n, _) = findCompilationMappingAttributeFromMemberInfo x |> Array.head
+        n
 
-    let variantNumberOfMember (x: MemberInfo) =
-        let (_, _, vn) = findCompilationMappingAttributeFromMemberInfo x in vn
+    let sequenceNumberOfUnionCaseField (x: MemberInfo) caseTag =
+        findCompilationMappingAttributeFromMemberInfo x
+        |> Array.tryFind (fun (_, _, vn) -> vn = caseTag)
+        |> Option.map (fun (_, sn, _) -> sn)
+        |> Option.defaultValue Int32.MaxValue
+
+    let belongsToCase (x: MemberInfo) caseTag =
+        findCompilationMappingAttributeFromMemberInfo x
+        |> Array.exists (fun (_, _, vn) -> vn = caseTag)
 
     let sortFreshArray f arr =
         Array.sortInPlaceWith f arr
         arr
 
     let isFieldProperty (prop: PropertyInfo) =
-        match tryFindCompilationMappingAttributeFromMemberInfo prop with
-        | None -> false
-        | Some(flags, _n, _vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
+        match findCompilationMappingAttributeFromMemberInfo prop with
+        | [||] -> false
+        | arr ->
+            let (flags, _, _) = arr |> Array.head
+            (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
 
     let tryFindSourceConstructFlagsOfType (typ: Type) =
         match tryFindCompilationMappingAttributeFromType typ with
-        | None -> None
-        | Some(flags, _n, _vn) -> Some flags
+        | [||] -> None
+        | [| flags, _n, _vn |] -> Some flags
+        | _ -> invalidOp (SR.GetString(SR.multipleCompilationMappings))
 
     //-----------------------------------------------------------------
     // UNION DECOMPILATION
@@ -379,9 +374,11 @@ module internal Impl =
         | null ->
             typ.GetMethods(staticMethodFlags ||| bindingFlags)
             |> Array.choose (fun minfo ->
-                match tryFindCompilationMappingAttributeFromMemberInfo minfo with
-                | None -> None
-                | Some(flags, n, _vn) ->
+                match findCompilationMappingAttributeFromMemberInfo minfo with
+                | [||] -> None
+                | arr ->
+                    let (flags, n, _) = arr |> Array.head
+
                     if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then
                         let nm = minfo.Name
                         // chop "get_" or  "New" off the front
@@ -510,8 +507,9 @@ module internal Impl =
 
             caseTyp.GetProperties(instancePropertyFlags ||| bindingFlags)
             |> Array.filter isFieldProperty
-            |> Array.filter (fun prop -> variantNumberOfMember prop = tag)
-            |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
+            |> Array.filter (fun prop -> belongsToCase prop tag)
+            |> sortFreshArray (fun p1 p2 ->
+                compare (sequenceNumberOfUnionCaseField p1 tag) (sequenceNumberOfUnionCaseField p2 tag))
 
     let getUnionCaseRecordReader (typ: Type, tag: int, bindingFlags) =
         let props = fieldsPropsOfUnionCase (typ, tag, bindingFlags)
@@ -1338,8 +1336,7 @@ type FSharpValue =
     static member PreComputeTupleConstructor(tupleType: Type) =
         checkTupleType ("tupleType", tupleType)
 
-        (compileTupleConstructor tupleEncField getTupleConstructorMethod tupleType)
-            .Invoke
+        (compileTupleConstructor tupleEncField getTupleConstructorMethod tupleType).Invoke
 
     static member PreComputeTupleConstructorInfo(tupleType: Type) =
         checkTupleType ("tupleType", tupleType)
@@ -1447,10 +1444,8 @@ module FSharpReflectionExtensions =
             FSharpValue.GetRecordFields(record, bindingFlags)
 
         static member PreComputeRecordReader
-            (
-                recordType: Type,
-                ?allowAccessToPrivateRepresentation
-            ) : (obj -> objnull array) =
+            (recordType: Type, ?allowAccessToPrivateRepresentation)
+            : (obj -> objnull array) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeRecordReader(recordType, bindingFlags)
 
@@ -1483,18 +1478,14 @@ module FSharpReflectionExtensions =
             FSharpValue.GetUnionFields(value, unionType, bindingFlags)
 
         static member PreComputeUnionTagReader
-            (
-                unionType: Type,
-                ?allowAccessToPrivateRepresentation
-            ) : (objnull -> int) =
+            (unionType: Type, ?allowAccessToPrivateRepresentation)
+            : (objnull -> int) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionTagReader(unionType, bindingFlags)
 
         static member PreComputeUnionReader
-            (
-                unionCase: UnionCaseInfo,
-                ?allowAccessToPrivateRepresentation
-            ) : (objnull -> objnull array) =
+            (unionCase: UnionCaseInfo, ?allowAccessToPrivateRepresentation)
+            : (objnull -> objnull array) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionReader(unionCase, bindingFlags)
 

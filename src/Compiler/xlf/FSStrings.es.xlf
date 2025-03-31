@@ -18,8 +18,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
-        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</source>
-        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability.</target>
+        <source>Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</source>
+        <target state="new">Nullness warning: A non-nullable '{0}' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverNullnessWarningWithType">
@@ -35,6 +35,21 @@
       <trans-unit id="ErrorFromAddingTypeEquationTuples">
         <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
         <target state="translated">Error de coincidencia de tipos. Se espera una tupla de longitud {0} de tipo\n    {1}    \nperero se ha proporcionado una tupla de longitud {2} de tipo\n    {3}{4}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental1">
+        <source>This construct is experimental</source>
+        <target state="new">This construct is experimental</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental2">
+        <source>. {0}</source>
+        <target state="new">. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental3">
+        <source>. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
+        <target state="new">. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
@@ -154,7 +169,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">En general, los identificadores de variables en mayúscula no deben usarse en patrones y pueden indicar una declaración abierta que falta o un nombre de patrón mal escrito.</target>
+        <target state="translated">En general, los identificadores de variables en mayúscula no deben usarse en patrones y pueden indicar una declaración abierta que falta o un nombre de patrón mal escrito.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
@@ -1545,11 +1560,6 @@
       <trans-unit id="Obsolete2">
         <source>. {0}</source>
         <target state="translated">. {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Experimental">
-        <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}. Esta advertencia se puede deshabilitar con '--nowarn:57' o '#nowarn "57"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">

@@ -2,6 +2,7 @@
 namespace FSharp.Compiler.Diagnostics
 
 open System
+open Internal.Utilities.Library
 
 /// For activities following the dotnet distributed tracing concept
 /// https://learn.microsoft.com/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
@@ -39,14 +40,16 @@ module internal Activity =
     module Events =
         val cacheHit: string
 
-    val startNoTags: name: string -> IDisposable
+    val startNoTags: name: string -> ActivityDisposable
 
-    val start: name: string -> tags: (string * string) seq -> IDisposable
+    val start: name: string -> tags: (string * string) seq -> ActivityDisposable
 
     val addEvent: name: string -> unit
 
+    val addEventWithTags: name: string -> tags: (string * objnull) seq -> unit
+
     module Profiling =
-        val startAndMeasureEnvironmentStats: name: string -> IDisposable
+        val startAndMeasureEnvironmentStats: name: string -> ActivityDisposable
         val addConsoleListener: unit -> IDisposable
 
     module CsvExport =

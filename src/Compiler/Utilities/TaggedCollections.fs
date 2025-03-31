@@ -883,7 +883,7 @@ module MapTree =
                     let k3, v3, l' = spliceOutSuccessor mn.Left in k3, v3, mk l' mn.Key mn.Value mn.Right
             | _ -> m.Key, m.Value, empty
 
-    let rec remove (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+    let rec remove (comparer: IComparer<'Key>) (k: 'Key) (m: MapTree<'Key, 'Value>) =
         if isEmpty m then
             empty
         else
@@ -905,7 +905,7 @@ module MapTree =
                     rebalance mn.Left mn.Key mn.Value (remove comparer k mn.Right)
             | _ -> if c = 0 then empty else m
 
-    let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+    let rec mem (comparer: IComparer<'Key>) (k: 'Key) (m: MapTree<'Key, 'Value>) =
         if isEmpty m then
             false
         else
@@ -1017,7 +1017,14 @@ module MapTree =
     let foldBack f m x =
         foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
-    let foldSectionOpt (comparer: IComparer<'Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
+    let foldSectionOpt
+        (comparer: IComparer<'Key>)
+        (lo: 'Key)
+        (hi: 'Key)
+        (f: OptimizedClosures.FSharpFunc<_, _, _, _>)
+        (m: MapTree<'Key, 'Value>)
+        x
+        =
         let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
             if isEmpty m then
                 x

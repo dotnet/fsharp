@@ -341,6 +341,7 @@ type internal FSharpPackage() as this =
     let mutable solutionEventsOpt = None
 
 #if DEBUG
+    let _traceProvider = Logging.Activity.export ()
     let _logger = Logging.Activity.listenToAll ()
     // Logging.Activity.listen "IncrementalBuild"
 #endif
@@ -374,14 +375,10 @@ type internal FSharpPackage() as this =
                 this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
             let optionsManager =
-                workspace.Services
-                    .GetService<IFSharpWorkspaceService>()
-                    .FSharpProjectOptionsManager
+                workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
             let metadataAsSource =
-                this.ComponentModel.DefaultExportProvider
-                    .GetExport<FSharpMetadataAsSourceService>()
-                    .Value
+                this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
 
             let! solution = this.GetServiceAsync(typeof<SVsSolution>)
             let solution = solution :?> IVsSolution
@@ -439,9 +436,7 @@ type internal FSharpLanguageService(package: FSharpPackage) =
         let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
 
         let solutionAnalysis =
-            workspace.Services
-                .GetService<EditorOptions>()
-                .Advanced.SolutionBackgroundAnalysis
+            workspace.Services.GetService<EditorOptions>().Advanced.SolutionBackgroundAnalysis
 
         globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 

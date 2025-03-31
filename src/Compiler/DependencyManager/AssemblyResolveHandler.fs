@@ -15,25 +15,24 @@ type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerCoreclr(assemblyProbingPaths: AssemblyResolutionProbe option) as this =
     let loadContextType =
-        !! Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
+        !!Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
     let loadFromAssemblyPathMethod =
-        !! loadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
+        !!loadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
 
-    let eventInfo = !! loadContextType.GetEvent("Resolving")
+    let eventInfo = !!loadContextType.GetEvent("Resolving")
 
     let handler, defaultAssemblyLoadContext =
         let ti = typeof<AssemblyResolveHandlerCoreclr>
 
         let gmi =
-            !! ti.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
+            !!ti.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
         let mi = gmi.MakeGenericMethod(loadContextType)
         let del = Delegate.CreateDelegate(!!eventInfo.EventHandlerType, this, mi)
 
         let prop =
-            (!! loadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public))
-                .GetValue(null, null)
+            (!!loadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)).GetValue(null, null)
 
         del, prop
 
@@ -41,7 +40,7 @@ type AssemblyResolveHandlerCoreclr(assemblyProbingPaths: AssemblyResolutionProbe
 
     member _.ResolveAssemblyNetStandard (ctxt: 'T) (assemblyName: AssemblyName) : Assembly =
         let loadAssembly path =
-            !! loadFromAssemblyPathMethod.Invoke(ctxt, [| path |]) :?> Assembly
+            !!loadFromAssemblyPathMethod.Invoke(ctxt, [| path |]) :?> Assembly
 
         let assemblyPaths =
             match assemblyProbingPaths with
@@ -113,7 +112,7 @@ type AssemblyResolveHandler internal (assemblyProbingPaths: AssemblyResolutionPr
             else
                 new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable)
 
-    new(assemblyProbingPaths: AssemblyResolutionProbe MaybeNull) = new AssemblyResolveHandler(Option.ofObj assemblyProbingPaths)
+    new(assemblyProbingPaths: AssemblyResolutionProbe | null) = new AssemblyResolveHandler(Option.ofObj assemblyProbingPaths)
 
     interface IDisposable with
         member _.Dispose() =

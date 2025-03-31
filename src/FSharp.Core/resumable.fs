@@ -131,11 +131,8 @@ module ResumableCode =
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
     let CombineDynamic
-        (
-            sm: byref<ResumableStateMachine<'Data>>,
-            code1: ResumableCode<'Data, unit>,
-            code2: ResumableCode<'Data, 'T>
-        ) : bool =
+        (sm: byref<ResumableStateMachine<'Data>>, code1: ResumableCode<'Data, unit>, code2: ResumableCode<'Data, 'T>)
+        : bool =
         if code1.Invoke(&sm) then
             code2.Invoke(&sm)
         else
@@ -170,11 +167,8 @@ module ResumableCode =
                 CombineDynamic(&sm, code1, code2))
 
     let rec WhileDynamic
-        (
-            sm: byref<ResumableStateMachine<'Data>>,
-            condition: unit -> bool,
-            body: ResumableCode<'Data, unit>
-        ) : bool =
+        (sm: byref<ResumableStateMachine<'Data>>, condition: unit -> bool, body: ResumableCode<'Data, unit>)
+        : bool =
         if condition () then
             if body.Invoke(&sm) then
                 WhileDynamic(&sm, condition, body)
@@ -207,10 +201,8 @@ module ResumableCode =
 
     /// Builds a step that executes the body while the condition predicate is true.
     let inline While
-        (
-            [<InlineIfLambda>] condition: unit -> bool,
-            body: ResumableCode<'Data, unit>
-        ) : ResumableCode<'Data, unit> =
+        ([<InlineIfLambda>] condition: unit -> bool, body: ResumableCode<'Data, unit>)
+        : ResumableCode<'Data, unit> =
         ResumableCode<'Data, unit>(fun sm ->
             if __useResumableCode then
                 //-- RESUMABLE CODE START
@@ -252,10 +244,8 @@ module ResumableCode =
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     let inline TryWith
-        (
-            body: ResumableCode<'Data, 'T>,
-            catch: exn -> ResumableCode<'Data, 'T>
-        ) : ResumableCode<'Data, 'T> =
+        (body: ResumableCode<'Data, 'T>, catch: exn -> ResumableCode<'Data, 'T>)
+        : ResumableCode<'Data, 'T> =
         ResumableCode<'Data, 'T>(fun sm ->
             if __useResumableCode then
                 //-- RESUMABLE CODE START
@@ -283,11 +273,8 @@ module ResumableCode =
                 TryWithDynamic(&sm, body, catch))
 
     let rec TryFinallyCompensateDynamic
-        (
-            sm: byref<ResumableStateMachine<'Data>>,
-            mf: ResumptionFunc<'Data>,
-            savedExn: exn option
-        ) : bool =
+        (sm: byref<ResumableStateMachine<'Data>>, mf: ResumptionFunc<'Data>, savedExn: exn option)
+        : bool =
         let mutable fin = false
         fin <- mf.Invoke(&sm)
 
@@ -362,10 +349,8 @@ module ResumableCode =
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     let inline TryFinallyAsync
-        (
-            body: ResumableCode<'Data, 'T>,
-            compensation: ResumableCode<'Data, unit>
-        ) : ResumableCode<'Data, 'T> =
+        (body: ResumableCode<'Data, 'T>, compensation: ResumableCode<'Data, unit>)
+        : ResumableCode<'Data, 'T> =
         ResumableCode<'Data, 'T>(fun sm ->
             if __useResumableCode then
                 //-- RESUMABLE CODE START
@@ -396,10 +381,8 @@ module ResumableCode =
                 TryFinallyAsyncDynamic(&sm, body, compensation))
 
     let inline Using
-        (
-            resource: 'Resource,
-            body: 'Resource -> ResumableCode<'Data, 'T>
-        ) : ResumableCode<'Data, 'T> when 'Resource :> IDisposable =
+        (resource: 'Resource, body: 'Resource -> ResumableCode<'Data, 'T>)
+        : ResumableCode<'Data, 'T> when 'Resource :> IDisposable | null =
         // A using statement is just a try/finally with the finally block disposing if non-null.
         TryFinally(
             ResumableCode<'Data, 'T>(fun sm -> (body resource).Invoke(&sm)),

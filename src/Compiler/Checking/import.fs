@@ -6,6 +6,7 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open FSharp.Compiler.Text.Range
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing
@@ -74,7 +75,7 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
                 stampEquals this.tcGlobals this.ty1 other.ty1
                 && stampEquals this.tcGlobals this.ty2 other.ty2
 
-    override this.Equals other =
+    override this.Equals(other:objnull) =
         match other with
         | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
         | _ -> false
@@ -449,13 +450,13 @@ let rec ImportProvidedTypeAsILType (env: ImportMap) (m: range) (st: Tainted<Prov
     elif st.PUntaint((fun st -> st.IsGenericParameter), m) then
         mkILTyvarTy (uint16 (st.PUntaint((fun st -> st.GenericParameterPosition), m)))
     elif st.PUntaint((fun st -> st.IsArray), m) then
-        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()), m))
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> !! st.GetElementType()), m))
         ILType.Array(ILArrayShape.FromRank (st.PUntaint((fun st -> st.GetArrayRank()), m)), et)
     elif st.PUntaint((fun st -> st.IsByRef), m) then
-        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()), m))
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> !! st.GetElementType()), m))
         ILType.Byref et
     elif st.PUntaint((fun st -> st.IsPointer), m) then
-        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> st.GetElementType()), m))
+        let et = ImportProvidedTypeAsILType env m (st.PApply((fun st -> !! st.GetElementType()), m))
         ILType.Ptr et
     else
         let gst, genericArgs =
@@ -493,15 +494,15 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then
-        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> !! st.GetElementType()), m))
         // TODO Nullness - integration into type providers as a separate feature for later.
         let nullness = Nullness.knownAmbivalent
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m)) nullness elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then
-        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> !! st.GetElementType()), m))
         mkByrefTy g elemTy
     elif st.PUntaint((fun st -> st.IsPointer), m) then
-        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> !! st.GetElementType()), m))
         if isUnitTy g elemTy || isVoidTy g elemTy && g.voidptr_tcr.CanDeref then
             mkVoidPtrTy g
         else
@@ -553,16 +554,19 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then
                     let rec conv ty =
                         match ty with
-                        | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv ty1, conv ty2)
+                        | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr ->
+                            let ms1: Measure = conv ty1
+                            let ms2: Measure = conv ty2
+                            Measure.Prod(ms1, ms2, unionRanges ms1.Range ms2.Range)
                         | TType_app (tcref, [ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
-                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One
-                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const tcref
+                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One(tcref.Range)
+                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const(tcref, tcref.Range)
                         | TType_app (tcref, _, _) ->
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
-                            Measure.One
+                            Measure.One(tcref.Range)
                         | _ ->
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name), m))
-                            Measure.One
+                            Measure.One(Range.Zero)
 
                     TType_measure (conv genericArg)
                 else
@@ -598,7 +602,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 | Some found -> found.Coerce(m)
                 | None ->
                     let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
-                    let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
+                    let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> string declaringGenericTypeDefn.FullName), m)
                     error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ ->
          match mbase.OfType<ProvidedConstructorInfo>() with
@@ -630,7 +634,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 match found with
                 | Some found -> found.Coerce(m)
                 | None ->
-                    let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName), m)
+                    let typeName = declaringGenericTypeDefn.PUntaint((fun x -> string x.FullName), m)
                     error(Error(FSComp.SR.etIncorrectProvidedConstructor(DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
          | _ -> mbase
 
@@ -644,7 +648,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
 
      let genericArity =
         if mbase.PUntaint((fun x -> x.IsGenericMethod), m) then
-            mbase.PUntaint((fun x -> x.GetGenericArguments().Length), m)
+            mbase.PApplyArray((fun x -> x.GetGenericArguments()),"GetGenericArguments", m).Length
         else 0
 
      let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic), m) then ILCallingConv.Static else ILCallingConv.Instance)

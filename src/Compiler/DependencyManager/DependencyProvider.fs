@@ -15,7 +15,7 @@ open System.Collections.Concurrent
 module Option =
 
     /// Convert string into Option string where null and String.Empty result in None
-    let ofString (s: string MaybeNull) =
+    let ofString (s: string | null) =
         match s with
         | null -> None
         | "" -> None
@@ -123,9 +123,6 @@ type IResolveDependenciesResult =
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
@@ -334,42 +331,36 @@ type ReflectionDependencyManagerProvider
             member _.StdOut =
                 match getInstanceProperty<string[]> (result.GetType()) "StdOut" with
                 | None -> [||]
-                | Some p -> !! p.GetValue(result) :?> string[]
+                | Some p -> !!p.GetValue(result) :?> string[]
 
             /// The resolution error log (* process stderror *)
             member _.StdError =
                 match getInstanceProperty<string[]> (result.GetType()) "StdError" with
                 | None -> [||]
-                | Some p -> !! p.GetValue(result) :?> string[]
+                | Some p -> !!p.GetValue(result) :?> string[]
 
             /// The resolution paths
             member _.Resolutions =
                 match getInstanceProperty<seq<string>> (result.GetType()) "Resolutions" with
                 | None -> Seq.empty<string>
-                | Some p -> !! p.GetValue(result) :?> seq<string>
+                | Some p -> !!p.GetValue(result) :?> seq<string>
 
             /// The source code file paths
             member _.SourceFiles =
                 match getInstanceProperty<seq<string>> (result.GetType()) "SourceFiles" with
                 | None -> Seq.empty<string>
-                | Some p -> !! p.GetValue(result) :?> seq<string>
+                | Some p -> !!p.GetValue(result) :?> seq<string>
 
             /// The roots to package directories
             member _.Roots =
                 match getInstanceProperty<seq<string>> (result.GetType()) "Roots" with
                 | None -> Seq.empty<string>
-                | Some p -> !! p.GetValue(result) :?> seq<string>
+                | Some p -> !!p.GetValue(result) :?> seq<string>
         }
 
     static member MakeResultFromFields
-        (
-            success: bool,
-            stdOut: string[],
-            stdError: string[],
-            resolutions: seq<string>,
-            sourceFiles: seq<string>,
-            roots: seq<string>
-        ) =
+        (success: bool, stdOut: string[], stdError: string[], resolutions: seq<string>, sourceFiles: seq<string>, roots: seq<string>)
+        =
         { new IResolveDependenciesResult with
             /// Succeeded?
             member _.Success = success
@@ -409,16 +400,8 @@ type ReflectionDependencyManagerProvider
 
         /// Resolve the dependencies for the given arguments
         member _.ResolveDependencies
-            (
-                scriptDir,
-                mainScriptName,
-                scriptName,
-                scriptExt,
-                packageManagerTextLines,
-                tfm,
-                rid,
-                timeout
-            ) : IResolveDependenciesResult =
+            (scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid, timeout)
+            : IResolveDependenciesResult =
             // The ResolveDependencies method, has two signatures, the original signature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
@@ -564,7 +547,7 @@ type DependencyProvider
     new() = new DependencyProvider(None, None, true)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
-    member _.GetRegisteredDependencyManagerHelpText(compilerTools, outputDir, errorReport) =
+    member _.GetRegisteredDependencyManagerHelpText(compilerTools, outputDir: string | null, errorReport) =
         [|
             let managers =
                 RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
@@ -575,7 +558,7 @@ type DependencyProvider
         |]
 
     /// Clear the DependencyManager results caches
-    member _.ClearResultsCache(compilerTools, outputDir, errorReport) =
+    member _.ClearResultsCache(compilerTools, outputDir: string | null, errorReport) =
         let managers =
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
 
@@ -584,12 +567,8 @@ type DependencyProvider
 
     /// Returns a formatted error message for the host to present
     member _.CreatePackageManagerUnknownError
-        (
-            compilerTools: seq<string>,
-            outputDir: string,
-            packageManagerKey: string,
-            reportError: ResolvingErrorReport
-        ) =
+        (compilerTools: seq<string>, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport)
+        =
         let registeredKeys =
             String.Join(
                 ", ",
@@ -602,12 +581,8 @@ type DependencyProvider
 
     /// Fetch a dependencymanager that supports a specific key
     member this.TryFindDependencyManagerInPath
-        (
-            compilerTools: seq<string>,
-            outputDir: string,
-            reportError: ResolvingErrorReport,
-            path: string
-        ) : string MaybeNull * IDependencyManagerProvider MaybeNull =
+        (compilerTools: seq<string>, outputDir: string, reportError: ResolvingErrorReport, path: string)
+        : string | null * IDependencyManagerProvider | null =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers =
@@ -632,12 +607,8 @@ type DependencyProvider
 
     /// Fetch a dependencymanager that supports a specific key
     member _.TryFindDependencyManagerByKey
-        (
-            compilerTools: seq<string>,
-            outputDir: string,
-            reportError: ResolvingErrorReport,
-            key: string
-        ) : IDependencyManagerProvider MaybeNull =
+        (compilerTools: seq<string>, outputDir: string, reportError: ResolvingErrorReport, key: string)
+        : IDependencyManagerProvider | null =
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
@@ -657,7 +628,7 @@ type DependencyProvider
             packageManagerTextLines: (string * string) seq,
             reportError: ResolvingErrorReport,
             executionTfm: string,
-            [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull,
+            [<Optional; DefaultParameterValue(null: string | null)>] executionRid: string | null,
             [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string,
             [<Optional; DefaultParameterValue("")>] mainScriptName: string,
             [<Optional; DefaultParameterValue("")>] fileName: string,
@@ -681,8 +652,8 @@ type DependencyProvider
                     try
                         let executionRid =
                             match executionRid with
-                            | Null -> RidHelpers.platformRid
-                            | NonNull executionRid -> executionRid
+                            | null -> RidHelpers.platformRid
+                            | executionRid -> executionRid
 
                         Ok(
                             packageManager.ResolveDependencies(

@@ -72,9 +72,9 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
 
     let nativeLibraryTryLoad =
         let nativeLibraryType: Type =
-            !! Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
+            !!Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
 
-        !! nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
+        !!nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
 
     let loadNativeLibrary path =
         let arguments = [| path :> obj; IntPtr.Zero :> obj |]
@@ -157,13 +157,12 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
     // netstandard 2.1 has this property, unfortunately we don't build with that yet
     //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
     let assemblyLoadContextType: Type =
-        !! Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
+        !!Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
     let eventInfo, handler, defaultAssemblyLoadContext =
-        !! assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
+        !!assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
         Func<Assembly, string, IntPtr> resolveUnmanagedDll,
-        (!! assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public))
-            .GetValue(null, null)
+        (!!assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)).GetValue(null, null)
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
@@ -184,7 +183,7 @@ type NativeDllResolveHandler(nativeProbingRoots: NativeResolutionProbe option) =
         |> Option.filter (fun _ -> isRunningOnCoreClr)
         |> Option.map (fun _ -> new NativeDllResolveHandlerCoreClr(nativeProbingRoots))
 
-    new(nativeProbingRoots: NativeResolutionProbe MaybeNull) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
+    new(nativeProbingRoots: NativeResolutionProbe | null) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
         handler |> Option.iter (fun handler -> handler.RefreshPathsInEnvironment(roots))

@@ -138,6 +138,12 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
+    member this.PApplyFilteredArray(factory, filter, methodName, range:range) =        
+        let a : 'U[] MaybeNull = this.Protect factory range
+        match a with 
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | NonNull a -> a |> Array.filter filter |> Array.map (fun u -> Tainted(context,u))
+
     member this.PApplyOption(f, range: range) =        
         let a = this.Protect f range
         match a with 
@@ -165,13 +171,8 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
 
 module internal Tainted =
 
-#if NO_CHECKNULLS
-    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct =
-        if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
-#else
     let (|Null|NonNull|) (p:Tainted<'T | null>) : Choice<unit, Tainted<'T>> when 'T : not null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
-#endif
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 

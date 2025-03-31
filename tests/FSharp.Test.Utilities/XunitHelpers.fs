@@ -10,28 +10,18 @@ open Xunit.Abstractions
 
 open TestFramework
 
+open FSharp.Compiler.Diagnostics
+
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
 type RunTestCasesInSequenceAttribute() = inherit Attribute()
 
-#if !XUNIT_EXTRAS
-/// Installs console support for parallel test runs and conditionally enables optional xUnit customizations.
-type FSharpXunitFramework(sink: IMessageSink) =
-    inherit XunitTestFramework(sink)
-    do
-        // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
-        // right at the start of the test run is here in the constructor.
-        // This gets executed once per test assembly.
-        MessageSink.sinkWriter |> ignore
-        TestConsole.install()
-
-    interface IDisposable with
-        member _.Dispose() =
-            cleanUpTemporaryDirectoryOfThisTestRun ()
-            base.Dispose()       
-
-#else
+#if XUNIT_EXTRAS
 
 // To use xUnit means to customize it. The following abomination adds 2 features:
 // - Capturing full console output individually for each test case, viewable in Test Explorer as test stdout.
@@ -45,6 +35,7 @@ type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArgument
     override this.InvokeTestAsync (aggregator: ExceptionAggregator) =
         task {
             use capture = new TestConsole.ExecutionCapture()
+            use _ = Activity.startNoTags test.DisplayName
             let! executionTime = this.BaseInvokeTestMethodAsync aggregator
             let output =
                 seq {
@@ -129,21 +120,55 @@ type CustomTheoryTestCase =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
 
+#endif
+
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
-    do
-        // Because xUnit v2 lacks assembly fixture, the next best place to ensure things get called
-        // right at the start of the test run is here in the constructor.
-        // This gets executed once per test assembly.
-        log "FSharpXunitFramework with XUNIT_EXTRAS installing TestConsole redirection"
-        TestConsole.install()
+            
+    override this.CreateExecutor (assemblyName) =
+        { new XunitTestFrameworkExecutor(assemblyName, this.SourceInformationProvider, this.DiagnosticMessageSink) with
+            
+            // Because xUnit v2 lacks assembly fixture, this is a good place to ensure things get called right at the start of the test run.
+            // This gets executed once per test assembly.
+            override x.RunTestCases(testCases, executionMessageSink, executionOptions) =
 
-    interface IDisposable with
-        member _.Dispose() =
-            cleanUpTemporaryDirectoryOfThisTestRun ()
-            base.Dispose()        
+            #if !NETCOREAPP
+                // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
+                AssemblyResolver.addResolver ()
+            #endif
+                
+                // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
+                use tracerProvider =
+                    OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+                        .AddSource(ActivityNames.FscSourceName)
+                        .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                        .AddOtlpExporter(fun o ->
+                            // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
+                            o.TimeoutMilliseconds <- 200
+                            o.BatchExportProcessorOptions.MaxQueueSize <- 16384
+                            o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
+                        )
+                        .Build()
 
+                logConfig initialConfig
+                log "Installing TestConsole redirection"
+                TestConsole.install()
+              
+                begin
+                    use _ = Activity.startNoTags $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
+                    // We can't just call base.RunTestCases here, because it's implementation is async void.
+                    use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
+                    runner.RunAsync().Wait()
+                end
+
+                tracerProvider.ForceFlush() |> ignore
+
+                cleanUpTemporaryDirectoryOfThisTestRun ()
+        }
+
+#if XUNIT_EXTRAS
+    // Rewrites discovered test cases to support extra parallelization and capturing console as test output.
     override this.CreateDiscoverer (assemblyInfo) =
         { new XunitTestFrameworkDiscoverer(assemblyInfo, this.SourceInformationProvider, this.DiagnosticMessageSink) with
             override _.FindTestsForType (testClass, includeSourceInformation, messageBus, options) =

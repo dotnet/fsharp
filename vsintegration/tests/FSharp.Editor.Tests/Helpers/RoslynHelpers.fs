@@ -67,9 +67,7 @@ module MefHelpers =
 
         let configuration = CompositionConfiguration.Create(catalog)
 
-        RuntimeComposition
-            .CreateRuntimeComposition(configuration)
-            .CreateExportProviderFactory()
+        RuntimeComposition.CreateRuntimeComposition(configuration).CreateExportProviderFactory()
 
     let createExportProvider () =
         exportProviderFactory.CreateExportProvider()

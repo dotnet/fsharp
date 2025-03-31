@@ -235,8 +235,7 @@ type TrampolineHolder() =
 
     // This should be the only call to Thread.Start in this library. We must always install a trampoline.
     member this.StartThreadWithTrampoline(f: unit -> AsyncReturn) =
-        Thread(getThreadStartCallbackForStartThreadWithTrampoline (this), IsBackground = true)
-            .Start(f |> box)
+        Thread(getThreadStartCallbackForStartThreadWithTrampoline (this), IsBackground = true).Start(f |> box)
 
         AsyncReturn.Fake()
 
@@ -753,7 +752,7 @@ module AsyncPrimitives =
     ///   - Cancellation check after 'entering' the implied try/finally and before running the body  (see CreateTryFinallyAsync)
     ///   - Hijack check after 'entering' the implied try/finally and before running the body  (see CreateTryFinallyAsync)
     ///   - Run 'disposeFunction' with exception protection (see CreateTryFinallyAsync)
-    let CreateUsingAsync (resource: 'T :> IDisposable) (computation: 'T -> Async<'a>) : Async<'a> =
+    let CreateUsingAsync (resource: 'T :> IDisposable | null) (computation: 'T -> Async<'a>) : Async<'a> =
         let disposeFunction () =
             Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
 
@@ -1741,13 +1740,8 @@ type Async =
 
     /// StartWithContinuations, except the exception continuation is given an ExceptionDispatchInfo
     static member StartWithContinuationsUsingDispatchInfo
-        (
-            computation: Async<'T>,
-            continuation,
-            exceptionContinuation,
-            cancellationContinuation,
-            ?cancellationToken
-        ) : unit =
+        (computation: Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken)
+        : unit =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
@@ -1759,13 +1753,8 @@ type Async =
             cancellationContinuation
 
     static member StartWithContinuations
-        (
-            computation: Async<'T>,
-            continuation,
-            exceptionContinuation,
-            cancellationContinuation,
-            ?cancellationToken
-        ) : unit =
+        (computation: Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken)
+        : unit =
         Async.StartWithContinuationsUsingDispatchInfo(
             computation,
             continuation,
@@ -1939,11 +1928,8 @@ type Async =
     /// it happens the child computation will be cancelled.   The resulting async doesn't support cancellation
     /// directly, rather the underlying computation must fill the result if cancellation occurs.
     static member AwaitAndBindChildResult
-        (
-            innerCTS: CancellationTokenSource,
-            resultCell: ResultCell<AsyncResult<'T>>,
-            millisecondsTimeout
-        ) : Async<'T> =
+        (innerCTS: CancellationTokenSource, resultCell: ResultCell<AsyncResult<'T>>, millisecondsTimeout)
+        : Async<'T> =
         match millisecondsTimeout with
         | None
         | Some -1 -> resultCell |> Async.AwaitAndBindResult_NoDirectCancelOrTimeout

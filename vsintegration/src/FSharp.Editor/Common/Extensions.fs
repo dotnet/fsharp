@@ -7,8 +7,14 @@ open System
 open System.IO
 open System.Collections.Immutable
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
+
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.TextManager.Interop
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -19,6 +25,10 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.Text.Editor
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.OLE.Interop
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
@@ -59,6 +69,56 @@ type Project with
 
     member this.IsFSharp = this.Language = LanguageNames.FSharp
 
+type TextViewEventsHandler
+    (
+        onChangeCaretHandler: (IVsTextView * int * int -> unit) option,
+        onKillFocus: (IVsTextView -> unit) option,
+        onSetFocus: (IVsTextView -> unit) option
+    ) =
+    interface IVsTextViewEvents with
+        member this.OnChangeCaretLine(view: IVsTextView, newline: int, oldline: int) =
+            onChangeCaretHandler
+            |> Option.iter (fun handler -> handler (view, newline, oldline))
+
+        member this.OnChangeScrollInfo
+            (_view: IVsTextView, _iBar: int, _iMinUnit: int, _iMaxUnits: int, _iVisibleUnits: int, _iFirstVisibleUnit: int)
+            =
+            ()
+
+        member this.OnKillFocus(view: IVsTextView) =
+            onKillFocus |> Option.iter (fun handler -> handler (view))
+
+        member this.OnSetBuffer(_view: IVsTextView, _buffer: IVsTextLines) = ()
+
+        member this.OnSetFocus(view: IVsTextView) =
+            onSetFocus |> Option.iter (fun handler -> handler (view))
+
+type ConnectionPointSubscription = System.IDisposable option
+
+// Usage example:
+//  If a handler is None, to not handle that event
+//  let subscription = subscribeToTextViewEvents (textView, onChangeCaretHandler, onKillFocus, onSetFocus)
+//  Unsubscribe using subscription.Dispose()
+let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKillFocus, onSetFocus) : ConnectionPointSubscription =
+    let handler = TextViewEventsHandler(onChangeCaretHandler, onKillFocus, onSetFocus)
+
+    match textView with
+    | :? IConnectionPointContainer as cpContainer ->
+        let riid = typeof<IVsTextViewEvents>.GUID
+        let mutable cookie = 0u
+
+        match cpContainer.FindConnectionPoint(ref riid) with
+        | null -> None
+        | cp ->
+            Some(
+                cp.Advise(handler, &cookie)
+
+                { new IDisposable with
+                    member _.Dispose() = cp.Unadvise(cookie)
+                }
+            )
+    | _ -> None
+
 type Document with
 
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
@@ -68,6 +128,32 @@ type Document with
             match project.LanguageServices with
             | null -> None
             | languageServices -> languageServices.GetService<'T>() |> Some
+
+    member this.TryGetIVsTextView() : IVsTextView option =
+        match ServiceProvider.GlobalProvider.GetService(typeof<SVsTextManager>) with
+        | :? IVsTextManager as textManager ->
+            // Grab IVsRunningDocumentTable
+            match ServiceProvider.GlobalProvider.GetService(typeof<SVsRunningDocumentTable>) with
+            | :? IVsRunningDocumentTable as rdt ->
+                match rdt.FindAndLockDocument(uint32 _VSRDTFLAGS.RDT_NoLock, this.FilePath) with
+                | hr, _, _, docData, _ when ErrorHandler.Succeeded(hr) && docData <> IntPtr.Zero ->
+                    match Marshal.GetObjectForIUnknown docData with
+                    | :? IVsTextBuffer as ivsTextBuffer ->
+                        match textManager.GetActiveView(1, ivsTextBuffer) with
+                        | hr, vsTextView when ErrorHandler.Succeeded(hr) -> Some vsTextView
+                        | _ -> None
+                    | _ -> None
+                | _ -> None
+            | _ -> None
+        | _ -> None
+
+    member this.TryGetTextViewAndCaretPos() : (IVsTextView * Position) option =
+        match this.TryGetIVsTextView() with
+        | Some textView ->
+            match textView.GetCaretPos() with
+            | hr, line, column when ErrorHandler.Succeeded(hr) -> Some(textView, Position.fromZ line column)
+            | _ -> None
+        | None -> None
 
     member this.IsFSharpScript = isScriptFile this.FilePath
 
@@ -208,11 +294,7 @@ module private SourceText =
 type SourceText with
 
     member this.ToFSharpSourceText() =
-        SourceText.weakTable.GetValue(
-            this,
-            Runtime.CompilerServices.ConditionalWeakTable<_, _>
-                .CreateValueCallback(SourceText.create)
-        )
+        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_, _>.CreateValueCallback(SourceText.create))
 
 type NavigationItem with
 
@@ -326,19 +408,6 @@ module Option =
             xs |> List.map Option.get |> Some
         else
             None
-
-[<RequireQualifiedAccess>]
-module ValueOption =
-
-    let inline ofOption o =
-        match o with
-        | Some v -> ValueSome v
-        | _ -> ValueNone
-
-    let inline toOption o =
-        match o with
-        | ValueSome v -> Some v
-        | _ -> None
 
 [<RequireQualifiedAccess>]
 module IEnumerator =

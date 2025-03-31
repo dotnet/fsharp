@@ -3149,7 +3149,7 @@ type TType =
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/dotnet/fsharp/issues/2561
-    member GetAssemblyName: unit -> string MaybeNull
+    member GetAssemblyName: unit -> string
 
     override ToString: unit -> string
 
@@ -3202,21 +3202,23 @@ type Measure =
     | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Const of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef * range: range
 
     /// A product of two units of measure
-    | Prod of measure1: Measure * measure2: Measure
+    | Prod of measure1: Measure * measure2: Measure * range: range
 
     /// An inverse of a units of measure expression
     | Inv of measure: Measure
 
     /// The unit of measure '1', e.g. float = float<1>
-    | One
+    | One of range: range
 
     /// Raising a measure to a rational power
     | RationalPower of measure: Measure * power: Rational
 
     override ToString: unit -> string
+
+    member Range: range
 
 type Attribs = Attrib list
 
@@ -4047,8 +4049,6 @@ type NamedDebugPointKey =
       Name: string }
 
     interface IComparable
-
-    override Equals: yobj: obj -> bool
 
     override GetHashCode: unit -> int
 

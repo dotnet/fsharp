@@ -12,8 +12,7 @@
     the cloned source in the inner build.
   -->
   <Target Name="ConfigureInnerBuildArg"
-          BeforeTargets="GetSourceBuildCommandConfiguration"
-          Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+          BeforeTargets="GetSourceBuildCommandConfiguration">
     <PropertyGroup>
       <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
     </PropertyGroup>
@@ -31,6 +30,7 @@
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
       <DotNetBuildUseMonoRuntime Condition="'$(DotNetBuildUseMonoRuntime)' == ''">false</DotNetBuildUseMonoRuntime>
+      <SourceBuildBootstrapRestoreConfigFileArg Condition="'$(RestoreConfigFile)' != ''" >/p:RestoreConfigFile=$(RestoreConfigFile)</SourceBuildBootstrapRestoreConfigFileArg>
     </PropertyGroup>
 
     <!-- this runs the source-build bootstrap path as described in https://github.com/dotnet/fsharp/blob/95df49e380ea8dbf33653fa4209f89dba29413f5/eng/build.sh#L247
@@ -41,7 +41,7 @@
          -bl enables the binlogs for the tools and Proto builds, which make debugging failures here easier
     -->
     <Exec
-      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) /p:DotNetBuildUseMonoRuntime=$(DotNetBuildUseMonoRuntime) /p:DotNetBuildSourceOnly=true /p:DotNetBuildInnerRepo=true /p:DotNetBuildRepo=true /p:DotNetBuildOrchestrator=$(DotNetBuildOrchestrator)"
+      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) $(SourceBuildBootstrapRestoreConfigFileArg) /p:DotNetBuildUseMonoRuntime=$(DotNetBuildUseMonoRuntime) /p:DotNetBuildSourceOnly=true /p:DotNetBuildInnerRepo=true /p:DotNetBuildRepo=true /p:DotNetBuildOrchestrator=$(DotNetBuildOrchestrator)"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
       EnvironmentVariables="@(InnerBuildEnv)" />
   </Target>

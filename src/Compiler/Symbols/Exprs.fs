@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Symbols
 
 open FSharp.Compiler
+open FSharp.Compiler.Text.Range
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
@@ -775,7 +776,7 @@ module FSharpExprConvert =
                 let argTy2 = tyOfExpr g arg2
                 let resTy = 
                     match getMeasureOfType g argTy1, getMeasureOfType g argTy2 with
-                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
+                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkWoNullAppTy tcref [TType_measure (Measure.Prod(ms1, (if isMul then ms2 else Measure.Inv ms2), unionRanges ms1.Range ms2.Range))]
                     | Some _, None  -> argTy1
                     | None, Some _ -> argTy2
                     | None, None -> argTy1

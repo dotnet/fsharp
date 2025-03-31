@@ -22,7 +22,6 @@ let mutable private wasCancelled = false
 let runCancelFirstTime f =
     let mutable requestCount = 0
     fun () ->
-        use _ = Cancellable.UsingToken cts.Token
         if requestCount = 0 then
             cts.Cancel()
 
@@ -103,13 +102,6 @@ type PreTypeDefData =
       CancelOnImport: bool }
 
     member this.TypeDef =
-        let name =
-            match this.Namespace with
-            | [] -> this.Name
-            | ns ->
-                let ns = ns |> String.concat "."
-                $"{ns}.{this.Name}"
-
         let methodsDefs =
             if this.HasCtor then
                 let mkCtor = runCancelFirstTime (fun _ -> [| ModuleReader.mkCtor () |])
@@ -150,12 +142,17 @@ let referenceReaderProject getPreTypeDefs (cancelOnModuleAccess: bool) (options:
 let parseAndCheck path source options =
     cts <- new CancellationTokenSource()
     wasCancelled <- false
-    use _ = Cancellable.UsingToken cts.Token
 
     try
-        match Async.RunSynchronously(checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options), cancellationToken = cts.Token) with
-        | fileResults, FSharpCheckFileAnswer.Aborted -> None
-        | fileResults, FSharpCheckFileAnswer.Succeeded results -> Some results
+        let checkFileAsync = checker.ParseAndCheckFileInProject(path, 0, SourceText.ofString source, options)
+        let result =
+            match Async.RunSynchronously(checkFileAsync, cancellationToken = cts.Token) with
+            | _, FSharpCheckFileAnswer.Aborted -> None
+            | _, FSharpCheckFileAnswer.Succeeded results -> Some results
+
+        Cancellable.HasCancellationToken |> shouldEqual false
+        result
+
     with :? OperationCanceledException ->
         wasCancelled <- true
         None
@@ -187,7 +184,7 @@ let ``Type defs 01 - assembly import`` () =
 
     let getPreTypeDefs typeData = runCancelFirstTime (fun _ -> createPreTypeDefs typeData)
     let typeDefs = getPreTypeDefs [ { Name = "T"; Namespace = []; HasCtor = false; CancelOnImport = false } ]
-    let path, options = mkTestFileAndOptions source [||]
+    let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject typeDefs false options
 
     // First request, should be cancelled inside getPreTypeDefs
@@ -213,7 +210,7 @@ let ``Type defs 02 - assembly import`` () =
     let source = source1
 
     let typeDefs = fun _ -> createPreTypeDefs [ { Name = "T"; Namespace = ["Ns"]; HasCtor = false; CancelOnImport = true } ]
-    let path, options = mkTestFileAndOptions source [||]
+    let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject typeDefs false options
 
     parseAndCheck path source options |> ignore
@@ -231,7 +228,7 @@ let ``Type defs 03 - type import`` () =
     let source = source2
 
     let typeDefs = fun _ -> createPreTypeDefs [ { Name = "T"; Namespace = ["Ns1"; "Ns2"]; HasCtor = false; CancelOnImport = true } ]
-    let path, options = mkTestFileAndOptions source [||]
+    let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject typeDefs false options
 
     // First request, should be cancelled inside GetTypeDef
@@ -256,7 +253,7 @@ let ``Type defs 04 - ctor import`` () =
     let source = source1
 
     let typeDefs = fun _ -> createPreTypeDefs [ { Name = "T"; Namespace = []; HasCtor = true; CancelOnImport = false } ]
-    let path, options = mkTestFileAndOptions source [||]
+    let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject typeDefs false options
 
     // First request, should be cancelled inside ILMethodDefs
@@ -278,7 +275,7 @@ let ``Module def 01 - assembly import`` () =
 
     let getPreTypeDefs typeData = fun _ -> createPreTypeDefs typeData
     let typeDefs = getPreTypeDefs [ { Name = "T"; Namespace = []; HasCtor = false; CancelOnImport = false } ]
-    let path, options = mkTestFileAndOptions source [||]
+    let path, options = mkTestFileAndOptions [||]
     let options = referenceReaderProject typeDefs true options
 
     // First request, should be cancelled inside getPreTypeDefs

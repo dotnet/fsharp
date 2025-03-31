@@ -1,49 +1,48 @@
 namespace FSharp.Test
 
 module Assert =
-    open FluentAssertions
     open System.Collections
     open Xunit
     open System.IO
 
+    // Equivalent, with message
     let inline shouldBeEqualWith (expected : ^T) (message: string) (actual: ^U) =
-        actual.Should().BeEquivalentTo(expected, message) |> ignore
+        try
+            Assert.Equivalent(expected, actual)
+        with e ->
+            Assert.True(false, message);
 
     let inline shouldBeEquivalentTo (expected : ^T) (actual : ^U) =
-        actual.Should().BeEquivalentTo(expected, "") |> ignore
-        
-    let inline shouldStartWith (expected : string) (actual : string) =
-        actual.Should().StartWith(expected) |> ignore
-        
-    let inline shouldContain (needle : string) (haystack : string) =
-        haystack.Should().Contain(needle) |> ignore    
+        Assert.Equivalent(expected, actual)
 
-    // One fine day, all of the 3 things below should be purged and replaced with pure Assert.Equal.
-    // Xunit checks types by default. These are just artifacts of the testing chaos in the repo back in a day.
     let inline shouldBe (expected : ^T) (actual : ^U) =
-        actual.Should().Be(expected, "") |> ignore
+        Assert.Equal(expected :> obj, actual :> obj)
+
+    let inline shouldStartWith (expected : string) (actual : string) =
+        Assert.StartsWith(expected, actual)
+
+    let inline shouldContain (needle : string) (haystack : string) =
+        Assert.Contains(needle, haystack)
 
     let inline areEqual (expected: ^T) (actual: ^T) =
         Assert.Equal<^T>(expected, actual)
 
     let inline shouldEqual (x: 'a) (y: 'a) =
         Assert.Equal<'a>(x, y)
-    //
 
     let inline shouldBeEmpty (actual : ^T when ^T :> IEnumerable) =
-        actual.Should().BeEmpty("") |> ignore
+        Assert.Empty(actual)
 
     let inline shouldNotBeEmpty (actual : ^T when ^T :> IEnumerable) =
-        actual.Should().NotBeEmpty("") |> ignore
+        Assert.NotEmpty(actual)
 
     let shouldBeFalse (actual: bool) =
-        actual.Should().BeFalse("") |> ignore
+        Assert.False(actual)
 
     let shouldBeTrue (actual: bool) =
-        actual.Should().BeTrue("") |> ignore
+        Assert.True(actual)
 
-    let shouldBeSameMultilineStringSets expectedText actualText =      
-      
+    let shouldBeSameMultilineStringSets expectedText actualText =
         let getLines text =
             use reader = new StringReader(text)
             Seq.initInfinite (fun _ -> reader.ReadLine()) 

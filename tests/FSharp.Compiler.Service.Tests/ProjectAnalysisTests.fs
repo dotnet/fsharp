@@ -1,6 +1,9 @@
 ﻿module FSharp.Compiler.Service.Tests.ProjectAnalysisTests
 
+open System.Threading.Tasks
+
 #nowarn "57" // Experimental stuff
+#nowarn "1182" //Lot of unused results are stored in a binding, since those tests are checking how internal caching works when changes are being applied
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
@@ -128,8 +131,20 @@ module ClearLanguageServiceRootCachesTest =
         let weakTcImports = test ()
         checker.InvalidateConfiguration Project1.options
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        GC.Collect()
-        System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
+
+        task {
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+            // Try collecting many times, because GC has some problems, especially on Linux.
+            // See for example: https://github.com/dotnet/runtime/discussions/108081
+            let mutable attempt = 1
+            while weakTcImports.IsAlive && attempt < 10 do
+                GC.Collect()
+                GC.WaitForPendingFinalizers()
+                attempt <- attempt + 1
+                do! Task.Delay(attempt * 1000)
+            Assert.False weakTcImports.IsAlive
+        }
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
@@ -3691,7 +3706,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP>]
+[<FactForDESKTOP; RunTestCasesInSequence>]
 let ``Test Project25 whole project errors`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
@@ -3699,7 +3714,7 @@ let ``Test Project25 whole project errors`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core."
-[<FactForDESKTOP>]
+[<FactForDESKTOP; RunTestCasesInSequence>]
 let ``Test Project25 symbol uses of type-provided members`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
@@ -3756,8 +3771,8 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
 // ".NET Core SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.")>]
-[<FactForDESKTOP>]
-let ``Test symbol uses of type-provided types`` () =
+[<FactForDESKTOP; RunTestCasesInSequence>]
+let ``Test Project25 symbol uses of type-provided types`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
@@ -3776,8 +3791,8 @@ let ``Test symbol uses of type-provided types`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((4, 15), (4, 26))); ("file1", ((10, 8), (10, 19)))|]
 
-[<Fact>]
-let ``Test symbol uses of fully-qualified records`` () =
+[<Fact; RunTestCasesInSequence>]
+let ``Test Project25 symbol uses of fully-qualified records`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunImmediate
     let backgroundParseResults1, backgroundTypedParse1 =
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options)
@@ -5446,7 +5461,7 @@ type A(i:int) =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 1`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [||]
+    let fileName, options = mkTestFileAndOptions [||]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [||]
@@ -5454,7 +5469,7 @@ let ``#4030, Incremental builder creation warnings 1`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 2`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times" |]
+    let fileName, options = mkTestFileAndOptions [| "--times" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [| false |]
@@ -5462,7 +5477,7 @@ let ``#4030, Incremental builder creation warnings 2`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 3`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--nowarn:75" |]
+    let fileName, options = mkTestFileAndOptions [| "--times"; "--nowarn:75" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [||]
@@ -5470,7 +5485,7 @@ let ``#4030, Incremental builder creation warnings 3`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 4`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror:75" |]
+    let fileName, options = mkTestFileAndOptions [| "--times"; "--warnaserror:75" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [| true |]
@@ -5478,7 +5493,7 @@ let ``#4030, Incremental builder creation warnings 4`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 5`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror-:75"; "--warnaserror" |]
+    let fileName, options = mkTestFileAndOptions [| "--times"; "--warnaserror-:75"; "--warnaserror" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [| false |]

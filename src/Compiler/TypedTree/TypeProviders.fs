@@ -22,6 +22,12 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 type TypeProviderDesignation = TypeProviderDesignation of string
+type 'a ProvidedArray= ('a[]) MaybeNull
+module ProvidedArray =
+    let map f (arr:_ ProvidedArray) : _ ProvidedArray = 
+        match arr with
+        | null -> null
+        | notNull -> notNull |> Array.map f
 
 exception ProvidedTypeResolution of range * exn
 
@@ -122,7 +128,6 @@ let CreateTypeProvider (
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
-#if FSHARPCORE_USE_PACKAGE
             TypeProviderConfig(systemRuntimeContainsType,
                 ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
@@ -131,16 +136,7 @@ let CreateTypeProvider (
                 IsInvalidationSupported=isInvalidationSupported, 
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-#else
-            TypeProviderConfig(systemRuntimeContainsType,
-                ReferencedAssemblies=getReferencedAssemblies(),
-                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
-                RuntimeAssembly=runtimeAssemblyPath, 
-                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
-                IsInvalidationSupported=isInvalidationSupported, 
-                IsHostedExecution= isInteractive, 
-                SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-#endif
+
         protect (fun () -> !!(Activator.CreateInstance(typeProviderImplementationType, [| box e|])) :?> ITypeProvider )
 
     elif not(isNull(typeProviderImplementationType.GetConstructor [| |])) then 
@@ -224,13 +220,8 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
         [||]
 
 /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-#if NO_CHECKNULLS
-let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
-    match TryTypeMember(st, fullName, memberName, m, recover, f) with 
-#else
 let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U | null)) : Tainted<'U> =
     match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with 
-#endif
     | Tainted.Null -> 
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
         st.PApplyNoFailure(fun _ -> recover)
@@ -343,9 +334,6 @@ type ProvidedTypeContext =
             ))
 
 [<Sealed>]
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -376,7 +364,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     member _.Namespace : string MaybeNull = x.Namespace
 
-    member _.FullName = x.FullName
+    member _.FullName : string MaybeNull = x.FullName
 
     member _.IsArray = x.IsArray
 
@@ -413,7 +401,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     /// Type.BaseType can be null when Type is interface or object
     member _.BaseType = x.BaseType |> ProvidedType.Create ctxt
 
-    member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] MaybeNull = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+    member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo ProvidedArray = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
 
     /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
     member _.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
@@ -486,12 +474,10 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         | null -> nullArg name 
         | t -> ProvidedType (t, ctxt)
 
-    static member CreateArray ctxt (xs: Type[] MaybeNull) : ProvidedType[] MaybeNull = 
-        match xs with
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedType.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs:_ ProvidedArray) = 
+        xs |> ProvidedArray.map (ProvidedType.CreateNonNull ctxt)
 
-    static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
+    static member CreateNoContext (x:Type) = ProvidedType.CreateNonNull ProvidedTypeContext.Empty x
 
     static member Void = ProvidedType.CreateNoContext typeof<System.Void>
 
@@ -512,9 +498,6 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type IProvidedCustomAttributeProvider =
     abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string MaybeNull * int * int) option 
 
@@ -575,9 +558,6 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
             |> Seq.toArray
 
 [<AbstractClass>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
@@ -600,9 +580,6 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
             provide().GetAttributeConstructorArgs (provider, attribName)
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
     let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
@@ -614,7 +591,7 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     member _.IsOptional = x.IsOptional
 
-    member _.RawDefaultValue = x.RawDefaultValue
+    member _.RawDefaultValue : objnull = x.RawDefaultValue
 
     member _.HasDefaultValue = x.Attributes.HasFlag(ParameterAttributes.HasDefault)
 
@@ -628,15 +605,8 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
 
     static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
     
-    static member CreateArray ctxt (xs: ParameterInfo[] MaybeNull) : ProvidedParameterInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
-    
-    static member CreateArrayNonNull ctxt xs : ProvidedParameterInfo[] = 
-        match box xs with 
-        | Null -> [| |]
-        | _  -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: ParameterInfo ProvidedArray) : ProvidedParameterInfo ProvidedArray = 
+        xs |> ProvidedArray.map (ProvidedParameterInfo.CreateNonNull ctxt)
     
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider =
@@ -658,9 +628,6 @@ type ProvidedParameterInfo (x: ParameterInfo, ctxt) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedAssembly (x: Assembly) = 
 
     member _.GetName() = x.GetName()
@@ -678,9 +645,6 @@ type ProvidedAssembly (x: Assembly) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 [<AbstractClass>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMethodBase (x: MethodBase, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -722,7 +686,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
     static member TaintedEquals (pt1: Tainted<ProvidedMethodBase>, pt2: Tainted<ProvidedMethodBase>) = 
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-    member _.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo[] = 
+    member _.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo ProvidedArray = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public 
 
         let staticParams = 
@@ -741,7 +705,7 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
                     with err -> raise (StripException (StripException err))
                 !!paramsAsObj :?> ParameterInfo[] 
 
-        staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
+        staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
     member _.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: objnull[]) = 
         let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
@@ -775,9 +739,6 @@ type ProvidedMethodBase (x: MethodBase, ctxt) =
 
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedFieldInfo (x: FieldInfo, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -788,10 +749,8 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: FieldInfo[] MaybeNull) : ProvidedFieldInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: FieldInfo ProvidedArray) : ProvidedFieldInfo ProvidedArray = 
+        xs |> ProvidedArray.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
     member _.IsInitOnly = x.IsInitOnly
 
@@ -801,7 +760,7 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
 
     member _.IsLiteral = x.IsLiteral
 
-    member _.GetRawConstantValue() = x.GetRawConstantValue()
+    member _.GetRawConstantValue() : objnull = x.GetRawConstantValue()
 
     /// FieldInfo.FieldType cannot be null
 
@@ -827,9 +786,6 @@ type ProvidedFieldInfo (x: FieldInfo, ctxt) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedMethodInfo (x: MethodInfo, ctxt) = 
     inherit ProvidedMethodBase(x, ctxt)
 
@@ -844,10 +800,8 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
         | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
 
-    static member CreateArray ctxt (xs: MethodInfo[] MaybeNull) : ProvidedMethodInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: MethodInfo ProvidedArray) : ProvidedMethodInfo ProvidedArray = 
+        xs |> ProvidedArray.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -858,9 +812,6 @@ type ProvidedMethodInfo (x: MethodInfo, ctxt) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedPropertyInfo (x: PropertyInfo, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -884,10 +835,8 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: PropertyInfo[] MaybeNull) : ProvidedPropertyInfo[] MaybeNull = 
-        match xs with
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: PropertyInfo ProvidedArray) : ProvidedPropertyInfo ProvidedArray = 
+        xs |> ProvidedArray.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -904,9 +853,6 @@ type ProvidedPropertyInfo (x: PropertyInfo, ctxt) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedEventInfo (x: EventInfo, ctxt) = 
     inherit ProvidedMemberInfo(x, ctxt)
 
@@ -924,10 +870,8 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedEventInfo (x, ctxt)
     
-    static member CreateArray ctxt (xs: EventInfo[] MaybeNull) : ProvidedEventInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: EventInfo ProvidedArray) : ProvidedEventInfo ProvidedArray = 
+        xs |> ProvidedArray.map (ProvidedEventInfo.CreateNonNull ctxt)
     
     member _.Handle = x
 
@@ -944,9 +888,6 @@ type ProvidedEventInfo (x: EventInfo, ctxt) =
         Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
 [<Sealed>] 
-#if NO_CHECKNULLS
-[<AllowNullLiteral>]
-#endif
 type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) = 
     inherit ProvidedMethodBase(x, ctxt)
 
@@ -957,10 +898,8 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
         | Null -> null 
         | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-    static member CreateArray ctxt (xs: ConstructorInfo[] MaybeNull) : ProvidedConstructorInfo[] MaybeNull = 
-        match xs with 
-        | Null -> null
-        | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
+    static member CreateArray ctxt (xs: ConstructorInfo ProvidedArray) : ProvidedConstructorInfo ProvidedArray = 
+        xs |> ProvidedArray.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
     member _.Handle = x
 
@@ -969,19 +908,19 @@ type ProvidedConstructorInfo (x: ConstructorInfo, ctxt) =
     override _.GetHashCode() = assert false; x.GetHashCode()
 
 type ProvidedExprType =
-    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
-    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
+    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr ProvidedArray
+    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr ProvidedArray
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
-    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
+    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar ProvidedArray * ProvidedExpr
     | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
     | ProvidedSequentialExpr of ProvidedExpr * ProvidedExpr
     | ProvidedTryWithExpr of ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr
     | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
     | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
-    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[] 
+    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr ProvidedArray 
     | ProvidedConstantExpr of objnull * ProvidedType
     | ProvidedDefaultExpr of ProvidedType
-    | ProvidedNewTupleExpr of ProvidedExpr[]
+    | ProvidedNewTupleExpr of ProvidedExpr ProvidedArray
     | ProvidedTupleGetExpr of ProvidedExpr * int
     | ProvidedTypeAsExpr of ProvidedExpr * ProvidedType
     | ProvidedTypeTestExpr of ProvidedExpr * ProvidedType
@@ -990,20 +929,17 @@ type ProvidedExprType =
     | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
     | ProvidedVarExpr of ProvidedVar
 
-#if NO_CHECKNULLS
-[<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-#else
+
 [<RequireQualifiedAccess; Class; Sealed>]
-#endif
 type ProvidedExpr (x: Expr, ctxt) =
 
-    member _.Type = x.Type |> ProvidedType.Create ctxt
+    member _.Type = x.Type |> ProvidedType.CreateNonNull ctxt
 
     member _.Handle = x
 
     member _.Context = ctxt
 
-    member _.UnderlyingExpressionString = x.ToString()
+    member _.UnderlyingExpressionString = string (x.ToString())
 
     member _.GetExprType() =
         match x with
@@ -1066,13 +1002,9 @@ type ProvidedExpr (x: Expr, ctxt) =
 
     override _.GetHashCode() = x.GetHashCode()
 
-#if NO_CHECKNULLS
-[<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-#else
 [<RequireQualifiedAccess; Class; Sealed>]
-#endif
 type ProvidedVar (x: Var, ctxt) =
-    member _.Type = x.Type |> ProvidedType.Create ctxt
+    member _.Type = x.Type |> ProvidedType.CreateNonNull ctxt
     member _.Name = x.Name
     member _.IsMutable = x.IsMutable
     member _.Handle = x
@@ -1120,11 +1052,9 @@ let ValidateExpectedName m expectedPath expectedName (st: Tainted<ProvidedType>)
     if name <> expectedName then
         raise (TypeProviderError(FSComp.SR.etProvidedTypeHasUnexpectedName(expectedName, name), st.TypeProviderDesignation, m))
 
-#if NO_CHECKNULLS
-    let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
-#else
-    let namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal // TODO NULLNESS: why is this explicit instantiation needed?
-#endif
+
+    let namespaceName = TryTypeMember(st, name, "Namespace", m, ("":_|null), fun st -> st.Namespace) |> unmarshal
+
 
     let rec declaringTypes (st: Tainted<ProvidedType>) accu =
         match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
@@ -1147,11 +1077,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
     // Do all the calling into st up front with recovery
     let fullName, namespaceName, usedMembers =
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
-#if NO_CHECKNULLS
-        let namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#else
         let namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#endif
         let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
         ValidateExpectedName m expectedPath expectedName st
         // Must be able to call (GetMethods|GetEvents|GetProperties|GetNestedTypes|GetConstructors)(bindingFlags).
@@ -1181,7 +1107,7 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
             if String.IsNullOrEmpty memberName then 
                 errorR(Error(FSComp.SR.etNullOrEmptyMemberName fullName, m))  
             else 
-                let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, ProvidedType.CreateNoContext(typeof<obj>), fun mi -> mi.DeclaringType)
+                let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, (ProvidedType.CreateNoContext(typeof<obj>) |> withNull), fun mi -> mi.DeclaringType)
                 match miDeclaringType with 
                     // Generated nested types may have null DeclaringType
                 | Tainted.Null when mi.OfType<ProvidedType>().IsSome -> ()
@@ -1256,11 +1182,7 @@ let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: s
 
     // Validate the Name, Namespace and FullName properties
     let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
-#if NO_CHECKNULLS
-    let _namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#else
     let _namespaceName = TryTypeMember<_, string | null>(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
-#endif
     let _fullname = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName)  |> unmarshal
     ValidateExpectedName m expectedPath expectedName st
 
@@ -1271,7 +1193,7 @@ let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: s
     | -1 -> ()
     | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName[n], expectedName), m))  
 
-    let staticParameters : Tainted<ProvidedParameterInfo[] MaybeNull> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
+    let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
     if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then 
         ValidateProvidedTypeAfterStaticInstantiation(m, st, expectedPath, expectedName)
 
@@ -1290,7 +1212,7 @@ let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace:
 
         // Check if the provided namespace name is an exact match of the required namespace name
         if displayName = providedNamespaceName then
-            let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.CreateNoContext(providedNamespace.ResolveTypeName typeName)), range=m) 
+            let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.Create ProvidedTypeContext.Empty (providedNamespace.ResolveTypeName typeName)), range=m) 
             match resolvedType with
             | Tainted.Null -> None
             | Tainted.NonNull result -> 
@@ -1351,7 +1273,8 @@ let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticAr
     else
         let mangledName = 
             let nm = methBeforeArgs.PUntaint((fun x -> x.Name), m)
-            let staticParams = methBeforeArgs.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParametersForMethod resolver), range=m) 
+            let staticParams = 
+                methBeforeArgs.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParametersForMethod resolver |> nonNull), range=m)                    
             let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
             mangledName
         match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs)), range=m) with 
@@ -1377,7 +1300,7 @@ let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGenerate
                 // Otherwise, use the full path of the erased type, including mangled arguments
                 let nm = typeBeforeArguments.PUntaint((fun x -> x.Name), m)
                 let enc, _ = ILPathToProvidedType (typeBeforeArguments, m)
-                let staticParams : Tainted<ProvidedParameterInfo[]> = typeBeforeArguments.PApplyWithProvider((fun (st, resolver) -> st.GetStaticParameters resolver |> nonNull), range=m) 
+                let staticParams = typeBeforeArguments.PApplyWithProvider((fun (st, resolver) -> st.GetStaticParameters resolver |> nonNull), range=m) 
                 let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
                 enc @ [ mangledName ]
 

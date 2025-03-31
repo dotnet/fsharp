@@ -39,17 +39,11 @@ let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
 let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
-#if NO_CHECKNULLS
-    compare (func x) (func y)
-#else
     match x,y with
     | null,null -> 0
     | null,_ -> -1
     | _,null -> 1
     | x,y ->  compare (func !!x) (func !!y)
-#endif
-
-
 
 //---------------------------------------------------------------------------
 // Basic data structures
@@ -228,12 +222,12 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
 
 and remapMeasureAux tyenv unt =
     match unt with
-    | Measure.One -> unt
-    | Measure.Const tcref ->
-        match tyenv.tyconRefRemap.TryFind tcref with 
-        | Some tcref -> Measure.Const tcref
+    | Measure.One _ -> unt
+    | Measure.Const(entityRef, m) ->
+        match tyenv.tyconRefRemap.TryFind entityRef with 
+        | Some tcref -> Measure.Const(tcref, m)
         | None -> unt
-    | Measure.Prod(u1, u2) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2)
+    | Measure.Prod(u1, u2, m) -> Measure.Prod(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2, m)
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var tp as unt -> 
@@ -243,6 +237,9 @@ and remapMeasureAux tyenv unt =
           | Some tpTy -> 
               match tpTy with
               | TType_measure unt -> unt
+              | TType_var(typar= typar) when tp.Kind = TyparKind.Measure ->
+                    // This is a measure typar that is not yet solved, so we can't remap it
+                    error(Error(FSComp.SR.tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute(), typar.Range))
               | _ -> failwith "remapMeasureAux: incorrect kinds"
           | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
@@ -444,7 +441,7 @@ let reduceTyconRefAbbrevMeasureable (tcref: TyconRef) =
 
 let rec stripUnitEqnsFromMeasureAux canShortcut unt = 
     match stripUnitEqnsAux canShortcut unt with 
-    | Measure.Const tcref when tcref.IsTypeAbbrev ->  
+    | Measure.Const(tyconRef= tcref) when tcref.IsTypeAbbrev ->  
         stripUnitEqnsFromMeasureAux canShortcut (reduceTyconRefAbbrevMeasureable tcref) 
     | m -> m
 
@@ -457,20 +454,20 @@ let stripUnitEqnsFromMeasure m = stripUnitEqnsFromMeasureAux false m
 /// What is the contribution of unit-of-measure constant ucref to unit-of-measure expression measure? 
 let rec MeasureExprConExponent g abbrev ucref unt =
     match (if abbrev then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
-    | Measure.Const ucrefR -> if tyconRefEq g ucrefR ucref then OneRational else ZeroRational
+    | Measure.Const(tyconRef= ucrefR) -> if tyconRefEq g ucrefR ucref then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureExprConExponent g abbrev ucref untR)
-    | Measure.Prod(unt1, unt2) -> AddRational(MeasureExprConExponent g abbrev ucref unt1) (MeasureExprConExponent g abbrev ucref unt2)
-    | Measure.RationalPower(untR, q) -> MulRational (MeasureExprConExponent g abbrev ucref untR) q
+    | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureExprConExponent g abbrev ucref unt1) (MeasureExprConExponent g abbrev ucref unt2)
+    | Measure.RationalPower(measure= untR; power= q) -> MulRational (MeasureExprConExponent g abbrev ucref untR) q
     | _ -> ZeroRational
 
 /// What is the contribution of unit-of-measure constant ucref to unit-of-measure expression measure
 /// after remapping tycons? 
 let rec MeasureConExponentAfterRemapping g r ucref unt =
     match stripUnitEqnsFromMeasure unt with
-    | Measure.Const ucrefR -> if tyconRefEq g (r ucrefR) ucref then OneRational else ZeroRational
+    | Measure.Const(tyconRef= ucrefR) -> if tyconRefEq g (r ucrefR) ucref then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureConExponentAfterRemapping g r ucref untR)
-    | Measure.Prod(unt1, unt2) -> AddRational(MeasureConExponentAfterRemapping g r ucref unt1) (MeasureConExponentAfterRemapping g r ucref unt2)
-    | Measure.RationalPower(untR, q) -> MulRational (MeasureConExponentAfterRemapping g r ucref untR) q
+    | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureConExponentAfterRemapping g r ucref unt1) (MeasureConExponentAfterRemapping g r ucref unt2)
+    | Measure.RationalPower(measure= untR; power= q) -> MulRational (MeasureConExponentAfterRemapping g r ucref untR) q
     | _ -> ZeroRational
 
 /// What is the contribution of unit-of-measure variable tp to unit-of-measure expression unt? 
@@ -478,8 +475,8 @@ let rec MeasureVarExponent tp unt =
     match stripUnitEqnsFromMeasure unt with
     | Measure.Var tpR -> if typarEq tp tpR then OneRational else ZeroRational
     | Measure.Inv untR -> NegRational(MeasureVarExponent tp untR)
-    | Measure.Prod(unt1, unt2) -> AddRational(MeasureVarExponent tp unt1) (MeasureVarExponent tp unt2)
-    | Measure.RationalPower(untR, q) -> MulRational (MeasureVarExponent tp untR) q
+    | Measure.Prod(measure1= unt1; measure2= unt2) -> AddRational(MeasureVarExponent tp unt1) (MeasureVarExponent tp unt2)
+    | Measure.RationalPower(measure = untR; power= q) -> MulRational (MeasureVarExponent tp untR) q
     | _ -> ZeroRational
 
 /// List the *literal* occurrences of unit variables in a unit expression, without repeats  
@@ -487,8 +484,8 @@ let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
         | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | Measure.Inv untR -> gather acc untR
         | _ -> acc   
     gather [] unt
@@ -502,9 +499,9 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
             else 
                 let e = MeasureVarExponent tp untexpr
                 if e = ZeroRational then acc else (tp, e) :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv untR -> gather acc untR
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | _ -> acc   
     gather [] untexpr
 
@@ -512,13 +509,13 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
 let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
     let rec gather acc unt =  
         match (if eraseAbbrevs then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
-        | Measure.Const c -> 
+        | Measure.Const(tyconRef= c) -> 
             if List.exists (fun (cR, _) -> tyconRefEq g c cR) acc then acc else 
             let e = MeasureExprConExponent g eraseAbbrevs c untexpr
             if e = ZeroRational then acc else (c, e) :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
         | Measure.Inv untR -> gather acc untR
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | _ -> acc  
     gather [] untexpr
 
@@ -527,9 +524,9 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
 let ListMeasureConOccsAfterRemapping g r unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Const c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c :: acc
-        | Measure.Prod(unt1, unt2) -> gather (gather acc unt1) unt2
-        | Measure.RationalPower(untR, _) -> gather acc untR
+        | Measure.Const(tyconRef= c) -> if List.exists (tyconRefEq g (r c)) acc then acc else r c :: acc
+        | Measure.Prod(measure1= unt1; measure2= unt2) -> gather (gather acc unt1) unt2
+        | Measure.RationalPower(measure= untR) -> gather acc untR
         | Measure.Inv untR -> gather acc untR
         | _ -> acc
    
@@ -538,19 +535,19 @@ let ListMeasureConOccsAfterRemapping g r unt =
 /// Construct a measure expression representing the n'th power of a measure
 let MeasurePower u n = 
     if n = 1 then u
-    elif n = 0 then Measure.One
+    elif n = 0 then Measure.One(range0)
     else Measure.RationalPower (u, intToRational n)
 
 let MeasureProdOpt m1 m2 =
     match m1, m2 with
-    | Measure.One, _ -> m2
-    | _, Measure.One -> m1
-    | _, _ -> Measure.Prod (m1, m2)
+    | Measure.One _, _ -> m2
+    | _, Measure.One _ -> m1
+    | _, _ -> Measure.Prod (m1, m2, unionRanges m1.Range m2.Range)
 
 /// Construct a measure expression representing the product of a list of measures
 let ProdMeasures ms = 
     match ms with 
-    | [] -> Measure.One 
+    | [] -> Measure.One(range0)
     | m :: ms -> List.foldBack MeasureProdOpt ms m
 
 let isDimensionless g ty =
@@ -580,9 +577,23 @@ let normalizeMeasure g ms =
     let vs = ListMeasureVarOccsWithNonZeroExponents ms
     let cs = ListMeasureConOccsWithNonZeroExponents g false ms
     match vs, cs with
-    | [], [] -> Measure.One
+    | [], [] -> Measure.One(ms.Range)
     | [(v, e)], [] when e = OneRational -> Measure.Var v
-    | vs, cs -> List.foldBack (fun (v, e) -> fun m -> Measure.Prod (Measure.RationalPower (Measure.Var v, e), m)) vs (List.foldBack (fun (c, e) -> fun m -> Measure.Prod (Measure.RationalPower (Measure.Const c, e), m)) cs Measure.One)
+    | vs, cs ->
+        List.foldBack
+            (fun (v, e) ->
+                fun unt ->
+                    let measureVar = Measure.Var(v)
+                    let measureRational = Measure.RationalPower(measureVar, e)
+                    Measure.Prod(measureRational, unt, unionRanges measureRational.Range unt.Range))
+            vs
+            (List.foldBack
+                (fun (c, e) ->
+                fun unt ->
+                    let measureConst = Measure.Const(c, c.Range)
+                    let measureRational = Measure.RationalPower(measureConst, e)
+                    let prodM = unionRanges measureConst.Range unt.Range
+                    Measure.Prod(measureRational, unt, prodM)) cs (Measure.One(ms.Range)))
  
 let tryNormalizeMeasureInType g ty =
     match ty with
@@ -916,14 +927,14 @@ let tryNiceEntityRefOfTy ty =
     let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> ValueSome tcref
-    | TType_measure (Measure.Const tcref) -> ValueSome tcref
+    | TType_measure (Measure.Const(tyconRef= tcref)) -> ValueSome tcref
     | _ -> ValueNone
 
 let tryNiceEntityRefOfTyOption ty = 
     let ty = stripTyparEqnsAux KnownWithoutNull false ty 
     match ty with
     | TType_app (tcref, _, _) -> Some tcref
-    | TType_measure (Measure.Const tcref) -> Some tcref
+    | TType_measure (Measure.Const(tyconRef= tcref)) -> Some tcref
     | _ -> None
     
 let mkInstForAppTy g ty = 
@@ -962,15 +973,26 @@ let stripMeasuresFromTy g ty =
 [<NoEquality; NoComparison>]
 type TypeEquivEnv = 
     { EquivTypars: TyparMap<TType>
-      EquivTycons: TyconRefRemap}
+      EquivTycons: TyconRefRemap
+      NullnessMustEqual : bool}
+
+let private nullnessEqual anev (n1:Nullness) (n2:Nullness) =
+    if anev.NullnessMustEqual then        
+        (n1.Evaluate() = NullnessInfo.WithNull) = (n2.Evaluate() = NullnessInfo.WithNull)
+    else 
+        true
 
 // allocate a singleton
-let typeEquivEnvEmpty = 
+let private typeEquivEnvEmpty = 
     { EquivTypars = TyparMap.Empty
-      EquivTycons = emptyTyconRefRemap }
+      EquivTycons = emptyTyconRefRemap
+      NullnessMustEqual = false}
+
+let private typeEquivCheckNullness = {typeEquivEnvEmpty with NullnessMustEqual = true}
 
 type TypeEquivEnv with 
-    static member Empty = typeEquivEnvEmpty
+    static member EmptyIgnoreNulls = typeEquivEnvEmpty
+    static member EmptyWithNullChecks (g:TcGlobals) = if g.checkNullness then typeEquivCheckNullness else typeEquivEnvEmpty
 
     member aenv.BindTyparsToTypes tps1 tys2 =
         { aenv with EquivTypars = (tps1, tys2, aenv.EquivTypars) |||> List.foldBack2 (fun tp ty tpmap -> tpmap.Add(tp, ty)) }
@@ -978,12 +1000,15 @@ type TypeEquivEnv with
     member aenv.BindEquivTypars tps1 tps2 =
         aenv.BindTyparsToTypes tps1 (List.map mkTyparTy tps2) 
 
-    static member FromTyparInst tpinst =
+    member aenv.FromTyparInst tpinst =
         let tps, tys = List.unzip tpinst
-        TypeEquivEnv.Empty.BindTyparsToTypes tps tys 
+        aenv.BindTyparsToTypes tps tys 
 
-    static member FromEquivTypars tps1 tps2 = 
-        TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
+    member aenv.FromEquivTypars tps1 tps2 = 
+        aenv.BindEquivTypars tps1 tps2
+
+    member anev.ResetEquiv = 
+        if anev.NullnessMustEqual then typeEquivCheckNullness else typeEquivEnvEmpty
 
 let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
    let (TTrait(tys1, nm, mf1, argTys, retTy, _, _)) = traitInfo1
@@ -1064,16 +1089,18 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_forall(tps1, rty1), TType_forall(tps2, retTy2) -> 
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 retTy2
 
-    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 -> // NOTE: nullness annotations are ignored for type equivalence
-        true
+    | TType_var (tp1, n1), TType_var (tp2, n2) when typarEq tp1 tp2 ->
+        nullnessEqual aenv n1 n2 
 
-    | TType_var (tp1, _), _ ->
+    | TType_var (tp1, n1), _ ->
         match aenv.EquivTypars.TryFind tp1 with
-        | Some tpTy1 -> typeEquivAux erasureFlag g tpTy1 ty2
+        | Some tpTy1 -> 
+            let tpTy1 = if (nullnessEqual aenv n1 g.knownWithoutNull) then tpTy1 else addNullnessToTy n1 tpTy1            
+            typeAEquivAux erasureFlag g aenv.ResetEquiv tpTy1 ty2
         | None -> false
 
-    // NOTE: nullness annotations are ignored for type equivalence
-    | TType_app (tcref1, tinst1, _), TType_app (tcref2, tinst2, _) ->
+    | TType_app (tcref1, tinst1, n1), TType_app (tcref2, tinst2, n2) ->
+        nullnessEqual aenv n1 n2  &&
         tcrefAEquiv g aenv tcref1 tcref2 &&
         typesAEquivAux erasureFlag g aenv tinst1 tinst2
 
@@ -1085,8 +1112,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
         structnessAEquiv tupInfo1 tupInfo2 && typesAEquivAux erasureFlag g aenv l1 l2
 
-    // NOTE: nullness annotations are ignored for type equivalence
-    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
+    | TType_fun (domainTy1, rangeTy1, n1), TType_fun (domainTy2, rangeTy2, n2) ->
+        nullnessEqual aenv n1 n2  &&
         typeAEquivAux erasureFlag g aenv domainTy1 domainTy2 && typeAEquivAux erasureFlag g aenv rangeTy1 rangeTy2
 
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
@@ -1099,18 +1126,6 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | _ -> true 
 
     | _ -> false
-
-and nullnessSensitivetypeAEquivAux  erasureFlag g aenv ty1 ty2 = 
-    let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
-    let ty2 = stripTyEqnsWrtErasure erasureFlag g ty2
-    match ty1, ty2 with
-    | TType_var (_,n1), TType_var (_,n2)
-    | TType_app (_,_,n1), TType_app (_,_,n2)     
-    | TType_fun (_,_,n1), TType_fun (_,_,n2) ->
-        n1 === n2
-    | _ -> true
-
-    && typeAEquivAux erasureFlag g aenv ty1 ty2
 
 and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
     ccuEq anonInfo1.Assembly anonInfo2.Assembly && 
@@ -1136,7 +1151,7 @@ and measureAEquiv g aenv un1 un2 =
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
 
-and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEnv.Empty ty1 ty2
+and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEnv.EmptyIgnoreNulls ty1 ty2
 
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
 
@@ -1152,14 +1167,14 @@ let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
-let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2
+let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.EmptyIgnoreNulls m1 m2
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let getMeasureOfType g ty =
     match ty with 
     | AppTy g (tcref, [tyarg]) ->
         match stripTyEqns g tyarg with  
-        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
+        | TType_measure ms when not (measureEquiv g ms (Measure.One(tcref.Range))) -> Some (tcref, ms)
         | _ -> None
     | _ -> None
 
@@ -2718,7 +2733,7 @@ let GetTraitConstraintInfosOfTypars g (tps: Typars) =
             match cx with 
             | TyparConstraint.MayResolveMember(traitInfo, _) -> traitInfo 
             | _ -> () ]
-    |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
+    |> ListSet.setify (traitsAEquiv g TypeEquivEnv.EmptyIgnoreNulls)
     |> List.sortBy (fun traitInfo -> traitInfo.MemberLogicalName, traitInfo.GetCompiledArgumentTypes().Length)
 
 /// Get information about the runtime witnesses needed for a set of generalized typars
@@ -3509,7 +3524,11 @@ let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2, _, _, _, _, _, _)) = 
 
 [<return: Struct>]
 let (|ExtractAttribNamedArg|_|) nm args = 
-    args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOptionInternal.ofOption
+    args |> List.tryPick (function AttribNamedArg(nm2, _, _, v) when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
+
+[<return: Struct>]
+let (|ExtractILAttributeNamedArg|_|) nm (args: ILAttributeNamedArg list) = 
+    args |> List.tryPick (function nm2, _, _, v when nm = nm2 -> Some v | _ -> None) |> ValueOption.ofOption
 
 [<return: Struct>]
 let (|StringExpr|_|) = function Expr.Const (Const.String n, _, _) -> ValueSome n | _ -> ValueNone
@@ -3525,6 +3544,8 @@ let (|AttribBoolArg|_|) = function AttribExpr(_, Expr.Const (Const.Bool n, _, _)
 
 [<return: Struct>]
 let (|AttribStringArg|_|) = function AttribExpr(_, Expr.Const (Const.String n, _, _)) -> ValueSome n | _ -> ValueNone
+
+let (|AttribElemStringArg|_|) = function ILAttribElem.String(n) -> n | _ -> None
 
 let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
@@ -3549,12 +3570,7 @@ let TryFindLocalizedFSharpStringAttribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
         match namedArgs with 
-        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> 
-            #if PROTO || BUILDING_WITH_LKG
-            Some b
-            #else
-            FSComp.SR.GetTextOpt(b)
-            #endif
+        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
         | _ -> Some b
     | _ -> None
     
@@ -4839,7 +4855,7 @@ type SignatureRepackageInfo =
     { RepackagedVals: (ValRef * ValRef) list
       RepackagedEntities: (TyconRef * TyconRef) list }
     
-    member remapInfo.ImplToSigMapping = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
+    member remapInfo.ImplToSigMapping g = { TypeEquivEnv.EmptyWithNullChecks g with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
     static member Empty = { RepackagedVals = []; RepackagedEntities= [] } 
 
 type SignatureHidingInfo = 
@@ -4965,7 +4981,7 @@ let rec accValRemapFromModuleOrNamespaceType g aenv (mty: ModuleOrNamespaceType)
 
 let ComputeRemappingFromInferredSignatureToExplicitSignature g mty msigty = 
     let mrpi, _ as entityRemap = accEntityRemapFromModuleOrNamespaceType mty msigty (SignatureRepackageInfo.Empty, SignatureHidingInfo.Empty)  
-    let aenv = mrpi.ImplToSigMapping
+    let aenv = mrpi.ImplToSigMapping g
     let valAndEntityRemap = accValRemapFromModuleOrNamespaceType g aenv mty msigty entityRemap
     valAndEntityRemap 
 
@@ -5028,7 +5044,7 @@ and accValRemapFromModuleOrNamespaceDefs g aenv msigty mdefs acc = List.foldBack
 
 let ComputeRemappingFromImplementationToSignature g mdef msigty =  
     let mrpi, _ as entityRemap = accEntityRemapFromModuleOrNamespace msigty mdef (SignatureRepackageInfo.Empty, SignatureHidingInfo.Empty) 
-    let aenv = mrpi.ImplToSigMapping
+    let aenv = mrpi.ImplToSigMapping g
     
     let valAndEntityRemap = accValRemapFromModuleOrNamespace g aenv msigty mdef entityRemap
     valAndEntityRemap
@@ -8314,9 +8330,6 @@ let IsMatchingSignatureDataVersionAttr (version: ILVersionInfo) cattr =
         warning(Failure(FSComp.SR.tastUnexpectedDecodeOfInterfaceDataVersionAttribute()))
         false
 
-let mkCompilerGeneratedAttr (g: TcGlobals) n = 
-    mkILCustomAttribute (tref_CompilationMappingAttr g, [mkILNonGenericValueTy (tref_SourceConstructFlags g)], [ILAttribElem.Int32 n], [])
-
 //--------------------------------------------------------------------------
 // tupled lambda --> method/function with a given valReprInfo specification.
 //
@@ -9126,38 +9139,34 @@ let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
+let inline HasConstraint ([<InlineIfLambda>] predicate) (tp:Typar)  = 
+    tp.Constraints |> List.exists predicate
+
+let inline tryGetTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp as x when HasConstraint predicate tp -> x
+    | _ -> ValueNone
+
+let inline IsTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp -> HasConstraint predicate tp
+    | ValueNone -> false
+
 // Note, isStructTy does not include type parameters with the ': struct' constraint
 // This predicate is used to detect those type parameters.
-let isNonNullableStructTyparTy g ty = 
-    match tryDestTyparTy g ty with 
-    | ValueSome tp -> 
-        tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
-    | ValueNone ->
-        false
+let IsNonNullableStructTyparTy g ty = ty |> IsTyparTyWithConstraint g _.IsIsNonNullableStruct
 
 // Note, isRefTy does not include type parameters with the ': not struct' or ': null' constraints
 // This predicate is used to detect those type parameters.
-let isReferenceTyparTy g ty = 
-    match tryDestTyparTy g ty with 
-    | ValueSome tp -> 
-        tp.Constraints |> List.exists (function
-            | TyparConstraint.IsReferenceType _ -> true
-            | TyparConstraint.SupportsNull _ -> true
-            | _ -> false)
-    | ValueNone ->
-        false
+let IsReferenceTyparTy g ty = ty |> IsTyparTyWithConstraint g (fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull)
 
-let isSupportsNullTyparTy g ty = 
-    if isReferenceTyparTy g ty then
-        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
-    else
-        false
+let GetTyparTyIfSupportsNull g ty = ty |> tryGetTyparTyWithConstraint g _.IsSupportsNull
 
 let TypeNullNever g ty = 
     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
     isStructTy g underlyingTy ||
     isByrefTy g underlyingTy ||
-    isNonNullableStructTyparTy g ty
+    IsNonNullableStructTyparTy g ty
 
 /// The pre-nullness logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
@@ -9179,7 +9188,7 @@ let TypeNullIsExtraValue g m ty =
         | ValueNone -> 
 
         // Consider type parameters
-        isSupportsNullTyparTy g ty
+        (GetTyparTyIfSupportsNull g ty).IsSome
 
 // Any mention of a type with AllowNullLiteral(true) is considered to be with-null
 let intrinsicNullnessOfTyconRef g (tcref: TyconRef) =
@@ -9217,7 +9226,7 @@ let changeWithNullReqTyToVariable g reqTy =
 let reqTyForArgumentNullnessInference g actualTy reqTy =
     // Only change reqd nullness if actualTy is an inference variable
     match tryDestTyparTy g actualTy with
-    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
+    | ValueSome t when t.IsCompilerGenerated && not(t |> HasConstraint _.IsSupportsNull) ->
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
@@ -9232,7 +9241,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 | None -> []
                 | Some t -> hasWithNullAnyWhere t withNull
 
-            | TType_app (tcr, tinst, nullnessOrig) -> 
+            | TType_app (tcr, tinst, _) -> 
                 let tyArgs = tinst |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 
                 match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
@@ -9251,7 +9260,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 let inner = tupTypes |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
 
-            | TType_anon (anon,tys) -> 
+            | TType_anon (tys=tys) -> 
                 let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
             | TType_fun (d, r, _) ->
@@ -9293,7 +9302,7 @@ let TypeNullIsExtraValueNew g m ty =
      | NullnessInfo.WithNull -> true)
     ||
     // Check if the type has a ': null' constraint
-    isSupportsNullTyparTy g ty
+    (GetTyparTyIfSupportsNull g ty).IsSome
 
 /// The pre-nullness logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
@@ -9339,8 +9348,9 @@ let rec TypeHasDefaultValueAux isNew g m ty =
             true))
     || 
       // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
-      (isNonNullableStructTyparTy g ty &&
-        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
+      ( match ty |> tryGetTyparTyWithConstraint g _.IsIsNonNullableStruct with
+        | ValueSome tp -> tp |> HasConstraint _.IsRequiresDefaultConstructor
+        | ValueNone -> false)        
 
 let TypeHasDefaultValue (g: TcGlobals) m ty = TypeHasDefaultValueAux false g m ty  
 
@@ -9957,7 +9967,7 @@ let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx =
 // FSharpTypeFunc, but rather bake a "local type function" for each TyLambda abstraction.
 let IsGenericValWithGenericConstraints g (v: Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists (isCompiledOrWitnessPassingConstraint g) tp.Constraints)
+    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> HasConstraint (isCompiledOrWitnessPassingConstraint g) tp)
 
 // Does a type support a given interface? 
 type Entity with 
@@ -11416,7 +11426,7 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
         { new IEqualityComparer<_> with 
-            member _.Equals(a, b) = nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.Empty a b)
+            member _.Equals(a, b) = nullSafeEquality a b (fun a b -> traitKeysAEquiv g TypeEquivEnv.EmptyIgnoreNulls a b)
             member _.GetHashCode(a) = hash a.MemberName
         })
 

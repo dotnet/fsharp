@@ -139,18 +139,8 @@ let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
         exiter.Exit 1
 
 let TypeCheck
-    (
-        ctok,
-        tcConfig,
-        tcImports,
-        tcGlobals,
-        diagnosticsLogger: DiagnosticsLogger,
-        assemblyName,
-        tcEnv0,
-        openDecls0,
-        inputs,
-        exiter: Exiter
-    ) =
+    (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger: DiagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter: Exiter)
+    =
     try
         if isNil inputs then
             error (Error(FSComp.SR.fscNoImplementationFiles (), rangeStartup))
@@ -164,7 +154,7 @@ let TypeCheck
 
         CheckClosedInputSet(
             ctok,
-            diagnosticsLogger.CheckForErrors,
+            (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
             tcConfig,
             tcImports,
             tcGlobals,
@@ -346,9 +336,7 @@ module InterfaceFileWriter =
                 if String.IsNullOrEmpty(tcConfig.printSignatureFile) then
                     Console.Out
                 else
-                    FileSystem
-                        .OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create)
-                        .GetWriter()
+                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create).GetWriter()
 
             writeHeader tcConfig.printSignatureFile os
 
@@ -367,7 +355,7 @@ module InterfaceFileWriter =
         let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
             for CheckedImplFile(qualifiedNameOfFile = name) as impl in declaredImpls do
                 let fileName =
-                    !! Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                    !!Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
 
                 printfn "writing impl file to %s" fileName
                 use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
@@ -388,7 +376,7 @@ module InterfaceFileWriter =
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
 // 3) If not, it will produce an error.
 let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
-    let outDir = !! Path.GetDirectoryName(outFile)
+    let outDir = !!Path.GetDirectoryName(outFile)
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
 
@@ -408,7 +396,7 @@ let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation = Assembly.GetExecutingAssembly().Location
-        let compilerLocation = !! Path.GetDirectoryName(executionLocation)
+        let compilerLocation = !!Path.GetDirectoryName(executionLocation)
 
         let compilerFsharpCoreDllPath =
             Path.Combine(compilerLocation, fsharpCoreAssemblyName)

@@ -14,7 +14,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckIncrementalClasses
@@ -148,9 +147,8 @@ type Exception with
         | IntfImplInExtrinsicAugmentation m
         | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
-        | ObsoleteError(_, m)
-        | ObsoleteWarning(_, m)
-        | Experimental(_, m)
+        | ObsoleteDiagnostic(_, _, _, _, m)
+        | Experimental(range = m)
         | PossibleUnverifiableCode m
         | UserCompilerMessage(_, _, m)
         | Deprecated(_, m)
@@ -159,8 +157,8 @@ type Exception with
         | IndeterminateType m
         | TyconBadArgs(_, _, _, m) -> Some m
 
-        | FieldNotContained(_, _, _, _, arf, _, _) -> Some arf.Range
-        | ValueNotContained(_, _, _, aval, _, _) -> Some aval.Range
+        | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
+        | ValueNotContained(_, _, _, _, aval, _, _) -> Some aval.Range
         | UnionCaseNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
         | FSharpExceptionNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
@@ -256,6 +254,8 @@ type Exception with
         | LetRecUnsound _ -> 31
         | FieldsFromDifferentTypes _ -> 32
         | TyconBadArgs _ -> 33
+        | FieldNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
+        | ValueNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
         | ValueNotContained _ -> 34
         | Deprecated _ -> 35
         | UnionCaseNotContained _ -> 36
@@ -266,7 +266,7 @@ type Exception with
         | UnresolvedOverloading _ -> 41
         | LibraryUseOnly _ -> 42
         | ErrorFromAddingConstraint _ -> 43
-        | ObsoleteWarning _ -> 44
+        | ObsoleteDiagnostic(isError = false) -> 44
         | ReservedKeyword _ -> 46
         | SelfRefObjCtor _ -> 47
         | VirtualAugmentationOnNullValuedType _ -> 48
@@ -327,7 +327,7 @@ type Exception with
         | UnresolvedConversionOperator _ -> 93
 
         // avoid 94-100 for safety
-        | ObsoleteError _ -> 101
+        | ObsoleteDiagnostic(isError = true) -> 101
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange _
         | TypeProviders.ProvidedTypeResolution _ -> 103
@@ -438,7 +438,7 @@ module OldStyleMessages =
     let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
     let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
     let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s")
+    let ConstraintSolverNullnessWarningEquivWithTypesE () = Message("ConstraintSolverNullnessWarningEquivWithTypes", "%s")
     let ConstraintSolverNullnessWarningWithTypesE () = Message("ConstraintSolverNullnessWarningWithTypes", "%s%s")
     let ConstraintSolverNullnessWarningWithTypeE () = Message("ConstraintSolverNullnessWarningWithType", "%s")
     let ConstraintSolverNullnessWarningE () = Message("ConstraintSolverNullnessWarning", "%s")
@@ -567,7 +567,9 @@ module OldStyleMessages =
     let ValNotLocalE () = Message("ValNotLocal", "")
     let Obsolete1E () = Message("Obsolete1", "")
     let Obsolete2E () = Message("Obsolete2", "%s")
-    let ExperimentalE () = Message("Experimental", "%s")
+    let Experimental1E () = Message("Experimental1", "")
+    let Experimental2E () = Message("Experimental2", "%s")
+    let Experimental3E () = Message("Experimental3", "")
     let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
     let DeprecatedE () = Message("Deprecated", "%s")
     let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
@@ -676,10 +678,9 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let t1, _t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2)
-            |> ignore
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
 
             if m.StartLine <> m2.StartLine then
                 os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
@@ -720,10 +721,7 @@ type Exception with
                 os.AppendString(SeeAlsoE().Format(stringOfRange m2))
 
         | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
-            os.AppendString(
-                ConstraintSolverMissingConstraintE()
-                    .Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc))
-            )
+            os.AppendString(ConstraintSolverMissingConstraintE().Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc)))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
@@ -1524,10 +1522,7 @@ type Exception with
                 foundInContext |> ignore // suppress unused variable warning in RELEASE
 #endif
                 let fix (s: string) =
-                    s
-                        .Replace(SR.GetString("FixKeyword"), "")
-                        .Replace(SR.GetString("FixSymbol"), "")
-                        .Replace(SR.GetString("FixReplace"), "")
+                    s.Replace(SR.GetString("FixKeyword"), "").Replace(SR.GetString("FixSymbol"), "").Replace(SR.GetString("FixReplace"), "")
 
                 let tokenNames =
                     ctxt.ShiftTokens
@@ -1618,7 +1613,7 @@ type Exception with
 
         | UnionPatternsBindDifferentNames _ -> os.AppendString(UnionPatternsBindDifferentNamesE().Format)
 
-        | ValueNotContained(denv, infoReader, mref, implVal, sigVal, f) ->
+        | ValueNotContained(_, denv, infoReader, mref, implVal, sigVal, f) ->
             let text1, text2 =
                 NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
 
@@ -1642,7 +1637,7 @@ type Exception with
                 )
             )
 
-        | FieldNotContained(denv, infoReader, enclosingTycon, _, v1, v2, f) ->
+        | FieldNotContained(_, denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
             os.AppendString(
@@ -1791,15 +1786,21 @@ type Exception with
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
-        | ObsoleteError(s, _)
-
-        | ObsoleteWarning(s, _) ->
+        | ObsoleteDiagnostic(message = message) ->
             os.AppendString(Obsolete1E().Format)
 
-            if s <> "" then
-                os.AppendString(Obsolete2E().Format s)
+            match message with
+            | Some message when message <> "" -> os.AppendString(Obsolete2E().Format message)
+            | _ -> ()
 
-        | Experimental(s, _) -> os.AppendString(ExperimentalE().Format s)
+        | Experimental(message = message) ->
+            os.AppendString(Experimental1E().Format)
+
+            match message with
+            | Some message when message <> "" -> os.AppendString(Experimental2E().Format message)
+            | _ -> ()
+
+            os.AppendString(Experimental3E().Format)
 
         | PossibleUnverifiableCode _ -> os.AppendString(PossibleUnverifiableCodeE().Format)
 

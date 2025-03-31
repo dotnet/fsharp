@@ -352,7 +352,7 @@ type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
 /// Checks if a module name is already given and deduplicates the name if needed.
 let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName: string) (qualNameOfFile: QualifiedNameOfFile) =
-    let path = !! Path.GetDirectoryName(fileName)
+    let path = !!Path.GetDirectoryName(fileName)
 
     let path =
         if FileSystem.IsPathRootedShim path then
@@ -433,7 +433,7 @@ let ParseInput
             "ParseAndCheckFile.parseFile"
             [|
                 Activity.Tags.fileName, fileName
-                Activity.Tags.buildPhase, !! BuildPhase.Parse.ToString()
+                Activity.Tags.buildPhase, !!BuildPhase.Parse.ToString()
                 Activity.Tags.userOpName, userOpName |> Option.defaultValue ""
             |]
 
@@ -703,15 +703,8 @@ let checkInputFile (tcConfig: TcConfig) fileName =
         error (Error(FSComp.SR.buildInvalidSourceFileExtension (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup))
 
 let parseInputStreamAux
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        retryLocked,
-        stream: Stream
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream)
+    =
     use reader = stream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
@@ -722,14 +715,8 @@ let parseInputStreamAux
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 let parseInputSourceTextAux
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        sourceText: ISourceText
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
+    =
     // Set up the LexBuffer for the file
     let lexbuf =
         UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
@@ -751,15 +738,8 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 
 /// Parse an input from stream
 let ParseOneInputStream
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        retryLocked,
-        stream: Stream
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream)
+    =
     try
         parseInputStreamAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream)
     with RecoverableException exn ->
@@ -768,14 +748,8 @@ let ParseOneInputStream
 
 /// Parse an input from source text
 let ParseOneInputSourceText
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        sourceText: ISourceText
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
+    =
     try
         parseInputSourceTextAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
     with RecoverableException exn ->
@@ -828,7 +802,7 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
         sourceFilesWithDelayLoggers
         |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
-            let directoryName = Path.GetDirectoryName fileName
+            let directoryName = !!(Path.GetDirectoryName fileName)
 
             let input =
                 parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
@@ -841,7 +815,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
 
     sourceFiles
     |> Array.map (fun (fileName, isLastCompiland) ->
-        let directoryName = Path.GetDirectoryName fileName
+        let directoryName = !!(Path.GetDirectoryName fileName)
 
         let input =
             ParseOneInputFile(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), diagnosticsLogger, retryLocked)
@@ -862,9 +836,11 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagno
         tcConfig.exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
-    (nowarnF: 'state -> range * string -> 'state,
-     hashReferenceF: 'state -> range * string * Directive -> 'state,
-     loadSourceF: 'state -> range * string -> unit)
+    (
+        nowarnF: 'state -> range * string -> 'state,
+        hashReferenceF: 'state -> range * string * Directive -> 'state,
+        loadSourceF: 'state -> range * string -> unit
+    )
     (tcConfig: TcConfigBuilder, inp: ParsedInput, pathOfMetaCommandSource, state0)
     =
 
@@ -1520,16 +1496,18 @@ type NodeToTypeCheck =
 /// <returns>a callback functions that takes a `TcState` and will add the checked result to it.</returns>
 let CheckOneInputWithCallback
     (node: NodeToTypeCheck)
-    ((checkForErrors,
-      tcConfig: TcConfig,
-      tcImports: TcImports,
-      tcGlobals,
-      prefixPathOpt,
-      tcSink,
-      tcState: TcState,
-      input: ParsedInput,
-      _skipImplIfSigExists: bool):
-        (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+    (
+        (checkForErrors,
+         tcConfig: TcConfig,
+         tcImports: TcImports,
+         tcGlobals,
+         prefixPathOpt,
+         tcSink,
+         tcState: TcState,
+         input: ParsedInput,
+         _skipImplIfSigExists: bool):
+            (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool
+    )
     : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
     cancellable {
         try
@@ -1823,16 +1801,18 @@ let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
 
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
-    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs):
-        'a *
-        (unit -> bool) *
-        TcConfig *
-        TcImports *
-        TcGlobals *
-        LongIdent option *
-        TcState *
-        (PhasedDiagnostic -> PhasedDiagnostic) *
-        ParsedInput list)
+    (
+        (ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs):
+            'a *
+            (unit -> bool) *
+            TcConfig *
+            TcImports *
+            TcGlobals *
+            LongIdent option *
+            TcState *
+            (PhasedDiagnostic -> PhasedDiagnostic) *
+            ParsedInput list
+    )
     : FinalFileResult list * TcState =
     use cts = new CancellationTokenSource()
 
@@ -1864,9 +1844,7 @@ let CheckMultipleInputsUsingGraphMode
             graph
             |> Graph.map (fun idx ->
                 let friendlyFileName =
-                    sourceFiles[idx]
-                        .FileName.Replace(tcConfig.implicitIncludeDir, "")
-                        .TrimStart([| '\\'; '/' |])
+                    sourceFiles[idx].FileName.Replace(tcConfig.implicitIncludeDir, "").TrimStart([| '\\'; '/' |])
 
                 (idx, friendlyFileName))
             |> Graph.writeMermaidToFile graphFile)
@@ -1907,7 +1885,10 @@ let CheckMultipleInputsUsingGraphMode
         let (Finisher(finisher = finisher)) =
             cancellable {
                 use _ = UseDiagnosticsLogger logger
-                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+
+                let checkForErrors2 () =
+                    priorErrors || (logger.CheckForRealErrorsIgnoringWarnings)
+
                 let tcSink = TcResultsSink.NoSink
 
                 return!
@@ -1922,7 +1903,7 @@ let CheckMultipleInputsUsingGraphMode
             (fun (state: State) ->
                 let tcState, priorErrors = state
                 let (partialResult: PartialResult, tcState) = finisher tcState
-                let hasErrors = logger.ErrorCount > 0
+                let hasErrors = logger.CheckForRealErrorsIgnoringWarnings
                 let priorOrCurrentErrors = priorErrors || hasErrors
                 let state: State = tcState, priorOrCurrentErrors
                 partialResult, state)
