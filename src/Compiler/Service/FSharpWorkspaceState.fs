@@ -430,7 +430,7 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
             Activity.start
                 "Projects.Update"
                 [
-                    Activity.Tags.project, !! projectIdentifier.ToString()
+                    Activity.Tags.project, !!projectIdentifier.ToString()
                     "sourceFiles", newSourceFiles |> String.concat "; "
                 ]
 
