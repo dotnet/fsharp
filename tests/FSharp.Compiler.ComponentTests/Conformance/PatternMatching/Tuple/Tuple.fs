@@ -30,7 +30,7 @@ module Tuple =
         compilation
         |> asFs
         |> withOptions ["--test:ErrorRanges"]
-        |> typecheck
+        |> compileExeAndRun
         |> shouldSucceed
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Tuple)
