@@ -606,6 +606,538 @@ let run r2 r3 =
         ]        
 
     [<Fact>]
+    let ``This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+
+let result = ResultBuilder()
+
+let run r2 r3 =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        if r2 = Ok 1 then
+            do! r2
+        return r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 27, Col 9, Line 27, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+        
+    [<Fact>]
+    let ``Sequence2 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        for i in [ 1] do
+            do! r2
+        return r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 32, Col 9, Line 32, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+        
+    [<Fact>]
+    let ``Sequence 5 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        for i in [ 1] do
+            do! r2
+        return! r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 32, Col 9, Line 32, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+    
+    [<Fact>]
+    let ``Sequence 7 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        match r2 with
+        | 0 -> do! r2
+        | _ -> do! r2
+        return! r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 33, Col 9, Line 33, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]    
+    
+    [<Fact>]
+    let ``Sequence 8 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        match! r2 with
+        | 0 -> do! r2
+        | _ -> do! r2
+        return! r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 33, Col 9, Line 33, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+    
+    [<Fact>]
+    let ``Sequence 9 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        match! r2 with
+        | 0 -> do! r2
+        | _ -> do! r2
+        return r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 33, Col 9, Line 33, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
+    let ``Sequence3 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+    
+    member _.Yield(x: 'T) = Ok x
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        for i in [ 1] do
+            yield r2
+        return r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 34, Col 9, Line 34, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+        
+    [<Fact>]
+    let ``Sequence 4 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+    
+    member _.Yield(x: 'T) = Ok x
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        for i in [ 1] do
+            yield r2
+        yield r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 34, Col 9, Line 34, Col 14, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]        
+    [<Fact>]
+    let ``Sequence 6 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Result =
+    let zip x1 x2 =
+        match x1,x2 with
+        | Ok x1res, Ok x2res -> Ok (x1res, x2res)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+type ResultBuilder() =
+    member _.MergeSources(t1: Result<'T,'U>, t2: Result<'T1,'U>) = Result.zip t1 t2
+    member _.BindReturn(x: Result<'T,'U>, f) = Result.map f x
+    member _.Bind(x: Result<'T,'U>, f) =
+        match x with
+        | Ok x -> f x
+        | Error e -> Error e
+        
+    member _.Zero() = Ok ()
+    
+    member _.Yield(x: 'T) = Ok x
+    
+    member _.YieldFrom(x: Result<'T,'U>) = x
+
+    member _.For(sequence: #seq<'T>, binder: 'T -> Result<_, _>) =
+        sequence
+        |> Seq.map binder
+        |> Seq.fold (fun acc x -> Result.bind (fun () -> x) acc) (Ok ())
+
+let result = ResultBuilder()
+
+let run (r2: Result<int, string>) (r3: Result<int, string>) =
+    result {
+        let! r2 = r2
+        let! r3 = r3
+        for i in [ 1] do
+            yield! r2
+        yield! r3
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 36, Col 9, Line 36, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
+    let ``Sequence 10 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: (string -> R)) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.For(s : seq<int>, rest: (int -> unit)) = S("")
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] do ()
+      0 |> ignore
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 17, Col 7, Line 17, Col 18, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
+    let ``Sequence 11 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: string -> R) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.For(s: seq<int>, rest: (int -> R)) = 
+        let folder state item =
+            match state with
+            | S(str) ->
+                match rest item with
+                | S(itemStr) -> S(str + itemStr)
+        Seq.fold folder (S("")) s
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] do
+          ()
+      for x in [1] do
+          ()
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 24, Col 7, Line 25, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+    [<Fact>]
+    let ``Sequence 12 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: string -> R) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.Yield(value: 'a) = S(string value)
+      member x.For(s: seq<int>, rest: (int -> R)) = 
+        let folder state item =
+            match state with
+            | S(str) ->
+                match rest item with
+                | S(itemStr) -> S(str + itemStr)
+        Seq.fold folder (S("")) s
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] ->
+          ()
+      for x in [1] ->
+          ()
+    }
+    
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 25, Col 7, Line 26, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+        
+    [<Fact>]
+    let ``Sequence 13 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
+        Fsx """
+module Test =
+    type R = S of string 
+     
+    type T() = 
+      member x.Bind(p: R, rest: string -> R) =  
+        match p with 
+        | S(s) -> rest s 
+      member x.Zero() = S("l")
+      member x.For(s: seq<int>, rest: (int -> R)) = 
+        let folder state item =
+            match state with
+            | S(str) ->
+                match rest item with
+                | S(itemStr) -> S(str + itemStr)
+        Seq.fold folder (S("")) s
+
+    let t = new T()
+
+    let t' = t { 
+      let a = 10
+      for x in [1] do ()
+      if true then
+          ()
+      else
+          ()
+    }
+        """
+        |> ignoreWarnings
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 708, Line 23, Col 7, Line 26, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
+        ]
+
+
+    [<Fact>]
     let ``Type constraint mismatch when using return!`` () =
         Fsx """
 open System.Threading.Tasks
