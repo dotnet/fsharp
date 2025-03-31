@@ -532,13 +532,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc isCompilerGenerated m ty 
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
-                
-                // Skip accessibility checks for compiler-generated pattern inputs, which all have names
-                // starting with "val patternInput". This allows pattern matching to work properly with private
-                // types when the pattern is used within the same module scope.
-                // let isCompilerGeneratedPatternInput = 
-                //     let name: string = objName()
-                //     name.StartsWith("val patternInput")
+                // Skip accessibility checks for compiler-generated pattern inputs
                 if not isCompilerGenerated && isLessAccessible tyconAcc valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 

@@ -25,7 +25,6 @@ module Tuple =
         |> typecheck
         |> shouldSucceed
         
-    // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Tuple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"tuples02.fs"|])>]
     let ``Tuple - tuples02_fs - --test:ErrorRanges`` compilation =
         compilation
