@@ -519,7 +519,6 @@ let add (col:IServiceCollection) =
     [<InlineData("""#r "nuget:envdte,usepackagetargets=invalidvalue" """, false, "input.fsx (1,1)-(1,49) interactive error Specified argument was out of the range of valid values. Parameter name: usepackagetargets")>]
     [<InlineData("""#r "nuget:envdte,usepackagetargets=" """, false, "input.fsx (1,1)-(1,37) interactive error Specified argument was out of the range of valid values. Parameter name: usepackagetargets")>]
     member _.``Eval script with usepackagetargets options``(code, shouldSucceed, error) =
-        System.Diagnostics.Debugger.Break() |> ignore
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
         match shouldSucceed with
