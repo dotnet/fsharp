@@ -142,11 +142,7 @@ module FSharpDependencyManager =
                     | Some v when v.ToLowerInvariant() = "true" -> setUsePackageTargets true
                     | Some v when v.ToLowerInvariant() = "false" -> setUsePackageTargets false
                     | _ ->
-                        // Normalize the error message to the coreclr format
-                        // coreclr emits the parameter name as "(Parameter 'usepackagetargets')", desktop framework emits it as "Parameter usepackagetargets" 
-                        let ex = ArgumentOutOfRangeException("usepackagetargets").Message
-                        let message = ex.Replace(Environment.NewLine, " ").Replace(" (Parameter 'usepackagetargets')", " Parameter name: usepackagetargets")
-                        raise (ArgumentException(message))
+                        raise (ArgumentException(ArgumentOutOfRangeException("usepackagetargets").Message))
                     |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "restoresources", Some v ->
                     Some
