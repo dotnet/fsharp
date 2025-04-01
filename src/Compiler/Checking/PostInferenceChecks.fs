@@ -521,7 +521,7 @@ let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths acce
         accessSubstPaths (thisCompPath, internalsVisibleToPath) access)
 
 
-let CheckTypeForAccess (cenv: cenv) env objName valAcc isCompilerGenerated m ty =
+let CheckTypeForAccess (cenv: cenv) env objName valAcc accessedValIsCompilerGenerated m ty =
     if cenv.reportErrors then
 
         let visitType ty =
@@ -533,7 +533,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc isCompilerGenerated m ty 
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 // Skip accessibility checks for compiler-generated pattern inputs
-                if not isCompilerGenerated && isLessAccessible tyconAcc valAcc then
+                if not accessedValIsCompilerGenerated && isLessAccessible tyconAcc valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
