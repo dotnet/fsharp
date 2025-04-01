@@ -636,16 +636,10 @@ module internal Salsa =
                 sb.Append(text+"\r\n") |> ignore
             Append "<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
             Append "    <PropertyGroup>"
-//            The salsa layer does Configuration/Platform in a kind of hacky way
-//            Append "        <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>"
-//            Append "        <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>"
+            Append "      <MSBuildCopyMarkerName>abcdefg</MSBuildCopyMarkerName>"
             Append "        <OutputPath>bin\Debug\</OutputPath>"
             if versionFile<>null then Append (sprintf "        <VersionFile>%s</VersionFile>" versionFile)
             if otherFlags<>null then Append (sprintf "        <OtherFlags>%s --resolutions</OtherFlags>" otherFlags)
-//            if targetFrameworkVersion<>null then
-//                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
-//                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
-//            else
             Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.7.2")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
@@ -655,15 +649,7 @@ module internal Salsa =
             for define in defines do
                 Append (sprintf "            %s;" define)                            
             Append "        </DefineConstants>"            
-            
             Append "    </PropertyGroup>"
-//            Append "    <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' \">"
-//            Append "        <OutputPath>bin\Debug\</OutputPath>"
-//            Append "    </PropertyGroup>"
-//            Append "    <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' \">"
-//            Append "        <OutputPath>bin\Release\</OutputPath>"
-//            Append "    </PropertyGroup>"
-
             Append "    <ItemGroup>"
             
             for (reference,specificVersion) in references do
