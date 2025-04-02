@@ -139,7 +139,7 @@ type Document with
                 | hr, _, _, docData, _ when ErrorHandler.Succeeded(hr) && docData <> IntPtr.Zero ->
                     match Marshal.GetObjectForIUnknown docData with
                     | :? IVsTextBuffer as ivsTextBuffer ->
-                        match textManager.GetActiveView(1, ivsTextBuffer) with
+                        match textManager.GetActiveView(0, ivsTextBuffer) with
                         | hr, vsTextView when ErrorHandler.Succeeded(hr) -> Some vsTextView
                         | _ -> None
                     | _ -> None
