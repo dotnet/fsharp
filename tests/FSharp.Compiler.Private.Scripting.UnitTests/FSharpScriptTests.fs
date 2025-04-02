@@ -518,7 +518,7 @@ let add (col:IServiceCollection) =
             Assert.Equal(error, errors[0].ToString()
                                          .Replace("\r\n", "\r")
                                          .Replace("Parameter name: ", "Parameter ")
-                                         .Replace("\rParameter ", "Parameter ")
+                                         .Replace("\rParameter ", " Parameter ")
                                          .Replace("(Parameter ", "Parameter ")
                                          .Replace("'usepackagetargets'", "usepackagetargets")
                                          .Replace("usepackagetargets)", "usepackagetargets"))
