@@ -17,13 +17,8 @@ module GoToDefinitionServiceTests =
     let userOpName = "GoToDefinitionServiceTests"
 
     let private findDefinition
-        (
-            document: Document,
-            sourceText: SourceText,
-            position: int,
-            defines: string list,
-            langVersion: string option
-        ) : range option =
+        (document: Document, sourceText: SourceText, position: int, defines: string list, langVersion: string option)
+        : range option =
         maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position

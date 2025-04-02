@@ -148,16 +148,8 @@ module internal CompletionUtils =
 
     /// Indicates the text span to be replaced by a committed completion list item.
     let getDefaultCompletionListSpan
-        (
-            sourceText: SourceText,
-            caretIndex,
-            documentId,
-            filePath,
-            defines,
-            langVersion,
-            strictIndentation,
-            ct: CancellationToken
-        ) =
+        (sourceText: SourceText, caretIndex, documentId, filePath, defines, langVersion, strictIndentation, ct: CancellationToken)
+        =
 
         // Gets connected identifier-part characters backward and forward from caret.
         let getIdentifierChars () =

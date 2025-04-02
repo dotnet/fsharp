@@ -813,7 +813,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
-        | SynMeasure.Divide(measure1 = ms1; measure2 = ms2; range= m) ->
+        | SynMeasure.Divide(measure1 = ms1; measure2 = ms2) ->
             let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
@@ -10684,7 +10684,7 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     resultList,tpEnv
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
-    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, trivia)) = synMatchClause
+    let (SynMatchClause(synPat, synWhenExprOpt, synResultExpr, patm, spTgt, _trivia)) = synMatchClause
 
     let isTrueMatchClause =
         if synMatchClause.IsTrueMatchClause then

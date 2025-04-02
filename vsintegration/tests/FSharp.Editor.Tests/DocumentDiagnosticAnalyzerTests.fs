@@ -62,11 +62,8 @@ type DocumentDiagnosticAnalyzerTests() =
         |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyDiagnosticBetweenMarkers
-        (
-            fileContents: string,
-            expectedMessage: string,
-            expectedSeverity: DiagnosticSeverity
-        ) =
+        (fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity)
+        =
         let errors =
             this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = expectedSeverity)
@@ -92,11 +89,8 @@ type DocumentDiagnosticAnalyzerTests() =
         |> Assert.shouldBeEqualWith expectedEnd "Error end positions should match"
 
     member private this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
-        (
-            fileContents: string,
-            expectedMessage: string,
-            expectedSeverity: DiagnosticSeverity
-        ) =
+        (fileContents: string, expectedMessage: string, expectedSeverity: DiagnosticSeverity)
+        =
         // TODO: once workaround (https://github.com/dotnet/fsharp/pull/15982) will not be needed, this should be reverted back to normal method (see PR)
         let errors =
             this.getDiagnostics fileContents
@@ -127,11 +121,8 @@ type DocumentDiagnosticAnalyzerTests() =
         this.VerifyDiagnosticBetweenMarkers_HACK_PLEASE_REFER_TO_COMMENT_INSIDE(fileContents, expectedMessage, DiagnosticSeverity.Error)
 
     member private this.VerifyErrorAtMarker_HACK_PLEASE_REFER_TO_COMMENT_INSIDE
-        (
-            fileContents: string,
-            expectedMarker: string,
-            ?expectedMessage: string
-        ) =
+        (fileContents: string, expectedMarker: string, ?expectedMessage: string)
+        =
         let errors =
             this.getDiagnostics fileContents
             |> Seq.filter (fun e -> e.Severity = DiagnosticSeverity.Error)
