@@ -327,11 +327,13 @@ module ScriptPreprocessClosure =
                     for kv in tcConfig.packageManagerLines do
                         let packageManagerKey, packageManagerLines = kv.Key, kv.Value
 
-                        match packageManagerLines |> List.filter (not << isEditorCursorInPackageLines) with
+                        let packageManagerLines =
+                            packageManagerLines |> List.filter (not << isEditorCursorInPackageLines)
+
+                        match packageManagerLines with
                         | [] -> ()
                         | packageManagerLine :: _ ->
                             let m = packageManagerLine.Range
-                            let packageManagerLines = packageManagerLines
                             yield! processPackageManagerLines m packageManagerLines scriptName packageManagerKey
             ]
 
