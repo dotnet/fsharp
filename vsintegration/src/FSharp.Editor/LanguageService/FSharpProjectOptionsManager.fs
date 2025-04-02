@@ -15,6 +15,8 @@ open Microsoft.VisualStudio.FSharp.Editor
 open System.Threading
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
+open Microsoft.VisualStudio.TextManager.Interop
+open FSharp.Compiler.Text
 
 #nowarn "57"
 
