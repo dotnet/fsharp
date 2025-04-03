@@ -5,6 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;45;47;52;58;75;1182</NoWarn><!-- 1182 - unused bindings, too many of them here -->
+    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>

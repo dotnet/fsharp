@@ -139,7 +139,8 @@ type XmlDocCollector() =
             let xmlDocBlock =
                 struct (savedLines.Count - currentGrabPointCommentsCount, savedLines.Count - 1, false)
 
-            savedGrabPoints.Add(pos, xmlDocBlock)
+            // silently override duplicate grab points (which happen only when preceded by nonsensical line directives)
+            savedGrabPoints[pos] <- xmlDocBlock
             currentGrabPointCommentsCount <- 0
             delayedGrabPoint <- ValueNone
 

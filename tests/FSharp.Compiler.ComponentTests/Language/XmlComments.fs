@@ -242,3 +242,19 @@ module M =
          |> withXmlCommentChecking
          |> compile
          |> withDiagnostics [ ]
+
+    // regression test for #18433
+    [<Fact>]
+    let OverrideXmlCommentsWithSameRange () =
+        Fs"""
+        module A
+        # 1
+        /// A is int
+        type A = {a: int}
+        # 1
+        /// B is int
+        type B = {b: int}
+        """
+        |> withXmlCommentChecking
+        |> compile
+        |> shouldSucceed

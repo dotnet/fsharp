@@ -1,0 +1,43 @@
+id: 
+name: GitOps.PullRequestIssueManagement
+description: GitOps.PullRequestIssueManagement primitive
+owner: 
+resource: repository
+disabled: false
+where: 
+configuration:
+  resourceManagementConfiguration:
+    eventResponderTasks:
+    - if:
+      - payloadType: Issues
+      - labelAdded:
+          label: Breaking-change
+      then:
+      - addReply:
+          reply: >-
+            Refer to the [.NET SDK breaking change guidelines](https://github.com/dotnet/sdk/blob/main/documentation/project-docs/breaking-change-guidelines.md#required-process-for-all-net-sdk-breaking-changes)
+      description: Add breaking change doc instructions to issue
+    - if:
+      - payloadType: Pull_Request
+      - labelAdded:
+          label: Breaking-change
+      then:
+      - addLabel:
+          label: needs-breaking-change-doc-created
+      - addReply:
+          reply: >-
+            Added `needs-breaking-change-doc-created` label because this PR has the `breaking-change` label. 
+
+
+            When you commit this breaking change:
+
+
+            1. [ ] Create and link to this PR and the issue a matching issue in the dotnet/docs repo using the [breaking change documentation template](https://aka.ms/dotnet/docs/new-breaking-change-issue), then remove this `needs-breaking-change-doc-created` label.
+
+            2. [ ] Ask a committer to mail the `.NET SDK Breaking Change Notification` email list.
+
+
+            You can refer to the [.NET SDK breaking change guidelines](https://github.com/dotnet/sdk/blob/main/documentation/project-docs/breaking-change-guidelines.md)
+      description: Add breaking change instructions to PR.
+onFailure: 
+onSuccess: 

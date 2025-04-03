@@ -269,7 +269,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.As (pat1, pat2, m) ->
         TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m
-        
+
     | SynPat.Named (SynIdent(id,_), isMemberThis, vis, m) ->
         TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valReprInfo m
 
@@ -522,7 +522,7 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
 /// Check a long identifier in a pattern
 and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLinearEnv) ty (longDotId, tyargs, args, vis, m) =
     let (SynLongIdent(longId, _, _)) = longDotId
-    
+
     if tyargs.IsSome then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
 
     let warnOnUpperForId =
@@ -643,7 +643,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     // Here we only care about the cases where the user has written the wildcard pattern explicitly
                     // | Case _ -> ...
                     // let myDiscardedArgFunc(Case _) = ..."""
-                    // This needs to be a waring because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
+                    // This needs to be a warning because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
                     // The rest of the cases will still be reported as FS0725
                     warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
                 | _ -> ()
@@ -725,7 +725,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             if numArgTys > 1 then
                 // Expects tuple without enough args
                 let printTy  = NicePrint.minimalStringOfType env.DisplayEnv
-                let missingArgs = 
+                let missingArgs =
                     argNames.[numArgs..numArgTys - 1]
                     |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printTy  id.FormalType)
                     |> String.concat (Environment.NewLine + "\t")

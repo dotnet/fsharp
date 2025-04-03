@@ -8465,9 +8465,9 @@ let (|NewDelegateExpr|_|) g expr =
 [<return: Struct>]
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, [], [delExpr;delInvokeArg], m) 
+    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
         when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
-            ValueSome(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
+            ValueSome(delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m)
     | _ -> ValueNone
 
 [<return: Struct>]
@@ -8494,17 +8494,17 @@ let (|OpPipeRight3|_|) g expr =
             ValueSome(resType, arg1, arg2, arg3, fExpr, m)
     | _ -> ValueNone
 
-let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
+let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =
     match delExpr with 
     | Expr.Let (bind, body, mLet, _) ->
-        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, delInvokeArg, m))
-    | NewDelegateExpr g (_, argvs, body, m, _) when argvs.Length > 0 -> 
+        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, tyargs, delInvokeArg, m))
+    | NewDelegateExpr g (_, argvs & _ :: _, body, m, _) ->
         let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body
         let argvs2, args2 = List.unzip pairs
         mkLetsBind m (mkCompGenBinds argvs2 args2) body
     | _ -> 
         // Remake the delegate invoke
-        Expr.App (delInvokeRef, delInvokeTy, [], [delExpr; delInvokeArg], m) 
+        Expr.App (delInvokeRef, delInvokeTy, tyargs, [delExpr; delInvokeArg], m) 
       
 //---------------------------------------------------------------------------
 // Adjust for expected usage

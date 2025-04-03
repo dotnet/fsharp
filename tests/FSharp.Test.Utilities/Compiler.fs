@@ -462,7 +462,7 @@ module rec Compiler =
 
     let FsxFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path) |> FS
-    
+
     let Fs (source: string) : CompilationUnit =
         fsFromString (FsSource source) |> FS
 
@@ -1049,7 +1049,7 @@ module rec Compiler =
                     let compilation = Compilation.Compilation([], CompileOutput.Exe,Array.empty, TargetFramework.Current, references, None, None)
                     evaluateReferences outputDirectory fsSource.IgnoreWarnings compilation
                     |> fst
-            
+
             let options =
                 [|
                     yield! fsSource.Options |> Array.ofList
@@ -1211,7 +1211,7 @@ module rec Compiler =
                 CompilationResult.Success (mkResult output)
             else
                 let err = (errors |> String.concat "\n").Replace("\r\n","\n")
-                let output = 
+                let output =
                     ExecutionOutput {Outcome = NoExitCode; StdOut = String.Empty; StdErr = err }
                 CompilationResult.Failure (mkResult output)
 
@@ -1243,7 +1243,7 @@ Actual:
         elif FileSystem.FileExistsShim baseline.FilePath then
             FileSystem.FileDeleteShim baseline.FilePath
 
-    
+
     let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
         printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
         let file = FileSystem.OpenFileForWriteShim(baselineFile.FilePath)
@@ -1300,7 +1300,7 @@ Actual:
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL -> 
+                | false, errorMsg, _actualIL ->
                     CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
         | CompilationResult.Failure f ->
             printfn "Failure:"
@@ -1614,7 +1614,7 @@ Actual:
             // For lists longer than 100 errors:
             expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine
 
-            // TODO: Check all "categories", collect all results and print alltogether.
+            // TODO: Check all "categories", collect all results and print all together.
             checkEqual "Errors count" expectedErrors.Length sourceErrors.Length
 
             (sourceErrors, expectedErrors)
@@ -1832,10 +1832,10 @@ Actual:
                 let m = Regex(pattern, RegexOptions.Multiline).Match(input)
                 if m.Success then
                     m.Index
-                else 
+                else
                     -1
             else
-                input.IndexOf(pattern) 
+                input.IndexOf(pattern)
 
         let private checkOutputInOrderCore useWildcards (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
@@ -1944,10 +1944,9 @@ Actual:
     let printSignatures cUnit = printSignaturesImpl None cUnit
     let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
 
-    let getImpliedSignatureHash cUnit = 
+    let getImpliedSignatureHash cUnit =
         let tcResults = cUnit |> typecheckResults
         let hash = tcResults.CalculateSignatureHash()
         match hash with
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
-

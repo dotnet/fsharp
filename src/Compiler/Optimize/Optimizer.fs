@@ -1734,9 +1734,9 @@ let TryEliminateBinding cenv _env bind e2 _m =
 
          // Immediate consumption of delegate via an application in a sequential, e.g. 'let part1 = e in part1.Invoke(args); rest'
          // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
-         | Expr.Sequential(DebugPoints(DelegateInvokeExpr g (delInvokeRef, delInvokeTy, DebugPoints (Expr.Val (VRefLocal vspec2, _, _), recreate2), delInvokeArg, _), recreate1), rest, NormalSeq, m)  
+         | Expr.Sequential(DebugPoints(DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, DebugPoints (Expr.Val (VRefLocal vspec2, _, _), recreate2), delInvokeArg, _), recreate1), rest, NormalSeq, m)  
              when IsUniqueUse vspec2 [rest;delInvokeArg] -> 
-               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, recreate2 e1, delInvokeTy, delInvokeArg, m)
+               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, recreate2 e1, delInvokeTy, tyargs, delInvokeArg, m)
                Some (Expr.Sequential(recreate1 invoke, rest, NormalSeq, m)  |> recreate0)
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
@@ -2397,8 +2397,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
-        | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m) ->
-            OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) 
+        | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
+            OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) 
         | _ -> 
         let attempt = 
             if IsDebugPipeRightExpr cenv expr then
@@ -3799,18 +3799,18 @@ and OptimizeDebugPipeRights cenv env expr =
             pipesExprR
     expr, { pipesInfo with HasEffect=true}
     
-and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
+and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =
     let g = cenv.g
     let optf0, finfo = OptimizeExpr cenv env delExpr
 
-    match StripPreComputationsFromComputedFunction g optf0 [delInvokeArg] (fun f delInvokeArgsR -> MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, f, delInvokeTy, List.head delInvokeArgsR, m)) with
+    match StripPreComputationsFromComputedFunction g optf0 [delInvokeArg] (fun f delInvokeArgsR -> MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, f, delInvokeTy, tyargs, List.head delInvokeArgsR, m)) with
     | Choice1Of2 remade -> 
         OptimizeExpr cenv env remade
     | Choice2Of2 (newf0, remake) -> 
 
     let newDelInvokeArgs, arginfos = OptimizeExprsThenConsiderSplits cenv env [delInvokeArg]
     let newDelInvokeArg = List.head newDelInvokeArgs
-    let reducedExpr = MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, newf0, delInvokeTy, newDelInvokeArg, m)
+    let reducedExpr = MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, newf0, delInvokeTy, tyargs, newDelInvokeArg, m)
     let newExpr = reducedExpr |> remake
     match newf0, reducedExpr with 
     | Expr.Obj _, Expr.Let _ -> 
