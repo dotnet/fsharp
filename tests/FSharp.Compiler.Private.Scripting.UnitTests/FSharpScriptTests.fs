@@ -500,8 +500,8 @@ let add (col:IServiceCollection) =
     [<Theory>]
     [<InlineData("""#r "nuget:envdte,usepackagetargets=true" """, true, "")>]
     [<InlineData("""#r "nuget:envdte,usepackagetargets=false" """, true, "")>]
-    [<InlineData("""#r "nuget:envdte,usepackagetargets=invalidvalue" """, false, "input.fsx (1,1)-(1,49) interactive error Invalid value for boolean 'usepackagetargets', valid values: true or false")>]
-    [<InlineData("""#r "nuget:envdte,usepackagetargets=" """, false, "input.fsx (1,1)-(1,37) interactive error Invalid value for boolean 'usepackagetargets', valid values: true or false")>]
+    [<InlineData("""#r "nuget:envdte,usepackagetargets=invalidvalue" """, false, "input.fsx (1,1)-(1,49) interactive error Specified argument was out of the range of valid values. Parameter usepackagetargets")>]
+    [<InlineData("""#r "nuget:envdte,usepackagetargets=" """, false, "input.fsx (1,1)-(1,37) interactive error Specified argument was out of the range of valid values. Parameter usepackagetargets")>]
     member _.``Eval script with usepackagetargets options``(code, shouldSucceed, error) =
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
@@ -514,4 +514,11 @@ let add (col:IServiceCollection) =
         | false ->
             Assert.NotEmpty(errors)
             Assert.Equal(1, errors.Length)
-            Assert.Equal(error, errors.[0].ToString())
+            // coreclr emits the value with "name: usepackagetargets", desktop framework just emits it "usepackagetargets"
+            Assert.Equal(error, errors[0].ToString()
+                                         .Replace("\r\n", "\r")
+                                         .Replace("Parameter name: ", "Parameter ")
+                                         .Replace("\rParameter ", " Parameter ")
+                                         .Replace("(Parameter ", "Parameter ")
+                                         .Replace("'usepackagetargets'", "usepackagetargets")
+                                         .Replace("usepackagetargets)", "usepackagetargets"))
