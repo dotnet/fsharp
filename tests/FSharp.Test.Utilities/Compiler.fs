@@ -1640,7 +1640,8 @@ Actual:
                 | Some (ExecutionOutput {Outcome = Failure ex }) ->
                     failwithf $"Eval or Execution has failed (expected to succeed): %A{ex}\n{diagnostics}"
                 | _ ->
-                    failwithf $"Operation failed (expected to succeed).\n{diagnostics}"
+                    
+                    failwithf $"Operation failed (expected to succeed).\n{diagnostics} \n OUTPUTs: %A{r.Output}"
 
         let shouldFail (result: CompilationResult) : CompilationResult =
             match result with
