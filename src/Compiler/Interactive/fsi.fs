@@ -1675,10 +1675,14 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
 
 let mkUniqueCcuName =
     let mutable ccuId = 0
-    let dynamicCcuName = "FSI-ASSEMBLY"
+
     fun () ->
         let nextId = Interlocked.Increment &ccuId
-        if nextId = 1 then dynamicCcuName else $"{dynamicCcuName}-{nextId}"
+
+        if nextId = 1 then
+            "FSI-ASSEMBLY"
+        else
+            $"FSI-ASSEMBLY-{nextId}"
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
@@ -1723,7 +1727,7 @@ type internal FsiDynamicCompiler
 
     let valuePrinter = FsiValuePrinter(fsi, outWriter)
 
-    let dynamicCcuName = mkUniqueCcuName()
+    let dynamicCcuName = mkUniqueCcuName ()
 
     let builders =
         if tcConfigB.fsiMultiAssemblyEmit then
