@@ -530,4 +530,11 @@ let add (col:IServiceCollection) =
         | false ->
             Assert.NotEmpty(errors)
             Assert.Equal(1, errors.Length)
-            Assert.Equal(error, errors[0].ToString())
+            // coreclr emits the value with "name: usepackagetargets", desktop framework just emits it "usepackagetargets"
+            let message =
+                errors[0]
+                    .ToString()
+                    .Replace(Environment.NewLine, " ")
+                    .Replace(" (Parameter 'usepackagetargets')", " Parameter name: usepackagetargets")
+                    .Replace("\r\n", "\r")
+            Assert.Equal(error, message)
