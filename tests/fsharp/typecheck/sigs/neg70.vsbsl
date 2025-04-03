@@ -1,2 +1,14 @@
 
 neg70.fsx(109,64,109,65): parse error FS0010: Unexpected symbol ')' in binding. Expected incomplete structured construct at or before this point or other token.
+
+neg70.fsx(107,29,107,69): typecheck error FS0507: No accessible member or object constructor named 'Rectangle' takes 0 arguments. Note the call to this member also provides 1 named arguments.
+
+neg70.fsx(108,39,108,40): typecheck error FS0039: The value or constructor 'y' is not defined.
+
+neg70.fsx(110,18,110,43): typecheck error FS0041: No overloads match for method 'FillEllipse'.
+
+Known types of arguments: Brush * (int * bool * bool * bool)
+
+Available overloads:
+ - Graphics.FillEllipse(brush: Brush, rect: Rectangle) : unit // Argument 'rect' doesn't match
+ - Graphics.FillEllipse(brush: Brush, rect: RectangleF) : unit // Argument 'rect' doesn't match
