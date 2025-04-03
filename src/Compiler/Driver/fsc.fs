@@ -671,6 +671,9 @@ let main1
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
 
+    // Read the source file content for the `CallerArgumentExpression` feature
+    readAndStoreFileContents tcConfig sourceFiles
+
     use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =

@@ -807,6 +807,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
 type internal FsiStdinSyphon(errorWriter: TextWriter) =
     let syphonText = StringBuilder()
 
+    /// Get the current syphon text
+    member _.SyphonText = syphonText.ToString()
+
     /// Clears the syphon text
     member _.Reset() = syphonText.Clear() |> ignore
 
@@ -2899,6 +2902,9 @@ type internal FsiDynamicCompiler
 
             let istate = fsiDynamicCompiler.ProcessDelayedReferences(ctok, istate)
 
+            // Read the source file content for the `CallerArgumentExpression` feature
+            readAndStoreFileContents tcConfig sourceFiles
+
             fsiDynamicCompiler.EvalParsedSourceFiles(ctok, diagnosticsLogger, istate, inputs, m)
 
     member _.GetBoundValues istate =
@@ -3511,7 +3517,11 @@ type FsiStdinLexerProvider
                 |> Option.iter (fun t ->
                     match t with
                     | Null -> ()
-                    | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
+                    | NonNull t ->
+                        fsiStdinSyphon.Add(t + "\n")
+                        // Update the stdin file content for the `CallerArgumentExpression` feature
+                        FileContent.clear ()
+                        FileContent.update stdinMockFileName (FileContent.FileCacheType.FromString fsiStdinSyphon.SyphonText))
 
                 match inputOption with
                 | Some Null
@@ -4208,6 +4218,9 @@ type FsiInteractionProcessor
 
                 ProcessStepStatus status None (fun _ istate -> run istate)
 
+            // Read the source file content for the `CallerArgumentExpression` feature
+            readAndStoreFileContents tcConfig [ sourceFile ]
+
             run istate)
 
     /// Load the source files, one by one. Called on the main thread.
@@ -4285,6 +4298,11 @@ type FsiInteractionProcessor
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = ParseInteraction tokenizer
+
+            // Update the file content for the `CallerArgumentExpression` feature
+            FileContent.clear ()
+            FileContent.update scriptFileName (FileContent.FileCacheType.FromString sourceText)
+
             ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
 
@@ -4318,6 +4336,10 @@ type FsiInteractionProcessor
                     m,
                     SynExprSequentialTrivia.Zero
                 )
+
+            // Update the file content for the `CallerArgumentExpression` feature
+            FileContent.clear ()
+            FileContent.update scriptFileName (FileContent.FileCacheType.FromString sourceText)
 
             ExecuteParsedExpressionOnMainThread(ctok, diagnosticsLogger, exprWithSeq, istate))
         |> commitResult
