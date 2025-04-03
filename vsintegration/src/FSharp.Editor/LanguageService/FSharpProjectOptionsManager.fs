@@ -200,13 +200,16 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
+            let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct)
 
                 let getProjectOptionsFromScript textViewAndCaret =
-                    match textViewAndCaret with
+                    let caret = textViewAndCaret ()
+
+                    match caret with
                     | None ->
                         checker.GetProjectOptionsFromScript(
                             document.FilePath,
@@ -226,7 +229,6 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             userOpName = userOpName
                         )
 
-                let textViewAndCaret = document.TryGetTextViewAndCaretPos()
                 let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
                 let project = document.Project
 
@@ -266,7 +268,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let updateProjectOptions () =
                     async {
-                        let! scriptProjectOptions, _ = getProjectOptionsFromScript None
+                        let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
 
                         checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
                         |> Async.Start
@@ -281,7 +283,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     match value with
                     | projectId, fileStamp, parsingOptions, projectOptions, _ ->
                         let subscription =
-                            match textViewAndCaret with
+                            match textViewAndCaret () with
                             | Some(textView, _) ->
                                 subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
                             | None -> None
