@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/NestedIfEndifWithComplexExpressionsSignatureFile.fsi",
       QualifiedNameOfFile NestedIfEndifWithComplexExpressionsSignatureFile, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val
@@ -23,4 +22,5 @@ SigFile
           If (And (Ident "FOO", Ident "BAR"), (6,8--6,22));
           If (Or (Ident "MEH", Ident "HMM"), (7,12--7,26)); EndIf (9,12--9,18);
           EndIf (10,8--10,14); EndIf (11,4--11,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

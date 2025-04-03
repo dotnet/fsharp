@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/ModuleMember/Val 01.fsi", QualifiedNameOfFile Module, [], [],
+     ("/root/ModuleMember/Val 01.fsi", QualifiedNameOfFile Module, [],
       [SynModuleOrNamespaceSig
          ([Module], false, NamedModule,
           [Val
@@ -26,6 +26,7 @@ SigFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,20), { LeadingKeyword = Module (1,0--1,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,13)-(3,15) parse error Unexpected symbol '->' in value signature

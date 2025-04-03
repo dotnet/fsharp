@@ -1,7 +1,6 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Try - With 05.fs", false, QualifiedNameOfFile Module, [],
-      [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Let
@@ -31,6 +30,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (7,0)-(7,1) parse error Incomplete structured construct at or before this point in pattern matching. Expected '->' or other token.

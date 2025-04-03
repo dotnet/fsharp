@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/SingleIfElseEndifSignatureFile.fsi",
-      QualifiedNameOfFile SingleIfElseEndifSignatureFile, [], [],
+      QualifiedNameOfFile SingleIfElseEndifSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val
@@ -19,4 +19,5 @@ SigFile
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives =
          [If (Ident "DEBUG", (5,4--5,13)); Else (7,4--7,9); EndIf (9,4--9,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

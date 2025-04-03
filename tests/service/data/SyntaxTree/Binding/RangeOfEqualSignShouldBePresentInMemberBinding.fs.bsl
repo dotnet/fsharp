@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Binding/RangeOfEqualSignShouldBePresentInMemberBinding.fs", false,
-      QualifiedNameOfFile RangeOfEqualSignShouldBePresentInMemberBinding, [], [],
+      QualifiedNameOfFile RangeOfEqualSignShouldBePresentInMemberBinding, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInMemberBinding], false, AnonModule,
           [Types
@@ -49,4 +49,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,21))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

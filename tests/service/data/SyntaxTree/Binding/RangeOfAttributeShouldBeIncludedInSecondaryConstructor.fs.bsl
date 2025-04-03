@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInSecondaryConstructor.fs",
       false,
       QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSecondaryConstructor,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSecondaryConstructor], false,
           AnonModule,
@@ -117,4 +117,5 @@ ImplFile
                     WithKeyword = None })], (2,0--11,12))], PreXmlDocEmpty, [],
           None, (2,0--12,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/OperatorInSynPatLongIdent.fs", false,
-      QualifiedNameOfFile OperatorInSynPatLongIdent, [], [],
+      QualifiedNameOfFile OperatorInSynPatLongIdent, [],
       [SynModuleOrNamespace
          ([OperatorInSynPatLongIdent], false, AnonModule,
           [Let
@@ -32,4 +32,5 @@ ImplFile
                     EqualsRange = Some (2,17--2,18) })], (2,0--2,28))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
