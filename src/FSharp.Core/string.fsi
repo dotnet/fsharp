@@ -139,7 +139,7 @@ module String =
     [<CompiledName("ForAll")>]
     val forall: predicate: (char -> bool) -> str: string -> bool
 
-    /// <summary>Builds a new string whose characters are the results of applying the function <c>mapping</c>
+    /// <summary>Builds a new string whose characters are the results of applying the function <c>initializer</c>
     /// to each index from <c>0</c> to <c>count-1</c> and concatenating the resulting
     /// strings.</summary>
     ///
