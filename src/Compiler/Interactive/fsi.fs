@@ -1682,7 +1682,7 @@ let mkUniqueCcuName =
         if nextId = 1 then
             "FSI-ASSEMBLY"
         else
-            $"FSI-ASSEMBLY-{nextId}"
+            $"FSI-ASSEMBLY{nextId}"
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
