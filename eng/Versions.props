@@ -74,8 +74,8 @@
   <!-- Dependencies from maintenance-packages, source-build specific -->
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' == 'true'">
     <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
-    <SystemMemoryVersion>4.6.2</SystemMemoryVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.1</SystemRuntimeCompilerServicesUnsafeVersion>
+    <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
+    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
   </PropertyGroup>
   <!-- Dependencies from maintenance-packages, everything else -->
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
