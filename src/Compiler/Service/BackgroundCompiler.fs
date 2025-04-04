@@ -112,6 +112,7 @@ type internal IBackgroundCompiler =
     abstract member GetProjectOptionsFromScript:
         fileName: string *
         sourceText: ISourceText *
+        caret: Position option *
         previewEnabled: bool option *
         loadedTimeStamp: System.DateTime option *
         otherFlags: string array option *
@@ -126,6 +127,7 @@ type internal IBackgroundCompiler =
     abstract GetProjectSnapshotFromScript:
         fileName: string *
         sourceText: ISourceTextNew *
+        caret: Position option *
         documentSource: DocumentSource *
         previewEnabled: bool option *
         loadedTimeStamp: System.DateTime option *
@@ -578,14 +580,8 @@ type internal BackgroundCompiler
                 res)
 
     member _.ParseFile
-        (
-            fileName: string,
-            sourceText: ISourceText,
-            options: FSharpParsingOptions,
-            cache: bool,
-            flatErrors: bool,
-            userOpName: string
-        ) =
+        (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
+        =
         async {
             use _ =
                 Activity.start
@@ -781,14 +777,8 @@ type internal BackgroundCompiler
 
     /// Type-check the result obtained by parsing, but only if the antecedent type checking context is available.
     member bc.CheckFileInProjectAllowingStaleCachedResults
-        (
-            parseResults: FSharpParseFileResults,
-            fileName,
-            fileVersion,
-            sourceText: ISourceText,
-            options,
-            userOpName
-        ) =
+        (parseResults: FSharpParseFileResults, fileName, fileVersion, sourceText: ISourceText, options, userOpName)
+        =
         async {
             use _ =
                 Activity.start
@@ -841,14 +831,8 @@ type internal BackgroundCompiler
 
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
     member bc.CheckFileInProject
-        (
-            parseResults: FSharpParseFileResults,
-            fileName,
-            fileVersion,
-            sourceText: ISourceText,
-            options,
-            userOpName
-        ) =
+        (parseResults: FSharpParseFileResults, fileName, fileVersion, sourceText: ISourceText, options, userOpName)
+        =
         async {
             use _ =
                 Activity.start
@@ -890,13 +874,8 @@ type internal BackgroundCompiler
 
     /// Parses and checks the source file and returns untyped AST and check results.
     member bc.ParseAndCheckFileInProject
-        (
-            fileName: string,
-            fileVersion,
-            sourceText: ISourceText,
-            options: FSharpProjectOptions,
-            userOpName
-        ) =
+        (fileName: string, fileVersion, sourceText: ISourceText, options: FSharpProjectOptions, userOpName)
+        =
         async {
             use _ =
                 Activity.start
@@ -1071,7 +1050,7 @@ type internal BackgroundCompiler
                         Some options,
                         Array.ofList tcDependencyFiles,
                         creationDiags,
-                        parseResults.Diagnostics,
+                        [||],
                         tcDiagnostics,
                         keepAssemblyContents,
                         Option.get latestCcuSigForFile,
@@ -1090,13 +1069,8 @@ type internal BackgroundCompiler
         }
 
     member _.FindReferencesInFile
-        (
-            fileName: string,
-            options: FSharpProjectOptions,
-            symbol: FSharpSymbol,
-            canInvalidateProject: bool,
-            userOpName: string
-        ) =
+        (fileName: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string)
+        =
         async {
             use _ =
                 Activity.start
@@ -1150,12 +1124,8 @@ type internal BackgroundCompiler
 
     /// Try to get recent approximate type check results for a file.
     member _.TryGetRecentCheckResultsForFile
-        (
-            fileName: string,
-            options: FSharpProjectOptions,
-            sourceText: ISourceText option,
-            _userOpName: string
-        ) =
+        (fileName: string, options: FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string)
+        =
         use _ =
             Activity.start
                 "BackgroundCompiler.GetSemanticClassificationForFile"
@@ -1308,6 +1278,7 @@ type internal BackgroundCompiler
         (
             fileName,
             sourceText,
+            caret,
             previewEnabled,
             loadedTimeStamp,
             otherFlags,
@@ -1358,6 +1329,7 @@ type internal BackgroundCompiler
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
                     fileName,
                     sourceText,
+                    caret,
                     CodeContext.Editing,
                     useSimpleResolution,
                     useFsiAuxLib,
@@ -1539,13 +1511,8 @@ type internal BackgroundCompiler
         member _.FileParsed: IEvent<string * FSharpProjectOptions> = self.FileParsed
 
         member _.FindReferencesInFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                symbol: FSharpSymbol,
-                canInvalidateProject: bool,
-                userOpName: string
-            ) : Async<seq<range>> =
+            (fileName: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string)
+            : Async<seq<range>> =
             self.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
 
         member this.FindReferencesInFile(fileName, projectSnapshot, symbol, userOpName) =
@@ -1557,42 +1524,30 @@ type internal BackgroundCompiler
             self.GetAssemblyData(options, userOpName)
 
         member _.GetAssemblyData
-            (
-                projectSnapshot: FSharpProjectSnapshot,
-                _fileName: string,
-                userOpName: string
-            ) : Async<ProjectAssemblyDataResult> =
+            (projectSnapshot: FSharpProjectSnapshot, _fileName: string, userOpName: string)
+            : Async<ProjectAssemblyDataResult> =
             self.GetAssemblyData(projectSnapshot.ToOptions(), userOpName)
 
         member _.GetBackgroundCheckResultsForFileInProject
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileResults> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileResults> =
             self.GetBackgroundCheckResultsForFileInProject(fileName, options, userOpName)
 
         member _.GetBackgroundParseResultsForFileInProject
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults> =
             self.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
 
         member _.GetCachedCheckFileResult
-            (
-                builder: IncrementalBuilder,
-                fileName: string,
-                sourceText: ISourceText,
-                options: FSharpProjectOptions
-            ) : Async<(FSharpParseFileResults * FSharpCheckFileResults) option> =
+            (builder: IncrementalBuilder, fileName: string, sourceText: ISourceText, options: FSharpProjectOptions)
+            : Async<(FSharpParseFileResults * FSharpCheckFileResults) option> =
             self.GetCachedCheckFileResult(builder, fileName, sourceText, options)
 
         member _.GetProjectOptionsFromScript
             (
                 fileName: string,
                 sourceText: ISourceText,
+                caret: Position option,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -1606,6 +1561,7 @@ type internal BackgroundCompiler
             self.GetProjectOptionsFromScript(
                 fileName,
                 sourceText,
+                caret,
                 previewEnabled,
                 loadedTimeStamp,
                 otherFlags,
@@ -1621,6 +1577,7 @@ type internal BackgroundCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                caret: Position option,
                 documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
@@ -1637,6 +1594,7 @@ type internal BackgroundCompiler
                     self.GetProjectOptionsFromScript(
                         fileName,
                         sourceText,
+                        caret,
                         previewEnabled,
                         loadedTimeStamp,
                         otherFlags,
@@ -1653,19 +1611,13 @@ type internal BackgroundCompiler
             }
 
         member _.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<EditorServices.SemanticClassificationView option> =
             self.GetSemanticClassificationForFile(fileName, options, userOpName)
 
         member _.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                snapshot: FSharpProjectSnapshot,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
+            (fileName: string, snapshot: FSharpProjectSnapshot, userOpName: string)
+            : Async<EditorServices.SemanticClassificationView option> =
             self.GetSemanticClassificationForFile(fileName, snapshot.ToOptions(), userOpName)
 
         member _.InvalidateConfiguration(options: FSharpProjectOptions, userOpName: string) : unit =
@@ -1682,21 +1634,13 @@ type internal BackgroundCompiler
             self.NotifyProjectCleaned(options, userOpName)
 
         member _.ParseAndCheckFileInProject
-            (
-                fileName: string,
-                fileVersion: int,
-                sourceText: ISourceText,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            (fileName: string, fileVersion: int, sourceText: ISourceText, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             self.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
 
         member _.ParseAndCheckFileInProject
-            (
-                fileName: string,
-                projectSnapshot: FSharpProjectSnapshot,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             async {
                 let fileSnapshot =
                     projectSnapshot.ProjectSnapshot.SourceFiles
@@ -1715,14 +1659,8 @@ type internal BackgroundCompiler
             self.ParseAndCheckProject(projectSnapshot.ToOptions(), userOpName)
 
         member _.ParseFile
-            (
-                fileName: string,
-                sourceText: ISourceText,
-                options: FSharpParsingOptions,
-                cache: bool,
-                flatErrors: bool,
-                userOpName: string
-            ) =
+            (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
+            =
             self.ParseFile(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member _.ParseFile(fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string) =
@@ -1733,18 +1671,11 @@ type internal BackgroundCompiler
         member _.ProjectChecked: IEvent<FSharpProjectOptions> = self.ProjectChecked
 
         member _.TryGetRecentCheckResultsForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                sourceText: ISourceText option,
-                userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+            (fileName: string, options: FSharpProjectOptions, sourceText: ISourceText option, userOpName: string)
+            : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             self.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
 
         member _.TryGetRecentCheckResultsForFile
-            (
-                fileName: string,
-                projectSnapshot: FSharpProjectSnapshot,
-                userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
+            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+            : (FSharpParseFileResults * FSharpCheckFileResults) option =
             self.TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)

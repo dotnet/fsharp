@@ -3525,3 +3525,30 @@ let ``Test NoWarn HashDirective`` () =
         printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
+
+let private sourceForParseError = """
+module N.M
+#nowarn 0xy
+()
+"""
+    
+[<Fact>]
+let ``RegressionTestForMissingParseError(TransparentCompiler)`` () =
+    let options = createProjectOptions [sourceForParseError] []
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 1
+    wholeProjectResults.Diagnostics.[0].ErrorNumber |> shouldEqual 1156
+    wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
+
+[<Fact>]
+let ``RegressionTestForDuplicateParseError(BackgroundCompiler)`` () =
+    let options = createProjectOptions [sourceForParseError] []
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let sourceName = options.SourceFiles[0]
+    let _wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let _, checkResults = exprChecker.GetBackgroundCheckResultsForFileInProject(sourceName, options) |> Async.RunImmediate
+    checkResults.Diagnostics.Length |> shouldEqual 1
+    checkResults.Diagnostics.[0].ErrorNumber |> shouldEqual 1156
+    checkResults.Diagnostics.[0].Range.StartLine |> shouldEqual 3
+

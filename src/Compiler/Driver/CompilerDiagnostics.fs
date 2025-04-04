@@ -678,7 +678,7 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let t1, _t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
 
@@ -721,10 +721,7 @@ type Exception with
                 os.AppendString(SeeAlsoE().Format(stringOfRange m2))
 
         | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
-            os.AppendString(
-                ConstraintSolverMissingConstraintE()
-                    .Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc))
-            )
+            os.AppendString(ConstraintSolverMissingConstraintE().Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc)))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
@@ -1525,10 +1522,7 @@ type Exception with
                 foundInContext |> ignore // suppress unused variable warning in RELEASE
 #endif
                 let fix (s: string) =
-                    s
-                        .Replace(SR.GetString("FixKeyword"), "")
-                        .Replace(SR.GetString("FixSymbol"), "")
-                        .Replace(SR.GetString("FixReplace"), "")
+                    s.Replace(SR.GetString("FixKeyword"), "").Replace(SR.GetString("FixSymbol"), "").Replace(SR.GetString("FixReplace"), "")
 
                 let tokenNames =
                     ctxt.ShiftTokens

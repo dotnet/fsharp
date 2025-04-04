@@ -58,14 +58,6 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
     AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
     ptys
 
-let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals)  tyarg attribs =
-    if g.langVersion.SupportsFeature(LanguageFeature.SupportValueOptionsAsOptionalParameters)
-        && findSynAttribute "StructAttribute" attribs
-    then
-        mkValueOptionTy g tyarg
-    else
-        mkOptionTy g tyarg
-
 let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->

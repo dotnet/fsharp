@@ -32,7 +32,7 @@ type Worker() =
 
         let actual =
             let x =
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]))
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
                 |> CancellableTask.start CancellationToken.None
 
             x.Result

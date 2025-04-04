@@ -424,9 +424,7 @@ module InterfaceFileWriter =
                 if String.IsNullOrEmpty(tcConfig.printSignatureFile) then
                     Console.Out
                 else
-                    FileSystem
-                        .OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create)
-                        .GetWriter()
+                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create).GetWriter()
 
             writeHeader tcConfig.printSignatureFile os
 
