@@ -2159,7 +2159,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">シグネチャおよび実装内の型 '{1}' の {0} 定義は、省略形が異なるため ({2} と {3})、互換性がありません</target>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -6114,7 +6114,7 @@
       </trans-unit>
       <trans-unit id="optLocalValueNotFoundDuringOptimization">
         <source>Local value {0} not found during optimization</source>
-        <target state="translated">最適化中にローカルの値 {0} が見つかりませんでした</target>
+        <target state="new">Local value {0} not found during optimization</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
@@ -6304,12 +6304,12 @@
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="translated">この数値は、10 進リテラルに使用できる範囲から外れています</target>
+        <target state="new">This number is outside the allowable range for decimal literals</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="translated">この数値は、32 ビット浮動小数点に使用できる範囲から外れています</target>
+        <target state="new">This number is outside the allowable range for 32-bit floats</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">

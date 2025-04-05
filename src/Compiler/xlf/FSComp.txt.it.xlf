@@ -2159,7 +2159,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">Le definizioni di {0} per il tipo '{1}' nella firma e nell'implementazione non sono compatibili perché le abbreviazioni sono diverse: {2} invece di {3}</target>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -6114,7 +6114,7 @@
       </trans-unit>
       <trans-unit id="optLocalValueNotFoundDuringOptimization">
         <source>Local value {0} not found during optimization</source>
-        <target state="translated">Valore locale {0} non trovato durante l'ottimizzazione</target>
+        <target state="new">Local value {0} not found during optimization</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
@@ -6304,12 +6304,12 @@
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="translated">Questo numero non è compreso nell'intervallo consentito per valori letterali decimali</target>
+        <target state="new">This number is outside the allowable range for decimal literals</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="translated">Questo numero non è compreso nell'intervallo consentito per valori float a 32 bit</target>
+        <target state="new">This number is outside the allowable range for 32-bit floats</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
