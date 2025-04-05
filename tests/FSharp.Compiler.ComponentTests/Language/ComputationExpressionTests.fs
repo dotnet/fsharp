@@ -1258,3 +1258,35 @@ let x18mutable =
             (Error 3147, Line 13, Col 20, Line 13, Col 23, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
             (Error 3147, Line 20, Col 21, Line 20, Col 22, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
         ]
+        
+    [<Fact>]
+    let ``Fix resumable and non-resumable CE error ranges`` () =
+        FSharp """
+module Test
+        
+open System.Threading.Tasks
+let minimum () : Async<int> =
+    async {
+        let! batch = async { return 1 }
+        return "1"
+    }
+    
+let minimum2 () : Task<int> =
+    task {
+        let! batch = task { return 1 }
+        return "1"
+    }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 8, Col 16, Line 8, Col 19, "This expression was expected to have type
+'int' 
+but here has type
+'string' ");
+            (Error 193, Line 14, Col 16, Line 14, Col 19, "Type constraint mismatch. The type 
+'TaskCode<string,string>' 
+is not compatible with type
+'TaskCode<int,int>' 
+")
+        ]

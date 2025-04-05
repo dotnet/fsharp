@@ -2747,19 +2747,25 @@ and TranslateComputationExpressionBind
 
         // Build the `Bind` call
         TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+            let m =
+                match holeFill with
+                | SynExpr.YieldOrReturn(trivia = yieldOrReturn) -> yieldOrReturn.YieldOrReturnKeyword
+                | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
+                | expr -> expr.Range
+
             let consumeExpr =
                 SynExpr.MatchLambda(
                     false,
                     consumePat.Range,
                     [
-                        SynMatchClause(consumePat, None, holeFill, innerRange, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)
+                        SynMatchClause(consumePat, None, holeFill, bindRange, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)
                     ],
                     DebugPointAtBinding.NoneAtInvisible,
                     innerRange
                 )
 
             let bindCall =
-                mkSynCall bindName bindRange (bindArgs @ [ consumeExpr ]) ceenv.builderValName
+                mkSynCall bindName m (bindArgs @ [ consumeExpr ]) ceenv.builderValName
 
             translatedCtxt (bindCall |> addBindDebugPoint))
 
