@@ -32,7 +32,31 @@ module Tuple =
         |> withOptions ["--test:ErrorRanges"]
         |> compileExeAndRun
         |> shouldSucceed
-        
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"tuples03.fs"|])>]
+    let ``Tuple - tuples03_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 410, Line 6, Col 12, Line 6, Col 14, "The type 'T' is less accessible than the value, member or type 'val t': T' it is used in."
+            Error 410, Line 6, Col 9, Line 6, Col 10, "The type 'T' is less accessible than the value, member or type 'val t: T' it is used in."
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"tuples04.fs"|])>]
+    let ``Tuple - tuples04_fs - --test:ErrorRanges`` compilation =
+        compilation
+        |> asFs
+        |> withOptions ["--test:ErrorRanges"]
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 410, Line 6, Col 12, Line 6, Col 14, "The type 'T' is less accessible than the value, member or type 'val internal t': T' it is used in."
+            Error 410, Line 6, Col 9, Line 6, Col 10, "The type 'T' is less accessible than the value, member or type 'val internal t: T' it is used in."
+        ]
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Tuple)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"W_IncompleteMatches01.fs"|])>]
     let ``Tuple - W_IncompleteMatches01_fs - --test:ErrorRanges`` compilation =
