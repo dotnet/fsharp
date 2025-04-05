@@ -482,3 +482,43 @@ test pfloat "1.234"
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.True(true = downcast value.ReflectionValue)
+
+    [<Fact>]
+    member _.``Nuget package with method duplicates differing only in generic arity``() =
+        // regression test for: https://github.com/dotnet/fsharp/issues/17796
+        // Was an internal error
+        let code = """
+#r "nuget: Microsoft.Extensions.DependencyInjection.Abstractions"
+open Microsoft.Extensions.DependencyInjection
+let add (col:IServiceCollection) = 
+    col.AddSingleton<string,string>()
+"""
+        use script = new FSharpScript(additionalArgs=[| |])
+        let _value,diag = script.Eval(code)
+        Assert.Empty(diag)
+
+    [<Theory>]
+    [<InlineData("""#r "nuget:envdte,usepackagetargets=true" """, true, "")>]
+    [<InlineData("""#r "nuget:envdte,usepackagetargets=false" """, true, "")>]
+    [<InlineData("""#r "nuget:envdte,usepackagetargets=invalidvalue" """, false, "input.fsx (1,1)-(1,49) interactive error Specified argument was out of the range of valid values. Parameter usepackagetargets")>]
+    [<InlineData("""#r "nuget:envdte,usepackagetargets=" """, false, "input.fsx (1,1)-(1,37) interactive error Specified argument was out of the range of valid values. Parameter usepackagetargets")>]
+    member _.``Eval script with usepackagetargets options``(code, shouldSucceed, error) =
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        match shouldSucceed with
+        | true ->
+            Assert.Empty(errors)
+            match result with
+            | Ok(_) -> ()
+            | Error(ex) -> Assert.True(false, "expected no failures")
+        | false ->
+            Assert.NotEmpty(errors)
+            Assert.Equal(1, errors.Length)
+            // coreclr emits the value with "name: usepackagetargets", desktop framework just emits it "usepackagetargets"
+            Assert.Equal(error, errors[0].ToString()
+                                         .Replace("\r\n", "\r")
+                                         .Replace("Parameter name: ", "Parameter ")
+                                         .Replace("\rParameter ", " Parameter ")
+                                         .Replace("(Parameter ", "Parameter ")
+                                         .Replace("'usepackagetargets'", "usepackagetargets")
+                                         .Replace("usepackagetargets)", "usepackagetargets"))

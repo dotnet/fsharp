@@ -1122,6 +1122,7 @@ type BackgroundCompiler
     member _.GetProjectOptionsFromScript
         (
             fileName,
+            caret,
             sourceText,
             previewEnabled,
             loadedTimeStamp,
@@ -1171,6 +1172,7 @@ type BackgroundCompiler
                     legacyReferenceResolver,
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
                     fileName,
+                    caret,
                     sourceText,
                     CodeContext.Editing,
                     useSimpleResolution,
@@ -1646,6 +1648,7 @@ type FSharpChecker
         (
             fileName,
             source,
+            ?caret,
             ?previewEnabled,
             ?loadedTimeStamp,
             ?otherFlags,
@@ -1661,6 +1664,7 @@ type FSharpChecker
         backgroundCompiler.GetProjectOptionsFromScript(
             fileName,
             source,
+            caret,
             previewEnabled,
             loadedTimeStamp,
             otherFlags,
