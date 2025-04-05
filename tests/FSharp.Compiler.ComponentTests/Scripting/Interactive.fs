@@ -35,13 +35,14 @@ module ``Interactive tests`` =
         ]
 
     [<Theory>]
-    [<InlineData(true)>]
-    [<InlineData(false)>]
-    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit) =
+    [<InlineData(true, true)>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit1, useMultiEmit2) =
 
-        let args : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
-        use sessionOne = new FSharpScript(additionalArgs=args)
-        use sessionTwo = new FSharpScript(additionalArgs=args)
+        let args useMultiEmit : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
+        use sessionOne = new FSharpScript(additionalArgs = args useMultiEmit1)
+        use sessionTwo = new FSharpScript(additionalArgs = args useMultiEmit2)
 
         sessionOne.Eval("""
 module Test1 =
@@ -62,6 +63,22 @@ module Test2 =
         let value2 = result2.Value
         Assert.Equal(typeof<string>, value2.ReflectionType)
         Assert.Equal("Execute - Test2.test2 - 27", value2.ReflectionValue :?> string)
+
+    [<Fact>]
+    let ``Multiple sessions should have unique assembly names`` () =
+        let args useMultiEmit : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
+        use session1 = new FSharpScript(additionalArgs = args true)
+        use session2 = new FSharpScript(additionalArgs = args false)
+        use session3 = new FSharpScript(additionalArgs = args true)
+        use session4 = new FSharpScript(additionalArgs = args false)
+
+        let names = 
+            [ for session in [session1; session2; session3; session4] do
+                let result = session.Eval("""System.Reflection.Assembly.GetExecutingAssembly().GetName().Name""") |> getValue
+                result |> Option.get |> _.ReflectionValue |> string ]
+
+        printfn "%A" names
+        Assert.True(names |> List.distinct = names, "Assembly names are not unique across sessions")
 
 module ``External FSI tests`` =
     [<Fact>]
