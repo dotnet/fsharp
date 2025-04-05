@@ -521,7 +521,7 @@ let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths acce
         accessSubstPaths (thisCompPath, internalsVisibleToPath) access)
 
 
-let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
+let CheckTypeForAccess (cenv: cenv) env objName valAcc accessedValIsCompilerGenerated m ty =
     if cenv.reportErrors then
 
         let visitType ty =
@@ -532,8 +532,9 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
-                if isLessAccessible tyconAcc valAcc then
-                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+                // Skip accessibility checks for compiler-generated pattern inputs
+                if not accessedValIsCompilerGenerated && isLessAccessible tyconAcc valAcc then
+                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 
@@ -2058,7 +2059,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
-        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
+        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access vref.IsCompilerGenerated v.Range v.Type
 
     if cenv.reportErrors  then
 
@@ -2283,7 +2284,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon ||
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
-    CheckTypeForAccess cenv env (fun () -> rfield.LogicalName) access m fieldTy
+    CheckTypeForAccess cenv env (fun () -> rfield.LogicalName) access false m fieldTy
 
     if isByrefLikeTyconRef g m tcref then
         // Permit Span fields in IsByRefLike types
@@ -2551,7 +2552,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
     // Access checks
     let access = AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
-    let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access tycon.Range ty
+    let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access false tycon.Range ty
 
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> visitType)
 
