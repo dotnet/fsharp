@@ -64,6 +64,17 @@ module Test2 =
         Assert.Equal(typeof<string>, value2.ReflectionType)
         Assert.Equal("Execute - Test2.test2 - 27", value2.ReflectionValue :?> string)
 
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Currently executing dynamic assembly can be resolved by simple name and full name`` useMultiEmit =
+        let args = [| if useMultiEmit then "--multiemit+" else "--multiemit-" |]
+        use session = new FSharpScript(additionalArgs = args)
+        let simpleNameResult = session.Eval("""System.Reflection.Assembly.GetExecutingAssembly().GetName().Name""") |> getValue
+        let fullNameResult = session.Eval("""System.Reflection.Assembly.GetExecutingAssembly().FullName""") |> getValue
+        System.Reflection.Assembly.Load(string simpleNameResult.Value.ReflectionValue) |> ignore
+        System.Reflection.Assembly.Load(string fullNameResult.Value.ReflectionValue) |> ignore
+
     [<Fact>]
     let ``Multiple sessions should have unique assembly names`` () =
         let args useMultiEmit : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
@@ -75,7 +86,7 @@ module Test2 =
         let names = 
             [ for session in [session1; session2; session3; session4] do
                 let result = session.Eval("""System.Reflection.Assembly.GetExecutingAssembly().GetName().Name""") |> getValue
-                result |> Option.get |> _.ReflectionValue |> string ]
+                result.Value.ReflectionValue |> string ]
 
         printfn "%A" names
         Assert.True(names |> List.distinct = names, "Assembly names are not unique across sessions")
