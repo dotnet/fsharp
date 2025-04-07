@@ -54,17 +54,6 @@ type SmokeTestsForCompilation() =
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
-    member _.mergesrc() =
-        task {
-            let! x = Task.FromResult(1)
-            and! y = Task.FromResult(2)
-            return x + y
-        }
-        |> fun t -> 
-            t.Wait()
-            if t.Result <> 3 then failwith "failed"
-
-    [<Fact>]
     member _.tbind() =
         task {
             let! x = Task.FromResult(1)
@@ -193,6 +182,98 @@ type SmokeTestsForCompilation() =
         |> fun t -> 
             t.Wait()
             if t.Result <> 5 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2tasks() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"    
+            
+    [<Fact>]
+    member _.merge3tasks() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            and! z = Task.FromResult(3)
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeYieldAndTask() =
+        task {
+            let! _ = Task.Yield()
+            and! y = Task.FromResult(1)
+            return y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeTaskAndYield() =
+        task {
+            let! x = Task.FromResult(1)
+            and! _ = Task.Yield()
+            return x
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2valueTasks() =
+        task {
+            let! x = ValueTask<int>(Task.FromResult(1))
+            and! y = ValueTask<int>(Task.FromResult(2))
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2valueTasksAndYield() =
+        task {
+            let! x = ValueTask<int>(Task.FromResult(1))
+            and! y = ValueTask<int>(Task.FromResult(2))
+            and! _ = Task.Yield()
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeYieldAnd2tasks() =
+        task {
+            let! _ = Task.Yield()
+            and! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2tasksAndValueTask() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            and! z = ValueTask<int>(Task.FromResult(3))
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
 
 exception TestException of string
 
