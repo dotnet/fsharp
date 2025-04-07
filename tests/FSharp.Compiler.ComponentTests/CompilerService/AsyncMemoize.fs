@@ -422,7 +422,7 @@ let ``Cancel running jobs with the same key`` () =
     // detach requests from their running computations
     cts.Cancel()
 
-    // Cancel the Get reequests, leaving the jobs running unawaited.
+    // Cancel the Get requests, leaving the jobs running unawaited.
     for job in jobsToCancel do assertTaskCanceled job
 
     // Start another request.
