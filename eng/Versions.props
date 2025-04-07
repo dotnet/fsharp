@@ -12,9 +12,9 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- These have to be in sync with latest release branch -->
     <!-- F# Version components -->
-    <FSMajorVersion>9</FSMajorVersion>
+    <FSMajorVersion>10</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>300</FSBuildVersion>
+    <FSBuildVersion>100</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -25,11 +25,11 @@
     <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
-    <FSCoreShippedVersion>9.0.0.0</FSCoreShippedVersion>
+    <FSCoreShippedVersion>10.0.0.0</FSCoreShippedVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
-    <FCSMinorVersion>9</FCSMinorVersion>
+    <FCSMinorVersion>10</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -43,8 +43,8 @@
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
-    <FSToolsMajorVersion>13</FSToolsMajorVersion>
-    <FSToolsMinorVersion>9</FSToolsMinorVersion>
+    <FSToolsMajorVersion>14</FSToolsMajorVersion>
+    <FSToolsMinorVersion>0</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
@@ -52,8 +52,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
-    <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>14</VSMinorVersion>
+    <VSMajorVersion>18</VSMajorVersion>
+    <VSMinorVersion>0</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
