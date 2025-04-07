@@ -252,10 +252,10 @@ For example:
 module TimeCritical =
 ```
 
-For stress testing async code you can use a custom `FSharp.Test.RepeatAttribute`.
+For stress testing async code you can use a custom `FSharp.Test.StressAttribute`.
 For example, applied to a single xUnit test case:
 ```fsharp
-[<Theory; Repeat(Count = 1000)>]
+[<Theory; Stress(Count = 1000)>]
 ```
 it will start it many times at the same time, and execute in parallel.
 
