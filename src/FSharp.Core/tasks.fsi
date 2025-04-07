@@ -239,6 +239,19 @@ module LowPriority =
             resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
                 when 'Resource :> IDisposable | null
 
+    type TaskBuilder with    
+        member inline MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2> :
+            task1: ^TaskLike1 * task2: ^TaskLike2 ->
+                Task<^TResult1 * ^TResult2>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^TaskLike2 : (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
 /// <summary>
 /// Contains medium-priority overloads for the `task` computation expression builder.
 /// </summary>
@@ -257,6 +270,25 @@ module MediumPriority =
         /// Specifies a unit of task code which draws a result from an F# async value.
         /// </summary>
         member inline ReturnFrom: computation: Async<'T> -> TaskCode<'T, 'T>
+
+    
+    type TaskBuilder with
+
+        member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
+            task1: Task<^TResult1> * task2: ^TaskLike2 ->
+                Task<^TResult1 * ^TResult2>
+                when ^TaskLike2 : (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+        member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
+            task1: ^TaskLike1 * task2: Task<^TResult2> ->
+                Task<^TResult1 * ^TResult2>
+                when ^TaskLike1 : (member GetAwaiter: unit -> ^Awaiter1)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
 
 /// <summary>
 /// Contains high-priority overloads for the `task` computation expression builder.
@@ -285,3 +317,8 @@ module HighPriority =
             task: Task<'TResult1> *
             continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) ->
                 bool
+
+    type TaskBuilder with    
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            task1: Task<^TResult1> * task2: Task<^TResult2> ->
+                Task<^TResult1 * ^TResult2>

@@ -54,6 +54,17 @@ type SmokeTestsForCompilation() =
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
+    member _.mergesrc() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
     member _.tbind() =
         task {
             let! x = Task.FromResult(1)
