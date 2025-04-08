@@ -375,6 +375,11 @@ let inline dumpDiagnostics (results: FSharpCheckFileResults) =
         sprintf "%s: %s" (e.Range.ToString()) message)
     |> List.ofArray
 
+let inline dumpDiagnosticNumbers (results: FSharpCheckFileResults) =
+    results.Diagnostics
+    |> Array.map (fun e -> e.Range.ToString(), e.ErrorNumber)
+    |> List.ofArray
+
 let getSymbolUses (results: FSharpCheckFileResults) =
     results.GetAllUsesOfAllSymbolsInFile()
 
