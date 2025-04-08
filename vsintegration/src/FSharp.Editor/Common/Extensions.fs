@@ -97,10 +97,10 @@ type ConnectionPointSubscription = System.IDisposable option
 
 // Usage example:
 //  If a handler is None, to not handle that event
-//  let subscription = subscribeToTextViewEvents (textView, onChangeCaretHandler, onKillFocus, OnSetFocus)
+//  let subscription = subscribeToTextViewEvents (textView, onChangeCaretHandler, onKillFocus, onSetFocus)
 //  Unsubscribe using subscription.Dispose()
-let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKillFocus, OnSetFocus) : ConnectionPointSubscription =
-    let handler = TextViewEventsHandler(onChangeCaretHandler, onKillFocus, OnSetFocus)
+let subscribeToTextViewEvents (textView: IVsTextView, onChangeCaretHandler, onKillFocus, onSetFocus) : ConnectionPointSubscription =
+    let handler = TextViewEventsHandler(onChangeCaretHandler, onKillFocus, onSetFocus)
 
     match textView with
     | :? IConnectionPointContainer as cpContainer ->
@@ -139,7 +139,7 @@ type Document with
                 | hr, _, _, docData, _ when ErrorHandler.Succeeded(hr) && docData <> IntPtr.Zero ->
                     match Marshal.GetObjectForIUnknown docData with
                     | :? IVsTextBuffer as ivsTextBuffer ->
-                        match textManager.GetActiveView(1, ivsTextBuffer) with
+                        match textManager.GetActiveView(0, ivsTextBuffer) with
                         | hr, vsTextView when ErrorHandler.Succeeded(hr) -> Some vsTextView
                         | _ -> None
                     | _ -> None

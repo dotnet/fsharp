@@ -40,16 +40,16 @@ module internal Activity =
     module Events =
         val cacheHit: string
 
-    val startNoTags: name: string -> IDisposable MaybeNull
+    val startNoTags: name: string -> ActivityDisposable
 
-    val start: name: string -> tags: (string * string) seq -> IDisposable MaybeNull
+    val start: name: string -> tags: (string * string) seq -> ActivityDisposable
 
     val addEvent: name: string -> unit
 
     val addEventWithTags: name: string -> tags: (string * objnull) seq -> unit
 
     module Profiling =
-        val startAndMeasureEnvironmentStats: name: string -> IDisposable MaybeNull
+        val startAndMeasureEnvironmentStats: name: string -> ActivityDisposable
         val addConsoleListener: unit -> IDisposable
 
     module CsvExport =
