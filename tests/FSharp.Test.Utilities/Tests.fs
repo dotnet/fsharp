@@ -1,5 +1,6 @@
-module FSharp.Test.StressAttributeTests
+module FSharp.Test.UtilitiesTests
 
+open System
 open System.Threading
 open Xunit
 open FSharp.Test
@@ -24,3 +25,21 @@ let ``Stress attribute should catch intermittent failure`` shouldFail _ =
 [<Theory; Stress(Count = 50)>]
 let ``Stress attribute works`` _ =
     passing.Run false
+
+[<Fact>]
+let ``TestConsole captures output`` () =
+    let rnd = Random()
+    let task n =
+        async {
+            use console = new TestConsole.ExecutionCapture()
+            do! Async.Sleep (rnd.Next 50)
+            printf $"Hello, world! {n}"
+            do! Async.Sleep (rnd.Next 50)
+            eprintf $"Some error {n}"
+            return console.OutText, console.ErrorText
+        }
+
+    let expected = [ for n in 0 .. 9 -> $"Hello, world! {n}", $"Some error {n}" ]
+
+    let results = Seq.init 10 task |> Async.Parallel |> Async.RunSynchronously
+    Assert.Equal(expected, results)
