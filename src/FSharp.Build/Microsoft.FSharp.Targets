@@ -375,6 +375,7 @@ this file.
               NoFramework="true"
               NoInterfaceData="$(NoInterfaceData)"
               NoOptimizationData="$(NoOptimizationData)"
+              ReuseTcResults="$(ReuseTypecheckingResults)"
               Optimize="$(Optimize)"
               ReflectionFree="$(ReflectionFree)"
               OtherFlags="$(FscOtherFlags)"

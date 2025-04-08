@@ -47,6 +47,8 @@ type Unique = int64
 /// Concurrency-safe
 val newUnique: (unit -> int64)
 
+val mutable stampCount: int64
+
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
 /// Concurrency-safe
 val newStamp: (unit -> int64)
