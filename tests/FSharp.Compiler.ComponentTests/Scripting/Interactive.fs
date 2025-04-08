@@ -35,13 +35,14 @@ module ``Interactive tests`` =
         ]
 
     [<Theory>]
-    [<InlineData(true)>]
-    [<InlineData(false)>]
-    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit) =
+    [<InlineData(true, true)>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit1, useMultiEmit2) =
 
-        let args : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
-        use sessionOne = new FSharpScript(additionalArgs=args)
-        use sessionTwo = new FSharpScript(additionalArgs=args)
+        let args useMultiEmit : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
+        use sessionOne = new FSharpScript(additionalArgs = args useMultiEmit1)
+        use sessionTwo = new FSharpScript(additionalArgs = args useMultiEmit2)
 
         sessionOne.Eval("""
 module Test1 =
@@ -63,6 +64,15 @@ module Test2 =
         Assert.Equal(typeof<string>, value2.ReflectionType)
         Assert.Equal("Execute - Test2.test2 - 27", value2.ReflectionValue :?> string)
 
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Currently executing dynamic assembly can be resolved by full name`` useMultiEmit =
+        let args = [| if useMultiEmit then "--multiemit+" else "--multiemit-" |]
+        use session = new FSharpScript(additionalArgs = args)
+        let fullNameResult = session.Eval("""System.Reflection.Assembly.GetExecutingAssembly().FullName""") |> getValue
+        System.Reflection.Assembly.Load(string fullNameResult.Value.ReflectionValue) |> ignore
+
 module ``External FSI tests`` =
     [<Fact>]
     let ``Eval object value``() =
@@ -75,7 +85,6 @@ module ``External FSI tests`` =
         Fsx "1+a"
         |> runFsi
         |> shouldFail
-
 
     [<Fact>]
     let ``Internals visible over a large number of submissions``() =

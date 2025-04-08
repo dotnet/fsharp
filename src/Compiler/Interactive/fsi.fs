@@ -2415,15 +2415,9 @@ type internal FsiDynamicCompiler
 
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
-    member _.FindDynamicAssembly(name, useFullName: bool) =
-        let getName (assemblyName: AssemblyName) : string MaybeNull =
-            if useFullName then
-                assemblyName.FullName
-            else
-                assemblyName.Name
-
+    member _.FindDynamicAssembly(assemblyName: AssemblyName) =
         dynamicAssemblies
-        |> ResizeArray.tryFind (fun asm -> getName (asm.GetName()) = name)
+        |> ResizeArray.tryFind (fun asm -> asm.FullName = assemblyName.FullName)
 
     member _.EvalParsedSourceFiles(ctok, diagnosticsLogger, istate, inputs, m) =
         let prefix = mkFragmentPath m nextFragmentId
@@ -3274,7 +3268,8 @@ type internal MagicAssemblyResolution() =
         try
             // Grab the name of the assembly
             let tcConfig = TcConfig.Create(tcConfigB, validate = false)
-            let simpleAssemName = fullAssemName.Split([| ',' |]).[0]
+            let assemblyName = AssemblyName(fullAssemName)
+            let simpleAssemName = !!assemblyName.Name
 
             if progress then
                 fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..."
@@ -3286,34 +3281,41 @@ type internal MagicAssemblyResolution() =
                 null
             else
                 // Check dynamic assemblies by exact version
-                match fsiDynamicCompiler.FindDynamicAssembly(fullAssemName, true) with
+                match fsiDynamicCompiler.FindDynamicAssembly(assemblyName) with
                 | Some asm -> asm
                 | None ->
-                    // Check dynamic assemblies by simple name
-                    match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName, false) with
-                    | Some asm when not (tcConfigB.fsiMultiAssemblyEmit) -> asm
-                    | _ ->
+                    // Otherwise continue
+                    let assemblyReferenceTextDll = (simpleAssemName + ".dll")
+                    let assemblyReferenceTextExe = (simpleAssemName + ".exe")
 
-                        // Otherwise continue
-                        let assemblyReferenceTextDll = (simpleAssemName + ".dll")
-                        let assemblyReferenceTextExe = (simpleAssemName + ".exe")
+                    let overallSearchResult =
 
-                        let overallSearchResult =
+                        // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
+                        // once an assembly has been referenced.
+                        let searchResult =
+                            tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName simpleAssemName
 
-                            // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
-                            // once an assembly has been referenced.
+                        match searchResult with
+                        | Some r -> OkResult([], Choice1Of2 r)
+                        | _ ->
+
+                            // OK, try to resolve as a .dll
                             let searchResult =
-                                tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName simpleAssemName
+                                tcImports.TryResolveAssemblyReference(
+                                    ctok,
+                                    AssemblyReference(m, assemblyReferenceTextDll, None),
+                                    ResolveAssemblyReferenceMode.Speculative
+                                )
 
                             match searchResult with
-                            | Some r -> OkResult([], Choice1Of2 r)
+                            | OkResult(warns, [ r ]) -> OkResult(warns, Choice1Of2 r.resolvedPath)
                             | _ ->
 
-                                // OK, try to resolve as a .dll
+                                // OK, try to resolve as a .exe
                                 let searchResult =
                                     tcImports.TryResolveAssemblyReference(
                                         ctok,
-                                        AssemblyReference(m, assemblyReferenceTextDll, None),
+                                        AssemblyReference(m, assemblyReferenceTextExe, None),
                                         ResolveAssemblyReferenceMode.Speculative
                                     )
 
@@ -3321,93 +3323,81 @@ type internal MagicAssemblyResolution() =
                                 | OkResult(warns, [ r ]) -> OkResult(warns, Choice1Of2 r.resolvedPath)
                                 | _ ->
 
-                                    // OK, try to resolve as a .exe
+                                    if progress then
+                                        fsiConsoleOutput.uprintfn "ATTEMPT LOAD, assemblyReferenceTextDll = %s" assemblyReferenceTextDll
+
+                                    /// Take a look through the files quoted, perhaps with explicit paths
                                     let searchResult =
-                                        tcImports.TryResolveAssemblyReference(
-                                            ctok,
-                                            AssemblyReference(m, assemblyReferenceTextExe, None),
-                                            ResolveAssemblyReferenceMode.Speculative
-                                        )
+                                        tcConfig.referencedDLLs
+                                        |> List.tryPick (fun assemblyReference ->
+                                            if progress then
+                                                fsiConsoleOutput.uprintfn
+                                                    "ATTEMPT MAGIC LOAD ON FILE, referencedDLL = %s"
+                                                    assemblyReference.Text
+
+                                            if
+                                                String.Compare(
+                                                    FileSystemUtils.fileNameOfPath assemblyReference.Text,
+                                                    assemblyReferenceTextDll,
+                                                    StringComparison.OrdinalIgnoreCase
+                                                ) = 0
+                                                || String.Compare(
+                                                    FileSystemUtils.fileNameOfPath assemblyReference.Text,
+                                                    assemblyReferenceTextExe,
+                                                    StringComparison.OrdinalIgnoreCase
+                                                ) = 0
+                                            then
+                                                Some(
+                                                    tcImports.TryResolveAssemblyReference(
+                                                        ctok,
+                                                        assemblyReference,
+                                                        ResolveAssemblyReferenceMode.Speculative
+                                                    )
+                                                )
+                                            else
+                                                None)
 
                                     match searchResult with
-                                    | OkResult(warns, [ r ]) -> OkResult(warns, Choice1Of2 r.resolvedPath)
+                                    | Some(OkResult(warns, [ r ])) -> OkResult(warns, Choice1Of2 r.resolvedPath)
                                     | _ ->
 
-                                        if progress then
-                                            fsiConsoleOutput.uprintfn "ATTEMPT LOAD, assemblyReferenceTextDll = %s" assemblyReferenceTextDll
-
-                                        /// Take a look through the files quoted, perhaps with explicit paths
-                                        let searchResult =
-                                            tcConfig.referencedDLLs
-                                            |> List.tryPick (fun assemblyReference ->
-                                                if progress then
-                                                    fsiConsoleOutput.uprintfn
-                                                        "ATTEMPT MAGIC LOAD ON FILE, referencedDLL = %s"
-                                                        assemblyReference.Text
-
-                                                if
-                                                    String.Compare(
-                                                        FileSystemUtils.fileNameOfPath assemblyReference.Text,
-                                                        assemblyReferenceTextDll,
-                                                        StringComparison.OrdinalIgnoreCase
-                                                    ) = 0
-                                                    || String.Compare(
-                                                        FileSystemUtils.fileNameOfPath assemblyReference.Text,
-                                                        assemblyReferenceTextExe,
-                                                        StringComparison.OrdinalIgnoreCase
-                                                    ) = 0
-                                                then
-                                                    Some(
-                                                        tcImports.TryResolveAssemblyReference(
-                                                            ctok,
-                                                            assemblyReference,
-                                                            ResolveAssemblyReferenceMode.Speculative
-                                                        )
-                                                    )
-                                                else
-                                                    None)
-
-                                        match searchResult with
-                                        | Some(OkResult(warns, [ r ])) -> OkResult(warns, Choice1Of2 r.resolvedPath)
-                                        | _ ->
-
 #if !NO_TYPEPROVIDERS
-                                            match tcImports.TryFindProviderGeneratedAssemblyByName(ctok, simpleAssemName) with
-                                            | Some assembly -> OkResult([], Choice2Of2 assembly)
-                                            | None ->
+                                        match tcImports.TryFindProviderGeneratedAssemblyByName(ctok, simpleAssemName) with
+                                        | Some assembly -> OkResult([], Choice2Of2 assembly)
+                                        | None ->
 #endif
 
-                                            // As a last resort, try to find the reference without an extension
-                                            match
-                                                tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(
-                                                    ILAssemblyRef.Create(simpleAssemName, None, None, false, None, None)
-                                                )
-                                            with
-                                            | Some resolvedPath -> OkResult([], Choice1Of2 resolvedPath)
-                                            | None ->
+                                        // As a last resort, try to find the reference without an extension
+                                        match
+                                            tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(
+                                                ILAssemblyRef.Create(simpleAssemName, None, None, false, None, None)
+                                            )
+                                        with
+                                        | Some resolvedPath -> OkResult([], Choice1Of2 resolvedPath)
+                                        | None ->
 
-                                                ErrorResult([], Failure(FSIstrings.SR.fsiFailedToResolveAssembly (simpleAssemName)))
+                                            ErrorResult([], Failure(FSIstrings.SR.fsiFailedToResolveAssembly (simpleAssemName)))
 
-                        match overallSearchResult with
-                        | ErrorResult _ -> null
-                        | OkResult _ ->
-                            let res = CommitOperationResult overallSearchResult
+                    match overallSearchResult with
+                    | ErrorResult _ -> null
+                    | OkResult _ ->
+                        let res = CommitOperationResult overallSearchResult
 
-                            match res with
-                            | Choice1Of2 assemblyName ->
-                                if simpleAssemName <> "Mono.Posix" && progress then
-                                    fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo (assemblyName))
+                        match res with
+                        | Choice1Of2 assemblyName ->
+                            if simpleAssemName <> "Mono.Posix" && progress then
+                                fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo (assemblyName))
 
-                                if isRunningOnCoreClr then
+                            if isRunningOnCoreClr then
+                                assemblyLoadFrom assemblyName
+                            else
+                                try
+                                    let an = AssemblyName.GetAssemblyName(assemblyName)
+                                    an.CodeBase <- assemblyName
+                                    Assembly.Load an
+                                with _ ->
                                     assemblyLoadFrom assemblyName
-                                else
-                                    try
-                                        let an = AssemblyName.GetAssemblyName(assemblyName)
-                                        an.CodeBase <- assemblyName
-                                        Assembly.Load an
-                                    with _ ->
-                                        assemblyLoadFrom assemblyName
-                            | Choice2Of2 assembly -> assembly
+                        | Choice2Of2 assembly -> assembly
 
         with e ->
             stopProcessingRecovery e range0
