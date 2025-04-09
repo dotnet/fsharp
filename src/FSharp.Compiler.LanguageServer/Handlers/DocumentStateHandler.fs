@@ -16,11 +16,8 @@ type DocumentStateHandler() =
     interface IRequestHandler<DidOpenTextDocumentParams, SemanticTokensDeltaPartialResult, FSharpRequestContext> with
         [<LanguageServerEndpoint(Methods.TextDocumentDidOpenName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync
-            (
-                request: DidOpenTextDocumentParams,
-                context: FSharpRequestContext,
-                _cancellationToken: CancellationToken
-            ) =
+            (request: DidOpenTextDocumentParams, context: FSharpRequestContext, _cancellationToken: CancellationToken)
+            =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Open(request.TextDocument.Uri, request.TextDocument.Text)
@@ -30,11 +27,8 @@ type DocumentStateHandler() =
     interface IRequestHandler<DidChangeTextDocumentParams, SemanticTokensDeltaPartialResult, FSharpRequestContext> with
         [<LanguageServerEndpoint(Methods.TextDocumentDidChangeName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync
-            (
-                request: DidChangeTextDocumentParams,
-                context: FSharpRequestContext,
-                _cancellationToken: CancellationToken
-            ) =
+            (request: DidChangeTextDocumentParams, context: FSharpRequestContext, _cancellationToken: CancellationToken)
+            =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Edit(request.TextDocument.Uri, request.ContentChanges.[0].Text)
@@ -44,11 +38,8 @@ type DocumentStateHandler() =
     interface INotificationHandler<DidCloseTextDocumentParams, FSharpRequestContext> with
         [<LanguageServerEndpoint(Methods.TextDocumentDidCloseName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleNotificationAsync
-            (
-                request: DidCloseTextDocumentParams,
-                context: FSharpRequestContext,
-                _cancellationToken: CancellationToken
-            ) =
+            (request: DidCloseTextDocumentParams, context: FSharpRequestContext, _cancellationToken: CancellationToken)
+            =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
             contextHolder.UpdateWorkspace _.Files.Close(request.TextDocument.Uri)
