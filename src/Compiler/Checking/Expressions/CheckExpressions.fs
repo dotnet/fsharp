@@ -5960,7 +5960,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.FromParseError (expr1, m) ->
         //SolveTypeAsError cenv env.DisplayEnv m overallTy
-        let _, tpenv = suppressErrorReporting (fun () -> TcExpr cenv overallTy env tpenv expr1)
+        let _, tpenv = TcExpr cenv overallTy env tpenv expr1
         mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m, _) ->
@@ -6489,9 +6489,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
 
     | e ->
         let env = { env with eIsControlFlow = true }
-        // Dive into the expression to check for syntax errors and suppress them if they show.
-        conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
-            TcExpr cenv overallTy env tpenv e)
+        TcExpr cenv overallTy env tpenv e
 
 and TcTyparExprThen (cenv: cenv) overallTy env tpenv synTypar m delayed =
     match delayed with
@@ -11103,39 +11101,33 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
         // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
         let rhsExprChecked, tpenv =
-            let atTopNonLambdaDefn =
-                declKind.IsModuleOrMemberOrExtensionBinding &&
-                (match rhsExpr with SynExpr.Lambda _ -> false | _ -> true) &&
-                synExprContainsError rhsExpr
+            // Save the arginfos away to match them up in the lambda
+            let (PrelimValReprInfo(argInfos, _)) = prelimValReprInfo
 
-            conditionallySuppressErrorReporting atTopNonLambdaDefn (fun () ->
+            // The right-hand-side is control flow (has an implicit debug point) in any situation where we
+            // haven't extended the debug point to include the 'let', that is, there is a debug point noted
+            // at the binding.
+            //
+            // This includes
+            //    let _ = expr
+            //    let () = expr
+            // which are transformed to sequential expressions in TcLetBinding
+            //
+            let rhsIsControlFlow =
+                match pat with
+                | SynPat.Wild _
+                | SynPat.Const (SynConst.Unit, _)
+                | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _) -> true
+                | _ ->
 
-                // Save the arginfos away to match them up in the lambda
-                let (PrelimValReprInfo(argInfos, _)) = prelimValReprInfo
+                match debugPoint with
+                | DebugPointAtBinding.Yes _ -> false
+                | _ -> true
 
-                // The right-hand-side is control flow (has an implicit debug point) in any situation where we
-                // haven't extended the debug point to include the 'let', that is, there is a debug point noted
-                // at the binding.
-                //
-                // This includes
-                //    let _ = expr
-                //    let () = expr
-                // which are transformed to sequential expressions in TcLetBinding
-                //
-                let rhsIsControlFlow =
-                    match pat with
-                    | SynPat.Wild _
-                    | SynPat.Const (SynConst.Unit, _)
-                    | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _) -> true
-                    | _ ->
-                    match debugPoint with
-                    | DebugPointAtBinding.Yes _ -> false
-                    | _ -> true
+            let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
 
-                let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
-
-                if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
-                else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
+            if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
+            else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr
 
         if kind = SynBindingKind.StandaloneExpression && not cenv.isScript then
             UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
