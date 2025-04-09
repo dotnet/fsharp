@@ -348,6 +348,12 @@ let inline mkOptionalNone (g: TcGlobals) ty calledArgTy mMethExpr =
     else
         mkNone g calledArgTy mMethExpr
 
+let inline mkOptionalSome (g: TcGlobals) outerOptTy innerNonOptionalType expr mMethExpr =
+    if g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g outerOptTy then
+        mkValueSome g innerNonOptionalType expr mMethExpr
+    else
+        mkSome g innerNonOptionalType expr mMethExpr
+
 
 /// Adjust the called argument type to take into account whether the caller's argument is CSharpMethod(?arg=Some(3)) or CSharpMethod(arg=1) 
 let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
@@ -1502,14 +1508,14 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
     match calledArg.CallerInfo, eCallerMemberName with
     | CallerLineNumber, _ when typeEquiv g calledNonOptTy g.int_ty ->
         let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
-        mkSome g calledNonOptTy lineExpr mMethExpr
+        mkOptionalSome g calledArgTy calledNonOptTy lineExpr mMethExpr
     | CallerFilePath, _ when typeEquiv g calledNonOptTy g.string_ty ->
         let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
         let filePathExpr = Expr.Const (Const.String(fileName), mMethExpr, calledNonOptTy)
-        mkSome g calledNonOptTy filePathExpr mMethExpr
+        mkOptionalSome g calledArgTy calledNonOptTy filePathExpr mMethExpr
     | CallerMemberName, Some(callerName) when typeEquiv g calledNonOptTy g.string_ty ->
         let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
-        mkSome g calledNonOptTy memberNameExpr mMethExpr
+        mkOptionalSome g calledArgTy calledNonOptTy memberNameExpr mMethExpr
     | _ ->
         mkOptionalNone g calledArgTy calledNonOptTy mMethExpr
 
