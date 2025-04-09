@@ -1,2 +1,4 @@
 
 neg84.fsx(11,1,11,1): parse error FS0010: Incomplete structured construct at or before this point in expression
+
+neg84.fsx(4,10,4,12): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '[_]' may indicate a case not covered by the pattern(s).

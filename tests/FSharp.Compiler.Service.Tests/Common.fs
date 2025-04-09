@@ -119,7 +119,6 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
         yield "--doc:test.xml"
         yield "--warn:3"
         yield "--fullpaths"
-        yield "--flaterrors"
         yield "--target:library"
         for x in fileNames do
             yield x
@@ -370,9 +369,15 @@ let inline dumpDiagnostics (results: FSharpCheckFileResults) =
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')
-            |> Array.map (fun s -> s.Trim())
+            |> Array.map _.Trim()
+            |> Array.filter (fun s -> s.Length > 0)
             |> String.concat " "
         sprintf "%s: %s" (e.Range.ToString()) message)
+    |> List.ofArray
+
+let inline dumpDiagnosticNumbers (results: FSharpCheckFileResults) =
+    results.Diagnostics
+    |> Array.map (fun e -> e.Range.ToString(), e.ErrorNumber)
     |> List.ofArray
 
 let getSymbolUses (results: FSharpCheckFileResults) =
