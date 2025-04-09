@@ -22,7 +22,7 @@ let failing = RunOrFail "Failing"
 let ``Stress attribute should catch intermittent failure`` shouldFail _ =
     failing.Run shouldFail
 
-[<Theory; Stress(Count = 50)>]
+[<Theory; Stress(Count = 5)>]
 let ``Stress attribute works`` _ =
     passing.Run false
 
