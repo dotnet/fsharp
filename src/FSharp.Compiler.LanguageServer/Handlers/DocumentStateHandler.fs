@@ -19,7 +19,7 @@ type DocumentStateHandler() =
             (
                 request: DidOpenTextDocumentParams,
                 context: FSharpRequestContext,
-                cancellationToken: CancellationToken
+                _cancellationToken: CancellationToken
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
@@ -33,7 +33,7 @@ type DocumentStateHandler() =
             (
                 request: DidChangeTextDocumentParams,
                 context: FSharpRequestContext,
-                cancellationToken: CancellationToken
+                _cancellationToken: CancellationToken
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 
@@ -47,7 +47,7 @@ type DocumentStateHandler() =
             (
                 request: DidCloseTextDocumentParams,
                 context: FSharpRequestContext,
-                cancellationToken: CancellationToken
+                _cancellationToken: CancellationToken
             ) =
             let contextHolder = context.LspServices.GetRequiredService<ContextHolder>()
 

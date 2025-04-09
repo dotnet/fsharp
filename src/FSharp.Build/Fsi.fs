@@ -37,15 +37,12 @@ type public Fsi() as this =
     let mutable provideCommandLineArgs = false
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
-    let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
     let mutable sources: ITaskItem[] = [||]
     let mutable loadSources: ITaskItem[] = [||]
     let mutable useSources: ITaskItem[] = [||]
     let mutable tailcalls: bool = true
     let mutable targetProfile: string MaybeNull = null
-    let mutable targetType: string MaybeNull = null
-    let mutable toolExe: string = "fsi.exe"
 
     let mutable toolPath: string =
         let locationOfThisDll =
@@ -112,9 +109,7 @@ type public Fsi() as this =
         let warningsAsErrorsArray =
             match warningsAsErrors with
             | Null -> [| "76" |]
-            | NonNull warningsAsErrors ->
-                (warningsAsErrors + " 76 ")
-                    .Split([| ' '; ';'; ',' |], StringSplitOptions.RemoveEmptyEntries)
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([| ' '; ';'; ',' |], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 

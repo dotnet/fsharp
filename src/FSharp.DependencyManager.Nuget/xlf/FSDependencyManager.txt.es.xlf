@@ -12,6 +12,11 @@
         <target state="translated">con la última versión</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidBooleanValue">
+        <source>Invalid value for boolean '{0}', valid values: true or false</source>
+        <target state="new">Invalid value for boolean '{0}', valid values: true or false</target>
+        <note />
+      </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
         <target state="translated">Valor de tiempo de espera "{0}" no válido. Valores válidos: ninguno, -1 y un número entero de milisegundos de espera</target>

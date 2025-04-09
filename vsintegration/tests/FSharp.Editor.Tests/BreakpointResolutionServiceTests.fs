@@ -69,9 +69,7 @@ let main argv =
         | ValueNone -> Assert.True(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
         | ValueSome(actualResolutionRange) ->
             let actualResolution =
-                sourceText
-                    .GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange))
-                    .ToString()
+                sourceText.GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange)).ToString()
 
             Assert.True(
                 expectedResolution.IsSome,
