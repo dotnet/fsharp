@@ -21,16 +21,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -223,7 +213,7 @@
 
   } 
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit res3@15
+  .class auto ansi serializable sealed nested assembly beforefieldinit res3@21
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -240,7 +230,7 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res3@15::builder@
+      IL_0008:  stfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res3@21::builder@
       IL_000d:  ret
     } 
 
@@ -249,10 +239,10 @@
       
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res3@15::builder@
+      IL_0001:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res3@21::builder@
       IL_0006:  call       class [ComputationExprLibrary]Library.Eventually`1<int32> Program::get_res2()
       IL_000b:  ldarg.0
-      IL_000c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res3@15::builder@
+      IL_000c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder Program/res3@21::builder@
       IL_0011:  newobj     instance void Program/'res3@16-1'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
       IL_0016:  tail.
       IL_0018:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!1> [ComputationExprLibrary]Library.EventuallyBuilder::Bind<int32,int32>(class [ComputationExprLibrary]Library.Eventually`1<!!0>,
@@ -332,7 +322,7 @@
     IL_002b:  stloc.s    V_4
     IL_002d:  ldloc.s    V_4
     IL_002f:  ldloc.s    V_4
-    IL_0031:  newobj     instance void Program/res3@15::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
+    IL_0031:  newobj     instance void Program/res3@21::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
     IL_0036:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<!!0>>)
     IL_003b:  dup
     IL_003c:  stsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$assembly>'.$Program::res3@13
@@ -346,7 +336,6 @@
   } 
 
 } 
-
 
 
 

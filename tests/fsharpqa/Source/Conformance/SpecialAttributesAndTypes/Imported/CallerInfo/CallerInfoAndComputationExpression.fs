@@ -21,7 +21,7 @@ module Program =
                 return x + y
             }
 
-        if result <> (((3, Some 21), Some 20), Some 19) then
+        if result <> (((3, Some 21), Some 21), Some 21) then
             failwith "Unexpected F# CallerLineNumber"
                    
         0
