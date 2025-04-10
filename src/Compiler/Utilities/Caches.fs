@@ -13,7 +13,7 @@ open System.Diagnostics
 // or the number of elements in the dictionary is greater than the available space from index to the end of the destination array.)
 // this is casuedby insertions happened between reading the `Count` and doing the `CopyTo`.
 // This solution introduces a custom `ConcurrentDictionary.sortBy` which will be calling a proper `CopyTo`, the one on the ConcurrentDictionary itself.
-module ConcurrentDictionary =
+module internal ConcurrentDictionary =
 
     open System.Collections
     open System.Collections.Generic
@@ -35,17 +35,17 @@ module ConcurrentDictionary =
             array :> seq<_>)
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type CachingStrategy =
+type internal CachingStrategy =
     | LRU
     | LFU
 
 [<Struct; RequireQualifiedAccess; NoComparison>]
-type EvictionMethod =
+type internal EvictionMethod =
     | Blocking
     | Background
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type CacheOptions =
+type internal CacheOptions =
     {
         MaximumCapacity: int
         PercentageToEvict: int
@@ -64,7 +64,7 @@ type CacheOptions =
         }
 
 [<Sealed; NoComparison; NoEquality>]
-type CachedEntity<'Value> =
+type internal CachedEntity<'Value> =
     val Value: 'Value
     val mutable LastAccessed: int64
     val mutable AccessCount: int64
@@ -78,7 +78,7 @@ type CachedEntity<'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
+type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
