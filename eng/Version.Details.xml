@@ -7,26 +7,26 @@
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.22-preview-25174-08">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.23-preview-25208-06">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>8e42d4a440e0f85c1e8dce43767e7a50d86aa8ff</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.13.22">
+    <Dependency Name="Microsoft.Build" Version="17.13.23">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>8e42d4a440e0f85c1e8dce43767e7a50d86aa8ff</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.13.22">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.13.23">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>8e42d4a440e0f85c1e8dce43767e7a50d86aa8ff</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.22">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.23">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>8e42d4a440e0f85c1e8dce43767e7a50d86aa8ff</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.22">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.23">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>8e42d4a440e0f85c1e8dce43767e7a50d86aa8ff</Sha>
     </Dependency>
     <Dependency Name="System.Reflection.Metadata" Version="8.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
@@ -42,14 +42,14 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="9.0.0-beta.25204.5">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="9.0.0-beta.25208.6">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>97cbc7361ff28b2948c8182720c166a744049f55</Sha>
+      <Sha>aa61e8c20a869bcc994f8b29eb07d927d2bec6f4</Sha>
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.arcade" Version="9.0.0-beta.25204.5">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.arcade" Version="9.0.0-beta.25208.6">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>97cbc7361ff28b2948c8182720c166a744049f55</Sha>
+      <Sha>aa61e8c20a869bcc994f8b29eb07d927d2bec6f4</Sha>
       <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.24462.2">

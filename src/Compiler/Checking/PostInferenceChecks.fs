@@ -2398,13 +2398,25 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
-                let errorIfNotStringTy m ty callerInfo =
+
+                let inline tryDestOptionalTy g ty =
+                    if isOptionTy g ty then
+                        destOptionTy g ty |> ValueSome
+                    elif g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g ty then
+                        destValueOptionTy g ty |> ValueSome
+                    else
+                        ValueNone
+
+                let errorIfNotStringTy m ty callerInfo = 
                     if not (typeEquiv g g.string_ty ty) then
                         errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv ty), m))
+                        
+                let errorIfNotOptional tyToCompare desiredTyName m ty callerInfo =
 
-                let errorIfNotStringOptionTy m ty callerInfo =
-                    if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                        errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                    match tryDestOptionalTy g ty with
+                    | ValueSome t when typeEquiv g tyToCompare t -> ()
+                    | ValueSome innerTy -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, desiredTyName, NicePrint.minimalStringOfType cenv.denv innerTy), m))
+                    | ValueNone -> errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, desiredTyName, NicePrint.minimalStringOfType cenv.denv ty), m))                   
 
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst)
                 |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, nameOpt, _, ty)) ->
@@ -2421,11 +2433,9 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     | CallerSide _, CallerLineNumber ->
                         if not (typeEquiv g g.int32_ty ty) then
                             errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv ty), m))
-                    | CalleeSide, CallerLineNumber ->
-                        if not ((isOptionTy g ty) && (typeEquiv g g.int32_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo |> string, "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)), m))
+                    | CalleeSide, CallerLineNumber -> errorIfNotOptional g.int32_ty "int" m ty callerInfo
                     | CallerSide _, (CallerFilePath | CallerMemberName) -> errorIfNotStringTy m ty callerInfo
-                    | CalleeSide, (CallerFilePath | CallerMemberName) -> errorIfNotStringOptionTy m ty callerInfo
+                    | CalleeSide, (CallerFilePath | CallerMemberName) -> errorIfNotOptional g.string_ty "string" m ty callerInfo
                 )
 
         for pinfo in immediateProps do
