@@ -106,7 +106,8 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
-    let typeSubsumptionCache = ConcurrentDictionary<TTypeCacheKey, bool>(System.Environment.ProcessorCount, 1024)
+    let typeSubsumptionCache =
+        Cache<TTypeCacheKey, bool>.Create({ CacheOptions.Default with MaximumCapacity = 1024 })
 
     member _.g = g
 
