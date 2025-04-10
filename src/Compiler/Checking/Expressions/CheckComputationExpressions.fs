@@ -2752,7 +2752,7 @@ and TranslateComputationExpressionBind
                     false,
                     consumePat.Range,
                     [
-                        SynMatchClause(consumePat, None, holeFill, bindRange, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)
+                        SynMatchClause(consumePat, None, holeFill, innerRange, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)
                     ],
                     DebugPointAtBinding.NoneAtInvisible,
                     innerRange
