@@ -5,6 +5,7 @@
 
   <PropertyGroup>
     <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
+    <NoWarn>NETSDK1138;NU1102;NU1504;NU1505;NU1605;NU1608</NoWarn>
   </PropertyGroup>
 
   <!-- directory locations -->
