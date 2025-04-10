@@ -422,18 +422,19 @@ let ``Cancel running jobs with the same key`` () =
     // detach requests from their running computations
     cts.Cancel()
 
+    // Cancel the Get requests, leaving the jobs running unawaited.
     for job in jobsToCancel do assertTaskCanceled job
 
+    // Start another request.
     let job = cache.Get(key 11, work) |> Async.StartAsTask
 
     // up til now the jobs should have been running unobserved
     let current = eventsWhen events (received Requested)
     Assert.Equal(0, current |> countOf Canceled)
 
-    // waitUntil events (countOf Canceled >> (=) 10)
+    waitUntil events (countOf Started >> (=) 11)
 
-    waitUntil events (received Started)
-
+    // Allow the single current request to finish.
     jobCanContinue.Set() |> ignore
 
     job.Wait()
