@@ -447,7 +447,7 @@ module HighPriority =
 
     type TaskBuilder with
     
-        // This is required for type inference in tasks cases
+        // This overload is required for type inference in tasks cases
         member inline this.MergeSources(task1: Task<^TResult1>, task2: Task<^TResult2>) 
                 : Task<^TResult1 * ^TResult2> =
             this.Run(
@@ -476,7 +476,7 @@ module MediumPriority =
 
     type TaskBuilder with
             
-        // This is required for type inference in tasks cases
+        // This overload is required for type inference in tasks cases
         member inline this.MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2
                 when ^TaskLike2 : (member GetAwaiter: unit -> ^Awaiter2)
                 and ^Awaiter2 :> ICriticalNotifyCompletion
@@ -492,7 +492,7 @@ module MediumPriority =
                 )
             )
     
-        // This is required for type inference in tasks cases
+        // This overload is required for type inference in tasks cases
         member inline this.MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1
                 when ^TaskLike1 : (member GetAwaiter: unit -> ^Awaiter1)
                 and ^Awaiter1 :> ICriticalNotifyCompletion
@@ -508,3 +508,67 @@ module MediumPriority =
                 )
             )
 
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources(computation1: Async<^TResult1>, computation2: Async<^TResult2>) 
+                : Task<^TResult1 * ^TResult2> =
+            this.Run(
+                this.Bind(computation1, fun (result1: ^TResult1) ->
+                    this.Bind(computation2, fun (result2: ^TResult2) ->
+                        this.Return(result1, result2)
+                    )
+                )
+            )
+
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2
+                when ^TaskLike2 : (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> 'TResult2)>
+                (computation: Async<^TResult1>, task: ^TaskLike2)
+                : Task<^TResult1 * ^TResult2> =
+            this.Run(
+                this.Bind(computation, fun (result1: ^TResult1) ->
+                    this.Bind(task, fun (result2: ^TResult2) ->
+                        this.Return(result1, result2)
+                    )
+                )
+            )
+    
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1
+                when ^TaskLike1 : (member GetAwaiter: unit -> ^Awaiter1)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> 'TResult1)>
+                (task: ^TaskLike1, computation: Async<^TResult2>)
+                : Task<^TResult1 * ^TResult2> =
+            this.Run(
+                this.Bind(task, fun (result1: ^TResult1) ->
+                    this.Bind(computation, fun (result2: ^TResult2) ->
+                        this.Return(result1, result2)
+                    )
+                )
+            )
+
+        // This overload is required for type inference in task + async cases
+        member inline this.MergeSources(task: Task<^TResult1>, computation: Async<^TResult2>) 
+                : Task<^TResult1 * ^TResult2> =
+            this.Run(
+                this.Bind(task, fun (result1: ^TResult1) ->
+                    this.Bind(computation, fun (result2: ^TResult2) ->
+                        this.Return(result1, result2)
+                    )
+                )
+            )
+
+        // This overload is required for type inference in async + task case
+        member inline this.MergeSources(computation: Async<^TResult1>, task: Task<^TResult2>) 
+                : Task<^TResult1 * ^TResult2> =
+            this.Run(
+                this.Bind(computation, fun (result1: ^TResult1) ->
+                    this.Bind(task, fun (result2: ^TResult2) ->
+                        this.Return(result1, result2)
+                    )
+                )
+            )

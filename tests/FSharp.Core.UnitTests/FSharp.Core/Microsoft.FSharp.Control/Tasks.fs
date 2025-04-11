@@ -275,6 +275,75 @@ type SmokeTestsForCompilation() =
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
+    [<Fact>]
+    member _.merge2asyncs() =
+        task {
+            let! x = async { return 1 }
+            and! y = async { return 2 }
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge3asyncs() =
+        task {
+            let! x = async { return 1 }
+            and! y = async { return 2 }
+            and! z = async { return 3 }
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
+    //[<Fact>]
+    //member _.mergeYieldAndAsync() =
+    //    task {
+    //        let! _ = Task.Yield()
+    //        and! y = async { return 1 }
+    //        return y
+    //    }
+    //    |> fun t -> 
+    //        t.Wait()
+    //        if t.Result <> 1 then failwith "failed"
+
+    //[<Fact>]
+    //member _.mergeAsyncAndYield() =
+    //    task {
+    //        let! x = async { return 1 }
+    //        and! _ = Task.Yield()
+    //        return x
+    //    }
+    //    |> fun t -> 
+    //        t.Wait()
+    //        if t.Result <> 1 then failwith "failed"
+
+    //[<Fact>]
+    //member _.mergeYieldAnd2asyncs() =
+    //    task {
+    //        let! _ = Task.Yield()
+    //        and! x = async { return 1 }
+    //        and! y = async { return 2 }
+    //        return x + y
+    //    }
+    //    |> fun t -> 
+    //        t.Wait()
+    //        if t.Result <> 3 then failwith "failed"
+
+    //[<Fact>]
+    //member _.merge2asyncsAndValueTask() =
+    //    task {
+    //        let! x = async { return 1 }
+    //        and! y = async { return 2 }
+    //        and! z = ValueTask<int>(Task.FromResult(3))
+    //        return x + y + z
+    //    }
+    //    |> fun t -> 
+    //        t.Wait()
+    //        if t.Result <> 6 then failwith "failed"
+
 exception TestException of string
 
 [<AutoOpen>]
@@ -387,6 +456,33 @@ type Basics() =
         t.Wait()
         require (y = 1) "bailed after exn"
         require (x = 0) "ran past failure"
+
+    [<Fact>]
+    member _.testCatchingInApplicative() =
+        printfn "Running testCatchingInApplicative..."
+        let mutable x = 0
+        let mutable y = 0
+        let t =
+            task {
+                try
+                    let! _ = task { 
+                        do! Task.Delay(100)
+                        x <- 1
+                    }
+                    and! _ = task { 
+                        failtest "hello"
+                    }
+                    ()
+                with
+                | TestException msg ->
+                    require (msg = "hello") "message tampered"
+                | _ ->
+                    require false "other exn type"
+                y <- 1
+            }
+        t.Wait()
+        require (y = 1) "bailed after exn"
+        require (x = 1) "exit too early"
 
     [<Fact>]
     member _.testNestedCatching() =
