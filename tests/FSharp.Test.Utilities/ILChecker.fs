@@ -60,8 +60,9 @@ module ILChecker =
 
         let unifyRuntimeAssemblyName ilCode =
             List.fold replace ilCode [
-                "\[System\.Runtime\]|\[System\.Console\]|\[System\.Runtime\.Extensions\]|\[mscorlib\]|\[System\.Memory\]", "[runtime]"
+                "\[System\.Runtime\]|\[System\.Console\]|\[System\.Runtime\.Extensions\]|\[mscorlib\]|\[System\.Memory\]|\[System\.Collections\]", "[runtime]"
                 "(\.assembly extern (System\.Runtime|System\.Console|System\.Runtime\.Extensions|mscorlib|System\.Memory)){1}([^\}]*)\}", ".assembly extern runtime { }"
+                "(\.assembly extern (System\.Collections)){1}([^\}]*)\}\\s+", ""
                 "(\.assembly extern (FSharp.Core)){1}([^\}]*)\}", ".assembly extern FSharp.Core { }" ]
 
         let unifyImageBase ilCode = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")

@@ -8,3 +8,21 @@ neg83.fsx(13,2,13,5): parse error FS0058: Unexpected syntax or possible incorrec
 To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 
 neg83.fsx(16,1,16,1): parse error FS0010: Incomplete structured construct at or before this point in expression
+
+neg83.fsx(8,12,8,39): typecheck error FS0001: Type mismatch. Expecting a
+    '('a -> 'a) -> string -> 'b'    
+but given a
+    ''c list -> 'd list'    
+The type ''a list' does not match the type ''b -> 'b'
+
+neg83.fsx(8,12,8,39): typecheck error FS0001: Type mismatch. Expecting a
+    '('a -> 'a) -> string -> 'b'    
+but given a
+    ''c list -> 'd list'    
+The type ''a list' does not match the type ''c -> 'c'
+
+neg83.fsx(10,15,10,17): typecheck error FS3217: This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?
+
+neg83.fsx(15,4,15,31): typecheck error FS0001: The type ''a list' does not match the type ''b -> 'b'
+
+neg83.fsx(15,4,15,31): typecheck error FS0001: The type ''a list' does not match the type ''c -> 'c'
