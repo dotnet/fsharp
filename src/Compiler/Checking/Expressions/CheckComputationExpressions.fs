@@ -914,7 +914,7 @@ let inline addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>
 /// Try translate the syntax sugar
 /// </summary>
 /// <param name="ceenv">Computation expression context (carrying caches, environments, ranges, etc)</param>
-/// <param name="firstTry">Flag if it's inital check</param>
+/// <param name="firstTry">Flag if it's initial check</param>
 /// <param name="q">a flag indicating if custom operators are allowed. They are not allowed inside try/with, try/finally, if/then/else etc.</param>
 /// <param name="varSpace">a lazy data structure indicating the variables bound so far in the overall computation</param>
 /// <param name="comp">the computation expression being analyzed</param>
@@ -1612,6 +1612,12 @@ let rec TryTranslateComputationExpression
                     // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
                     let m1 = rangeForCombine innerComp1
 
+                    let combineDelayRange =
+                        match innerComp2 with
+                        | SynExpr.YieldOrReturn(trivia = yieldOrReturn) -> yieldOrReturn.YieldOrReturnKeyword
+                        | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
+                        | expr -> expr.Range
+
                     if
                         isNil (
                             TryFindIntrinsicOrExtensionMethInfo
@@ -1624,7 +1630,8 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
-                        error (Error(FSComp.SR.tcRequireBuilderMethod ("Combine"), m))
+
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Combine", combineDelayRange))
 
                     if
                         isNil (
@@ -1638,7 +1645,7 @@ let rec TryTranslateComputationExpression
                                 ceenv.builderTy
                         )
                     then
-                        error (Error(FSComp.SR.tcRequireBuilderMethod ("Delay"), m))
+                        error (Error(FSComp.SR.tcRequireBuilderMethod "Delay", combineDelayRange))
 
                     let combineCall =
                         mkSynCall
@@ -2786,7 +2793,7 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
         | Some(thenExpr, None) ->
             let elseExprOptOpt =
                 match elseCompOpt with
-                // When we are missing an 'else' part alltogether in case of 'if cond then return exp', we fallback from BindReturn into regular Bind+Return
+                // When we are missing an 'else' part altogether in case of 'if cond then return exp', we fallback from BindReturn into regular Bind+Return
                 | None -> None
                 | Some elseComp ->
                     match convertSimpleReturnToExpr ceenv comp varSpace elseComp with
@@ -3083,9 +3090,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
         TranslateComputationExpression ceenv CompExprTranslationPass.Initial hasCustomOperations (LazyWithContext.NotLazy([], env)) comp id
 
     let mDelayOrQuoteOrRun =
-        mBuilderVal
-            .NoteSourceConstruct(NotedSourceConstruct.DelayOrQuoteOrRun)
-            .MakeSynthetic()
+        mBuilderVal.NoteSourceConstruct(NotedSourceConstruct.DelayOrQuoteOrRun).MakeSynthetic()
 
     // Add a call to 'Delay' if the method is present
     let delayedExpr =

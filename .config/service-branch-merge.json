@@ -5,8 +5,12 @@
             "MergeToBranch": "main",
             "ExtraSwitches": "-QuietComments"
         },
+        "release/dev17.14": {
+            "MergeToBranch": "release/dev18.0",
+            "ExtraSwitches": "-QuietComments"
+        },
         "main": {
-            "MergeToBranch": "release/dev17.14",
+            "MergeToBranch": "release/dev18.0",
             "ExtraSwitches": "-QuietComments"
         }
     }

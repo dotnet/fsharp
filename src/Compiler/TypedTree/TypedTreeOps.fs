@@ -39,17 +39,11 @@ let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
 let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
-#if NO_CHECKNULLS
-    compare (func x) (func y)
-#else
     match x,y with
     | null,null -> 0
     | null,_ -> -1
     | _,null -> 1
     | x,y ->  compare (func !!x) (func !!y)
-#endif
-
-
 
 //---------------------------------------------------------------------------
 // Basic data structures
@@ -3576,12 +3570,7 @@ let TryFindLocalizedFSharpStringAttribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
         match namedArgs with 
-        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> 
-            #if PROTO || BUILDING_WITH_LKG
-            Some b
-            #else
-            FSComp.SR.GetTextOpt(b)
-            #endif
+        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
         | _ -> Some b
     | _ -> None
     
@@ -8476,9 +8465,9 @@ let (|NewDelegateExpr|_|) g expr =
 [<return: Struct>]
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, [], [delExpr;delInvokeArg], m) 
+    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
         when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
-            ValueSome(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
+            ValueSome(delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m)
     | _ -> ValueNone
 
 [<return: Struct>]
@@ -8505,17 +8494,17 @@ let (|OpPipeRight3|_|) g expr =
             ValueSome(resType, arg1, arg2, arg3, fExpr, m)
     | _ -> ValueNone
 
-let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
+let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =
     match delExpr with 
     | Expr.Let (bind, body, mLet, _) ->
-        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, delInvokeArg, m))
-    | NewDelegateExpr g (_, argvs, body, m, _) when argvs.Length > 0 -> 
+        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, tyargs, delInvokeArg, m))
+    | NewDelegateExpr g (_, argvs & _ :: _, body, m, _) ->
         let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body
         let argvs2, args2 = List.unzip pairs
         mkLetsBind m (mkCompGenBinds argvs2 args2) body
     | _ -> 
         // Remake the delegate invoke
-        Expr.App (delInvokeRef, delInvokeTy, [], [delExpr; delInvokeArg], m) 
+        Expr.App (delInvokeRef, delInvokeTy, tyargs, [delExpr; delInvokeArg], m) 
       
 //---------------------------------------------------------------------------
 // Adjust for expected usage
@@ -9252,7 +9241,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 | None -> []
                 | Some t -> hasWithNullAnyWhere t withNull
 
-            | TType_app (tcr, tinst, nullnessOrig) -> 
+            | TType_app (tcr, tinst, _) -> 
                 let tyArgs = tinst |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 
                 match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
@@ -9271,7 +9260,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 let inner = tupTypes |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
 
-            | TType_anon (anon,tys) -> 
+            | TType_anon (tys=tys) -> 
                 let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
             | TType_fun (d, r, _) ->
