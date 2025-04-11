@@ -242,7 +242,7 @@ module LowPriority =
     type TaskBuilder with
 
         /// <summary>
-        /// Implmentation of the `and!` operation for two task-like values.
+        /// Implementation of the `and!` operation for two task-like values.
         /// </summary>
         member inline MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2> :
             task1: ^TaskLike1 * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -258,7 +258,7 @@ module LowPriority =
     type BackgroundTaskBuilder with
 
         /// <summary>
-        /// Implmentation of the `and!` operation for two task-like values.
+        /// Implementation of the `and!` operation for two task-like values.
         /// </summary>
         member inline MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2> :
             task1: ^TaskLike1 * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -276,7 +276,7 @@ module LowPlusPriority =
     type TaskBuilder with
 
         /// <summary>
-        /// Implmentation of the `and!` operation for an async and a task-like value.
+        /// Implementation of the `and!` operation for an async and a task-like value.
         /// </summary>
         member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
             computation: Async< ^TResult1 > * task: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -286,7 +286,7 @@ module LowPlusPriority =
                 and ^Awaiter2: (member GetResult: unit -> ^TResult2)
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a task-like value and an async.
+        /// Implementation of the `and!` operation for a task-like value and an async.
         /// </summary>
         member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
             task: ^TaskLike1 * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
@@ -298,7 +298,7 @@ module LowPlusPriority =
     type BackgroundTaskBuilder with
 
         /// <summary>
-        /// Implmentation of the `and!` operation for an async and a task-like value.
+        /// Implementation of the `and!` operation for an async and a task-like value.
         /// </summary>
         member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
             computation: Async< ^TResult1 > * task: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -308,7 +308,7 @@ module LowPlusPriority =
                 and ^Awaiter2: (member GetResult: unit -> ^TResult2)
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a task-like value and an async.
+        /// Implementation of the `and!` operation for a task-like value and an async.
         /// </summary>
         member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
             task: ^TaskLike1 * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
@@ -339,7 +339,7 @@ module MediumPriority =
     type TaskBuilder with
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a a task and a task-like value.
+        /// Implementation of the `and!` operation for a a task and a task-like value.
         /// </summary>
         member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
             task1: Task< ^TResult1 > * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -349,7 +349,7 @@ module MediumPriority =
                 and ^Awaiter2: (member GetResult: unit -> ^TResult2)
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a task-like value and a task.
+        /// Implementation of the `and!` operation for a task-like value and a task.
         /// </summary>
         member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
             task1: ^TaskLike1 * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
@@ -359,19 +359,19 @@ module MediumPriority =
                 and ^Awaiter1: (member GetResult: unit -> ^TResult1)
 
         /// <summary>
-        /// Implmentation of the `and!` operation for two asyncs.
+        /// Implementation of the `and!` operation for two asyncs.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             computation1: Async< ^TResult1 > * computation2: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a task and an async.
+        /// Implementation of the `and!` operation for a task and an async.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             task: Task< ^TResult1 > * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
 
         /// <summary>
-        /// Implmentation of the `and!` operation for an async and a task.
+        /// Implementation of the `and!` operation for an async and a task.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             computation: Async< ^TResult1 > * task: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
@@ -379,7 +379,7 @@ module MediumPriority =
     type BackgroundTaskBuilder with
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a a task and a task-like value.
+        /// Implementation of the `and!` operation for a a task and a task-like value.
         /// </summary>
         member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
             task1: Task< ^TResult1 > * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
@@ -389,7 +389,7 @@ module MediumPriority =
                 and ^Awaiter2: (member GetResult: unit -> ^TResult2)
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a task-like value and a task.
+        /// Implementation of the `and!` operation for a task-like value and a task.
         /// </summary>
         member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
             task1: ^TaskLike1 * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
@@ -399,19 +399,19 @@ module MediumPriority =
                 and ^Awaiter1: (member GetResult: unit -> ^TResult1)
 
         /// <summary>
-        /// Implmentation of the `and!` operation for two asyncs.
+        /// Implementation of the `and!` operation for two asyncs.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             computation1: Async< ^TResult1 > * computation2: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
 
         /// <summary>
-        /// Implmentation of the `and!` operation for a task and an async.
+        /// Implementation of the `and!` operation for a task and an async.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             task: Task< ^TResult1 > * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
 
         /// <summary>
-        /// Implmentation of the `and!` operation for an async and a task.
+        /// Implementation of the `and!` operation for an async and a task.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             computation: Async< ^TResult1 > * task: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
@@ -446,14 +446,14 @@ module HighPriority =
 
     type TaskBuilder with
         /// <summary>
-        /// Implmentation of the `and!` operation for two tasks.
+        /// Implementation of the `and!` operation for two tasks.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             task1: Task< ^TResult1 > * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
 
     type BackgroundTaskBuilder with
         /// <summary>
-        /// Implmentation of the `and!` operation for two tasks.
+        /// Implementation of the `and!` operation for two tasks.
         /// </summary>
         member inline MergeSources< ^TResult1, ^TResult2> :
             task1: Task< ^TResult1 > * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
