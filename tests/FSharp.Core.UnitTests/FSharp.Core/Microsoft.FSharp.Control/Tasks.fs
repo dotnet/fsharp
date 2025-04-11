@@ -344,6 +344,18 @@ type SmokeTestsForCompilation() =
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
+    [<Fact>]
+    member _.mergeBackgroundTask() =
+        backgroundTask {
+            let! x = async { return 1 }
+            and! y = task { return 2 }
+            and! z = ValueTask<int>(Task.FromResult(3))
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
 exception TestException of string
 
 [<AutoOpen>]
