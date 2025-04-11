@@ -73,7 +73,7 @@ type ImportMap =
     member g: TcGlobals
 
     /// Type subsumption cache
-    member TypeSubsumptionCache: ConcurrentDictionary<TTypeCacheKey, bool>
+    member TypeSubsumptionCache: Cache<TTypeCacheKey, bool>
 
 module Nullness =
 
