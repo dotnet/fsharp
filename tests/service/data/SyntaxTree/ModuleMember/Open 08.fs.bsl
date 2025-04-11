@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/ModuleMember/Open 08.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/ModuleMember/Open 08.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Open
@@ -10,4 +10,5 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,4), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

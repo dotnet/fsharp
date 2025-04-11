@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SynType/SingleSynTypeInsideSynExprTraitCall.fs", false,
-      QualifiedNameOfFile SingleSynTypeInsideSynExprTraitCall, [], [],
+      QualifiedNameOfFile SingleSynTypeInsideSynExprTraitCall, [],
       [SynModuleOrNamespace
          ([SingleSynTypeInsideSynExprTraitCall], false, AnonModule,
           [Types
@@ -191,4 +191,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,60))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

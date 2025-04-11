@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Record - Field 09.fs", false, QualifiedNameOfFile Foo,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Expr
@@ -16,6 +16,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,5), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (4,2)-(4,3) parse error Field bindings must have the form 'id = expr;'

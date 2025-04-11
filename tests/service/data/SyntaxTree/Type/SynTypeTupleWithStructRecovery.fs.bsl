@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeTupleWithStructRecovery.fs", false,
-      QualifiedNameOfFile SynTypeTupleWithStructRecovery, [], [],
+      QualifiedNameOfFile SynTypeTupleWithStructRecovery, [],
       [SynModuleOrNamespace
          ([SynTypeTupleWithStructRecovery], false, AnonModule,
           [Let
@@ -34,6 +34,7 @@ ImplFile
                     EqualsRange = Some (2,25--2,26) })], (2,0--2,29))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (2,25)-(2,26) parse error Unexpected symbol '=' in binding. Expected ')' or other token.
