@@ -35,13 +35,14 @@ module ``Interactive tests`` =
         ]
 
     [<Theory>]
-    [<InlineData(true)>]
-    [<InlineData(false)>]
-    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit) =
+    [<InlineData(true, true)>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit1, useMultiEmit2) =
 
-        let args : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
-        use sessionOne = new FSharpScript(additionalArgs=args)
-        use sessionTwo = new FSharpScript(additionalArgs=args)
+        let args useMultiEmit : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
+        use sessionOne = new FSharpScript(additionalArgs = args useMultiEmit1)
+        use sessionTwo = new FSharpScript(additionalArgs = args useMultiEmit2)
 
         sessionOne.Eval("""
 module Test1 =
@@ -55,7 +56,6 @@ module Test1 =
 
         sessionTwo.Eval("""
 module Test2 =
-
     let test2 obj = sprintf "Execute - Test2.test2 - %A" obj""") |> ignore
 
         let result2 = sessionTwo.Eval("""Test2.test2 27""") |> getValue
