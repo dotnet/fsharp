@@ -101,18 +101,18 @@ let TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
 let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
-let inline TryGetCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key =
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+let inline TryGetCachedTypeSubsumption (_g: TcGlobals) (amap: ImportMap) key =
+    //if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         match amap.TypeSubsumptionCache.TryGet(key) with
         | true, subsumes ->
             ValueSome subsumes
         | false, _ ->
             ValueNone
-    else
-        ValueNone
+    //else
+    //    ValueNone
 
-let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subsumes : unit =
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+let inline UpdateCachedTypeSubsumption (_g: TcGlobals) (amap: ImportMap) key subsumes : unit =
+    //if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         amap.TypeSubsumptionCache.TryAdd(key, subsumes) |> ignore
 
 /// The feasible coercion relation. Part of the language spec.

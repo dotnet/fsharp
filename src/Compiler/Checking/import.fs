@@ -90,6 +90,8 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 
         combined
 
+let typeSubsumptionCache = lazy Cache<TTypeCacheKey, bool>.Create({ CacheOptions.Default with EvictionMethod = EvictionMethod.Background })
+
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
 //-------------------------------------------------------------------------
@@ -106,16 +108,13 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
-    let typeSubsumptionCache =
-        Cache<TTypeCacheKey, bool>.Create({ CacheOptions.Default with MaximumCapacity = 1024 })
-
     member _.g = g
 
     member _.assemblyLoader = assemblyLoader
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member _.TypeSubsumptionCache = typeSubsumptionCache
+    member _.TypeSubsumptionCache = typeSubsumptionCache.Value
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 

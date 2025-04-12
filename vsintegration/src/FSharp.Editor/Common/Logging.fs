@@ -135,16 +135,16 @@ module Activity =
             String.replicate (loop activity 0) "    "
 
         let collectTags (activity: Activity) =
-            [ for tag in activity.Tags -> $"{tag.Key}: %A{tag.Value}" ]
+            [ for tag in activity.Tags -> $"{tag.Key}: {tag.Value}" ]
             |> String.concat ", "
 
         let listener =
             new ActivityListener(
-                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                ShouldListenTo = (fun source -> source.Name = ActivityNames.FscSourceName),
                 Sample =
                     (fun context ->
                         if context.Name.Contains(filter) then
-                            ActivitySamplingResult.AllDataAndRecorded
+                            ActivitySamplingResult.AllData
                         else
                             ActivitySamplingResult.None),
                 ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
@@ -152,13 +152,24 @@ module Activity =
 
         ActivitySource.AddActivityListener(listener)
 
-    let export () =
-        OpenTelemetry.Sdk
-            .CreateTracerProviderBuilder()
-            .AddSource(ActivityNames.FscSourceName)
-            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName = "F#", serviceVersion = "1.0.0"))
-            .AddOtlpExporter()
-            .Build()
+    let exportTraces() =     
+        let provider =
+            // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
+            OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddOtlpExporter(fun o ->
+                    // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
+                    o.TimeoutMilliseconds <- 200
+                    o.BatchExportProcessorOptions.MaxQueueSize <- 16384
+                    o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
+                )
+                .Build()
+        let a = Activity.startNoTags "FSharpPackage"
+        fun () ->
+            a.Dispose()
+            provider.ForceFlush(5000) |> ignore
+            provider.Dispose()
 
     let listenToAll () = listen ""
 #endif
