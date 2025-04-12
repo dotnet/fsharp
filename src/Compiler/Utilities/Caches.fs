@@ -115,7 +115,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
 
         cache
 
-    member this.GetStats(): obj =
+    member this.GetStats() : obj =
         {|
             Capacity = options.MaximumCapacity
             PercentageToEvict = options.PercentageToEvict
@@ -160,9 +160,20 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
 
                 if evictionCount > 0 then
                     let exceeded = this.Store.Count > currentCapacity
+
                     if exceeded then
                         currentCapacity <- this.Store.Count
-                    use _ = Activity.start "Cache.Eviction" (seq { yield "Store.Count", string this.Store.Count; if exceeded then yield "RESIZE", "!" })
+
+                    use _ =
+                        Activity.start
+                            "Cache.Eviction"
+                            (seq {
+                                yield "Store.Count", string this.Store.Count
+
+                                if exceeded then
+                                    yield "RESIZE", "!"
+                            })
+
                     this.TryEvictItems()
 
                 let utilization = (this.Store.Count / options.MaximumCapacity)

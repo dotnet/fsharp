@@ -1305,11 +1305,16 @@ and [<Sealed>] TcImports
             | None -> false
         | None -> false
 
-    let typeSubsumptionCache = lazy Cache<TTypeCacheKey, bool>.Create({
-            CacheOptions.Default with
-                EvictionMethod = EvictionMethod.Background
-                PercentageToEvict = 20
-                MaximumCapacity = 200_000 })
+    let typeSubsumptionCache =
+        lazy
+            Cache<TTypeCacheKey, bool>
+                .Create(
+                    { CacheOptions.Default with
+                        EvictionMethod = EvictionMethod.Background
+                        PercentageToEvict = 20
+                        MaximumCapacity = 200_000
+                    }
+                )
 
     member internal _.Base =
         CheckDisposed()
