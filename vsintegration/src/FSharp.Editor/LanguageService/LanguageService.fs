@@ -340,9 +340,7 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
-    #if DEBUG
     do Logging.Activity.listen "CacheSize"
-    #endif
 
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)

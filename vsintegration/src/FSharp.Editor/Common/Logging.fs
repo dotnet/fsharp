@@ -118,11 +118,8 @@ module Logging =
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
-#if DEBUG
-module Activity =
 
-    open OpenTelemetry.Resources
-    open OpenTelemetry.Trace
+module Activity =
 
     let listen filter =
         let indent (activity: Activity) =
@@ -151,7 +148,9 @@ module Activity =
             )
 
         ActivitySource.AddActivityListener(listener)
-
+#if DEBUG
+    open OpenTelemetry.Resources
+    open OpenTelemetry.Trace
     let exportTraces() =     
         let provider =
             // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
