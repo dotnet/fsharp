@@ -5,6 +5,7 @@
 [IL]: Error [UnmanagedPointer]: : FSharp.Compiler.IO.RawByteMemory::.ctor(uint8*, int32, object)][offset 0x00000009] Unmanaged pointers are not a verifiable type.
 [IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::get_Item(int32)][offset 0x0000001A][found Native Int] Expected ByRef on the stack.
 [IL]: Error [StackByRef]: : FSharp.Compiler.IO.RawByteMemory::set_Item(int32, uint8)][offset 0x0000001B][found Native Int] Expected ByRef on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.Cache`2::TryGetPickToEvict()][offset 0x00000034][found ref 'object'][expected ref '[S.P.CoreLib]System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<object,FSharp.Compiler.CachedEntity`1<T1>>>'] Unexpected type on the stack.
 [IL]: Error [ReturnPtrToStack]: : Internal.Utilities.Text.Lexing.LexBuffer`1::get_LexemeView()][offset 0x00000017] Return type is ByRef, TypedReference, ArgHandle, or ArgIterator.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.Text.Lexing.UnicodeTables::scanUntilSentinel([FSharp.Compiler.Service]Internal.Utilities.Text.Lexing.LexBuffer`1<char>, int32)][offset 0x0000008D][found Short] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.Xml.XmlDoc::processLines([FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>)][offset 0x0000002C][found Char] Unexpected type on the stack.
