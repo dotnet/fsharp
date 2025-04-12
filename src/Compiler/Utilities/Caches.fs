@@ -58,7 +58,7 @@ type internal CacheOptions =
 
     static member Default =
         {
-            MaximumCapacity = 500_000
+            MaximumCapacity = 10_000
             PercentageToEvict = 5
             Strategy = CachingStrategy.LRU
             LevelOfConcurrency = Environment.ProcessorCount
@@ -86,7 +86,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
 
-    let mutable maxCount = 0
+    let mutable currentCapacity = capacity
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -105,10 +105,10 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
             options.MaximumCapacity
             + (options.MaximumCapacity * options.PercentageToEvict / 100)
 
+        use _ = Activity.start "Cache.Created" (seq { "capacity", string capacity })
+
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
-
-        Task.Run(cache.TraceSize, cts.Token) |> ignore
 
         if options.EvictionMethod = EvictionMethod.Background then
             Task.Run(cache.TryEvictTask, cts.Token) |> ignore
@@ -152,23 +152,17 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
                 | true, _ -> eviction.Trigger(key)
                 | _ -> () // TODO: We probably want to count eviction misses as well?
 
-    member private this.TraceSize() =
-        backgroundTask {
-            while not cts.Token.IsCancellationRequested  do
-                if this.Store.Count > maxCount then
-                    maxCount <- this.Store.Count
-                    use _ = Activity.start "CacheSize" (seq { "size", string maxCount })
-                    ()
-                do! Task.Delay(1000)
-        }
-
     // TODO: Shall this be a safer task, wrapping everything in try .. with, so it's not crashing silently?
     member private this.TryEvictTask() =
         backgroundTask {
             while not cts.Token.IsCancellationRequested do
-                let evictionCount = 0 // this.CalculateEvictionCount()
+                let evictionCount = this.CalculateEvictionCount()
 
                 if evictionCount > 0 then
+                    let exceeded = this.Store.Count > currentCapacity
+                    if exceeded then
+                        currentCapacity <- this.Store.Count
+                    use _ = Activity.start "Cache.Eviction" (seq { yield "Store.Count", string this.Store.Count; if exceeded then yield "RESIZE", "!" })
                     this.TryEvictItems()
 
                 let utilization = (this.Store.Count / options.MaximumCapacity)

@@ -1305,6 +1305,12 @@ and [<Sealed>] TcImports
             | None -> false
         | None -> false
 
+    let typeSubsumptionCache = lazy Cache<TTypeCacheKey, bool>.Create({
+            CacheOptions.Default with
+                EvictionMethod = EvictionMethod.Background
+                PercentageToEvict = 20
+                MaximumCapacity = 200_000 })
+
     member internal _.Base =
         CheckDisposed()
         importsBase
@@ -1704,7 +1710,7 @@ and [<Sealed>] TcImports
                 member _.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
             }
 #endif
-        ImportMap(tcImports.GetTcGlobals(), loaderInterface)
+        ImportMap(tcImports.GetTcGlobals(), loaderInterface, typeSubsumptionCache.Value)
 
     // Note the tcGlobals are only available once mscorlib and fslib have been established. For TcImports,
     // they are logically only needed when converting AbsIL data structures into F# data structures, and

@@ -64,7 +64,7 @@ type TTypeCacheKey =
 /// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs.
 [<Sealed>]
 type ImportMap =
-    new: g: TcGlobals * assemblyLoader: AssemblyLoader -> ImportMap
+    new: g: TcGlobals * assemblyLoader: AssemblyLoader * typeSubsumptionCache: Cache<TTypeCacheKey, bool> -> ImportMap
 
     /// The AssemblyLoader for the import context
     member assemblyLoader: AssemblyLoader
