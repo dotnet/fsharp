@@ -115,18 +115,18 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
 
         cache
 
-    member this.GetStats() : obj =
-        {|
-            Capacity = options.MaximumCapacity
-            PercentageToEvict = options.PercentageToEvict
-            Strategy = options.Strategy
-            LevelOfConcurrency = options.LevelOfConcurrency
-            Count = this.Store.Count
-            MostRecentlyAccesssed = this.Store.Values |> Seq.maxBy _.LastAccessed |> _.LastAccessed
-            LeastRecentlyAccesssed = this.Store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
-            MostFrequentlyAccessed = this.Store.Values |> Seq.maxBy _.AccessCount |> _.AccessCount
-            LeastFrequentlyAccessed = this.Store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
-        |}
+    //member this.GetStats() =
+    //    {|
+    //        Capacity = options.MaximumCapacity
+    //        PercentageToEvict = options.PercentageToEvict
+    //        Strategy = options.Strategy
+    //        LevelOfConcurrency = options.LevelOfConcurrency
+    //        Count = this.Store.Count
+    //        MostRecentlyAccesssed = this.Store.Values |> Seq.maxBy _.LastAccessed |> _.LastAccessed
+    //        LeastRecentlyAccesssed = this.Store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
+    //        MostFrequentlyAccessed = this.Store.Values |> Seq.maxBy _.AccessCount |> _.AccessCount
+    //        LeastFrequentlyAccessed = this.Store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
+    //    |}
 
     member private this.CalculateEvictionCount() =
         if this.Store.Count >= options.MaximumCapacity then
