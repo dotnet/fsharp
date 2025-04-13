@@ -1,2 +1,6 @@
 
 neg79.fsx(31,32,31,33): parse error FS0010: Unexpected symbol ')' in if/then/else expression
+
+neg79.fsx(31,17,31,31): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'bool'.
+
+neg79.fsx(26,11,26,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value 'Horizontal (_, _)' may indicate a case not covered by the pattern(s).
