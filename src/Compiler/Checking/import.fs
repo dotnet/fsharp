@@ -93,7 +93,18 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 
         combined
 
-let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>()
+//let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>()
+
+let typeSubsumptionCache =
+    //typeSubsumptionCaches.GetValue(g, fun _ ->
+        Cache<TTypeCacheKey, bool>.Create(
+            { CacheOptions.Default with
+                EvictionMethod = EvictionMethod.Background
+                PercentageToEvict = 15
+                MaximumCapacity = 500_000
+            }
+        )
+    //)
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -110,17 +121,6 @@ let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>(
 [<Sealed>]
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
-
-    let typeSubsumptionCache =
-        typeSubsumptionCaches.GetValue(g, fun _ ->
-            Cache<TTypeCacheKey, bool>.Create(
-                { CacheOptions.Default with
-                    EvictionMethod = EvictionMethod.Background
-                    PercentageToEvict = 20
-                    MaximumCapacity = 200_000
-                }
-            )
-        )
 
     member _.g = g
 
