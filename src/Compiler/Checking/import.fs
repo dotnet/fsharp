@@ -6,17 +6,20 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
-open FSharp.Compiler.Text.Range
+open System.Runtime.CompilerServices
+
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing
 open Internal.Utilities.TypeHashing.HashTypes
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -90,6 +93,8 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 
         combined
 
+let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>()
+
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
 //-------------------------------------------------------------------------
@@ -103,8 +108,19 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 /// using tcImports.GetImportMap() if needed, and it is not harmful if multiple instances are used. The object
 /// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs.
 [<Sealed>]
-type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader, typeSubsumptionCache: Cache<TTypeCacheKey, bool>) =
+type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
+
+    let typeSubsumptionCache =
+        typeSubsumptionCaches.GetValue(g, fun _ ->
+            Cache<TTypeCacheKey, bool>.Create(
+                { CacheOptions.Default with
+                    EvictionMethod = EvictionMethod.Background
+                    PercentageToEvict = 20
+                    MaximumCapacity = 200_000
+                }
+            )
+        )
 
     member _.g = g
 
