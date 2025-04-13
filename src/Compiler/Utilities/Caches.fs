@@ -80,11 +80,13 @@ type internal CachedEntity<'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
+type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts, name: string) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
+
+    static let mutable cacheId = 0
 
     let mutable currentCapacity = capacity
 
@@ -105,10 +107,12 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
             options.MaximumCapacity
             + (options.MaximumCapacity * options.PercentageToEvict / 100)
 
-        use _ = Activity.start "Cache.Created" (seq { "capacity", string capacity })
+        let name = $"Cache{Interlocked.Increment &cacheId}"
+
+        use _ = Activity.start "Cache.Created" (seq {"name", name; "capacity", string capacity })
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+        let cache = new Cache<'Key, 'Value>(options, capacity, cts, name)
 
         if options.EvictionMethod = EvictionMethod.Background then
             Task.Run(cache.TryEvictTask, cts.Token) |> ignore
@@ -168,6 +172,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
                         Activity.start
                             "Cache.Eviction"
                             (seq {
+                                yield "name", name
                                 yield "Store.Count", string this.Store.Count
 
                                 if exceeded then
