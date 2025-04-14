@@ -93,7 +93,27 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 
         combined
 
-let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>()
+let getOrCreateTypeSubsumptionCache =
+    let mutable lockObj = obj()
+    let mutable cache = None
+
+    fun compilationMode ->
+        lock lockObj <| fun () ->
+            match cache with
+            | Some c -> c
+            | _ ->
+                let options =
+                    if compilationMode = CompilationMode.OneOff then
+                        { CacheOptions.Default with
+                            PercentageToEvict = 0
+                            EvictionMethod = EvictionMethod.KeepAll }
+                    else
+                        { CacheOptions.Default with
+                            EvictionMethod = EvictionMethod.Background
+                            PercentageToEvict = 15
+                            MaximumCapacity = 100_000 }
+                cache <- Some (Cache<TTypeCacheKey, bool>.Create(options))
+                cache.Value
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -111,27 +131,13 @@ let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>(
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
-    let typeSubsumptionCache =
-        lazy
-        let options =
-            if g.compilationMode = CompilationMode.OneOff then
-                { CacheOptions.Default with
-                    PercentageToEvict = 0
-                    EvictionMethod = EvictionMethod.KeepAll }
-            else
-                { CacheOptions.Default with
-                    EvictionMethod = EvictionMethod.Blocking // EvictionMethod.Background
-                    PercentageToEvict = 15
-                    MaximumCapacity = 500_000 }
-        typeSubsumptionCaches.GetValue(g, fun _ -> Cache<TTypeCacheKey, bool>.Create(options))
-
     member _.g = g
 
     member _.assemblyLoader = assemblyLoader
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member _.TypeSubsumptionCache = typeSubsumptionCache.Value
+    member val TypeSubsumptionCache = getOrCreateTypeSubsumptionCache g.compilationMode
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 
