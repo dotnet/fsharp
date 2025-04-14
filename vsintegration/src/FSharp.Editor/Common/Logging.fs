@@ -149,16 +149,16 @@ module FSharpServiceTelemetry =
         ActivitySource.AddActivityListener(listener)
 
     let logCacheMetricsToOutput () =
-        let cacheCounts = Collections.Generic.Dictionary<string, int>()
+        let instruments = Collections.Generic.Dictionary<string, int64>()
         let listener = new MeterListener(
             InstrumentPublished = fun instrument l ->
                 if instrument.Meter.Name = "FSharp.Compiler.Caches" then
-                    cacheCounts[instrument.Name] <- 0
+                    instruments[instrument.Name] <- 0L
                     l.EnableMeasurementEvents(instrument)
         )
 
-        let callBack = MeasurementCallback(fun instr v _ _ -> cacheCounts[instr.Name] <- v)
-        listener.SetMeasurementEventCallback<int> callBack
+        let callBack = MeasurementCallback(fun instr v _ _ -> instruments[instr.Name] <- v)
+        listener.SetMeasurementEventCallback callBack
         listener.Start()
         
         let msg = Event<string>()
@@ -167,11 +167,10 @@ module FSharpServiceTelemetry =
             while true do
                 do! System.Threading.Tasks.Task.Delay(1000)
                 listener.RecordObservableInstruments()
-                if cacheCounts.Count > 0 then
-                    let details =
-                        [ for kvp in cacheCounts -> $"{kvp.Key}: {kvp.Value}"]
-                        |> String.concat ", "
-                    msg.Trigger $"total: {cacheCounts.Values |> Seq.sum} | {details}"
+                if instruments.Count > 0 then
+                    [ for kvp in instruments -> $"{kvp.Key}: {kvp.Value}"]
+                    |> String.concat ", "
+                    |> msg.Trigger
         } |> ignore
 
         msg.Publish |> Event.pairwise |> Event.filter (fun (x, y) -> x <> y) |> Event.map snd |> Event.add logMsg
