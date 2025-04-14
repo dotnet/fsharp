@@ -80,7 +80,6 @@ type internal CachedEntity<'Value> =
 module internal CacheMetrics =
     let mutable cacheId = 0
     let meter = new Meter("FSharp.Compiler.Caches")
-    // let _count = meter.CreateObservableCounter("Count", (fun _ -> cache.Store.Count))
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
@@ -110,7 +109,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
 
-        CacheMetrics.meter.CreateObservableGauge($"count-{Interlocked.Increment &CacheMetrics.cacheId}", (fun () -> cache.Store.Count)) |> ignore
+        CacheMetrics.meter.CreateObservableGauge($"count{Interlocked.Increment &CacheMetrics.cacheId}", (fun () -> cache.Store.Count)) |> ignore
 
         if options.EvictionMethod = EvictionMethod.Background then
             Task.Run(cache.TryEvictTask, cts.Token) |> ignore

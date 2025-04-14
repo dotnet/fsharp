@@ -149,25 +149,32 @@ module FSharpServiceTelemetry =
         ActivitySource.AddActivityListener(listener)
 
     let logCacheMetricsToOutput () =
+        let cacheCounts = Collections.Generic.Dictionary<string, int>()
         let listener = new MeterListener(
             InstrumentPublished = fun instrument l ->
                 if instrument.Meter.Name = "FSharp.Compiler.Caches" then
-                   l.EnableMeasurementEvents(instrument)
+                    cacheCounts[instrument.Name] <- 0
+                    l.EnableMeasurementEvents(instrument)
         )
 
-        let msg = Event<string>()
-
-        let callBack = MeasurementCallback(fun instr v _ _ -> msg.Trigger $"{instr.Name}: {v}")
-        listener.SetMeasurementEventCallback<int32> callBack
+        let callBack = MeasurementCallback(fun instr v _ _ -> cacheCounts[instr.Name] <- v)
+        listener.SetMeasurementEventCallback<int> callBack
         listener.Start()
-
-        msg.Publish |> Event.pairwise |> Event.filter (fun (x, y) -> x <> y) |> Event.map snd |> Event.add logMsg
+        
+        let msg = Event<string>()
 
         backgroundTask {
             while true do
                 do! System.Threading.Tasks.Task.Delay(1000)
                 listener.RecordObservableInstruments()
+                if cacheCounts.Count > 0 then
+                    let details =
+                        [ for kvp in cacheCounts -> $"{kvp.Key}: {kvp.Value}"]
+                        |> String.concat ", "
+                    msg.Trigger $"total: {cacheCounts.Values |> Seq.sum} | {details}"
         } |> ignore
+
+        msg.Publish |> Event.pairwise |> Event.filter (fun (x, y) -> x <> y) |> Event.map snd |> Event.add logMsg
 
 #if DEBUG
     open OpenTelemetry.Resources

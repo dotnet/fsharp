@@ -93,18 +93,7 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 
         combined
 
-//let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>()
-
-let typeSubsumptionCache =
-    //typeSubsumptionCaches.GetValue(g, fun _ ->
-        Cache<TTypeCacheKey, bool>.Create(
-            { CacheOptions.Default with
-                EvictionMethod = EvictionMethod.Background
-                PercentageToEvict = 15
-                MaximumCapacity = 500_000
-            }
-        )
-    //)
+let typeSubsumptionCaches = ConditionalWeakTable<_, Cache<TTypeCacheKey, bool>>()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -122,13 +111,25 @@ let typeSubsumptionCache =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
+    let typeSubsumptionCache =
+        lazy 
+        typeSubsumptionCaches.GetValue(g, fun g ->
+                Cache<TTypeCacheKey, bool>.Create(
+                    { CacheOptions.Default with
+                        // EvictionMethod = EvictionMethod.Background
+                        PercentageToEvict = 15
+                        MaximumCapacity = if g.compilationMode = CompilationMode.OneOff then System.Int32.MaxValue else 500_000
+                    }
+                )
+            )
+
     member _.g = g
 
     member _.assemblyLoader = assemblyLoader
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member _.TypeSubsumptionCache = typeSubsumptionCache
+    member _.TypeSubsumptionCache = typeSubsumptionCache.Value
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 
