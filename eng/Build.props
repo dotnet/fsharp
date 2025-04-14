@@ -1,0 +1,7 @@
+<Project>
+
+  <ItemGroup Condition="'$(DotNetBuild)' == 'true'">
+    <ProjectToBuild Include="$(RepoRoot)Microsoft.FSharp.Compiler.sln" />
+  </ItemGroup>
+
+</Project>
