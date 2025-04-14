@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
-    <NoWarn>NETSDK1138</NoWarn>
+    <NoWarn>$(NoWarn);NETSDK1138</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(FSharpTestCompilerVersion)' == 'net40'">
