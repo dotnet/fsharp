@@ -2309,7 +2309,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
-                    filename, sourceText, CodeContext.Editing,
+                    filename, sourceText, None, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,

@@ -56,7 +56,12 @@ type DependencyManagerInteractiveTests() =
 0"""
         use script = new scriptHost()
         let opt, errors = script.Eval(text)
-        Assert.Equal(errors.Length, 1)
+
+        // Strip out msbuild out of support warnings
+        let messages = errors |> Array.map(fun e -> e.Message) |> Array.filter(fun m -> not (m.Contains("warning NETSDK1138: The target framework 'net5.0' is out of support")))
+
+        Assert.Equal(1, messages.Length)
+        Assert.Contains("Unable to find package System.Collections.Immutable.DoesNotExist.", messages.[0])
 
 (*
     [<Theory>]

@@ -16,7 +16,8 @@ type PackageReference =
       Version:string
       RestoreSources:string
       Script:string
-    }
+      UsePackageTargets: bool
+   }
 
 // Resolved assembly information
 type internal Resolution =

@@ -865,7 +865,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.ParseAndCheckProject(options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
 
-    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, userOpName) = 
+    member _.GetProjectOptionsFromScript(filename, sourceText, caret, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, userOpName) = 
 
         reactor.EnqueueAndAwaitOpAsync (userOpName, "GetProjectOptionsFromScript", filename, fun ctok -> 
           cancellable {
@@ -898,7 +898,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
             let loadClosure = 
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
-                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
+                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, caret,
                     CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
                     applyCompilerOptions, assumeDotNetFramework, 
                     tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
@@ -1312,9 +1312,9 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member _.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?userOpName: string) = 
+    member _.GetProjectOptionsFromScript(filename, source, ?caret, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, optionsStamp, userOpName)
+        backgroundCompiler.GetProjectOptionsFromScript(filename, source, caret, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, optionsStamp, userOpName)
 
     member _.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?isInteractive, ?isEditing) = 
         let isEditing = defaultArg isEditing false

@@ -280,9 +280,9 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
         $args += " --no-build"
     }
 
-    if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
-        $args += " --filter TestCategory!=PullRequest"
-    }
+    #if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
+    #    $args += " --filter TestCategory!=PullRequest"
+    #}
 
     Write-Host("$args")
     Exec-Console $dotnetExe $args

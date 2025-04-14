@@ -130,6 +130,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+  </ItemGroup>
+
+
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj" />
@@ -164,7 +169,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Features" Version="$(MicrosoftCodeAnalysisVisualBasicFeaturesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="$(MicrosoftCodeAnalysisVisualBasicWorkspacesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="$(MicrosoftCodeAnalysisScriptingCommonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
