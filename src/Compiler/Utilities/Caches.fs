@@ -93,7 +93,21 @@ module internal CacheMetrics =
         //let _ = meter.CreateObservableGauge($"LRA{uid}", orZero (Seq.map _.LastAccessed >> Seq.min))
         let _ = meter.CreateObservableGauge($"MFA{uid}", orZero (Seq.map _.AccessCount >> Seq.max))
         let _ = meter.CreateObservableGauge($"LFA{uid}", orZero (Seq.map _.AccessCount >> Seq.min))
-        ()
+
+        let mutable evictions = 0L
+        let mutable hits = 0L
+        let mutable misses = 0L
+
+        fun eviction hit miss ->
+
+            eviction |> Event.add (fun _ -> Interlocked.Increment &evictions |> ignore)
+            hit |> Event.add (fun _ -> Interlocked.Increment &hits |> ignore)
+            miss |> Event.add (fun _ -> Interlocked.Increment &misses |> ignore)
+
+            let _ = meter.CreateObservableGauge($"evicted{uid}", fun () -> Interlocked.Exchange(&evictions, 0L))
+            let _ = meter.CreateObservableGauge($"hits{uid}", fun () -> Interlocked.Exchange(&hits, 0L))
+            let _ = meter.CreateObservableGauge($"misses{uid}", fun () -> Interlocked.Exchange(&misses, 0L))
+            ()
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
@@ -106,7 +120,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
     let store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
 
-    do CacheMetrics.addInstrumentation store
+    do CacheMetrics.addInstrumentation store eviction.Publish cacheHit.Publish cacheMiss.Publish
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -171,21 +185,18 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     member private this.TryEvictTask() =
         backgroundTask {
             while not cts.Token.IsCancellationRequested do
-                let evictionCount = this.CalculateEvictionCount()
+                this.TryEvictItems()
 
-                if evictionCount > 0 then
-                    this.TryEvictItems()
+                let utilization = (float store.Count / float options.MaximumCapacity)
+                // So, based on utilization this will scale the delay between 0 and 1 seconds.
+                // Worst case scenario would be when 1 second delay happens,
+                // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
+                // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
+                // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
+                let delay = 1000.0 - (1000.0 * utilization)
 
-                    let utilization = (float store.Count / float options.MaximumCapacity)
-                    // So, based on utilization this will scale the delay between 0 and 1 seconds.
-                    // Worst case scenario would be when 1 second delay happens,
-                    // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
-                    // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
-                    // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
-                    let delay = 1000.0 - (1000.0 * utilization)
-
-                    if delay > 0.0 then
-                        do! Task.Delay(int delay)
+                if delay > 0.0 then
+                    do! Task.Delay(int delay)
         }
 
     member this.TryEvict() =
