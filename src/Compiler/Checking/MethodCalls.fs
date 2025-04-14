@@ -1540,8 +1540,8 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
         match tryPickArgumentCodeText assignedArgs param with
         | Some code -> 
             let expr = Expr.Const(Const.String code, mMethExpr, calledNonOptTy)
-            mkOptionalSome g calledNonOptTy expr mMethExpr
-        | None -> mkOptionalNone g calledNonOptTy mMethExpr
+            mkOptionalSome g calledArgTy calledNonOptTy expr mMethExpr
+        | None -> mkOptionalNone g calledArgTy calledNonOptTy mMethExpr
 
     | _ ->
         mkOptionalNone g calledArgTy calledNonOptTy mMethExpr
