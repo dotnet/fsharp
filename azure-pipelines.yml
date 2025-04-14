@@ -57,7 +57,7 @@ variables:
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: DotNetSdkVersion
-    value: '5.0.401'
+    value: '6.0.135'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -95,8 +95,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCore1ESPool-Svc-Internal
-            demands: ImageOverride -equals build.windows.10.amd64.vs2019
+            name: $(DncEngInternalBuildPool)
+            demands: ImageOverride -equals windows.vs2022preview.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -393,7 +393,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: 5.0.401
+              version: 6.0.135
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
@@ -416,7 +416,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: 5.0.401
+              version: 6.0.135
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
