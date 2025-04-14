@@ -58,7 +58,7 @@ type internal CacheOptions =
 
     static member Default =
         {
-            MaximumCapacity = 10_000
+            MaximumCapacity = 100
             PercentageToEvict = 5
             Strategy = CachingStrategy.LRU
             LevelOfConcurrency = Environment.ProcessorCount
@@ -80,7 +80,7 @@ type internal CachedEntity<'Value> =
 
 module internal CacheMetrics =
     let mutable cacheId = 0
-    let meter = new Meter("FSharp.Compiler.Caches")
+    let createMeter () = new Meter("FSharp.Compiler.Caches")
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
@@ -89,6 +89,12 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
+    
+    // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
+    let store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
+
+    let meter = CacheMetrics.createMeter()
+    let _ = meter.CreateObservableGauge($"cache{Interlocked.Increment &CacheMetrics.cacheId}", (fun () -> store.Count))
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -99,9 +105,6 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     [<CLIEvent>]
     member val Eviction = eviction.Publish
 
-    // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-    member val Store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
-
     static member Create(options: CacheOptions) =
         let capacity =
             options.MaximumCapacity
@@ -109,8 +112,6 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
 
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
-
-        CacheMetrics.meter.CreateObservableGauge($"count{Interlocked.Increment &CacheMetrics.cacheId}", (fun () -> cache.Store.Count)) |> ignore
 
         if options.EvictionMethod = EvictionMethod.Background then
             Task.Run(cache.TryEvictTask, cts.Token) |> ignore
@@ -131,15 +132,15 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     //    |}
 
     member private this.CalculateEvictionCount() =
-        if this.Store.Count >= options.MaximumCapacity then
-            (this.Store.Count - options.MaximumCapacity)
+        if store.Count >= options.MaximumCapacity then
+            (store.Count - options.MaximumCapacity)
             + (options.MaximumCapacity * options.PercentageToEvict / 100)
         else
             0
 
     // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
     member private this.TryGetPickToEvict() =
-        this.Store
+        store
         |> match options.Strategy with
            | CachingStrategy.LRU -> ConcurrentDictionary.sortBy _.Value.LastAccessed
            | CachingStrategy.LFU -> ConcurrentDictionary.sortBy _.Value.AccessCount
@@ -150,7 +151,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     member private this.TryEvictItems() =
         if this.CalculateEvictionCount() > 0 then
             for key in this.TryGetPickToEvict() do
-                match this.Store.TryRemove(key) with
+                match store.TryRemove(key) with
                 | true, _ -> eviction.Trigger(key)
                 | _ -> () // TODO: We probably want to count eviction misses as well?
 
@@ -163,16 +164,16 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
                 if evictionCount > 0 then
                     this.TryEvictItems()
 
-                let utilization = (this.Store.Count / options.MaximumCapacity)
+                let utilization = (float store.Count / float options.MaximumCapacity)
                 // So, based on utilization this will scale the delay between 0 and 1 seconds.
                 // Worst case scenario would be when 1 second delay happens,
                 // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
                 // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
                 // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
-                let delay = 1000 - (1000 * utilization)
+                let delay = 1000.0 - (1000.0 * utilization)
 
-                if delay > 0 then
-                    do! Task.Delay(delay)
+                if delay > 0.0 then
+                    do! Task.Delay(int delay)
         }
 
     member this.TryEvict() =
@@ -183,7 +184,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
             | EvictionMethod.KeepAll -> ()
 
     member this.TryGet(key, value: outref<'Value>) =
-        match this.Store.TryGetValue(key) with
+        match store.TryGetValue(key) with
         | true, cachedEntity ->
             // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
             cachedEntity.LastAccessed <- DateTimeOffset.Now.Ticks
@@ -204,10 +205,10 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
         let value = CachedEntity<'Value>(value)
 
         if update then
-            let _ = this.Store.AddOrUpdate(key, value, (fun _ _ -> value))
+            let _ = store.AddOrUpdate(key, value, (fun _ _ -> value))
             true
         else
-            this.Store.TryAdd(key, value)
+            store.TryAdd(key, value)
 
     interface IDisposable with
         member _.Dispose() = cts.Cancel()
