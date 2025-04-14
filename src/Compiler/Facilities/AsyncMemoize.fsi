@@ -42,7 +42,8 @@ type Extensions =
 ///
 /// Strongly holds at most one result per key.
 /// </summary>
-type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'TVersion: equality and 'TKey:not null and 'TVersion:not null> =
+type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
+    when 'TKey: equality and 'TVersion: equality and 'TKey: not null and 'TVersion: not null> =
 
     /// <param name="keepStrongly">Maximum number of strongly held results to keep in the cache</param>
     /// <param name="keepWeakly">Maximum number of weakly held results to keep in the cache</param>
@@ -50,7 +51,11 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue when 'TKey: equality and 'T
     /// <param name="cancelUnawaitedJobs">Cancels a job when all the awaiting requests are canceled. If set to false, unawaited job will run to completion and it's result will be cached.</param>
     /// <param name="cancelDuplicateRunningJobs">If true, when a job is started, all other jobs with the same key will be canceled.</param>
     new:
-        ?keepStrongly: int * ?keepWeakly: int * ?name: string * ?cancelUnawaitedJobs: bool * ?cancelDuplicateRunningJobs: bool ->
+        ?keepStrongly: int *
+        ?keepWeakly: int *
+        ?name: string *
+        ?cancelUnawaitedJobs: bool *
+        ?cancelDuplicateRunningJobs: bool ->
             AsyncMemoize<'TKey, 'TVersion, 'TValue>
 
     member Clear: unit -> unit

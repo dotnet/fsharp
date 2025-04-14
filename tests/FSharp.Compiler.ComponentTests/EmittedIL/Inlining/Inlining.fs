@@ -41,6 +41,17 @@ module Inlining =
         |> getCompilation
         |> verifyCompilation
 
+    [<Theory; FileInlineData("FSharpDelegateBetaReduction.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
+    let ``FSharpDelegateBetaReduction_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> asExe
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> ignoreWarnings
+        |> verifyILBaseline
+
     [<Fact>]
     let ``List contains inlining`` () =
         Fsx """module Test

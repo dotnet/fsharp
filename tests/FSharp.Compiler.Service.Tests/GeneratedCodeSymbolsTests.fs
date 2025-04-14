@@ -22,10 +22,10 @@ type T () =
             for implFile in wholeProjectResults.AssemblyContents.ImplementationFiles do
                 for decl in implFile.Declarations do
                     match decl with
-                    | FSharpImplementationFileDeclaration.Entity(e,ds) ->
+                    | FSharpImplementationFileDeclaration.Entity(_e,ds) ->
                         for d in ds do
                             match d with
-                            | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (mfv, args, body) ->
+                            | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (mfv, _args, _body) ->
                                 yield mfv
                             | _ -> ()
                     | _ -> ()
@@ -51,10 +51,10 @@ type T = A | B
             for implFile in wholeProjectResults.AssemblyContents.ImplementationFiles do
                 for decl in implFile.Declarations do
                     match decl with
-                    | FSharpImplementationFileDeclaration.Entity(e,ds) ->
+                    | FSharpImplementationFileDeclaration.Entity(_e,ds) ->
                         for d in ds do
                             match d with
-                            | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (mfv, args, body) ->
+                            | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (mfv, _args, _body) ->
                                 yield mfv
                             | _ -> ()
                     | _ -> ()
@@ -84,10 +84,10 @@ type T =
             for implFile in wholeProjectResults.AssemblyContents.ImplementationFiles do
                 for decl in implFile.Declarations do
                     match decl with
-                    | FSharpImplementationFileDeclaration.Entity(e,ds) ->
+                    | FSharpImplementationFileDeclaration.Entity(_e,ds) ->
                         for d in ds do
                             match d with
-                            | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (mfv, args, body) ->
+                            | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (mfv, _args, _body) ->
                                 yield mfv
                             | _ -> ()
                     | _ -> ()
