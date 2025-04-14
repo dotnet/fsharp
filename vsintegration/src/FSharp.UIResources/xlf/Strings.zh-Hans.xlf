@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="translated">始终在点击回车时时添加新行</target>
+        <target state="translated">始终在按下 Enter 时添加新行</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
