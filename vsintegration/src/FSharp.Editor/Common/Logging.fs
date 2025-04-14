@@ -154,9 +154,14 @@ module FSharpServiceTelemetry =
                 if instrument.Meter.Name = "FSharp.Compiler.Caches" then
                    l.EnableMeasurementEvents(instrument)
         )
-        let callBack = MeasurementCallback(fun instr v _ _ -> logMsg $"{instr.Name}: {v}")
+
+        let msg = Event<string>()
+
+        let callBack = MeasurementCallback(fun instr v _ _ -> msg.Trigger $"{instr.Name}: {v}")
         listener.SetMeasurementEventCallback<int32> callBack
         listener.Start()
+
+        msg.Publish |> Event.pairwise |> Event.filter (fun (x, y) -> x <> y) |> Event.map snd |> Event.add logMsg
 
         backgroundTask {
             while true do
