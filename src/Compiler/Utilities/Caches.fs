@@ -5,8 +5,7 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
-
-open FSharp.Compiler.Diagnostics
+open System.Diagnostics.Metrics
 
 [<RequireQualifiedAccess>]
 // Default Seq.* function have one issue - when doing `Seq.sortBy`, it will call a `ToArray` on the collection,
@@ -78,17 +77,18 @@ type internal CachedEntity<'Value> =
             AccessCount = 0L
         }
 
+module internal CacheMetrics =
+    let mutable cacheId = 0
+    let meter = new Meter("FSharp.Compiler.Caches")
+    // let _count = meter.CreateObservableCounter("Count", (fun _ -> cache.Store.Count))
+
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts, name: string) =
+type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
-
-    static let mutable cacheId = 0
-
-    let mutable currentCapacity = capacity
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -107,12 +107,10 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts,
             options.MaximumCapacity
             + (options.MaximumCapacity * options.PercentageToEvict / 100)
 
-        let name = $"Cache{Interlocked.Increment &cacheId}"
-
-        use _ = Activity.start "Cache.Created" (seq {"name", name; "capacity", string capacity })
-
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(options, capacity, cts, name)
+        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+
+        CacheMetrics.meter.CreateObservableGauge($"count-{Interlocked.Increment &CacheMetrics.cacheId}", (fun () -> cache.Store.Count)) |> ignore
 
         if options.EvictionMethod = EvictionMethod.Background then
             Task.Run(cache.TryEvictTask, cts.Token) |> ignore
@@ -163,22 +161,6 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts,
                 let evictionCount = this.CalculateEvictionCount()
 
                 if evictionCount > 0 then
-                    let exceeded = this.Store.Count > currentCapacity
-
-                    if exceeded then
-                        currentCapacity <- this.Store.Count
-
-                    use _ =
-                        Activity.start
-                            "Cache.Eviction"
-                            (seq {
-                                yield "name", name
-                                yield "Store.Count", string this.Store.Count
-
-                                if exceeded then
-                                    yield "RESIZE", "!"
-                            })
-
                     this.TryEvictItems()
 
                 let utilization = (this.Store.Count / options.MaximumCapacity)

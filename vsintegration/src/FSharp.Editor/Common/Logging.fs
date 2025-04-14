@@ -30,6 +30,7 @@ module Config =
     let fsharpOutputGuid = Guid fsharpOutputGuidString
 
 open Config
+open System.Diagnostics.Metrics
 
 [<Export>]
 type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
@@ -118,7 +119,7 @@ module Logging =
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
-module Activity =
+module FSharpServiceTelemetry =
 
     let listen filter =
         let indent (activity: Activity) =
@@ -146,30 +147,51 @@ module Activity =
             )
 
         ActivitySource.AddActivityListener(listener)
+
+    let logCacheMetricsToOutput () =
+        let listener = new MeterListener(
+            InstrumentPublished = fun instrument l ->
+                if instrument.Meter.Name = "FSharp.Compiler.Caches" then
+                   l.EnableMeasurementEvents(instrument)
+        )
+        let callBack = MeasurementCallback(fun instr v _ _ -> logMsg $"{instr.Name}: {v}")
+        listener.SetMeasurementEventCallback<int32> callBack
+        listener.Start()
+
+        backgroundTask {
+            while true do
+                do! System.Threading.Tasks.Task.Delay(1000)
+                listener.RecordObservableInstruments()
+        } |> ignore
+
 #if DEBUG
     open OpenTelemetry.Resources
     open OpenTelemetry.Trace
+    open OpenTelemetry.Metrics
 
-    let exportTraces () =
-        let provider =
+    let export () =
+        let meterProvider =
+            // Configure OpenTelemetry metrics. Metrics can be viewed in Prometheus or other compatible tools.
+            OpenTelemetry.Sdk
+                .CreateMeterProviderBuilder()
+                .AddOtlpExporter()
+                .Build()
+        let tracerProvider =
             // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
             OpenTelemetry.Sdk
                 .CreateTracerProviderBuilder()
                 .AddSource(ActivityNames.FscSourceName)
                 .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                .AddOtlpExporter(fun o ->
-                    // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
-                    o.TimeoutMilliseconds <- 200
-                    o.BatchExportProcessorOptions.MaxQueueSize <- 16384
-                    o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100)
+                .AddOtlpExporter()
                 .Build()
 
         let a = Activity.startNoTags "FSharpPackage"
 
         fun () ->
             a.Dispose()
-            provider.ForceFlush(5000) |> ignore
-            provider.Dispose()
+            tracerProvider.ForceFlush(5000) |> ignore
+            tracerProvider.Dispose()
+            meterProvider.Dispose()
 
     let listenToAll () = listen ""
 #endif
