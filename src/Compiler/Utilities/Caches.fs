@@ -44,6 +44,7 @@ type internal CachingStrategy =
 type internal EvictionMethod =
     | Blocking
     | Background
+    | KeepAll
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
@@ -178,7 +179,8 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
         if this.CalculateEvictionCount() > 0 then
             match options.EvictionMethod with
             | EvictionMethod.Blocking -> this.TryEvictItems()
-            | EvictionMethod.Background -> ()
+            | EvictionMethod.Background
+            | EvictionMethod.KeepAll -> ()
 
     member this.TryGet(key, value: outref<'Value>) =
         match this.Store.TryGetValue(key) with

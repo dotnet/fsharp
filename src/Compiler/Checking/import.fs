@@ -112,16 +112,18 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
     let typeSubsumptionCache =
-        lazy 
-        typeSubsumptionCaches.GetValue(g, fun g ->
-                Cache<TTypeCacheKey, bool>.Create(
-                    { CacheOptions.Default with
-                        // EvictionMethod = EvictionMethod.Background
-                        PercentageToEvict = 15
-                        MaximumCapacity = if g.compilationMode = CompilationMode.OneOff then System.Int32.MaxValue else 500_000
-                    }
-                )
-            )
+        lazy
+        let options =
+            if g.compilationMode = CompilationMode.OneOff then
+                { CacheOptions.Default with
+                    PercentageToEvict = 0
+                    EvictionMethod = EvictionMethod.KeepAll }
+            else
+                { CacheOptions.Default with
+                    EvictionMethod = EvictionMethod.Blocking // EvictionMethod.Background
+                    PercentageToEvict = 15
+                    MaximumCapacity = 500_000 }
+        typeSubsumptionCaches.GetValue(g, fun _ -> Cache<TTypeCacheKey, bool>.Create(options))
 
     member _.g = g
 
