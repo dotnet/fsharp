@@ -21,6 +21,14 @@ open OpenTelemetry.Trace
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
 type RunTestCasesInSequenceAttribute() = inherit Attribute()
 
+// Helper for stress testing.
+// Runs a test case many times in parallel.
+// Example usage: [<Theory; Stress(Count = 1000)>]
+type StressAttribute([<ParamArray>] data: obj array) =
+    inherit DataAttribute()
+    member val Count = 1 with get, set
+    override this.GetData _ = Seq.init this.Count (fun i -> [| yield! data; yield box i |])
+
 #if XUNIT_EXTRAS
 
 // To use xUnit means to customize it. The following abomination adds 2 features:

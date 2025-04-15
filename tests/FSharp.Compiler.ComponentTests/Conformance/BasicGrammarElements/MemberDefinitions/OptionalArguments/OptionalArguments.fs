@@ -610,3 +610,40 @@ but here has type
 but here has type
     ''a voption'    "
             ]
+
+    [<Fact>]
+    let ``Struct optional args can have caller member name`` () =
+
+        let source = """module TestLib
+open System.Runtime.CompilerServices
+
+let printItOut x =
+  printf "%s" $"{x};"
+
+type Ab() =
+
+  static member aa ([<CallerMemberName; Struct>]?b: string) =
+    printItOut b
+
+  static member bb ([<CallerLineNumber; Struct>]?i: int) =
+    printItOut i
+
+[<EntryPoint>]
+let main _args =
+  Ab.aa()
+  Ab.bb()
+  Ab.aa("hello")
+  Ab.bb(42)
+  0
+"""
+
+        source
+        |> FSharp
+        |> withLangVersionPreview
+        |> withNoWarn 25
+        |> asExe
+        |> compile
+        |> ILVerifierModule.verifyPEFileWithSystemDlls
+        |> run
+        |> verifyOutputContains [|"main;18;hello;42;"|]
+    
