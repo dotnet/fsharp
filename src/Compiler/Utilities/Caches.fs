@@ -1,6 +1,7 @@
 namespace FSharp.Compiler
 
 open System
+open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
@@ -95,16 +96,19 @@ module internal CacheMetrics =
         let _ = meter.CreateObservableGauge($"LFA{uid}", orZero (Seq.map _.AccessCount >> Seq.min))
 
         let mutable evictions = 0L
+        let mutable fails = 0L
         let mutable hits = 0L
         let mutable misses = 0L
 
-        fun eviction hit miss ->
+        fun eviction hit miss evictionFail ->
 
             eviction |> Event.add (fun _ -> Interlocked.Increment &evictions |> ignore)
+            evictionFail |> Event.add (fun _ -> Interlocked.Increment &fails |> ignore)
             hit |> Event.add (fun _ -> Interlocked.Increment &hits |> ignore)
             miss |> Event.add (fun _ -> Interlocked.Increment &misses |> ignore)
 
             let _ = meter.CreateObservableGauge($"evicted{uid}", fun () -> Interlocked.Exchange(&evictions, 0L))
+            let _ = meter.CreateObservableGauge($"fails{uid}", fun () -> Interlocked.Exchange(&fails, 0L))
             let _ = meter.CreateObservableGauge($"hits{uid}", fun () -> Interlocked.Exchange(&hits, 0L))
             let _ = meter.CreateObservableGauge($"misses{uid}", fun () -> Interlocked.Exchange(&misses, 0L))
             ()
@@ -116,11 +120,12 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
+    let evictionFail = Event<_>()
     
     // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
     let store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
 
-    do CacheMetrics.addInstrumentation store eviction.Publish cacheHit.Publish cacheMiss.Publish
+    do CacheMetrics.addInstrumentation store eviction.Publish cacheHit.Publish cacheMiss.Publish evictionFail.Publish
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -179,7 +184,7 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
             for key in this.TryGetPickToEvict() do
                 match store.TryRemove(key) with
                 | true, _ -> eviction.Trigger(key)
-                | _ -> () // TODO: We probably want to count eviction misses as well?
+                | _ -> evictionFail.Trigger(key) // TODO: We probably want to count eviction misses as well?
 
     // TODO: Shall this be a safer task, wrapping everything in try .. with, so it's not crashing silently?
     member private this.TryEvictTask() =
