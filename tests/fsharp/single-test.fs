@@ -304,9 +304,9 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 printfn "Filename: %s" projectFileName
 
     match p with
-    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true false
-    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true true
-    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
+    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net6.0" true false
+    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net6.0" true true
+    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net6.0" true false
 
 #if !NETCOREAPP
     | FSC_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false true
