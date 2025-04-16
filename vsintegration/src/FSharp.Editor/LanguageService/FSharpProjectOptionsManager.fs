@@ -24,6 +24,14 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
 
+open Microsoft.VisualStudio.FSharp.Editor.Extensions
+open System.Windows
+open Microsoft.VisualStudio
+open FSharp.Compiler.Text
+open Microsoft.VisualStudio.TextManager.Interop
+
+#nowarn "57"
+
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
 
@@ -102,7 +110,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
     let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
-    let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
@@ -160,17 +168,35 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) userOpName =
         async {
             let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
+            let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
                 
-                let! scriptProjectOptions, _ =
-                    checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath,
-                        sourceText.ToFSharpSourceText(),
-                        SessionsProperties.fsiPreview,
-                        assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
-                        userOpName=userOpName)
+                let getProjectOptionsFromScript textViewAndCaret =
+                    let caret = textViewAndCaret ()
 
+                    match caret with
+                    | None ->
+                        checkerProvider.Checker.GetProjectOptionsFromScript(
+                            document.FilePath,
+                            sourceText.ToFSharpSourceText(),
+                            previewEnabled = SessionsProperties.fsiPreview,
+                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                            userOpName = userOpName
+                        )
+
+                    | Some(_, caret) ->
+                        checkerProvider.Checker.GetProjectOptionsFromScript(
+                            document.FilePath,
+                            sourceText.ToFSharpSourceText(),
+                            caret,
+                            previewEnabled = SessionsProperties.fsiPreview,
+                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                            userOpName = userOpName
+                        )
+
+                let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
                 let project = document.Project
 
                 let otherOptions =
@@ -207,13 +233,45 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
+                let updateProjectOptions () =
+                    async {
+                        let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
+
+                        checkerProvider.Checker.CheckProjectInBackground(scriptProjectOptions, userOpName="checkOptions")
+                    }
+                    |> Async.Start
+
+                let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
+                let onKillFocus (_) = updateProjectOptions ()
+                let onSetFocus (_) = updateProjectOptions ()
+
+                let addToCacheAndSubscribe value =
+                    match value with
+                    | _, parsingOptions, projectOptions, _ ->
+                        let subscription =
+                            match textViewAndCaret () with
+                            | Some(textView, _) ->
+                                subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
+                            | None -> None
+
+                        (fileStamp, parsingOptions, projectOptions, subscription)
+
+                singleFileCache.AddOrUpdate(
+                    document.Id, // The key to the cache
+                    (fun _ value -> addToCacheAndSubscribe value), // Function to add the cached value if the key does not exist
+                    (fun _ _ value -> value), // Function to update the value if the key exists
+                    (fileStamp, parsingOptions, projectOptions, None) // The value to add or update
+                )
+                |> ignore
 
                 return Some(parsingOptions, projectOptions)
 
-            | true, (fileStamp2, parsingOptions, projectOptions) ->
+            | true, (fileStamp2, parsingOptions, projectOptions, _) ->
                 if fileStamp <> fileStamp2 then
-                    singleFileCache.TryRemove(document.Id) |> ignore
+                    match singleFileCache.TryRemove(document.Id) with
+                    | true, (_, _, _, Some subscription) -> subscription.Dispose()
+                    | _ -> ()
+
                     return! tryComputeOptionsByFile document ct userOpName
                 else
                     return Some(parsingOptions, projectOptions)
@@ -401,11 +459,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, projectOptions) ->
-                        lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
-                        checkerProvider.Checker.ClearCache([projectOptions])
-                    | _ ->
-                        ()
+                    | true, (_, _, _, Some subscription) -> subscription.Dispose()
+                    | _ -> ()
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)

@@ -67,7 +67,6 @@ let test () : unit =
 
 test ()
             """
-        
         CompilerAssert.RunScript script []
 
     [<Test>]
@@ -87,10 +86,7 @@ let test () : unit =
 
 test ()
             """
-    
-        // We expect this error until System.Reflection.Emit gets fixed for emitting `modreq` on method calls.
-        // See: https://github.com/dotnet/corefx/issues/29254
-        CompilerAssert.RunScript script [ "Method not found: '!0 ByRef System.ReadOnlySpan`1.get_Item(Int32)'." ]
+        CompilerAssert.RunScript script []
 
     [<Test>]
     let Script_ReadOnlySpanForInBoundsDo() =
@@ -109,12 +105,8 @@ let test () : unit =
 
 test ()
             """
+        CompilerAssert.RunScript script []
     
-        // We expect this error until System.Reflection.Emit gets fixed for emitting `modreq` on method calls.
-        // See: https://github.com/dotnet/corefx/issues/29254
-        CompilerAssert.RunScript script [ "Method not found: '!0 ByRef System.ReadOnlySpan`1.get_Item(Int32)'."  ]
-
-
     [<Test>]
     let ``Invalid usage of type abbreviated span should fail to compile``() =
         CompilerAssert.TypeCheckWithErrors """

@@ -42,6 +42,9 @@ type LoadClosure =
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
       PackageReferences: (range * string list)[]
 
+      /// The raw package manager lines in the script
+      PackageManagerLines: Map<string, PackageManagerLine list>
+
       /// Whether we're decided to use .NET Framework analysis for this script
       UseDesktopFramework: bool
 
@@ -80,7 +83,8 @@ type CodeContext =
 module ScriptPreprocessClosure = 
     
     /// Represents an input to the closure finding process
-    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
+    type ClosureSource =
+        | ClosureSource of fileName: string * referenceRange: range * sourceText: ISourceText * Position option * parseRequired: bool
         
     /// Represents an output of the closure finding process
     type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (string * range) list // filename, range, errors, warnings, nowarns
@@ -194,7 +198,7 @@ module ScriptPreprocessClosure =
                 | None -> new StreamReader(stream, true)
                 | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n) 
             let source = reader.ReadToEnd()
-            [ClosureSource(filename, m, SourceText.ofString source, parseRequired)]
+            [ ClosureSource(filename, m, SourceText.ofString source, None, parseRequired) ]
         with e -> 
             errorRecovery e m 
             []
@@ -232,10 +236,22 @@ module ScriptPreprocessClosure =
         let packageReferences = Dictionary<range, string list>(HashIdentity.Structural)
 
         // Resolve the packages
-        let rec resolveDependencyManagerSources scriptName =
+        let rec resolveDependencyManagerSources scriptName (caret: Position option) =
+            let caretLine =
+                match caret with
+                | None -> Int32.MinValue
+                | Some pos -> pos.Line
+
+            let isEditorCursorInPackageLines (line: PackageManagerLine) =
+                caretLine >= line.Range.StartLine && caretLine <= line.Range.EndLine
+
             if not (loadScripts.Contains scriptName) then
                 [ for kv in tcConfig.packageManagerLines do
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
+
+                    let packageManagerLines =
+                        packageManagerLines |> List.filter (not << isEditorCursorInPackageLines)
+
                     match packageManagerLines with
                     | [] -> ()
                     | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
@@ -288,7 +304,7 @@ module ScriptPreprocessClosure =
                                         let scriptText = File.ReadAllText script
                                         loadScripts.Add script |> ignore
                                         let iSourceText = SourceText.ofString scriptText
-                                        yield! loop (ClosureSource(script, m, iSourceText, true))
+                                        yield! loop (ClosureSource(script, m, iSourceText, caret, true))
 
                                 else
                                     // Send outputs via diagnostics
@@ -302,7 +318,7 @@ module ScriptPreprocessClosure =
                                     tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
 
-        and loop (ClosureSource(filename, m, sourceText, parseRequired)) = 
+        and loop (ClosureSource(filename, m, sourceText, caret, parseRequired)) = 
             [   if not (observedSources.HaveSeen(filename)) then
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
@@ -321,12 +337,12 @@ module ScriptPreprocessClosure =
                         let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)
                         tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
 
-                        yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources filename caret
 
                         let postSources = tcConfig.GetAvailableLoadedSources()
                         let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
-                        yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources filename caret
                         for (m, subFile) in sources do
                             if IsScript subFile then 
                                 for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
@@ -345,7 +361,7 @@ module ScriptPreprocessClosure =
         sources, tcConfig, packageReferences
         
     /// Reduce the full directive closure into LoadClosure
-    let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences, earlierDiagnostics) = 
+    let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences, earlierDiagnostics) : LoadClosure = 
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
@@ -411,6 +427,7 @@ module ScriptPreprocessClosure =
             { SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))
               References = List.groupBy fst references |> List.map (map2Of2 (List.map snd))
               PackageReferences = packageReferences
+              PackageManagerLines = tcConfig.packageManagerLines
               UseDesktopFramework = (tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib)
               SdkDirOverride = tcConfig.sdkDirOverride
               UnresolvedReferences = unresolvedReferences
@@ -426,7 +443,7 @@ module ScriptPreprocessClosure =
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename, sourceText, codeContext, 
+            filename, sourceText, caret, codeContext, 
             useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride,
             lexResourceManager: Lexhelp.LexResourceManager, 
             applyCommandLineArgs, assumeDotNetFramework,
@@ -453,7 +470,7 @@ module ScriptPreprocessClosure =
                  applyCommandLineArgs, assumeDotNetFramework, useSdkRefs, sdkDirOverride,
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
-        let closureSources = [ClosureSource(filename, range0, sourceText, true)]
+        let closureSources = [ClosureSource(filename, range0, sourceText, caret, true)]
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
         GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
 
@@ -476,14 +493,14 @@ type LoadClosure with
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText
                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                      filename: string, sourceText: ISourceText, implicitDefines, useSimpleResolution: bool, 
+                      filename: string, sourceText: ISourceText, (caret: Position option), implicitDefines, useSimpleResolution: bool, 
                       useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager: Lexhelp.LexResourceManager, 
                       applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot,
                       reduceMemoryUsage, dependencyProvider) = 
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
-            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
+            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, caret,
              implicitDefines, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager, 
              applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
 

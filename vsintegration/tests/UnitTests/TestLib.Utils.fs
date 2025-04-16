@@ -8,7 +8,7 @@ open NUnit.Framework
 open Microsoft.VisualStudio
 
 module Asserts =
-    (* Asserts ----------------------------------------------------------------------------- *)
+    (* Asserts ------------------------------------------------------------------------------ *)
     let AssertEqualMsg expected actual failureMsg =
         if expected<>actual then 
             let message = sprintf "Expected\n%A\nbut got\n%A\n%s" expected actual failureMsg

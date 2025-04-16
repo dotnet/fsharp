@@ -301,16 +301,16 @@ module internal Salsa =
     /// Token types.
     type TokenType = Text | Keyword | Comment | Identifier | String | Number | InactiveCode | PreprocessorKeyword | Operator
         with override this.ToString() =
-            match this with
-            | Text                  -> "Text"
-            | Keyword               -> "Keyword"
-            | Comment               -> "Comment"
-            | Identifier            -> "Identifier"
-            | String                -> "String"
-            | Number                -> "Number"
-            | InactiveCode          -> "InactiveCode"
-            | PreprocessorKeyword   -> "PreprocessorKeyword"
-            | Operator              -> "Operator"
+                match this with
+                | Text                  -> "Text"
+                | Keyword               -> "Keyword"
+                | Comment               -> "Comment"
+                | Identifier            -> "Identifier"
+                | String                -> "String"
+                | Number                -> "Number"
+                | InactiveCode          -> "InactiveCode"
+                | PreprocessorKeyword   -> "PreprocessorKeyword"
+                | Operator              -> "Operator"
 
     /// Declaration types.
     type DeclarationType = 
@@ -1101,7 +1101,7 @@ module internal Salsa =
             
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, previewEnabled=false, loadedTimeStamp=System.DateTime(2000,1,1), otherFlags=[| |]) 
                 |> Async.RunSynchronously
                 |> fst // drop diagnostics
                  
@@ -1148,7 +1148,7 @@ module internal Salsa =
                 project.Errors <- project.Errors |> List.filter(fun err->err.Path <> file.Filename)
                 let ls = project.Solution.Vs.LanguageService
                 
-                // Full check.                    
+                // Full check.
                 let sink = new AuthoringSink(BackgroundRequestReason.FullTypeCheck, 0, 0, maxErrors) 
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                 let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing, System.IO.Path.GetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)

@@ -11,7 +11,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
-    <NoWarn>NU1701;FS0075</NoWarn>
+    <NoWarn>$(Nowarn);NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
