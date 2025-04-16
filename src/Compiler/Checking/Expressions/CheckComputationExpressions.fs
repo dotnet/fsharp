@@ -1828,12 +1828,10 @@ let rec TryTranslateComputationExpression
                     error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
 
                 let sources =
-                    (rhsExpr
-                     :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
+                    (rhsExpr :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
-                let pats =
-                    pat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
+                let pats = pat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
