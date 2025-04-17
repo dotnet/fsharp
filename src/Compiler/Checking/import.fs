@@ -6,6 +6,7 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Runtime.CompilerServices
 
 open Internal.Utilities.Library
@@ -55,7 +56,8 @@ type CanCoerce =
     | CanCoerce
     | NoCoerce
 
-type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
+[<Struct; NoComparison; CustomEquality; DebuggerDisplay("{ToString()}")>]
+type TTypeCacheKey =
 
     val ty1: TType
     val ty2: TType
@@ -84,14 +86,26 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
         | _ -> false
 
     override this.GetHashCode() : int =
-        let g = this.tcGlobals
+        // TODO: we need reasonable uniformity
+        // The idea is to keep the illusion of immutability of TType.
+        // This hash must be stable during compilation, otherwise we won't be able to find the keys in the cache.
+        let rec simpleTypeHash ty =
+            match ty with
+            | TType_ucase (u, tinst) -> tinst |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash u.CaseName)
+            | TType_app(tcref, tinst, _) -> tinst |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash tcref.Stamp)
+            | TType_anon(info, tys) -> tys |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash info.Stamp)
+            | TType_tuple(_ , tys) -> tys |> hashListOrderMatters (simpleTypeHash)
+            | TType_forall(tps, tau) -> tps |> Seq.map _.Stamp |> hashListOrderMatters (hash) |> pipeToHash (simpleTypeHash tau)
+            | TType_fun (d, r, _) -> simpleTypeHash d |> pipeToHash (simpleTypeHash r)
+            | TType_var _
+            | TType_measure _ -> 0
 
-        let ty1Hash = combineHash (hashStamp g this.ty1) (hashTType g this.ty1)
-        let ty2Hash = combineHash (hashStamp g this.ty2) (hashTType g this.ty2)
+        hash this.tcGlobals
+        |> pipeToHash (simpleTypeHash this.ty1)
+        |> pipeToHash (simpleTypeHash this.ty2)
+        |> pipeToHash (hash this.canCoerce)
 
-        let combined = combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
-
-        combined
+    override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
 let getOrCreateTypeSubsumptionCache =
     let mutable lockObj = obj()
