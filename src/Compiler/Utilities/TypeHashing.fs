@@ -129,9 +129,9 @@ module rec HashTypes =
     let rec stampEquals g ty1 ty2 =
         match (stripTyEqns g ty1), (stripTyEqns g ty2) with
         | TType_app(tcref1, tinst1, _), TType_app(tcref2, tinst2, _) ->
-            tcref1.Stamp = tcref2.Stamp &&
-            tinst1.Length = tinst2.Length &&
-            tinst1 |> List.zip tinst2 |> List.forall (fun (t1, t2) -> stampEquals g t1 t2)
+            tcref1.Stamp = tcref2.Stamp
+            && tinst1.Length = tinst2.Length
+            && tinst1 |> List.zip tinst2 |> List.forall (fun (t1, t2) -> stampEquals g t1 t2)
 
         | TType_var(r1, _), TType_var(r2, _) -> r1.Stamp.Equals(r2.Stamp)
         | _ -> false

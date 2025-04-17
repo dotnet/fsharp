@@ -343,15 +343,17 @@ type internal FSharpPackage() as this =
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput()
+    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
 
-    #if DEBUG
-    let flushTelemetry = Logging.FSharpServiceTelemetry.export()
+#if DEBUG
+    let flushTelemetry = Logging.FSharpServiceTelemetry.export ()
 
-    override this.Dispose (disposing: bool) = 
+    override this.Dispose(disposing: bool) =
         base.Dispose(disposing: bool)
-        if disposing then flushTelemetry()
-    #endif
+
+        if disposing then
+            flushTelemetry ()
+#endif
 
     override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
         // `base.` methods can't be called in the `async` builder, so we have to cache it

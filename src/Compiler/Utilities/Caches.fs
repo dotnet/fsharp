@@ -48,7 +48,13 @@ type internal CachedEntity<'Key, 'Value> =
     val mutable AccessCount: int64
     val mutable Node: LinkedListNode<CachedEntity<'Key, 'Value>>
 
-    private new(key, value) = { Key = key; Value = value; AccessCount = 0L; Node = Unchecked.defaultof<_> }
+    private new(key, value) =
+        {
+            Key = key
+            Value = value
+            AccessCount = 0L
+            Node = Unchecked.defaultof<_>
+        }
 
     static member Create(key, value) =
         let entity = CachedEntity(key, value)
@@ -69,19 +75,22 @@ type internal EvictionQueue<'Key, 'Value>() =
     let pool = Queue<CachedEntity<'Key, 'Value>>()
 
     member _.Acquire(key, value) =
-        lock pool <| fun () ->
-        if pool.Count > 0 then
-            pool.Dequeue().ReUse(key, value)
-        else
-            CachedEntity.Create<_, _>(key, value)
+        lock pool
+        <| fun () ->
+            if pool.Count > 0 then
+                pool.Dequeue().ReUse(key, value)
+            else
+                CachedEntity.Create<_, _>(key, value)
 
     member _.Add(entity: CachedEntity<'Key, 'Value>) =
-        lock list <| fun () ->
+        lock list
+        <| fun () ->
             if isNull entity.Node.List then
                 list.AddLast(entity.Node)
 
     member _.Update(entity: CachedEntity<'Key, 'Value>, strategy: CachingStrategy) =
-        lock list <| fun () ->
+        lock list
+        <| fun () ->
             entity.AccessCount <- entity.AccessCount + 1L
 
             let node = entity.Node
@@ -95,34 +104,40 @@ type internal EvictionQueue<'Key, 'Value>() =
                 // Bubble up the node in the list, linear time.
                 // TODO: frequency list approach would be faster.
                 while (isNotNull node.Next) && (node.Next.Value.AccessCount < node.Value.AccessCount) do
-                   list.Remove(node)
-                   list.AddAfter(node.Next, node)
+                    list.Remove(node)
+                    list.AddAfter(node.Next, node)
 
     member _.GetKeysToEvict(count) =
-        lock list <| fun () ->
-        list |> Seq.map _.Key |> Seq.truncate count |> Seq.toArray
+        lock list
+        <| fun () -> list |> Seq.map _.Key |> Seq.truncate count |> Seq.toArray
 
-    member _.Remove(entity: CachedEntity<_,_>) =
+    member _.Remove(entity: CachedEntity<_, _>) =
         lock list <| fun () -> list.Remove(entity.Node)
         // Return to the pool for reuse.
         lock pool <| fun () -> pool.Enqueue(entity)
 
-    member _.Count = list.Count 
+    member _.Count = list.Count
 
 module internal CacheMetrics =
 
     let mutable cacheId = 0
-    let addInstrumentation (store: ConcurrentDictionary<_, CachedEntity<_,_>>) =
+
+    let addInstrumentation (store: ConcurrentDictionary<_, CachedEntity<_, _>>) =
         let meter = new Meter("FSharp.Compiler.Caches")
         let uid = Interlocked.Increment &cacheId
 
-        let orZero f = fun () ->
-            let vs = store.Values
-            if vs |> Seq.isEmpty then 0L else f vs
+        let orZero f =
+            fun () ->
+                let vs = store.Values
+                if vs |> Seq.isEmpty then 0L else f vs
 
         let _ = meter.CreateObservableGauge($"cache{uid}", (fun () -> int64 store.Count))
-        let _ = meter.CreateObservableGauge($"MFA{uid}", orZero (Seq.map _.AccessCount >> Seq.max))
-        let _ = meter.CreateObservableGauge($"LFA{uid}", orZero (Seq.map _.AccessCount >> Seq.min))
+
+        let _ =
+            meter.CreateObservableGauge($"MFA{uid}", orZero (Seq.map _.AccessCount >> Seq.max))
+
+        let _ =
+            meter.CreateObservableGauge($"LFA{uid}", orZero (Seq.map _.AccessCount >> Seq.min))
 
         let mutable evictions = 0L
         let mutable fails = 0L
@@ -136,36 +151,50 @@ module internal CacheMetrics =
             hit |> Event.add (fun _ -> Interlocked.Increment &hits |> ignore)
             miss |> Event.add (fun _ -> Interlocked.Increment &misses |> ignore)
 
-            let _ = meter.CreateObservableGauge($"evicted{uid}", fun () -> Interlocked.Exchange(&evictions, 0L))
-            let _ = meter.CreateObservableGauge($"fails{uid}", fun () -> Interlocked.Exchange(&fails, 0L))
-            let _ = meter.CreateObservableGauge($"hits{uid}", fun () -> Interlocked.Exchange(&hits, 0L))
-            let _ = meter.CreateObservableGauge($"misses{uid}", fun () -> Interlocked.Exchange(&misses, 0L))
+            let _ =
+                meter.CreateObservableGauge($"evicted{uid}", fun () -> Interlocked.Exchange(&evictions, 0L))
+
+            let _ =
+                meter.CreateObservableGauge($"fails{uid}", fun () -> Interlocked.Exchange(&fails, 0L))
+
+            let _ =
+                meter.CreateObservableGauge($"hits{uid}", fun () -> Interlocked.Exchange(&hits, 0L))
+
+            let _ =
+                meter.CreateObservableGauge($"misses{uid}", fun () -> Interlocked.Exchange(&misses, 0L))
+
             ()
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> private (options: CacheOptions, capacity, cts: CancellationTokenSource) =
+type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
+    private (options: CacheOptions, capacity, cts: CancellationTokenSource) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
     let evictionFail = Event<_>()
-    
-    let store = ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
+
+    let store =
+        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
 
     let evictionQueue = EvictionQueue<'Key, 'Value>()
 
     let tryEvictItems () =
-        let count = if store.Count > options.MaximumCapacity then store.Count - options.MaximumCapacity else 0
+        let count =
+            if store.Count > options.MaximumCapacity then
+                store.Count - options.MaximumCapacity
+            else
+                0
+
         for key in evictionQueue.GetKeysToEvict(count) do
             match store.TryRemove(key) with
             | true, removed ->
                 evictionQueue.Remove(removed)
                 eviction.Trigger(key)
-            | _ ->
-                evictionFail.Trigger(key)
+            | _ -> evictionFail.Trigger(key)
 
-    let rec backgroundEviction () = 
+    let rec backgroundEviction () =
         async {
             tryEvictItems ()
 
@@ -178,28 +207,29 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> private
             let delay = 1000.0 - (1000.0 * utilization)
 
             if delay > 0.0 then
-                do! Async.Sleep (int delay)
+                do! Async.Sleep(int delay)
 
             return! backgroundEviction ()
         }
 
-    do if options.EvictionMethod = EvictionMethod.Background then
-        Async.Start(backgroundEviction (), cancellationToken = cts.Token) 
+    do
+        if options.EvictionMethod = EvictionMethod.Background then
+            Async.Start(backgroundEviction (), cancellationToken = cts.Token)
 
     do CacheMetrics.addInstrumentation store eviction.Publish cacheHit.Publish cacheMiss.Publish evictionFail.Publish
 
     let tryEvict () =
-        if options.EvictionMethod.IsBlocking then tryEvictItems()
+        if options.EvictionMethod.IsBlocking then
+            tryEvictItems ()
 
     let tryGet (key: 'Key) =
         match store.TryGetValue(key) with
         | true, cachedEntity ->
             evictionQueue.Update(cachedEntity, options.Strategy)
             Some cachedEntity
-        | _ ->
-            None
+        | _ -> None
 
-    member _.TryGetValue (key: 'Key, value: outref<'Value>) =
+    member _.TryGetValue(key: 'Key, value: outref<'Value>) =
         match tryGet key with
         | Some cachedEntity ->
             cacheHit.Trigger(key, cachedEntity.Value)
@@ -211,9 +241,10 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> private
             false
 
     member _.TryAdd(key: 'Key, value: 'Value) =
-        tryEvict()
+        tryEvict ()
 
         let cachedEntity = evictionQueue.Acquire(key, value)
+
         if store.TryAdd(key, cachedEntity) then
             evictionQueue.Add(cachedEntity)
             true
@@ -221,13 +252,17 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> private
             false
 
     member _.AddOrUpdate(key: 'Key, value: 'Value) =
-        tryEvict()
+        tryEvict ()
 
-        let entity = store.AddOrUpdate(
-            key,
-            (fun _ -> evictionQueue.Acquire(key, value)),
-            (fun _ (current: CachedEntity<_, _>) -> current.Value <- value; current)
-        )
+        let entity =
+            store.AddOrUpdate(
+                key,
+                (fun _ -> evictionQueue.Acquire(key, value)),
+                (fun _ (current: CachedEntity<_, _>) ->
+                    current.Value <- value
+                    current)
+            )
+
         evictionQueue.Add(entity)
 
     [<CLIEvent>]
@@ -255,4 +290,3 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> private
         member _.Dispose() = cts.Cancel()
 
     member this.Dispose() = (this :> IDisposable).Dispose()
-

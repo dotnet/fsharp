@@ -150,30 +150,39 @@ module FSharpServiceTelemetry =
 
     let logCacheMetricsToOutput () =
         let instruments = Collections.Generic.Dictionary<string, int64>()
-        let listener = new MeterListener(
-            InstrumentPublished = fun instrument l ->
-                if instrument.Meter.Name = "FSharp.Compiler.Caches" then
-                    instruments[instrument.Name] <- 0L
-                    l.EnableMeasurementEvents(instrument)
-        )
+
+        let listener =
+            new MeterListener(
+                InstrumentPublished =
+                    fun instrument l ->
+                        if instrument.Meter.Name = "FSharp.Compiler.Caches" then
+                            instruments[instrument.Name] <- 0L
+                            l.EnableMeasurementEvents(instrument)
+            )
 
         let callBack = MeasurementCallback(fun instr v _ _ -> instruments[instr.Name] <- v)
         listener.SetMeasurementEventCallback callBack
         listener.Start()
-        
+
         let msg = Event<string>()
 
         backgroundTask {
             while true do
                 do! System.Threading.Tasks.Task.Delay(1000)
                 listener.RecordObservableInstruments()
+
                 if instruments.Count > 0 then
-                    [ for kvp in instruments -> $"{kvp.Key}: {kvp.Value}"]
+                    [ for kvp in instruments -> $"{kvp.Key}: {kvp.Value}" ]
                     |> String.concat ", "
                     |> msg.Trigger
-        } |> ignore
+        }
+        |> ignore
 
-        msg.Publish |> Event.pairwise |> Event.filter (fun (x, y) -> x <> y) |> Event.map snd |> Event.add logMsg
+        msg.Publish
+        |> Event.pairwise
+        |> Event.filter (fun (x, y) -> x <> y)
+        |> Event.map snd
+        |> Event.add logMsg
 
 #if DEBUG
     open OpenTelemetry.Resources
@@ -183,10 +192,8 @@ module FSharpServiceTelemetry =
     let export () =
         let meterProvider =
             // Configure OpenTelemetry metrics. Metrics can be viewed in Prometheus or other compatible tools.
-            OpenTelemetry.Sdk
-                .CreateMeterProviderBuilder()
-                .AddOtlpExporter()
-                .Build()
+            OpenTelemetry.Sdk.CreateMeterProviderBuilder().AddOtlpExporter().Build()
+
         let tracerProvider =
             // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
             OpenTelemetry.Sdk
