@@ -1454,8 +1454,19 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState, declaredImpls, ccuContents
 
 let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    (tcState, inputs)
-    ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
+    let checkOneInputEntry =
+        CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)
+
+    let mutable state = tcState
+
+    let results =
+        inputs
+        |> List.map (fun input ->
+            let result, newState = checkOneInputEntry state input
+            state <- newState // Update state for the next iteration
+            result, newState)
+
+    results |> List.map fst, state, results |> List.map snd
 
 open FSharp.Compiler.GraphChecking
 
@@ -1813,7 +1824,7 @@ let CheckMultipleInputsUsingGraphMode
             (PhasedDiagnostic -> PhasedDiagnostic) *
             ParsedInput list
     )
-    : FinalFileResult list * TcState =
+    : FinalFileResult list * TcState * TcState list =
     use cts = new CancellationTokenSource()
 
     let sourceFiles: FileInProject array =
@@ -1909,40 +1920,44 @@ let CheckMultipleInputsUsingGraphMode
                 partialResult, state)
         )
 
-    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
-        // Equip loggers to locally filter w.r.t. scope pragmas in each input
-        let inputsWithLoggers =
-            inputsWithLoggers
-            |> List.toArray
-            |> Array.map (fun (input, oldLogger) ->
-                let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
-                input, logger)
+    let results, state =
+        UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
+            // Equip loggers to locally filter w.r.t. scope pragmas in each input
+            let inputsWithLoggers =
+                inputsWithLoggers
+                |> List.toArray
+                |> Array.map (fun (input, oldLogger) ->
+                    let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
+                    input, logger)
 
-        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<NodeToTypeCheck, State, PartialResult> =
-            match node with
-            | NodeToTypeCheck.ArtificialImplFile idx ->
-                let parsedInput, _ = inputsWithLoggers[idx]
-                processArtificialImplFile node parsedInput state
-            | NodeToTypeCheck.PhysicalFile idx ->
-                let parsedInput, logger = inputsWithLoggers[idx]
-                processFile node (parsedInput, logger) state
+            let processFile (node: NodeToTypeCheck) (state: State) : Finisher<NodeToTypeCheck, State, PartialResult> =
+                match node with
+                | NodeToTypeCheck.ArtificialImplFile idx ->
+                    let parsedInput, _ = inputsWithLoggers[idx]
+                    processArtificialImplFile node parsedInput state
+                | NodeToTypeCheck.PhysicalFile idx ->
+                    let parsedInput, logger = inputsWithLoggers[idx]
+                    processFile node (parsedInput, logger) state
 
-        let state: State = tcState, priorErrors
+            let state: State = tcState, priorErrors
 
-        let partialResults, (tcState, _) =
-            TypeCheckingGraphProcessing.processTypeCheckingGraph nodeGraph processFile state cts.Token
+            let partialResults, (tcState, _) =
+                TypeCheckingGraphProcessing.processTypeCheckingGraph nodeGraph processFile state cts.Token
 
-        let partialResults =
-            partialResults
-            // Bring back the original, index-based file order.
-            |> List.sortBy fst
-            |> List.map snd
+            let partialResults =
+                partialResults
+                // Bring back the original, index-based file order.
+                |> List.sortBy fst
+                |> List.map snd
 
-        partialResults, tcState)
+            partialResults, tcState)
+
+    // TODO: collect states here also
+    results, state, []
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
-    let results, tcState =
+    let results, lastState, tcStates =
         match tcConfig.typeCheckingConfig.Mode with
         | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
             CheckMultipleInputsUsingGraphMode(
@@ -1959,10 +1974,11 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
         | _ -> CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
-        CheckMultipleInputsFinish(results, tcState)
+        CheckMultipleInputsFinish(results, lastState)
 
     let tcState, declaredImpls, ccuContents =
         CheckClosedInputSetFinish(implFiles, tcState)
 
     tcState.Ccu.Deref.Contents <- ccuContents
-    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+
+    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcStates

@@ -54,6 +54,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
 open FSharp.Compiler.CheckExpressionsOps
+open FSharp.Compiler.ReuseTcResults.CachingDriver
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -139,8 +140,19 @@ let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
         exiter.Exit 1
 
 let TypeCheck
-    (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger: DiagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter: Exiter)
-    =
+    (
+        ctok,
+        tcConfig,
+        tcImports,
+        tcGlobals,
+        diagnosticsLogger: DiagnosticsLogger,
+        assemblyName,
+        tcEnv0,
+        openDecls0,
+        inputs,
+        exiter: Exiter,
+        outfile
+    ) =
     try
         if isNil inputs then
             error (Error(FSComp.SR.fscNoImplementationFiles (), rangeStartup))
@@ -152,17 +164,93 @@ let TypeCheck
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
-        CheckClosedInputSet(
-            ctok,
-            (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
-            tcConfig,
-            tcImports,
-            tcGlobals,
-            None,
-            tcInitialState,
-            eagerFormat,
-            inputs
-        )
+        if tcConfig.reuseTcResults = ReuseTcResults.On then
+            let cachingDriver = CachingDriver(tcConfig)
+
+            let tcCacheState = cachingDriver.GetTcCacheState(inputs)
+
+            match tcCacheState with
+            | TcCacheState.Present files when files |> List.forall (fun (_file, canReuse) -> canReuse) ->
+                // TODO: last state should be sent back here, not the initial state
+                let _lastState, topAttrs, declaredImpls, tcEnvFromImpls =
+                    cachingDriver.ReuseTcResults inputs
+
+                tcInitialState, topAttrs, declaredImpls, tcEnvFromImpls
+            | TcCacheState.Present files when files |> List.exists (fun (_file, canReuse) -> canReuse) ->
+                let canReuse, cannotReuse =
+                    files
+                    |> List.partition (fun (_file, canReuse) -> canReuse)
+                    |> fun (a, b) -> a |> List.map fst, b |> List.map fst
+
+                let tcCurrentState, _, reusedImpls, _ = cachingDriver.ReuseTcResults canReuse
+
+                let lastState, topAttrs, newImpls, tcEnvAtEndOfLastFile, tcStates =
+                    CheckClosedInputSet(
+                        ctok,
+                        diagnosticsLogger.CheckForErrors,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        None,
+                        tcCurrentState,
+                        eagerFormat,
+                        cannotReuse
+                    )
+
+                let _tcResults =
+                    List.zip3 cannotReuse newImpls tcStates
+                    |> List.map (fun (input, impl, state) ->
+                        {
+                            Input = input
+                            DeclaredImpl = impl
+                            State = state
+                        })
+
+                // TODO: cache new stuff
+                // cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
+
+                lastState, topAttrs, reusedImpls @ newImpls, tcEnvAtEndOfLastFile
+
+            | _ ->
+                let lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcStates =
+                    CheckClosedInputSet(
+                        ctok,
+                        diagnosticsLogger.CheckForErrors,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        None,
+                        tcInitialState,
+                        eagerFormat,
+                        inputs
+                    )
+
+                let tcResults =
+                    List.zip3 inputs declaredImpls tcStates
+                    |> List.map (fun (input, impl, state) ->
+                        {
+                            Input = input
+                            DeclaredImpl = impl
+                            State = state
+                        })
+
+                cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
+                lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+        else
+            let lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _ =
+                CheckClosedInputSet(
+                    ctok,
+                    (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    None,
+                    tcInitialState,
+                    eagerFormat,
+                    inputs
+                )
+
+            lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
     with exn ->
         errorRecovery exn rangeStartup
         exiter.Exit 1
@@ -461,6 +549,8 @@ let main1
         disposables: DisposablesTracker
     ) =
 
+    CompilerGlobalState.stampCount <- 0L
+
     // See Bug 735819
     let lcidFromCodePage =
         let thread = Thread.CurrentThread
@@ -499,6 +589,7 @@ let main1
         )
 
     tcConfigB.exiter <- exiter
+    tcConfigB.cmdLineArgs <- argv
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -680,7 +771,7 @@ let main1
     let inputs = inputs |> List.map fst
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter, outfile)
 
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
