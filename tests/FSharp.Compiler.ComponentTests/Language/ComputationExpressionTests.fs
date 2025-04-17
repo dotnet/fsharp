@@ -1258,3 +1258,131 @@ let x18mutable =
             (Error 3147, Line 13, Col 20, Line 13, Col 23, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
             (Error 3147, Line 20, Col 21, Line 20, Col 22, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
         ]
+        
+    [<Fact>]
+    let ``Fix resumable and non-resumable CE error ranges`` () =
+        FSharp """
+module Test
+        
+open System.Threading.Tasks
+let minimum () : Async<int> =
+    async {
+        let! batch = async { return 1 }
+        return "1"
+    }
+    
+let minimum2 () : Task<int> =
+    task {
+        let! batch = task { return 1 }
+        return "1"
+    }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 8, Col 16, Line 8, Col 19, "This expression was expected to have type
+'int' 
+but here has type
+'string' ");
+            (Error 193, Line 14, Col 16, Line 14, Col 19, "Type constraint mismatch. The type 
+'TaskCode<string,string>' 
+is not compatible with type
+'TaskCode<int,int>' 
+")
+        ]
+        
+    [<Fact>]
+    let ``Fix resumable and non-resumable CE error ranges 2`` () =
+        FSharp """
+module Test
+        
+open System.Threading.Tasks
+let minimum () : Async<int> =
+    async {
+        let batch: Async<int> = async { return "" }
+        return "1"
+    }
+    
+let minimum2 () : Task<int> =
+    task {
+        let batch: Task<int> = task { return "" }
+        return "1"
+    }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 7, Col 48, Line 7, Col 50, "This expression was expected to have type
+'int' 
+but here has type
+'string' ");
+            (Error 1, Line 8, Col 16, Line 8, Col 19, "This expression was expected to have type
+'int' 
+but here has type
+'string' ");
+            (Error 1, Line 13, Col 46, Line 13, Col 48, "This expression was expected to have type
+'int' 
+but here has type
+'string' ");
+            (Error 1, Line 14, Col 16, Line 14, Col 19, "This expression was expected to have type
+'int' 
+but here has type
+'string' ")
+        ]        
+    
+    [<Fact>]
+    let ``Fix resumable and non-resumable CE error ranges 3`` () =
+        FSharp """
+module Test
+        
+open System.Threading.Tasks
+open System.Collections.Generic
+open System.Linq
+
+let f () : Task<IList<string>> = task {
+    let! x = task { return 42 }
+
+    let! y = task { return 43 }
+
+    return Seq.empty.ToList()
+}
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193, Line 13, Col 12, Line 13, Col 30, "Type constraint mismatch. The type 
+'TaskCode<List<'a>,List<'a>>' 
+is not compatible with type
+'TaskCode<IList<string>,IList<string>>' 
+")
+        ]
+        
+    [<Fact>]
+    let ``Fix resumable and non-resumable CE error ranges 4`` () =
+        FSharp """
+module Test
+        
+open System.Threading.Tasks
+
+let foo () : int64 = 6
+let otherAsync () = async { return "lol"}
+let fooAsync () : Async<int64> = async { 
+    let! _ = otherAsync ()
+    return 6 
+}
+
+let otherTask() = task { return "lol"}
+let fooTask () : Task<int64> = task { 
+        let! _ = otherTask()
+        return 6 
+    }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 193, Line 16, Col 16, Line 16, Col 17, "Type constraint mismatch. The type 
+'TaskCode<int,int>' 
+is not compatible with type
+'TaskCode<int64,int64>' 
+")
+        ]
