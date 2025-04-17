@@ -1353,7 +1353,7 @@ and FSharpImplementationFileDeclaration =
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
     let g = cenv.g
-    let (CheckedImplFile (qname, _pragmas, _, contents, hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl 
+    let (CheckedImplFile (qname, _, contents, hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl
     let rec getBind (bind: Binding) = 
         let v = bind.Var
         assert v.IsCompiledAsTopLevel

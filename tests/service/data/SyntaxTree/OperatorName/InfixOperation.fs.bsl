@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/InfixOperation.fs", false,
-      QualifiedNameOfFile InfixOperation, [], [],
+      QualifiedNameOfFile InfixOperation, [],
       [SynModuleOrNamespace
          ([InfixOperation], false, AnonModule,
           [Expr
@@ -18,4 +18,5 @@ ImplFile
               (2,0--2,5))], PreXmlDocEmpty, [], None, (2,0--2,5),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

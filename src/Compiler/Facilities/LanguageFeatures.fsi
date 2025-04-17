@@ -90,6 +90,7 @@ type LanguageFeature =
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
+    | ScopedNowarn
 
 /// LanguageVersion management
 type LanguageVersion =

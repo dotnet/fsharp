@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/ImplicitCtorWithAsKeyword.fs", false,
-      QualifiedNameOfFile ImplicitCtorWithAsKeyword, [], [],
+      QualifiedNameOfFile ImplicitCtorWithAsKeyword, [],
       [SynModuleOrNamespace
          ([ImplicitCtorWithAsKeyword], false, AnonModule,
           [Types
@@ -80,6 +80,7 @@ ImplFile
           PreXmlDocEmpty, [], None, (2,0--9,0), { LeadingKeyword = None })],
       (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments =
          [LineComment (3,0--3,23); LineComment (5,0--5,7);
           LineComment (6,0--6,8); LineComment (7,0--7,9)] }, set []))

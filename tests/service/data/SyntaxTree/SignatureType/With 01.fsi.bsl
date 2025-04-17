@@ -1,6 +1,6 @@
 SigFile
   (ParsedSigFileInput
-     ("/root/SignatureType/With 01.fsi", QualifiedNameOfFile With 01, [], [],
+     ("/root/SignatureType/With 01.fsi", QualifiedNameOfFile With 01, [],
       [SynModuleOrNamespaceSig
          ([X], false, DeclaredNamespace,
           [Types
@@ -39,4 +39,5 @@ SigFile
           PreXmlDocEmpty, [], None, (1,0--4,28),
           { LeadingKeyword = Namespace (1,0--1,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

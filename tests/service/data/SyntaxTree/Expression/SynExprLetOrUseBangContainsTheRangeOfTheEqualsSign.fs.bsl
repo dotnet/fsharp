@@ -3,7 +3,6 @@ ImplFile
      ("/root/Expression/SynExprLetOrUseBangContainsTheRangeOfTheEqualsSign.fs",
       false,
       QualifiedNameOfFile SynExprLetOrUseBangContainsTheRangeOfTheEqualsSign, [],
-      [],
       [SynModuleOrNamespace
          ([SynExprLetOrUseBangContainsTheRangeOfTheEqualsSign], false,
           AnonModule,
@@ -33,4 +32,5 @@ ImplFile
                  (2,0--6,1)), (2,0--6,1))], PreXmlDocEmpty, [], None, (2,0--6,1),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
