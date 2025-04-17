@@ -1,40 +1,14 @@
+// LinkedList uses nulls, so we need to disable the nullability warnings for this file.
+#nowarn 3261
 namespace FSharp.Compiler
 
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
-open System.Threading.Tasks
 open System.Diagnostics
 open System.Diagnostics.Metrics
-
-[<RequireQualifiedAccess>]
-// Default Seq.* function have one issue - when doing `Seq.sortBy`, it will call a `ToArray` on the collection,
-// which is *not* calling `ConcurrentDictionary.ToArray`, but uses a custom one instead (treating it as `ICollection`)
-// this leads to and exception when trying to evict without locking (The index is equal to or greater than the length of the array,
-// or the number of elements in the dictionary is greater than the available space from index to the end of the destination array.)
-// this is casuedby insertions happened between reading the `Count` and doing the `CopyTo`.
-// This solution introduces a custom `ConcurrentDictionary.sortBy` which will be calling a proper `CopyTo`, the one on the ConcurrentDictionary itself.
-module internal ConcurrentDictionary =
-
-    open System.Collections
-    open System.Collections.Generic
-
-    let inline mkSeq f =
-        { new IEnumerable<'U> with
-            member _.GetEnumerator() = f ()
-
-          interface IEnumerable with
-              member _.GetEnumerator() = (f () :> IEnumerator)
-        }
-
-    let inline mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
-
-    let inline sortBy ([<InlineIfLambda>] projection) (source: ConcurrentDictionary<_, _>) =
-        mkDelayedSeq (fun () ->
-            let array = source.ToArray()
-            Array.sortInPlaceBy projection array
-            array :> seq<_>)
+open Internal.Utilities.Library
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CachingStrategy =
@@ -45,7 +19,7 @@ type internal CachingStrategy =
 type internal EvictionMethod =
     | Blocking
     | Background
-    | KeepAll
+    | NoEviction
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
@@ -67,21 +41,78 @@ type internal CacheOptions =
         }
 
 [<Sealed; NoComparison; NoEquality>]
-type internal CachedEntity<'Value> =
-    val Value: 'Value
-    val mutable LastAccessed: int64
+[<DebuggerDisplay("{ToString()}")>]
+type internal CachedEntity<'Key, 'Value> =
+    val mutable Key: 'Key
+    val mutable Value: 'Value
     val mutable AccessCount: int64
+    val mutable Node: LinkedListNode<CachedEntity<'Key, 'Value>>
 
-    new(value: 'Value) =
-        {
-            Value = value
-            LastAccessed = DateTimeOffset.Now.Ticks
-            AccessCount = 0L
-        }
+    private new(key, value) = { Key = key; Value = value; AccessCount = 0L; Node = Unchecked.defaultof<_> }
+
+    static member Create(key, value) =
+        let entity = CachedEntity(key, value)
+        entity.Node <- LinkedListNode(entity)
+        entity
+
+    member this.ReUse(key, value) =
+        this.Key <- key
+        this.Value <- value
+        this.AccessCount <- 0L
+        this
+
+    override this.ToString() = $"{this.Key}"
+
+type internal EvictionQueue<'Key, 'Value>() =
+
+    let list = LinkedList<CachedEntity<'Key, 'Value>>()
+    let pool = Queue<CachedEntity<'Key, 'Value>>()
+
+    member _.Acquire(key, value) =
+        lock pool <| fun () ->
+        if pool.Count > 0 then
+            pool.Dequeue().ReUse(key, value)
+        else
+            CachedEntity.Create<_, _>(key, value)
+
+    member _.Add(entity: CachedEntity<'Key, 'Value>) =
+        lock list <| fun () ->
+            if isNull entity.Node.List then
+                list.AddLast(entity.Node)
+
+    member _.Update(entity: CachedEntity<'Key, 'Value>, strategy: CachingStrategy) =
+        lock list <| fun () ->
+            entity.AccessCount <- entity.AccessCount + 1L
+
+            let node = entity.Node
+
+            match strategy with
+            | CachingStrategy.LRU ->
+                // Just move this node to the end of the list.
+                list.Remove(node)
+                list.AddLast(node)
+            | CachingStrategy.LFU ->
+                // Bubble up the node in the list, linear time.
+                // TODO: frequency list approach would be faster.
+                while (isNotNull node.Next) && (node.Next.Value.AccessCount < node.Value.AccessCount) do
+                   list.Remove(node)
+                   list.AddAfter(node.Next, node)
+
+    member _.GetKeysToEvict(count) =
+        lock list <| fun () ->
+        list |> Seq.map _.Key |> Seq.truncate count |> Seq.toArray
+
+    member _.Remove(entity: CachedEntity<_,_>) =
+        lock list <| fun () -> list.Remove(entity.Node)
+        // Return to the pool for reuse.
+        lock pool <| fun () -> pool.Enqueue(entity)
+
+    member _.Count = list.Count 
 
 module internal CacheMetrics =
+
     let mutable cacheId = 0
-    let addInstrumentation (store: ConcurrentDictionary<_, CachedEntity<'Value>>) =
+    let addInstrumentation (store: ConcurrentDictionary<_, CachedEntity<_,_>>) =
         let meter = new Meter("FSharp.Compiler.Caches")
         let uid = Interlocked.Increment &cacheId
 
@@ -90,8 +121,6 @@ module internal CacheMetrics =
             if vs |> Seq.isEmpty then 0L else f vs
 
         let _ = meter.CreateObservableGauge($"cache{uid}", (fun () -> int64 store.Count))
-        //let _ = meter.CreateObservableGauge($"MRA{uid}", orZero (Seq.map _.LastAccessed >> Seq.max))
-        //let _ = meter.CreateObservableGauge($"LRA{uid}", orZero (Seq.map _.LastAccessed >> Seq.min))
         let _ = meter.CreateObservableGauge($"MFA{uid}", orZero (Seq.map _.AccessCount >> Seq.max))
         let _ = meter.CreateObservableGauge($"LFA{uid}", orZero (Seq.map _.AccessCount >> Seq.min))
 
@@ -115,17 +144,91 @@ module internal CacheMetrics =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts) =
+type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> private (options: CacheOptions, capacity, cts: CancellationTokenSource) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
     let eviction = Event<_>()
     let evictionFail = Event<_>()
     
-    // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-    let store = ConcurrentDictionary<_, CachedEntity<'Value>>(options.LevelOfConcurrency, capacity)
+    let store = ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
+
+    let evictionQueue = EvictionQueue<'Key, 'Value>()
+
+    let tryEvictItems () =
+        let count = if store.Count > options.MaximumCapacity then store.Count - options.MaximumCapacity else 0
+        for key in evictionQueue.GetKeysToEvict(count) do
+            match store.TryRemove(key) with
+            | true, removed ->
+                evictionQueue.Remove(removed)
+                eviction.Trigger(key)
+            | _ ->
+                evictionFail.Trigger(key)
+
+    let rec backgroundEviction () = 
+        async {
+            tryEvictItems ()
+
+            let utilization = (float store.Count / float options.MaximumCapacity)
+            // So, based on utilization this will scale the delay between 0 and 1 seconds.
+            // Worst case scenario would be when 1 second delay happens,
+            // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
+            // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
+            // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
+            let delay = 1000.0 - (1000.0 * utilization)
+
+            if delay > 0.0 then
+                do! Async.Sleep (int delay)
+
+            return! backgroundEviction ()
+        }
+
+    do if options.EvictionMethod = EvictionMethod.Background then
+        Async.Start(backgroundEviction (), cancellationToken = cts.Token) 
 
     do CacheMetrics.addInstrumentation store eviction.Publish cacheHit.Publish cacheMiss.Publish evictionFail.Publish
+
+    let tryEvict () =
+        if options.EvictionMethod.IsBlocking then tryEvictItems()
+
+    let tryGet (key: 'Key) =
+        match store.TryGetValue(key) with
+        | true, cachedEntity ->
+            evictionQueue.Update(cachedEntity, options.Strategy)
+            Some cachedEntity
+        | _ ->
+            None
+
+    member _.TryGetValue (key: 'Key, value: outref<'Value>) =
+        match tryGet key with
+        | Some cachedEntity ->
+            cacheHit.Trigger(key, cachedEntity.Value)
+            value <- cachedEntity.Value
+            true
+        | _ ->
+            cacheMiss.Trigger(key)
+            value <- Unchecked.defaultof<'Value>
+            false
+
+    member _.TryAdd(key: 'Key, value: 'Value) =
+        tryEvict()
+
+        let cachedEntity = evictionQueue.Acquire(key, value)
+        if store.TryAdd(key, cachedEntity) then
+            evictionQueue.Add(cachedEntity)
+            true
+        else
+            false
+
+    member _.AddOrUpdate(key: 'Key, value: 'Value) =
+        tryEvict()
+
+        let entity = store.AddOrUpdate(
+            key,
+            (fun _ -> evictionQueue.Acquire(key, value)),
+            (fun _ (current: CachedEntity<_, _>) -> current.Value <- value; current)
+        )
+        evictionQueue.Add(entity)
 
     [<CLIEvent>]
     member val CacheHit = cacheHit.Publish
@@ -136,109 +239,20 @@ type internal Cache<'Key, 'Value> private (options: CacheOptions, capacity, cts)
     [<CLIEvent>]
     member val Eviction = eviction.Publish
 
+    [<CLIEvent>]
+    member val EvictionFail = evictionFail.Publish
+
     static member Create(options: CacheOptions) =
+        // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
             options.MaximumCapacity
             + (options.MaximumCapacity * options.PercentageToEvict / 100)
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
-
-        if options.EvictionMethod = EvictionMethod.Background then
-            Task.Run(cache.TryEvictTask, cts.Token) |> ignore
-
-        cache
-
-    //member this.GetStats() =
-    //    {|
-    //        Capacity = options.MaximumCapacity
-    //        PercentageToEvict = options.PercentageToEvict
-    //        Strategy = options.Strategy
-    //        LevelOfConcurrency = options.LevelOfConcurrency
-    //        Count = this.Store.Count
-    //        MostRecentlyAccesssed = this.Store.Values |> Seq.maxBy _.LastAccessed |> _.LastAccessed
-    //        LeastRecentlyAccesssed = this.Store.Values |> Seq.minBy _.LastAccessed |> _.LastAccessed
-    //        MostFrequentlyAccessed = this.Store.Values |> Seq.maxBy _.AccessCount |> _.AccessCount
-    //        LeastFrequentlyAccessed = this.Store.Values |> Seq.minBy _.AccessCount |> _.AccessCount
-    //    |}
-
-    member private this.CalculateEvictionCount() =
-        if store.Count >= options.MaximumCapacity then
-            (store.Count - options.MaximumCapacity)
-            + (options.MaximumCapacity * options.PercentageToEvict / 100)
-        else
-            0
-
-    // TODO: All of these are proofs of concept, a very naive implementation of eviction strategies, it will always walk the dictionary to find the items to evict, this is not efficient.
-    member private this.TryGetPickToEvict() =
-        store
-        |> match options.Strategy with
-           | CachingStrategy.LRU -> ConcurrentDictionary.sortBy _.Value.LastAccessed
-           | CachingStrategy.LFU -> ConcurrentDictionary.sortBy _.Value.AccessCount
-        |> Seq.take (this.CalculateEvictionCount())
-        |> Seq.map (fun x -> x.Key)
-
-    // TODO: Explore an eviction shortcut, some sort of list of keys to evict first, based on the strategy.
-    member private this.TryEvictItems() =
-        if this.CalculateEvictionCount() > 0 then
-            for key in this.TryGetPickToEvict() do
-                match store.TryRemove(key) with
-                | true, _ -> eviction.Trigger(key)
-                | _ -> evictionFail.Trigger(key) // TODO: We probably want to count eviction misses as well?
-
-    // TODO: Shall this be a safer task, wrapping everything in try .. with, so it's not crashing silently?
-    member private this.TryEvictTask() =
-        backgroundTask {
-            while not cts.Token.IsCancellationRequested do
-                this.TryEvictItems()
-
-                let utilization = (float store.Count / float options.MaximumCapacity)
-                // So, based on utilization this will scale the delay between 0 and 1 seconds.
-                // Worst case scenario would be when 1 second delay happens,
-                // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
-                // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
-                // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
-                let delay = 1000.0 - (1000.0 * utilization)
-
-                if delay > 0.0 then
-                    do! Task.Delay(int delay)
-        }
-
-    member this.TryEvict() =
-        if this.CalculateEvictionCount() > 0 then
-            match options.EvictionMethod with
-            | EvictionMethod.Blocking -> this.TryEvictItems()
-            | EvictionMethod.Background
-            | EvictionMethod.KeepAll -> ()
-
-    member this.TryGet(key, value: outref<'Value>) =
-        match store.TryGetValue(key) with
-        | true, cachedEntity ->
-            // this is fine to be non-atomic, I guess, we are okay with race if the time is within the time of multiple concurrent calls.
-            cachedEntity.LastAccessed <- DateTimeOffset.Now.Ticks
-            let _ = Interlocked.Increment(&cachedEntity.AccessCount)
-            cacheHit.Trigger(key, cachedEntity.Value)
-            value <- cachedEntity.Value
-            true
-        | _ ->
-            cacheMiss.Trigger(key)
-            value <- Unchecked.defaultof<'Value>
-            false
-
-    member this.TryAdd(key, value: 'Value, ?update: bool) =
-        let update = defaultArg update false
-
-        this.TryEvict()
-
-        let value = CachedEntity<'Value>(value)
-
-        if update then
-            let _ = store.AddOrUpdate(key, value, (fun _ _ -> value))
-            true
-        else
-            store.TryAdd(key, value)
+        new Cache<'Key, 'Value>(options, capacity, cts)
 
     interface IDisposable with
         member _.Dispose() = cts.Cancel()
 
     member this.Dispose() = (this :> IDisposable).Dispose()
+

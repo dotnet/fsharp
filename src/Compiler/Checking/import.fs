@@ -120,11 +120,12 @@ let getOrCreateTypeSubsumptionCache =
                     if compilationMode = CompilationMode.OneOff then
                         { CacheOptions.Default with
                             PercentageToEvict = 0
-                            EvictionMethod = EvictionMethod.KeepAll }
+                            EvictionMethod = EvictionMethod.NoEviction }
                     else
                         { CacheOptions.Default with
-                            EvictionMethod = EvictionMethod.Blocking // EvictionMethod.Background
-                            PercentageToEvict = 15
+                            EvictionMethod = EvictionMethod.Background
+                            Strategy = CachingStrategy.LRU
+                            PercentageToEvict = 5
                             MaximumCapacity = 100_000 }
                 cache <- Some (Cache<TTypeCacheKey, bool>.Create(options))
                 cache.Value
