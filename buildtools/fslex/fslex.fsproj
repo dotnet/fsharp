@@ -5,8 +5,8 @@
     <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <RollForward Condition="'$(BUILDING_USING_DOTNET)' == 'true'">LatestMajor</RollForward>
-    <NoWarn>$(NoWarn);64;1204;1182</NoWarn>         <!--Temporary fix for sourcebuild -->
-    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>
+    <NoWarn>$(NoWarn);64;1204</NoWarn>  <!--Temporary fix for sourcebuild -->
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
   </PropertyGroup>
 
   <PropertyGroup>
