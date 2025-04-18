@@ -131,57 +131,10 @@ type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
 
     member _.Count = list.Count
 
-module internal CacheMetrics =
-
-    let mutable cacheId = 0
-
-    let addInstrumentation (store: ConcurrentDictionary<_, CachedEntity<_, _>>) =
-        let meter = new Meter("FSharp.Compiler.Caches")
-        let uid = Interlocked.Increment &cacheId
-
-        let _orZero f =
-            fun () ->
-                let vs = store.Values
-                if vs |> Seq.isEmpty then 0L else f vs
-
-        let _ = meter.CreateObservableGauge($"cache{uid}", (fun () -> int64 store.Count))
-
-        //let _ =
-        //    meter.CreateObservableGauge($"MFA{uid}", orZero (Seq.map _.AccessCount >> Seq.max))
-
-        //let _ =
-        //    meter.CreateObservableGauge($"LFA{uid}", orZero (Seq.map _.AccessCount >> Seq.min))
-
-        let mutable evictions = 0L
-        let mutable fails = 0L
-        let mutable hits = 0L
-        let mutable misses = 0L
-
-        fun eviction hit miss evictionFail ->
-
-            eviction |> Event.add (fun _ -> Interlocked.Increment &evictions |> ignore)
-            evictionFail |> Event.add (fun _ -> Interlocked.Increment &fails |> ignore)
-            hit |> Event.add (fun _ -> Interlocked.Increment &hits |> ignore)
-            miss |> Event.add (fun _ -> Interlocked.Increment &misses |> ignore)
-
-            let _ =
-                meter.CreateObservableGauge($"evicted{uid}", fun () -> Interlocked.Exchange(&evictions, 0L))
-
-            let _ =
-                meter.CreateObservableGauge($"fails{uid}", fun () -> Interlocked.Exchange(&fails, 0L))
-
-            let _ =
-                meter.CreateObservableGauge($"hits{uid}", fun () -> Interlocked.Exchange(&hits, 0L))
-
-            let _ =
-                meter.CreateObservableGauge($"misses{uid}", fun () -> Interlocked.Exchange(&misses, 0L))
-
-            ()
-
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
-    private (options: CacheOptions, capacity, cts: CancellationTokenSource) =
+    internal (options: CacheOptions, capacity, cts: CancellationTokenSource) =
 
     let cacheHit = Event<_ * _>()
     let cacheMiss = Event<_>()
@@ -228,8 +181,6 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     do
         if options.EvictionMethod = EvictionMethod.Background then
             Async.Start(backgroundEviction (), cancellationToken = cts.Token)
-
-    do CacheMetrics.addInstrumentation store eviction.Publish cacheHit.Publish cacheMiss.Publish evictionFail.Publish
 
     let tryEvict () =
         if options.EvictionMethod.IsBlocking then
@@ -290,15 +241,6 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     [<CLIEvent>]
     member val EvictionFail = evictionFail.Publish
 
-    static member Create(options: CacheOptions) =
-        // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-        let capacity =
-            options.MaximumCapacity
-            + (options.MaximumCapacity * options.PercentageToEvict / 100)
-
-        let cts = new CancellationTokenSource()
-        new Cache<'Key, 'Value>(options, capacity, cts)
-
     interface IDisposable with
         member this.Dispose() =
             cts.Cancel()
@@ -308,3 +250,68 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
 
     override this.Finalize (): unit =
         this.Dispose()
+
+
+module internal CacheMetrics =
+    
+    let mutable cacheId = 0
+
+    [<Literal>]
+    let cachesMetricsName = "FSharp.Compiler.Caches"
+    
+    let addInstrumentation (cache: Cache<_, _>) =
+        let meter = new Meter(cachesMetricsName)
+        let cacheId = Interlocked.Increment &cacheId
+    
+        let mutable evictions = 0L
+        let mutable fails = 0L
+        let mutable hits = 0L
+        let mutable misses = 0L
+
+        let mutable allEvictions = 0L
+        let mutable allFails = 0L
+        let mutable allHits = 0L
+        let mutable allMisses = 0L
+
+        cache.CacheHit |> Event.add (fun _ ->
+            Interlocked.Increment &hits |> ignore
+            Interlocked.Increment &allHits |> ignore
+        )
+
+        cache.CacheMiss |> Event.add (fun _ ->
+            Interlocked.Increment &misses |> ignore
+            Interlocked.Increment &allMisses |> ignore
+        )
+
+        cache.Eviction |> Event.add (fun _ ->
+            Interlocked.Increment &evictions |> ignore
+            Interlocked.Increment &allEvictions |> ignore
+        )
+
+        cache.EvictionFail |> Event.add (fun _ ->
+            Interlocked.Increment &fails |> ignore
+            Interlocked.Increment &allFails |> ignore
+        )
+
+
+        let hitRatio () =
+            let misses = Interlocked.Exchange(&misses, 0L)
+            let hits = Interlocked.Exchange(&hits, 0L)
+            float hits / float (hits + misses)
+
+        meter.CreateObservableGauge($"hit ratio {cacheId}", hitRatio) |> ignore
+
+module internal Cache =
+    let Create<'Key, 'Value when 'Key: not null and 'Key: equality>(options: CacheOptions) =
+        // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
+        let capacity =
+            options.MaximumCapacity
+            + (options.MaximumCapacity * options.PercentageToEvict / 100)
+
+        let cts = new CancellationTokenSource()
+        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+    #if DEBUG
+        CacheMetrics.addInstrumentation cache
+    #endif
+        cache
+

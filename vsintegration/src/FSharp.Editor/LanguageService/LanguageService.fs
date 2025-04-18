@@ -343,9 +343,9 @@ type internal FSharpPackage() as this =
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
+#if DEBUG
     do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
 
-#if DEBUG
     let flushTelemetry = Logging.FSharpServiceTelemetry.export ()
 
     override this.Dispose(disposing: bool) =

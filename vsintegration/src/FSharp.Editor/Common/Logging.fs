@@ -31,6 +31,7 @@ module Config =
 
 open Config
 open System.Diagnostics.Metrics
+open System.Text
 
 [<Export>]
 type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
@@ -148,43 +149,34 @@ module FSharpServiceTelemetry =
 
         ActivitySource.AddActivityListener(listener)
 
+#if DEBUG
     let logCacheMetricsToOutput () =
-        let instruments = Collections.Generic.Dictionary<string, int64>()
-
         let listener =
             new MeterListener(
                 InstrumentPublished =
                     fun instrument l ->
                         if instrument.Meter.Name = "FSharp.Compiler.Caches" then
-                            instruments[instrument.Name] <- 0L
                             l.EnableMeasurementEvents(instrument)
             )
-
-        let callBack = MeasurementCallback(fun instr v _ _ -> instruments[instr.Name] <- v)
+        let measurements = Collections.Generic.Dictionary<_, _>()
+        let changed = ResizeArray()
+        let callBack = MeasurementCallback(fun i v _ _ ->
+            let v = if Double.IsNaN v then "-" else $"%.1f{v * 100.}%%"
+            if measurements.ContainsKey(i.Name) && measurements[i.Name] = v then ()
+            else
+                measurements[i.Name] <- v
+                changed.Add i.Name)
         listener.SetMeasurementEventCallback callBack
         listener.Start()
 
-        let msg = Event<string>()
+        let timer = new System.Timers.Timer(1000.0, AutoReset = true)
+        timer.Elapsed.Add (fun _ ->
+            changed.Clear()
+            listener.RecordObservableInstruments()
+            let msg = seq { for k in changed -> $"{k}: {measurements[k]}" } |> String.concat ", "
+            if msg <> "" then logMsg msg)
+        timer.Start()
 
-        backgroundTask {
-            while true do
-                do! System.Threading.Tasks.Task.Delay(1000)
-                listener.RecordObservableInstruments()
-
-                if instruments.Count > 0 then
-                    [ for kvp in instruments do if kvp.Value > 0L then $"{kvp.Key}: {kvp.Value}" ]
-                    |> String.concat ", "
-                    |> msg.Trigger
-        }
-        |> ignore
-
-        msg.Publish
-        |> Event.pairwise
-        |> Event.filter (fun (x, y) -> x <> y)
-        |> Event.map snd
-        |> Event.add logMsg
-
-#if DEBUG
     open OpenTelemetry.Resources
     open OpenTelemetry.Trace
     open OpenTelemetry.Metrics
