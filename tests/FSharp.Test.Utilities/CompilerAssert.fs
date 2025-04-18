@@ -246,7 +246,7 @@ let main argv = 0"""
 
     static let compileAux isExe options source f : unit =
         let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe.foobar" else ".dll")
         try
             f (rawCompile inputFilePath outputFilePath isExe options source)
         finally
