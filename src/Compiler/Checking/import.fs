@@ -91,7 +91,7 @@ type TTypeCacheKey =
         // This hash must be stable during compilation, otherwise we won't be able to find the keys in the cache.
         let rec simpleTypeHash ty =
             match ty with
-            | TType_ucase (u, tinst) -> tinst |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash u.CaseName)
+            | TType_ucase (_, tinst) -> tinst |> hashListOrderMatters (simpleTypeHash) // |> pipeToHash (hash u.CaseName)
             | TType_app(tcref, tinst, _) -> tinst |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash tcref.Stamp)
             | TType_anon(info, tys) -> tys |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash info.Stamp)
             | TType_tuple(_ , tys) -> tys |> hashListOrderMatters (simpleTypeHash)
@@ -106,30 +106,23 @@ type TTypeCacheKey =
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-let getOrCreateTypeSubsumptionCache =
-    let mutable lockObj = obj()
-    let mutable cache = None
+let createTypeSubsumptionCache (g: TcGlobals) =
+    let options =
+        if g.compilationMode = CompilationMode.OneOff then
+            { CacheOptions.Default with
+                PercentageToEvict = 5
+                Strategy = CachingStrategy.LRU
+                MaximumCapacity = 8192
+                EvictionMethod = EvictionMethod.Background }
+        else
+            { CacheOptions.Default with
+                EvictionMethod = EvictionMethod.Background
+                Strategy = CachingStrategy.LRU
+                PercentageToEvict = 5
+                MaximumCapacity = 8192 }
+    Cache<TTypeCacheKey, bool>.Create(options)
 
-    fun compilationMode ->
-        lock lockObj <| fun () ->
-            match cache with
-            | Some c -> c
-            | _ ->
-                let options =
-                    if compilationMode = CompilationMode.OneOff then
-                        { CacheOptions.Default with
-                            PercentageToEvict = 5
-                            Strategy = CachingStrategy.LRU
-                            MaximumCapacity = 8192
-                            EvictionMethod = EvictionMethod.Background }
-                    else
-                        { CacheOptions.Default with
-                            EvictionMethod = EvictionMethod.Background
-                            Strategy = CachingStrategy.LRU
-                            PercentageToEvict = 5
-                            MaximumCapacity = 8192 }
-                cache <- Some (Cache<TTypeCacheKey, bool>.Create(options))
-                cache.Value
+let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<_,_>>()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -153,7 +146,7 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member val TypeSubsumptionCache = getOrCreateTypeSubsumptionCache g.compilationMode
+    member _.TypeSubsumptionCache = typeSubsumptionCaches.GetValue(g, createTypeSubsumptionCache) // getOrCreateTypeSubsumptionCache g.compilationMode
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 

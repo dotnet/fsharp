@@ -101,8 +101,8 @@ let TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
 let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
-let inline TryGetCachedTypeSubsumption (_g: TcGlobals) (amap: ImportMap) key =
-    if true (* g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache *) then
+let inline TryGetCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key =
+    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         match amap.TypeSubsumptionCache.TryGetValue(key) with
         | true, subsumes ->
             ValueSome subsumes
@@ -111,8 +111,8 @@ let inline TryGetCachedTypeSubsumption (_g: TcGlobals) (amap: ImportMap) key =
     else
         ValueNone
 
-let inline UpdateCachedTypeSubsumption (_g: TcGlobals) (amap: ImportMap) key subsumes : unit =
-    if true (* g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache *) then
+let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subsumes : unit =
+    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         amap.TypeSubsumptionCache.AddOrUpdate(key, subsumes)
 
 [<RequireQualifiedAccess>]

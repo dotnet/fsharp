@@ -172,7 +172,7 @@ module FSharpServiceTelemetry =
                 listener.RecordObservableInstruments()
 
                 if instruments.Count > 0 then
-                    [ for kvp in instruments -> $"{kvp.Key}: {kvp.Value}" ]
+                    [ for kvp in instruments do if kvp.Value > 0L then $"{kvp.Key}: {kvp.Value}" ]
                     |> String.concat ", "
                     |> msg.Trigger
         }

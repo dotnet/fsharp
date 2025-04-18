@@ -72,15 +72,12 @@ type internal CachedEntity<'Key, 'Value> =
 type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
 
     let list = LinkedList<CachedEntity<'Key, 'Value>>()
-    let pool = Queue<CachedEntity<'Key, 'Value>>()
+    let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
 
     member _.Acquire(key, value) =
-        lock pool
-        <| fun () ->
-            if pool.Count > 0 then
-                pool.Dequeue().ReUse(key, value)
-            else
-                CachedEntity.Create<_, _>(key, value)
+        match pool.TryTake() with
+        | true , entity -> entity.ReUse(key, value)
+        | _ -> CachedEntity.Create<_, _>(key, value)
 
     member _.Add(entity: CachedEntity<'Key, 'Value>, strategy) =
         lock list
@@ -130,7 +127,7 @@ type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
     member _.Remove(entity: CachedEntity<_, _>) =
         lock list <| fun () -> list.Remove(entity.Node)
         // Return to the pool for reuse.
-        lock pool <| fun () -> pool.Enqueue(entity)
+        pool.Add(entity)
 
     member _.Count = list.Count
 
@@ -303,6 +300,11 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         new Cache<'Key, 'Value>(options, capacity, cts)
 
     interface IDisposable with
-        member _.Dispose() = cts.Cancel()
+        member this.Dispose() =
+            cts.Cancel()
+            GC.SuppressFinalize(this)
 
     member this.Dispose() = (this :> IDisposable).Dispose()
+
+    override this.Finalize (): unit =
+        this.Dispose()
