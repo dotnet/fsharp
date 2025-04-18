@@ -45,15 +45,15 @@ type CanCoerce =
 [<Struct; NoComparison; CustomEquality>]
 type TTypeCacheKey =
     interface System.IEquatable<TTypeCacheKey>
-    private new: ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
+    private new: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
 
     static member FromStrippedTypes:
-        ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
+        ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
 
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
-    val tcGlobals: TcGlobals
+    //val tcGlobals: TcGlobals
     override GetHashCode: unit -> int
 
 /// Represents a context used for converting AbstractIL .NET and provided types to F# internal compiler data structures.

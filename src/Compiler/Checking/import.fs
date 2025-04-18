@@ -62,13 +62,13 @@ type TTypeCacheKey =
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
-    val tcGlobals: TcGlobals
+    //val tcGlobals: TcGlobals
 
-    private new (ty1, ty2, canCoerce, tcGlobals) =
-        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; tcGlobals = tcGlobals }
+    private new (ty1, ty2, canCoerce) =
+        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
 
-    static member FromStrippedTypes (ty1, ty2, canCoerce, tcGlobals) =
-        TTypeCacheKey(ty1, ty2, canCoerce, tcGlobals)
+    static member FromStrippedTypes (ty1, ty2, canCoerce) =
+        TTypeCacheKey(ty1, ty2, canCoerce)
 
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
@@ -77,8 +77,8 @@ type TTypeCacheKey =
             elif this.ty1 === other.ty1 && this.ty2 === other.ty2 then
                 true
             else
-                stampEquals this.tcGlobals this.ty1 other.ty1
-                && stampEquals this.tcGlobals this.ty2 other.ty2
+                stampEquals this.ty1 other.ty1
+                && stampEquals this.ty2 other.ty2
 
     override this.Equals(other:objnull) =
         match other with
@@ -100,8 +100,7 @@ type TTypeCacheKey =
             | TType_var _
             | TType_measure _ -> 0
 
-        hash this.tcGlobals
-        |> pipeToHash (simpleTypeHash this.ty1)
+        simpleTypeHash this.ty1
         |> pipeToHash (simpleTypeHash this.ty2)
         |> pipeToHash (hash this.canCoerce)
 
@@ -119,14 +118,16 @@ let getOrCreateTypeSubsumptionCache =
                 let options =
                     if compilationMode = CompilationMode.OneOff then
                         { CacheOptions.Default with
-                            PercentageToEvict = 0
-                            EvictionMethod = EvictionMethod.NoEviction }
+                            PercentageToEvict = 5
+                            Strategy = CachingStrategy.LRU
+                            MaximumCapacity = 8192
+                            EvictionMethod = EvictionMethod.Background }
                     else
                         { CacheOptions.Default with
                             EvictionMethod = EvictionMethod.Background
                             Strategy = CachingStrategy.LRU
                             PercentageToEvict = 5
-                            MaximumCapacity = 100_000 }
+                            MaximumCapacity = 8192 }
                 cache <- Some (Cache<TTypeCacheKey, bool>.Create(options))
                 cache.Value
 
