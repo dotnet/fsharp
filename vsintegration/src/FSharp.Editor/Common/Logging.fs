@@ -30,6 +30,8 @@ module Config =
     let fsharpOutputGuid = Guid fsharpOutputGuidString
 
 open Config
+open System.Diagnostics.Metrics
+open System.Text
 
 [<Export>]
 type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
@@ -118,11 +120,7 @@ module Logging =
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
-#if DEBUG
-module Activity =
-
-    open OpenTelemetry.Resources
-    open OpenTelemetry.Trace
+module FSharpServiceTelemetry =
 
     let listen filter =
         let indent (activity: Activity) =
@@ -135,16 +133,15 @@ module Activity =
             String.replicate (loop activity 0) "    "
 
         let collectTags (activity: Activity) =
-            [ for tag in activity.Tags -> $"{tag.Key}: %A{tag.Value}" ]
-            |> String.concat ", "
+            [ for tag in activity.Tags -> $"{tag.Key}: {tag.Value}" ] |> String.concat ", "
 
         let listener =
             new ActivityListener(
-                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                ShouldListenTo = (fun source -> source.Name = ActivityNames.FscSourceName),
                 Sample =
                     (fun context ->
                         if context.Name.Contains(filter) then
-                            ActivitySamplingResult.AllDataAndRecorded
+                            ActivitySamplingResult.AllData
                         else
                             ActivitySamplingResult.None),
                 ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
@@ -152,13 +149,59 @@ module Activity =
 
         ActivitySource.AddActivityListener(listener)
 
+#if DEBUG
+    let logCacheMetricsToOutput () =
+        let listener =
+            new MeterListener(
+                InstrumentPublished =
+                    fun instrument l ->
+                        if instrument.Meter.Name = "FSharp.Compiler.Caches" then
+                            l.EnableMeasurementEvents(instrument)
+            )
+        let measurements = Collections.Generic.Dictionary<_, _>()
+        let changed = ResizeArray()
+        let callBack = MeasurementCallback(fun i v _ _ ->
+            let v = if Double.IsNaN v then "-" else $"%.1f{v * 100.}%%"
+            if measurements.ContainsKey(i.Name) && measurements[i.Name] = v then ()
+            else
+                measurements[i.Name] <- v
+                changed.Add i.Name)
+        listener.SetMeasurementEventCallback callBack
+        listener.Start()
+
+        let timer = new System.Timers.Timer(1000.0, AutoReset = true)
+        timer.Elapsed.Add (fun _ ->
+            changed.Clear()
+            listener.RecordObservableInstruments()
+            let msg = seq { for k in changed -> $"{k}: {measurements[k]}" } |> String.concat ", "
+            if msg <> "" then logMsg msg)
+        timer.Start()
+
+    open OpenTelemetry.Resources
+    open OpenTelemetry.Trace
+    open OpenTelemetry.Metrics
+
     let export () =
-        OpenTelemetry.Sdk
-            .CreateTracerProviderBuilder()
-            .AddSource(ActivityNames.FscSourceName)
-            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName = "F#", serviceVersion = "1.0.0"))
-            .AddOtlpExporter()
-            .Build()
+        let meterProvider =
+            // Configure OpenTelemetry metrics. Metrics can be viewed in Prometheus or other compatible tools.
+            OpenTelemetry.Sdk.CreateMeterProviderBuilder().AddOtlpExporter().Build()
+
+        let tracerProvider =
+            // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
+            OpenTelemetry.Sdk
+                .CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddOtlpExporter()
+                .Build()
+
+        let a = Activity.startNoTags "FSharpPackage"
+
+        fun () ->
+            a.Dispose()
+            tracerProvider.ForceFlush(5000) |> ignore
+            tracerProvider.Dispose()
+            meterProvider.Dispose()
 
     let listenToAll () = listen ""
 #endif
