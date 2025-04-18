@@ -104,29 +104,29 @@
     <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
     <!-- Roslyn packages -->
-    <RoslynVersion>3.11.0</RoslynVersion>
+    <RoslynVersion>3.9.0-5.21120.8</RoslynVersion>
     <MicrosoftCodeAnalysisCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCommonVersion>
     <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
-    <MicrosoftCodeAnalysisCSharpScriptingVersion>3.11.0</MicrosoftCodeAnalysisCSharpScriptingVersion>
-    <MicrosoftCodeAnalysisCSharpFeaturesVersion>3.11.0</MicrosoftCodeAnalysisCSharpFeaturesVersion>
-    <MicrosoftCodeAnalysisCSharpEditorFeaturesVersion>3.9.0-5.21120.8</MicrosoftCodeAnalysisCSharpEditorFeaturesVersion>
-    <MicrosoftCodeAnalysisCSharpWorkspacesVersion>3.11.0</MicrosoftCodeAnalysisCSharpWorkspacesVersion>
-    <MicrosoftCodeAnalysisFeaturesVersion>3.11.0</MicrosoftCodeAnalysisFeaturesVersion>
-    <MicrosoftCodeAnalysisFeaturesCommonVersion>3.11.0</MicrosoftCodeAnalysisFeaturesCommonVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesVersion>3.11.0-4.25056.23</MicrosoftCodeAnalysisEditorFeaturesVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesCommonVersion>3.11.0-4.25056.23</MicrosoftCodeAnalysisEditorFeaturesCommonVersion>
+    <MicrosoftCodeAnalysisCSharpScriptingVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpScriptingVersion>
+    <MicrosoftCodeAnalysisCSharpFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpFeaturesVersion>
+    <MicrosoftCodeAnalysisCSharpEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisCSharpWorkspacesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpWorkspacesVersion>
+    <MicrosoftCodeAnalysisFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesVersion>
+    <MicrosoftCodeAnalysisFeaturesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesCommonVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesCommonVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>3.11.0-4.25056.23</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>3.9.0-5.21120.8</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
-    <MicrosoftCodeAnalysisScriptingCommonVersion>3.11.0</MicrosoftCodeAnalysisScriptingCommonVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
+    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
+    <MicrosoftCodeAnalysisScriptingCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisScriptingCommonVersion>
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
-    <MicrosoftCodeAnalysisVisualBasicVersion>3.11.0</MicrosoftCodeAnalysisVisualBasicVersion>
-    <MicrosoftCodeAnalysisVisualBasicFeaturesVersion>3.11.0</MicrosoftCodeAnalysisVisualBasicFeaturesVersion>
-    <MicrosoftCodeAnalysisVisualBasicWorkspacesVersion>3.11.0</MicrosoftCodeAnalysisVisualBasicWorkspacesVersion>
+    <MicrosoftCodeAnalysisVisualBasicVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVisualBasicVersion>
+    <MicrosoftCodeAnalysisVisualBasicFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVisualBasicFeaturesVersion>
+    <MicrosoftCodeAnalysisVisualBasicWorkspacesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVisualBasicWorkspacesVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>16.11</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>16.11.2</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
@@ -208,8 +208,8 @@
     <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>
     <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
     <NewtonsoftJsonVersion>12.0.2</NewtonsoftJsonVersion>
-    <NUnitVersion>3.11.0</NUnitVersion>
-    <NUnit3TestAdapterVersion>3.11.2</NUnit3TestAdapterVersion>
+    <NUnitVersion>3.13.2</NUnitVersion>
+    <NUnit3TestAdapterVersion>4.1.0</NUnit3TestAdapterVersion>
     <NUnitLiteVersion>3.11.0</NUnitLiteVersion>
     <NunitXmlTestLoggerVersion>2.1.41</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
