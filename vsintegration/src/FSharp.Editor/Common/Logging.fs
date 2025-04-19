@@ -184,7 +184,14 @@ module FSharpServiceTelemetry =
     let export () =
         let meterProvider =
             // Configure OpenTelemetry metrics. Metrics can be viewed in Prometheus or other compatible tools.
-            OpenTelemetry.Sdk.CreateMeterProviderBuilder().AddOtlpExporter().Build()
+            OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddMeter(FSharp.Compiler.Cache.MeterName)
+                .AddOtlpExporter(fun _e m ->
+                    m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
+                    m.TemporalityPreference <- MetricReaderTemporalityPreference.Cumulative
+                )
+                .Build()
 
         let tracerProvider =
             // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.

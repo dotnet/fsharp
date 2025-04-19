@@ -91,13 +91,13 @@ type TTypeCacheKey =
         // This hash must be stable during compilation, otherwise we won't be able to find the keys in the cache.
         let rec simpleTypeHash ty =
             match ty with
-            | TType_ucase (_, tinst) -> tinst |> hashListOrderMatters (simpleTypeHash) // |> pipeToHash (hash u.CaseName)
+            | TType_ucase (_, tinst) -> tinst |> hashListOrderMatters (simpleTypeHash)
             | TType_app(tcref, tinst, _) -> tinst |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash tcref.Stamp)
             | TType_anon(info, tys) -> tys |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hash info.Stamp)
             | TType_tuple(_ , tys) -> tys |> hashListOrderMatters (simpleTypeHash)
             | TType_forall(tps, tau) -> tps |> Seq.map _.Stamp |> hashListOrderMatters (hash) |> pipeToHash (simpleTypeHash tau)
             | TType_fun (d, r, _) -> simpleTypeHash d |> pipeToHash (simpleTypeHash r)
-            | TType_var _
+            | TType_var (r, _) -> hash r.Stamp
             | TType_measure _ -> 0
 
         simpleTypeHash this.ty1
@@ -110,9 +110,10 @@ let createTypeSubsumptionCache (g: TcGlobals) =
     let options =
         if g.compilationMode = CompilationMode.OneOff then
             { CacheOptions.Default with
-                PercentageToEvict = 0
-                MaximumCapacity = 100_000
-                EvictionMethod = EvictionMethod.NoEviction }
+                EvictionMethod = EvictionMethod.Blocking
+                Strategy = CachingStrategy.LRU
+                PercentageToEvict = 5
+                MaximumCapacity = 8192 }
         else
             { CacheOptions.Default with
                 EvictionMethod = EvictionMethod.Background

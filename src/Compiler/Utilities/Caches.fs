@@ -252,56 +252,54 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         this.Dispose()
 
 
-module internal CacheMetrics =
-    
+module internal Cache =      
     let mutable cacheId = 0
-
+    
     [<Literal>]
-    let cachesMetricsName = "FSharp.Compiler.Caches"
-    
+    let MeterName = "FSharp.Compiler.Caches"
+        
     let addInstrumentation (cache: Cache<_, _>) =
-        let meter = new Meter(cachesMetricsName)
+        let meter = new Meter(MeterName)
         let cacheId = Interlocked.Increment &cacheId
-    
+        
         let mutable evictions = 0L
         let mutable fails = 0L
         let mutable hits = 0L
         let mutable misses = 0L
-
+    
         let mutable allEvictions = 0L
         let mutable allFails = 0L
         let mutable allHits = 0L
         let mutable allMisses = 0L
-
+    
         cache.CacheHit |> Event.add (fun _ ->
             Interlocked.Increment &hits |> ignore
             Interlocked.Increment &allHits |> ignore
         )
-
+    
         cache.CacheMiss |> Event.add (fun _ ->
             Interlocked.Increment &misses |> ignore
             Interlocked.Increment &allMisses |> ignore
         )
-
+    
         cache.Eviction |> Event.add (fun _ ->
             Interlocked.Increment &evictions |> ignore
             Interlocked.Increment &allEvictions |> ignore
         )
-
+    
         cache.EvictionFail |> Event.add (fun _ ->
             Interlocked.Increment &fails |> ignore
             Interlocked.Increment &allFails |> ignore
         )
-
-
+    
+    
         let hitRatio () =
             let misses = Interlocked.Exchange(&misses, 0L)
             let hits = Interlocked.Exchange(&hits, 0L)
             float hits / float (hits + misses)
-
+    
         meter.CreateObservableGauge($"hit ratio {cacheId}", hitRatio) |> ignore
 
-module internal Cache =
     let Create<'Key, 'Value when 'Key: not null and 'Key: equality>(options: CacheOptions) =
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
@@ -311,7 +309,7 @@ module internal Cache =
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
     #if DEBUG
-        CacheMetrics.addInstrumentation cache
+        addInstrumentation cache
     #endif
         cache
 
