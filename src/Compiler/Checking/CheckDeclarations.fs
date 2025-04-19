@@ -5751,9 +5751,10 @@ let CheckOneImplFile
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile,
-        diagnosticOptions) =
+        diagnosticOptions,
+        sourceText: ISourceText option) =
 
-    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, trivia, _)) = synImplFile
+    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
@@ -5775,7 +5776,7 @@ let CheckOneImplFile
                 tcSequenceExpressionEntry=TcSequenceExpressionEntry,
                 tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
                 tcComputationExpression=TcComputationExpression,
-                fileContent=trivia.FileContent)    
+                sourceText=sourceText)    
 
         let envinner, moduleTyAcc = MakeInitialEnv env 
 

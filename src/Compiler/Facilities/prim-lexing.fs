@@ -325,8 +325,8 @@ and [<Sealed>] internal LexBuffer<'Char>
         with get () = bufferAcceptAction
         and set v = bufferAcceptAction <- v
 
-    member val private FileContentBuilder = System.Text.StringBuilder()
-    member lexbuf.FileContent = lexbuf.FileContentBuilder.ToString()
+    member val private SourceTextBuilder = System.Text.StringBuilder()
+    member lexbuf.SourceText = lexbuf.SourceTextBuilder.ToString() |> SourceText.ofString
 
     member lexbuf.RefillBuffer() = filler lexbuf
 
@@ -370,7 +370,7 @@ and [<Sealed>] internal LexBuffer<'Char>
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
 
             if typeof<'Char> = typeof<char> then
-                lexBuffer.FileContentBuilder.Append(Unchecked.unbox<char array> extension, 0, n)
+                lexBuffer.SourceTextBuilder.Append(Unchecked.unbox<char array> extension, 0, n)
                 |> ignore
 
         new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, langVersion, strictIndentation)
@@ -384,7 +384,7 @@ and [<Sealed>] internal LexBuffer<'Char>
         lexBuffer.BufferMaxScanLength <- buffer.Length
 
         if typeof<'Char> = typeof<char> then
-            lexBuffer.FileContentBuilder.Append(Unchecked.unbox<char array> buffer, 0, buffer.Length)
+            lexBuffer.SourceTextBuilder.Append(Unchecked.unbox<char array> buffer, 0, buffer.Length)
             |> ignore
 
         lexBuffer

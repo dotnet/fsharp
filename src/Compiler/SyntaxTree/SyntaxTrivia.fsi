@@ -48,9 +48,6 @@ type ParsedImplFileInputTrivia =
 
         /// Represent code comments found in the source file
         CodeComments: CommentTrivia list
-
-        /// The impl file content. Used to support `CallerArgumentExpression` feature.
-        FileContent: string
     }
 
 /// Represents additional information for ParsedSigFileInputTrivia
