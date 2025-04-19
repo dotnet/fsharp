@@ -267,5 +267,4 @@ module Line =
     val fromZ: Line0 -> int
 
     /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
-    val toZ: int -> Line0 
-
+    val toZ: int -> Line0
