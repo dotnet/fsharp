@@ -200,18 +200,18 @@ let main argv = 0"""
         finally
             ctxt.Unload()
 #else
-
-    static let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
-
     static let adSetup =
         let setup = new System.AppDomainSetup ()
-        setup.PrivateBinPath <- pathToThisDll
+        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
+        setup.ApplicationBase <- directory
         setup
 
     static let executeBuiltApp assembly deps =
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
-        worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
+        let worker =
+            use _a = (new AlreadyLoadedAppDomainResolver())
+            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
+        worker.ExecuteTestCase assembly (deps |> Array.ofList)
 #endif
 
     static let defaultProjectOptions =
