@@ -434,6 +434,7 @@ val AdjustCallerArgs:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     tcFieldInit: (range -> AbstractIL.IL.ILFieldInit -> Const) ->
     eCallerMemberName: string option ->
+    fileContentLines: string System.Collections.Generic.IReadOnlyList ->
     infoReader: InfoReader ->
     ad: AccessorDomain ->
     calledMeth: CalledMeth<Expr> ->

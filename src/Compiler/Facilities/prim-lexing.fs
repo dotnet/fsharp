@@ -325,6 +325,9 @@ and [<Sealed>] internal LexBuffer<'Char>
         with get () = bufferAcceptAction
         and set v = bufferAcceptAction <- v
 
+    member val private FileContentBuilder = System.Text.StringBuilder()
+    member lexbuf.FileContent = lexbuf.FileContentBuilder.ToString()
+
     member lexbuf.RefillBuffer() = filler lexbuf
 
     static member LexemeString(lexbuf: LexBuffer<char>) =
@@ -366,6 +369,10 @@ and [<Sealed>] internal LexBuffer<'Char>
             Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
 
+            if typeof<'Char> = typeof<char> then
+                lexBuffer.FileContentBuilder.Append(Unchecked.unbox<char array> extension, 0, n)
+                |> ignore
+
         new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, langVersion, strictIndentation)
 
     // Important: This method takes ownership of the array
@@ -375,6 +382,11 @@ and [<Sealed>] internal LexBuffer<'Char>
 
         lexBuffer.Buffer <- buffer
         lexBuffer.BufferMaxScanLength <- buffer.Length
+
+        if typeof<'Char> = typeof<char> then
+            lexBuffer.FileContentBuilder.Append(Unchecked.unbox<char array> buffer, 0, buffer.Length)
+            |> ignore
+
         lexBuffer
 
     // Important: this method does copy the array

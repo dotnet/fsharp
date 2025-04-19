@@ -1539,14 +1539,3 @@ type TcConfigProvider =
         TcConfigProvider(fun _ctok -> TcConfig.Create(tcConfigB, validate = false))
 
 let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
-
-/// Read and store the source file content for the `CallerArgumentExpression` feature.
-/// This should only be called in `fsc` or `fsi` processing.
-let readAndStoreFileContents (tcConfig: TcConfig) (sourceFiles: #seq<string>) =
-    if
-        tcConfig.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression
-        && (tcConfig.compilationMode.IsOneOff || tcConfig.isInteractive)
-    then
-        for fileName in sourceFiles do
-            if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                FileContent.update fileName (FileContent.FileCacheType.NotYetRead tcConfig.inputCodePage)

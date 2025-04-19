@@ -293,6 +293,7 @@ let PostParseModuleImpls
         {
             ConditionalDirectives = conditionalDirectives
             CodeComments = codeComments
+            FileContent = lexbuf.FileContent
         }
 
     ParsedInput.ImplFile(
@@ -599,6 +600,7 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 {
                     ConditionalDirectives = []
                     CodeComments = []
+                    FileContent = String.Empty
                 },
                 Set.empty
             )

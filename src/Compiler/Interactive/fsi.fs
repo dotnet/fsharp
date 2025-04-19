@@ -807,9 +807,6 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
 type internal FsiStdinSyphon(errorWriter: TextWriter) =
     let syphonText = StringBuilder()
 
-    /// Get the current syphon text
-    member _.SyphonText = syphonText.ToString()
-
     /// Clears the syphon text
     member _.Reset() = syphonText.Clear() |> ignore
 
@@ -2441,7 +2438,7 @@ type internal FsiDynamicCompiler
 
     /// Evaluate the given definitions and produce a new interactive state.
     member _.EvalParsedDefinitions
-        (ctok, diagnosticsLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list)
+        (ctok, diagnosticsLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list, fileContent)
         =
         let fileName = stdinMockFileName
 
@@ -2484,6 +2481,7 @@ type internal FsiDynamicCompiler
                     {
                         ConditionalDirectives = []
                         CodeComments = []
+                        FileContent = fileContent
                     },
                     Set.empty
                 )
@@ -2504,7 +2502,9 @@ type internal FsiDynamicCompiler
         processContents newState declaredImpls
 
     /// Evaluate the given expression and produce a new interactive state.
-    member fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr, suppressItPrint) =
+    member fsiDynamicCompiler.EvalParsedExpression
+        (ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr, suppressItPrint, fileContent)
+        =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
         let itName = "it"
 
@@ -2513,7 +2513,7 @@ type internal FsiDynamicCompiler
 
         // Evaluate the overall definitions.
         let istate =
-            fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, false, true, defs)
+            fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, false, true, defs, fileContent)
             |> fst
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with
@@ -2901,9 +2901,6 @@ type internal FsiDynamicCompiler
                     fsiDynamicCompiler.ProcessMetaCommandsFromParsedInputAsInteractiveCommands(ctok, istate, sourceFile, input))
 
             let istate = fsiDynamicCompiler.ProcessDelayedReferences(ctok, istate)
-
-            // Read the source file content for the `CallerArgumentExpression` feature
-            readAndStoreFileContents tcConfig sourceFiles
 
             fsiDynamicCompiler.EvalParsedSourceFiles(ctok, diagnosticsLogger, istate, inputs, m)
 
@@ -3517,11 +3514,7 @@ type FsiStdinLexerProvider
                 |> Option.iter (fun t ->
                     match t with
                     | Null -> ()
-                    | NonNull t ->
-                        fsiStdinSyphon.Add(t + "\n")
-                        // Update the stdin file content for the `CallerArgumentExpression` feature
-                        FileContent.clear ()
-                        FileContent.update stdinMockFileName (FileContent.FileCacheType.FromString fsiStdinSyphon.SyphonText))
+                    | NonNull t -> fsiStdinSyphon.Add(t + "\n"))
 
                 match inputOption with
                 | Some Null
@@ -3620,7 +3613,7 @@ type FsiStdinLexerProvider
 
 [<RequireQualifiedAccess>]
 type InteractionGroup =
-    | Definitions of defns: SynModuleDecl list * range: range
+    | Definitions of defns: SynModuleDecl list * range: range * fileContent: string
 
     | HashDirectives of hashDirective: ParsedHashDirective list
 
@@ -3727,8 +3720,10 @@ type FsiInteractionProcessor
             None
 
     let runhDirective diagnosticsLogger ctok istate source =
+        let fileContent = $"<@@ {source} @@>"
+
         let lexbuf =
-            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, $"<@@ {source} @@>")
+            UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, tcConfigB.strictIndentation, fileContent)
 
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
@@ -3739,7 +3734,7 @@ type FsiInteractionProcessor
         | Some(ParsedScriptInteraction.Definitions([ SynModuleDecl.Expr(e, _) ], _)) ->
 
             let _state, status =
-                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, e, true)
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, e, true, fileContent)
 
             match status with
             | Completed(Some compStatus) ->
@@ -3924,14 +3919,14 @@ type FsiInteractionProcessor
                         loop istate action
                     else
                         match action with
-                        | InteractionGroup.Definitions([], _)
+                        | InteractionGroup.Definitions([], _, _)
                         | InteractionGroup.HashDirectives [] -> istate, Completed None
 
-                        | InteractionGroup.Definitions([ SynModuleDecl.Expr(expr, _) ], _) ->
-                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)
+                        | InteractionGroup.Definitions([ SynModuleDecl.Expr(expr, _) ], _, fileContent) ->
+                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false, fileContent)
 
-                        | InteractionGroup.Definitions(defs, _) ->
-                            fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, defs)
+                        | InteractionGroup.Definitions(defs, _, fileContent) ->
+                            fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, defs, fileContent)
 
                         | InteractionGroup.HashDirectives(hash :: rest) ->
                             let status = PartiallyProcessHashDirective(ctok, istate, hash, diagnosticsLogger)
@@ -3967,7 +3962,8 @@ type FsiInteractionProcessor
             synInteraction,
             diagnosticsLogger: DiagnosticsLogger,
             lastResult: FsiValue option,
-            cancellationToken: CancellationToken
+            cancellationToken: CancellationToken,
+            fileContent
         ) =
         cancellationToken.ThrowIfCancellationRequested()
 
@@ -4027,7 +4023,7 @@ type FsiInteractionProcessor
                                 | SynModuleDecl.Expr(expr, _) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding expr)
                                 | _ -> defsA
 
-                    let group = InteractionGroup.Definitions(defsA, m)
+                    let group = InteractionGroup.Definitions(defsA, m, fileContent)
                     let others = ParsedScriptInteraction.Definitions(defsB, m)
                     Some group, Some others, istate
 
@@ -4037,7 +4033,7 @@ type FsiInteractionProcessor
             let status = ExecuteInteractionGroup(ctok, istate, group, diagnosticsLogger)
 
             ProcessStepStatus status lastResult (fun lastResult istate ->
-                ExecuteParsedInteractionInGroups(ctok, istate, others, diagnosticsLogger, lastResult, cancellationToken))
+                ExecuteParsedInteractionInGroups(ctok, istate, others, diagnosticsLogger, lastResult, cancellationToken, fileContent))
 
     /// Execute a single parsed interaction which may contain multiple items to be executed
     /// independently
@@ -4048,10 +4044,11 @@ type FsiInteractionProcessor
             synInteraction,
             diagnosticsLogger: DiagnosticsLogger,
             lastResult: FsiValue option,
-            cancellationToken: CancellationToken
+            cancellationToken: CancellationToken,
+            fileContent
         ) =
         let status =
-            ExecuteParsedInteractionInGroups(ctok, istate, synInteraction, diagnosticsLogger, lastResult, cancellationToken)
+            ExecuteParsedInteractionInGroups(ctok, istate, synInteraction, diagnosticsLogger, lastResult, cancellationToken, fileContent)
 
         ProcessStepStatus status lastResult (fun lastResult istate ->
             let rec loop istate =
@@ -4108,21 +4105,21 @@ type FsiInteractionProcessor
             stopProcessingRecovery e range0
             istate, CompletedWithReportedError e
 
-    let ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, synInteraction, istate, cancellationToken) =
+    let ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, synInteraction, istate, cancellationToken, fileContent) =
         istate
         |> mainThreadProcessAction ctok (fun ctok istate ->
-            ExecuteParsedInteraction(ctok, istate, synInteraction, diagnosticsLogger, None, cancellationToken))
+            ExecuteParsedInteraction(ctok, istate, synInteraction, diagnosticsLogger, None, cancellationToken, fileContent))
 
     let ParseExpression (tokenizer: LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
             Parser.typedSequentialExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
 
-    let ExecuteParsedExpressionOnMainThread (ctok, diagnosticsLogger, expr, istate) =
+    let ExecuteParsedExpressionOnMainThread (ctok, diagnosticsLogger, expr, istate, fileContent) =
         istate
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             istate
             |> mainThreadProcessAction ctok (fun ctok istate ->
-                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false)))
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr, false, fileContent)))
 
     let commitResult (istate, result) =
         match result with
@@ -4186,7 +4183,14 @@ type FsiInteractionProcessor
                 let res =
                     istate
                     |> runCodeOnMainThread (fun ctok istate ->
-                        ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, action, istate, cancellationToken))
+                        ExecuteParsedInteractionOnMainThread(
+                            ctok,
+                            diagnosticsLogger,
+                            action,
+                            istate,
+                            cancellationToken,
+                            tokenizer.LexBuffer.FileContent
+                        ))
 
                 if progress then
                     fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res
@@ -4217,9 +4221,6 @@ type FsiInteractionProcessor
                     processor.ParseAndExecuteInteractionFromLexbuf((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
 
                 ProcessStepStatus status None (fun _ istate -> run istate)
-
-            // Read the source file content for the `CallerArgumentExpression` feature
-            readAndStoreFileContents tcConfig [ sourceFile ]
 
             run istate)
 
@@ -4277,7 +4278,7 @@ type FsiInteractionProcessor
         setCurrState (
             currState
             |> InteractiveCatch diagnosticsLogger (fun istate ->
-                fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, [])
+                fsiDynamicCompiler.EvalParsedDefinitions(ctok, diagnosticsLogger, istate, true, false, [], String.Empty)
                 |> fst,
                 Completed None)
             |> fst
@@ -4298,12 +4299,7 @@ type FsiInteractionProcessor
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = ParseInteraction tokenizer
-
-            // Update the file content for the `CallerArgumentExpression` feature
-            FileContent.clear ()
-            FileContent.update scriptFileName (FileContent.FileCacheType.FromString sourceText)
-
-            ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
+            ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken, sourceText))
         |> commitResult
 
     member this.EvalScript(ctok, scriptPath, diagnosticsLogger) =
@@ -4337,11 +4333,7 @@ type FsiInteractionProcessor
                     SynExprSequentialTrivia.Zero
                 )
 
-            // Update the file content for the `CallerArgumentExpression` feature
-            FileContent.clear ()
-            FileContent.update scriptFileName (FileContent.FileCacheType.FromString sourceText)
-
-            ExecuteParsedExpressionOnMainThread(ctok, diagnosticsLogger, exprWithSeq, istate))
+            ExecuteParsedExpressionOnMainThread(ctok, diagnosticsLogger, exprWithSeq, istate, sourceText))
         |> commitResult
 
     member _.AddBoundValue(ctok, diagnosticsLogger, name, value: obj) =

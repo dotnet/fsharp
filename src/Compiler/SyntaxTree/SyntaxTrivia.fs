@@ -32,6 +32,7 @@ type ParsedImplFileInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
         CodeComments: CommentTrivia list
+        FileContent: string
     }
 
 [<NoEquality; NoComparison>]

@@ -313,6 +313,9 @@ type TcFileState =
                 -> UnscopedTyparEnv
                 -> range * Expr * TType * SynExpr
                 -> Expr * UnscopedTyparEnv
+
+        /// The impl file content split by lines. Used to support `CallerArgumentExpression` feature.
+        FileContentLines: string IReadOnlyList
     }
 
     static member Create:
@@ -356,5 +359,6 @@ type TcFileState =
                 -> OverallTy
                 -> UnscopedTyparEnv
                 -> range * Expr * TType * SynExpr
-                -> Expr * UnscopedTyparEnv) ->
+                -> Expr * UnscopedTyparEnv) *
+        ?fileContent: string ->
             TcFileState

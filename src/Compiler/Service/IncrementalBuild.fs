@@ -130,7 +130,7 @@ module IncrementalBuildSyntaxTree =
                     [],
                     [],
                     isLastCompiland,
-                    { ConditionalDirectives = []; CodeComments = [] },
+                    { ConditionalDirectives = []; CodeComments = []; FileContent = String.Empty },
                     Set.empty
                 )
             ), sourceRange, fileName, [||]

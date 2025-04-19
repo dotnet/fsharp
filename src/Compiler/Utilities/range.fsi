@@ -269,21 +269,3 @@ module Line =
     /// Convert a line number from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toZ: int -> Line0 
 
-/// Store code file content. Used to implement `CallerArgumentExpression`
-module internal FileContent =
-    [<RequireQualifiedAccess>]
-    type FileCacheType =
-        | AlreadyRead of lines: string array
-        | NotYetRead of codePage: int option
-        
-        static member FromString: s: string -> FileCacheType
-
-    /// Update the file content. Should be called before the code file/expression is typechecked.
-    val update: fileName: string -> fileContent: FileCacheType -> unit
-    
-    /// Clean up all the file contents. 
-    /// May be called in `fsi` processing, to avoid holding the source files which were compiled.
-    val clear: unit -> unit
-    
-    /// Get the code text of the specific `range`
-    val getCodeText: range -> string
