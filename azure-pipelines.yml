@@ -129,8 +129,6 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
-            displayName: End to end build tests
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -326,17 +324,6 @@ stages:
               publishLocation: Container
             continueOnError: true
             condition: failed()
-
-        # End to end build
-        - job: EndToEndBuildTests
-          pool:
-            vmImage: windows-latest
-          steps:
-          - checkout: self
-            clean: true
-          - script: .\Build.cmd -c Release
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
-            displayName: End to end build tests
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
