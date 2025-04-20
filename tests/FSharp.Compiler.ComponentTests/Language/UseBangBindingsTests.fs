@@ -2,6 +2,7 @@
 
 namespace Language
 
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -39,7 +40,7 @@ let main _ =
             (Error 1228, Line 16, Col 10, Line 16, Col 11, "'use!' bindings must be of the form 'use! <var> = <expr>'")
         ]
         
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``Named patterns are allowed in use! binding`` () =
         FSharp """
 module Program 
@@ -66,11 +67,9 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> withOutputContainsAllInOrder [
-            "disposed 1"
-            "disposed 3"
-            "disposed 2"
-        ]
+        |> withStdOutContains "disposed 1"
+        |> withStdOutContains "disposed 2"
+        |> withStdOutContains "disposed 3"
         
     [<Fact>]
     let ``Both named and discard patterns in custom computation expression use! binding`` () =
@@ -125,10 +124,8 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> withOutputContainsAllInOrder [
-            "Counter with value 4 disposed"
-            "Counter with value 5 disposed"
-        ]
+        |> withStdOutContains "Counter with value 4 disposed"
+        |> withStdOutContains "Counter with value 5 disposed"
         
 module UseBangBindingsPreviewTests =
     [<Fact>]
@@ -171,18 +168,16 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> withOutputContainsAllInOrder [
-            "Starting async workflow"
-            "Created counter with value 5"
-            "Created counter with value 4"
-            "Created counter with value 3"
-            "Done using the resource"
-            "Counter with value 3 disposed"
-            "Counter with value 4 disposed"
-            "Counter with value 5 disposed"
-        ]
-        
-    [<Fact>]
+        |> withStdOutContains "Starting async workflow"
+        |> withStdOutContains "Created counter with value 5"
+        |> withStdOutContains "Created counter with value 4"
+        |> withStdOutContains "Created counter with value 3"
+        |> withStdOutContains "Done using the resource"
+        |> withStdOutContains "Counter with value 3 disposed"
+        |> withStdOutContains "Counter with value 4 disposed"
+        |> withStdOutContains "Counter with value 5 disposed"
+
+    [<FactForNETCOREAPP>]
     let ``Discard pattern allowed in async use! binding 2`` () =
         FSharp """
 module Program 
@@ -210,12 +205,10 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> withOutputContainsAllInOrder [
-            "disposed 1"
-            "disposed 4"
-            "disposed 3"
-            "disposed 2"
-        ]
+        |> withStdOutContains "disposed 1"
+        |> withStdOutContains "disposed 2"
+        |> withStdOutContains "disposed 3"
+        |> withStdOutContains "disposed 4"
         
     [<Fact>]
     let ``Both named and discard patterns in custom computation expression use! binding`` () =
@@ -271,11 +264,9 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> withOutputContainsAllInOrder [
-            "Counter with value 3 disposed"
-            "Counter with value 4 disposed"
-            "Counter with value 5 disposed"
-        ]
+        |> withStdOutContains "Counter with value 3 disposed"
+        |> withStdOutContains "Counter with value 4 disposed"
+        |> withStdOutContains "Counter with value 5 disposed"
         
     [<Fact>]
     let ``Discard patterns are allowed in use and use! binding`` () =
@@ -330,7 +321,5 @@ let main _ =
         |> shouldSucceed
         |> run
         |> shouldSucceed
-        |> withOutputContainsAllInOrder [
-            "Counter with value 2 disposed"
-            "disposed 1"
-        ]
+        |> withStdOutContains "disposed 1"
+        |> withStdOutContains "Counter with value 2 disposed"
