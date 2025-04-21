@@ -126,26 +126,6 @@ module HashAccessibility =
 module rec HashTypes =
     open Microsoft.FSharp.Core.LanguagePrimitives
 
-    let rec stampEquals ty1 ty2 =
-        match ty1, ty2 with
-        | TType_app(tcref1, tinst1, _), TType_app(tcref2, tinst2, _) ->
-            tcref1.Stamp = tcref2.Stamp
-            && tinst1.Length = tinst2.Length
-            && tinst1 |> List.zip tinst2 |> List.forall (fun (t1, t2) -> stampEquals t1 t2)
-
-        | TType_var(r1, _), TType_var(r2, _) -> r1.Stamp.Equals(r2.Stamp)
-        | _ -> false
-
-    /// Get has for Stamp for TType_app tyconref and TType_var typar
-    let hashStamp g ty =
-        let v: Stamp =
-            match (stripTyEqns g ty) with
-            | TType_app(tcref, _, _) -> tcref.Stamp
-            | TType_var(r, _) -> r.Stamp
-            | _ -> GenericZero
-
-        hash v
-
     /// Hash a reference to a type
     let hashTyconRef tcref = hashTyconRefImpl tcref
 

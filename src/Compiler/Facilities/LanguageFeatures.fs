@@ -220,6 +220,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.EnforceAttributeTargets, previewVersion // Not enabled due to a number of external library dependencies on unenforced attributes
+                LanguageFeature.UseTypeSubsumptionCache, previewVersion
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
@@ -228,9 +229,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
                 LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
-
-                // Just to see if it works.
-                LanguageFeature.UseTypeSubsumptionCache, languageVersion46
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
