@@ -851,6 +851,17 @@ let (|OptionalSequential|) e =
     | _ -> (e, None)
 
 [<return: Struct>]
+let rec (|UnwrapUseBang|_|) supportsUseBangBindingValueDiscard pat =
+    match pat with
+    | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> ValueSome(id, pat)
+    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> ValueSome(id, pat)
+    | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
+        let tmpIdent = mkSynId m "_"
+        ValueSome(tmpIdent, SynPat.Named(SynIdent(tmpIdent, None), false, None, m))
+    | SynPat.Paren(pat = UnwrapUseBang supportsUseBangBindingValueDiscard (id, pat)) -> ValueSome(id, pat)
+    | _ -> ValueNone
+
+[<return: Struct>]
 let (|ExprAsUseBang|_|) expr =
     match expr with
     | SynExpr.LetOrUseBang(
@@ -1823,14 +1834,12 @@ let rec TryTranslateComputationExpression
                 requireBuilderMethod "Using" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
                 requireBuilderMethod "Bind" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
 
+                let supportsUseBangBindingValueDiscard =
+                    ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.UseBangBindingValueDiscard
+
                 let ident, pat =
                     match pat with
-                    | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
-                    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
-                    | SynPat.Wild(m) when ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.UseBangBindingValueDiscard ->
-                        // Special handling for wildcard (_) patterns
-                        let tmpIdent = mkSynId m "_"
-                        tmpIdent, SynPat.Named(SynIdent(tmpIdent, None), false, None, m)
+                    | UnwrapUseBang supportsUseBangBindingValueDiscard (ident, pat) -> ident, pat
                     | _ -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
 
                 let bindExpr =
