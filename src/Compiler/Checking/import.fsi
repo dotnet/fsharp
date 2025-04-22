@@ -47,8 +47,7 @@ type TTypeCacheKey =
     interface System.IEquatable<TTypeCacheKey>
     private new: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
 
-    static member FromStrippedTypes:
-        ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
+    static member FromStrippedTypes: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
 
     val ty1: TType
     val ty2: TType

@@ -328,3 +328,33 @@ module HashTastMemberOrVals =
 
             hashNonMemberVal (g, obs) (tps, vref.Deref, tau, cxs)
         | Some _ -> hashMember (g, obs) emptyTyparInst vref.Deref
+
+module HashStamps =
+    let rec stampEquals ty1 ty2 =
+        match ty1, ty2 with
+        | TType_app(tcref1, tinst1, _), TType_app(tcref2, tinst2, _) ->
+            tcref1.Stamp = tcref2.Stamp
+            && tinst1.Length = tinst2.Length
+            && (tinst1, tinst2) ||> Seq.zip |> Seq.forall (fun (t1, t2) -> stampEquals t1 t2)
+
+        | TType_var(r1, _), TType_var(r2, _) -> r1.Stamp = r2.Stamp
+        | _ -> false
+
+    let inline hashStamp (x: int64) = uint x * 2654435761u |> int
+
+    // The idea is to keep the illusion of immutability of TType.
+    // This hash must be stable during compilation, otherwise we won't be able to find keys or evict from the cache.
+    let rec hashTType ty =
+        match ty with
+        | TType_ucase(_, tinst) -> tinst |> hashListOrderMatters (hashTType)
+        | TType_app(tcref, tinst, _) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp tcref.Stamp)
+        | TType_anon(info, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp info.Stamp)
+        | TType_tuple(_, tys) -> tys |> hashListOrderMatters (hashTType)
+        | TType_forall(tps, tau) ->
+            tps
+            |> Seq.map _.Stamp
+            |> hashListOrderMatters (hashStamp)
+            |> pipeToHash (hashTType tau)
+        | TType_fun(d, r, _) -> hashTType d |> pipeToHash (hashTType r)
+        | TType_var(r, _) -> hashStamp r.Stamp
+        | TType_measure _ -> 0

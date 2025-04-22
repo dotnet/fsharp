@@ -56,40 +56,12 @@ type CanCoerce =
     | CanCoerce
     | NoCoerce
 
-module StampHashing =
-    let rec stampEquals ty1 ty2 =
-        match ty1, ty2 with
-        | TType_app(tcref1, tinst1, _), TType_app(tcref2, tinst2, _) ->
-            tcref1.Stamp = tcref2.Stamp
-            && tinst1.Length = tinst2.Length
-            && (tinst1, tinst2) ||> Seq.zip |> Seq.forall (fun (t1, t2) -> stampEquals t1 t2)
-
-        | TType_var(r1, _), TType_var(r2, _) -> r1.Stamp = r2.Stamp
-        | _ -> false
-
-    let inline hashStamp (x: int64) =
-        uint x * 2654435761u |> int
-
-    // The idea is to keep the illusion of immutability of TType.
-    // This hash must be stable during compilation, otherwise we won't be able to find keys or evict from the cache.
-    let rec simpleTypeHash ty =
-        match ty with
-        | TType_ucase (_, tinst) -> tinst |> hashListOrderMatters (simpleTypeHash)
-        | TType_app(tcref, tinst, _) -> tinst |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hashStamp tcref.Stamp)
-        | TType_anon(info, tys) -> tys |> hashListOrderMatters (simpleTypeHash) |> pipeToHash (hashStamp info.Stamp)
-        | TType_tuple(_ , tys) -> tys |> hashListOrderMatters (simpleTypeHash)
-        | TType_forall(tps, tau) -> tps |> Seq.map _.Stamp |> hashListOrderMatters (hashStamp) |> pipeToHash (simpleTypeHash tau)
-        | TType_fun (d, r, _) -> simpleTypeHash d |> pipeToHash (simpleTypeHash r)
-        | TType_var (r, _) -> hashStamp r.Stamp
-        | TType_measure _ -> 0
-
 [<Struct; NoComparison; CustomEquality; DebuggerDisplay("{ToString()}")>]
 type TTypeCacheKey =
 
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
-    //val tcGlobals: TcGlobals
 
     private new (ty1, ty2, canCoerce) =
         { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
@@ -104,8 +76,8 @@ type TTypeCacheKey =
             elif this.ty1 === other.ty1 && this.ty2 === other.ty2 then
                 true
             else
-                StampHashing.stampEquals this.ty1 other.ty1
-                && StampHashing.stampEquals this.ty2 other.ty2
+                HashStamps.stampEquals this.ty1 other.ty1
+                && HashStamps.stampEquals this.ty2 other.ty2
 
     override this.Equals(other:objnull) =
         match other with
@@ -113,8 +85,8 @@ type TTypeCacheKey =
         | _ -> false
 
     override this.GetHashCode() : int =
-        StampHashing.simpleTypeHash this.ty1
-        |> pipeToHash (StampHashing.simpleTypeHash this.ty2)
+        HashStamps.hashTType this.ty1
+        |> pipeToHash (HashStamps.hashTType this.ty2)
         |> pipeToHash (hash this.canCoerce)
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"

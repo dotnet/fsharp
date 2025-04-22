@@ -115,9 +115,6 @@ let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subs
     if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         amap.TypeSubsumptionCache.AddOrUpdate(key, subsumes)
 
-[<RequireQualifiedAccess>]
-type ResultWorthCaching = Yes | No
-
 /// The feasible coercion relation. Part of the language spec.
 let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: TType) (canCoerce: CanCoerce) (ty2: TType) =
 
@@ -134,33 +131,32 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
     | ValueSome subsumes ->
         subsumes
     | ValueNone ->
-        let subsumes, worthCaching =
+        let subsumes =
             match ty1, ty2 with
             | TType_measure _, TType_measure _
             | TType_var _, _ | _, TType_var _ ->
-                true, ResultWorthCaching.No
+                true
 
             | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
-                List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2, ResultWorthCaching.Yes
+                List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
 
             | TType_tuple _, TType_tuple _
             | TType_anon _, TType_anon _
             | TType_fun _, TType_fun _ ->
-                TypesFeasiblyEquiv ndeep g amap m ty1 ty2, ResultWorthCaching.Yes
+                TypesFeasiblyEquiv ndeep g amap m ty1 ty2
 
             | _ ->
                 // F# reference types are subtypes of type 'obj'
                     if isObjTyAnyNullness g ty1 && (canCoerce = CanCoerce || isRefTy g ty2) then
-                        true, ResultWorthCaching.No
+                        true
                     elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
-                        true, ResultWorthCaching.Yes
+                        true
                     else
                         let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
                         // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                        List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces, ResultWorthCaching.Yes
+                        List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
-        if worthCaching = ResultWorthCaching.Yes then
-            UpdateCachedTypeSubsumption g amap key subsumes
+        UpdateCachedTypeSubsumption g amap key subsumes
 
         subsumes
 
