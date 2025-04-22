@@ -5921,7 +5921,8 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             tcSimplePats=TcSimplePats,
             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
             tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
-            tcComputationExpression=TcComputationExpression)
+            tcComputationExpression=TcComputationExpression,
+            sourceText=None)
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
     let m = sigFile.QualifiedName.Range

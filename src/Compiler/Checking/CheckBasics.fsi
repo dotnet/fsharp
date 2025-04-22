@@ -360,5 +360,5 @@ type TcFileState =
                 -> UnscopedTyparEnv
                 -> range * Expr * TType * SynExpr
                 -> Expr * UnscopedTyparEnv) *
-        ?sourceText: ISourceText option ->
+        sourceText: ISourceText option ->
             TcFileState

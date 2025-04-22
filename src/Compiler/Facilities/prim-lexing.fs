@@ -362,6 +362,7 @@ and [<Sealed>] internal LexBuffer<'Char>
         (reportLibraryOnlyFeatures, langVersion, strictIndentation, f: 'Char[] * int * int -> int)
         : LexBuffer<'Char> =
         let extension = Array.zeroCreate 4096
+        let isCharTy = typeof<'Char> = typeof<char>
 
         let filler (lexBuffer: LexBuffer<'Char>) =
             let n = f (extension, 0, extension.Length)
@@ -369,7 +370,7 @@ and [<Sealed>] internal LexBuffer<'Char>
             Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
             lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
 
-            if typeof<'Char> = typeof<char> then
+            if isCharTy then
                 lexBuffer.SourceTextBuilder.Append(Unchecked.unbox<char array> extension, 0, n)
                 |> ignore
 

@@ -347,7 +347,7 @@ type TcFileState =
           tcSequenceExpressionEntry,
           tcArrayOrListSequenceExpression,
           tcComputationExpression,
-          ?sourceText: ISourceText option) =
+          sourceText: ISourceText option) =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
@@ -379,7 +379,7 @@ type TcFileState =
           TcSequenceExpressionEntry = tcSequenceExpressionEntry
           TcArrayOrListComputedExpression = tcArrayOrListSequenceExpression
           TcComputationExpression = tcComputationExpression
-          SourceText = sourceText |> Option.flatten
+          SourceText = sourceText
         }
 
     override _.ToString() = "<cenv>"
