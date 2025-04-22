@@ -850,12 +850,18 @@ let (|OptionalSequential|) e =
     | SynExpr.Sequential(debugPoint = _sp; isTrueSeq = true; expr1 = dataComp1; expr2 = dataComp2) -> (dataComp1, Some dataComp2)
     | _ -> (e, None)
 
+//   use! x = ...
+//   use! (x) = ...
+//   use! (__) = ...
+//   use! _ = ...
+//   use! (_) = ...
 [<return: Struct>]
 let rec (|UnwrapUseBang|_|) supportsUseBangBindingValueDiscard pat =
     match pat with
     | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> ValueSome(id, pat)
     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> ValueSome(id, pat)
     | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
+        // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
         let tmpIdent = mkSynId m "_"
         ValueSome(tmpIdent, SynPat.Named(SynIdent(tmpIdent, None), false, None, m))
     | SynPat.Paren(pat = UnwrapUseBang supportsUseBangBindingValueDiscard (id, pat)) -> ValueSome(id, pat)
