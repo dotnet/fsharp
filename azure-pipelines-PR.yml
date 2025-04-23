@@ -210,7 +210,7 @@ stages:
         enableSourceBuild: 
         sourceBuildParameters:
           platforms:
-            buildArguments: --source-build
+            buildArguments: '--source-build'
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
