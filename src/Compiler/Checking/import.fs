@@ -105,7 +105,7 @@ let createTypeSubsumptionCache (g: TcGlobals) =
                 MaximumCapacity = 32_000 } // 8192 }
     Cache.Create<TTypeCacheKey, bool>(options)
 
-let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<_,_>>()
+let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.

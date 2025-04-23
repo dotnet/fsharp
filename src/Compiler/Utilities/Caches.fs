@@ -9,6 +9,7 @@ open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
 open Internal.Utilities.Library
+open System.Runtime.CompilerServices
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CachingStrategy =
@@ -71,25 +72,27 @@ type internal CachedEntity<'Key, 'Value> =
     override this.ToString() = $"{this.Key}"
 
 type internal IEvictionQueue<'Key, 'Value> =
-    interface
-        abstract member Acquire: 'Key * 'Value -> CachedEntity<'Key, 'Value>
-        abstract member Add: CachedEntity<'Key, 'Value> * CachingStrategy -> unit
-        abstract member Update: CachedEntity<'Key, 'Value> -> unit
-        abstract member GetKeysToEvict: int -> 'Key[]
-        abstract member Remove: CachedEntity<'Key, 'Value> -> unit
-    end
+    abstract member Acquire: 'Key * 'Value -> CachedEntity<'Key, 'Value>
+    abstract member Add: CachedEntity<'Key, 'Value> * CachingStrategy -> unit
+    abstract member Update: CachedEntity<'Key, 'Value> -> unit
+    abstract member GetKeysToEvict: int -> 'Key[]
+    abstract member Remove: CachedEntity<'Key, 'Value> -> unit
 
-type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
+type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy, maximumCapacity, overCapacity: Event<_>) =
 
     let list = LinkedList<CachedEntity<'Key, 'Value>>()
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
+    let mutable created = 0
 
     interface IEvictionQueue<'Key, 'Value> with
 
         member _.Acquire(key, value) =
             match pool.TryTake() with
             | true, entity -> entity.ReUse(key, value)
-            | _ -> CachedEntity(key, value).WithNode()
+            | _ ->
+                if Interlocked.Increment &created > maximumCapacity then
+                    overCapacity.Trigger()
+                CachedEntity(key, value).WithNode()
 
         member _.Add(entity: CachedEntity<'Key, 'Value>, strategy) =
             lock list
@@ -137,7 +140,7 @@ type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
         member this.Remove(entity: CachedEntity<_, _>) =
             lock list <| fun () -> list.Remove(entity.Node)
             // Return to the pool for reuse.
-            pool.Add(entity)
+            if pool.Count < maximumCapacity then pool.Add(entity)
 
     member _.Count = list.Count
 
@@ -153,15 +156,32 @@ type internal EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
             member _.Remove(_) = ()
         }
 
+type ICacheEvents =
+    [<CLIEvent>]
+    abstract member CacheHit: IEvent<unit>
+
+    [<CLIEvent>]
+    abstract member CacheMiss: IEvent<unit>
+
+    [<CLIEvent>]
+    abstract member Eviction: IEvent<unit>
+
+    [<CLIEvent>]
+    abstract member EvictionFail: IEvent<unit> 
+
+    [<CLIEvent>]
+    abstract member OverCapacity: IEvent<unit>
+
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     internal (options: CacheOptions, capacity, cts: CancellationTokenSource) =
 
-    let cacheHit = Event<_ * _>()
-    let cacheMiss = Event<_>()
-    let eviction = Event<_>()
-    let evictionFail = Event<_>()
+    let cacheHit = Event<unit>()
+    let cacheMiss = Event<unit>()
+    let eviction = Event<unit>()
+    let evictionFail = Event<unit>()
+    let overCapacity = Event<unit>()
 
     let store =
         ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
@@ -169,7 +189,7 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     let evictionQueue: IEvictionQueue<'Key, 'Value> =
         match options.EvictionMethod with
         | EvictionMethod.NoEviction -> EvictionQueue.NoEviction
-        | _ -> EvictionQueue(options.Strategy)
+        | _ -> EvictionQueue(options.Strategy, options.MaximumCapacity, overCapacity)
 
     let tryEvictItems () =
         let count =
@@ -182,10 +202,10 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
             match store.TryRemove(key) with
             | true, removed ->
                 evictionQueue.Remove(removed)
-                eviction.Trigger(key)
+                eviction.Trigger()
             | _ ->
                 failwith "eviction fail"
-                evictionFail.Trigger(key)
+                evictionFail.Trigger()
 
     let rec backgroundEviction () =
         async {
@@ -212,12 +232,12 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     member _.TryGetValue(key: 'Key, value: outref<'Value>) =
         match store.TryGetValue(key) with
         | true, cachedEntity ->
-            cacheHit.Trigger(key, cachedEntity.Value)
+            cacheHit.Trigger()
             evictionQueue.Update(cachedEntity)
             value <- cachedEntity.Value
             true
         | _ ->
-            cacheMiss.Trigger(key)
+            cacheMiss.Trigger()
             value <- Unchecked.defaultof<'Value>
             false
 
@@ -248,75 +268,34 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
 
         evictionQueue.Add(entity, options.Strategy)
 
-    [<CLIEvent>]
-    member val CacheHit = cacheHit.Publish
+    interface ICacheEvents with
 
-    [<CLIEvent>]
-    member val CacheMiss = cacheMiss.Publish
+        [<CLIEvent>]
+        member val CacheHit = cacheHit.Publish
 
-    [<CLIEvent>]
-    member val Eviction = eviction.Publish
+        [<CLIEvent>]
+        member val CacheMiss = cacheMiss.Publish
 
-    [<CLIEvent>]
-    member val EvictionFail = evictionFail.Publish
+        [<CLIEvent>]
+        member val Eviction = eviction.Publish
+
+        [<CLIEvent>]
+        member val EvictionFail = evictionFail.Publish
+
+        [<CLIEvent>]
+        member val OverCapacity = overCapacity.Publish
 
     interface IDisposable with
         member this.Dispose() =
             cts.Cancel()
+            CacheInstrumentation.RemoveInstrumentation(this)
             GC.SuppressFinalize(this)
 
     member this.Dispose() = (this :> IDisposable).Dispose()
 
     override this.Finalize() : unit = this.Dispose()
 
-module internal Cache =
-    let mutable cacheId = 0
-
-    [<Literal>]
-    let MeterName = "FSharp.Compiler.Caches"
-
-    let addInstrumentation (cache: Cache<_, _>) =
-        let meter = new Meter(MeterName)
-        let cacheId = Interlocked.Increment &cacheId
-
-        let mutable evictions = 0L
-        let mutable fails = 0L
-        let mutable hits = 0L
-        let mutable misses = 0L
-
-        let mutable allEvictions = 0L
-        let mutable allFails = 0L
-        let mutable allHits = 0L
-        let mutable allMisses = 0L
-
-        cache.CacheHit
-        |> Event.add (fun _ ->
-            Interlocked.Increment &hits |> ignore
-            Interlocked.Increment &allHits |> ignore)
-
-        cache.CacheMiss
-        |> Event.add (fun _ ->
-            Interlocked.Increment &misses |> ignore
-            Interlocked.Increment &allMisses |> ignore)
-
-        cache.Eviction
-        |> Event.add (fun _ ->
-            Interlocked.Increment &evictions |> ignore
-            Interlocked.Increment &allEvictions |> ignore)
-
-        cache.EvictionFail
-        |> Event.add (fun _ ->
-            Interlocked.Increment &fails |> ignore
-            Interlocked.Increment &allFails |> ignore)
-
-        let hitRatio () =
-            let misses = Interlocked.Exchange(&misses, 0L)
-            let hits = Interlocked.Exchange(&hits, 0L)
-            float hits / float (hits + misses)
-
-        meter.CreateObservableGauge($"hit ratio {cacheId}", hitRatio) |> ignore
-
-    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
+    static member Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
             options.MaximumCapacity
@@ -324,7 +303,81 @@ module internal Cache =
 
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+        CacheInstrumentation.AddInstrumentation cache |> ignore
+        cache 
+        
+    member this.GetStats() =
+        CacheInstrumentation.GetStats(this)
+
+and internal CacheInstrumentation (cache: ICacheEvents) =
+    static let mutable cacheId = 0
+
+    static let instrumentedCaches = ConcurrentDictionary<ICacheEvents, CacheInstrumentation>()
+
+    static let meter = new Meter(nameof CacheInstrumentation)
+    let hits = meter.CreateCounter<int64>("hits")
+    let misses = meter.CreateCounter<int64>("misses")
+    let evictions = meter.CreateCounter<int64>("evictions")
+    let evictionFails = meter.CreateCounter<int64>("eviction-fails")
+    let overCapacity = meter.CreateCounter<int64>("over-capacity")
+
+    do
+        cache.CacheHit.Add <| fun _ -> hits.Add(1L)
+        cache.CacheMiss.Add <| fun _ -> misses.Add(1L)
+        cache.Eviction.Add <| fun _ -> evictions.Add(1L)
+        cache.EvictionFail.Add <| fun _ -> evictionFails.Add(1L)
+        cache.OverCapacity.Add <| fun _ -> overCapacity.Add(1L)
+
+    let current = ConcurrentDictionary<Instrument, int64 ref>()
+
 #if DEBUG
-        addInstrumentation cache
+    let listener =
+        new MeterListener(
+            InstrumentPublished = fun i l -> if i.Meter = meter then l.EnableMeasurementEvents(i))
+
+    do
+        listener.SetMeasurementEventCallback<int64>(fun k v _ _ ->
+            Interlocked.Add(current.GetOrAdd(k, ref 0L), v) |> ignore)
+        listener.Start()
 #endif
-        cache
+
+    member val CacheId = $"cache-{Interlocked.Increment(&cacheId)}"
+
+    member val RecentStats = "-" with get, set
+
+    member this.TryUpdateStats(clearCounts) =
+        let stats =
+            try 
+                let ratio = float current[hits].Value / float (current[hits].Value + current[misses].Value)
+                [ for i in current.Keys -> $"{i.Name}: {current[i].Value}"]
+                |> String.concat ", "
+                |> sprintf "%s | ratio: %.2f %s" this.CacheId ratio
+            with _ -> "!"
+
+        if clearCounts then 
+            for r in current.Values do Interlocked.Exchange(r, 0L) |> ignore
+
+        if stats <> this.RecentStats then
+            this.RecentStats <- stats
+            true
+        else
+            false
+
+    static member GetStats(cache: ICacheEvents) =
+        instrumentedCaches[cache].TryUpdateStats(false) |> ignore
+        instrumentedCaches[cache].RecentStats
+
+    static member GetStatsUpdateForAllCaches(clearCounts) =
+        [
+            for i in instrumentedCaches.Values do
+                if i.TryUpdateStats(clearCounts) then
+                    i.RecentStats
+        ]
+
+    static member AddInstrumentation(cache: ICacheEvents) =
+        instrumentedCaches[cache] <- CacheInstrumentation(cache)
+
+    static member RemoveInstrumentation(cache: ICacheEvents) =
+        instrumentedCaches.TryRemove(cache) |> ignore
+
+

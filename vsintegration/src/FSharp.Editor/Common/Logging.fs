@@ -151,41 +151,12 @@ module FSharpServiceTelemetry =
 
 #if DEBUG
     let logCacheMetricsToOutput () =
-        let listener =
-            new MeterListener(
-                InstrumentPublished =
-                    fun instrument l ->
-                        if instrument.Meter.Name = "FSharp.Compiler.Caches" then
-                            l.EnableMeasurementEvents(instrument)
-            )
-
-        let measurements = Collections.Generic.Dictionary<_, _>()
-        let changed = ResizeArray()
-
-        let callBack =
-            MeasurementCallback(fun i v _ _ ->
-                let v = if Double.IsNaN v then "-" else $"%.1f{v * 100.}%%"
-
-                if measurements.ContainsKey(i.Name) && measurements[i.Name] = v then
-                    ()
-                else
-                    measurements[i.Name] <- v
-                    changed.Add i.Name)
-
-        listener.SetMeasurementEventCallback callBack
-        listener.Start()
 
         let timer = new System.Timers.Timer(1000.0, AutoReset = true)
 
         timer.Elapsed.Add(fun _ ->
-            changed.Clear()
-            listener.RecordObservableInstruments()
-
-            let msg =
-                seq { for k in changed -> $"{k}: {measurements[k]}" } |> String.concat ", "
-
-            if msg <> "" then
-                logMsg msg)
+            FSharp.Compiler.CacheInstrumentation.GetStatsUpdateForAllCaches(clearCounts = true)
+            |> Seq.iter logMsg)
 
         timer.Start()
 
@@ -199,7 +170,7 @@ module FSharpServiceTelemetry =
             OpenTelemetry.Sdk
                 .CreateMeterProviderBuilder()
                 .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                .AddMeter(FSharp.Compiler.Cache.MeterName)
+                .AddMeter(nameof FSharp.Compiler.CacheInstrumentation)
                 .AddOtlpExporter(fun _e m ->
                     m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
                     m.TemporalityPreference <- MetricReaderTemporalityPreference.Cumulative)
