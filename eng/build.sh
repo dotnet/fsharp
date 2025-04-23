@@ -289,7 +289,7 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto $properties"
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto $properties /p:DotNetBuildRepo=$product_build /p:DotNetBuildSourceOnly=$source_build"
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
