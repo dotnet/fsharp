@@ -149,7 +149,6 @@ module FSharpServiceTelemetry =
 
         ActivitySource.AddActivityListener(listener)
 
-#if DEBUG
     let logCacheMetricsToOutput () =
 
         let timer = new System.Timers.Timer(1000.0, AutoReset = true)
@@ -160,6 +159,7 @@ module FSharpServiceTelemetry =
 
         timer.Start()
 
+#if DEBUG
     open OpenTelemetry.Resources
     open OpenTelemetry.Trace
     open OpenTelemetry.Metrics

@@ -291,7 +291,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
 
     override this.Finalize() : unit = this.Dispose()
 
-    static member Create<'Key, 'Value when 'Key: not null and 'Key: equality>(options: CacheOptions) =
+    static member Create<'Key, 'Value>(options: CacheOptions) =
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
             options.MaximumCapacity
@@ -325,7 +325,6 @@ and CacheInstrumentation(cache: ICacheEvents) =
 
     let current = ConcurrentDictionary<Instrument, int64 ref>()
 
-#if DEBUG
     let listener =
         new MeterListener(
             InstrumentPublished =
@@ -337,7 +336,6 @@ and CacheInstrumentation(cache: ICacheEvents) =
     do
         listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(current.GetOrAdd(k, ref 0L), v) |> ignore)
         listener.Start()
-#endif
 
     member val CacheId = $"cache-{Interlocked.Increment(&cacheId)}"
 
@@ -365,6 +363,9 @@ and CacheInstrumentation(cache: ICacheEvents) =
         else
             false
 
+    member this.Dispose() =
+        listener.Dispose()
+
     static member GetStats(cache: ICacheEvents) =
         instrumentedCaches[cache].TryUpdateStats(false) |> ignore
         instrumentedCaches[cache].RecentStats
@@ -377,7 +378,8 @@ and CacheInstrumentation(cache: ICacheEvents) =
         ]
 
     static member AddInstrumentation(cache: ICacheEvents) =
-        instrumentedCaches[cache] <- CacheInstrumentation(cache)
+        instrumentedCaches[cache] <- new CacheInstrumentation(cache)
 
     static member RemoveInstrumentation(cache: ICacheEvents) =
+        instrumentedCaches[cache].Dispose()
         instrumentedCaches.TryRemove(cache) |> ignore

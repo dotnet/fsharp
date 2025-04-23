@@ -70,7 +70,7 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     member Dispose: unit -> unit
     member GetStats: unit -> string
 
-    static member Create<'Key, 'Value when 'Key: not null and 'Key: equality> :
+    static member Create<'Key, 'Value> :
         options: CacheOptions -> Cache<'Key, 'Value>
 
     interface ICacheEvents
