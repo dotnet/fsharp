@@ -257,6 +257,16 @@ function BuildSolution {
     enable_analyzers=false
   fi
 
+  local source_build_args=""
+  if [[ "$source_build" == true ]]; then
+    source_build_args="/p:DotNetBuildSourceOnly=true"
+  fi
+
+  local product_build_args=""
+  if [[ "$product_build" == true ]]; then
+    product_build_args="/p:DotNetBuildRepo=true"
+  fi
+
   # NuGet often exceeds the limit of open files on Mac and Linux
   # https://github.com/NuGet/Home/issues/2163
   if [[ "$UNAME" == "Darwin" || "$UNAME" == "Linux" ]]; then
@@ -289,7 +299,7 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto $properties /p:DotNetBuildRepo=$product_build /p:DotNetBuildSourceOnly=$source_build"
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto $source_build_args $product_build_args $properties
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
@@ -304,8 +314,6 @@ function BuildSolution {
       /p:RepoRoot="$repo_root" \
       /p:Restore=$restore \
       /p:Build=$build \
-      /p:DotNetBuildRepo=$product_build \
-      /p:DotNetBuildSourceOnly=$source_build \
       /p:Rebuild=$rebuild \
       /p:Pack=$pack \
       /p:Publish=$publish \
@@ -315,6 +323,8 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:BuildNoRealsig=$buildnorealsig \
+      $source_build_args \
+      $product_build_args \
       $properties
   fi
 }
