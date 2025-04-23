@@ -207,7 +207,10 @@ stages:
         enablePublishTestResults: false
         enablePublishBuildAssets: true
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
-        enableSourceBuild: true
+        enableSourceBuild: 
+        sourceBuildParameters:
+          platforms:
+            buildArguments: --source-build
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
