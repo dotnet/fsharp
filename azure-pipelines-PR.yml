@@ -210,6 +210,8 @@ stages:
         enableSourceBuild: 
         sourceBuildParameters:
           platforms:
+          - name: 'Managed'
+            container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
             buildArguments: '--source-build'
         enableTelemetry: true
         helixRepo: dotnet/fsharp
