@@ -41,6 +41,9 @@ let example() =
         use! (res1) = new Disposable()
         use! (___) = new Disposable()
         use! _ = new Disposable()
+        use! (_) = new Disposable()
+        use! _res2 = new Disposable()
+        use! (_res3) = new Disposable()
         return ()
     }
 
@@ -48,8 +51,8 @@ example()
 |> Async.RunSynchronously
 
 let disposeCalls = Disposable.DisposeCallCount()
-if disposeCalls <> 5 then
+if disposeCalls <> 8 then
     failwithf $"unexpected dispose call count: %i{disposeCalls}"
 let ctorCalls = Disposable.ConstructorCallCount()
-if ctorCalls <> 5 then
+if ctorCalls <> 8 then
     failwithf $"unexpected constructor call count: %i{ctorCalls}"
