@@ -11367,7 +11367,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             if (directedTgts = AttributeTargets.Assembly || directedTgts = AttributeTargets.Module) then
                 error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), mAttr))
             else
-                error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
+                warning(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
 
         match ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mAttr ad ty with
         | Exception _ when canFail = TcCanFail.IgnoreAllErrors || canFail = TcCanFail.IgnoreMemberResoutionError -> [ ], true
