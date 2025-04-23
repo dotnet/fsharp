@@ -311,11 +311,17 @@ and CacheInstrumentation(cache: ICacheEvents) =
     static let instrumentedCaches = ConcurrentDictionary<ICacheEvents, CacheInstrumentation>()
 
     static let meter = new Meter(nameof CacheInstrumentation)
-    let hits = meter.CreateCounter<int64>("hits")
-    let misses = meter.CreateCounter<int64>("misses")
-    let evictions = meter.CreateCounter<int64>("evictions")
-    let evictionFails = meter.CreateCounter<int64>("eviction-fails")
-    let overCapacity = meter.CreateCounter<int64>("over-capacity")
+
+    let instanceId = $"cache-{Interlocked.Increment(&cacheId)}"
+
+    let hits = meter.CreateCounter<int64>("hits", "count", instanceId)
+    let misses = meter.CreateCounter<int64>("misses", "count", instanceId)
+    let evictions = meter.CreateCounter<int64>("evictions", "count", instanceId)
+
+    let evictionFails =
+        meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
+
+    let overCapacity = meter.CreateCounter<int64>("over-capacity", "count", instanceId)
 
     do
         cache.CacheHit.Add <| fun _ -> hits.Add(1L)
@@ -330,7 +336,7 @@ and CacheInstrumentation(cache: ICacheEvents) =
         new MeterListener(
             InstrumentPublished =
                 fun i l ->
-                    if i.Meter = meter then
+                    if i.Meter = meter && i.Description = instanceId then
                         l.EnableMeasurementEvents(i)
         )
 
@@ -338,7 +344,7 @@ and CacheInstrumentation(cache: ICacheEvents) =
         listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(current.GetOrAdd(k, ref 0L), v) |> ignore)
         listener.Start()
 
-    member val CacheId = $"cache-{Interlocked.Increment(&cacheId)}"
+    member val CacheId = instanceId
 
     member val RecentStats = "-" with get, set
 
@@ -346,11 +352,16 @@ and CacheInstrumentation(cache: ICacheEvents) =
         let stats =
             try
                 let ratio =
-                    float current[hits].Value / float (current[hits].Value + current[misses].Value) * 100.0
+                    float current[hits].Value / float (current[hits].Value + current[misses].Value)
+                    * 100.0
 
-                [ for i in current.Keys do
-                    let v = current[i].Value
-                    if v > 0 then $"{i.Name}: {v}" ]
+                [
+                    for i in current.Keys do
+                        let v = current[i].Value
+
+                        if v > 0 then
+                            $"{i.Name}: {v}"
+                ]
                 |> String.concat ", "
                 |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
             with _ ->
@@ -366,8 +377,7 @@ and CacheInstrumentation(cache: ICacheEvents) =
         else
             false
 
-    member this.Dispose() =
-        listener.Dispose()
+    member this.Dispose() = listener.Dispose()
 
     static member GetStats(cache: ICacheEvents) =
         instrumentedCaches[cache].TryUpdateStats(false) |> ignore
