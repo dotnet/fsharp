@@ -207,7 +207,7 @@ stages:
         enablePublishTestResults: false
         enablePublishBuildAssets: true
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
-        enableSourceBuild: 
+        enableSourceBuild: true
         sourceBuildParameters:
           platforms:
           - name: 'Managed'
