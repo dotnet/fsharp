@@ -7,6 +7,18 @@
   </PropertyGroup>
 
   <!--
+    The build script passes in the full path of the sln to build.  This must be overridden in order to build
+    the cloned source in the inner build.
+  -->
+  <Target Name="ConfigureInnerBuildArg"
+          BeforeTargets="GetSourceBuildCommandConfiguration"
+          Condition="'$(DotNetBuildOrchestrator)' != 'true'">
+    <PropertyGroup>
+      <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
+    </PropertyGroup>
+  </Target>
+
+  <!--
     The build script bootstraps some tooling for the build.  Since the inner build is triggerred via msbuild,
     trigger the bootstrapping for the inner build.
   -->
