@@ -82,6 +82,6 @@ type internal CacheInstrumentation =
     member RecentStats: string
     member TryUpdateStats: clearCounts: bool -> bool
     static member GetStats: cache: ICacheEvents -> string
-    static member GetStatsUpdateForAllCaches: clearCounts: bool -> string list
+    static member GetStatsUpdateForAllCaches: clearCounts: bool -> string
     static member AddInstrumentation: cache: ICacheEvents -> unit
     static member RemoveInstrumentation: cache: ICacheEvents -> unit

@@ -95,14 +95,14 @@ let createTypeSubsumptionCache (g: TcGlobals) =
     let options =
         if g.compilationMode = CompilationMode.OneOff then
             { CacheOptions.Default with
-                MaximumCapacity = 8192
+                MaximumCapacity = 100_000
                 EvictionMethod = EvictionMethod.NoEviction }
         else
             { CacheOptions.Default with
                 EvictionMethod = EvictionMethod.Background
                 Strategy = CachingStrategy.LRU
-                PercentageToEvict = 5
-                MaximumCapacity = 32_000 } // 8192 }
+                PercentageToEvict = 20
+                MaximumCapacity = 100_000 }
     Cache.Create<TTypeCacheKey, bool>(options)
 
 let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()

@@ -154,8 +154,8 @@ module FSharpServiceTelemetry =
         let timer = new System.Timers.Timer(1000.0, AutoReset = true)
 
         timer.Elapsed.Add(fun _ ->
-            FSharp.Compiler.CacheInstrumentation.GetStatsUpdateForAllCaches(clearCounts = true)
-            |> Seq.iter logMsg)
+            let stats = FSharp.Compiler.CacheInstrumentation.GetStatsUpdateForAllCaches(clearCounts = true)
+            if stats <> "" then logMsg $"\n{stats}")
 
         timer.Start()
 

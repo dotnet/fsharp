@@ -185,12 +185,13 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
     let evictionQueue: IEvictionQueue<'Key, 'Value> =
         match options.EvictionMethod with
         | EvictionMethod.NoEviction -> EvictionQueue.NoEviction
-        | _ -> EvictionQueue(options.Strategy, options.MaximumCapacity, overCapacity)
+        | _ -> EvictionQueue(options.Strategy, capacity, overCapacity)
 
     let tryEvictItems () =
         let count =
             if store.Count > options.MaximumCapacity then
-                store.Count - options.MaximumCapacity
+                (store.Count - options.MaximumCapacity)
+                + int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
             else
                 0
 
@@ -295,7 +296,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
             options.MaximumCapacity
-            + (options.MaximumCapacity * options.PercentageToEvict / 100)
+            + int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
 
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
@@ -345,11 +346,13 @@ and CacheInstrumentation(cache: ICacheEvents) =
         let stats =
             try
                 let ratio =
-                    float current[hits].Value / float (current[hits].Value + current[misses].Value)
+                    float current[hits].Value / float (current[hits].Value + current[misses].Value) * 100.0
 
-                [ for i in current.Keys -> $"{i.Name}: {current[i].Value}" ]
+                [ for i in current.Keys do
+                    let v = current[i].Value
+                    if v > 0 then $"{i.Name}: {v}" ]
                 |> String.concat ", "
-                |> sprintf "%s | ratio: %.2f %s" this.CacheId ratio
+                |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
             with _ ->
                 "!"
 
@@ -376,6 +379,7 @@ and CacheInstrumentation(cache: ICacheEvents) =
                 if i.TryUpdateStats(clearCounts) then
                     i.RecentStats
         ]
+        |> String.concat "\n"
 
     static member AddInstrumentation(cache: ICacheEvents) =
         instrumentedCaches[cache] <- new CacheInstrumentation(cache)
