@@ -103,6 +103,11 @@ extends:
           enablePublishBuildAssets: true
           enablePublishUsingPipelines: $(_PublishUsingPipelines)
           enableSourceBuild: true
+          sourceBuildParameters:
+            platforms:
+            - name: 'Managed'
+              container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
+              buildArguments: '--source-build'
           enableTelemetry: true
           helixRepo: dotnet/fsharp
           jobs:
