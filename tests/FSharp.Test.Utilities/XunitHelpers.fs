@@ -12,9 +12,9 @@ open TestFramework
 
 open FSharp.Compiler.Diagnostics
 
-open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
+open OpenTelemetry.Metrics
 
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
@@ -146,16 +146,32 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 AssemblyResolver.addResolver ()
             #endif
                 
+                // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
+                let otlpEndpoint = Uri("http://127.0.0.1:4317")
+                
                 // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
                 use tracerProvider =
                     OpenTelemetry.Sdk.CreateTracerProviderBuilder()
                         .AddSource(ActivityNames.FscSourceName)
                         .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
                         .AddOtlpExporter(fun o ->
+                            o.Endpoint <- otlpEndpoint
+                            o.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
                             // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
                             o.TimeoutMilliseconds <- 200
                             o.BatchExportProcessorOptions.MaxQueueSize <- 16384
                             o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
+                        )
+                        .Build()
+
+                use meterProvider =
+                    OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+                        .AddMeter(nameof FSharp.Compiler.CacheInstrumentation)
+                        .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                        .AddOtlpExporter(fun e m ->
+                            e.Endpoint <- otlpEndpoint
+                            e.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
+                            m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
                         )
                         .Build()
 
