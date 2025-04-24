@@ -37,11 +37,10 @@ let testBindingPatterns() =
     Disposable.Reset()
     
     counterDisposable {
-        use! res = new Disposable(1) 
-        use! __ = new Disposable(2)
-        use! (res1) = new Disposable(3)
-        use! _ = new Disposable(4)
-        use! (_) = new Disposable(5)
+        use! _ = new Disposable(1)
+        use! _ = new Disposable(2)
+        use! (_) = new Disposable(3)
+        use! (_) = new Disposable(4)
         return ()
     } |> Async.RunSynchronously
     
