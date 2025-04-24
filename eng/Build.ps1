@@ -68,7 +68,7 @@ param (
     [switch]$testBenchmarks,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
-    [switch]$sourceBuild,
+    [switch][Alias('pb')]$productBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
     [switch]$buildnorealsig = $true,
@@ -133,7 +133,7 @@ function Print-Usage() {
     Write-Host "  -prepareMachine               Prepare machine for CI run, clean up processes after build"
     Write-Host "  -dontUseGlobalNuGetCache      Do not use the global NuGet cache"
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
-    Write-Host "  -sourceBuild                  Simulate building for source-build."
+    Write-Host "  -productBuild                 Build the repository in product-build mode."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
     Write-Host "  -buildnorealsig               Build product with realsig- (default use realsig+, where necessary)"
@@ -218,10 +218,6 @@ function Process-Arguments() {
         $script:pack = $True;
     }
 
-    if ($sourceBuild) {
-        $script:testpack = $False;
-    }
-
     if ($noBinaryLog) {
         $script:binaryLog = $False;
     }
@@ -278,7 +274,7 @@ function Update-Arguments() {
 }
 
 
-function BuildSolution([string] $solutionName, $nopack) {
+function BuildSolution([string] $solutionName, $packSolution) {
         Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
@@ -292,13 +288,11 @@ function BuildSolution([string] $solutionName, $nopack) {
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
 
-    $sourceBuildArgs = if ($sourceBuild) { "/p:DotNetBuildSourceOnly=true /p:DotNetBuildRepo=true" } else { "" }
-
     $BUILDING_USING_DOTNET_ORIG = $env:BUILDING_USING_DOTNET
 
     $env:BUILDING_USING_DOTNET="false"
 
-    $pack = if ($nopack -eq $False) {""} else {$pack}
+    $pack = if ($packSolution -eq $False) {""} else {$pack}
 
     MSBuild $toolsetBuildProj `
         $bl `
@@ -307,6 +301,7 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:RepoRoot=$RepoRoot `
         /p:Restore=$restore `
         /p:Build=$build `
+        /p:DotNetBuildRepo=$productBuild `
         /p:Rebuild=$rebuild `
         /p:Pack=$pack `
         /p:Sign=$sign `
@@ -319,7 +314,6 @@ function BuildSolution([string] $solutionName, $nopack) {
         /p:CompressAllMetadata=$CompressAllMetadata `
         /p:BuildNoRealsig=$buildnorealsig `
         /v:$verbosity `
-        $sourceBuildArgs `
         $suppressExtensionDeployment `
         @properties
 
@@ -567,7 +561,7 @@ try {
     }
 
     $script:BuildMessage = "Failure building product"
-    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $sourceBuild) {
+    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $productBuild) {
         $originalSignValue = $sign
         if ($msbuildEngine -eq "dotnet") {
             # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
@@ -587,7 +581,8 @@ try {
         BuildSolution "FSharp.Benchmarks.sln" $False
     }
 
-    if ($pack) {
+    # When building in product build mode, only build the compiler solution.
+    if ($pack -or $productBuild) {
         $properties_storage = $properties
         BuildSolution "Microsoft.FSharp.Compiler.sln" $True
         $properties = $properties_storage

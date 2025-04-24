@@ -6,6 +6,16 @@
     <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj' and $(TolerateUnusedBindings) != 'true'">
+    <WarningsAsErrors>1182;$(WarningsAsErrors)</WarningsAsErrors>
+    <WarnOn>1182;$(WarnOn)</WarnOn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj' and $(TolerateUnusedBindings) == 'true'">
+    <WarningsNotAsErrors>1182;$(WarningsNotAsErrors)</WarningsNotAsErrors>
+    <NoWarn>1182;$(NoWarn)</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(BUILDING_USING_DOTNET)' != 'true' and '$(MSBuildProjectExtension)' == '.fsproj'"> <!-- VB.NET does not understand "preview". It only knows "old","older" and "boomer" :-)) (jk)-->
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
