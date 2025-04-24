@@ -1,22 +1,10 @@
 <!-- When altering this file, include @dotnet/product-construction as a reviewer. -->
-
 <Project>
 
   <PropertyGroup>
     <GitHubRepositoryName>fsharp</GitHubRepositoryName>
     <SourceBuildManagedOnly>true</SourceBuildManagedOnly>
   </PropertyGroup>
-
-  <!--
-    The build script passes in the full path of the sln to build.  This must be overridden in order to build
-    the cloned source in the inner build.
-  -->
-  <Target Name="ConfigureInnerBuildArg"
-          BeforeTargets="GetSourceBuildCommandConfiguration">
-    <PropertyGroup>
-      <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\Microsoft.FSharp.Compiler.sln"</InnerBuildArgs>
-    </PropertyGroup>
-  </Target>
 
   <!--
     The build script bootstraps some tooling for the build.  Since the inner build is triggerred via msbuild,
@@ -26,7 +14,6 @@
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand"
           Condition="'$(DotNetBuildSourceOnly)' == 'true'">
-          
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>
       <DotNetBuildUseMonoRuntime Condition="'$(DotNetBuildUseMonoRuntime)' == ''">false</DotNetBuildUseMonoRuntime>
