@@ -104,7 +104,7 @@ extends:
           enablePublishUsingPipelines: $(_PublishUsingPipelines)
           enableSourceBuild: true
           sourceBuildParameters:
-            - enableInternalSources: true
+            enableInternalSources: true
           enableTelemetry: true
           helixRepo: dotnet/fsharp
           jobs:
