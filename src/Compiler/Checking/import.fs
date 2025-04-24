@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.Runtime.CompilerServices
+open System.Threading
 
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -29,7 +30,6 @@ open FSharp.Compiler.TcGlobals
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open System.Threading
 #endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies
@@ -115,8 +115,6 @@ let getOrCreateTypeSubsumptionCache =
                         MaximumCapacity = 4 * 32768 }
             cache <- Some (Cache.Create<TTypeCacheKey, bool>(options))
         cache.Value
-
-let _typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
