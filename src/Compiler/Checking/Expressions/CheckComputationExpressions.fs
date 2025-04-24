@@ -1778,30 +1778,95 @@ let rec TryTranslateComputationExpression
                 |> addBindDebugPoint spBind
             )
 
+        // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
+        | ExprAsUseBang(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind) ->
+            if ceenv.isQuery then
+                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
+
+            match pat, andBangs with
+            | (SynPat.Named(ident = SynIdent(id, _); isThisVal = false) | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ]))), [] ->
+                // Valid pattern case - handle with Using + Bind
+                requireBuilderMethod "Using" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+                requireBuilderMethod "Bind" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+
+                let bindExpr =
+                    let consumeExpr =
+                        SynExpr.MatchLambda(
+                            false,
+                            mBind,
+                            [
+                                SynMatchClause(
+                                    pat,
+                                    None,
+                                    TranslateComputationExpressionNoQueryOps ceenv innerComp,
+                                    innerComp.Range,
+                                    DebugPointAtTarget.Yes,
+                                    SynMatchClauseTrivia.Zero
+                                )
+                            ],
+                            DebugPointAtBinding.NoneAtInvisible,
+                            mBind
+                        )
+
+                    let consumeExpr =
+                        mkSynCall "Using" mBind [ SynExpr.Ident id; consumeExpr ] ceenv.builderValName
+
+                    let consumeExpr =
+                        SynExpr.MatchLambda(
+                            false,
+                            mBind,
+                            [
+                                SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
+                            ],
+                            DebugPointAtBinding.NoneAtInvisible,
+                            mBind
+                        )
+
+                    let rhsExpr =
+                        mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
+
+                    mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName
+                    |> addBindDebugPoint spBind
+
+                Some(translatedCtxt bindExpr)
+            | _pat, [] -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
+            | _pat, _ands ->
+                // Has andBangs
+                let m =
+                    match andBangs with
+                    | [] -> comp.Range
+                    | h :: _ -> h.Trivia.AndBangKeyword
+
+                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
+
         // 'let! pat = expr in expr' -->
         //    --> build.Bind(e1, (fun _argN -> match _argN with pat -> expr))
         //  or
         //    --> build.BindReturn(e1, (fun _argN -> match _argN with pat -> expr-without-return))
-        | ExprAsLetBang(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind) ->
-
-            if ceenv.isQuery then
-                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
-
-            match andBangs with
+        // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
+        //     build.BindN(expr1, expr2, ...)
+        // or
+        //     build.BindNReturn(expr1, expr2, ...)
+        // or
+        //     build.Bind(build.MergeSources(expr1, expr2), ...)
+        | ExprAsLetBang(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind) ->
+            match andBangBindings with
             | [] ->
-                // Simple case: let! without and! bindings
+                if ceenv.isQuery then
+                    error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
+
                 // Add the variables to the query variable space, on demand
                 let varSpace =
                     addVarsToVarSpace varSpace (fun _mCustomOp env ->
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
 
                         let _, _, vspecs, envinner, _ =
-                            TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv pat None TcTrueMatchClause.No
+                            TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv letPat None TcTrueMatchClause.No
 
                         vspecs, envinner)
 
                 let rhsExpr =
-                    mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
+                    mkSourceExprConditional isFromSource letRhsExpr ceenv.sourceMethInfo ceenv.builderValName
 
                 Some(
                     TranslateComputationExpressionBind
@@ -1813,12 +1878,11 @@ let rec TryTranslateComputationExpression
                         (addBindDebugPoint spBind)
                         "Bind"
                         [ rhsExpr ]
-                        pat
+                        letPat
                         innerComp
                         translatedCtxt
                 )
-            | andBangBindings ->
-                // Complex case: let! with and! bindings
+            | _ ->
                 if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
                     let andBangRange =
                         match andBangBindings with
@@ -1827,11 +1891,16 @@ let rec TryTranslateComputationExpression
 
                     error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
 
+                if ceenv.isQuery then
+                    error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
+
                 let sources =
-                    (rhsExpr :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
+                    (letRhsExpr
+                     :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
-                let pats = pat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
+                let pats =
+                    letPat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
@@ -1858,7 +1927,7 @@ let rec TryTranslateComputationExpression
                     hasBindReturnN
                     && Option.isSome (convertSimpleReturnToExpr ceenv comp varSpace innerComp)
                 then
-                    let consumePat = SynPat.Tuple(false, pats, [], pat.Range)
+                    let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
 
                     // Add the variables to the query variable space, on demand
                     let varSpace =
@@ -1901,7 +1970,7 @@ let rec TryTranslateComputationExpression
                         )
 
                     if hasBindN then
-                        let consumePat = SynPat.Tuple(false, pats, [], pat.Range)
+                        let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
 
                         // Add the variables to the query variable space, on demand
                         let varSpace =
@@ -1968,6 +2037,7 @@ let rec TryTranslateComputationExpression
                                 sourcesAndPats[0]
 
                             elif numSourcesAndPats <= maxMergeSources then
+
                                 // Call MergeSources2(e1, e2), MergeSources3(e1, e2, e3) etc
                                 let mergeSourcesName = mkMergeSourcesName numSourcesAndPats
 
@@ -1976,10 +2046,11 @@ let rec TryTranslateComputationExpression
                                 let source =
                                     mkSynCall mergeSourcesName sourcesRange (List.map fst sourcesAndPats) ceenv.builderValName
 
-                                let pat = SynPat.Tuple(false, List.map snd sourcesAndPats, [], pat.Range)
+                                let pat = SynPat.Tuple(false, List.map snd sourcesAndPats, [], letPat.Range)
                                 source, pat
 
                             else
+
                                 // Call MergeSourcesMax(e1, e2, e3, e4, (...))
                                 let nowSourcesAndPats, laterSourcesAndPats =
                                     List.splitAt (maxMergeSources - 1) sourcesAndPats
@@ -1998,7 +2069,7 @@ let rec TryTranslateComputationExpression
                                         ceenv.builderValName
 
                                 let pat =
-                                    SynPat.Tuple(false, List.map snd nowSourcesAndPats @ [ laterPat ], [], pat.Range)
+                                    SynPat.Tuple(false, List.map snd nowSourcesAndPats @ [ laterPat ], [], letPat.Range)
 
                                 source, pat
 
@@ -2014,7 +2085,7 @@ let rec TryTranslateComputationExpression
 
                                 vspecs, envinner)
 
-                        // Build the Bind call
+                        // Build the 'Bind' call
                         Some(
                             TranslateComputationExpressionBind
                                 ceenv
@@ -2029,303 +2100,6 @@ let rec TryTranslateComputationExpression
                                 innerComp
                                 translatedCtxt
                         )
-
-        // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
-        | ExprAsUseBang(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind) ->
-            if ceenv.isQuery then
-                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
-
-            match pat, andBangs with
-            | (SynPat.Named(ident = SynIdent(id, _); isThisVal = false) | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ]))), [] ->
-                // Valid pattern case - handle with Using + Bind
-                requireBuilderMethod "Using" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
-                requireBuilderMethod "Bind" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
-
-                let bindExpr =
-                    let consumeExpr =
-                        SynExpr.MatchLambda(
-                            false,
-                            mBind,
-                            [
-                                SynMatchClause(
-                                    pat,
-                                    None,
-                                    TranslateComputationExpressionNoQueryOps ceenv innerComp,
-                                    innerComp.Range,
-                                    DebugPointAtTarget.Yes,
-                                    SynMatchClauseTrivia.Zero
-                                )
-                            ],
-                            DebugPointAtBinding.NoneAtInvisible,
-                            mBind
-                        )
-
-                    let consumeExpr =
-                        mkSynCall "Using" mBind [ SynExpr.Ident id; consumeExpr ] ceenv.builderValName
-
-                    let consumeExpr =
-                        SynExpr.MatchLambda(
-                            false,
-                            mBind,
-                            [
-                                SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
-                            ],
-                            DebugPointAtBinding.NoneAtInvisible,
-                            mBind
-                        )
-
-                    let rhsExpr =
-                        mkSourceExprConditional isFromSource rhsExpr ceenv.sourceMethInfo ceenv.builderValName
-
-                    mkSynCall "Bind" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName
-                    |> addBindDebugPoint spBind
-
-                Some(translatedCtxt bindExpr)
-            | _pat, [] -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
-            | _pat, _ands ->
-                // Has andBangs
-                let m =
-                    match andBangs with
-                    | [] -> comp.Range
-                    | h :: _ -> h.Trivia.AndBangKeyword
-
-                error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
-
-        // 'let! pat1 = expr1 and! pat2 = expr2 in ...' -->
-        //     build.BindN(expr1, expr2, ...)
-        // or
-        //     build.BindNReturn(expr1, expr2, ...)
-        // or
-        //     build.Bind(build.MergeSources(expr1, expr2), ...)
-        | SynExpr.LetOrUseBang(
-            bindDebugPoint = spBind
-            isUse = false
-            isFromSource = isFromSource
-            pat = letPat
-            rhs = letRhsExpr
-            andBangs = andBangBindings
-            body = innerComp
-            trivia = { LetOrUseBangKeyword = mBind }) ->
-            if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang) then
-                let andBangRange =
-                    match andBangBindings with
-                    | [] -> comp.Range
-                    | h :: _ -> h.Trivia.AndBangKeyword
-
-                error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
-
-            if ceenv.isQuery then
-                error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
-
-            let sources =
-                (letRhsExpr
-                 :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
-                |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
-
-            let pats =
-                letPat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
-
-            let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
-
-            let numSources = sources.Length
-            let bindReturnNName = "Bind" + string numSources + "Return"
-            let bindNName = "Bind" + string numSources
-
-            // Check if this is a Bind2Return etc.
-            let hasBindReturnN =
-                not (
-                    isNil (
-                        TryFindIntrinsicOrExtensionMethInfo
-                            ResultCollectionSettings.AtMostOneResult
-                            cenv
-                            ceenv.env
-                            mBind
-                            ceenv.ad
-                            bindReturnNName
-                            ceenv.builderTy
-                    )
-                )
-
-            if
-                hasBindReturnN
-                && Option.isSome (convertSimpleReturnToExpr ceenv comp varSpace innerComp)
-            then
-                let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
-
-                // Add the variables to the query variable space, on demand
-                let varSpace =
-                    addVarsToVarSpace varSpace (fun _mCustomOp env ->
-                        use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-
-                        let _, _, vspecs, envinner, _ =
-                            TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv consumePat None TcTrueMatchClause.No
-
-                        vspecs, envinner)
-
-                Some(
-                    TranslateComputationExpressionBind
-                        ceenv
-                        comp
-                        q
-                        varSpace
-                        mBind
-                        (addBindDebugPoint spBind)
-                        bindNName
-                        sources
-                        consumePat
-                        innerComp
-                        translatedCtxt
-                )
-
-            else
-
-                // Check if this is a Bind2 etc.
-                let hasBindN =
-                    not (
-                        isNil (
-                            TryFindIntrinsicOrExtensionMethInfo
-                                ResultCollectionSettings.AtMostOneResult
-                                cenv
-                                ceenv.env
-                                mBind
-                                ceenv.ad
-                                bindNName
-                                ceenv.builderTy
-                        )
-                    )
-
-                if hasBindN then
-                    let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
-
-                    // Add the variables to the query variable space, on demand
-                    let varSpace =
-                        addVarsToVarSpace varSpace (fun _mCustomOp env ->
-                            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-
-                            let _, _, vspecs, envinner, _ =
-                                TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv consumePat None TcTrueMatchClause.No
-
-                            vspecs, envinner)
-
-                    Some(
-                        TranslateComputationExpressionBind
-                            ceenv
-                            comp
-                            q
-                            varSpace
-                            mBind
-                            (addBindDebugPoint spBind)
-                            bindNName
-                            sources
-                            consumePat
-                            innerComp
-                            translatedCtxt
-                    )
-                else
-
-                    // Look for the maximum supported MergeSources, MergeSources3, ...
-                    let mkMergeSourcesName n =
-                        if n = 2 then
-                            "MergeSources"
-                        else
-                            "MergeSources" + (string n)
-
-                    let maxMergeSources =
-                        let rec loop (n: int) =
-                            let mergeSourcesName = mkMergeSourcesName n
-
-                            if
-                                isNil (
-                                    TryFindIntrinsicOrExtensionMethInfo
-                                        ResultCollectionSettings.AtMostOneResult
-                                        cenv
-                                        ceenv.env
-                                        mBind
-                                        ceenv.ad
-                                        mergeSourcesName
-                                        ceenv.builderTy
-                                )
-                            then
-                                (n - 1)
-                            else
-                                loop (n + 1)
-
-                        loop 2
-
-                    if maxMergeSources = 1 then
-                        error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN (bindNName), mBind))
-
-                    let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) =
-                        let numSourcesAndPats = sourcesAndPats.Length
-                        assert (numSourcesAndPats <> 0)
-
-                        if numSourcesAndPats = 1 then
-                            sourcesAndPats[0]
-
-                        elif numSourcesAndPats <= maxMergeSources then
-
-                            // Call MergeSources2(e1, e2), MergeSources3(e1, e2, e3) etc
-                            let mergeSourcesName = mkMergeSourcesName numSourcesAndPats
-
-                            requireBuilderMethod mergeSourcesName mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
-
-                            let source =
-                                mkSynCall mergeSourcesName sourcesRange (List.map fst sourcesAndPats) ceenv.builderValName
-
-                            let pat = SynPat.Tuple(false, List.map snd sourcesAndPats, [], letPat.Range)
-                            source, pat
-
-                        else
-
-                            // Call MergeSourcesMax(e1, e2, e3, e4, (...))
-                            let nowSourcesAndPats, laterSourcesAndPats =
-                                List.splitAt (maxMergeSources - 1) sourcesAndPats
-
-                            let mergeSourcesName = mkMergeSourcesName maxMergeSources
-
-                            requireBuilderMethod mergeSourcesName mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
-
-                            let laterSource, laterPat = mergeSources laterSourcesAndPats
-
-                            let source =
-                                mkSynCall
-                                    mergeSourcesName
-                                    sourcesRange
-                                    (List.map fst nowSourcesAndPats @ [ laterSource ])
-                                    ceenv.builderValName
-
-                            let pat =
-                                SynPat.Tuple(false, List.map snd nowSourcesAndPats @ [ laterPat ], [], letPat.Range)
-
-                            source, pat
-
-                    let mergedSources, consumePat = mergeSources (List.zip sources pats)
-
-                    // Add the variables to the query variable space, on demand
-                    let varSpace =
-                        addVarsToVarSpace varSpace (fun _mCustomOp env ->
-                            use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-
-                            let _, _, vspecs, envinner, _ =
-                                TcMatchPattern cenv (NewInferenceType cenv.g) env ceenv.tpenv consumePat None TcTrueMatchClause.No
-
-                            vspecs, envinner)
-
-                    // Build the 'Bind' call
-                    Some(
-                        TranslateComputationExpressionBind
-                            ceenv
-                            comp
-                            q
-                            varSpace
-                            mBind
-                            (addBindDebugPoint spBind)
-                            "Bind"
-                            [ mergedSources ]
-                            consumePat
-                            innerComp
-                            translatedCtxt
-                    )
 
         | SynExpr.Match(spMatch, expr, clauses, m, trivia) ->
             if ceenv.isQuery then
