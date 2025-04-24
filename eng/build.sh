@@ -173,8 +173,10 @@ while [[ $# > 0 ]]; do
       ;;
     # nop implementations of runtime* args sourcebuild might pass in on internal builds
     --runtimesourcefeed)
+      shift
       ;;
     --runtimesourcefeedkey)
+      shift
       ;;
     /p:*)
       properties="$properties $1"
