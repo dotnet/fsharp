@@ -66,30 +66,35 @@ type CachedEntity<'Key, 'Value> =
 
     override this.ToString() = $"{this.Key}"
 
+type EntityPool<'Key, 'Value>(maximumCapacity, overCapacity: Event<_>) =
+    let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
+    let mutable created = 0
+
+    member _.Acquire(key, value) =
+        match pool.TryTake() with
+        | true, entity -> entity.ReUse(key, value)
+        | _ ->
+            if Interlocked.Increment &created > maximumCapacity then
+                overCapacity.Trigger()
+
+            CachedEntity(key, value).WithNode()
+
+    member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
+        if pool.Count < maximumCapacity then
+            pool.Add(entity)
+
 type IEvictionQueue<'Key, 'Value> =
-    abstract member Acquire: 'Key * 'Value -> CachedEntity<'Key, 'Value>
     abstract member Add: CachedEntity<'Key, 'Value> * CachingStrategy -> unit
     abstract member Update: CachedEntity<'Key, 'Value> -> unit
     abstract member GetKeysToEvict: int -> 'Key[]
     abstract member Remove: CachedEntity<'Key, 'Value> -> unit
 
 [<Sealed; NoComparison; NoEquality>]
-type EvictionQueue<'Key, 'Value>(strategy: CachingStrategy, maximumCapacity, overCapacity: Event<_>) =
+type EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
 
     let list = LinkedList<CachedEntity<'Key, 'Value>>()
-    let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
-    let mutable created = 0
 
     interface IEvictionQueue<'Key, 'Value> with
-
-        member _.Acquire(key, value) =
-            match pool.TryTake() with
-            | true, entity -> entity.ReUse(key, value)
-            | _ ->
-                if Interlocked.Increment &created > maximumCapacity then
-                    overCapacity.Trigger()
-
-                CachedEntity(key, value).WithNode()
 
         member _.Add(entity: CachedEntity<'Key, 'Value>, strategy) =
             lock list
@@ -135,15 +140,11 @@ type EvictionQueue<'Key, 'Value>(strategy: CachingStrategy, maximumCapacity, ove
 
         member this.Remove(entity: CachedEntity<_, _>) =
             lock list <| fun () -> list.Remove(entity.Node)
-            // Return to the pool for reuse.
-            if pool.Count < maximumCapacity then
-                pool.Add(entity)
 
     member _.Count = list.Count
 
     static member NoEviction =
         { new IEvictionQueue<'Key, 'Value> with
-            member _.Acquire(key, value) = CachedEntity(key, value)
             member _.Add(_, _) = ()
 
             member _.Update(entity) =
@@ -179,13 +180,15 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
     let evictionFail = Event<unit>()
     let overCapacity = Event<unit>()
 
+    let pool = EntityPool<'Key, 'Value>(capacity, overCapacity)
+
     let store =
         ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
 
     let evictionQueue: IEvictionQueue<'Key, 'Value> =
         match options.EvictionMethod with
         | EvictionMethod.NoEviction -> EvictionQueue.NoEviction
-        | _ -> EvictionQueue(options.Strategy, capacity, overCapacity)
+        | _ -> EvictionQueue(options.Strategy)
 
     let tryEvictItems () =
         let count =
@@ -199,6 +202,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
             match store.TryRemove(key) with
             | true, removed ->
                 evictionQueue.Remove(removed)
+                pool.Reclaim(removed)
                 eviction.Trigger()
             | _ ->
                 failwith "eviction fail"
@@ -242,24 +246,29 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
         if options.EvictionMethod.IsBlocking then
             tryEvictItems ()
 
-        let cachedEntity = evictionQueue.Acquire(key, value)
+        let cachedEntity = pool.Acquire(key, value)
 
         if store.TryAdd(key, cachedEntity) then
             evictionQueue.Add(cachedEntity, options.Strategy)
             true
         else
+            pool.Reclaim(cachedEntity)
             false
 
     member _.AddOrUpdate(key: 'Key, value: 'Value) =
         if options.EvictionMethod.IsBlocking then
             tryEvictItems ()
 
+        let aquired = pool.Acquire(key, value)
+
         let entity =
             store.AddOrUpdate(
                 key,
-                (fun _ -> evictionQueue.Acquire(key, value)),
+                (fun _ -> aquired),
                 (fun _ (current: CachedEntity<_, _>) ->
+                    pool.Reclaim aquired
                     current.Value <- value
+                    evictionQueue.Remove(current)
                     current)
             )
 

@@ -32,7 +32,6 @@ type internal CachedEntity<'Key, 'Value> =
     override ToString: unit -> string
 
 type internal IEvictionQueue<'Key, 'Value> =
-    abstract member Acquire: 'Key * 'Value -> CachedEntity<'Key, 'Value>
     abstract member Add: CachedEntity<'Key, 'Value> * CachingStrategy -> unit
     abstract member Update: CachedEntity<'Key, 'Value> -> unit
     abstract member GetKeysToEvict: int -> 'Key[]
@@ -40,7 +39,7 @@ type internal IEvictionQueue<'Key, 'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 type internal EvictionQueue<'Key, 'Value> =
-    new: strategy: CachingStrategy * maximumCapacity: int * overCapacity: Event<unit> -> EvictionQueue<'Key, 'Value>
+    new: strategy: CachingStrategy -> EvictionQueue<'Key, 'Value>
     member Count: int
     static member NoEviction: IEvictionQueue<'Key, 'Value>
     interface IEvictionQueue<'Key, 'Value>

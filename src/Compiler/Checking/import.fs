@@ -29,6 +29,7 @@ open FSharp.Compiler.TcGlobals
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open System.Threading
 #endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies
@@ -91,21 +92,31 @@ type TTypeCacheKey =
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-let createTypeSubsumptionCache (g: TcGlobals) =
-    let options =
-        if g.compilationMode = CompilationMode.OneOff then
-            { CacheOptions.Default with
-                MaximumCapacity = 100_000
-                EvictionMethod = EvictionMethod.NoEviction }
-        else
-            { CacheOptions.Default with
-                EvictionMethod = EvictionMethod.Background
-                Strategy = CachingStrategy.LRU
-                PercentageToEvict = 20
-                MaximumCapacity = 100_000 }
-    Cache.Create<TTypeCacheKey, bool>(options)
+let getOrCreateTypeSubsumptionCache =
+    let mutable latch = 0
+    let mutable cache = None
 
-let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()
+    fun (g: TcGlobals) ->
+        // Single execution latch. We create a singleton assuming compilationMode will not change during the lifetime of the process.
+        if Interlocked.CompareExchange(&latch, 1, 0) = 0 then
+            let options =
+                match g.compilationMode with
+                | CompilationMode.OneOff ->
+                    // This is a one-off compilation, so we don't need to worry about eviction.
+                    { CacheOptions.Default with
+                        MaximumCapacity = 200_000
+                        EvictionMethod = EvictionMethod.NoEviction }
+                | _ ->
+                    // Oncremental use, so we need to set up the cache with eviction.
+                    { CacheOptions.Default with
+                        EvictionMethod = EvictionMethod.Background
+                        Strategy = CachingStrategy.LRU
+                        PercentageToEvict = 5
+                        MaximumCapacity = 4 * 32768 }
+            cache <- Some (Cache.Create<TTypeCacheKey, bool>(options))
+        cache.Value
+
+let _typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -129,7 +140,7 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member _.TypeSubsumptionCache = typeSubsumptionCaches.GetValue(g, createTypeSubsumptionCache) // getOrCreateTypeSubsumptionCache g.compilationMode
+    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = getOrCreateTypeSubsumptionCache g
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 
