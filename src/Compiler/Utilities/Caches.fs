@@ -10,7 +10,6 @@ open System.Diagnostics.Metrics
 
 [<Struct; RequireQualifiedAccess; NoComparison>]
 type EvictionMethod =
-    | Blocking
     | Background
     | NoEviction
 
@@ -28,7 +27,7 @@ type CacheOptions =
             MaximumCapacity = 1024
             PercentageToEvict = 5
             LevelOfConcurrency = Environment.ProcessorCount
-            EvictionMethod = EvictionMethod.Blocking
+            EvictionMethod = EvictionMethod.Background
         }
 
 [<Sealed; NoComparison; NoEquality>]
@@ -219,9 +218,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
             false
 
     member _.TryAdd(key: 'Key, value: 'Value) =
-        if options.EvictionMethod.IsBlocking then
-            tryEvictItems ()
-
         let cachedEntity = pool.Acquire(key, value)
 
         if store.TryAdd(key, cachedEntity) then
@@ -232,9 +228,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
             false
 
     member _.AddOrUpdate(key: 'Key, value: 'Value) =
-        if options.EvictionMethod.IsBlocking then
-            tryEvictItems ()
-
         let aquired = pool.Acquire(key, value)
 
         let entity =
@@ -276,17 +269,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
     member this.Dispose() = (this :> IDisposable).Dispose()
 
     override this.Finalize() : unit = this.Dispose()
-
-    static member Create<'Key, 'Value>(options: CacheOptions) =
-        // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-        let capacity =
-            options.MaximumCapacity
-            + int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
-
-        let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
-        CacheInstrumentation.AddInstrumentation cache |> ignore
-        cache
 
     member this.GetStats() = CacheInstrumentation.GetStats(this)
 
@@ -382,3 +364,31 @@ and CacheInstrumentation(cache: ICacheEvents) =
     static member RemoveInstrumentation(cache: ICacheEvents) =
         instrumentedCaches[cache].Dispose()
         instrumentedCaches.TryRemove(cache) |> ignore
+
+module Cache =
+
+    // During testing a lot of compilations are started in app domains and subprocesses.
+    // This is a reliable way to pass the override to all of them.
+    [<Literal>]
+    let private overrideVariable = "FSHARP_CACHE_OVERRIDE"
+
+    /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
+    let OverrideMaxCapacityForTesting () =
+        Environment.SetEnvironmentVariable(overrideVariable, "true", EnvironmentVariableTarget.Process)
+
+    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
+
+        let options =
+            match Environment.GetEnvironmentVariable(overrideVariable) with
+            | null -> options
+            | _ -> { options with MaximumCapacity = 8 * 1024 }
+
+        // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
+        let capacity =
+            options.MaximumCapacity
+            + int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
+
+        let cts = new CancellationTokenSource()
+        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+        CacheInstrumentation.AddInstrumentation cache |> ignore
+        cache

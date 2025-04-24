@@ -106,10 +106,10 @@ let getOrCreateTypeSubsumptionCache =
                     | CompilationMode.OneOff ->
                         // This is a one-off compilation, so we don't need to worry about eviction.
                         { CacheOptions.Default with
-                            MaximumCapacity = 200_000
+                            MaximumCapacity = 4 * 1024
                             EvictionMethod = EvictionMethod.NoEviction }
                     | _ ->
-                        // Oncremental use, so we need to set up the cache with eviction.
+                        // Incremental use, so we need to set up the cache with eviction.
                         { CacheOptions.Default with
                             EvictionMethod = EvictionMethod.Background
                             PercentageToEvict = 5

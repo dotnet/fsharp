@@ -145,6 +145,11 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
                 AssemblyResolver.addResolver ()
             #endif
+
+                // Override cache capacity to reduce memory usage in CI.
+                FSharp.Compiler.Cache.OverrideMaxCapacityForTesting()
+
+                let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
                 
                 // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
                 let otlpEndpoint = Uri("http://127.0.0.1:4317")
@@ -167,7 +172,8 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 use meterProvider =
                     OpenTelemetry.Sdk.CreateMeterProviderBuilder()
                         .AddMeter(nameof FSharp.Compiler.CacheInstrumentation)
-                        .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                        .AddMeter("System.Runtime")
+                        .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
                         .AddOtlpExporter(fun e m ->
                             e.Endpoint <- otlpEndpoint
                             e.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
@@ -180,7 +186,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 TestConsole.install()
               
                 begin
-                    use _ = Activity.startNoTags $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
+                    use _ = Activity.startNoTags testRunName
                     // We can't just call base.RunTestCases here, because it's implementation is async void.
                     use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
                     runner.RunAsync().Wait()

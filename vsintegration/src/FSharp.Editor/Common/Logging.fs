@@ -177,6 +177,7 @@ module FSharpServiceTelemetry =
                 .CreateMeterProviderBuilder()
                 .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
                 .AddMeter(nameof FSharp.Compiler.CacheInstrumentation)
+                .AddMeter("System.Runtime")
                 .AddOtlpExporter(fun e m ->
                     e.Endpoint <- otlpEndpoint
                     m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000

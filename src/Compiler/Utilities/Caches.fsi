@@ -5,7 +5,6 @@ open System.Threading
 
 [<Struct; RequireQualifiedAccess; NoComparison>]
 type internal EvictionMethod =
-    | Blocking
     | Background
     | NoEviction
 
@@ -63,8 +62,6 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     member Dispose: unit -> unit
     member GetStats: unit -> string
 
-    static member Create<'Key, 'Value> : options: CacheOptions -> Cache<'Key, 'Value>
-
     interface ICacheEvents
     interface IDisposable
 
@@ -77,3 +74,7 @@ type internal CacheInstrumentation =
     static member GetStatsUpdateForAllCaches: clearCounts: bool -> string
     static member AddInstrumentation: cache: ICacheEvents -> unit
     static member RemoveInstrumentation: cache: ICacheEvents -> unit
+
+module internal Cache =
+    val OverrideMaxCapacityForTesting: unit -> unit
+    val Create<'Key, 'Value when 'Key: not null and 'Key: equality> : options: CacheOptions -> Cache<'Key, 'Value>
