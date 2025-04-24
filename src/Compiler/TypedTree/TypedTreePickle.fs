@@ -135,6 +135,14 @@ type NodeOutTable<'Data, 'Node> =
             Table = Table<_>.Create nm
         }
 
+// Small glossary for future generations:
+// o... - output
+// i... - input
+// os - output stream
+// is - input stream
+// tab - table
+// osgn - output stream graph nodes
+
 [<NoEquality; NoComparison>]
 type WriterState =
     {
@@ -1122,7 +1130,7 @@ let unpickleObjWithDanglingCcus
 
         let res = u st1
         check viewedScope st1.ientities
-        check viewedScope st1.ientities
+        check viewedScope st1.ianoninfos
         check viewedScope st1.ivals
         check viewedScope st1.itypars
         res
@@ -1937,7 +1945,7 @@ let u_tcref st =
     match tag with
     | 0 -> u_local_item_ref st.ientities st |> ERefLocal
     | 1 -> u_nleref st |> ERefNonLocal
-    | _ -> ufailwith st "u_item_ref"
+    | _ -> ufailwith st "u_tcref"
 
 let u_ucref st =
     let a, b = u_tup2 u_tcref u_string st
@@ -2027,7 +2035,7 @@ let u_vref st =
     match tag with
     | 0 -> u_local_item_ref st.ivals st |> VRefLocal
     | 1 -> u_nonlocal_val_ref st |> VRefNonLocal
-    | _ -> ufailwith st "u_item_ref"
+    | _ -> ufailwith st "u_vref"
 
 let u_vrefs = u_list u_vref
 
@@ -3206,7 +3214,7 @@ and u_parentref st =
     match tag with
     | 0 -> ParentNone
     | 1 -> u_tcref st |> Parent
-    | _ -> ufailwith st "u_attribkind"
+    | _ -> ufailwith st "u_parentref"
 
 and u_attribkind st =
     let tag = u_byte st
@@ -3496,7 +3504,7 @@ and u_lval_op_kind st =
     | 1 -> LByrefGet
     | 2 -> LSet
     | 3 -> LByrefSet
-    | _ -> ufailwith st "uval_op_kind"
+    | _ -> ufailwith st "ulval_op_kind"
 
 and p_op x st =
     match x with
