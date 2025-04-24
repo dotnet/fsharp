@@ -658,8 +658,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureUseBangBindingValueDiscard">
-        <source>Use bang binding with value discard</source>
-        <target state="new">Use bang binding with value discard</target>
+        <source>Allows use! _ = ... in computation expressions</source>
+        <target state="new">Allows use! _ = ... in computation expressions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUseTypeSubsumptionCache">
