@@ -264,7 +264,7 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -365,7 +365,7 @@ stages:
         # Plain build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
