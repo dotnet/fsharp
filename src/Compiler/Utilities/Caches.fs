@@ -8,11 +8,6 @@ open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
 
-[<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type CachingStrategy =
-    | LRU
-    | LFU
-
 [<Struct; RequireQualifiedAccess; NoComparison>]
 type EvictionMethod =
     | Blocking
@@ -24,7 +19,6 @@ type CacheOptions =
     {
         MaximumCapacity: int
         PercentageToEvict: int
-        Strategy: CachingStrategy
         EvictionMethod: EvictionMethod
         LevelOfConcurrency: int
     }
@@ -33,7 +27,6 @@ type CacheOptions =
         {
             MaximumCapacity = 1024
             PercentageToEvict = 5
-            Strategy = CachingStrategy.LRU
             LevelOfConcurrency = Environment.ProcessorCount
             EvictionMethod = EvictionMethod.Blocking
         }
@@ -84,26 +77,25 @@ type EntityPool<'Key, 'Value>(maximumCapacity, overCapacity: Event<_>) =
             pool.Add(entity)
 
 type IEvictionQueue<'Key, 'Value> =
-    abstract member Add: CachedEntity<'Key, 'Value> * CachingStrategy -> unit
+    abstract member Add: CachedEntity<'Key, 'Value> -> unit
     abstract member Update: CachedEntity<'Key, 'Value> -> unit
     abstract member GetKeysToEvict: int -> 'Key[]
     abstract member Remove: CachedEntity<'Key, 'Value> -> unit
 
 [<Sealed; NoComparison; NoEquality>]
-type EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
+type EvictionQueue<'Key, 'Value>() =
 
     let list = LinkedList<CachedEntity<'Key, 'Value>>()
 
     interface IEvictionQueue<'Key, 'Value> with
 
-        member _.Add(entity: CachedEntity<'Key, 'Value>, strategy) =
+        member _.Add(entity: CachedEntity<'Key, 'Value>) =
             lock list
             <| fun () ->
                 if isNull entity.Node.List then
-                    match strategy with
-                    | CachingStrategy.LRU -> list.AddLast(entity.Node)
-                    | CachingStrategy.LFU -> list.AddLast(entity.Node)
-        // list.AddFirst(entity.Node)
+                    list.AddLast(entity.Node)
+                else
+                    assert false
 
         member _.Update(entity: CachedEntity<'Key, 'Value>) =
             lock list
@@ -114,25 +106,9 @@ type EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
 
                 // Sync between store and the eviction queue is not atomic. It might be already evicted or not yet added.
                 if node.List = list then
-
-                    match strategy with
-                    | CachingStrategy.LRU ->
-                        // Just move this node to the end of the list.
-                        list.Remove(node)
-                        list.AddLast(node)
-                    | CachingStrategy.LFU ->
-                        // Bubble up the node in the list, linear time.
-                        // TODO: frequency list approach would be faster.
-                        let rec bubbleUp (current: LinkedListNode<CachedEntity<'Key, 'Value>>) =
-                            match current.Next with
-                            | NonNull next when next.Value.AccessCount < entity.AccessCount -> bubbleUp next
-                            | _ -> current
-
-                        let next = bubbleUp node
-
-                        if next <> node then
-                            list.Remove(node)
-                            list.AddAfter(next, node)
+                    // Just move this node to the end of the list.
+                    list.Remove(node)
+                    list.AddLast(node)
 
         member _.GetKeysToEvict(count) =
             lock list
@@ -145,7 +121,7 @@ type EvictionQueue<'Key, 'Value>(strategy: CachingStrategy) =
 
     static member NoEviction =
         { new IEvictionQueue<'Key, 'Value> with
-            member _.Add(_, _) = ()
+            member _.Add(_) = ()
 
             member _.Update(entity) =
                 Interlocked.Increment(&entity.AccessCount) |> ignore
@@ -188,7 +164,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
     let evictionQueue: IEvictionQueue<'Key, 'Value> =
         match options.EvictionMethod with
         | EvictionMethod.NoEviction -> EvictionQueue.NoEviction
-        | _ -> EvictionQueue(options.Strategy)
+        | _ -> EvictionQueue()
 
     let tryEvictItems () =
         let count =
@@ -249,7 +225,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
         let cachedEntity = pool.Acquire(key, value)
 
         if store.TryAdd(key, cachedEntity) then
-            evictionQueue.Add(cachedEntity, options.Strategy)
+            evictionQueue.Add(cachedEntity)
             true
         else
             pool.Reclaim(cachedEntity)
@@ -272,7 +248,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
                     current)
             )
 
-        evictionQueue.Add(entity, options.Strategy)
+        evictionQueue.Add(entity)
 
     interface ICacheEvents with
 

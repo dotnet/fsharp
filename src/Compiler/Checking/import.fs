@@ -112,7 +112,6 @@ let getOrCreateTypeSubsumptionCache =
                         // Oncremental use, so we need to set up the cache with eviction.
                         { CacheOptions.Default with
                             EvictionMethod = EvictionMethod.Background
-                            Strategy = CachingStrategy.LRU
                             PercentageToEvict = 5
                             MaximumCapacity = 4 * 32768 }
                 cache <- Some (Cache.Create<TTypeCacheKey, bool>(options))

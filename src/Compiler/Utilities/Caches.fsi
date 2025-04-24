@@ -3,11 +3,6 @@ namespace FSharp.Compiler
 open System
 open System.Threading
 
-[<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type internal CachingStrategy =
-    | LRU
-    | LFU
-
 [<Struct; RequireQualifiedAccess; NoComparison>]
 type internal EvictionMethod =
     | Blocking
@@ -18,7 +13,6 @@ type internal EvictionMethod =
 type internal CacheOptions =
     { MaximumCapacity: int
       PercentageToEvict: int
-      Strategy: CachingStrategy
       EvictionMethod: EvictionMethod
       LevelOfConcurrency: int }
 
@@ -32,14 +26,14 @@ type internal CachedEntity<'Key, 'Value> =
     override ToString: unit -> string
 
 type internal IEvictionQueue<'Key, 'Value> =
-    abstract member Add: CachedEntity<'Key, 'Value> * CachingStrategy -> unit
+    abstract member Add: CachedEntity<'Key, 'Value> -> unit
     abstract member Update: CachedEntity<'Key, 'Value> -> unit
     abstract member GetKeysToEvict: int -> 'Key[]
     abstract member Remove: CachedEntity<'Key, 'Value> -> unit
 
 [<Sealed; NoComparison; NoEquality>]
 type internal EvictionQueue<'Key, 'Value> =
-    new: strategy: CachingStrategy -> EvictionQueue<'Key, 'Value>
+    new: unit -> EvictionQueue<'Key, 'Value>
     member Count: int
     static member NoEviction: IEvictionQueue<'Key, 'Value>
     interface IEvictionQueue<'Key, 'Value>
