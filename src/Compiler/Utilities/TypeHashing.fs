@@ -329,15 +329,47 @@ module HashTastMemberOrVals =
             hashNonMemberVal (g, obs) (tps, vref.Deref, tau, cxs)
         | Some _ -> hashMember (g, obs) emptyTyparInst vref.Deref
 
+/// Practical TType comparer strictly for the use with cache keys.
 module HashStamps =
-    let rec stampEquals ty1 ty2 =
-        match ty1, ty2 with
-        | TType_app(tcref1, tinst1, _), TType_app(tcref2, tinst2, _) ->
-            tcref1.Stamp = tcref2.Stamp
-            && tinst1.Length = tinst2.Length
-            && (tinst1, tinst2) ||> Seq.zip |> Seq.forall (fun (t1, t2) -> stampEquals t1 t2)
+    let rec typeInstStampsEqual (tys1: TypeInst) (tys2: TypeInst) =
+        tys1.Length = tys2.Length
+        && (tys1, tys2) ||> Seq.zip |> Seq.forall (fun (t1, t2) -> stampEquals t1 t2)
 
-        | TType_var(r1, _), TType_var(r2, _) -> r1.Stamp = r2.Stamp
+    and inline typarStampEquals (t1: Typar) (t2: Typar) = t1.Stamp = t2.Stamp
+
+    and typarsStampsEqual (tps1: Typars) (tps2: Typars) =
+        tps1.Length = tps2.Length && (tps1, tps2) ||> Seq.forall2 typarStampEquals
+
+    and measureStampEquals (m1: Measure) (m2: Measure) =
+        match m1, m2 with
+        | Measure.Var(mv1), Measure.Var(mv2) -> mv1.Stamp = mv2.Stamp
+        | Measure.Const(t1, _), Measure.Const(t2, _) -> t1.Stamp = t2.Stamp
+        | Measure.Prod(m1, m2, _), Measure.Prod(m3, m4, _) -> measureStampEquals m1 m3 && measureStampEquals m2 m4
+        | Measure.Inv m1, Measure.Inv m2 -> measureStampEquals m1 m2
+        | Measure.One _, Measure.One _ -> true
+        | Measure.RationalPower(m1, r1), Measure.RationalPower(m2, r2) -> r1 = r2 && measureStampEquals m1 m2
+        | _ -> false
+
+    and nullnessEquals (n1: Nullness) (n2: Nullness) =
+        match n1, n2 with
+        | Nullness.Known n1, Nullness.Known n2 -> n1 = n2
+        | Nullness.Variable _, Nullness.Variable _ -> true
+        | _ -> false
+
+    and stampEquals ty1 ty2 =
+        match ty1, ty2 with
+        | TType_ucase(u, tys1), TType_ucase(v, tys2) -> u.CaseName = v.CaseName && typeInstStampsEqual tys1 tys2
+        | TType_app(tcref1, tinst1, Nullness.Known n1), TType_app(tcref2, tinst2, Nullness.Known n2) ->
+            n1 = n2 && tcref1.Stamp = tcref2.Stamp && typeInstStampsEqual tinst1 tinst2
+        | TType_app(tcref1, tinst1, n1), TType_app(tcref2, tinst2, n2) ->
+            tcref1.Stamp = tcref2.Stamp
+            && nullnessEquals n1 n2
+            && typeInstStampsEqual tinst1 tinst2
+        | TType_anon(info1, tys1), TType_anon(info2, tys2) -> info1.Stamp = info2.Stamp && typeInstStampsEqual tys1 tys2
+        | TType_tuple(c1, tys1), TType_tuple(c2, tys2) -> c1 = c2 && typeInstStampsEqual tys1 tys2
+        | TType_forall(tps1, tau1), TType_forall(tps2, tau2) -> typarsStampsEqual tps1 tps2 && stampEquals tau1 tau2
+        | TType_var(r1, n1), TType_var(r2, n2) -> r1.Stamp = r2.Stamp && nullnessEquals n1 n2
+        | TType_measure m1, TType_measure m2 -> measureStampEquals m1 m2
         | _ -> false
 
     let inline hashStamp (x: int64) = uint x * 2654435761u |> int
