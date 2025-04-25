@@ -61,16 +61,95 @@ type CachedEntity<'Key, 'Value> =
 
     override this.ToString() = $"{this.Key}"
 
-type EntityPool<'Key, 'Value>(maximumCapacity, overCapacity: Event<_>) =
+module CacheMetrics =
+    let meter = new Meter("FSharp.Compiler.Cache")
+
+type CacheMetrics(cacheId) =
+
+    static let instrumentedCaches = ConcurrentDictionary<string, CacheMetrics>()
+
+    let readings = ConcurrentDictionary<string, int64 ref>()
+
+    let listener =
+        new MeterListener(
+            InstrumentPublished =
+                fun i l ->
+                    if i.Meter = CacheMetrics.meter && i.Description = cacheId then
+                        l.EnableMeasurementEvents(i)
+        )
+
+    do
+        listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(readings.GetOrAdd(k.Name, ref 0L), v) |> ignore)
+        listener.Start()
+
+    member val CacheId = cacheId
+
+    member val RecentStats = "-" with get, set
+
+    member this.TryUpdateStats(clearCounts) =
+        let stats =
+            try
+                let ratio =
+                    float readings["hits"].Value
+                    / float (readings["hits"].Value + readings["misses"].Value)
+                    * 100.0
+
+                [
+                    for name in readings.Keys do
+                        let v = readings[name].Value
+
+                        if v > 0 then
+                            $"{name}: {v}"
+                ]
+                |> String.concat ", "
+                |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
+            with _ ->
+                "!"
+
+        if clearCounts then
+            for r in readings.Values do
+                Interlocked.Exchange(r, 0L) |> ignore
+
+        if stats <> this.RecentStats then
+            this.RecentStats <- stats
+            true
+        else
+            false
+
+    member this.Dispose() = listener.Dispose()
+
+    static member GetStats(cacheId) =
+        instrumentedCaches[cacheId].TryUpdateStats(false) |> ignore
+        instrumentedCaches[cacheId].RecentStats
+
+    static member GetStatsUpdateForAllCaches(clearCounts) =
+        [
+            for i in instrumentedCaches.Values do
+                if i.TryUpdateStats(clearCounts) then
+                    i.RecentStats
+        ]
+        |> String.concat "\n"
+
+    static member AddInstrumentation(cacheId) =
+        instrumentedCaches[cacheId] <- new CacheMetrics(cacheId)
+
+    static member RemoveInstrumentation(cacheId) =
+        instrumentedCaches[cacheId].Dispose()
+        instrumentedCaches.TryRemove(cacheId) |> ignore
+
+type EntityPool<'Key, 'Value>(maximumCapacity, cacheId) =
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
     let mutable created = 0
+
+    let overCapacity =
+        CacheMetrics.meter.CreateCounter<int64>("over-capacity", "count", cacheId)
 
     member _.Acquire(key, value) =
         match pool.TryTake() with
         | true, entity -> entity.ReUse(key, value)
         | _ ->
             if Interlocked.Increment &created > maximumCapacity then
-                overCapacity.Trigger()
+                overCapacity.Add 1L
 
             CachedEntity(key, value).WithNode()
 
@@ -135,33 +214,27 @@ type EvictionQueue<'Key, 'Value>() =
             member _.Remove(_) = ()
         }
 
-type ICacheEvents =
-    [<CLIEvent>]
-    abstract member CacheHit: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member CacheMiss: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member Eviction: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member EvictionFail: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member OverCapacity: IEvent<unit>
-
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (options: CacheOptions, capacity, cts: CancellationTokenSource) =
+type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
+    internal (options: CacheOptions, capacity, cts: CancellationTokenSource, ?name) =
 
-    let cacheHit = Event<unit>()
-    let cacheMiss = Event<unit>()
+    static let mutable cacheId = 0
+
+    let instanceId = defaultArg name $"cache-{Interlocked.Increment(&cacheId)}"
+
+    let hits = CacheMetrics.meter.CreateCounter<int64>("hits", "count", instanceId)
+    let misses = CacheMetrics.meter.CreateCounter<int64>("misses", "count", instanceId)
+
+    let evictions =
+        CacheMetrics.meter.CreateCounter<int64>("evictions", "count", instanceId)
+
+    let evictionFails =
+        CacheMetrics.meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
+
     let eviction = Event<'Value>()
-    let evictionFail = Event<unit>()
-    let overCapacity = Event<unit>()
 
-    let pool = EntityPool<'Key, 'Value>(capacity, overCapacity)
+    let pool = EntityPool<'Key, 'Value>(capacity, instanceId)
 
     let store =
         ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
@@ -185,9 +258,8 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
                 evictionQueue.Remove(removed)
                 pool.Reclaim(removed)
                 eviction.Trigger(removed.Value)
-            | _ ->
-                failwith "eviction fail"
-                evictionFail.Trigger()
+                evictions.Add 1L
+            | _ -> evictionFails.Add 1L
 
     let rec backgroundEviction () =
         async {
@@ -211,15 +283,17 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
         if options.EvictionMethod = EvictionMethod.Background then
             Async.Start(backgroundEviction (), cancellationToken = cts.Token)
 
+    member val Name = instanceId
+
     member _.TryGetValue(key: 'Key, value: outref<'Value>) =
         match store.TryGetValue(key) with
         | true, cachedEntity ->
-            cacheHit.Trigger()
+            hits.Add 1L
             evictionQueue.Update(cachedEntity)
             value <- cachedEntity.Value
             true
         | _ ->
-            cacheMiss.Trigger()
+            misses.Add 1L
             value <- Unchecked.defaultof<'Value>
             false
 
@@ -244,125 +318,15 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
     [<CLIEvent>]
     member val ValueEvicted = eviction.Publish
 
-    interface ICacheEvents with
-
-        [<CLIEvent>]
-        member val CacheHit = cacheHit.Publish
-
-        [<CLIEvent>]
-        member val CacheMiss = cacheMiss.Publish
-
-        [<CLIEvent>]
-        member val Eviction = eviction.Publish |> Event.map ignore
-
-        [<CLIEvent>]
-        member val EvictionFail = evictionFail.Publish
-
-        [<CLIEvent>]
-        member val OverCapacity = overCapacity.Publish
-
     interface IDisposable with
         member this.Dispose() =
             store.Clear()
             cts.Cancel()
-            CacheInstrumentation.RemoveInstrumentation(this)
+            CacheMetrics.RemoveInstrumentation(this.Name)
 
     member this.Dispose() = (this :> IDisposable).Dispose()
 
-    member this.GetStats() = CacheInstrumentation.GetStats(this)
-
-and CacheInstrumentation(cache: ICacheEvents) =
-    static let mutable cacheId = 0
-
-    static let instrumentedCaches = ConcurrentDictionary<ICacheEvents, CacheInstrumentation>()
-
-    static let meter = new Meter(nameof CacheInstrumentation)
-
-    let instanceId = $"cache-{Interlocked.Increment(&cacheId)}"
-
-    let hits = meter.CreateCounter<int64>("hits", "count", instanceId)
-    let misses = meter.CreateCounter<int64>("misses", "count", instanceId)
-    let evictions = meter.CreateCounter<int64>("evictions", "count", instanceId)
-
-    let evictionFails =
-        meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
-
-    let overCapacity = meter.CreateCounter<int64>("over-capacity", "count", instanceId)
-
-    do
-        cache.CacheHit.Add <| fun _ -> hits.Add(1L)
-        cache.CacheMiss.Add <| fun _ -> misses.Add(1L)
-        cache.Eviction.Add <| fun _ -> evictions.Add(1L)
-        cache.EvictionFail.Add <| fun _ -> evictionFails.Add(1L)
-        cache.OverCapacity.Add <| fun _ -> overCapacity.Add(1L)
-
-    let current = ConcurrentDictionary<Instrument, int64 ref>()
-
-    let listener =
-        new MeterListener(
-            InstrumentPublished =
-                fun i l ->
-                    if i.Meter = meter && i.Description = instanceId then
-                        l.EnableMeasurementEvents(i)
-        )
-
-    do
-        listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(current.GetOrAdd(k, ref 0L), v) |> ignore)
-        listener.Start()
-
-    member val CacheId = instanceId
-
-    member val RecentStats = "-" with get, set
-
-    member this.TryUpdateStats(clearCounts) =
-        let stats =
-            try
-                let ratio =
-                    float current[hits].Value / float (current[hits].Value + current[misses].Value)
-                    * 100.0
-
-                [
-                    for i in current.Keys do
-                        let v = current[i].Value
-
-                        if v > 0 then
-                            $"{i.Name}: {v}"
-                ]
-                |> String.concat ", "
-                |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
-            with _ ->
-                "!"
-
-        if clearCounts then
-            for r in current.Values do
-                Interlocked.Exchange(r, 0L) |> ignore
-
-        if stats <> this.RecentStats then
-            this.RecentStats <- stats
-            true
-        else
-            false
-
-    member this.Dispose() = listener.Dispose()
-
-    static member GetStats(cache: ICacheEvents) =
-        instrumentedCaches[cache].TryUpdateStats(false) |> ignore
-        instrumentedCaches[cache].RecentStats
-
-    static member GetStatsUpdateForAllCaches(clearCounts) =
-        [
-            for i in instrumentedCaches.Values do
-                if i.TryUpdateStats(clearCounts) then
-                    i.RecentStats
-        ]
-        |> String.concat "\n"
-
-    static member AddInstrumentation(cache: ICacheEvents) =
-        instrumentedCaches[cache] <- new CacheInstrumentation(cache)
-
-    static member RemoveInstrumentation(cache: ICacheEvents) =
-        instrumentedCaches[cache].Dispose()
-        instrumentedCaches.TryRemove(cache) |> ignore
+    member this.GetStats() = CacheMetrics.GetStats(this.Name)
 
 module Cache =
 
@@ -378,8 +342,8 @@ module Cache =
     let applyOverride (options: CacheOptions) =
         let capacity =
             match Environment.GetEnvironmentVariable(overrideVariable) with
-            | NonNull _ when options.MaximumCapacity < 100 -> 3
-            | NonNull _ -> 512
+            | NonNull _ when options.MaximumCapacity < 100 -> 5
+            | NonNull _ -> 8912
             | _ -> options.MaximumCapacity
 
         { options with
@@ -395,5 +359,5 @@ module Cache =
 
         let cts = new CancellationTokenSource()
         let cache = new Cache<'Key, 'Value>(options, capacity, cts)
-        CacheInstrumentation.AddInstrumentation cache |> ignore
+        CacheMetrics.AddInstrumentation cache.Name |> ignore
         cache

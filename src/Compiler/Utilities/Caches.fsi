@@ -37,25 +37,9 @@ type internal EvictionQueue<'Key, 'Value> =
     static member NoEviction: IEvictionQueue<'Key, 'Value>
     interface IEvictionQueue<'Key, 'Value>
 
-type internal ICacheEvents =
-    [<CLIEvent>]
-    abstract member CacheHit: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member CacheMiss: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member Eviction: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member EvictionFail: IEvent<unit>
-
-    [<CLIEvent>]
-    abstract member OverCapacity: IEvent<unit>
-
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
-    new: options: CacheOptions * capacity: int * cts: CancellationTokenSource -> Cache<'Key, 'Value>
+    new: options: CacheOptions * capacity: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
     member GetOrCreate: key: 'Key * valueFactory: ('Key -> 'Value) -> 'Value
@@ -65,18 +49,17 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     [<CLIEvent>]
     member ValueEvicted: IEvent<'Value>
 
-    interface ICacheEvents
     interface IDisposable
 
-type internal CacheInstrumentation =
-    new: cache: ICacheEvents -> CacheInstrumentation
+type internal CacheMetrics =
+    new: cacheId: string -> CacheMetrics
     member CacheId: string
     member RecentStats: string
     member TryUpdateStats: clearCounts: bool -> bool
-    static member GetStats: cache: ICacheEvents -> string
+    static member GetStats: cacheId: string -> string
     static member GetStatsUpdateForAllCaches: clearCounts: bool -> string
-    static member AddInstrumentation: cache: ICacheEvents -> unit
-    static member RemoveInstrumentation: cache: ICacheEvents -> unit
+    static member AddInstrumentation: cacheId: string -> unit
+    static member RemoveInstrumentation: cacheId: string -> unit
 
 module internal Cache =
     val OverrideMaxCapacityForTesting: unit -> unit

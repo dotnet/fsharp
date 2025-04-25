@@ -171,7 +171,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
 
                 use meterProvider =
                     OpenTelemetry.Sdk.CreateMeterProviderBuilder()
-                        .AddMeter(nameof FSharp.Compiler.CacheInstrumentation)
+                        .AddMeter(nameof FSharp.Compiler.CacheMetrics)
                         .AddMeter("System.Runtime")
                         .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
                         .AddOtlpExporter(fun e m ->

@@ -344,7 +344,7 @@ type internal FSharpPackage() as this =
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
     // Uncomment to view cache metrics in the output window
-    // do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
+    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
 
 #if DEBUG
 

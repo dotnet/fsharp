@@ -155,7 +155,7 @@ module FSharpServiceTelemetry =
 
         timer.Elapsed.Add(fun _ ->
             let stats =
-                FSharp.Compiler.CacheInstrumentation.GetStatsUpdateForAllCaches(clearCounts = true)
+                FSharp.Compiler.CacheMetrics.GetStatsUpdateForAllCaches(clearCounts = true)
 
             if stats <> "" then
                 logMsg $"\n{stats}")
