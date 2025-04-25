@@ -114,7 +114,10 @@ type EvictionQueue<'Key, 'Value>() =
             <| fun () -> list |> Seq.map _.Key |> Seq.truncate count |> Seq.toArray
 
         member this.Remove(entity: CachedEntity<_, _>) =
-            lock list <| fun () -> list.Remove(entity.Node)
+            lock list
+            <| fun () ->
+                if entity.Node.List = list then
+                    list.Remove(entity.Node)
 
     member _.Count = list.Count
 
@@ -226,22 +229,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
         else
             pool.Reclaim(cachedEntity)
             false
-
-    member _.AddOrUpdate(key: 'Key, value: 'Value) =
-        let aquired = pool.Acquire(key, value)
-
-        let entity =
-            store.AddOrUpdate(
-                key,
-                (fun _ -> aquired),
-                (fun _ (current: CachedEntity<_, _>) ->
-                    pool.Reclaim aquired
-                    current.Value <- value
-                    evictionQueue.Remove(current)
-                    current)
-            )
-
-        evictionQueue.Add(entity)
 
     interface ICacheEvents with
 
@@ -381,7 +368,7 @@ module Cache =
         let options =
             match Environment.GetEnvironmentVariable(overrideVariable) with
             | null -> options
-            | _ -> { options with MaximumCapacity = 8 * 1024 }
+            | _ -> { options with MaximumCapacity = 1024 }
 
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
