@@ -645,11 +645,8 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         }
 
     member this.NavigateToExternalDeclaration
-        (
-            targetSymbolUse: FSharpSymbolUse,
-            metadataReferences: seq<MetadataReference>,
-            cancellationToken: CancellationToken
-        ) =
+        (targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>, cancellationToken: CancellationToken)
+        =
 
         let textOpt =
             match targetSymbolUse.Symbol with
@@ -892,9 +889,7 @@ type FSharpCrossLanguageSymbolNavigationService() =
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
     let metadataAsSource =
-        componentModel.DefaultExportProvider
-            .GetExport<FSharpMetadataAsSourceService>()
-            .Value
+        componentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
 
     let tryFindFieldByName (name: string) (e: FSharpEntity) =
         let fields =
@@ -1060,11 +1055,8 @@ type FSharpCrossLanguageSymbolNavigationService() =
 
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync
-            (
-                assemblyName: string,
-                documentationCommentId: string,
-                cancellationToken: CancellationToken
-            ) : Task<IFSharpNavigableLocation> =
+            (assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken)
+            : Task<IFSharpNavigableLocation> =
             let path =
                 FSharpCrossLanguageSymbolNavigationService.DocCommentIdToPath documentationCommentId
 

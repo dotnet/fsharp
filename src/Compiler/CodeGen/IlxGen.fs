@@ -1510,18 +1510,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
 
 /// Determine how a top-level value is represented, when representing as a field, by computing an ILFieldSpec
 let ComputeFieldSpecForVal
-    (
-        optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option,
-        isInteractive,
-        g,
-        ilTyForProperty,
-        vspec: Val,
-        nm,
-        m,
-        cloc,
-        ilTy,
-        ilGetterMethRef
-    ) =
+    (optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option, isInteractive, g, ilTyForProperty, vspec: Val, nm, m, cloc, ilTy, ilGetterMethRef) =
     assert vspec.IsCompiledAsTopLevel
 
     let generate () =
@@ -1615,14 +1604,8 @@ let IsFSharpValCompiledAsMethod g (v: Val) =
 /// method (possibly and instance method). Otherwise it gets represented as a
 /// static field and property.
 let ComputeStorageForValWithValReprInfo
-    (
-        cenv,
-        optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option,
-        isInteractive,
-        optShadowLocal,
-        vref: ValRef,
-        cloc
-    ) =
+    (cenv, optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option, isInteractive, optShadowLocal, vref: ValRef, cloc)
+    =
 
     if
         isUnitTy cenv.g vref.Type
@@ -2420,9 +2403,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         anonTypeTable.GrabExtraBindingsToGenerate()
 
     member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
-        gtdefs
-            .FindNestedTypeDefsBuilder(tref.Enclosing)
-            .AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
+        gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
 
     member _.FindNestedTypeDefBuilder(tref: ILTypeRef) = gtdefs.FindNestedTypeDefBuilder(tref)
 
@@ -5676,32 +5657,14 @@ and GenGenericParam cenv eenv (tp: Typar) =
         |> List.map (GenTypeAux cenv tp.Range eenv.tyenv VoidNotOK PtrTypesNotOK)
 
     let refTypeConstraint =
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.IsReferenceType _
-            // 'null' automatically implies 'not struct'
-            | TyparConstraint.SupportsNull _ -> true
-            | _ -> false)
+        tp |> HasConstraint(fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull) // `null` implies not struct
 
-    let notNullableValueTypeConstraint =
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.IsNonNullableStruct _ -> true
-            | _ -> false)
+    let notNullableValueTypeConstraint = tp |> HasConstraint _.IsIsNonNullableStruct
 
     let nullnessOfTypar =
         if g.langFeatureNullness && g.checkNullness then
-            let hasNotSupportsNull =
-                tp.Constraints
-                |> List.exists (function
-                    | TyparConstraint.NotSupportsNull _ -> true
-                    | _ -> false)
-
-            let hasSupportsNull () =
-                tp.Constraints
-                |> List.exists (function
-                    | TyparConstraint.SupportsNull _ -> true
-                    | _ -> false)
+            let hasNotSupportsNull = tp |> HasConstraint _.IsNotSupportsNull
+            let hasSupportsNull () = tp |> HasConstraint _.IsSupportsNull
 
             if hasNotSupportsNull || notNullableValueTypeConstraint then
                 NullnessInfo.WithoutNull
@@ -5714,17 +5677,11 @@ and GenGenericParam cenv eenv (tp: Typar) =
             None
 
     let defaultConstructorConstraint =
-        tp.Constraints
-        |> List.exists (function
-            | TyparConstraint.RequiresDefaultConstructor _ -> true
-            | _ -> false)
+        tp |> HasConstraint _.IsRequiresDefaultConstructor
 
     let emitUnmanagedInIlOutput =
         cenv.g.langVersion.SupportsFeature(LanguageFeature.UnmanagedConstraintCsharpInterop)
-        && tp.Constraints
-           |> List.exists (function
-               | TyparConstraint.IsUnmanaged _ -> true
-               | _ -> false)
+        && tp |> HasConstraint _.IsIsUnmanaged
 
     let tpName =
         // use the CompiledName if given
@@ -5960,11 +5917,7 @@ and renameMethodDef nameOfOverridingMethod (mdef: ILMethodDef) =
     mdef.With(name = nameOfOverridingMethod)
 
 and fixupMethodImplFlags (mdef: ILMethodDef) =
-    mdef
-        .WithAccess(ILMemberAccess.Private)
-        .WithHideBySig()
-        .WithFinal(true)
-        .WithNewSlot
+    mdef.WithAccess(ILMemberAccess.Private).WithHideBySig().WithFinal(true).WithNewSlot
 
 and fixupStaticAbstractSlotFlags (mdef: ILMethodDef) = mdef.WithHideBySig(true)
 
@@ -6488,15 +6441,17 @@ and GenSequenceExpr
     cenv
     (cgbuf: CodeGenBuffer)
     eenvouter
-    (nextEnumeratorValRef: ValRef,
-     pcvref: ValRef,
-     currvref: ValRef,
-     stateVars,
-     generateNextExpr,
-     closeExpr,
-     checkCloseExpr: Expr,
-     seqElemTy,
-     m)
+    (
+        nextEnumeratorValRef: ValRef,
+        pcvref: ValRef,
+        currvref: ValRef,
+        stateVars,
+        generateNextExpr,
+        closeExpr,
+        checkCloseExpr: Expr,
+        seqElemTy,
+        m
+    )
     sequel
     =
 
@@ -6637,8 +6592,7 @@ and GenSequenceExpr
         |> AddNonUserCompilerGeneratedAttribs g
 
     let ilCtorBody =
-        mkILSimpleStorageCtor(Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly, None, eenvouter.imports)
-            .MethodBody
+        mkILSimpleStorageCtor(Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly, None, eenvouter.imports).MethodBody
 
     let cloMethods =
         [
@@ -6684,18 +6638,19 @@ and GenSequenceExpr
 /// Generate the class for a closure type definition
 and GenClosureTypeDefs
     cenv
-    (tref: ILTypeRef,
-     ilGenParams,
-     attrs,
-     ilCloAllFreeVars,
-     ilCloLambdas,
-     ilCtorBody,
-     mdefs,
-     mimpls,
-     ext,
-     ilIntfTys,
-     cloSpec: IlxClosureSpec option)
-    =
+    (
+        tref: ILTypeRef,
+        ilGenParams,
+        attrs,
+        ilCloAllFreeVars,
+        ilCloLambdas,
+        ilCtorBody,
+        mdefs,
+        mimpls,
+        ext,
+        ilIntfTys,
+        cloSpec: IlxClosureSpec option
+    ) =
     let g = cenv.g
 
     let cloInfo =
@@ -6723,8 +6678,7 @@ and GenClosureTypeDefs
             let cctor = mkILClassCtor (MethodBody.IL(notlazy ilCode))
 
             let ilFieldDef =
-                mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Assembly)
-                    .WithInitOnly(true)
+                mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Assembly).WithInitOnly(true)
 
             (cctor :: mdefs), [ ilFieldDef ]
         else
@@ -6778,9 +6732,7 @@ and GenStaticDelegateClosureTypeDefs
     // Remove the redundant constructor.
     tdefs
     |> List.map (fun td ->
-        td
-            .WithAbstract(true)
-            .With(methods = mkILMethodsFromArray (td.Methods.AsArray() |> Array.filter (fun m -> not m.IsConstructor))))
+        td.WithAbstract(true).With(methods = mkILMethodsFromArray (td.Methods.AsArray() |> Array.filter (fun m -> not m.IsConstructor))))
 
 and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
@@ -8588,8 +8540,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
             let ilMethodBody = MethodBody.IL(ilLazyCode)
 
-            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody))
-                .WithSpecialName
+            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs g
 
         CountMethodDef()
@@ -8766,8 +8717,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 let body =
                     mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld fspec ], None, eenv.imports)
 
-                mkILStaticMethod([], ilGetterMethRef.Name, access, [], mkILReturn fty, body)
-                    .WithSpecialName
+                mkILStaticMethod([], ilGetterMethRef.Name, access, [], mkILReturn fty, body).WithSpecialName
 
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty, getterMethod)
 
@@ -9197,26 +9147,27 @@ and GenMethodForBinding
     cenv
     mgbuf
     eenv
-    (v: Val,
-     mspec,
-     hasWitnessEntry,
-     generateWitnessArgs,
-     access,
-     ctps,
-     mtps,
-     witnessInfos,
-     curriedArgInfos,
-     paramInfos,
-     argTys,
-     retInfo,
-     valReprInfo,
-     ctorThisValOpt,
-     baseValOpt,
-     methLambdaTypars,
-     methLambdaVars,
-     methLambdaBody,
-     returnTy)
-    =
+    (
+        v: Val,
+        mspec,
+        hasWitnessEntry,
+        generateWitnessArgs,
+        access,
+        ctps,
+        mtps,
+        witnessInfos,
+        curriedArgInfos,
+        paramInfos,
+        argTys,
+        retInfo,
+        valReprInfo,
+        ctorThisValOpt,
+        baseValOpt,
+        methLambdaTypars,
+        methLambdaVars,
+        methLambdaBody,
+        returnTy
+    ) =
     let g = cenv.g
     let m = v.Range
 
@@ -10205,18 +10156,8 @@ and CreatePermissionSets cenv eenv (securityAttributes: Attrib list) =
 
 /// Generate a static class at the given cloc
 and GenTypeDefForCompLoc
-    (
-        cenv,
-        eenv,
-        mgbuf: AssemblyBuilder,
-        cloc,
-        hidden,
-        accessibility: Accessibility,
-        attribs,
-        initTrigger,
-        eliminateIfEmpty,
-        addAtEnd
-    ) =
+    (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, accessibility: Accessibility, attribs, initTrigger, eliminateIfEmpty, addAtEnd)
+    =
     let g = cenv.g
     let tref = TypeRefForCompLoc cloc
 
@@ -10298,8 +10239,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
         let ilReturn = mkILReturn ILType.Void
 
         let method =
-            (mkILNonGenericStaticMethod (eenv.staticInitializationName, access, [], ilReturn, ilBody))
-                .WithSpecialName
+            (mkILNonGenericStaticMethod (eenv.staticInitializationName, access, [], ilReturn, ilBody)).WithSpecialName
 
         cgbuf.mgbuf.AddMethodDef(tref, method)
         CountMethodDef()
@@ -12232,14 +12172,14 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 if hasLiteralAttr then
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
                     // Checked: This FieldInfo (FieldBuilder) supports GetValue().
-                    (!! staticTy.GetField(fspec.Name)).GetValue(null: obj MaybeNull)
+                    (!!staticTy.GetField(fspec.Name)).GetValue(null: obj MaybeNull)
                 else
                     let staticTy = ctxt.LookupTypeRef ilContainerTy.TypeRef
                     // We can't call .Invoke on the ILMethodRef's MethodInfo,
                     // because it is the MethodBuilder and that does not support Invoke.
                     // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
                     let methInfo =
-                        !! staticTy.GetMethod(ilGetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !!staticTy.GetMethod(ilGetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     methInfo.Invoke(null, null)
 
@@ -12252,7 +12192,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
                 // because it is the MethodBuilder and that does not support Invoke.
                 // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
                 let methInfo =
-                    !! staticTy.GetMethod(ilGetterMethSpec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                    !!staticTy.GetMethod(ilGetterMethSpec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                 methInfo.Invoke(null, null)
 
@@ -12279,14 +12219,14 @@ let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: ob
                     let staticTy = ctxt.LookupTypeRef fspec.DeclaringTypeRef
 
                     let fieldInfo =
-                        !! staticTy.GetField(fspec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !!staticTy.GetField(fspec.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     fieldInfo.SetValue(null, value)
                 else
                     let staticTy = ctxt.LookupTypeRef ilSetterMethRef.DeclaringTypeRef
 
                     let methInfo =
-                        !! staticTy.GetMethod(ilSetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+                        !!staticTy.GetMethod(ilSetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
                     methInfo.Invoke(null, [| value |]) |> ignore
         | _ -> ()

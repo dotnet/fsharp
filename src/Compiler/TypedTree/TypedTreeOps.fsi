@@ -1438,7 +1438,9 @@ val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Ex
 /// Make a delegate invoke expression for an F# delegate type, doing beta reduction by introducing let-bindings
 /// if the delegate expression is a construction of a delegate.
 val MakeFSharpDelegateInvokeAndTryBetaReduce:
-    TcGlobals -> delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * delInvokeArg: Expr * m: range -> Expr
+    TcGlobals ->
+    delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * tyargs: TypeInst * delInvokeArg: Expr * m: range ->
+        Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -1734,13 +1736,18 @@ val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 ///
 /// Note, isStructTy does not include type parameters with the ': struct' constraint
 /// This predicate is used to detect those type parameters.
-val isNonNullableStructTyparTy: TcGlobals -> TType -> bool
+val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
+
+val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
+
+val inline IsTyparTyWithConstraint:
+    TcGlobals -> [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> TType -> bool
 
 /// Determine if a type is a variable type with the ': not struct' constraint.
 ///
 /// Note, isRefTy does not include type parameters with the ': not struct' constraint
 /// This predicate is used to detect those type parameters.
-val isReferenceTyparTy: TcGlobals -> TType -> bool
+val IsReferenceTyparTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is an unmanaged type
 val isUnmanagedTy: TcGlobals -> TType -> bool
@@ -2746,7 +2753,7 @@ val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * rang
 
 /// Match a .Invoke on a delegate
 [<return: Struct>]
-val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr * range) voption
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Expr * range) voption
 
 /// Match 'if __useResumableCode then ... else ...' expressions
 [<return: Struct>]

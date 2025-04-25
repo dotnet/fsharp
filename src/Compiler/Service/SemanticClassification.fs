@@ -135,12 +135,8 @@ module TcResolutionsExtensions =
     type TcResolutions with
 
         member sResolutions.GetSemanticClassification
-            (
-                g: TcGlobals,
-                amap: ImportMap,
-                formatSpecifierLocations: (range * int)[],
-                range: range option
-            ) : SemanticClassificationItem[] =
+            (g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int)[], range: range option)
+            : SemanticClassificationItem[] =
             DiagnosticsScope.Protect
                 range0
                 (fun () ->

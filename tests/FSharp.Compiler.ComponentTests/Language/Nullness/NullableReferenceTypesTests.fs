@@ -150,10 +150,8 @@ let doNotWarnOnDowncastRepeatedNestedNullable(o:objnull) = o :? list<((AB | null
     |> shouldFail
     |> withDiagnostics
                 [ Error 3264, Line 4, Col 39, Line 4, Col 47, "Nullness warning: Downcasting from 'objnull' into 'AB' can introduce unexpected null values. Cast to 'AB|null' instead or handle the null before downcasting."
-                  Error 3261, Line 5, Col 42, Line 5, Col 59, "Nullness warning: The types 'obj' and 'AB | null' do not have compatible nullability."
                   Error 3060, Line 5, Col 42, Line 5, Col 59, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
                   Error 3060, Line 6, Col 41, Line 6, Col 55, "This type test or downcast will erase the provided type 'AB | null' to the type 'AB'"
-                  Error 3261, Line 7, Col 51, Line 7, Col 97, "Nullness warning: The types 'obj' and 'AB | null array | null list | null' do not have compatible nullability."
                   Error 3060, Line 7, Col 51, Line 7, Col 97, "This type test or downcast will erase the provided type 'List<AB | null array | null> | null' to the type 'List<AB array>'"]
 
 
@@ -1267,6 +1265,47 @@ let mappedMaybe = nonNull maybeNull
     |> withDiagnostics [Error 3262, Line 4, Col 25, Line 4, Col 39, "Value known to be without null passed to a function meant for nullables: You can remove this `nonNull` assertion."]
 
 [<Fact>]
+let ``Useless null check when used in piping`` () = 
+    FSharp """module MyLibrary
+
+let foo = "test"
+let bar = foo |> Option.ofObj // Should produce FS3262, but did not
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3262, Line 4, Col 18, Line 4, Col 30, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+
+[<Fact>]
+let ``Useless null check when used in multi piping`` () = 
+    FSharp """module MyLibrary
+
+let myFunc whateverArg = 
+    whateverArg |> string |> Option.ofObj
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [Error 3262, Line 4, Col 30, Line 4, Col 42, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+
+[<Fact>]
+let ``Useless null check when used in more exotic pipes`` () = 
+    FSharp """module MyLibrary
+
+let functionComposition x = x |> (string >> Option.ofObj)
+let doublePipe x = ("x","y") ||> (fun x _y -> Option.ofObj x)
+let intToint x = x + 1
+let pointfree = intToint >> string >> Option.ofObj
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics 
+        [ Error 3262, Line 3, Col 45, Line 3, Col 57, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+          Error 3262, Line 4, Col 60, Line 4, Col 61, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
+          Error 3262, Line 6, Col 39, Line 6, Col 51, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
+
+[<Fact>]
 let ``Regression: Useless usage in nested calls`` () = 
     FSharp """module MyLibrary
 open System.IO
@@ -1335,6 +1374,46 @@ let nullEquals = cmp2.Equals("abc", null)
 let dict = ConcurrentDictionary<string, int> (StringComparer.Ordinal)
 dict["ok"] <- 42
 
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<InlineData("t :?> 'T")>]
+[<InlineData("(downcast t) : 'T")>]
+[<InlineData("t |> unbox<'T>")>]
+[<InlineData("(t : objnull) :?> 'T")>]
+[<Theory>]
+let ``Unsafe cast should not insist on not null constraint``(castOp:string) =
+
+    FSharp $"""module MyLibrary
+let test<'T> () =
+    let t = obj()
+    {castOp}"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+
+[<InlineData("null")>]
+[<InlineData("if false then null else []")>]
+[<InlineData("if false then [] else null")>]
+[<InlineData("(if false then [] else null) : (_ list | null)")>]
+[<InlineData("[] : (_ list | null)")>]
+[<Theory>]
+let ``Nullness in inheritance chain`` (returnExp:string) = 
+    
+    FSharp $"""module MyLibrary
+
+[<AbstractClass>]
+type Generator<'T>() =
+    abstract Values: unit -> 'T
+
+[<Sealed>]
+type ListGenerator<'T>() =
+    inherit Generator<List<'T> | null>()
+
+    override _.Values() = {returnExp}
 """
     |> asLibrary
     |> typeCheckWithStrictNullness

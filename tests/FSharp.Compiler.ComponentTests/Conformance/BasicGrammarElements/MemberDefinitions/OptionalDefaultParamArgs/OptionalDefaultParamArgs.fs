@@ -73,12 +73,25 @@ module MemberDefinitions_OptionalDefaultParamArgs =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_WrongDefaultType.fs"|])>]
     let ``W_WrongDefaultType_fs`` compilation =
         compilation
+        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
-        |> withDiagnostics [
-            (Warning 3211, Line 10, Col 62, Line 10, Col 63, "The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'.")
-        ]
+        |> withDiagnostics 
+                      [ Warning 3211, Line 10, Col 62, Line 10, Col 63, "The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'."
+                        Error 1, Line 13, Col 25, Line 13, Col 27, "This expression was expected to have type
+                        'string' 
+                        but here has type
+                        'unit' "]
 
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_WrongDefaultObj.fs"|])>]
+    let ``W_WrongDefaultObjType_fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics 
+            [ Warning 3211, Line 10, Col 62, Line 10, Col 67, "The default value does not have the same type as the argument. The DefaultParameterValue attribute and any Optional attribute will be ignored. Note: 'null' needs to be annotated with the correct type, e.g. 'DefaultParameterValue(null:obj)'."
+              Warning 3397, Line 12, Col 19, Line 12, Col 21, """This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime. This warning may be disabled using '#nowarn "3397"."""]
 
 
 

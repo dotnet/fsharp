@@ -268,12 +268,16 @@ open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Text
 open Microsoft.FSharp.Collections
 open Printf
+
+#nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
+#if BUILDING_WITH_LKG
+#nowarn ""3261"" // Nullness warnings can happen due to LKG not having latest fixes
+#endif
 "
 
     let StringBoilerPlate fileName =
         @"
     // BEGIN BOILERPLATE
-
     static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
     static let getTypeInfo (t: System.Type) = t
@@ -318,7 +322,7 @@ open Printf
         // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
         mkFunctionValue tys (fun inp -> impl rty inp)
 
-    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    #if !NULLABLE
     static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
     #else
     static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
@@ -344,7 +348,7 @@ open Printf
             if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
                 let b = new System.Text.StringBuilder()
                 b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-    #if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
+    #if !NULLABLE
                 box(b.ToString())
     #else
                 box(b.ToString()) |> Unchecked.nonNull
@@ -443,7 +447,7 @@ open Printf
                 let lines =
                     File.ReadAllLines(fileName)
                     |> Array.mapi (fun i s -> i, s) // keep line numbers
-                    |> Array.filter (fun (i, s) -> not (s.StartsWith "#")) // filter out comments
+                    |> Array.filter (fun (_i, s) -> not (s.StartsWith "#")) // filter out comments
 
                 printMessage "Parsing %s" fileName
                 let stringInfos = lines |> Array.map (fun (i, s) -> ParseLine fileName i s)
@@ -507,7 +511,7 @@ open Printf
                 printMessage "Generating resource methods for %s" outFileName
                 // gen each resource method
                 stringInfos
-                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, _netFormatString) ->
                     let formalArgs = new System.Text.StringBuilder()
                     let actualArgs = new System.Text.StringBuilder()
                     let mutable firstTime = true
@@ -585,7 +589,7 @@ open Printf
                 fprintfn outSignature "    static member RunStartupValidation: unit -> unit"
 
                 stringInfos
-                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                |> Seq.iter (fun (_lineNum, (_optErrNum, ident), _str, _holes, _netFormatString) ->
                     fprintfn out "        ignore(GetString(\"%s\"))" ident)
 
                 fprintfn out "        ()" // in case there are 0 strings, we need the generated code to parse
@@ -594,7 +598,7 @@ open Printf
                 xd.LoadXml(xmlBoilerPlateString)
 
                 stringInfos
-                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                |> Seq.iter (fun (_lineNum, (_optErrNum, ident), _str, _holes, netFormatString) ->
                     let xn = xd.CreateElement("data")
                     xn.SetAttribute("name", ident) |> ignore
                     xn.SetAttribute("xml:space", "preserve") |> ignore

@@ -39,17 +39,11 @@ let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
 
 let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
-#if NO_CHECKNULLS
-    compare (func x) (func y)
-#else
     match x,y with
     | null,null -> 0
     | null,_ -> -1
     | _,null -> 1
     | x,y ->  compare (func !!x) (func !!y)
-#endif
-
-
 
 //---------------------------------------------------------------------------
 // Basic data structures
@@ -3576,12 +3570,7 @@ let TryFindLocalizedFSharpStringAttribute g nm attrs =
     match TryFindFSharpAttribute g nm attrs with
     | Some(Attrib(_, _, [ AttribStringArg b ], namedArgs, _, _, _)) -> 
         match namedArgs with 
-        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> 
-            #if PROTO || BUILDING_WITH_LKG
-            Some b
-            #else
-            FSComp.SR.GetTextOpt(b)
-            #endif
+        | ExtractAttribNamedArg "Localize" (AttribBoolArg true) -> FSComp.SR.GetTextOpt(b)
         | _ -> Some b
     | _ -> None
     
@@ -8487,9 +8476,9 @@ let (|NewDelegateExpr|_|) g expr =
 [<return: Struct>]
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, [], [delExpr;delInvokeArg], m) 
+    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
         when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
-            ValueSome(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
+            ValueSome(delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m)
     | _ -> ValueNone
 
 [<return: Struct>]
@@ -8516,17 +8505,17 @@ let (|OpPipeRight3|_|) g expr =
             ValueSome(resType, arg1, arg2, arg3, fExpr, m)
     | _ -> ValueNone
 
-let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
+let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =
     match delExpr with 
     | Expr.Let (bind, body, mLet, _) ->
-        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, delInvokeArg, m))
-    | NewDelegateExpr g (_, argvs, body, m, _) when argvs.Length > 0 -> 
+        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, tyargs, delInvokeArg, m))
+    | NewDelegateExpr g (_, argvs & _ :: _, body, m, _) ->
         let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body
         let argvs2, args2 = List.unzip pairs
         mkLetsBind m (mkCompGenBinds argvs2 args2) body
     | _ -> 
         // Remake the delegate invoke
-        Expr.App (delInvokeRef, delInvokeTy, [], [delExpr; delInvokeArg], m) 
+        Expr.App (delInvokeRef, delInvokeTy, tyargs, [delExpr; delInvokeArg], m) 
       
 //---------------------------------------------------------------------------
 // Adjust for expected usage
@@ -9161,41 +9150,34 @@ let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
+let inline HasConstraint ([<InlineIfLambda>] predicate) (tp:Typar)  = 
+    tp.Constraints |> List.exists predicate
+
+let inline tryGetTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp as x when HasConstraint predicate tp -> x
+    | _ -> ValueNone
+
+let inline IsTyparTyWithConstraint g ([<InlineIfLambda>] predicate) ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp -> HasConstraint predicate tp
+    | ValueNone -> false
+
 // Note, isStructTy does not include type parameters with the ': struct' constraint
 // This predicate is used to detect those type parameters.
-let isNonNullableStructTyparTy g ty = 
-    match tryDestTyparTy g ty with 
-    | ValueSome tp -> 
-        tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
-    | ValueNone ->
-        false
+let IsNonNullableStructTyparTy g ty = ty |> IsTyparTyWithConstraint g _.IsIsNonNullableStruct
 
 // Note, isRefTy does not include type parameters with the ': not struct' or ': null' constraints
 // This predicate is used to detect those type parameters.
-let isReferenceTyparTy g ty = 
-    match tryDestTyparTy g ty with 
-    | ValueSome tp -> 
-        tp.Constraints |> List.exists (function
-            | TyparConstraint.IsReferenceType _ -> true
-            | TyparConstraint.SupportsNull _ -> true
-            | _ -> false)
-    | ValueNone ->
-        false
+let IsReferenceTyparTy g ty = ty |> IsTyparTyWithConstraint g (fun tc -> tc.IsIsReferenceType || tc.IsSupportsNull)
 
-let GetTyparTyIfSupportsNull g ty = 
-    if isReferenceTyparTy g ty then
-        let tp = destTyparTy g ty
-        if tp.Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false) then
-            ValueSome tp
-        else ValueNone
-    else
-        ValueNone
+let GetTyparTyIfSupportsNull g ty = ty |> tryGetTyparTyWithConstraint g _.IsSupportsNull
 
 let TypeNullNever g ty = 
     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
     isStructTy g underlyingTy ||
     isByrefTy g underlyingTy ||
-    isNonNullableStructTyparTy g ty
+    IsNonNullableStructTyparTy g ty
 
 /// The pre-nullness logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValue g m ty = 
@@ -9255,7 +9237,7 @@ let changeWithNullReqTyToVariable g reqTy =
 let reqTyForArgumentNullnessInference g actualTy reqTy =
     // Only change reqd nullness if actualTy is an inference variable
     match tryDestTyparTy g actualTy with
-    | ValueSome t when t.IsCompilerGenerated && not(t.Constraints |> List.exists(function | TyparConstraint.SupportsNull _ -> true | _ -> false))->
+    | ValueSome t when t.IsCompilerGenerated && not(t |> HasConstraint _.IsSupportsNull) ->
         changeWithNullReqTyToVariable g reqTy       
     | _ -> reqTy
 
@@ -9270,7 +9252,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 | None -> []
                 | Some t -> hasWithNullAnyWhere t withNull
 
-            | TType_app (tcr, tinst, nullnessOrig) -> 
+            | TType_app (tcr, tinst, _) -> 
                 let tyArgs = tinst |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 
                 match alreadyWrappedInOuterWithNull, tcr.TypeAbbrev with
@@ -9289,7 +9271,7 @@ let GetDisallowedNullness (g:TcGlobals) (ty:TType) =
                 let inner = tupTypes |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
 
-            | TType_anon (anon,tys) -> 
+            | TType_anon (tys=tys) -> 
                 let inner = tys |> List.collect (fun t -> hasWithNullAnyWhere t false)
                 if alreadyWrappedInOuterWithNull then ty :: inner else inner
             | TType_fun (d, r, _) ->
@@ -9377,8 +9359,9 @@ let rec TypeHasDefaultValueAux isNew g m ty =
             true))
     || 
       // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
-      (isNonNullableStructTyparTy g ty &&
-        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
+      ( match ty |> tryGetTyparTyWithConstraint g _.IsIsNonNullableStruct with
+        | ValueSome tp -> tp |> HasConstraint _.IsRequiresDefaultConstructor
+        | ValueNone -> false)        
 
 let TypeHasDefaultValue (g: TcGlobals) m ty = TypeHasDefaultValueAux false g m ty  
 
@@ -9995,7 +9978,7 @@ let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx =
 // FSharpTypeFunc, but rather bake a "local type function" for each TyLambda abstraction.
 let IsGenericValWithGenericConstraints g (v: Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists (isCompiledOrWitnessPassingConstraint g) tp.Constraints)
+    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> HasConstraint (isCompiledOrWitnessPassingConstraint g) tp)
 
 // Does a type support a given interface? 
 type Entity with 
