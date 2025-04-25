@@ -731,6 +731,8 @@ type TcGlobals(
   let v_generic_equality_withc_outer_info       = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,       "GenericEqualityWithComparer"          , None                 , None          , [vara],     mk_equality_withc_sig varaTy)
   let v_generic_hash_withc_outer_info           = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,       "GenericHashWithComparer"              , None                 , None          , [vara],     mk_hash_withc_sig varaTy)
 
+  let v_generic_one_info                        = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,       "GenericOne"                           , None                 , None          , [],         ([[v_unit_ty]], varaTy))
+
   let v_generic_equality_er_inner_info         = makeIntrinsicValRef(fslib_MFHashCompare_nleref,               "GenericEqualityERIntrinsic"           , None                 , None          , [vara],     mk_rel_sig varaTy)
   let v_generic_equality_per_inner_info     = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                  "GenericEqualityIntrinsic"             , None                 , None          , [vara],     mk_rel_sig varaTy)
   let v_generic_equality_withc_inner_info   = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                  "GenericEqualityWithComparerIntrinsic" , None                 , None          , [vara],     mk_equality_withc_sig varaTy)
@@ -1590,6 +1592,8 @@ type TcGlobals(
   member _.generic_hash_withc_outer_info = v_generic_hash_withc_outer_info
   member val generic_hash_inner_vref = ValRefForIntrinsic v_generic_hash_inner_info
   member val generic_hash_withc_inner_vref = ValRefForIntrinsic v_generic_hash_withc_inner_info
+
+  member val generic_one_vref = ValRefForIntrinsic v_generic_one_info
 
   member val reference_equality_inner_vref         = ValRefForIntrinsic v_reference_equality_inner_info
 

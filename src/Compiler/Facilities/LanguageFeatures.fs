@@ -98,6 +98,7 @@ type LanguageFeature =
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
+    | MoreTypesInSimpleForLoops
     | WarnWhenUnitPassedToObjArg
 
 /// LanguageVersion management
@@ -228,7 +229,9 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
+                LanguageFeature.MoreTypesInSimpleForLoops, previewVersion
                 LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
+
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -390,6 +393,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
+        | LanguageFeature.MoreTypesInSimpleForLoops -> FSComp.SR.featureMoreTypesInSimpleForLoops ()
         | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
 
     /// Get a version string associated with the given feature.

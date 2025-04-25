@@ -7636,6 +7636,17 @@ let mkTypedOne g m ty =
     elif typeEquivAux EraseMeasures g ty g.decimal_ty then Expr.Const (Const.Decimal 1m, m, ty)
     else error (InternalError ($"Unrecognized numeric type '{ty}'.", m))
 
+let mkTypedMinusOne g m ty =
+    if typeEquivAux EraseMeasures g ty g.int32_ty then Expr.Const (Const.Int32 -1, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.int64_ty then Expr.Const (Const.Int64 -1L, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.nativeint_ty then Expr.Const (Const.IntPtr -1L, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.int16_ty then Expr.Const (Const.Int16 -1s, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.sbyte_ty then Expr.Const (Const.SByte -1y, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.float32_ty then Expr.Const (Const.Single -1.0f, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.float_ty then Expr.Const (Const.Double -1.0, m, ty)
+    elif typeEquivAux EraseMeasures g ty g.decimal_ty then Expr.Const (Const.Decimal -1m, m, ty)
+    else error (InternalError ($"Unrecognized or unsigned numeric type '{ty}'.", m))
+
 let destInt32 = function Expr.Const (Const.Int32 n, _, _) -> Some n | _ -> None
 
 let isIDelegateEventType g ty =
@@ -10446,8 +10457,26 @@ let (|Let|_|) expr =
     | Expr.Let (TBind(v, e1, sp), e2, _, _) -> ValueSome(v, e1, sp, e2)
     | _ -> ValueNone
 
+/// Microsoft.FSharp.Core.LanguagePrimitives.GenericOne
+let (|GenericOne|_|) g expr =
+    match expr with
+    | Expr.Val (vref, _, _) -> valRefEq g vref g.generic_one_vref
+    | _ -> false
+
+/// Microsoft.FSharp.Core.Operators.(~-)
+let (|UnaryMinus|_|) g expr =
+    match expr with
+    | Expr.Val (vref, _, _) -> valRefEq g vref g.unchecked_unary_minus_vref
+    | _ -> false
+
 [<return: Struct>]
 let (|RangeInt32Step|_|) g expr = 
+    let (|GenericPlusOrMinusOne|_|) g expr =
+        match expr with
+        | Expr.App (funcExpr = UnaryMinus g; args = [Expr.App (funcExpr = GenericOne g)]) -> ValueSome -1
+        | Expr.App (funcExpr = GenericOne g) -> ValueSome 1
+        | _ -> ValueNone
+
     match expr with 
     // detect 'n .. m' 
     | Expr.App (Expr.Val (vf, _, _), _, [tyarg], [startExpr;finishExpr], _)
@@ -10456,6 +10485,9 @@ let (|RangeInt32Step|_|) g expr =
     // detect (RangeInt32 startExpr N finishExpr), the inlined/compiled form of 'n .. m' and 'n .. N .. m'
     | Expr.App (Expr.Val (vf, _, _), _, [], [startExpr; Int32Expr n; finishExpr], _)
          when valRefEq g vf g.range_int32_op_vref -> ValueSome(startExpr, n, finishExpr)
+
+    | Expr.App (Expr.Val (vf, _, _), _, [ty1; ty2], [startExpr; GenericPlusOrMinusOne g n; finishExpr], _)
+         when valRefEq g vf g.range_step_op_vref && typeEquiv g ty1 g.int_ty && typeEquiv g ty2 g.int_ty -> ValueSome(startExpr, n, finishExpr)
 
     | _ -> ValueNone
 
@@ -11064,6 +11096,17 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
 let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
     let inline mkLetBindingsIfNeeded f =
+        /// Replace LanguagePrimitives.GenericOne or -LanguagePrimitives.GenericOne with their constant equivalents.
+        /// -LanguagePrimitives.GenericOne is emitted in CheckExpressions.TcExprIntegerForLoop for `downto`
+        /// for types other than System.Int32.
+        let constifyPlusOrMinusGenericOne expr =
+            match expr with
+            | Expr.App (funcExpr = UnaryMinus g; args = [Expr.App (funcExpr = GenericOne g)]) -> Some (mkTypedMinusOne g expr.Range (tyOfExpr g expr))
+            | Expr.App (funcExpr = GenericOne g) -> Some (mkTypedOne g expr.Range (tyOfExpr g expr))
+            | _ -> None
+
+        let step = constifyPlusOrMinusGenericOne step |> Option.defaultValue step
+
         match start, step, finish with
         | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
             f start step finish

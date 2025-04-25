@@ -487,6 +487,11 @@
         <target state="translated">Zahození shody vzoru není povolené pro případ sjednocení, který nepřijímá žádná data.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMoreTypesInSimpleForLoops">
+        <source>Support more types in simple for-loops</source>
+        <target state="new">Support more types in simple for-loops</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
