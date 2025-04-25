@@ -1775,6 +1775,12 @@ type internal TransparentCompiler
         caches.ProjectExtras.Get(
             projectSnapshot.SignatureKey,
             async {
+                use _ =
+                    Activity.start
+                        "ComputeProjectExtras"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
                 let! results, finalInfo, parseDiagnostics = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
@@ -1864,19 +1870,26 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) fileName =
+    let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) _fileName =
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             async {
+                use _ =
+                    Activity.start
+                        "ComputeAssemblyData"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
+
                 use! _holder = Cancellable.UseToken()
 
                 try
 
-                    let availableOnDiskModifiedTime =
-                        if FileSystem.FileExistsShim fileName then
-                            Some <| FileSystem.GetLastWriteTimeShim fileName
-                        else
-                            None
+                    //let availableOnDiskModifiedTime =
+                    //    if FileSystem.FileExistsShim fileName then
+                    //        Some <| FileSystem.GetLastWriteTimeShim fileName
+                    //    else
+                    //        None
 
                     // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode
                     //  - some file needs to be edited (this triggers a re-check, but LastModifiedTimeOnDisk won't change)
@@ -1884,9 +1897,9 @@ type internal TransparentCompiler
                     //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again
                     // Until that sequence happens the project will be used from disk (if available).
                     // To get around it we probably need to detect changes made in the editor and record a timestamp for them.
-                    let shouldUseOnDisk =
-                        availableOnDiskModifiedTime
-                        |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
+                    let shouldUseOnDisk = false
+                    //availableOnDiskModifiedTime
+                    //|> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
 
                     let name = projectSnapshot.ProjectFileName |> Path.GetFileNameWithoutExtension
 
