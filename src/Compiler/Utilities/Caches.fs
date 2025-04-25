@@ -375,13 +375,19 @@ module Cache =
     let OverrideMaxCapacityForTesting () =
         Environment.SetEnvironmentVariable(overrideVariable, "true", EnvironmentVariableTarget.Process)
 
-    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
-
-        let options =
+    let applyOverride (options: CacheOptions) =
+        let capacity =
             match Environment.GetEnvironmentVariable(overrideVariable) with
-            | NonNull _ when options.MaximumCapacity > 1024 -> { options with MaximumCapacity = 1024 }
-            | _ -> options
+            | NonNull _ when options.MaximumCapacity < 100 -> 3
+            | NonNull _ -> 512
+            | _ -> options.MaximumCapacity
 
+        { options with
+            MaximumCapacity = capacity
+        }
+
+    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
+        let options = applyOverride options
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =
             options.MaximumCapacity
