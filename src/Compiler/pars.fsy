@@ -3574,6 +3574,17 @@ headBindingPattern:
         let pat2 = SynPat.Wild(mColonColon.EndRange)
         SynPat.ListCons($1, pat2, rhs2 parseState 1 2, { ColonColonRange = mColonColon }) }
 
+  | headBindingPattern COLON typeWithTypeConstraints %prec paren_pat_colon
+      { let mLhs = lhs parseState
+        SynPat.Typed($1, $3, mLhs) }
+
+  | headBindingPattern COLON recover
+      { let mColon = rhs parseState 2
+        if not $3 then
+          reportParseErrorAt mColon (FSComp.SR.parsExpectingPattern ())
+        let ty = SynType.FromParseError(mColon.EndRange)
+        SynPat.Typed($1, ty, lhs parseState) }
+
   | tuplePatternElements %prec pat_tuple
       { let pats, commas = $1
         let pats, commas = normalizeTuplePat pats commas
