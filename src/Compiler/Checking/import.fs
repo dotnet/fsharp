@@ -63,12 +63,17 @@ type TTypeCacheKey =
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
+    val hashCode: int
 
-    private new (ty1, ty2, canCoerce) =
-        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
+    private new (ty1, ty2, canCoerce, hashCode) =
+        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; hashCode = hashCode }
 
     static member FromStrippedTypes (ty1, ty2, canCoerce) =
-        TTypeCacheKey(ty1, ty2, canCoerce)
+        let hashCode =
+            HashStamps.hashTType ty1
+            |> pipeToHash (HashStamps.hashTType ty2)
+            |> pipeToHash (hash canCoerce)
+        TTypeCacheKey(ty1, ty2, canCoerce, hashCode)
 
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
@@ -85,10 +90,7 @@ type TTypeCacheKey =
         | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
         | _ -> false
 
-    override this.GetHashCode() : int =
-        HashStamps.hashTType this.ty1
-        |> pipeToHash (HashStamps.hashTType this.ty2)
-        |> pipeToHash (hash this.canCoerce)
+    override this.GetHashCode () : int = this.hashCode
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 

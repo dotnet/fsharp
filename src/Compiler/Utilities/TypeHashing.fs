@@ -358,34 +358,39 @@ module HashStamps =
     and stampEquals ty1 ty2 =
         match ty1, ty2 with
         | TType_ucase(u, tys1), TType_ucase(v, tys2) -> u.CaseName = v.CaseName && typeInstStampsEqual tys1 tys2
-        | TType_app(tcref1, tinst1, Nullness.Known n1), TType_app(tcref2, tinst2, Nullness.Known n2) ->
-            n1 = n2 && tcref1.Stamp = tcref2.Stamp && typeInstStampsEqual tinst1 tinst2
         | TType_app(tcref1, tinst1, n1), TType_app(tcref2, tinst2, n2) ->
             tcref1.Stamp = tcref2.Stamp
             && nullnessEquals n1 n2
             && typeInstStampsEqual tinst1 tinst2
         | TType_anon(info1, tys1), TType_anon(info2, tys2) -> info1.Stamp = info2.Stamp && typeInstStampsEqual tys1 tys2
         | TType_tuple(c1, tys1), TType_tuple(c2, tys2) -> c1 = c2 && typeInstStampsEqual tys1 tys2
-        | TType_forall(tps1, tau1), TType_forall(tps2, tau2) -> typarsStampsEqual tps1 tps2 && stampEquals tau1 tau2
+        | TType_forall(tps1, tau1), TType_forall(tps2, tau2) -> stampEquals tau1 tau2 && typarsStampsEqual tps1 tps2
         | TType_var(r1, n1), TType_var(r2, n2) -> r1.Stamp = r2.Stamp && nullnessEquals n1 n2
         | TType_measure m1, TType_measure m2 -> measureStampEquals m1 m2
         | _ -> false
 
-    let inline hashStamp (x: int64) = uint x * 2654435761u |> int
+    let inline hashStamp (x: Stamp) : Hash = uint x * 2654435761u |> int
 
     // The idea is to keep the illusion of immutability of TType.
     // This hash must be stable during compilation, otherwise we won't be able to find keys or evict from the cache.
-    let rec hashTType ty =
+    let rec hashTType ty : Hash =
         match ty with
-        | TType_ucase(_, tinst) -> tinst |> hashListOrderMatters (hashTType)
-        | TType_app(tcref, tinst, _) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp tcref.Stamp)
+        | TType_ucase(u, tinst) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hash u.CaseName)
+        | TType_app(tcref, tinst, Nullness.Known n) ->
+            tinst
+            |> hashListOrderMatters (hashTType)
+            |> pipeToHash (hashStamp tcref.Stamp)
+            |> pipeToHash (hash n)
+        | TType_app(tcref, tinst, Nullness.Variable _) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp tcref.Stamp)
         | TType_anon(info, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp info.Stamp)
-        | TType_tuple(_, tys) -> tys |> hashListOrderMatters (hashTType)
+        | TType_tuple(c, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hash c)
         | TType_forall(tps, tau) ->
             tps
             |> Seq.map _.Stamp
             |> hashListOrderMatters (hashStamp)
             |> pipeToHash (hashTType tau)
-        | TType_fun(d, r, _) -> hashTType d |> pipeToHash (hashTType r)
-        | TType_var(r, _) -> hashStamp r.Stamp
+        | TType_fun(d, r, Nullness.Known n) -> hashTType d |> pipeToHash (hashTType r) |> pipeToHash (hash n)
+        | TType_fun(d, r, Nullness.Variable _) -> hashTType d |> pipeToHash (hashTType r)
+        | TType_var(r, Nullness.Known n) -> hashStamp r.Stamp |> pipeToHash (hash n)
+        | TType_var(r, Nullness.Variable _) -> hashStamp r.Stamp
         | TType_measure _ -> 0
