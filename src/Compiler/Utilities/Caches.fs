@@ -5,8 +5,11 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
+open System.Threading.Tasks
 open System.Diagnostics
 open System.Diagnostics.Metrics
+
+open FSharp.Compiler.Diagnostics
 
 [<Struct; RequireQualifiedAccess; NoComparison>]
 type EvictionMethod =
@@ -154,7 +157,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
 
     let cacheHit = Event<unit>()
     let cacheMiss = Event<unit>()
-    let eviction = Event<unit>()
+    let eviction = Event<'Value>()
     let evictionFail = Event<unit>()
     let overCapacity = Event<unit>()
 
@@ -181,7 +184,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
             | true, removed ->
                 evictionQueue.Remove(removed)
                 pool.Reclaim(removed)
-                eviction.Trigger()
+                eviction.Trigger(removed.Value)
             | _ ->
                 failwith "eviction fail"
                 evictionFail.Trigger()
@@ -230,6 +233,17 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
             pool.Reclaim(cachedEntity)
             false
 
+    member this.GetOrCreate(key: 'Key, valueFactory: 'Key -> 'Value) =
+        match this.TryGetValue(key) with
+        | true, value -> value
+        | _ ->
+            let value = valueFactory key
+            this.TryAdd(key, value) |> ignore
+            value
+
+    [<CLIEvent>]
+    member val ValueEvicted = eviction.Publish
+
     interface ICacheEvents with
 
         [<CLIEvent>]
@@ -239,7 +253,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
         member val CacheMiss = cacheMiss.Publish
 
         [<CLIEvent>]
-        member val Eviction = eviction.Publish
+        member val Eviction = eviction.Publish |> Event.map ignore
 
         [<CLIEvent>]
         member val EvictionFail = evictionFail.Publish
@@ -249,13 +263,11 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (option
 
     interface IDisposable with
         member this.Dispose() =
+            store.Clear()
             cts.Cancel()
             CacheInstrumentation.RemoveInstrumentation(this)
-            GC.SuppressFinalize(this)
 
     member this.Dispose() = (this :> IDisposable).Dispose()
-
-    override this.Finalize() : unit = this.Dispose()
 
     member this.GetStats() = CacheInstrumentation.GetStats(this)
 
@@ -367,8 +379,8 @@ module Cache =
 
         let options =
             match Environment.GetEnvironmentVariable(overrideVariable) with
-            | null -> options
-            | _ -> { options with MaximumCapacity = 1024 }
+            | NonNull _ when options.MaximumCapacity > 1024 -> { options with MaximumCapacity = 1024 }
+            | _ -> options
 
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
         let capacity =

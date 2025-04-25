@@ -108,7 +108,9 @@ let createTypeSubsumptionCache (g: TcGlobals) =
                 MaximumCapacity = 4 * 32768 }
     Cache.Create<TTypeCacheKey, bool>(options)
 
-let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()
+let typeSubsumptionCaches = Cache.Create<TcGlobals, Cache<TTypeCacheKey, bool>>({ CacheOptions.Default with MaximumCapacity = 16 })
+
+do typeSubsumptionCaches.ValueEvicted.Add <| _.Dispose()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -132,7 +134,8 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = typeSubsumptionCaches.GetValue(g, createTypeSubsumptionCache)
+    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> =
+        typeSubsumptionCaches.GetOrCreate(g, createTypeSubsumptionCache)
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 
