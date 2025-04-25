@@ -92,30 +92,23 @@ type TTypeCacheKey =
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-let getOrCreateTypeSubsumptionCache =
-    let mutable lockObj = obj()
-    let mutable cache = None
+let createTypeSubsumptionCache (g: TcGlobals) =
+    let options =
+        match g.compilationMode with
+        | CompilationMode.OneOff ->
+            // This is a one-off compilation, so we don't need to worry about eviction.
+            { CacheOptions.Default with
+                MaximumCapacity = 4 * 1024
+                EvictionMethod = EvictionMethod.NoEviction }
+        | _ ->
+            // Incremental use, so we need to set up the cache with eviction.
+            { CacheOptions.Default with
+                EvictionMethod = EvictionMethod.Background
+                PercentageToEvict = 5
+                MaximumCapacity = 4 * 32768 }
+    Cache.Create<TTypeCacheKey, bool>(options)
 
-    fun compilationMode ->
-        lock lockObj <| fun () ->
-            match cache with
-            | Some c -> c
-            | _ ->
-                let options =
-                    match compilationMode with
-                    | CompilationMode.OneOff ->
-                        // This is a one-off compilation, so we don't need to worry about eviction.
-                        { CacheOptions.Default with
-                            MaximumCapacity = 4 * 1024
-                            EvictionMethod = EvictionMethod.NoEviction }
-                    | _ ->
-                        // Incremental use, so we need to set up the cache with eviction.
-                        { CacheOptions.Default with
-                            EvictionMethod = EvictionMethod.Background
-                            PercentageToEvict = 5
-                            MaximumCapacity = 4 * 32768 }
-                cache <- Some (Cache.Create<TTypeCacheKey, bool>(options))
-                cache.Value
+let typeSubsumptionCaches = ConditionalWeakTable<TcGlobals, Cache<TTypeCacheKey, bool>>()
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -139,7 +132,7 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = getOrCreateTypeSubsumptionCache g.compilationMode
+    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = typeSubsumptionCaches.GetValue(g, createTypeSubsumptionCache)
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 

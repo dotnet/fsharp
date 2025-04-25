@@ -332,8 +332,7 @@ module HashTastMemberOrVals =
 /// Practical TType comparer strictly for the use with cache keys.
 module HashStamps =
     let rec typeInstStampsEqual (tys1: TypeInst) (tys2: TypeInst) =
-        tys1.Length = tys2.Length
-        && (tys1, tys2) ||> Seq.zip |> Seq.forall (fun (t1, t2) -> stampEquals t1 t2)
+        tys1.Length = tys2.Length && (tys1, tys2) ||> Seq.forall2 stampEquals
 
     and inline typarStampEquals (t1: Typar) (t2: Typar) = t1.Stamp = t2.Stamp
 
