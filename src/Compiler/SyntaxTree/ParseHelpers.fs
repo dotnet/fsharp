@@ -357,8 +357,8 @@ let mkSynMemberDefnGetSet
             // Ensure we prioritize the explicit return type on the accessor if present
             let optReturnType =
                 match optReturnType with
-                | Some _ -> optReturnType      // Use accessor's explicit return type if provided
-                | None -> optPropertyType      // Otherwise fall back to property type
+                | Some _ -> optReturnType // Use accessor's explicit return type if provided
+                | None -> optPropertyType // Otherwise fall back to property type
             // REDO with the correct member kind
             let binding =
                 mkSynBinding
@@ -427,7 +427,7 @@ let mkSynMemberDefnGetSet
                 // For getters and setters with explicit return types or other patterns
                 // that don't match earlier cases, use valInfo as is
                 | SynMemberKind.PropertyGet, valInfo, _
-                | SynMemberKind.PropertySet, valInfo, _ -> valInfo   
+                | SynMemberKind.PropertySet, valInfo, _ -> valInfo
                 | _ ->
                     // should be unreachable, cover just in case
                     raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
