@@ -130,6 +130,46 @@ type CustomTheoryTestCase =
 
 #endif
 
+
+type OpenTelemetryExport(testRunName, enable) =
+    // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
+    let otlpEndpoint = Uri("http://127.0.0.1:4317")
+    
+    // Configure OpenTelemetry export. 
+    let providers : IDisposable list =
+        if not enable then [] else
+            [
+            // Configure OpenTelemetry tracing export. Traces can be viewed in Jaeger or other compatible tools.
+            OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddOtlpExporter(fun o ->
+                    o.Endpoint <- otlpEndpoint
+                    o.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
+                    // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
+                    o.TimeoutMilliseconds <- 200
+                    o.BatchExportProcessorOptions.MaxQueueSize <- 16384
+                    o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
+                )
+                .Build()
+
+            // Configure OpenTelemetry metrics export. Metrics can be viewed in Prometheus or other compatible tools.
+            OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+                .AddMeter(nameof FSharp.Compiler.CacheMetrics)
+                .AddMeter("System.Runtime")
+                .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
+                .AddOtlpExporter(fun e m ->
+                    e.Endpoint <- otlpEndpoint
+                    e.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
+                    m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
+                )
+                .Build()
+            ]
+
+    interface IDisposable with
+        member this.Dispose() =
+            for p in providers do p.Dispose()
+
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
@@ -150,37 +190,9 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 FSharp.Compiler.Cache.OverrideMaxCapacityForTesting()
 
                 let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
-                
-                // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
-                let otlpEndpoint = Uri("http://127.0.0.1:4317")
-                
-                // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
-                use tracerProvider =
-                    OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-                        .AddSource(ActivityNames.FscSourceName)
-                        .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                        .AddOtlpExporter(fun o ->
-                            o.Endpoint <- otlpEndpoint
-                            o.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
-                            // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
-                            o.TimeoutMilliseconds <- 200
-                            o.BatchExportProcessorOptions.MaxQueueSize <- 16384
-                            o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
-                        )
-                        .Build()
 
-                use meterProvider =
-                    OpenTelemetry.Sdk.CreateMeterProviderBuilder()
-                        .AddMeter(nameof FSharp.Compiler.CacheMetrics)
-                        .AddMeter("System.Runtime")
-                        .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
-                        .AddOtlpExporter(fun e m ->
-                            e.Endpoint <- otlpEndpoint
-                            e.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
-                            m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
-                        )
-                        .Build()
-
+                use _ = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)   
+                
                 logConfig initialConfig
                 log "Installing TestConsole redirection"
                 TestConsole.install()
@@ -191,8 +203,6 @@ type FSharpXunitFramework(sink: IMessageSink) =
                     use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
                     runner.RunAsync().Wait()
                 end
-
-                tracerProvider.ForceFlush() |> ignore
 
                 cleanUpTemporaryDirectoryOfThisTestRun ()
         }

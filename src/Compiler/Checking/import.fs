@@ -100,7 +100,7 @@ let createTypeSubsumptionCache (g: TcGlobals) =
         | CompilationMode.OneOff ->
             // This is a one-off compilation, so we don't need to worry about eviction.
             { CacheOptions.Default with
-                MaximumCapacity = 4 * 1024
+                MaximumCapacity = 4 * 32768
                 EvictionMethod = EvictionMethod.NoEviction }
         | _ ->
             // Incremental use, so we need to set up the cache with eviction.
@@ -110,7 +110,7 @@ let createTypeSubsumptionCache (g: TcGlobals) =
                 MaximumCapacity = 4 * 32768 }
     Cache.Create<TTypeCacheKey, bool>(options)
 
-let typeSubsumptionCaches = Cache.Create<TcGlobals, Cache<TTypeCacheKey, bool>>({ CacheOptions.Default with MaximumCapacity = 16 })
+let typeSubsumptionCaches = Cache.Create<TcGlobals, Cache<TTypeCacheKey, bool>>({ CacheOptions.Default with MaximumCapacity = 24 })
 
 do typeSubsumptionCaches.ValueEvicted.Add <| _.Dispose()
 

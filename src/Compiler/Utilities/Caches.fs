@@ -70,6 +70,7 @@ type CacheMetrics(cacheId) =
 
     let readings = ConcurrentDictionary<string, int64 ref>()
 
+#if DEBUG
     let listener =
         new MeterListener(
             InstrumentPublished =
@@ -81,6 +82,11 @@ type CacheMetrics(cacheId) =
     do
         listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(readings.GetOrAdd(k.Name, ref 0L), v) |> ignore)
         listener.Start()
+
+    member this.Dispose() = listener.Dispose()
+#else
+    member this.Dispose() = ()
+#endif
 
     member val CacheId = cacheId
 
@@ -115,8 +121,6 @@ type CacheMetrics(cacheId) =
             true
         else
             false
-
-    member this.Dispose() = listener.Dispose()
 
     static member GetStats(cacheId) =
         instrumentedCaches[cacheId].TryUpdateStats(false) |> ignore
@@ -342,8 +346,7 @@ module Cache =
     let applyOverride (options: CacheOptions) =
         let capacity =
             match Environment.GetEnvironmentVariable(overrideVariable) with
-            | NonNull _ when options.MaximumCapacity < 100 -> 5
-            | NonNull _ -> 8912
+            | NonNull _ when options.MaximumCapacity > 1024 -> 1024
             | _ -> options.MaximumCapacity
 
         { options with
