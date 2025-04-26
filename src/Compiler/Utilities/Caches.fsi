@@ -23,7 +23,6 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     new: options: CacheOptions * capacity: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
-    member GetOrCreate: key: 'Key * valueFactory: ('Key -> 'Value) -> 'Value
     member Dispose: unit -> unit
 
     interface IDisposable

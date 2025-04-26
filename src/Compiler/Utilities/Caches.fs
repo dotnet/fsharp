@@ -5,11 +5,8 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
-open System.Threading.Tasks
 open System.Diagnostics
 open System.Diagnostics.Metrics
-
-open FSharp.Compiler.Diagnostics
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -54,25 +51,25 @@ type CachedEntity<'Key, 'Value> =
 
     override this.ToString() = $"{this.Key}"
 
-module CacheMetrics =
-    let meter = new Meter("FSharp.Compiler.Cache")
-
+// Currently the Cache itself exposes Metrics.Counters that count raw cache events: hits, misses, evictions etc.
+// This class observes those counters and keeps a snapshot of readings. For now this is used only to print cache stats in debug mode.
+// TODO: We could add some System.Diagnostics.Metrics.Gauge instruments to this class, to get computed stats also exposed as metrics.
 type CacheMetrics(cacheId) =
+    static let meter = new Meter("FSharp.Compiler.Cache")
 
     static let instrumentedCaches = ConcurrentDictionary<string, CacheMetrics>()
 
     let readings = ConcurrentDictionary<string, int64 ref>()
 
 #if DEBUG
-    let listener =
-        new MeterListener(
-            InstrumentPublished =
-                fun i l ->
-                    if i.Meter = CacheMetrics.meter && i.Description = cacheId then
-                        l.EnableMeasurementEvents(i)
-        )
+    let listener = new MeterListener()
 
     do
+        listener.InstrumentPublished <-
+            fun i l ->
+                if i.Meter = meter && i.Description = cacheId then
+                    l.EnableMeasurementEvents(i)
+
         listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(readings.GetOrAdd(k.Name, ref 0L), v) |> ignore)
         listener.Start()
 
@@ -82,6 +79,8 @@ type CacheMetrics(cacheId) =
 #endif
 
     member val CacheId = cacheId
+
+    static member val Meter = meter
 
     member val RecentStats = "-" with get, set
 
@@ -139,7 +138,7 @@ type EntityPool<'Key, 'Value>(maximumCapacity, cacheId) =
     let mutable created = 0
 
     let overCapacity =
-        CacheMetrics.meter.CreateCounter<int64>("over-capacity", "count", cacheId)
+        CacheMetrics.Meter.CreateCounter<int64>("over-capacity", "count", cacheId)
 
     member _.Acquire(key, value) =
         match pool.TryTake() with
@@ -163,14 +162,14 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
 
     let instanceId = defaultArg name $"cache-{Interlocked.Increment(&cacheId)}"
 
-    let hits = CacheMetrics.meter.CreateCounter<int64>("hits", "count", instanceId)
-    let misses = CacheMetrics.meter.CreateCounter<int64>("misses", "count", instanceId)
+    let hits = CacheMetrics.Meter.CreateCounter<int64>("hits", "count", instanceId)
+    let misses = CacheMetrics.Meter.CreateCounter<int64>("misses", "count", instanceId)
 
     let evictions =
-        CacheMetrics.meter.CreateCounter<int64>("evictions", "count", instanceId)
+        CacheMetrics.Meter.CreateCounter<int64>("evictions", "count", instanceId)
 
     let evictionFails =
-        CacheMetrics.meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
+        CacheMetrics.Meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
 
     let pool = EntityPool<'Key, 'Value>(capacity, instanceId)
 
@@ -199,6 +198,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
                 evictionQueue.Remove(node)
                 evictionQueue.AddLast(node)
 
+    // If items count exceeds this, evictions ensue.
     let targetCount =
         options.MaximumCapacity
         - int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
@@ -263,14 +263,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         else
             pool.Reclaim(cachedEntity)
             false
-
-    member this.GetOrCreate(key: 'Key, valueFactory: 'Key -> 'Value) =
-        match this.TryGetValue(key) with
-        | true, value -> value
-        | _ ->
-            let value = valueFactory key
-            this.TryAdd(key, value) |> ignore
-            value
 
     interface IDisposable with
         member this.Dispose() =
