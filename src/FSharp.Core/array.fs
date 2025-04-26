@@ -1587,22 +1587,10 @@ module Array =
             acc <- Checked.(+) acc array.[i]
 
         acc
-
-    [<CompiledName("Sum")>]
-    let inline sumFloat (array: float array) : float =
-        System.Linq.Enumerable.Sum array
-
-    [<CompiledName("Sum")>]
-    let inline sumFloat32 (array: float32 array) : float32 =
-        System.Linq.Enumerable.Sum array
-
-    [<CompiledName("Sum")>]
-    let inline sumInt (array: int array) : int =
-        System.Linq.Enumerable.Sum array
-
-    [<CompiledName("Sum")>]
-    let inline sumInt64 (array: int64 array) : int64 =
-        System.Linq.Enumerable.Sum array
+        when ^T : float = (System.Linq.Enumerable.Sum : IEnumerable<float> -> float) (# "" array : IEnumerable<float> #)
+        when ^T : float32 = (System.Linq.Enumerable.Sum : IEnumerable<float32> -> float32) (# "" array : IEnumerable<float32> #)
+        when ^T : int = (System.Linq.Enumerable.Sum : IEnumerable<int> -> int) (# "" array : IEnumerable<int> #)
+        when ^T : int64 = (System.Linq.Enumerable.Sum : IEnumerable<int64> -> int64) (# "" array : IEnumerable<int64> #)
 
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
@@ -1701,14 +1689,8 @@ module Array =
             acc <- Checked.(+) acc array.[i]
 
         LanguagePrimitives.DivideByInt< ^T> acc array.Length
-
-    [<CompiledName("Average")>]
-    let inline averageFloat (array: float array) : float =
-        System.Linq.Enumerable.Average array
-
-    [<CompiledName("Average")>]
-    let inline averageFloat32 (array: float32 array) : float32 =
-        System.Linq.Enumerable.Average array
+        when ^T : float = (System.Linq.Enumerable.Average : IEnumerable<float> -> float) (# "" array : IEnumerable<float> #)
+        when ^T : float32 = (System.Linq.Enumerable.Average : IEnumerable<float32> -> float32) (# "" array : IEnumerable<float32> #)
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =

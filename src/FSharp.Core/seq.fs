@@ -478,7 +478,8 @@ module Internal =
             static member Bind(g: Generator<'T>, cont) =
                 match g with
                 | :? GenerateThen<'T> as g ->
-                    GenerateThen<_>.Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
+                    GenerateThen<_>
+                        .Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
                 | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
 
         let bindG g cont =
@@ -1471,23 +1472,11 @@ module Seq =
         while e.MoveNext() do
             acc <- Checked.(+) acc e.Current
 
-        acc
-
-    [<CompiledName("Sum")>]
-    let inline sumFloat (array: float array) : float =
-        System.Linq.Enumerable.Sum array
-
-    [<CompiledName("Sum")>]
-    let inline sumFloat32 (array: float32 array) : float32 =
-        System.Linq.Enumerable.Sum array
-
-    [<CompiledName("Sum")>]
-    let inline sumInt (array: int array) : int =
-        System.Linq.Enumerable.Sum array
-
-    [<CompiledName("Sum")>]
-    let inline sumInt64 (array: int64 array) : int64 =
-        System.Linq.Enumerable.Sum array
+        acc 
+        when ^a: int64 = (System.Linq.Enumerable.Sum: IEnumerable<int64> -> int64) (# "" source : IEnumerable<int64> #) 
+        when ^a: int = (System.Linq.Enumerable.Sum: IEnumerable<int> -> int) (# "" source : IEnumerable<int> #) 
+        when ^a: float32 = (System.Linq.Enumerable.Sum: IEnumerable<float32> -> float32) (# "" source : IEnumerable<float32> #) 
+        when ^a: float = (System.Linq.Enumerable.Sum: IEnumerable<float> -> float) (# "" source : IEnumerable<float> #)
 
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =
@@ -1513,15 +1502,9 @@ module Seq =
         if count = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
-        LanguagePrimitives.DivideByInt< ^a> acc count
-
-    [<CompiledName("Average")>]
-    let inline averageFloat (source: seq<float>) : float =
-        System.Linq.Enumerable.Average source
-
-    [<CompiledName("Average")>]
-    let inline averageFloat32 (source: seq<float32>) : float32 =
-        System.Linq.Enumerable.Average source
+        LanguagePrimitives.DivideByInt< ^a> acc count 
+        when ^a: float32 = (System.Linq.Enumerable.Average: IEnumerable<float32> -> float32) (# "" source : IEnumerable<float32> #) 
+        when ^a: float = (System.Linq.Enumerable.Average: IEnumerable<float> -> float) (# "" source : IEnumerable<float> #)
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =
