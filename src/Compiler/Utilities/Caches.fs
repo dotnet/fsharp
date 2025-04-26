@@ -186,6 +186,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
             else
                 assert false
 
+    // Only LRU currrently. We can add other strategies when needed.
     let updateEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
         lock evictionQueue
         <| fun () ->
