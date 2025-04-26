@@ -1473,6 +1473,22 @@ module Seq =
 
         acc
 
+    [<CompiledName("Sum")>]
+    let inline sumFloat (array: float array) : float =
+        System.Linq.Enumerable.Sum array
+
+    [<CompiledName("Sum")>]
+    let inline sumFloat32 (array: float32 array) : float32 =
+        System.Linq.Enumerable.Sum array
+
+    [<CompiledName("Sum")>]
+    let inline sumInt (array: int array) : int =
+        System.Linq.Enumerable.Sum array
+
+    [<CompiledName("Sum")>]
+    let inline sumInt64 (array: int64 array) : int64 =
+        System.Linq.Enumerable.Sum array
+
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =
         use e = source.GetEnumerator()
@@ -1498,6 +1514,14 @@ module Seq =
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
         LanguagePrimitives.DivideByInt< ^a> acc count
+
+    [<CompiledName("Average")>]
+    let inline averageFloat (source: seq<float>) : float =
+        System.Linq.Enumerable.Average source
+
+    [<CompiledName("Average")>]
+    let inline averageFloat32 (source: seq<float32>) : float32 =
+        System.Linq.Enumerable.Average source
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =

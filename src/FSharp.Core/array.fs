@@ -1588,6 +1588,22 @@ module Array =
 
         acc
 
+    [<CompiledName("Sum")>]
+    let inline sumFloat (array: float array) : float =
+        System.Linq.Enumerable.Sum array
+
+    [<CompiledName("Sum")>]
+    let inline sumFloat32 (array: float32 array) : float32 =
+        System.Linq.Enumerable.Sum array
+
+    [<CompiledName("Sum")>]
+    let inline sumInt (array: int array) : int =
+        System.Linq.Enumerable.Sum array
+
+    [<CompiledName("Sum")>]
+    let inline sumInt64 (array: int64 array) : int64 =
+        System.Linq.Enumerable.Sum array
+
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
         checkNonNull "array" array
@@ -1685,6 +1701,14 @@ module Array =
             acc <- Checked.(+) acc array.[i]
 
         LanguagePrimitives.DivideByInt< ^T> acc array.Length
+
+    [<CompiledName("Average")>]
+    let inline averageFloat (array: float array) : float =
+        System.Linq.Enumerable.Average array
+
+    [<CompiledName("Average")>]
+    let inline averageFloat32 (array: float32 array) : float32 =
+        System.Linq.Enumerable.Average array
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
