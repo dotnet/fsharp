@@ -41,19 +41,29 @@ ImplFile
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
                                   SynArgInfo ([], false, None)), None),
+                            LongIdent
+                              (SynLongIdent ([Norm], [], [None]), None, None,
+                               Pats [], None, (4,42--4,46)),
+                            Some
+                              (SynBindingReturnInfo
+                                 (Fun
+                                    (Var
+                                       (SynTypar (T, None, false), (4,49--4,51)),
+                                     Var
+                                       (SynTypar (Measure, None, false),
+                                        (4,55--4,63)), (4,49--4,63),
+                                     { ArrowRange = (4,52--4,54) }),
+                                  (4,49--4,63), [],
+                                  { ColonRange = Some (4,47--4,48) })),
                             Typed
-                              (LongIdent
-                                 (SynLongIdent ([Norm], [], [None]), None, None,
-                                  Pats [], None, (4,42--4,46)),
+                              (ArbitraryAfterError ("memberCore2", (4,63--4,63)),
                                Fun
                                  (Var (SynTypar (T, None, false), (4,49--4,51)),
                                   Var
                                     (SynTypar (Measure, None, false),
                                      (4,55--4,63)), (4,49--4,63),
-                                  { ArrowRange = (4,52--4,54) }), (4,42--4,63)),
-                            None,
-                            ArbitraryAfterError ("memberCore2", (4,63--4,63)),
-                            (4,42--4,63), NoneAtInvisible,
+                                  { ArrowRange = (4,52--4,54) }), (4,63--4,63)),
+                            (4,42--4,46), NoneAtInvisible,
                             { LeadingKeyword = Member (4,35--4,41)
                               InlineKeyword = None
                               EqualsRange = None }), (4,35--4,63))],

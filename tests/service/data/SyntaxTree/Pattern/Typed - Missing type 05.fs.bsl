@@ -16,21 +16,25 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
+                           Named (SynIdent (i, None), false, None, (4,8--4,9)),
+                           Some
+                             (SynBindingReturnInfo
+                                (FromParseError (4,10--4,10), (4,10--4,10), [],
+                                 { ColonRange = Some (4,9--4,10) })),
                            Typed
-                             (Named
-                                (SynIdent (i, None), false, None, (4,8--4,9)),
-                              FromParseError (4,10--4,10), (4,8--6,5)), None,
-                           ArbitraryAfterError ("localBinding2", (6,5--6,5)),
-                           (4,8--6,5), Yes (4,4--6,5),
+                             (ArbitraryAfterError
+                                ("localBinding2", (4,10--4,10)),
+                              FromParseError (4,10--4,10), (4,10--4,10)),
+                           (4,8--4,9), Yes (4,4--4,10),
                            { LeadingKeyword = Let (4,4--4,7)
                              InlineKeyword = None
                              EqualsRange = None })],
-                       ArbitraryAfterError ("seqExpr", (6,5--6,5)), (4,4--6,5),
-                       { LetOrUseKeyword = (4,4--4,7)
-                         InKeyword = None }), (4,4--6,5)), (3,0--6,5)),
-              (3,0--6,5))],
+                       ArbitraryAfterError ("seqExpr", (4,10--4,10)),
+                       (4,4--4,10), { LetOrUseKeyword = (4,4--4,7)
+                                      InKeyword = None }), (4,4--4,10)),
+                 (3,0--4,10)), (3,0--4,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--6,5), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--4,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 

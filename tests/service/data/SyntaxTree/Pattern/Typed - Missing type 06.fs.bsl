@@ -14,13 +14,18 @@ ImplFile
                         SynValData
                           (None, SynValInfo ([], SynArgInfo ([], false, None)),
                            None),
+                        Named (SynIdent (i, None), false, None, (4,8--4,9)),
+                        Some
+                          (SynBindingReturnInfo
+                             (FromParseError (4,10--4,10), (4,10--4,10), [],
+                              { ColonRange = Some (4,9--4,10) })),
                         Typed
-                          (Named (SynIdent (i, None), false, None, (4,8--4,9)),
-                           FromParseError (4,10--4,10), (4,8--4,12)), None,
-                        Const (Int32 1, (4,13--4,14)), (4,8--4,12),
-                        Yes (4,4--4,14), { LeadingKeyword = Let (4,4--4,7)
-                                           InlineKeyword = None
-                                           EqualsRange = Some (4,11--4,12) })],
+                          (Const (Int32 1, (4,13--4,14)),
+                           FromParseError (4,10--4,10), (4,13--4,14)),
+                        (4,8--4,9), Yes (4,4--4,14),
+                        { LeadingKeyword = Let (4,4--4,7)
+                          InlineKeyword = None
+                          EqualsRange = Some (4,11--4,12) })],
                     Const (Unit, (6,4--6,6)), (4,4--6,6),
                     { LetOrUseKeyword = (4,4--4,7)
                       InKeyword = None }), (3,0--6,6)), (3,0--6,6))],

@@ -24,20 +24,24 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
                                None),
+                            LongIdent
+                              (SynLongIdent ([P], [], [None]), None, None,
+                               Pats [], None, (4,18--4,19)),
+                            Some
+                              (SynBindingReturnInfo
+                                 (FromParseError (4,20--4,20), (4,20--4,20), [],
+                                  { ColonRange = Some (4,19--4,20) })),
                             Typed
-                              (LongIdent
-                                 (SynLongIdent ([P], [], [None]), None, None,
-                                  Pats [], None, (4,18--4,19)),
-                               FromParseError (4,20--4,20), (4,18--6,4)), None,
-                            ArbitraryAfterError ("memberCore2", (6,4--6,4)),
-                            (4,18--6,4), NoneAtInvisible,
+                              (ArbitraryAfterError ("memberCore2", (4,20--4,20)),
+                               FromParseError (4,20--4,20), (4,20--4,20)),
+                            (4,18--4,19), NoneAtInvisible,
                             { LeadingKeyword =
                                StaticMember ((4,4--4,10), (4,11--4,17))
                               InlineKeyword = None
-                              EqualsRange = None }), (4,4--6,4))], (4,4--6,4)),
-                  [], None, (3,5--6,4), { LeadingKeyword = Type (3,0--3,4)
-                                          EqualsRange = Some (3,7--3,8)
-                                          WithKeyword = None })], (3,0--6,4));
+                              EqualsRange = None }), (4,4--4,20))], (4,4--4,20)),
+                  [], None, (3,5--4,20), { LeadingKeyword = Type (3,0--3,4)
+                                           EqualsRange = Some (3,7--3,8)
+                                           WithKeyword = None })], (3,0--4,20));
            Types
              ([SynTypeDefn
                  (SynComponentInfo

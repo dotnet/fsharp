@@ -10,8 +10,20 @@ ImplFile
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Wild (3,4--3,5),
+                  Some
+                    (SynBindingReturnInfo
+                       (Fun
+                          (LongIdent (SynLongIdent ([a], [], [None])),
+                           Tuple
+                             (false,
+                              [Type (LongIdent (SynLongIdent ([b], [], [None])));
+                               Star (3,14--3,15);
+                               Type (FromParseError (3,15--3,15))], (3,12--3,15)),
+                           (3,7--3,17), { ArrowRange = (3,9--3,11) }),
+                        (3,7--3,17), [], { ColonRange = Some (3,5--3,6) })),
                   Typed
-                    (Wild (3,4--3,5),
+                    (Const (Unit, (3,18--3,20)),
                      Fun
                        (LongIdent (SynLongIdent ([a], [], [None])),
                         Tuple
@@ -19,8 +31,8 @@ ImplFile
                            [Type (LongIdent (SynLongIdent ([b], [], [None])));
                             Star (3,14--3,15);
                             Type (FromParseError (3,15--3,15))], (3,12--3,15)),
-                        (3,7--3,15), { ArrowRange = (3,9--3,11) }), (3,4--3,17)),
-                  None, Const (Unit, (3,18--3,20)), (3,4--3,17), Yes (3,0--3,20),
+                        (3,7--3,17), { ArrowRange = (3,9--3,11) }), (3,18--3,20)),
+                  (3,4--3,5), Yes (3,0--3,20),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,16--3,17) })], (3,0--3,20))],
@@ -29,4 +41,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,16)-(3,17) parse error Unexpected symbol '=' in type
+(3,16)-(3,17) parse error Unexpected symbol '=' in binding

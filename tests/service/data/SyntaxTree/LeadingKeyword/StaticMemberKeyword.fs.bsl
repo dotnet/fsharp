@@ -25,14 +25,18 @@ ImplFile
                                       MemberKind = Member },
                                SynValInfo ([[]], SynArgInfo ([], false, None)),
                                None),
+                            LongIdent
+                              (SynLongIdent ([Y], [], [None]), None, None,
+                               Pats [], None, (3,18--3,19)),
+                            Some
+                              (SynBindingReturnInfo
+                                 (LongIdent (SynLongIdent ([int], [], [None])),
+                                  (3,22--3,25), [],
+                                  { ColonRange = Some (3,20--3,21) })),
                             Typed
-                              (LongIdent
-                                 (SynLongIdent ([Y], [], [None]), None, None,
-                                  Pats [], None, (3,18--3,19)),
+                              (Const (Int32 1, (3,28--3,29)),
                                LongIdent (SynLongIdent ([int], [], [None])),
-                               (3,18--3,25)), None,
-                            Const (Int32 1, (3,28--3,29)), (3,18--3,25),
-                            NoneAtInvisible,
+                               (3,28--3,29)), (3,18--3,19), NoneAtInvisible,
                             { LeadingKeyword =
                                StaticMember ((3,4--3,10), (3,11--3,17))
                               InlineKeyword = None

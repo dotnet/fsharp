@@ -28,21 +28,26 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = PropertyGet },
                                   SynValInfo
-                                    ([[SynArgInfo ([], false, None)]],
+                                    ([[SynArgInfo ([], false, None)]; []],
                                      SynArgInfo ([], false, None)), None),
+                               LongIdent
+                                 (SynLongIdent
+                                    ([this; Y], [(3,15--3,16)], [None; None]),
+                                  Some get, None,
+                                  Pats
+                                    [Paren
+                                       (Const (Unit, (3,26--3,28)), (3,26--3,28))],
+                                  None, (3,23--3,28)),
+                               Some
+                                 (SynBindingReturnInfo
+                                    (LongIdent
+                                       (SynLongIdent ([int], [], [None])),
+                                     (3,29--3,32), [],
+                                     { ColonRange = Some (3,28--3,29) })),
                                Typed
-                                 (LongIdent
-                                    (SynLongIdent
-                                       ([this; Y], [(3,15--3,16)], [None; None]),
-                                     Some get, None,
-                                     Pats
-                                       [Paren
-                                          (Const (Unit, (3,26--3,28)),
-                                           (3,26--3,28))], None, (3,23--3,28)),
+                                 (Const (Int32 1, (3,35--3,36)),
                                   LongIdent (SynLongIdent ([int], [], [None])),
-                                  (3,23--3,32)), None,
-                               Const (Int32 1, (3,35--3,36)), (3,23--3,32),
-                               NoneAtInvisible,
+                                  (3,35--3,36)), (3,23--3,28), NoneAtInvisible,
                                { LeadingKeyword = Member (3,4--3,10)
                                  InlineKeyword = None
                                  EqualsRange = Some (3,33--3,34) })),
@@ -60,26 +65,31 @@ ImplFile
                                       GetterOrSetterIsCompilerGenerated = false
                                       MemberKind = PropertySet },
                                   SynValInfo
-                                    ([[SynArgInfo ([], false, None)]],
+                                    ([[SynArgInfo ([], false, None)];
+                                      [SynArgInfo ([], false, None)]],
                                      SynArgInfo ([], false, None)), None),
+                               LongIdent
+                                 (SynLongIdent
+                                    ([this; Y], [(3,15--3,16)], [None; None]),
+                                  Some set, None,
+                                  Pats
+                                    [Paren
+                                       (Typed
+                                          (Wild (3,46--3,47),
+                                           LongIdent
+                                             (SynLongIdent ([int], [], [None])),
+                                           (3,46--3,51)), (3,45--3,52))], None,
+                                  (3,41--3,52)),
+                               Some
+                                 (SynBindingReturnInfo
+                                    (LongIdent
+                                       (SynLongIdent ([unit], [], [None])),
+                                     (3,53--3,57), [],
+                                     { ColonRange = Some (3,52--3,53) })),
                                Typed
-                                 (LongIdent
-                                    (SynLongIdent
-                                       ([this; Y], [(3,15--3,16)], [None; None]),
-                                     Some set, None,
-                                     Pats
-                                       [Paren
-                                          (Typed
-                                             (Wild (3,46--3,47),
-                                              LongIdent
-                                                (SynLongIdent
-                                                   ([int], [], [None])),
-                                              (3,46--3,51)), (3,45--3,52))],
-                                     None, (3,41--3,52)),
+                                 (Const (Unit, (3,60--3,62)),
                                   LongIdent (SynLongIdent ([unit], [], [None])),
-                                  (3,41--3,57)), None,
-                               Const (Unit, (3,60--3,62)), (3,41--3,57),
-                               NoneAtInvisible,
+                                  (3,60--3,62)), (3,41--3,52), NoneAtInvisible,
                                { LeadingKeyword = Member (3,4--3,10)
                                  InlineKeyword = None
                                  EqualsRange = Some (3,58--3,59) })),
