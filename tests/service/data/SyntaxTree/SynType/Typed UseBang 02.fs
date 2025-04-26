@@ -1,3 +1,6 @@
 module Module
 
-use! (res: Async<int>) = ()
+async {
+    use! (res: Async<int>) = ()
+    return ()
+}

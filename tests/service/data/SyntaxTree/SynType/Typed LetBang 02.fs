@@ -1,3 +1,6 @@
 module Module
 
-let! (res: Async<int>) = ()
+async {
+    let! (res: Async<int>) = ()
+    return ()
+}

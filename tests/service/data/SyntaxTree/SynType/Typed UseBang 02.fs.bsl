@@ -5,23 +5,30 @@ ImplFile
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr
-             (LetOrUseBang
-                (Yes (3,0--3,27), true, true,
-                 Paren
-                   (Typed
-                      (Named (SynIdent (res, None), false, None, (3,6--3,9)),
-                       App
-                         (LongIdent (SynLongIdent ([Async], [], [None])),
-                          Some (3,16--3,17),
-                          [LongIdent (SynLongIdent ([int], [], [None]))], [],
-                          Some (3,20--3,21), false, (3,11--3,21)), (3,6--3,21)),
-                    (3,5--3,22)), Const (Unit, (3,25--3,27)), [],
-                 ImplicitZero (3,27--3,27), (3,0--4,0),
-                 { LetOrUseBangKeyword = (3,0--3,4)
-                   EqualsRange = Some (3,23--3,24) }), (3,0--4,0))],
+             (App
+                (NonAtomic, false, Ident async,
+                 ComputationExpr
+                   (false,
+                    LetOrUseBang
+                      (Yes (4,4--4,31), true, true,
+                       Paren
+                         (Typed
+                            (Named
+                               (SynIdent (res, None), false, None, (4,10--4,13)),
+                             App
+                               (LongIdent (SynLongIdent ([Async], [], [None])),
+                                Some (4,20--4,21),
+                                [LongIdent (SynLongIdent ([int], [], [None]))],
+                                [], Some (4,24--4,25), false, (4,15--4,25)),
+                             (4,10--4,25)), (4,9--4,26)),
+                       Const (Unit, (4,29--4,31)), [],
+                       YieldOrReturn
+                         ((false, true), Const (Unit, (5,11--5,13)), (5,4--5,13),
+                          { YieldOrReturnKeyword = (5,4--5,10) }), (4,4--5,13),
+                       { LetOrUseBangKeyword = (4,4--4,8)
+                         EqualsRange = Some (4,27--4,28) }), (3,6--6,1)),
+                 (3,0--6,1)), (3,0--6,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--4,0), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--6,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
-
-(4,0)-(4,0) parse error Incomplete structured construct at or before this point in expression
