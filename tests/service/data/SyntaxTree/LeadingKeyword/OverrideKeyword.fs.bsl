@@ -26,21 +26,15 @@ ImplFile
                                SynValInfo
                                  ([[SynArgInfo ([], false, None)]; []],
                                   SynArgInfo ([], false, None)), None),
-                            LongIdent
-                              (SynLongIdent ([E], [], [None]), None, None,
-                               Pats [], None, (3,13--3,14)),
-                            Some
-                              (SynBindingReturnInfo
-                                 (LongIdent
-                                    (SynLongIdent ([string], [], [None])),
-                                  (3,17--3,23), [],
-                                  { ColonRange = Some (3,15--3,16) })),
                             Typed
-                              (Const
-                                 (String ("", Regular, (3,26--3,28)),
-                                  (3,26--3,28)),
+                              (LongIdent
+                                 (SynLongIdent ([E], [], [None]), None, None,
+                                  Pats [], None, (3,13--3,14)),
                                LongIdent (SynLongIdent ([string], [], [None])),
-                               (3,26--3,28)), (3,13--3,14), NoneAtInvisible,
+                               (3,13--3,23)), None,
+                            Const
+                              (String ("", Regular, (3,26--3,28)), (3,26--3,28)),
+                            (3,13--3,23), NoneAtInvisible,
                             { LeadingKeyword = Override (3,4--3,12)
                               InlineKeyword = None
                               EqualsRange = Some (3,24--3,25) }), (3,4--3,28))],

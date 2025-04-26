@@ -11,15 +11,12 @@ ImplFile
                   PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Named (SynIdent (s, None), false, None, (5,4--5,5)),
-                  Some
-                    (SynBindingReturnInfo
-                       (LongIdent (SynLongIdent ([string], [], [None])),
-                        (5,8--5,14), [], { ColonRange = Some (5,6--5,7) })),
                   Typed
-                    (Const (String ("s", Regular, (5,17--5,20)), (5,17--5,20)),
+                    (Named (SynIdent (s, None), false, None, (5,4--5,5)),
                      LongIdent (SynLongIdent ([string], [], [None])),
-                     (5,17--5,20)), (5,4--5,5), Yes (5,0--5,20),
+                     (5,4--5,14)), None,
+                  Const (String ("s", Regular, (5,17--5,20)), (5,17--5,20)),
+                  (5,4--5,14), Yes (5,0--5,20),
                   { LeadingKeyword = Let (5,0--5,3)
                     InlineKeyword = None
                     EqualsRange = Some (5,15--5,16) })], (5,0--5,20))],

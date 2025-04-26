@@ -10,20 +10,8 @@ ImplFile
                   PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
-                  Wild (3,4--3,5),
-                  Some
-                    (SynBindingReturnInfo
-                       (Fun
-                          (Tuple
-                             (false,
-                              [Type (LongIdent (SynLongIdent ([a], [], [None])));
-                               Star (3,9--3,10);
-                               Type (FromParseError (3,10--3,10))], (3,7--3,10)),
-                           LongIdent (SynLongIdent ([b], [], [None])),
-                           (3,7--3,15), { ArrowRange = (3,11--3,13) }),
-                        (3,7--3,15), [], { ColonRange = Some (3,5--3,6) })),
                   Typed
-                    (Const (Unit, (3,18--3,20)),
+                    (Wild (3,4--3,5),
                      Fun
                        (Tuple
                           (false,
@@ -31,8 +19,8 @@ ImplFile
                             Star (3,9--3,10); Type (FromParseError (3,10--3,10))],
                            (3,7--3,10)),
                         LongIdent (SynLongIdent ([b], [], [None])), (3,7--3,15),
-                        { ArrowRange = (3,11--3,13) }), (3,18--3,20)),
-                  (3,4--3,5), Yes (3,0--3,20),
+                        { ArrowRange = (3,11--3,13) }), (3,4--3,15)), None,
+                  Const (Unit, (3,18--3,20)), (3,4--3,15), Yes (3,0--3,20),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,16--3,17) })], (3,0--3,20))],
@@ -41,4 +29,4 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(3,11)-(3,13) parse error Unexpected symbol '->' in binding
+(3,11)-(3,13) parse error Unexpected symbol '->' in type
