@@ -343,10 +343,8 @@ type internal FSharpPackage() as this =
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    // Uncomment to view cache metrics in the output window
-    // do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
-
 #if DEBUG
+    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
 
     let flushTelemetry = Logging.FSharpServiceTelemetry.otelExport ()
 

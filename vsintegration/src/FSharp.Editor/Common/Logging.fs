@@ -176,7 +176,7 @@ module FSharpServiceTelemetry =
             OpenTelemetry.Sdk
                 .CreateMeterProviderBuilder()
                 .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                .AddMeter(nameof FSharp.Compiler.CacheInstrumentation)
+                .AddMeter(nameof FSharp.Compiler.CacheMetrics)
                 .AddMeter("System.Runtime")
                 .AddOtlpExporter(fun e m ->
                     e.Endpoint <- otlpEndpoint

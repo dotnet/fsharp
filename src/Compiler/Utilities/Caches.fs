@@ -11,17 +11,11 @@ open System.Diagnostics.Metrics
 
 open FSharp.Compiler.Diagnostics
 
-[<Struct; RequireQualifiedAccess; NoComparison>]
-type EvictionMethod =
-    | Background
-    | NoEviction
-
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
     {
         MaximumCapacity: int
         PercentageToEvict: int
-        EvictionMethod: EvictionMethod
         LevelOfConcurrency: int
     }
 
@@ -30,7 +24,6 @@ type CacheOptions =
             MaximumCapacity = 1024
             PercentageToEvict = 5
             LevelOfConcurrency = Environment.ProcessorCount
-            EvictionMethod = EvictionMethod.Background
         }
 
 [<Sealed; NoComparison; NoEquality>]
@@ -161,63 +154,6 @@ type EntityPool<'Key, 'Value>(maximumCapacity, cacheId) =
         if pool.Count < maximumCapacity then
             pool.Add(entity)
 
-type IEvictionQueue<'Key, 'Value> =
-    abstract member Add: CachedEntity<'Key, 'Value> -> unit
-    abstract member Update: CachedEntity<'Key, 'Value> -> unit
-    abstract member GetKeysToEvict: int -> 'Key[]
-    abstract member Remove: CachedEntity<'Key, 'Value> -> unit
-
-[<Sealed; NoComparison; NoEquality>]
-type EvictionQueue<'Key, 'Value>() =
-
-    let list = LinkedList<CachedEntity<'Key, 'Value>>()
-
-    interface IEvictionQueue<'Key, 'Value> with
-
-        member _.Add(entity: CachedEntity<'Key, 'Value>) =
-            lock list
-            <| fun () ->
-                if isNull entity.Node.List then
-                    list.AddLast(entity.Node)
-                else
-                    assert false
-
-        member _.Update(entity: CachedEntity<'Key, 'Value>) =
-            lock list
-            <| fun () ->
-                Interlocked.Increment(&entity.AccessCount) |> ignore
-
-                let node = entity.Node
-
-                // Sync between store and the eviction queue is not atomic. It might be already evicted or not yet added.
-                if node.List = list then
-                    // Just move this node to the end of the list.
-                    list.Remove(node)
-                    list.AddLast(node)
-
-        member _.GetKeysToEvict(count) =
-            lock list
-            <| fun () -> list |> Seq.map _.Key |> Seq.truncate count |> Seq.toArray
-
-        member this.Remove(entity: CachedEntity<_, _>) =
-            lock list
-            <| fun () ->
-                if entity.Node.List = list then
-                    list.Remove(entity.Node)
-
-    member _.Count = list.Count
-
-    static member NoEviction =
-        { new IEvictionQueue<'Key, 'Value> with
-            member _.Add(_) = ()
-
-            member _.Update(entity) =
-                Interlocked.Increment(&entity.AccessCount) |> ignore
-
-            member _.GetKeysToEvict(_) = [||]
-            member _.Remove(_) = ()
-        }
-
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
 type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
@@ -236,39 +172,52 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     let evictionFails =
         CacheMetrics.meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
 
-    let eviction = Event<'Value>()
-
     let pool = EntityPool<'Key, 'Value>(capacity, instanceId)
 
     let store =
         ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
 
-    let evictionQueue: IEvictionQueue<'Key, 'Value> =
-        match options.EvictionMethod with
-        | EvictionMethod.NoEviction -> EvictionQueue.NoEviction
-        | _ -> EvictionQueue()
+    let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
-    let tryEvictItems () =
-        let count =
-            if store.Count > options.MaximumCapacity then
-                (store.Count - options.MaximumCapacity)
-                + int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
+    let addToEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
+        lock evictionQueue
+        <| fun () ->
+            if isNull entity.Node.List then
+                evictionQueue.AddLast(entity.Node)
             else
-                0
+                assert false
 
-        for key in evictionQueue.GetKeysToEvict(count) do
-            match store.TryRemove(key) with
+    let updateEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
+        lock evictionQueue
+        <| fun () ->
+
+            let node = entity.Node
+
+            // Sync between store and the eviction queue is not atomic. It might be already evicted or not yet added.
+            if node.List = evictionQueue then
+                // Just move this node to the end of the list.
+                evictionQueue.Remove(node)
+                evictionQueue.AddLast(node)
+
+    let targetCount =
+        options.MaximumCapacity
+        - int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
+
+    do assert (targetCount >= 0)
+
+    let tryEvictOne () =
+        match evictionQueue.First with
+        | null -> evictionFails.Add 1L
+        | first ->
+            match store.TryRemove(first.Value.Key) with
             | true, removed ->
-                evictionQueue.Remove(removed)
+                lock evictionQueue <| fun () -> evictionQueue.Remove(removed.Node)
                 pool.Reclaim(removed)
-                eviction.Trigger(removed.Value)
                 evictions.Add 1L
             | _ -> evictionFails.Add 1L
 
     let rec backgroundEviction () =
         async {
-            tryEvictItems ()
-
             let utilization = (float store.Count / float options.MaximumCapacity)
             // So, based on utilization this will scale the delay between 0 and 1 seconds.
             // Worst case scenario would be when 1 second delay happens,
@@ -280,11 +229,14 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
             if delay > 0.0 then
                 do! Async.Sleep(int delay)
 
+            while store.Count > targetCount && evictionQueue.Count > 0 do
+                tryEvictOne ()
+
             return! backgroundEviction ()
         }
 
     do
-        if options.EvictionMethod = EvictionMethod.Background then
+        if options.PercentageToEvict > 0 then
             Async.Start(backgroundEviction (), cancellationToken = cts.Token)
 
     member val Name = instanceId
@@ -293,7 +245,8 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         match store.TryGetValue(key) with
         | true, cachedEntity ->
             hits.Add 1L
-            evictionQueue.Update(cachedEntity)
+            Interlocked.Increment(&cachedEntity.AccessCount) |> ignore
+            updateEvictionQueue cachedEntity
             value <- cachedEntity.Value
             true
         | _ ->
@@ -305,7 +258,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         let cachedEntity = pool.Acquire(key, value)
 
         if store.TryAdd(key, cachedEntity) then
-            evictionQueue.Add(cachedEntity)
+            addToEvictionQueue cachedEntity
             true
         else
             pool.Reclaim(cachedEntity)
@@ -318,9 +271,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
             let value = valueFactory key
             this.TryAdd(key, value) |> ignore
             value
-
-    [<CLIEvent>]
-    member val ValueEvicted = eviction.Publish
 
     interface IDisposable with
         member this.Dispose() =

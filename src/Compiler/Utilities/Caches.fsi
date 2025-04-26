@@ -3,16 +3,10 @@ namespace FSharp.Compiler
 open System
 open System.Threading
 
-[<Struct; RequireQualifiedAccess; NoComparison>]
-type internal EvictionMethod =
-    | Background
-    | NoEviction
-
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
     { MaximumCapacity: int
       PercentageToEvict: int
-      EvictionMethod: EvictionMethod
       LevelOfConcurrency: int }
 
     static member Default: CacheOptions
@@ -24,30 +18,13 @@ type internal CachedEntity<'Key, 'Value> =
     member ReUse: key: 'Key * value: 'Value -> CachedEntity<'Key, 'Value>
     override ToString: unit -> string
 
-type internal IEvictionQueue<'Key, 'Value> =
-    abstract member Add: CachedEntity<'Key, 'Value> -> unit
-    abstract member Update: CachedEntity<'Key, 'Value> -> unit
-    abstract member GetKeysToEvict: int -> 'Key[]
-    abstract member Remove: CachedEntity<'Key, 'Value> -> unit
-
-[<Sealed; NoComparison; NoEquality>]
-type internal EvictionQueue<'Key, 'Value> =
-    new: unit -> EvictionQueue<'Key, 'Value>
-    member Count: int
-    static member NoEviction: IEvictionQueue<'Key, 'Value>
-    interface IEvictionQueue<'Key, 'Value>
-
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     new: options: CacheOptions * capacity: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
     member GetOrCreate: key: 'Key * valueFactory: ('Key -> 'Value) -> 'Value
-    member GetStats: unit -> string
     member Dispose: unit -> unit
-
-    [<CLIEvent>]
-    member ValueEvicted: IEvent<'Value>
 
     interface IDisposable
 
