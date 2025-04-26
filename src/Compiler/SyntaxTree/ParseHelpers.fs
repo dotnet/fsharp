@@ -354,11 +354,20 @@ let mkSynMemberDefnGetSet
         | None -> None
         | Some memberKind ->
 
-            // Ensure we prioritize the explicit return type on the accessor if present
+            // REVIEW: It's hard not to ignore the optPropertyType type annotation for 'set' properties. To apply it,
+            // we should apply it to the last argument, but at this point we've already pushed the patterns that
+            // make up the arguments onto the RHS. So we just always give a warning.
+
+            (match optPropertyType with
+             | Some _ -> errorR (Error(FSComp.SR.parsTypeAnnotationsOnGetSet (), mBindLhs))
+             | None -> ())
+
             let optReturnType =
-                match optReturnType with
-                | Some _ -> optReturnType // Use accessor's explicit return type if provided
-                | None -> optPropertyType // Otherwise fall back to property type
+                match (memberKind, optReturnType) with
+                | SynMemberKind.PropertySet, _ -> optReturnType
+                | _, None -> optPropertyType
+                | _ -> optReturnType
+
             // REDO with the correct member kind
             let binding =
                 mkSynBinding
@@ -396,6 +405,10 @@ let mkSynMemberDefnGetSet
                     | _ -> SynInfo.unnamedTopArg
 
                 match memberKind, valSynInfo, memFlags.IsInstance with
+                | SynMemberKind.PropertyGet, SynValInfo([], _ret), false
+                | SynMemberKind.PropertyGet, SynValInfo([ _ ], _ret), true ->
+                    raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterMustHaveAtLeastOneArgument ())
+
                 | SynMemberKind.PropertyGet, SynValInfo(thisArg :: indexOrUnitArgs :: rest, ret), true ->
                     if not rest.IsEmpty then
                         reportParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
@@ -424,10 +437,7 @@ let mkSynMemberDefnGetSet
                         reportParseErrorAt mWholeBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
 
                     SynValInfo([ indexArgs @ adjustValueArg valueArg ], ret)
-                // For getters and setters with explicit return types or other patterns
-                // that don't match earlier cases, use valInfo as is
-                | SynMemberKind.PropertyGet, valInfo, _
-                | SynMemberKind.PropertySet, valInfo, _ -> valInfo
+
                 | _ ->
                     // should be unreachable, cover just in case
                     raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
