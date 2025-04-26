@@ -351,7 +351,7 @@ module HashStamps =
 
     and nullnessEquals (n1: Nullness) (n2: Nullness) =
         match n1, n2 with
-        | Nullness.Known n1, Nullness.Known n2 -> n1 = n2
+        | Nullness.Known k1, Nullness.Known k2 -> k1 = k2
         | Nullness.Variable _, Nullness.Variable _ -> true
         | _ -> false
 

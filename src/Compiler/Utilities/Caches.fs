@@ -11,16 +11,14 @@ open System.Diagnostics.Metrics
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
     {
-        MaximumCapacity: int
-        PercentageToEvict: int
-        LevelOfConcurrency: int
+        Capacity: int
+        HeadroomPercentage: int
     }
 
     static member Default =
         {
-            MaximumCapacity = 1024
-            PercentageToEvict = 5
-            LevelOfConcurrency = Environment.ProcessorCount
+            Capacity = 1024
+            HeadroomPercentage = 10
         }
 
 [<Sealed; NoComparison; NoEquality>]
@@ -133,7 +131,7 @@ type CacheMetrics(cacheId) =
         instrumentedCaches[cacheId].Dispose()
         instrumentedCaches.TryRemove(cacheId) |> ignore
 
-type EntityPool<'Key, 'Value>(maximumCapacity, cacheId) =
+type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
     let mutable created = 0
 
@@ -144,19 +142,19 @@ type EntityPool<'Key, 'Value>(maximumCapacity, cacheId) =
         match pool.TryTake() with
         | true, entity -> entity.ReUse(key, value)
         | _ ->
-            if Interlocked.Increment &created > maximumCapacity then
+            if Interlocked.Increment &created > totalCapacity then
                 overCapacity.Add 1L
 
             CachedEntity(key, value).WithNode()
 
     member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
-        if pool.Count < maximumCapacity then
+        if pool.Count < totalCapacity then
             pool.Add(entity)
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
 type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
-    internal (options: CacheOptions, capacity, cts: CancellationTokenSource, ?name) =
+    internal (capacity, headroom, cts: CancellationTokenSource, ?name) =
 
     static let mutable cacheId = 0
 
@@ -171,20 +169,19 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     let evictionFails =
         CacheMetrics.Meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
 
-    let pool = EntityPool<'Key, 'Value>(capacity, instanceId)
+    let totalCapacity = capacity + headroom
+
+    let pool = EntityPool<'Key, 'Value>(totalCapacity, instanceId)
 
     let store =
-        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(options.LevelOfConcurrency, capacity)
+        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity)
 
     let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
     let addToEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
         lock evictionQueue
         <| fun () ->
-            if isNull entity.Node.List then
-                evictionQueue.AddLast(entity.Node)
-            else
-                assert false
+            evictionQueue.AddLast(entity.Node)
 
     // Only LRU currrently. We can add other strategies when needed.
     let updateEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
@@ -199,27 +196,20 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
                 evictionQueue.Remove(node)
                 evictionQueue.AddLast(node)
 
-    // If items count exceeds this, evictions ensue.
-    let targetCount =
-        options.MaximumCapacity
-        - int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
-
-    do assert (targetCount >= 0)
-
     let tryEvictOne () =
         match evictionQueue.First with
         | null -> evictionFails.Add 1L
         | first ->
             match store.TryRemove(first.Value.Key) with
             | true, removed ->
-                lock evictionQueue <| fun () -> evictionQueue.Remove(removed.Node)
+                lock evictionQueue <| fun () -> evictionQueue.Remove(first)
                 pool.Reclaim(removed)
                 evictions.Add 1L
             | _ -> evictionFails.Add 1L
 
     let rec backgroundEviction () =
         async {
-            let utilization = (float store.Count / float options.MaximumCapacity)
+            let utilization = (float store.Count / float totalCapacity)
             // So, based on utilization this will scale the delay between 0 and 1 seconds.
             // Worst case scenario would be when 1 second delay happens,
             // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
@@ -230,15 +220,14 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
             if delay > 0.0 then
                 do! Async.Sleep(int delay)
 
-            while store.Count > targetCount && evictionQueue.Count > 0 do
+            while store.Count > capacity && evictionQueue.Count > 0 do
                 tryEvictOne ()
 
             return! backgroundEviction ()
         }
 
     do
-        if options.PercentageToEvict > 0 then
-            Async.Start(backgroundEviction (), cancellationToken = cts.Token)
+        Async.Start(backgroundEviction (), cancellationToken = cts.Token)
 
     member val Name = instanceId
 
@@ -283,27 +272,23 @@ module Cache =
     let private overrideVariable = "FSHARP_CACHE_OVERRIDE"
 
     /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
-    let OverrideMaxCapacityForTesting () =
+    let OverrideCapacityForTesting () =
         Environment.SetEnvironmentVariable(overrideVariable, "true", EnvironmentVariableTarget.Process)
 
-    let applyOverride (options: CacheOptions) =
-        let capacity =
-            match Environment.GetEnvironmentVariable(overrideVariable) with
-            | NonNull _ when options.MaximumCapacity > 1024 -> 1024
-            | _ -> options.MaximumCapacity
-
-        { options with
-            MaximumCapacity = capacity
-        }
+    let applyOverride (capacity: int) =
+        match Environment.GetEnvironmentVariable(overrideVariable) with
+        | NonNull _ when capacity > 1024 -> 1024
+        | _ -> capacity
 
     let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
-        let options = applyOverride options
+        if options.Capacity < 0 then invalidArg "Capacity" "Capacity must be positive"
+        if options.HeadroomPercentage < 0 then invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
+
+        let capacity = applyOverride options.Capacity
         // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-        let capacity =
-            options.MaximumCapacity
-            + int (float options.MaximumCapacity * float options.PercentageToEvict / 100.0)
+        let headroom = int (float options.Capacity * float options.HeadroomPercentage / 100.0)
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(options, capacity, cts)
+        let cache = new Cache<'Key, 'Value>(capacity, headroom, cts)
         CacheMetrics.AddInstrumentation cache.Name |> ignore
         cache

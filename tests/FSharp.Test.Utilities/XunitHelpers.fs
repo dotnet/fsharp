@@ -187,7 +187,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
             #endif
 
                 // Override cache capacity to reduce memory usage in CI.
-                FSharp.Compiler.Cache.OverrideMaxCapacityForTesting()
+                FSharp.Compiler.Cache.OverrideCapacityForTesting()
 
                 let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 

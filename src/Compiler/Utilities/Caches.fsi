@@ -5,9 +5,8 @@ open System.Threading
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
-    { MaximumCapacity: int
-      PercentageToEvict: int
-      LevelOfConcurrency: int }
+    { Capacity: int
+      HeadroomPercentage: int }
 
     static member Default: CacheOptions
 
@@ -20,7 +19,7 @@ type internal CachedEntity<'Key, 'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
-    new: options: CacheOptions * capacity: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
+    new:  capacity: int * headroom: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
     member Dispose: unit -> unit
@@ -38,5 +37,5 @@ type internal CacheMetrics =
     static member RemoveInstrumentation: cacheId: string -> unit
 
 module internal Cache =
-    val OverrideMaxCapacityForTesting: unit -> unit
+    val OverrideCapacityForTesting: unit -> unit
     val Create<'Key, 'Value when 'Key: not null and 'Key: equality> : options: CacheOptions -> Cache<'Key, 'Value>

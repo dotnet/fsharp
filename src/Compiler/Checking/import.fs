@@ -7,13 +7,10 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
-open System.Runtime.CompilerServices
-open System.Threading
 
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing
-open Internal.Utilities.TypeHashing.HashTypes
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -63,17 +60,12 @@ type TTypeCacheKey =
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
-    val hashCode: int
 
-    private new (ty1, ty2, canCoerce, hashCode) =
-        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; hashCode = hashCode }
+    private new (ty1, ty2, canCoerce) =
+        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
 
     static member FromStrippedTypes (ty1, ty2, canCoerce) =
-        let hashCode =
-            HashStamps.hashTType ty1
-            |> pipeToHash (HashStamps.hashTType ty2)
-            |> pipeToHash (hash canCoerce)
-        TTypeCacheKey(ty1, ty2, canCoerce, hashCode)
+        TTypeCacheKey(ty1, ty2, canCoerce)
 
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
@@ -90,31 +82,14 @@ type TTypeCacheKey =
         | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
         | _ -> false
 
-    override this.GetHashCode () : int = this.hashCode
+    override this.GetHashCode () : int =
+        HashStamps.hashTType this.ty1
+        |> pipeToHash (HashStamps.hashTType this.ty2)
+        |> pipeToHash (hash this.canCoerce)
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-//let createTypeSubsumptionCache (g: TcGlobals) =
-//    let options =
-//        match g.compilationMode with
-//        | CompilationMode.OneOff ->
-            
-//            { CacheOptions.Default with
-//                MaximumCapacity = 4 * 32768
-//                // This is a one-off compilation, so we don't need to worry about eviction.
-//                PercentageToEvict = 0 }
-//        | _ ->
-//            // Incremental use, so we need to set up the cache with eviction.
-//            { CacheOptions.Default with
-//                PercentageToEvict = 5
-//                MaximumCapacity = 4 * 32768 }
-//    Cache.Create<TTypeCacheKey, bool>(options)
-
-//let typeSubsumptionCaches = Cache.Create<TcGlobals, Cache<TTypeCacheKey, bool>>({ CacheOptions.Default with MaximumCapacity = 24 })
-
-let typeSubsumptionCache = lazy Cache.Create<TTypeCacheKey, bool>({ CacheOptions.Default with MaximumCapacity = 4 * 32768 })
-
-//do typeSubsumptionCaches.ValueEvicted.Add <| _.Value.Dispose()
+let typeSubsumptionCache = lazy Cache.Create<TTypeCacheKey, bool>({ CacheOptions.Default with Capacity = 131072 })
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -139,7 +114,6 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
     member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = typeSubsumptionCache.Value
-        //typeSubsumptionCaches.GetOrCreate(g, createTypeSubsumptionCache)
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 
