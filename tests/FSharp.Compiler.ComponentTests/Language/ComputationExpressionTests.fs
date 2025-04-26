@@ -22,6 +22,21 @@ let x = lb {1; 2;}
         |> compile
         |> shouldSucceed
         |> ignore
+        
+    [<Fact>]
+    let ``Allow let! and use! binding with type annotation without parentheses.``() =
+        FSharp """
+module ComputationExpressionTests
+let f =
+    async {
+        let! (a: int) = async { return 1 }
+        let! b: int = async { return 1 } 
+        return a
+    }
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Fact>]
     let ``A CE explicitly using Zero fails without a defined Zero``() =
