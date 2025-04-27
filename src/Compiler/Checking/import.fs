@@ -89,7 +89,7 @@ type TTypeCacheKey =
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-let typeSubsumptionCache = lazy Cache.Create<TTypeCacheKey, bool>({ CacheOptions.Default with Capacity = 131072 })
+let typeSubsumptionCache = lazy Cache.Create<TTypeCacheKey, bool>("TypeSubsumptionCache", { CacheOptions.Default with Capacity = 131072 })
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.

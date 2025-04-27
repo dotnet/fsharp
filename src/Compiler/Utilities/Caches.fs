@@ -280,7 +280,7 @@ module Cache =
         | NonNull _ when capacity > 1024 -> 1024
         | _ -> capacity
 
-    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (options: CacheOptions) =
+    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (name, options: CacheOptions) =
         if options.Capacity < 0 then invalidArg "Capacity" "Capacity must be positive"
         if options.HeadroomPercentage < 0 then invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
@@ -289,6 +289,6 @@ module Cache =
         let headroom = int (float options.Capacity * float options.HeadroomPercentage / 100.0)
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(capacity, headroom, cts)
+        let cache = new Cache<'Key, 'Value>(capacity, headroom, cts, name)
         CacheMetrics.AddInstrumentation cache.Name |> ignore
         cache

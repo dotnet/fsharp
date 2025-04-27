@@ -38,4 +38,4 @@ type internal CacheMetrics =
 
 module internal Cache =
     val OverrideCapacityForTesting: unit -> unit
-    val Create<'Key, 'Value when 'Key: not null and 'Key: equality> : options: CacheOptions -> Cache<'Key, 'Value>
+    val Create<'Key, 'Value when 'Key: not null and 'Key: equality> : name: string * options: CacheOptions -> Cache<'Key, 'Value>
