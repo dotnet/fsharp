@@ -121,6 +121,7 @@ module Logging =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
 module FSharpServiceTelemetry =
+    open FSharp.Compiler.Caches
 
     let listen filter =
         let indent (activity: Activity) =
@@ -154,8 +155,7 @@ module FSharpServiceTelemetry =
         let timer = new System.Timers.Timer(1000.0, AutoReset = true)
 
         timer.Elapsed.Add(fun _ ->
-            let stats =
-                FSharp.Compiler.CacheMetrics.GetStatsUpdateForAllCaches(clearCounts = true)
+            let stats = CacheMetrics.GetStatsUpdateForAllCaches(clearCounts = true)
 
             if stats <> "" then
                 logMsg $"\n{stats}")
@@ -176,7 +176,7 @@ module FSharpServiceTelemetry =
             OpenTelemetry.Sdk
                 .CreateMeterProviderBuilder()
                 .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                .AddMeter(nameof FSharp.Compiler.CacheMetrics)
+                .AddMeter(CacheMetrics.Meter.Name)
                 .AddMeter("System.Runtime")
                 .AddOtlpExporter(fun e m ->
                     e.Endpoint <- otlpEndpoint

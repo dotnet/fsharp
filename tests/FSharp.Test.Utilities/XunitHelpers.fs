@@ -10,6 +10,7 @@ open Xunit.Abstractions
 
 open TestFramework
 
+open FSharp.Compiler.Caches
 open FSharp.Compiler.Diagnostics
 
 open OpenTelemetry.Resources
@@ -155,7 +156,7 @@ type OpenTelemetryExport(testRunName, enable) =
 
             // Configure OpenTelemetry metrics export. Metrics can be viewed in Prometheus or other compatible tools.
             OpenTelemetry.Sdk.CreateMeterProviderBuilder()
-                .AddMeter(nameof FSharp.Compiler.CacheMetrics)
+                .AddMeter(CacheMetrics.Meter.Name)
                 .AddMeter("System.Runtime")
                 .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
                 .AddOtlpExporter(fun e m ->
@@ -187,7 +188,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
             #endif
 
                 // Override cache capacity to reduce memory usage in CI.
-                FSharp.Compiler.Cache.OverrideCapacityForTesting()
+                Cache.OverrideCapacityForTesting()
 
                 let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 

@@ -24,6 +24,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Caches
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -89,7 +90,9 @@ type TTypeCacheKey =
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-let typeSubsumptionCache = lazy Cache.Create<TTypeCacheKey, bool>("TypeSubsumptionCache", { CacheOptions.Default with Capacity = 131072 })
+let typeSubsumptionCache =
+    // Leave most of the capacity in reserve for bursts.
+    lazy Cache.Create<TTypeCacheKey, bool>("TypeSubsumptionCache", { TotalCapacity = 131072; HeadroomPercentage = 75 })
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.

@@ -1,5 +1,5 @@
 // LinkedList uses nulls, so we need to disable the nullability warnings for this file.
-namespace FSharp.Compiler
+namespace FSharp.Compiler.Caches
 
 open System
 open System.Collections.Generic
@@ -11,13 +11,16 @@ open System.Diagnostics.Metrics
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
     {
-        Capacity: int
+        /// Total capacity, determines the size of the underlying store.
+        TotalCapacity: int
+
+        /// Safety margin size as a percentage of TotalCapacity.
         HeadroomPercentage: int
     }
 
     static member Default =
         {
-            Capacity = 1024
+            TotalCapacity = 1024
             HeadroomPercentage = 10
         }
 
@@ -83,24 +86,24 @@ type CacheMetrics(cacheId) =
     member val RecentStats = "-" with get, set
 
     member this.TryUpdateStats(clearCounts) =
-        let stats =
+        let ratio =
             try
-                let ratio =
-                    float readings["hits"].Value
-                    / float (readings["hits"].Value + readings["misses"].Value)
-                    * 100.0
-
-                [
-                    for name in readings.Keys do
-                        let v = readings[name].Value
-
-                        if v > 0 then
-                            $"{name}: {v}"
-                ]
-                |> String.concat ", "
-                |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
+                float readings["hits"].Value
+                / float (readings["hits"].Value + readings["misses"].Value)
+                * 100.0
             with _ ->
-                "!"
+                Double.NaN
+
+        let stats =
+            [
+                for name in readings.Keys do
+                    let v = readings[name].Value
+
+                    if v > 0 then
+                        $"{name}: {v}"
+            ]
+            |> String.concat ", "
+            |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
 
         if clearCounts then
             for r in readings.Values do
@@ -153,23 +156,19 @@ type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
-    internal (capacity, headroom, cts: CancellationTokenSource, ?name) =
+type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalCapacity, headroom, cts: CancellationTokenSource, ?name) =
 
     static let mutable cacheId = 0
 
     let instanceId = defaultArg name $"cache-{Interlocked.Increment(&cacheId)}"
 
-    let hits = CacheMetrics.Meter.CreateCounter<int64>("hits", "count", instanceId)
-    let misses = CacheMetrics.Meter.CreateCounter<int64>("misses", "count", instanceId)
-
-    let evictions =
-        CacheMetrics.Meter.CreateCounter<int64>("evictions", "count", instanceId)
+    let meter = CacheMetrics.Meter
+    let hits = meter.CreateCounter<int64>("hits", "count", instanceId)
+    let misses = meter.CreateCounter<int64>("misses", "count", instanceId)
+    let evictions = meter.CreateCounter<int64>("evictions", "count", instanceId)
 
     let evictionFails =
-        CacheMetrics.Meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
-
-    let totalCapacity = capacity + headroom
+        meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
 
     let pool = EntityPool<'Key, 'Value>(totalCapacity, instanceId)
 
@@ -179,9 +178,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
     let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
     let addToEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
-        lock evictionQueue
-        <| fun () ->
-            evictionQueue.AddLast(entity.Node)
+        lock evictionQueue <| fun () -> evictionQueue.AddLast(entity.Node)
 
     // Only LRU currrently. We can add other strategies when needed.
     let updateEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
@@ -207,6 +204,9 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
                 evictions.Add 1L
             | _ -> evictionFails.Add 1L
 
+    // Non-evictable capacity.
+    let capacity = totalCapacity - headroom
+
     let rec backgroundEviction () =
         async {
             let utilization = (float store.Count / float totalCapacity)
@@ -220,14 +220,13 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
             if delay > 0.0 then
                 do! Async.Sleep(int delay)
 
-            while store.Count > capacity && evictionQueue.Count > 0 do
+            while store.Count > capacity - headroom && evictionQueue.Count > 0 do
                 tryEvictOne ()
 
             return! backgroundEviction ()
         }
 
-    do
-        Async.Start(backgroundEviction (), cancellationToken = cts.Token)
+    do Async.Start(backgroundEviction (), cancellationToken = cts.Token)
 
     member val Name = instanceId
 
@@ -281,14 +280,18 @@ module Cache =
         | _ -> capacity
 
     let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (name, options: CacheOptions) =
-        if options.Capacity < 0 then invalidArg "Capacity" "Capacity must be positive"
-        if options.HeadroomPercentage < 0 then invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
+        if options.TotalCapacity < 0 then
+            invalidArg "Capacity" "Capacity must be positive"
 
-        let capacity = applyOverride options.Capacity
-        // Increase expected capacity by the percentage to evict, since we want to not resize the dictionary.
-        let headroom = int (float options.Capacity * float options.HeadroomPercentage / 100.0)
+        if options.HeadroomPercentage < 0 then
+            invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
+
+        let totalCapacity = applyOverride options.TotalCapacity
+        // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
+        let headroom =
+            int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(capacity, headroom, cts, name)
+        let cache = new Cache<'Key, 'Value>(totalCapacity, headroom, cts, name)
         CacheMetrics.AddInstrumentation cache.Name |> ignore
         cache

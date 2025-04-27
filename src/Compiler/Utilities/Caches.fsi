@@ -1,11 +1,12 @@
-namespace FSharp.Compiler
+namespace FSharp.Compiler.Caches
 
 open System
+open System.Diagnostics.Metrics
 open System.Threading
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
-    { Capacity: int
+    { TotalCapacity: int
       HeadroomPercentage: int }
 
     static member Default: CacheOptions
@@ -19,7 +20,7 @@ type internal CachedEntity<'Key, 'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
-    new:  capacity: int * headroom: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
+    new: totalCapacity: int * headroom: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
     member Dispose: unit -> unit
@@ -31,6 +32,7 @@ type internal CacheMetrics =
     member CacheId: string
     member RecentStats: string
     member TryUpdateStats: clearCounts: bool -> bool
+    static member Meter: Meter
     static member GetStats: cacheId: string -> string
     static member GetStatsUpdateForAllCaches: clearCounts: bool -> string
     static member AddInstrumentation: cacheId: string -> unit
@@ -38,4 +40,6 @@ type internal CacheMetrics =
 
 module internal Cache =
     val OverrideCapacityForTesting: unit -> unit
-    val Create<'Key, 'Value when 'Key: not null and 'Key: equality> : name: string * options: CacheOptions -> Cache<'Key, 'Value>
+
+    val Create<'Key, 'Value when 'Key: not null and 'Key: equality> :
+        name: string * options: CacheOptions -> Cache<'Key, 'Value>
