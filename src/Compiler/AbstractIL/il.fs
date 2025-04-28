@@ -2795,6 +2795,8 @@ type ILTypeDef
 
     member _.MetadataIndex = metadataIndex
 
+    member _.Flags = additionalFlags
+
     member x.With
         (
             ?name,

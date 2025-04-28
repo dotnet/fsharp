@@ -162,6 +162,8 @@ type ValFlags =
 
     member WithMakesNoCriticalTailcalls: ValFlags
 
+    member Flags: int64
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess>]
 type TyparKind =
@@ -291,6 +293,8 @@ type EntityFlags =
 
     /// Get the flags as included in the F# binary metadata
     member PickledBits: int64
+
+    member Flags: int64
 
     member PreEstablishedHasDefaultConstructor: bool
 

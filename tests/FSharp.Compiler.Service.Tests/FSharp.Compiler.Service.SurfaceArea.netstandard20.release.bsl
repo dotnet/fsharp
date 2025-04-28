@@ -845,6 +845,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] FindByName(System.String)
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] TryFindInstanceByNameAndCallingSignature(System.String, ILCallingSignature)
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: System.Collections.Generic.IDictionary`2[System.String,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef]] CreateDictionary(ILMethodDef[])
+FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.IL+ILMethodDef[]])
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(ILMethodImplDef)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(ILMethodImplDef, System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(System.Object)
@@ -1568,6 +1569,8 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILSecurityDecls get_SecurityDecls()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDef With(Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.TypeAttributes], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefLayout], Microsoft.FSharp.Core.FSharpOption`1[Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+InterfaceImpl]]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef]], Microsoft.FSharp.Core.FSharpOption`1[Internal.Utilities.Library.InterruptibleLazy`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILType]]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodImplDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILEventDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILPropertyDefs], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILTypeDefAdditionalFlags], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILAttributesStored], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILSecurityDecls])
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess Access
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAccess get_Access()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAdditionalFlags Flags
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefAdditionalFlags get_Flags()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout Layout
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefLayout get_Layout()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: ILTypeDefs NestedTypes
