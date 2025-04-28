@@ -5,7 +5,8 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218 --nowarn:1182 --warnaserror-:1182</OtherFlags>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
+    <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
