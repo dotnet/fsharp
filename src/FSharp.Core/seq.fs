@@ -1503,8 +1503,6 @@ module Seq =
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
         LanguagePrimitives.DivideByInt< ^a> acc count 
-        when ^a: float32 = (System.Linq.Enumerable.Average: IEnumerable<float32> -> float32) (# "" source : IEnumerable<float32> #) 
-        when ^a: float = (System.Linq.Enumerable.Average: IEnumerable<float> -> float) (# "" source : IEnumerable<float> #)
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =

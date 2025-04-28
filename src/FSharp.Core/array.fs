@@ -1689,8 +1689,6 @@ module Array =
             acc <- Checked.(+) acc array.[i]
 
         LanguagePrimitives.DivideByInt< ^T> acc array.Length
-        when ^T : float = (System.Linq.Enumerable.Average : IEnumerable<float> -> float) (# "" array : IEnumerable<float> #)
-        when ^T : float32 = (System.Linq.Enumerable.Average : IEnumerable<float32> -> float32) (# "" array : IEnumerable<float32> #)
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
