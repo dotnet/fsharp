@@ -20,8 +20,8 @@ type CacheOptions =
 
     static member Default =
         {
-            TotalCapacity = 1024
-            HeadroomPercentage = 10
+            TotalCapacity = 128
+            HeadroomPercentage = 50
         }
 
 [<Sealed; NoComparison; NoEquality>]
@@ -62,7 +62,6 @@ type CacheMetrics(cacheId) =
 
     let readings = ConcurrentDictionary<string, int64 ref>()
 
-#if DEBUG
     let listener = new MeterListener()
 
     do
@@ -75,9 +74,6 @@ type CacheMetrics(cacheId) =
         listener.Start()
 
     member this.Dispose() = listener.Dispose()
-#else
-    member this.Dispose() = ()
-#endif
 
     member val CacheId = cacheId
 
@@ -115,6 +111,7 @@ type CacheMetrics(cacheId) =
         else
             false
 
+    // TODO: Should return a Map, not a string
     static member GetStats(cacheId) =
         instrumentedCaches[cacheId].TryUpdateStats(false) |> ignore
         instrumentedCaches[cacheId].RecentStats
@@ -129,7 +126,7 @@ type CacheMetrics(cacheId) =
 
     static member AddInstrumentation(cacheId) =
         if instrumentedCaches.ContainsKey cacheId then
-            invalidArg "cacheId" "cache with that name already exists"
+            invalidArg "cacheId" $"cache with name {cacheId} already exists"
 
         instrumentedCaches[cacheId] <- new CacheMetrics(cacheId)
 
@@ -158,7 +155,6 @@ type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
             pool.Add(entity)
 
 module Cache =
-
     // During testing a lot of compilations are started in app domains and subprocesses.
     // This is a reliable way to pass the override to all of them.
     [<Literal>]
@@ -175,11 +171,16 @@ module Cache =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalCapacity, headroom, cts: CancellationTokenSource, ?name) =
+type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
+    internal (totalCapacity, headroom, cts: CancellationTokenSource, ?name, ?observeMetrics) =
 
-    static let mutable cacheId = 0
+    let instanceId = defaultArg name (Guid.NewGuid().ToString())
 
-    let instanceId = defaultArg name $"cache-{Interlocked.Increment(&cacheId)}"
+    let observeMetrics = defaultArg observeMetrics false
+
+    do
+        if observeMetrics then
+            CacheMetrics.AddInstrumentation instanceId
 
     let meter = CacheMetrics.Meter
     let hits = meter.CreateCounter<int64>("hits", "count", instanceId)
@@ -286,13 +287,15 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
         member this.Dispose() =
             store.Clear()
             cts.Cancel()
-            CacheMetrics.RemoveInstrumentation(this.Name)
+
+            if observeMetrics then
+                CacheMetrics.RemoveInstrumentation instanceId
 
     member this.Dispose() = (this :> IDisposable).Dispose()
 
     member this.GetStats() = CacheMetrics.GetStats(this.Name)
 
-    static member Create<'Key, 'Value>(options: CacheOptions, ?name) =
+    static member Create<'Key, 'Value>(options: CacheOptions, ?name, ?observeMetrics) =
         if options.TotalCapacity < 0 then
             invalidArg "Capacity" "Capacity must be positive"
 
@@ -305,6 +308,8 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
             int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<_, _>(totalCapacity, headroom, cts, ?name = name)
-        CacheMetrics.AddInstrumentation cache.Name |> ignore
+
+        let cache =
+            new Cache<_, _>(totalCapacity, headroom, cts, ?name = name, ?observeMetrics = observeMetrics)
+
         cache

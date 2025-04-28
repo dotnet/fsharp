@@ -21,7 +21,10 @@ module internal Cache =
 
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
-    new: totalCapacity: int * headroom: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
+    new:
+        totalCapacity: int * headroom: int * cts: CancellationTokenSource * ?name: string * ?observeMetrics: bool ->
+            Cache<'Key, 'Value>
+
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
     /// Cancels the background eviction task.
@@ -32,7 +35,8 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     /// For testing only
     member BackgroundEvictionComplete: IEvent<unit>
 
-    static member Create<'Key, 'Value> : options: CacheOptions * ?name: string -> Cache<'Key, 'Value>
+    static member Create<'Key, 'Value> :
+        options: CacheOptions * ?name: string * ?observeMetrics: bool -> Cache<'Key, 'Value>
 
 [<Class>]
 type internal CacheMetrics =
