@@ -58,7 +58,7 @@ type CachedEntity<'Key, 'Value> =
 type CacheMetrics(cacheId) =
     static let meter = new Meter("FSharp.Compiler.Cache")
 
-    static let instrumentedCaches = ConcurrentDictionary<string, CacheMetrics>()
+    static let observedCaches = ConcurrentDictionary<string, CacheMetrics>()
 
     let readings = ConcurrentDictionary<string, int64 ref>()
 
@@ -113,26 +113,26 @@ type CacheMetrics(cacheId) =
 
     // TODO: Should return a Map, not a string
     static member GetStats(cacheId) =
-        instrumentedCaches[cacheId].TryUpdateStats(false) |> ignore
-        instrumentedCaches[cacheId].RecentStats
+        observedCaches[cacheId].TryUpdateStats(false) |> ignore
+        observedCaches[cacheId].RecentStats
 
     static member GetStatsUpdateForAllCaches(clearCounts) =
         [
-            for i in instrumentedCaches.Values do
+            for i in observedCaches.Values do
                 if i.TryUpdateStats(clearCounts) then
                     i.RecentStats
         ]
         |> String.concat "\n"
 
     static member AddInstrumentation(cacheId) =
-        if instrumentedCaches.ContainsKey cacheId then
+        if observedCaches.ContainsKey cacheId then
             invalidArg "cacheId" $"cache with name {cacheId} already exists"
 
-        instrumentedCaches[cacheId] <- new CacheMetrics(cacheId)
+        observedCaches[cacheId] <- new CacheMetrics(cacheId)
 
     static member RemoveInstrumentation(cacheId) =
-        instrumentedCaches[cacheId].Dispose()
-        instrumentedCaches.TryRemove(cacheId) |> ignore
+        observedCaches[cacheId].Dispose()
+        observedCaches.TryRemove(cacheId) |> ignore
 
 type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
