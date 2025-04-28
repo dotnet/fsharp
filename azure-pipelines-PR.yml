@@ -545,11 +545,11 @@ stages:
             continueOnError: true
             condition: failed()
 
-          # Windows With Compressed Metadata
+          # Windows With Compressed Metadata Desktop
         - job: WindowsCompressedMetadata
           variables:
           - name: XUNIT_LOGS
-            value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
+            value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
           - name: __VSNeverShowWhatsNew
             value: 1
           pool:
