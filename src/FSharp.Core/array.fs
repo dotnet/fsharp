@@ -1578,7 +1578,7 @@ module Array =
         checkNonNull "array" array
         Microsoft.FSharp.Primitives.Basics.Array.permute indexMap array
 
-    let inline private classicSum (array: ^T array) : ^T =
+    let inline private fsharpSumImpl (array: ^T array) : ^T =
         checkNonNull "array" array
         let mutable acc = LanguagePrimitives.GenericZero< ^T>
 
@@ -1587,26 +1587,28 @@ module Array =
 
         acc
 
+    let isNetFramework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework"
+
     [<CompiledName("Sum")>]
     let inline sum (array: ^T array) : ^T =
-        classicSum array
+        fsharpSumImpl array
         when ^T : float = 
-            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum array
+            if isNetFramework then fsharpSumImpl array
             else 
                 let r = (System.Linq.Enumerable.Sum : IEnumerable<float> -> float) (# "" array : IEnumerable<float> #)
                 (# "" r : 'T #)
         when ^T : float32 = 
-            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum array
+            if isNetFramework then fsharpSumImpl array
             else 
                 let r = (System.Linq.Enumerable.Sum : IEnumerable<float32> -> float32) (# "" array : IEnumerable<float32> #)
                 (# "" r : 'T #)
         when ^T : int = 
-            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum array
+            if isNetFramework then fsharpSumImpl array
             else 
                 let r = (System.Linq.Enumerable.Sum : IEnumerable<int> -> int) (# "" array : IEnumerable<int> #)
                 (# "" r : 'T #)
         when ^T : int64 = 
-            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum array
+            if isNetFramework then fsharpSumImpl array
             else 
                 let r = (System.Linq.Enumerable.Sum : IEnumerable<int64> -> int64) (# "" array : IEnumerable<int64> #)
                 (# "" r : 'T #)
