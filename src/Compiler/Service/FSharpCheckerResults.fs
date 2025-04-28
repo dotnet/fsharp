@@ -384,7 +384,7 @@ type internal TypeCheckInfo
             if rangeContainsPos mPossible cursorPos then
                 match bestSoFar with
                 | Some(bestm, _, _) ->
-                    if rangeContainsRange bestm mPossible && not (equals bestm mPossible) then
+                    if rangeContainsRange bestm mPossible then
                         bestSoFar <- Some(mPossible, env, ad)
                 | None -> bestSoFar <- Some(mPossible, env, ad))
 
