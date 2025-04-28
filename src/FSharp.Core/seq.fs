@@ -1464,8 +1464,7 @@ module Seq =
         else
             mkDelayedSeq (fun () -> countByRefType projection source)
 
-    [<CompiledName("Sum")>]
-    let inline sum (source: seq< ^a >) : ^a =
+    let inline private classicSum (source: seq< ^a >) : ^a =
         use e = source.GetEnumerator()
         let mutable acc = LanguagePrimitives.GenericZero< ^a>
 
@@ -1473,10 +1472,30 @@ module Seq =
             acc <- Checked.(+) acc e.Current
 
         acc 
-        when ^a: int64 = (System.Linq.Enumerable.Sum: IEnumerable<int64> -> int64) (# "" source : IEnumerable<int64> #) 
-        when ^a: int = (System.Linq.Enumerable.Sum: IEnumerable<int> -> int) (# "" source : IEnumerable<int> #) 
-        when ^a: float32 = (System.Linq.Enumerable.Sum: IEnumerable<float32> -> float32) (# "" source : IEnumerable<float32> #) 
-        when ^a: float = (System.Linq.Enumerable.Sum: IEnumerable<float> -> float) (# "" source : IEnumerable<float> #)
+
+    [<CompiledName("Sum")>]
+    let inline sum (source: seq< ^a >) : ^a =
+        classicSum source
+        when ^a: int64 = 
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum source
+            else 
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<int64> -> int64) (# "" source : IEnumerable<int64> #)
+                (# "" r : 'a #)
+        when ^a: int = 
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum source
+            else
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<int> -> int) (# "" source : IEnumerable<int> #)
+                (# "" r : 'a #)
+        when ^a: float32 = 
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum source
+            else 
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<float32> -> float32) (# "" source : IEnumerable<float32> #)
+                (# "" r : 'a #)
+        when ^a: float = 
+            if System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework" then classicSum source
+            else
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<float> -> float) (# "" source : IEnumerable<float> #)
+                (# "" r : 'a #)
 
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =
