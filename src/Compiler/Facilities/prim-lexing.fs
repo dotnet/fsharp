@@ -265,12 +265,14 @@ and [<Sealed>] internal LexBuffer<'Char>
     let mutable eof = false
     let mutable startPos = Position.Empty
     let mutable endPos = Position.Empty
+    let sourceStringBuilder = System.Text.StringBuilder(4096)
 
     // Throw away all the input besides the lexeme, which is placed at start of buffer
     let discardInput () =
         Array.blit buffer bufferScanStart buffer 0 bufferScanLength
         bufferScanStart <- 0
         bufferMaxScanLength <- bufferScanLength
+        sourceStringBuilder.Clear() |> ignore
 
     member lexbuf.EndOfScan() : int =
         //Printf.eprintf "endOfScan, lexBuffer.lexemeLength = %d\n" lexBuffer.lexemeLength;
@@ -325,7 +327,7 @@ and [<Sealed>] internal LexBuffer<'Char>
         with get () = bufferAcceptAction
         and set v = bufferAcceptAction <- v
 
-    member val private SourceTextBuilder = System.Text.StringBuilder()
+    member val private SourceTextBuilder = sourceStringBuilder
     member lexbuf.SourceText = lexbuf.SourceTextBuilder.ToString() |> SourceText.ofString
 
     member lexbuf.RefillBuffer() = filler lexbuf

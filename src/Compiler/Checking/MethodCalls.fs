@@ -1447,13 +1447,11 @@ let emptyPreBinder (e: Expr) = e
 let tryPickArgumentCodeText (sourceText: ISourceText option) assignedArgs paramName =
     assignedArgs
     |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
-    match called.NameOpt with
-    | Some x when x.idText = paramName ->
-        sourceText
-        |> Option.bind (fun sourceText ->
+    match called.NameOpt, sourceText with
+    | Some x, Some sourceText when x.idText = paramName ->
         let code = sourceText.GetSubTextFromRange caller.Range
         if System.String.IsNullOrEmpty code then None
-        else Some code)
+        else Some code
     | _ -> None)
 
 /// Get the expression that must be inserted on the caller side for a CallerSide optional arg,

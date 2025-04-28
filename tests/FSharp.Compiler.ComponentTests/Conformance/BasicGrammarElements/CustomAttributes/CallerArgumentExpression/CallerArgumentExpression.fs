@@ -67,7 +67,36 @@ assertEqual (A.aa(a = stringABC)) ("abc", ".cctor", 17, "stringABC")
         |> shouldSucceed
         |> ignore
 
+    [<FactForNETCOREAPP>]
+    let ``Can define methods using CallerArgumentExpression with F#-style optional arguments of voption`` () =
+        FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+type A() =
+  static member aa (
+    a,
+    [<CallerMemberName; Struct>] ?b: string, 
+    [<CallerLineNumber; Struct>] ?c: int, 
+    [<CallerArgumentExpressionAttribute("a"); Struct>] ?e: string) = 
+    let b = defaultValueArg b "no value"
+    let c = defaultValueArg c 0
+    let e = defaultValueArg e "no value"
+    a,b,c,e
+
+let stringABC = "abc"
+assertEqual (A.aa(stringABC)) ("abc", ".cctor", 16, "stringABC")
+assertEqual (A.aa(a = stringABC)) ("abc", ".cctor", 17, "stringABC")
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
     [<FactForNETCOREAPP(Skip = "Currently cannot get the original text range with #line")>]
+    /// This test is to check whether the feature can work correctly when there are #line directives. 
+    /// But since the behavior doesn't exist now, this test is skipped, and wait for
+    /// the future update to the feature.
     let ``Can define in F# - with #line`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
