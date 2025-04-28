@@ -2159,7 +2159,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</source>
-        <target state="translated">签名和实现中类型“{1}”的 {0} 定义不兼容，因为缩写不同: {2} 与 {3}</target>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the abbreviations differ: {2} versus {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleAbbreviationHiddenBySig">
@@ -6114,7 +6114,7 @@
       </trans-unit>
       <trans-unit id="optLocalValueNotFoundDuringOptimization">
         <source>Local value {0} not found during optimization</source>
-        <target state="translated">优化过程中未找到本地值 {0}</target>
+        <target state="new">Local value {0} not found during optimization</target>
         <note />
       </trans-unit>
       <trans-unit id="optValueMarkedInlineHasUnexpectedValue">
@@ -6304,12 +6304,12 @@
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
         <source>This number is outside the allowable range for decimal literals</source>
-        <target state="translated">此数字在允许的十进制文本范围之外</target>
+        <target state="new">This number is outside the allowable range for decimal literals</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideThirtyTwoBitFloat">
         <source>This number is outside the allowable range for 32-bit floats</source>
-        <target state="translated">此数字在允许的 32 位浮点数范围之外</target>
+        <target state="new">This number is outside the allowable range for 32-bit floats</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
