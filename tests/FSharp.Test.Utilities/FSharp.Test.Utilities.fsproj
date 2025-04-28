@@ -75,26 +75,31 @@
     <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
   </ItemGroup>
 
-    <ItemGroup>
-      <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-      <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
-      <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
-      <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
-      <InternalsVisibleTo Include="LanguageServiceProfiling" />
-      <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
-    </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.ComponentTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+    <InternalsVisibleTo Include="LanguageServiceProfiling" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
