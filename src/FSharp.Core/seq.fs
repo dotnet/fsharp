@@ -1502,7 +1502,7 @@ module Seq =
         if count = 0 then
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
-        LanguagePrimitives.DivideByInt< ^a> acc count 
+        LanguagePrimitives.DivideByInt< ^a> acc count
 
     [<CompiledName("AverageBy")>]
     let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =
