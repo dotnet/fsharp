@@ -1,6 +1,6 @@
 module Module
 
 async {
-    let! res: Async<int> = ()
-    return ()
+    let! res: int = async { return 1 }
+    return res
 }
