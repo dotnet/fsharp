@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.25163.3">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.25223.3">
       <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
-      <Sha>27dfbb8d8a0344d845948109a5a1f0d9c7f17fa9</Sha>
+      <Sha>19eb5ea4e5f9c4e5256843a92805c8c9e942207d</Sha>
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.20-preview-25162-14">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.25-preview-25214-09">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
+      <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.13.20">
+    <Dependency Name="Microsoft.Build" Version="17.13.25">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
+      <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.13.20">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.13.25">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
+      <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.20">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.25">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
+      <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.20">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.25">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>a4ef1e90fef9b56473708b7d308f982c7c9f46d9</Sha>
+      <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
     </Dependency>
     <Dependency Name="System.Reflection.Metadata" Version="8.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
@@ -42,14 +42,14 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="9.0.0-beta.25164.2">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="9.0.0-beta.25208.6">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>5ba9ca776c1d0bb72b2791591e54cf51fc52dfee</Sha>
+      <Sha>aa61e8c20a869bcc994f8b29eb07d927d2bec6f4</Sha>
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.arcade" Version="9.0.0-beta.25164.2">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.arcade" Version="9.0.0-beta.25208.6">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>5ba9ca776c1d0bb72b2791591e54cf51fc52dfee</Sha>
+      <Sha>aa61e8c20a869bcc994f8b29eb07d927d2bec6f4</Sha>
       <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.24462.2">

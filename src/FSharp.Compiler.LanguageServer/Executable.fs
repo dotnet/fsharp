@@ -4,11 +4,11 @@ open System
 open StreamJsonRpc
 
 [<EntryPoint>]
-let main argv =
+let main _argv =
 
     let jsonRpc = new JsonRpc(Console.OpenStandardOutput(), Console.OpenStandardInput())
 
-    let s = new FSharpLanguageServer(jsonRpc, (LspLogger Console.Out.Write))
+    let _s = new FSharpLanguageServer(jsonRpc, (LspLogger Console.Out.Write))
 
     jsonRpc.StartListening()
 

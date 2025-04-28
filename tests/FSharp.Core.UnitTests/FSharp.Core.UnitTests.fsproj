@@ -12,7 +12,7 @@
     <PackageVersion>$(FSCoreUnitTestsPackageVersion)</PackageVersion>
     <PreRelease>true</PreRelease>
     <LangVersion>preview</LangVersion>
-
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>

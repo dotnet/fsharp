@@ -11,7 +11,7 @@ open Microsoft.Extensions.DependencyInjection
 type LspServiceLifeCycleManager() =
 
     interface ILifeCycleManager with
-        member _.ShutdownAsync(message: string) =
+        member _.ShutdownAsync(_message: string) =
             task {
                 try
                     printfn "Shutting down"

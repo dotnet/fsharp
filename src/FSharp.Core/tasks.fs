@@ -58,36 +58,28 @@ type TaskBuilderBase() =
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
     member inline _.Combine
-        (
-            task1: TaskCode<'TOverall, unit>,
-            task2: TaskCode<'TOverall, 'T>
-        ) : TaskCode<'TOverall, 'T> =
+        (task1: TaskCode<'TOverall, unit>, task2: TaskCode<'TOverall, 'T>)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.Combine(task1, task2)
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline _.While
-        (
-            [<InlineIfLambda>] condition: unit -> bool,
-            body: TaskCode<'TOverall, unit>
-        ) : TaskCode<'TOverall, unit> =
+        ([<InlineIfLambda>] condition: unit -> bool, body: TaskCode<'TOverall, unit>)
+        : TaskCode<'TOverall, unit> =
         ResumableCode.While(condition, body)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryWith
-        (
-            body: TaskCode<'TOverall, 'T>,
-            catch: exn -> TaskCode<'TOverall, 'T>
-        ) : TaskCode<'TOverall, 'T> =
+        (body: TaskCode<'TOverall, 'T>, catch: exn -> TaskCode<'TOverall, 'T>)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.TryWith(body, catch)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
     member inline _.TryFinally
-        (
-            body: TaskCode<'TOverall, 'T>,
-            [<InlineIfLambda>] compensation: unit -> unit
-        ) : TaskCode<'TOverall, 'T> =
+        (body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation: unit -> unit)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinally(
             body,
             ResumableCode<_, _>(fun _sm ->
@@ -100,10 +92,8 @@ type TaskBuilderBase() =
 
 #if NETSTANDARD2_1
     member inline internal this.TryFinallyAsync
-        (
-            body: TaskCode<'TOverall, 'T>,
-            compensation: unit -> ValueTask
-        ) : TaskCode<'TOverall, 'T> =
+        (body: TaskCode<'TOverall, 'T>, compensation: unit -> ValueTask)
+        : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinallyAsync(
             body,
             ResumableCode<_, _>(fun sm ->
@@ -138,11 +128,9 @@ type TaskBuilderBase() =
                         false)
         )
 
-    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable|null>
-        (
-            resource: 'Resource,
-            body: 'Resource -> TaskCode<'TOverall, 'T>
-        ) : TaskCode<'TOverall, 'T> =
+    member inline this.Using<'Resource, 'TOverall, 'T when 'Resource :> IAsyncDisposable | null>
+        (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>)
+        : TaskCode<'TOverall, 'T> =
         this.TryFinallyAsync(
             (fun sm -> (body resource).Invoke(&sm)),
             (fun () ->
@@ -310,11 +298,8 @@ module LowPriority =
             and ^Awaiter :> ICriticalNotifyCompletion
             and ^Awaiter: (member get_IsCompleted: unit -> bool)
             and ^Awaiter: (member GetResult: unit -> 'TResult1)>
-            (
-                sm: byref<_>,
-                task: ^TaskLike,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : bool =
+            (sm: byref<_>, task: ^TaskLike, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : bool =
 
             let mutable awaiter = (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) (task))
 
@@ -337,10 +322,8 @@ module LowPriority =
             and ^Awaiter :> ICriticalNotifyCompletion
             and ^Awaiter: (member get_IsCompleted: unit -> bool)
             and ^Awaiter: (member GetResult: unit -> 'TResult1)>
-            (
-                task: ^TaskLike,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : TaskCode<'TOverall, 'TResult2> =
+            (task: ^TaskLike, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<'TOverall, _>(fun sm ->
                 if __useResumableCode then
@@ -382,23 +365,59 @@ module LowPriority =
 
             this.Bind(task, this.Return)
 
-        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable|null>
-            (
-                resource: 'Resource,
-                body: 'Resource -> TaskCode<'TOverall, 'T>
-            ) =
+        member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable | null>
+            (resource: 'Resource, body: 'Resource -> TaskCode<'TOverall, 'T>)
+            =
             ResumableCode.Using(resource, body)
 
+    type TaskBuilder with
+        member inline this.MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> ^TResult2)>
+            (task1: ^TaskLike1, task2: ^TaskLike2)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+    type BackgroundTaskBuilder with
+        member inline this.MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> ^TResult2)>
+            (task1: ^TaskLike1, task2: ^TaskLike2)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
 module HighPriority =
+
     // High priority extensions
     type TaskBuilderBase with
 
         static member BindDynamic
-            (
-                sm: byref<_>,
-                task: Task<'TResult1>,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : bool =
+            (sm: byref<_>, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : bool =
             let mutable awaiter = task.GetAwaiter()
 
             let cont =
@@ -415,10 +434,8 @@ module HighPriority =
                 false
 
         member inline _.Bind
-            (
-                task: Task<'TResult1>,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : TaskCode<'TOverall, 'TResult2> =
+            (task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<'TOverall, _>(fun sm ->
                 if __useResumableCode then
@@ -448,18 +465,255 @@ module HighPriority =
         member inline this.ReturnFrom(task: Task<'T>) : TaskCode<'T, 'T> =
             this.Bind(task, this.Return)
 
+    type TaskBuilder with
+
+        // This overload is required for type inference in tasks cases
+        member inline this.MergeSources
+            (task1: Task< ^TResult1 >, task2: Task< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+    type BackgroundTaskBuilder with
+
+        // This overload is required for type inference in tasks cases
+        member inline this.MergeSources
+            (task1: Task< ^TResult1 >, task2: Task< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
 module MediumPriority =
+    open LowPriority
     open HighPriority
 
     // Medium priority extensions
     type TaskBuilderBase with
 
         member inline this.Bind
-            (
-                computation: Async<'TResult1>,
-                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
-            ) : TaskCode<'TOverall, 'TResult2> =
+            (computation: Async<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>))
+            : TaskCode<'TOverall, 'TResult2> =
             this.Bind(Async.StartImmediateAsTask computation, continuation)
 
         member inline this.ReturnFrom(computation: Async<'T>) : TaskCode<'T, 'T> =
             this.ReturnFrom(Async.StartImmediateAsTask computation)
+
+    type TaskBuilder with
+
+        // This overload is required for type inference in tasks cases
+        member inline this.MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2
+            when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> 'TResult2)>
+            (task1: Task< ^TResult1 >, task2: ^TaskLike2)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in tasks cases
+        member inline this.MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> 'TResult1)>
+            (task1: ^TaskLike1, task2: Task< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources
+            (computation1: Async< ^TResult1 >, computation2: Async< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    computation1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(computation2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in task + async cases
+        member inline this.MergeSources
+            (task: Task< ^TResult1 >, computation: Async< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(computation, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in async + task case
+        member inline this.MergeSources
+            (computation: Async< ^TResult1 >, task: Task< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    computation,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+    type BackgroundTaskBuilder with
+
+        // This overload is required for type inference in tasks cases
+        member inline this.MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2
+            when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> 'TResult2)>
+            (task1: Task< ^TResult1 >, task2: ^TaskLike2)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in tasks cases
+        member inline this.MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> 'TResult1)>
+            (task1: ^TaskLike1, task2: Task< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources
+            (computation1: Async< ^TResult1 >, computation2: Async< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    computation1,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(computation2, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in task + async cases
+        member inline this.MergeSources
+            (task: Task< ^TResult1 >, computation: Async< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(computation, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in async + task case
+        member inline this.MergeSources
+            (computation: Async< ^TResult1 >, task: Task< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    computation,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+module LowPlusPriority =
+    open LowPriority
+    open MediumPriority
+
+    type TaskBuilder with
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2
+            when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> 'TResult2)>
+            (computation: Async< ^TResult1 >, task: ^TaskLike2)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    computation,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> 'TResult1)>
+            (task: ^TaskLike1, computation: Async< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(computation, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+    type BackgroundTaskBuilder with
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2
+            when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+            and ^Awaiter2 :> ICriticalNotifyCompletion
+            and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter2: (member GetResult: unit -> 'TResult2)>
+            (computation: Async< ^TResult1 >, task: ^TaskLike2)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    computation,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(task, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )
+
+        // This overload is required for type inference in async cases
+        member inline this.MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1
+            when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+            and ^Awaiter1 :> ICriticalNotifyCompletion
+            and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter1: (member GetResult: unit -> 'TResult1)>
+            (task: ^TaskLike1, computation: Async< ^TResult2 >)
+            : Task<struct (^TResult1 * ^TResult2)> =
+            this.Run(
+                this.Bind(
+                    task,
+                    fun (result1: ^TResult1) ->
+                        this.Bind(computation, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
+                )
+            )

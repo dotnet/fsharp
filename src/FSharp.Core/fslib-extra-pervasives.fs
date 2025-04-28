@@ -325,6 +325,7 @@ module ExtraTopLevelOperators =
     [<assembly: AutoOpen("Microsoft.FSharp.Collections")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPlusPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.MediumPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority")>]
@@ -347,21 +348,15 @@ open Microsoft.FSharp.Quotations
 
 /// <summary>Represents the product of two measure expressions when returned as a generic argument of a provided type.</summary>
 [<Sealed>]
-type MeasureProduct<'Measure1, 'Measure2>() =
-    class
-    end
+type MeasureProduct<'Measure1, 'Measure2>() = class end
 
 /// <summary>Represents the inverse of a measure expressions when returned as a generic argument of a provided type.</summary>
 [<Sealed>]
-type MeasureInverse<'Measure> =
-    class
-    end
+type MeasureInverse<'Measure> = class end
 
 /// <summary>Represents the '1' measure expression when returned as a generic argument of a provided type.</summary>
 [<Sealed>]
-type MeasureOne =
-    class
-    end
+type MeasureOne = class end
 
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false)>]
 type TypeProviderAttribute() =
@@ -473,7 +468,7 @@ type IProvidedNamespace =
 
     abstract GetTypes: unit -> Type array
 
-    abstract ResolveTypeName: typeName: string -> (Type|null)
+    abstract ResolveTypeName: typeName: string -> (Type | null)
 
 type ITypeProvider =
     inherit System.IDisposable

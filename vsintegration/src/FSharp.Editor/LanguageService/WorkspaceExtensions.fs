@@ -389,11 +389,8 @@ module private CheckerExtensions =
             }
 
         member checker.ParseAndCheckDocumentUsingTransparentCompiler
-            (
-                document: Document,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) =
+            (document: Document, options: FSharpProjectOptions, userOpName: string)
+            =
             cancellableTask {
 
                 checker.TransparentCompiler.SetCacheSizeFactor(document.Project.TransparentCompilerCacheFactor)
@@ -410,12 +407,8 @@ module private CheckerExtensions =
 
         /// Parse and check the source text from the Roslyn document with possible stale results.
         member checker.ParseAndCheckDocumentWithPossibleStaleResults
-            (
-                document: Document,
-                options: FSharpProjectOptions,
-                allowStaleResults: bool,
-                userOpName: string
-            ) =
+            (document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string)
+            =
             cancellableTask {
                 let! ct = CancellableTask.getCancellationToken ()
 
@@ -481,12 +474,8 @@ module private CheckerExtensions =
 
         /// Parse and check the source text from the Roslyn document.
         member checker.ParseAndCheckDocument
-            (
-                document: Document,
-                options: FSharpProjectOptions,
-                userOpName: string,
-                ?allowStaleResults: bool
-            ) =
+            (document: Document, options: FSharpProjectOptions, userOpName: string, ?allowStaleResults: bool)
+            =
             cancellableTask {
 
                 if checker.UsesTransparentCompiler then
