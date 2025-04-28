@@ -4,6 +4,7 @@
 /// with generalization at appropriate points.
 module internal FSharp.Compiler.CheckComputationExpressions
 
+open FSharp.Compiler.TcGlobals
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -1783,11 +1784,32 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
-            match pat, andBangs with
-            | (SynPat.Named(ident = SynIdent(id, _); isThisVal = false) | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ]))), [] ->
+            match andBangs with
+            | [] ->
                 // Valid pattern case - handle with Using + Bind
                 requireBuilderMethod "Using" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
                 requireBuilderMethod "Bind" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+
+                let supportsUseBangBindingValueDiscard =
+                    ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.UseBangBindingValueDiscard
+
+                //   use! x = ...
+                //   use! (x) = ...
+                //   use! (__) = ...
+                //   use! _ = ...
+                //   use! (_) = ...
+                let rec extractIdentifierFromPattern pat =
+                    match pat with
+                    | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
+                    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
+                    | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
+                        // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
+                        let tmpIdent = mkSynId m "_"
+                        tmpIdent, SynPat.Named(SynIdent(tmpIdent, None), false, None, m)
+                    | SynPat.Paren(pat = pat) -> extractIdentifierFromPattern pat
+                    | _ -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
+
+                let ident, pat = extractIdentifierFromPattern pat
 
                 let bindExpr =
                     let consumeExpr =
@@ -1809,14 +1831,14 @@ let rec TryTranslateComputationExpression
                         )
 
                     let consumeExpr =
-                        mkSynCall "Using" mBind [ SynExpr.Ident id; consumeExpr ] ceenv.builderValName
+                        mkSynCall "Using" mBind [ SynExpr.Ident ident; consumeExpr ] ceenv.builderValName
 
                     let consumeExpr =
                         SynExpr.MatchLambda(
                             false,
                             mBind,
                             [
-                                SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
+                                SynMatchClause(pat, None, consumeExpr, ident.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
                             ],
                             DebugPointAtBinding.NoneAtInvisible,
                             mBind
@@ -1829,8 +1851,7 @@ let rec TryTranslateComputationExpression
                     |> addBindDebugPoint spBind
 
                 Some(translatedCtxt bindExpr)
-            | _pat, [] -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), mBind))
-            | _pat, _ands ->
+            | _ ->
                 // Has andBangs
                 let m =
                     match andBangs with
