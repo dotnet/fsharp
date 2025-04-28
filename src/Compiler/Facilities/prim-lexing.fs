@@ -272,7 +272,6 @@ and [<Sealed>] internal LexBuffer<'Char>
         Array.blit buffer bufferScanStart buffer 0 bufferScanLength
         bufferScanStart <- 0
         bufferMaxScanLength <- bufferScanLength
-        sourceStringBuilder.Clear() |> ignore
 
     member lexbuf.EndOfScan() : int =
         //Printf.eprintf "endOfScan, lexBuffer.lexemeLength = %d\n" lexBuffer.lexemeLength;
