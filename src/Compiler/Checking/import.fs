@@ -92,7 +92,7 @@ type TTypeCacheKey =
 
 let typeSubsumptionCache =
     // Leave most of the capacity in reserve for bursts.
-    lazy Cache.Create<TTypeCacheKey, bool>("TypeSubsumptionCache", { TotalCapacity = 131072; HeadroomPercentage = 75 })
+    lazy Cache.Create<TTypeCacheKey, bool>({ TotalCapacity = 131072; HeadroomPercentage = 75 }, name = "TypeSubsumptionCache")
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.

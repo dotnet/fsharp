@@ -128,6 +128,9 @@ type CacheMetrics(cacheId) =
         |> String.concat "\n"
 
     static member AddInstrumentation(cacheId) =
+        if instrumentedCaches.ContainsKey cacheId then
+            invalidArg "cacheId" "cache with that name already exists"
+
         instrumentedCaches[cacheId] <- new CacheMetrics(cacheId)
 
     static member RemoveInstrumentation(cacheId) =
@@ -153,6 +156,22 @@ type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
     member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
         if pool.Count < totalCapacity then
             pool.Add(entity)
+
+module Cache =
+
+    // During testing a lot of compilations are started in app domains and subprocesses.
+    // This is a reliable way to pass the override to all of them.
+    [<Literal>]
+    let private overrideVariable = "FSHARP_CACHE_OVERRIDE"
+
+    /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
+    let OverrideCapacityForTesting () =
+        Environment.SetEnvironmentVariable(overrideVariable, "true", EnvironmentVariableTarget.Process)
+
+    let applyOverride (capacity: int) =
+        match Environment.GetEnvironmentVariable(overrideVariable) with
+        | NonNull _ when capacity > 1024 -> 1024
+        | _ -> capacity
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
@@ -207,6 +226,14 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
     // Non-evictable capacity.
     let capacity = totalCapacity - headroom
 
+    let backgroundEvictionComplete = Event<_>()
+
+    let evictItems () =
+        while store.Count > capacity - headroom && evictionQueue.Count > 0 do
+            tryEvictOne ()
+
+        backgroundEvictionComplete.Trigger()
+
     let rec backgroundEviction () =
         async {
             let utilization = (float store.Count / float totalCapacity)
@@ -220,13 +247,15 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
             if delay > 0.0 then
                 do! Async.Sleep(int delay)
 
-            while store.Count > capacity - headroom && evictionQueue.Count > 0 do
-                tryEvictOne ()
+            if store.Count > capacity then
+                evictItems ()
 
             return! backgroundEviction ()
         }
 
     do Async.Start(backgroundEviction (), cancellationToken = cts.Token)
+
+    member val BackgroundEvictionComplete = backgroundEvictionComplete.Publish
 
     member val Name = instanceId
 
@@ -263,35 +292,19 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
 
     member this.GetStats() = CacheMetrics.GetStats(this.Name)
 
-module Cache =
-
-    // During testing a lot of compilations are started in app domains and subprocesses.
-    // This is a reliable way to pass the override to all of them.
-    [<Literal>]
-    let private overrideVariable = "FSHARP_CACHE_OVERRIDE"
-
-    /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
-    let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "true", EnvironmentVariableTarget.Process)
-
-    let applyOverride (capacity: int) =
-        match Environment.GetEnvironmentVariable(overrideVariable) with
-        | NonNull _ when capacity > 1024 -> 1024
-        | _ -> capacity
-
-    let Create<'Key, 'Value when 'Key: not null and 'Key: equality> (name, options: CacheOptions) =
+    static member Create<'Key, 'Value>(options: CacheOptions, ?name) =
         if options.TotalCapacity < 0 then
             invalidArg "Capacity" "Capacity must be positive"
 
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-        let totalCapacity = applyOverride options.TotalCapacity
+        let totalCapacity = Cache.applyOverride options.TotalCapacity
         // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
         let headroom =
             int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
 
         let cts = new CancellationTokenSource()
-        let cache = new Cache<'Key, 'Value>(totalCapacity, headroom, cts, name)
+        let cache = new Cache<_, _>(totalCapacity, headroom, cts, ?name = name)
         CacheMetrics.AddInstrumentation cache.Name |> ignore
         cache

@@ -6,40 +6,37 @@ open System.Threading
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
-    { TotalCapacity: int
-      HeadroomPercentage: int }
+    {
+        /// Total capacity, determines the size of the underlying store.
+        TotalCapacity: int
+
+        /// Safety margin size as a percentage of TotalCapacity.
+        HeadroomPercentage: int
+    }
 
     static member Default: CacheOptions
 
-[<Sealed; NoComparison; NoEquality>]
-type internal CachedEntity<'Key, 'Value> =
-    new: key: 'Key * value: 'Value -> CachedEntity<'Key, 'Value>
-    member WithNode: unit -> CachedEntity<'Key, 'Value>
-    member ReUse: key: 'Key * value: 'Value -> CachedEntity<'Key, 'Value>
-    override ToString: unit -> string
+module internal Cache =
+    val OverrideCapacityForTesting: unit -> unit
 
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     new: totalCapacity: int * headroom: int * cts: CancellationTokenSource * ?name: string -> Cache<'Key, 'Value>
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
+    /// Cancels the background eviction task.
     member Dispose: unit -> unit
 
     interface IDisposable
 
+    /// For testing only
+    member BackgroundEvictionComplete: IEvent<unit>
+
+    static member Create<'Key, 'Value> : options: CacheOptions * ?name: string -> Cache<'Key, 'Value>
+
+[<Class>]
 type internal CacheMetrics =
-    new: cacheId: string -> CacheMetrics
-    member CacheId: string
-    member RecentStats: string
-    member TryUpdateStats: clearCounts: bool -> bool
     static member Meter: Meter
     static member GetStats: cacheId: string -> string
+    /// Retrieves current hit ratio, hits, misses, evictions etc. formatted for printing or logging.
     static member GetStatsUpdateForAllCaches: clearCounts: bool -> string
-    static member AddInstrumentation: cacheId: string -> unit
-    static member RemoveInstrumentation: cacheId: string -> unit
-
-module internal Cache =
-    val OverrideCapacityForTesting: unit -> unit
-
-    val Create<'Key, 'Value when 'Key: not null and 'Key: equality> :
-        name: string * options: CacheOptions -> Cache<'Key, 'Value>
