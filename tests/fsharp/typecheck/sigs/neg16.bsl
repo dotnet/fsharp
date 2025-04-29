@@ -13,9 +13,9 @@ neg16.fs(44,10,44,11): typecheck error FS0934: Records, union, abbreviations and
 
 neg16.fs(47,10,47,13): typecheck error FS0934: Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute
 
-neg16.fs(49,7,49,23): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg16.fs(49,7,49,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg16.fs(52,7,52,23): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg16.fs(52,7,52,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg16.fs(59,8,59,17): typecheck error FS0001: This expression was expected to have type
     'Choice<'a,'b>'    

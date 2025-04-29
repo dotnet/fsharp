@@ -261,53 +261,53 @@ neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to
 but here has type
     'objnull'    
 
-neg20.fs(195,5,195,10): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(195,5,195,10): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(198,5,198,11): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(198,5,198,11): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(202,7,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
 
-neg20.fs(204,5,204,14): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(204,5,204,14): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(207,5,207,11): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(207,5,207,11): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(210,5,210,12): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(210,5,210,12): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(213,5,213,33): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(213,5,213,33): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(216,5,216,12): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(216,5,216,12): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(219,5,219,15): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(219,5,219,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(222,5,222,31): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(222,5,222,31): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(225,5,225,22): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(225,5,225,22): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(228,5,228,23): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(228,5,228,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(231,5,231,21): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(231,5,231,21): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(234,5,234,34): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(234,5,234,34): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(237,5,237,34): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(237,5,237,34): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(240,5,240,23): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(240,5,240,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(243,5,243,23): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(243,5,243,23): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(249,9,249,27): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(249,9,249,27): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(255,5,255,28): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(255,5,255,28): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(258,5,258,38): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(258,5,258,38): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(261,5,261,17): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(261,5,261,17): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(265,5,265,24): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(265,5,265,24): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(268,5,268,27): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(268,5,268,27): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(271,5,271,15): typecheck warning FS0842: This attribute is not valid for use on this language element
+neg20.fs(271,5,271,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(278,14,278,95): typecheck error FS0507: No accessible member or object constructor named 'ProcessStartInfo' takes 0 arguments. Note the call to this member also provides 2 named arguments.
 
@@ -342,6 +342,7 @@ neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'S
 Known type of argument: 'a0
 
 Candidates:
+ - System.String(value: System.ReadOnlySpan<char>) : System.String
  - System.String(value: char array) : System.String
  - System.String(value: nativeptr<char>) : System.String
  - System.String(value: nativeptr<sbyte>) : System.String
@@ -351,6 +352,7 @@ neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'G
 Known type of argument: 'a0
 
 Candidates:
+ - System.Guid(b: System.ReadOnlySpan<byte>) : System.Guid
  - System.Guid(b: byte array) : System.Guid
  - System.Guid(g: string) : System.Guid
 
