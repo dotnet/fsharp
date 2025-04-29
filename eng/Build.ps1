@@ -73,6 +73,7 @@ param (
     [switch]$compressAllMetadata,
     [switch]$buildnorealsig = $true,
     [switch]$verifypackageshipstatus = $false,
+    [string]$job = "",
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -357,6 +358,10 @@ function VerifyAssemblyVersionsAndSymbols() {
 }
 
 function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false, [string] $settings = "") {
+    if ($job) {
+        Write-Host("Testing batch: $job")
+        $filter = ""
+    }
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
@@ -376,6 +381,9 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     }
 
     $args += " $settings"
+    if ($job) {
+        $args += " --filter batch=$job"
+    }
 
     if ($asBackgroundJob) {
         Write-Host

@@ -90,6 +90,14 @@ module TestCaseCustomizations =
         else
             testCase.TestMethod
 
+    let sha = Security.Cryptography.SHA256.Create()
+
+    let addBatchTrait (testCase: ITestCase) =
+        let data = Text.Encoding.UTF8.GetBytes testCase.UniqueID
+        let hashCode = BitConverter.ToUInt32(sha.ComputeHash(data), 0)
+        let batch = hashCode % 4u + 1u
+        testCase.Traits.Add("batch", ResizeArray [ string batch ])
+
 type CustomTestCase =
     inherit XunitTestCase
     // xUinit demands this constructor for deserialization.
@@ -109,6 +117,7 @@ type CustomTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
+        TestCaseCustomizations.addBatchTrait testCase
 
 type CustomTheoryTestCase =
     inherit XunitTheoryTestCase
@@ -127,6 +136,7 @@ type CustomTheoryTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
+        TestCaseCustomizations.addBatchTrait testCase
 
 #endif
 

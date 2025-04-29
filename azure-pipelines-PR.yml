@@ -306,11 +306,13 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
+          strategy:
+            parallel: 4
           steps:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
+          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -job $(System.JobPositionInPhase)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -318,6 +320,15 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build
 
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsNoRealsig_testDesktop $(System.JobPositionInPhase)
+              mergeTestResults: true
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
             condition: always()
@@ -333,7 +344,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
+                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps $(System.JobPositionInPhase)'
                 ArtifactType: Container
                 parallel: true
 
@@ -429,11 +440,8 @@ stages:
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
-            maxParallel: 5
+            maxParallel: 4
             matrix:
-              desktop_release:
-                _configuration: Release
-                _testKind: testDesktop
               coreclr_release:
                 _configuration: Release
                 _testKind: testCoreclr
@@ -533,6 +541,84 @@ stages:
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
               ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+
+          # Windows With Compressed Metadata Desktop
+        - job: WindowsCompressedMetadata
+          variables:
+          - name: XUNIT_LOGS
+            value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
+          - name: __VSNeverShowWhatsNew
+            value: 1
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          strategy:
+            parallel: 4
+
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release -testDesktop -job $(System.JobPositionInPhase)
+            env:
+              DOTNET_DbgEnableMiniDump: 1
+              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+              NativeToolsOnMachine: true
+            displayName: Build / Test
+
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsCompressedMetadata testDesktop $(System.JobPositionInPhase)
+              mergeTestResults: true
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            continueOnError: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Tests BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows testDesktop test binlogs'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: failed()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
+              ArtifactName: 'Windows testDesktop test logs $(System.JobPositionInPhase)'
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows testDesktop'
               publishLocation: Container
             continueOnError: true
             condition: failed()
