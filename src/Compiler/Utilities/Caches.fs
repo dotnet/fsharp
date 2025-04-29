@@ -24,24 +24,28 @@ type CacheOptions =
             HeadroomPercentage = 50
         }
 
+// It is important that this is not a struct, because LinkedListNode holds a reference to it,
+// and it holds the reference to that Node, in a circular way.
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{ToString()}")>]
 type CachedEntity<'Key, 'Value> =
     val mutable Key: 'Key
     val mutable Value: 'Value
     val mutable AccessCount: int64
-    val mutable Node: LinkedListNode<CachedEntity<'Key, 'Value>>
+    val mutable Node: LinkedListNode<CachedEntity<'Key, 'Value>> voption
 
     new(key, value) =
         {
             Key = key
             Value = value
             AccessCount = 0L
-            Node = Unchecked.defaultof<_>
+            Node = ValueNone
         }
 
+    // This is one time initialization, outside of the constructor because of circular reference.
+    // The contract is that each CachedEntity that the EntityPool produces, has Node assigned.
     member this.WithNode() =
-        this.Node <- LinkedListNode(this)
+        this.Node <- ValueSome(LinkedListNode this)
         this
 
     member this.ReUse(key, value) =
@@ -134,6 +138,8 @@ type CacheMetrics(cacheId) =
         observedCaches[cacheId].Dispose()
         observedCaches.TryRemove(cacheId) |> ignore
 
+// Creates and after reclaiming holds entities for reuse.
+// More than totalCapacity can be created, but it will hold for reuse at most totalCapacity.
 type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
     let mutable created = 0
@@ -148,6 +154,8 @@ type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
             if Interlocked.Increment &created > totalCapacity then
                 overCapacity.Add 1L
 
+            // Associate a LinkedListNode with freshly created entity.
+            // This is a one time initialization.
             CachedEntity(key, value).WithNode()
 
     member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
@@ -169,10 +177,14 @@ module Cache =
         | NonNull _ when capacity > 1024 -> 1024
         | _ -> capacity
 
+[<Struct>]
+type EvictionQueueMessage<'Key, 'Value> =
+    | Add of CachedEntity<'Key, 'Value>
+    | Update of CachedEntity<'Key, 'Value>
+
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
-    internal (totalCapacity, headroom, cts: CancellationTokenSource, ?name, ?observeMetrics) =
+type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalCapacity, headroom, ?name, ?observeMetrics) =
 
     let instanceId = defaultArg name (Guid.NewGuid().ToString())
 
@@ -197,66 +209,53 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
 
     let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
-    let addToEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
-        lock evictionQueue <| fun () -> evictionQueue.AddLast(entity.Node)
-
-    // Only LRU currrently. We can add other strategies when needed.
-    let updateEvictionQueue (entity: CachedEntity<'Key, 'Value>) =
-        lock evictionQueue
-        <| fun () ->
-
-            let node = entity.Node
-
-            // Sync between store and the eviction queue is not atomic. It might be already evicted or not yet added.
-            if node.List = evictionQueue then
-                // Just move this node to the end of the list.
-                evictionQueue.Remove(node)
-                evictionQueue.AddLast(node)
-
-    let tryEvictOne () =
-        match evictionQueue.First with
-        | null -> evictionFails.Add 1L
-        | first ->
-            match store.TryRemove(first.Value.Key) with
-            | true, removed ->
-                lock evictionQueue <| fun () -> evictionQueue.Remove(first)
-                pool.Reclaim(removed)
-                evictions.Add 1L
-            | _ -> evictionFails.Add 1L
-
     // Non-evictable capacity.
     let capacity = totalCapacity - headroom
 
-    let backgroundEvictionComplete = Event<_>()
+    let evicted = Event<_>()
 
-    let evictItems () =
-        while store.Count > capacity - headroom && evictionQueue.Count > 0 do
-            tryEvictOne ()
+    let evictionProcessor =
+        new MailboxProcessor<EvictionQueueMessage<_, _>>(fun mb ->
+            let rec processNext () =
+                async {
+                    match! mb.Receive() with
+                    | EvictionQueueMessage.Add entity ->
 
-        backgroundEvictionComplete.Trigger()
+                        assert entity.Node.IsSome
 
-    let rec backgroundEviction () =
-        async {
-            let utilization = (float store.Count / float totalCapacity)
-            // So, based on utilization this will scale the delay between 0 and 1 seconds.
-            // Worst case scenario would be when 1 second delay happens,
-            // if the cache will grow rapidly (or in bursts), it will go beyond the maximum capacity.
-            // In this case underlying dictionary will resize, AND we will have to evict items, which will likely be slow.
-            // In this case, cache stats should be used to adjust MaximumCapacity and PercentageToEvict.
-            let delay = 1000.0 - (1000.0 * utilization)
+                        evictionQueue.AddLast(entity.Node.Value)
 
-            if delay > 0.0 then
-                do! Async.Sleep(int delay)
+                        // Evict one immediately if necessary.
+                        if evictionQueue.Count > capacity then
+                            let first = nonNull evictionQueue.First
 
-            if store.Count > capacity then
-                evictItems ()
+                            match store.TryRemove(first.Value.Key) with
+                            | true, removed ->
+                                evictionQueue.Remove(first)
+                                pool.Reclaim(removed)
+                                evictions.Add 1L
+                                evicted.Trigger()
+                            | _ -> evictionFails.Add 1L
 
-            return! backgroundEviction ()
-        }
+                    | EvictionQueueMessage.Update entity ->
+                        entity.AccessCount <- entity.AccessCount + 1L
 
-    do Async.Start(backgroundEviction (), cancellationToken = cts.Token)
+                        assert entity.Node.IsSome
 
-    member val BackgroundEvictionComplete = backgroundEvictionComplete.Publish
+                        let node = entity.Node.Value
+                        assert (node.List = evictionQueue)
+                        // Just move this node to the end of the list.
+                        evictionQueue.Remove(node)
+                        evictionQueue.AddLast(node)
+
+                    do! processNext ()
+                }
+
+            processNext ())
+
+    do evictionProcessor.Start()
+
+    member val Evicted = evicted.Publish
 
     member val Name = instanceId
 
@@ -264,8 +263,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         match store.TryGetValue(key) with
         | true, cachedEntity ->
             hits.Add 1L
-            Interlocked.Increment(&cachedEntity.AccessCount) |> ignore
-            updateEvictionQueue cachedEntity
+            evictionProcessor.Post(EvictionQueueMessage.Update cachedEntity)
             value <- cachedEntity.Value
             true
         | _ ->
@@ -277,7 +275,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         let cachedEntity = pool.Acquire(key, value)
 
         if store.TryAdd(key, cachedEntity) then
-            addToEvictionQueue cachedEntity
+            evictionProcessor.Post(EvictionQueueMessage.Add cachedEntity)
             true
         else
             pool.Reclaim(cachedEntity)
@@ -285,8 +283,8 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
 
     interface IDisposable with
         member this.Dispose() =
+            evictionProcessor.Dispose()
             store.Clear()
-            cts.Cancel()
 
             if observeMetrics then
                 CacheMetrics.RemoveInstrumentation instanceId
@@ -307,9 +305,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality>
         let headroom =
             int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
 
-        let cts = new CancellationTokenSource()
-
         let cache =
-            new Cache<_, _>(totalCapacity, headroom, cts, ?name = name, ?observeMetrics = observeMetrics)
+            new Cache<_, _>(totalCapacity, headroom, ?name = name, ?observeMetrics = observeMetrics)
 
         cache

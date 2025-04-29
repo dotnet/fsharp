@@ -21,9 +21,7 @@ module internal Cache =
 
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
-    new:
-        totalCapacity: int * headroom: int * cts: CancellationTokenSource * ?name: string * ?observeMetrics: bool ->
-            Cache<'Key, 'Value>
+    new: totalCapacity: int * headroom: int * ?name: string * ?observeMetrics: bool -> Cache<'Key, 'Value>
 
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
@@ -33,7 +31,7 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     interface IDisposable
 
     /// For testing only
-    member BackgroundEvictionComplete: IEvent<unit>
+    member Evicted: IEvent<unit>
 
     static member Create<'Key, 'Value> :
         options: CacheOptions * ?name: string * ?observeMetrics: bool -> Cache<'Key, 'Value>

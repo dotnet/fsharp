@@ -50,14 +50,14 @@ let ``Eviction of least recently used`` () =
     let mutable value = 0
     cache.TryGetValue("key1", &value) |> ignore
 
-    let evictionComplete = new ManualResetEvent(false)
-    cache.BackgroundEvictionComplete.Add(fun _ -> evictionComplete.Set() |> ignore)
+    let evicted = new ManualResetEvent(false)
+    cache.Evicted.Add(fun _ -> evicted.Set() |> ignore)
         
     // Add a third item, which should schedule key2 for eviction
     cache.TryAdd("key3", 3) |> ignore
         
     // Wait for eviction to complete using the event
-    evictionComplete.WaitOne() |> ignore
+    evicted.WaitOne() |> ignore
         
     Assert.False(cache.TryGetValue("key2", &value), "key2 should have been evicted")
     Assert.True(cache.TryGetValue("key1", &value), "key1 should still be in cache")
@@ -76,14 +76,14 @@ let ``Metrics can be retrieved`` () =
     let mutable value = 0
     cache.TryGetValue("key1", &value) |> ignore
 
-    let evictionComplete = new ManualResetEvent(false)
-    cache.BackgroundEvictionComplete.Add(fun _ -> evictionComplete.Set() |> ignore)
+    let evicted = new ManualResetEvent(false)
+    cache.Evicted.Add(fun _ -> evicted.Set() |> ignore)
         
     // Add a third item, which should schedule key2 for eviction
     cache.TryAdd("key3", 3) |> ignore
         
     // Wait for eviction to complete using the event
-    evictionComplete.WaitOne() |> ignore
+    evicted.WaitOne() |> ignore
 
     let metrics = CacheMetrics.GetStats "test_metrics"
 
