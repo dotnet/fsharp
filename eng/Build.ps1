@@ -358,17 +358,14 @@ function VerifyAssemblyVersionsAndSymbols() {
 }
 
 function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [string]$testadapterpath, [boolean] $asBackgroundJob = $false, [string] $settings = "") {
-    if ($job) {
-        Write-Host("Testing batch: $job")
-        $filter = ""
-    }
+
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
     # {assembly} and {framework} will expand respectively. See https://github.com/spekt/testlogger/wiki/Logger-Configuration#logfilepath
     # This is useful to deconflict log filenames when there are many test assemblies, e.g. when testing a whole solution.
-    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}.xml"
-    $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
+    $testLogPath = "$ArtifactsDir\TestResults\$configuration\{assembly}_{framework}$job.xml"
+    $testBinLogPath = "$LogDir\${projectName}_$targetFramework$job.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""xunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
     $args += " --blame --blame-hang-timeout 5minutes --results-directory $ArtifactsDir\TestResults\$configuration -p:vstestusemsbuildoutput=true"
 

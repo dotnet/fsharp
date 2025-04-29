@@ -92,10 +92,17 @@ module TestCaseCustomizations =
 
     let sha = Security.Cryptography.SHA256.Create()
 
+    // We add extra trait to each test, of the form "batch=n" where n is between 1 and 4.
+    // It can be used to filter on in multi-agent testing in CI
+    // with dotnet test filter switch, for example "--filter batch=1"
+    // That way each agent can run test for a batch of tests. 
+    let NumberOfBatchesInMultiAgentTesting = 4u
+
     let addBatchTrait (testCase: ITestCase) =
+        // Get a batch number stable between executions / compilations.
         let data = Text.Encoding.UTF8.GetBytes testCase.DisplayName
         let hashCode = BitConverter.ToUInt32(sha.ComputeHash(data), 0)
-        let batch = hashCode % 4u + 1u
+        let batch = hashCode % NumberOfBatchesInMultiAgentTesting + 1u
         testCase.Traits.Add("batch", ResizeArray [ string batch ])
 
 type CustomTestCase =
