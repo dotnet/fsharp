@@ -1,7 +1,7 @@
 
 neg32.fs(17,11,17,56): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg32.fs(24,15,24,16): typecheck error FS0043: The member or object constructor 'TryParse' does not take 1 argument(s). An overload was found taking 4 arguments.
+neg32.fs(24,15,24,16): typecheck error FS0043: The member or object constructor 'TryParse' does not take 1 argument(s). An overload was found taking 2 arguments.
 
 neg32.fs(43,17,43,19): typecheck error FS0039: The type parameter 'T is not defined.
 

@@ -342,7 +342,6 @@ neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'S
 Known type of argument: 'a0
 
 Candidates:
- - System.String(value: System.ReadOnlySpan<char>) : System.String
  - System.String(value: char array) : System.String
  - System.String(value: nativeptr<char>) : System.String
  - System.String(value: nativeptr<sbyte>) : System.String
@@ -352,7 +351,6 @@ neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'G
 Known type of argument: 'a0
 
 Candidates:
- - System.Guid(b: System.ReadOnlySpan<byte>) : System.Guid
  - System.Guid(b: byte array) : System.Guid
  - System.Guid(g: string) : System.Guid
 
