@@ -174,7 +174,7 @@ module Cache =
 
     let applyOverride (capacity: int) =
         match Environment.GetEnvironmentVariable(overrideVariable) with
-        | NonNull _ when capacity > 1024 -> 1024
+        | NonNull _ when capacity > 4096 -> 4096
         | _ -> capacity
 
 [<Struct>]
@@ -214,46 +214,49 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
 
     let evicted = Event<_>()
 
+    let cts = new CancellationTokenSource()
+
     let evictionProcessor =
-        new MailboxProcessor<EvictionQueueMessage<_, _>>(fun mb ->
-            let rec processNext () =
-                async {
-                    match! mb.Receive() with
-                    | EvictionQueueMessage.Add entity ->
+        MailboxProcessor.Start(
+            (fun mb ->
+                let rec processNext () =
+                    async {
+                        match! mb.Receive() with
+                        | EvictionQueueMessage.Add entity ->
 
-                        assert entity.Node.IsSome
+                            assert entity.Node.IsSome
 
-                        evictionQueue.AddLast(entity.Node.Value)
+                            evictionQueue.AddLast(entity.Node.Value)
 
-                        // Evict one immediately if necessary.
-                        if evictionQueue.Count > capacity then
-                            let first = nonNull evictionQueue.First
+                            // Evict one immediately if necessary.
+                            while evictionQueue.Count > capacity do
+                                let first = nonNull evictionQueue.First
 
-                            match store.TryRemove(first.Value.Key) with
-                            | true, removed ->
-                                evictionQueue.Remove(first)
-                                pool.Reclaim(removed)
-                                evictions.Add 1L
-                                evicted.Trigger()
-                            | _ -> evictionFails.Add 1L
+                                match store.TryRemove(first.Value.Key) with
+                                | true, removed ->
+                                    evictionQueue.Remove(first)
+                                    pool.Reclaim(removed)
+                                    evictions.Add 1L
+                                    evicted.Trigger()
+                                | _ -> evictionFails.Add 1L
 
-                    | EvictionQueueMessage.Update entity ->
-                        entity.AccessCount <- entity.AccessCount + 1L
+                        | EvictionQueueMessage.Update entity ->
+                            entity.AccessCount <- entity.AccessCount + 1L
 
-                        assert entity.Node.IsSome
+                            assert entity.Node.IsSome
 
-                        let node = entity.Node.Value
-                        assert (node.List = evictionQueue)
-                        // Just move this node to the end of the list.
-                        evictionQueue.Remove(node)
-                        evictionQueue.AddLast(node)
+                            let node = entity.Node.Value
+                            assert (node.List = evictionQueue)
+                            // Just move this node to the end of the list.
+                            evictionQueue.Remove(node)
+                            evictionQueue.AddLast(node)
 
-                    return! processNext ()
-                }
+                        return! processNext ()
+                    }
 
-            processNext ())
-
-    do evictionProcessor.Start()
+                processNext ()),
+            cts.Token
+        )
 
     member val Evicted = evicted.Publish
 
@@ -283,6 +286,8 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
 
     interface IDisposable with
         member this.Dispose() =
+            cts.Cancel()
+            cts.Dispose()
             evictionProcessor.Dispose()
             store.Clear()
 
