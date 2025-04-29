@@ -546,7 +546,7 @@ stages:
             condition: failed()
 
           # Windows With Compressed Metadata Desktop
-        - job: WindowsCompressedMetadata
+        - job: WindowsCompressedMetadata_Desktop
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
