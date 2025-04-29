@@ -248,7 +248,7 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
                         evictionQueue.Remove(node)
                         evictionQueue.AddLast(node)
 
-                    do! processNext ()
+                    return! processNext ()
                 }
 
             processNext ())
