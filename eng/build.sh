@@ -76,6 +76,7 @@ prepare_machine=false
 source_build=false
 product_build=false
 buildnorealsig=true
+job=""
 properties=""
 
 docker=false
@@ -101,6 +102,11 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
+      args="$args $1"
+      shift
+      ;;
+    --job|-job)
+      job=$2
       args="$args $1"
       shift
       ;;
@@ -227,6 +233,10 @@ function Test() {
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
   args+=" -- xUnit.MaxParallelThreads=1"
+  if [[ "$job" != "" ]]; then
+    args+=" --filter batch=$job"
+  fi
+
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
