@@ -411,3 +411,12 @@ AInCs.B (123 - 7) |> assertEqual "123 - 7"
       |> runFsi
       |> shouldSucceed
       |> ignore
+      
+    [<FactForNETCOREAPP>]
+    let ``Big expr test`` () =
+      let path = __SOURCE_DIRECTORY__ ++ "Big expr test.fsx"
+      FsFromPath path
+      |> withLangVersionPreview
+      |> runFsi
+      |> shouldSucceed
+      |> ignore
