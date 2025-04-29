@@ -331,7 +331,7 @@ stages:
             continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
-            condition: always()
+            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -587,7 +587,7 @@ stages:
 
           - task: PublishBuildArtifacts@1
             displayName: Publish Tests BinLog
-            condition: always()
+            condition: eq(variables['System.JobPositionInPhase'], 1)
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
@@ -618,7 +618,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop'
+              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -642,16 +642,18 @@ stages:
           variables:
           - name: _SignType
             value: Test
+          strategy:
+            parallel: 4
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            displayName: Build / Test
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr -job $(System.JobPositionInPhase)
+            displayName: Build / Test -job $(System.JobPositionInPhase)
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: Linux
+              testRunTitle: Linux -job $(System.JobPositionInPhase)
               testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
@@ -661,7 +663,7 @@ stages:
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
+              ArtifactName: 'Linux $(_BuildConfig) test logs -job $(System.JobPositionInPhase)'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -672,7 +674,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
+              ArtifactName: 'NuGetPackageContents Linux -job $(System.JobPositionInPhase)'
               publishLocation: Container
             continueOnError: true
             condition: failed()

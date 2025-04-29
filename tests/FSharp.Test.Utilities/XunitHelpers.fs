@@ -93,7 +93,7 @@ module TestCaseCustomizations =
     let sha = Security.Cryptography.SHA256.Create()
 
     let addBatchTrait (testCase: ITestCase) =
-        let data = Text.Encoding.UTF8.GetBytes testCase.UniqueID
+        let data = Text.Encoding.UTF8.GetBytes testCase.DisplayName
         let hashCode = BitConverter.ToUInt32(sha.ComputeHash(data), 0)
         let batch = hashCode % 4u + 1u
         testCase.Traits.Add("batch", ResizeArray [ string batch ])
