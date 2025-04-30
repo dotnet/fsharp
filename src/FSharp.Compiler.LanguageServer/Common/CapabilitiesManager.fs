@@ -19,7 +19,7 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
     let addIf (enabled: bool) (capability: 'a) =
         if enabled then capability |> withNull else null
 
-    let defaultCapabilities (clientCapabilities: ClientCapabilities) =
+    let defaultCapabilities (_clientCapabilities: ClientCapabilities) =
         // TODO: don't register if dynamic registraion is supported
         ServerCapabilities(
             TextDocumentSync = TextDocumentSyncOptions(OpenClose = true, Change = TextDocumentSyncKind.Full),
