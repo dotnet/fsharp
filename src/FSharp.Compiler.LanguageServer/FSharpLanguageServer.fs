@@ -89,12 +89,8 @@ type FSharpLanguageServer
         FSharpLanguageServer.Create(LspLogger System.Diagnostics.Trace.TraceInformation, initialWorkspace, addExtraHandlers, config)
 
     static member Create
-        (
-            logger: ILspLogger,
-            initialWorkspace,
-            ?addExtraHandlers: Action<IServiceCollection>,
-            ?config: FSharpLanguageServerConfig
-        ) =
+        (logger: ILspLogger, initialWorkspace, ?addExtraHandlers: Action<IServiceCollection>, ?config: FSharpLanguageServerConfig)
+        =
 
         let struct (clientStream, serverStream) = FullDuplexStream.CreatePair()
 

@@ -35,14 +35,21 @@ module internal ProjectCache =
 
 module internal SolutionConfigCache =
 
-    type FSharpExtensionConfig = {
-        GetDiagnosticsFrom: string
-        GetSemanticHighlightingFrom: string
-    } with
+    type FSharpExtensionConfig =
+        {
+            GetDiagnosticsFrom: string
+            GetSemanticHighlightingFrom: string
+        }
+
         static member Old = "old"
         static member Lsp = "lsp"
         static member Both = "both"
-        static member Default = { GetDiagnosticsFrom = FSharpExtensionConfig.Both; GetSemanticHighlightingFrom = FSharpExtensionConfig.Both }
+
+        static member Default =
+            {
+                GetDiagnosticsFrom = FSharpExtensionConfig.Both
+                GetSemanticHighlightingFrom = FSharpExtensionConfig.Both
+            }
 
         member this.ShouldProduceDiagnostics() =
             Set.contains this.GetDiagnosticsFrom (set [ FSharpExtensionConfig.Old; FSharpExtensionConfig.Both ])
@@ -51,11 +58,14 @@ module internal SolutionConfigCache =
             Set.contains this.GetSemanticHighlightingFrom (set [ FSharpExtensionConfig.Old; FSharpExtensionConfig.Both ])
 
     let readFSharpExtensionConfig (solutionPath: string) =
-        let configFilePath = Path.Combine(solutionPath, "extensibility.settings.VisualStudio.json")
+        let configFilePath =
+            Path.Combine(solutionPath, "extensibility.settings.VisualStudio.json")
+
         if File.Exists configFilePath then
             try
                 let json = File.ReadAllText configFilePath
                 let jObject = JObject.Parse json
+
                 {
                     GetDiagnosticsFrom = jObject["fsharp.getDiagnosticsFrom"].ToString().ToLower()
                     GetSemanticHighlightingFrom = jObject["fsharp.getSemanticHighlightingFrom"].ToString().ToLower()
@@ -64,11 +74,13 @@ module internal SolutionConfigCache =
                 System.Diagnostics.Trace.TraceError($"Error reading FSharpExtensionConfig from {configFilePath}", ex)
                 FSharpExtensionConfig.Default
         else
-            System.Diagnostics.Trace.TraceInformation($"extensibility.settings.VisualStudio.json not found in {solutionPath}. Using default config.")
+            System.Diagnostics.Trace.TraceInformation(
+                $"extensibility.settings.VisualStudio.json not found in {solutionPath}. Using default config."
+            )
+
             FSharpExtensionConfig.Default
 
-    let ExtensionConfig =
-        ConditionalWeakTable<Solution, FSharpExtensionConfig>()
+    let ExtensionConfig = ConditionalWeakTable<Solution, FSharpExtensionConfig>()
 
 type Solution with
 
@@ -77,7 +89,11 @@ type Solution with
         this.Workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
     member internal this.GetFSharpExtensionConfig() =
-        SolutionConfigCache.ExtensionConfig.GetValue(this, ConditionalWeakTable<_, _>.CreateValueCallback(fun _ -> SolutionConfigCache.readFSharpExtensionConfig(Path.GetDirectoryName this.FilePath)))
+        SolutionConfigCache.ExtensionConfig.GetValue(
+            this,
+            ConditionalWeakTable<_, _>.CreateValueCallback(fun _ ->
+                SolutionConfigCache.readFSharpExtensionConfig (Path.GetDirectoryName this.FilePath))
+        )
 
 module internal FSharpProjectSnapshotSerialization =
 

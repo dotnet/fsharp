@@ -151,14 +151,20 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     interface IFSharpDocumentDiagnosticAnalyzer with
 
         member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMetadata || (not (document |> shouldProduceDiagnostics)) then
+            if
+                document.Project.IsFSharpMetadata
+                || (not (document |> shouldProduceDiagnostics))
+            then
                 Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                 |> CancellableTask.start cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript || (not (document |> shouldProduceDiagnostics)) then
+            if
+                document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript
+                || (not (document |> shouldProduceDiagnostics))
+            then
                 Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
