@@ -1177,38 +1177,38 @@ type internal TransparentCompiler
                     // TODO: is there a situation where this is not enough and we need to have them separate?
                     file.IsLastCompiland && file.IsExe
             }
-            
+
         caches.ParseFile.Get(
             key,
-        async {
-            use _ =
-                Activity.start
-                    "ComputeParseFile"
-                    [|
-                        Activity.Tags.fileName, file.FileName |> shortPath
-                        Activity.Tags.version, file.StringVersion
-                    |]
+            async {
+                use _ =
+                    Activity.start
+                        "ComputeParseFile"
+                        [|
+                            Activity.Tags.fileName, file.FileName |> shortPath
+                            Activity.Tags.version, file.StringVersion
+                        |]
 
-            let diagnosticsLogger =
-                CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
-            // Return the disposable object that cleans up
-            use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
+                let diagnosticsLogger =
+                    CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
+                // Return the disposable object that cleans up
+                use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
 
-            let flags = file.IsLastCompiland, file.IsExe
-            let fileName = file.FileName
-            let sourceText = file.Source
+                let flags = file.IsLastCompiland, file.IsExe
+                let fileName = file.FileName
+                let sourceText = file.Source
 
-            let input =
-                ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
+                let input =
+                    ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, flags, diagnosticsLogger, sourceText)
 
-            // TODO: Hashing of syntax tree
-            let inputHash = file.Version
+                // TODO: Hashing of syntax tree
+                let inputHash = file.Version
 
-            fileParsed.Trigger(fileName, Unchecked.defaultof<_>)
+                fileParsed.Trigger(fileName, Unchecked.defaultof<_>)
 
-            return FSharpParsedFile(fileName, inputHash, sourceText, input, diagnosticsLogger.GetDiagnostics())
-        }
-    )
+                return FSharpParsedFile(fileName, inputHash, sourceText, input, diagnosticsLogger.GetDiagnostics())
+            }
+        )
 
     // In case we don't want to use any parallel processing
     let mkLinearGraph count : Graph<FileIndex> =
