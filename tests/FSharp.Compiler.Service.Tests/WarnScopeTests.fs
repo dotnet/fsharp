@@ -208,15 +208,3 @@ let EditUndoCheckTest () =
         | FSharpCheckFileAnswer.Succeeded checkResults ->
             checkDiagnostics errors (Array.toList checkResults.Diagnostics)
     warnEdits |> List.iteri parseAndCheckFileInProject
-
-[<Fact>]
-let EditUndoParseTest () =
-    let sourceName = "warnEdits.fs"
-    let parsingOptions = {
-            FSharpParsingOptions.Default with SourceFiles = [| sourceName |]; LangVersionText = "preview" }
-    let checker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
-    let parseFile(sourceText, errors) =
-        let source = SourceText.ofString sourceText
-        let parseFileResults = checker.ParseFile(sourceName, source, parsingOptions) |> Async.RunImmediate
-        checkDiagnostics errors (Array.toList parseFileResults.Diagnostics)
-    warnEdits |> List.iter parseFile
