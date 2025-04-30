@@ -299,7 +299,9 @@ type CacheSizes =
 
         {
             ParseFileKeepStrongly = 50 * sizeFactor
-            ParseFileKeepWeakly = 20 * sizeFactor
+            // Since ParseFile version is just a content hash, we keep only one version
+            // in order to ensure that we re-parse after undo for the sake of WarnScopes
+            ParseFileKeepWeakly = 0 // 20 * sizeFactor
             ParseFileWithoutProjectKeepStrongly = 5 * sizeFactor
             ParseFileWithoutProjectKeepWeakly = 2 * sizeFactor
             ParseAndCheckFileInProjectKeepStrongly = sizeFactor
@@ -1160,27 +1162,24 @@ type internal TransparentCompiler
 
         }
 
-    let ComputeParseFile (_projectSnapshot: ProjectSnapshotBase<_>) (tcConfig: TcConfig) (file: FSharpFileSnapshotWithSource) =
+    let ComputeParseFile (projectSnapshot: ProjectSnapshotBase<_>) (tcConfig: TcConfig) (file: FSharpFileSnapshotWithSource) =
 
-        // Disabling caching as long as the key is just based on the file content and therefore
-        // does not re-parse for the sake of warn scope data
+        let key =
+            { new ICacheKey<_, _> with
+                member _.GetLabel() = file.FileName |> shortPath
 
-        // let key =
-        //     { new ICacheKey<_, _> with
-        //         member _.GetLabel() = file.FileName |> shortPath
+                member _.GetKey() =
+                    projectSnapshot.ProjectConfig.Identifier, file.FileName
 
-        //         member _.GetKey() =
-        //             projectSnapshot.ProjectConfig.Identifier, file.FileName
-
-        //         member _.GetVersion() =
-        //             projectSnapshot.ParsingVersion,
-        //             file.StringVersion,
-        //             // TODO: is there a situation where this is not enough and we need to have them separate?
-        //             file.IsLastCompiland && file.IsExe
-        //     }
-
-        // caches.ParseFile.Get(
-        //     key,
+                member _.GetVersion() =
+                    projectSnapshot.ParsingVersion,
+                    file.StringVersion,
+                    // TODO: is there a situation where this is not enough and we need to have them separate?
+                    file.IsLastCompiland && file.IsExe
+            }
+            
+        caches.ParseFile.Get(
+            key,
         async {
             use _ =
                 Activity.start
@@ -1209,7 +1208,7 @@ type internal TransparentCompiler
 
             return FSharpParsedFile(fileName, inputHash, sourceText, input, diagnosticsLogger.GetDiagnostics())
         }
-    // )
+    )
 
     // In case we don't want to use any parallel processing
     let mkLinearGraph count : Graph<FileIndex> =
