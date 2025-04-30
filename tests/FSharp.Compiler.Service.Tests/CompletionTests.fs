@@ -134,3 +134,67 @@ let f (s: string) =
     ()
 """
     assertHasItemWithNames ["Length"] info
+
+
+[<Fact>]
+let ``Import - Ns 01`` () =
+    let info =
+        getCompletionInfo "let _: R " (14, 12) """
+namespace Ns
+
+type Rec1 = { F: int }
+
+
+namespace Ns
+
+type Rec2 = { F: int }
+
+module M =
+
+    type Rec3 = { F: int }
+
+    let _: R = ()
+"""
+    assertHasItemWithNames ["Rec1"; "Rec2"; "Rec3"] info
+
+[<Fact>]
+let ``Import - Ns 02 - Rec`` () =
+    let info =
+        getCompletionInfo "let _: R " (14, 12) """
+namespace Ns
+
+type Rec1 = { F: int }
+
+
+namespace rec Ns
+
+type Rec2 = { F: int }
+
+module M =
+
+    type Rec3 = { F: int }
+
+    let _: R = ()
+"""
+    assertHasItemWithNames ["Rec1"; "Rec2"; "Rec3"] info
+
+[<Fact>]
+let ``Import - Ns 03 - Rec`` () =
+    let info =
+        getCompletionInfo "let _: R " (14, 12) """
+namespace Ns
+
+type Rec1 = { F: int }
+
+
+namespace rec Ns
+
+type Rec2 = { F: int }
+
+module rec M =
+
+    type Rec3 = { F: int }
+
+    let _: R = ()
+"""
+    assertHasItemWithNames ["Rec1"; "Rec2"; "Rec3"] info
