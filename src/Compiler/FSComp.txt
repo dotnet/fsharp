@@ -1798,3 +1798,4 @@ featureDontWarnOnUppercaseIdentifiersInBindingPatterns,"Don't warn on uppercase 
 featureDeprecatePlacesWhereSeqCanBeOmitted,"Deprecate places where 'seq' can be omitted"
 featureSupportValueOptionsAsOptionalParameters,"Support ValueOption as valid type for optional member parameters"
 featureSupportWarnWhenUnitPassedToObjArg,"Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`."
+featureUseBangBindingValueDiscard,"Allows use! _ = ... in computation expressions"
