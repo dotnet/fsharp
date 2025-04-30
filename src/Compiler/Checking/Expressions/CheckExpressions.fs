@@ -3187,6 +3187,24 @@ let BuildRecdFieldSet g m objExpr (rfinfo: RecdFieldInfo) argExpr =
     let wrap, objExpr, _readonly, _writeonly = mkExprAddrOfExpr g boxity false DefinitelyMutates objExpr None m
     wrap (mkRecdFieldSetViaExprAddr (objExpr, rfinfo.RecdFieldRef, rfinfo.TypeInst, argExpr, m) )
 
+// This is used to check the target of an attribute with the form of
+// Long Form: [<target:attribute-name(arguments)>]
+// Short Form: [<attribute-name(arguments)>]
+let (|LongFormAttrTarget|UnrecognizedLongAttrTarget|ShortFormAttributeTarget|) (targetIndicator: Ident option) =
+    match targetIndicator with
+    | Some id when id.idText = "assembly" -> LongFormAttrTarget AttributeTargets.Assembly
+    | Some id when id.idText = "module" -> LongFormAttrTarget AttributeTargets.Module
+    | Some id when id.idText = "return" -> LongFormAttrTarget AttributeTargets.ReturnValue
+    | Some id when id.idText = "field" -> LongFormAttrTarget AttributeTargets.Field
+    | Some id when id.idText = "property" -> LongFormAttrTarget AttributeTargets.Property
+    | Some id when id.idText = "method" -> LongFormAttrTarget AttributeTargets.Method
+    | Some id when id.idText = "param" -> LongFormAttrTarget AttributeTargets.Parameter
+    | Some id when id.idText = "type" -> LongFormAttrTarget AttributeTargets.TyconDecl
+    | Some id when id.idText = "constructor" -> LongFormAttrTarget AttributeTargets.Constructor
+    | Some id when id.idText = "event" -> LongFormAttrTarget AttributeTargets.Event
+    | Some id -> UnrecognizedLongAttrTarget id
+    | None -> ShortFormAttributeTarget
+
 //-------------------------------------------------------------------------
 // Helpers dealing with named and optional args at callsites
 //-------------------------------------------------------------------------
@@ -11344,27 +11362,18 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                     (validOnDefault, inheritedDefault)
                 | _ ->
                     (validOnDefault, inheritedDefault)
-        let possibleTgts = enum validOn &&& attrTgt
-        let directedTgts =
+        let attributeTargets = enum validOn &&& attrTgt
+        let directedTargets =
             match targetIndicator with
-            | Some id when id.idText = "assembly" -> AttributeTargets.Assembly
-            | Some id when id.idText = "module" -> AttributeTargets.Module
-            | Some id when id.idText = "return" -> AttributeTargets.ReturnValue
-            | Some id when id.idText = "field" -> AttributeTargets.Field
-            | Some id when id.idText = "property" -> AttributeTargets.Property
-            | Some id when id.idText = "method" -> AttributeTargets.Method
-            | Some id when id.idText = "param" -> AttributeTargets.Parameter
-            | Some id when id.idText = "type" -> AttributeTargets.TyconDecl
-            | Some id when id.idText = "constructor" -> AttributeTargets.Constructor
-            | Some id when id.idText = "event" -> AttributeTargets.Event
-            | Some id ->
-                errorR(Error(FSComp.SR.tcUnrecognizedAttributeTarget(), id.idRange))
-                possibleTgts
-            // mask explicit targets
-            | _ -> possibleTgts &&& ~~~ attrEx
-        let constrainedTgts = possibleTgts &&& directedTgts
-        if constrainedTgts = enum 0 then
-            if (directedTgts = AttributeTargets.Assembly || directedTgts = AttributeTargets.Module) then
+            | LongFormAttrTarget attrTarget -> attrTarget
+            | UnrecognizedLongAttrTarget attrTarget ->
+                errorR(Error(FSComp.SR.tcUnrecognizedAttributeTarget(), attrTarget.idRange))
+                attributeTargets
+            | ShortFormAttributeTarget -> attributeTargets &&& ~~~ attrEx
+      
+        let constrainedTargets = attributeTargets &&& directedTargets
+        if constrainedTargets = enum 0 then
+            if (directedTargets = AttributeTargets.Assembly || directedTargets = AttributeTargets.Module) then
                 error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), mAttr))
             else
                 warning(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
@@ -11428,11 +11437,11 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                     if isStruct then error (Error(FSComp.SR.tcCustomAttributeMustBeReferenceType(), m))
                     if args.Length <> ilMethRef.ArgTypes.Length then error (Error(FSComp.SR.tcCustomAttributeArgumentMismatch(), m))
                     let args = args |> List.map mkAttribExpr
-                    Attrib(tcref, ILAttrib ilMethRef, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, m)
+                    Attrib(tcref, ILAttrib ilMethRef, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTargets, m)
 
                 | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(vref, _, _, _)), _, _, args, _) ->
                     let args = args |> List.collect (function Expr.Const (Const.Unit, _, _) -> [] | expr -> tryDestRefTupleExpr expr) |> List.map mkAttribExpr
-                    Attrib(tcref, FSAttrib vref, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, mAttr)
+                    Attrib(tcref, FSAttrib vref, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTargets, mAttr)
 
                 | _ ->
                     error (Error(FSComp.SR.tcCustomAttributeMustInvokeConstructor(), mAttr))
@@ -11440,7 +11449,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             | _ ->
                 error(Error(FSComp.SR.tcAttributeExpressionsMustBeConstructorCalls(), mAttr))
 
-        [ (constrainedTgts, attrib) ], false
+        [ (constrainedTargets, attrib) ], false
 
 and TcAttributesWithPossibleTargetsEx canFail (cenv: cenv) env attrTgt attrEx synAttribs =
 
