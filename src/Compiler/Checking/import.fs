@@ -6,22 +6,25 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
-open FSharp.Compiler.Text.Range
+open System.Diagnostics
+
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.TypeHashing
-open Internal.Utilities.TypeHashing.HashTypes
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Caches
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -52,18 +55,18 @@ type CanCoerce =
     | CanCoerce
     | NoCoerce
 
-type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
+[<Struct; NoComparison; CustomEquality; DebuggerDisplay("{ToString()}")>]
+type TTypeCacheKey =
 
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
-    val tcGlobals: TcGlobals
 
-    private new (ty1, ty2, canCoerce, tcGlobals) =
-        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce; tcGlobals = tcGlobals }
+    private new (ty1, ty2, canCoerce) =
+        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
 
-    static member FromStrippedTypes (ty1, ty2, canCoerce, tcGlobals) =
-        TTypeCacheKey(ty1, ty2, canCoerce, tcGlobals)
+    static member FromStrippedTypes (ty1, ty2, canCoerce) =
+        TTypeCacheKey(ty1, ty2, canCoerce)
 
     interface System.IEquatable<TTypeCacheKey> with
         member this.Equals other =
@@ -72,23 +75,24 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
             elif this.ty1 === other.ty1 && this.ty2 === other.ty2 then
                 true
             else
-                stampEquals this.tcGlobals this.ty1 other.ty1
-                && stampEquals this.tcGlobals this.ty2 other.ty2
+                HashStamps.stampEquals this.ty1 other.ty1
+                && HashStamps.stampEquals this.ty2 other.ty2
 
     override this.Equals(other:objnull) =
         match other with
         | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
         | _ -> false
 
-    override this.GetHashCode() : int =
-        let g = this.tcGlobals
+    override this.GetHashCode () : int =
+        HashStamps.hashTType this.ty1
+        |> pipeToHash (HashStamps.hashTType this.ty2)
+        |> pipeToHash (hash this.canCoerce)
 
-        let ty1Hash = combineHash (hashStamp g this.ty1) (hashTType g this.ty1)
-        let ty2Hash = combineHash (hashStamp g this.ty2) (hashTType g this.ty2)
+    override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-        let combined = combineHash (combineHash ty1Hash ty2Hash) (hash this.canCoerce)
-
-        combined
+let typeSubsumptionCache =
+    // Leave most of the capacity in reserve for bursts.
+    lazy Cache.Create<TTypeCacheKey, bool>({ TotalCapacity = 131072; HeadroomPercentage = 75 }, name = "TypeSubsumptionCache")
 
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
@@ -106,15 +110,13 @@ type [<Struct; NoComparison; CustomEquality>] TTypeCacheKey =
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
 
-    let typeSubsumptionCache = ConcurrentDictionary<TTypeCacheKey, bool>(System.Environment.ProcessorCount, 1024)
-
     member _.g = g
 
     member _.assemblyLoader = assemblyLoader
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
-    member _.TypeSubsumptionCache = typeSubsumptionCache
+    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = typeSubsumptionCache.Value
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 
