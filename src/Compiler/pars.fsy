@@ -4462,25 +4462,24 @@ declExpr:
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
-  | BINDER atomicPatternLongIdent COLON typeWithTypeConstraints EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { // Handle type annotations on simple identifier patterns in let!/use! bindings
+ | BINDER headBindingPattern COLON typeWithTypeConstraints EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
+    {  // Handle type annotations on patterns in let!/use! bindings
+       // Examples: let! x: int = async { return 1 }
+       //           use! _: IDisposable = async { return new MemoryStream() }
        let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 7)
-       let vis, lidwd = $2
-       let pat = mkSynPatMaybeVar lidwd vis (rhs parseState 2)
-       let pat = SynPat.Typed(pat, $4, unionRanges pat.Range $4.Range)
+       let pat = SynPat.Typed($2, $4, unionRanges $2.Range $4.Range)
        let mEquals = rhs parseState 5
        let m = unionRanges (rhs parseState 1) $10.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, pat, $6, $9, $10, m, trivia) }
 
-  | OBINDER atomicPatternLongIdent COLON typeWithTypeConstraints EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { // Handle type annotations on simple identifier patterns in let!/use! bindings (offside-sensitive version)
+  | OBINDER headBindingPattern COLON typeWithTypeConstraints EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
+     { // Handle type annotations on patterns in let!/use! bindings (offside-sensitive version)
+       // This rule maintains consistent handling of binding constructs across different syntactic contexts
        let report, mIn, _ = $7
        report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $6.Range)
-       let vis, lidwd = $2
-       let pat = mkSynPatMaybeVar lidwd vis (rhs parseState 2)
-       let pat = SynPat.Typed(pat, $4, unionRanges pat.Range $4.Range)
+       let pat = SynPat.Typed($2, $4, unionRanges $2.Range $4.Range)
        let mEquals = rhs parseState 5
        let m = unionRanges (rhs parseState 1) $10.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
