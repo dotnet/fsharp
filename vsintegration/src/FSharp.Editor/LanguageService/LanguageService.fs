@@ -340,14 +340,20 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
-#if DEBUG
-    let _traceProvider = Logging.Activity.export ()
-    let _logger = Logging.Activity.listenToAll ()
-    // Logging.Activity.listen "IncrementalBuild"
-#endif
-
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
+
+#if DEBUG
+    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
+
+    let flushTelemetry = Logging.FSharpServiceTelemetry.otelExport ()
+
+    override this.Dispose(disposing: bool) =
+        base.Dispose(disposing: bool)
+
+        if disposing then
+            flushTelemetry ()
+#endif
 
     override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
         // `base.` methods can't be called in the `async` builder, so we have to cache it
