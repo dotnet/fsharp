@@ -12,9 +12,7 @@ ImplFile
                     LetOrUseBang
                       (Yes (4,4--4,38), false, true,
                        Typed
-                         (LongIdent
-                            (SynLongIdent ([res], [], [None]), None, None,
-                             Pats [], None, (4,9--4,12)),
+                         (Named (SynIdent (res, None), false, None, (4,9--4,12)),
                           LongIdent (SynLongIdent ([int], [], [None])),
                           (4,9--4,17)),
                        App

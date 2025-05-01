@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/SynType/Typed UseBang 03.fs", false, QualifiedNameOfFile Module, [],
+     ("/root/SynType/Typed UseBang 04.fs", false, QualifiedNameOfFile Module, [],
       [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
@@ -8,7 +8,7 @@ ImplFile
              (LetOrUseBang
                 (Yes (3,0--3,31), true, true,
                  Typed
-                   (Named (SynIdent (x, None), false, None, (3,5--3,6)),
+                   (Wild (3,5--3,6),
                     LongIdent (SynLongIdent ([int], [], [None])), (3,5--3,10)),
                  App
                    (NonAtomic, false, Ident async,
@@ -22,7 +22,7 @@ ImplFile
                    (Yes (4,0--4,33), true, true,
                     Paren
                       (Typed
-                         (Named (SynIdent (y, None), false, None, (4,6--4,7)),
+                         (Wild (4,6--4,7),
                           LongIdent (SynLongIdent ([int], [], [None])),
                           (4,6--4,11)), (4,5--4,12)),
                     App
