@@ -20,7 +20,7 @@ module internal Error =
     let NoMsBuildType = invalidOperation "No MSBuild Engine type loaded."
     let UseOfUnhookedLanguageServiceState = invalidOperation "Invalid call because language service state has been unhooked."
     let UseOfUninitializedLanguageServiceState = invalidOperation "Invalid call because language service state has not been initialized."
-    let UseOfUnitializedServiceProvider = invalidOperation "ServiceProvider used before complete initialization."
+    let UseOfUninitializedServiceProvider = invalidOperation "ServiceProvider used before complete initialization."
     let Bug = invalidOperation "Unexpected."
 
 /// Assert helpers

@@ -31,4 +31,10 @@
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NoOptimizationData>true</NoOptimizationData>
+    <NoInterfaceData>false</NoInterfaceData>
+    <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
 </Project>

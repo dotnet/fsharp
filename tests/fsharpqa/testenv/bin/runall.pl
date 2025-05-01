@@ -36,11 +36,11 @@ my(
     %knownfail,           # keys are labels of tests that should be skipped 
     $local_env_file,      # local environment file name
     @local_env_list,      # array of local environments
-    @local_keepfiles,     # array of pre-existing files to keep
+    @local_keepfiles,     # array of preexisting files to keep
     $ltags,               # tags for local env
     $maxfails,            # maximum number of failing tests (of all kinds) we allow before stopping run
     $maxtests,            # maximum number of tests that will be run (-1 is infinite)
-    $noclobber,           # clobber pre-existing RW files?
+    $noclobber,           # clobber preexisting RW files?
     $noise,               # amount of output requested, 0 to 4
     $nottags,             # kinds of tests/envs not to run
     $target,              # target platform for test run
@@ -373,7 +373,7 @@ sub verify_unlink
 	my $delete = "del /f";
 	$delete = "del" if $isWin9x; # VCQA:6953 del /f isn't available on Win9x
     foreach (@_) {
-		# Try to delete - call sytem DEL to fix unicode filename issues.
+		# Try to delete - call system DEL to fix unicode filename issues.
 	system "DEL \"$_\" > nul 2> nul";
         if (-e $_) {
             # Make file read/writeable
@@ -511,7 +511,7 @@ sub get_lang
 
     # put language in the form that VCTR expects, either
     # English, Japanese, German, or Arabic
-    # Can not just return the string from getoslang.exe, b/c
+    # Cannot just return the string from getoslang.exe, b/c
     # getoslang.exe will return things like English (United States)
     foreach my $l ($host_lang, $target_lang)
     {
@@ -536,7 +536,7 @@ sub get_os
 
     # Put os ver in the form that VCTR expects, either
     # NT4 , Win98 , Win2K , WinXP , XPWow , .NetSvr , Win95 , WinME , WinXP.
-    # Ideally this transformation would be peformed using a table, but there is too much variance
+    # Ideally this transformation would be performed using a table, but there is too much variance
     # in what getosver.exe produces, given that it show build numbers, service packs, and such.
     foreach my $o ($host_os, $target_os)
     {
@@ -656,7 +656,7 @@ sub get_clver
 		if( $target_arch == -1) {
 			# target architecture is not set; try to find it out from the cl.exe
 			$vc_info{"targetarch"} = $5;
-			# get the arch that the compiler is targetting
+			# get the arch that the compiler is targeting
 			if ( $vc_info{"targetarch"} =~ /x86/i ) {
 				$vc_info{"targetarch"} = "x86";
 			}
@@ -2114,7 +2114,7 @@ sub parse_switches
             } else {
                 $debug = $sw;
                 if ( $filelock > 0 ) {
-                    leave("Runall.pl line " . __LINE__ . ":  Bad -debug switch value: '$sw'\n\t (-filelock switch is not 0 so -debug:$sw can not be used\n", $SWITCH_ERROR_EXITVAL);
+                    leave("Runall.pl line " . __LINE__ . ":  Bad -debug switch value: '$sw'\n\t (-filelock switch is not 0 so -debug:$sw cannot be used\n", $SWITCH_ERROR_EXITVAL);
                 } else {
                     $filelock = 0;
                 }
@@ -2413,7 +2413,7 @@ sub parse_switches
 # get_switches -- build up user preferences
 #
 # The environment variable RUNALL is checked first, so that the values
-# it holds can be overriden on the command line.
+# it holds can be overridden on the command line.
 #
 sub get_switches
 {
@@ -2439,7 +2439,7 @@ sub get_switches
     $ttags = '__ra_alltag__' unless $ttags;
     $ltags = '__ra_alltag__' unless $ltags;
 
-    # set TARGET_MANAGED env variable if we're targetting the CLR
+    # set TARGET_MANAGED env variable if we're targeting the CLR
     $ENV{TARGET_IS_MANAGED} = 0;
     $ENV{TARGET_IS_MANAGED} = 1 if (($target eq "cee") or ($target =~ /clr$/) or ($target eq "clrpure"));
 
@@ -2919,7 +2919,7 @@ sub get_targetdef_file($$) {
 
     if ( $cannon ) {
 	#
-	# Reduce to canonical form. Expand all compound archtecture names for
+	# Reduce to canonical form. Expand all compound architecture names for
 	# each element in the rhs of the map.
 	#
 	my $key;
@@ -3399,7 +3399,7 @@ sub check_maxtests
 }
 
 #
-# check_target -- check whether a test is run for the target plaform
+# check_target -- check whether a test is run for the target platform
 #
 # Returns non-zero if the test should be run, zero otherwise.
 #
@@ -3899,7 +3899,7 @@ sub kill_compiler_host
 #
 # run_test -- execute a test directory
 #
-# The return value is the return value from the test, modifed (if necessary)
+# The return value is the return value from the test, modified (if necessary)
 # to be within the 0 to 5 required range.
 #
 # Depends on $terse_mode, $found_runpl, $debug, $debug_retval
@@ -4133,7 +4133,7 @@ sub cleanup_directory
 
 
 #
-# Exctacts root for the specified path
+# Extracts root for the specified path
 #
 sub extract_root()
 {
@@ -4214,7 +4214,7 @@ sub save_the_log_file {
     my ($retval, $test, $label, $globenv, $locenv, $skipmsg) = @_;
     
     # Runpl.xml requires a 'GroupID' attribute on the TestOutput tags.
-    # The id is incremented by 1 everytime $GROUPSIZE lines are seen.
+    # The id is incremented by 1 every time $GROUPSIZE lines are seen.
     my $lines_seen;
     BEGIN {
     	my $_lines_seen = 0;
@@ -4557,7 +4557,7 @@ sub RunMultiProcess() {
 
     my %test_to_id;       # map a test name to all its indices in @testlist (semicolon separated)
     my $test;
-    my @has_predecessors; # 1 if the test has (unresolved) precessors
+    my @has_predecessors; # 1 if the test has (unresolved) predecessors
     my @has_successors;   # 1 if the others depend upon this test
     my %dependents;       # see read_dependence.
 
@@ -4571,7 +4571,7 @@ sub RunMultiProcess() {
     my $cLoopActions;     # number of queue actions in this loop (used for deadlock detection)
 
     my @queueIdleTime;    # number of seconds each process is idle
-    my @queueEmptyTime;   # time when each process bacame idle
+    my @queueEmptyTime;   # time when each process became idle
 
     my @run_with;         # a semicolon separated list of each test the indexed test is run with
 
@@ -4591,7 +4591,7 @@ sub RunMultiProcess() {
     # determine whether the queues are consistent
     #
     #
-    sub check_queues_consistancy() {
+    sub check_queues_consistency() {
 	my $prev = -1;
 	my $x;
 	foreach $x (sort @waitlist) {
@@ -4639,7 +4639,7 @@ sub RunMultiProcess() {
 		    leave ("Runall.pl line " . __LINE__ . ": Assert! pre $pre post $post\n", $STATE_ERROR_EXITVAL) if ($post > $pre);
 		};
 
-		# if we unblocked a test, resest its entry in $has_predecessors and
+		# if we unblocked a test, reset its entry in $has_predecessors and
 		# move it from the waitlist to the readylist (if it is in the waitlist). 
 		if ($dependents{$dep_test_id} =~ /^;*$/) {
 		    my @newly_unblocked = ();
@@ -4658,7 +4658,7 @@ sub RunMultiProcess() {
 
 	    };
 	};
-	check_queues_consistancy();	
+	check_queues_consistency();	
     };
 
     sub add_queue_idle($) {
@@ -4723,7 +4723,7 @@ sub RunMultiProcess() {
 	};
     };
 
-    # regurgitate the the dependence list for debugging purposes
+    # regurgitate the dependence list for debugging purposes
     mp_log( "##################################################\n", 4);
     mp_log( "#####   DEPENDENTS ###############################\n", 4);
     mp_log( "##################################################\n", 4);
@@ -4796,7 +4796,7 @@ sub RunMultiProcess() {
 
 	while (1) {
 
-	    check_queues_consistancy();
+	    check_queues_consistency();
 
 	    $cLoopActions = 0;
 
@@ -5251,7 +5251,7 @@ sub RunMultiProcess() {
     } continue {
     }
 
-	# Note that we don't get the runpl.log ouput for these because they weren't run by child processes
+	# Note that we don't get the runpl.log output for these because they weren't run by child processes
 	fake_xml_for_skipped_tests(\%skip_msg, \%test_to_id) if ($xml);
 	
     if ($mpdebug) {

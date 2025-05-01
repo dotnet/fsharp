@@ -2,10 +2,11 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open System
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``String Tests`` =
 
     type CalcSum(x : int, y: int) = 
@@ -24,15 +25,15 @@ module ``String Tests`` =
 
         override x.ToString() = (x :> IFormattable).ToString(null, null)
 
-    [<Test>]
+    [<Fact>]
     let ``String of custom type``() =
         let calc = CalcSum(10, 20)
         Assert.areEqual (string calc) "X + Y = 30"
 
-        let testDelegate = TestDelegate (fun () ->
+        let testDelegate = fun () ->
             printfn "%s" (calc.ToString())
             Console.WriteLine("{0:S}", calc)
-            Console.Write("{0} {1} {2:D}", 10, 20, calc))
+            Console.Write("{0} {1} {2:D}", 10, 20, calc)
         let e = Assert.Throws<ArgumentException> testDelegate
         Assert.areEqual e.ParamName "D"
 
@@ -41,7 +42,7 @@ module ``String Tests`` =
       |  A  =  1
       |  B  =  2
 
-    [<Test>]
+    [<Fact>]
     let ``String of int32 based enum``() =
         let a = Foo.A
         let r = a :> System.IFormattable
@@ -53,7 +54,7 @@ module ``String Tests`` =
         | A = 3u
         | B = 4u
 
-    [<Test>]
+    [<Fact>]
     let ``String of uint32 based enum``() =
         let a = Foo2.A
         let r = a :> System.IFormattable
@@ -64,7 +65,7 @@ module ``String Tests`` =
         | A = 'a'
         | B = 'b'
 
-    [<Test>]
+    [<Fact>]
     let ``String of char based enum``() =
         let a = Foo3.A
         let r = a :> System.IFormattable
@@ -75,7 +76,7 @@ module ``String Tests`` =
         | A = 1s
         | B = 2s
         
-    [<Test>]
+    [<Fact>]
     let ``String of int16 based enum``() =
         let a = Foo4.A
         let r = a :> System.IFormattable
@@ -86,7 +87,7 @@ module ``String Tests`` =
         | A = 1us
         | B = 2us
 
-    [<Test>]
+    [<Fact>]
     let ``String of uint16 based enum``() =
         let a = Foo5.A
         let r = a :> System.IFormattable
@@ -97,7 +98,7 @@ module ``String Tests`` =
         | A = 1y
         | B = 2y
 
-    [<Test>]
+    [<Fact>]
     let ``String of sbyte based enum``() =
         let a = Foo6.A
         let r = a :> System.IFormattable
@@ -108,7 +109,7 @@ module ``String Tests`` =
         | A = 1uy
         | B = 2uy
 
-    [<Test>]
+    [<Fact>]
     let ``String of byte based enum``() =
         let a = Foo7.A
         let r = a :> System.IFormattable

@@ -1,5 +1,5 @@
 // #Conformance #DataExpressions #Query
-// Set Opeartors LINQ101 samples converted to query
+// Set Operators LINQ101 samples converted to query
 
 open System
 open System.Collections.Generic

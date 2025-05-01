@@ -33,9 +33,9 @@ module CompilationTests = begin
     let (|>) x f = f x    
 
     (* not TLR - constant - trivial expr *)  
-    let notSinceTrival1 = 1
-    let notSinceTrival2 = 1.2
-    let notSinceTrival3 = true
+    let notSinceTrivial1 = 1
+    let notSinceTrivial2 = 1.2
+    let notSinceTrivial3 = true
 
     (* TLR constants - non-trivial (e.g. allocating) *)
     type ('a,'b) xy = {x:'a;y:'b}    
@@ -97,7 +97,7 @@ module CompilationTests = begin
      *INDEX: tlr polymorphic constants?
      *-------------------------------------------------------------------------*)    
 
-    (* Concerned about polymorphic constants. Arity 0, but infact type-functions. *)
+    (* Concerned about polymorphic constants. Arity 0, but in fact type-functions. *)
     let enclosing1 (a:int) =
       let tlrInnerFreePolymorphicConstant = None in
       if  tlrInnerFreePolymorphicConstant = None then 0 else 1
@@ -195,15 +195,15 @@ module CompilationTests = begin
       let arityZeroAlphaBeta = (1,2,(None : 'alpha option),(None : 'beta option)) in
       arityZeroMono,arityZeroAlpha,arityZeroAlphaBeta
 
-    (* free occurance, but at a type instance *)
-    let freeOccuranceAtInstaceTest (u:unit) (b:'beta) =
-      let freeOccuranceTestPolyFun (x:'alpha) = x in 
-      let useAtInt      = freeOccuranceTestPolyFun 3 in
-      let useAtIntList  = freeOccuranceTestPolyFun [3] in
-      let useAtBool     = freeOccuranceTestPolyFun true in
-      let instAtInt     = (freeOccuranceTestPolyFun : int -> int) in
-      let instAtIntList = (freeOccuranceTestPolyFun : int list -> int list) in
-      let instAtBeta    = (freeOccuranceTestPolyFun : 'beta -> 'beta) in
+    (* free occurrence, but at a type instance *)
+    let freeOccurrenceAtInstanceTest (u:unit) (b:'beta) =
+      let freeOccurrenceTestPolyFun (x:'alpha) = x in 
+      let useAtInt      = freeOccurrenceTestPolyFun 3 in
+      let useAtIntList  = freeOccurrenceTestPolyFun [3] in
+      let useAtBool     = freeOccurrenceTestPolyFun true in
+      let instAtInt     = (freeOccurrenceTestPolyFun : int -> int) in
+      let instAtIntList = (freeOccurrenceTestPolyFun : int list -> int list) in
+      let instAtBeta    = (freeOccurrenceTestPolyFun : 'beta -> 'beta) in
       ()
 
 
@@ -213,7 +213,7 @@ module CompilationTests = begin
 
     (* Hit problems in letrec's with value recursions,
        because packing a recursive value into an environment failed,
-       since uses to valrecs are requried to be delayed.
+       since uses to valrecs are required to be delayed.
 
        Solutions?
        (a) skip TLR if fclass has a valrec? (they are not common case)
@@ -380,7 +380,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

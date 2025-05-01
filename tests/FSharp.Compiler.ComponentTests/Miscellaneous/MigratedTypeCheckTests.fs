@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Compiler.ComponentTests.Miscellaneous.FsharpSuiteMigrated.TypeCheckTests
+module Miscellaneous.FsharpSuiteMigrated_TypeCheckTests
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.ScriptHelpers 
-open TestFrameworkAdapter  
+open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter  
 
 [<Fact>]
 let misc () = singleTestBuildAndRunVersion "typecheck/misc" FSC_OPTIMIZED LangVersion.SupportsMl

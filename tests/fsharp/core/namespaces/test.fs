@@ -23,7 +23,17 @@ namespace Hello.Goodbye
     module X  = 
       let x = 1 
 
+    type UnionTypeHiddenWithDiscriminatorsPartlyRevealed =
+        | A1
+        | B1
+        | C1
 
+    module M = 
+        let v = A1.IsA1
+    type UnionTypeHiddenWithDiscriminatorsFullyRevealed =
+        | A1
+        | B1
+        | C1
 
 namespace Hello.Beatles
 
@@ -49,7 +59,7 @@ namespace UseMe
 
         let ``global`` = 1
 
-        // THis should still resolve
+        // This should still resolve
         let arr2 = global.Microsoft.FSharp.Collections.Array.map (global.Microsoft.FSharp.Core.Operators.(+) 1) [| 1;2;3;4 |]
 
         let test3 : global.Microsoft.FSharp.Core.int  = 3
@@ -135,6 +145,13 @@ namespace rec CheckRecursiveNameResolution4
 
       do Hello.Goodbye.Utils.test "test292jwf" (Test.N.x.V = 4)
 
+    module UnionTestsWithSignature = 
+        // Check accessing the *.Is* properties of unions not through a signature
+        let a = Hello.Goodbye.A
+
+        Hello.Goodbye.Utils.test "vwehlevw1a" a.IsA
+        Hello.Goodbye.Utils.test "vwehlevw2a" (not a.IsB)
+        Hello.Goodbye.Utils.test "vwehlevw3a" (not a.IsC)
 
 namespace rec CheckRecursiveNameResolution5
 

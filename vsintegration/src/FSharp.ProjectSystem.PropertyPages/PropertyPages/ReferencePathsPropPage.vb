@@ -619,7 +619,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         End Sub
 
         ''' <summary>
-        '''  Handle SystemEvents, so we will update Buttom image when SystemColor was changed...
+        '''  Handle SystemEvents, so we will update Bottom image when SystemColor was changed...
         ''' </summary>
         Private Sub SystemEvents_UserPreferenceChanged(ByVal sender As Object, ByVal e As UserPreferenceChangedEventArgs)
             Select Case e.Category

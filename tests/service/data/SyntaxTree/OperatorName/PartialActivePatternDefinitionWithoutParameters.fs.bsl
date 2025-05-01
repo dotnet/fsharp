@@ -16,7 +16,7 @@ ImplFile
                     (SynIdent
                        (|Boolean|_|,
                         Some (HasParenthesis ((2,4--2,5), (2,16--2,17)))), false,
-                     None, (2,5--2,16)), None,
+                     None, (2,4--2,17)), None,
                   LongIdent
                     (false,
                      SynLongIdent

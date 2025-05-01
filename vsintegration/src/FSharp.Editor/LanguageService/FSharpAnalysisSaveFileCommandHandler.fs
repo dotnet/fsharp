@@ -12,10 +12,12 @@ open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.VisualStudio.Text.Editor.Commanding.Commands
 open Microsoft.VisualStudio.Commanding
 open Microsoft.VisualStudio.Utilities
+open CancellableTasks
+open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 // This causes re-analysis to happen when a F# document is saved.
 // We do this because FCS relies on the file system and existing open documents
-// need to be re-analyzed so the changes are propogated.
+// need to be re-analyzed so the changes are propagated.
 // We only re-analyze F# documents that are dependent on the document that was just saved.
 // We ignore F# script documents here.
 // REVIEW: This could be removed when Roslyn workspaces becomes the source of truth for FCS instead of the file system.
@@ -46,42 +48,52 @@ type internal FSharpAnalysisSaveFileCommandHandler [<ImportingConstructor>] (ana
                     | _ ->
                         let document = solution.GetDocument(documentId)
 
-                        async {
-                            try
-                                if document.Project.Language = LanguageNames.FSharp then
+                        if document.Project.Language <> LanguageNames.FSharp then
+                            ()
+                        else
+                            cancellableTask {
+                                try
                                     let openDocIds = workspace.GetOpenDocumentIds()
 
                                     let docIdsToReanalyze =
                                         if document.IsFSharpScript then
-                                            openDocIds
-                                            |> Seq.filter (fun x ->
-                                                x <> document.Id
-                                                && (let doc = solution.GetDocument(x)
+                                            [|
+                                                for x in openDocIds do
+                                                    if
+                                                        x <> document.Id
+                                                        && (let doc = solution.GetDocument(x)
 
-                                                    match doc with
-                                                    | null -> false
-                                                    | _ -> doc.IsFSharpScript))
-                                            |> Array.ofSeq
+                                                            match doc with
+                                                            | null -> false
+                                                            | _ -> doc.IsFSharpScript)
+                                                    then
+                                                        yield x
+                                            |]
                                         else
                                             let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
 
-                                            openDocIds
-                                            |> Seq.filter (fun x ->
-                                                depProjIds.Contains(x.ProjectId)
-                                                && x <> document.Id
-                                                && (let doc = solution.GetDocument(x)
+                                            [|
+                                                for x in openDocIds do
+                                                    if
+                                                        depProjIds.Contains(x.ProjectId)
+                                                        && x <> document.Id
+                                                        && (let doc = solution.GetDocument(x)
 
-                                                    match box doc with
-                                                    | null -> false
-                                                    | _ -> doc.Project.Language = LanguageNames.FSharp))
-                                            |> Array.ofSeq
+                                                            match box doc with
+                                                            | null -> false
+                                                            | _ -> doc.Project.Language = LanguageNames.FSharp)
+                                                    then
+                                                        yield x
+                                            |]
 
                                     if docIdsToReanalyze.Length > 0 then
                                         analyzerService.Reanalyze(workspace, documentIds = docIdsToReanalyze)
-                            with ex ->
-                                logException ex
-                        }
-                        |> Async.Start // fire and forget
+                                with ex ->
+                                    TelemetryReporter.ReportFault(TelemetryEvents.AnalysisSaveFileHandler, e = ex)
+                                    logException ex
+                            }
+                            |> CancellableTask.startWithoutCancellation
+                            |> ignore // fire and forget
 
             nextCommandHandler.Invoke()
 

@@ -1,0 +1,27 @@
+<Project>
+  <!-- We want to restore ALL the MIBCs when we build anything, since in the future it will contain different profiles, not only the FSC one we got from building Giraffe -->
+  <ItemGroup Condition="'$(IgnoreMIBC)' != 'true'">
+    <MIBCPackage Include="optimization.windows_nt-x86.mibc.runtime"   Version="$(optimizationwindows_ntx86MIBCRuntimeVersion)" />
+    <MIBCPackage Include="optimization.windows_nt-x64.mibc.runtime"   Version="$(optimizationwindows_ntx64MIBCRuntimeVersion)" />
+    <MIBCPackage Include="optimization.windows_nt-arm64.mibc.runtime" Version="$(optimizationwindows_ntarm64MIBCRuntimeVersion)" />
+    <MIBCPackage Include="optimization.linux-x64.mibc.runtime"        Version="$(optimizationlinuxx64MIBCRuntimeVersion)" />
+    <MIBCPackage Include="optimization.linux-arm64.mibc.runtime"      Version="$(optimizationlinuxarm64MIBCRuntimeVersion)" />
+  </ItemGroup>
+
+  <!-- We copy all packages to the output (per architecture) -->
+  <Target Name="CopyMIBC">
+    <ItemGroup>
+      <MibcFiles Include="$(NuGetPackageRoot)%(MibcPackage.Identity)\%(MibcPackage.Version)\**\DotNet_FSharp.mibc" />
+    </ItemGroup>
+
+    <Copy
+      SourceFiles="@(MibcFiles)"
+      DestinationFolder="$(ArtifactsDir)mibc\%(MibcPackage.Identity)\"
+      SkipUnchangedFiles="true" />
+
+    <Copy
+      SourceFiles="@(MibcFiles)"
+      DestinationFolder="$(ArtifactsDir)mibc-proto\%(MibcPackage.Identity)\"
+      SkipUnchangedFiles="true" />
+  </Target>
+</Project>

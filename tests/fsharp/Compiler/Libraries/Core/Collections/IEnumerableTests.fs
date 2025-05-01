@@ -2,9 +2,10 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``IEnumerable Tests`` =
 
     // Regression test for FSHARP1.0:4726
@@ -34,7 +35,7 @@ module ``IEnumerable Tests`` =
         end
     end
 
-    [<Test>]
+    [<Fact>]
     let ``Dispose``() =
         let _ = Seq.cast (new C()) |> Seq.map (fun x -> use o = x; 
                                                         o) |> Seq.length

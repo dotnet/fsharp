@@ -62,7 +62,7 @@ let IsLowerTriangular A = A |> Matrix.foralli (fun i j aij -> i >= j || aij = 0.
 //
 //  These tests generate random matrices but do not yet check whether they
 //  are singular or not. Hence, there is an almost zero probability that the
-//  some procedures crach because of this reason.
+//  some procedures crash because of this reason.
 //
 //----------------------------------------------------------------------------
 "*)
@@ -313,7 +313,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

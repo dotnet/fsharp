@@ -500,7 +500,7 @@ module AwaitEventTests =
                                               Some(fun () ->  ev.Trigger(expectedResult))
                                           else
                                               None
-                                      // The completion must come after the event is triggerd
+                                      // The completion must come after the event is triggered
                                       let! child = 
                                            async { do! Async.Sleep 200;  // THIS TIME MUST BE LONG ENOUGH FOR THE EVENT HANDLER TO WIRE UP
                                                    complete(expectedResult)   }
@@ -719,7 +719,7 @@ module AsBeginEndTests =
 check "32o8f43kaO: Cancel a While loop" 
     (let count = ref 0
      let res = ref 0
-     let asyncGroup = new new System.Threading.CancellationTokenSource()
+     let asyncGroup = new System.Threading.CancellationTokenSource()
      Async.Spawn(async { do! async { use! holder = Async.OnCancel (fun msg -> printfn "got cancellation...."; incr res) 
                                      while true do
                                          do! Async.Sleep(10) 
@@ -742,7 +742,7 @@ check "32o8f43kaO: Cancel a While loop"
 check "32o8f43ka2: Cancel a For loop" 
     (let count = ref 0
      let res = ref 0
-     let asyncGroup = new new System.Threading.CancellationTokenSource()
+     let asyncGroup = new System.Threading.CancellationTokenSource()
      Async.Spawn(async { do! async { use! holder = Async.OnCancel (fun msg -> printfn "got cancellation...."; incr res) 
                                      for x in Seq.initInfinite (fun i -> i) do
                                          do! Async.Sleep(10) 
@@ -1432,7 +1432,7 @@ let test3 () =
                 if n < 100 then 
                     do! a (n + 1) }
                     
-    // on low-resouce test VMs, this might not pass on the first try.  Give a few chances.               
+    // on low-resource test VMs, this might not pass on the first try.  Give a few chances.               
     let rec doTest maxAttempts =
         printfn "doTest, maxAttempts %d" maxAttempts
         match maxAttempts with
@@ -2100,7 +2100,7 @@ let aa =
       exit 1
   else   
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
 #endif
 

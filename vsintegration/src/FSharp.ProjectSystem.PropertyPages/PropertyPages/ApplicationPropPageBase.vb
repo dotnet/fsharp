@@ -500,7 +500,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 Else
                     'Can't simply set SelectedItem, because it uses a case-sensitive comparison
                     For Each Item As String In ApplicationManifestCombobox.Items
-                        ' Compare using oridinal ignore case as they are file paths.
+                        ' Compare using ordinal ignore case as they are file paths.
                         If Item.Equals(CurrentManifestValue, StringComparison.OrdinalIgnoreCase) Then
                             ApplicationManifestCombobox.SelectedItem = Item
                             Exit For

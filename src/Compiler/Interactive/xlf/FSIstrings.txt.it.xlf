@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiDetailedHelpLink">
+        <source>See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</source>
+        <target state="new">See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
         <target state="translated">Le funzioni con [&lt;EntryPoint&gt;] non vengono richiamate in FSI. '{0}' non è stato richiamato. Eseguire '{1} &lt;args&gt;' per richiamare '{2}' con la matrice di stringhe appropriata degli argomenti della riga di comando.</target>
@@ -17,6 +22,11 @@
         <target state="translated">Cancella schermata</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
+        <target state="translated">Visualizzare la documentazione per un identificatore, ad esempio #help \"List.map\";;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Non è stato possibile completare l'operazione a causa di un errore precedente</target>
@@ -28,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
-        <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">Creare più assembly (attivato per impostazione predefinita)</target>
+        <source>Emit multiple assemblies ({0} by default)</source>
+        <target state="new">Emit multiple assemblies ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -103,8 +113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
-        <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">Esegue interazioni in un ciclo di eventi di Windows Forms (abilitata per impostazione predefinita)</target>
+        <source>Execute interactions on a Windows Forms event loop ({0} by default)</source>
+        <target state="new">Execute interactions on a Windows Forms event loop ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
@@ -113,13 +123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
-        <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">Supporta completamento con tasto TAB in console (abilitata per impostazione predefinita)</target>
+        <source>Support TAB completion in console ({0} by default)</source>
+        <target state="new">Support TAB completion in console ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">Crea informazioni di debug in quotation</target>
+        <source>Emit debug information in quotations ({0} by default)</source>
+        <target state="new">Emit debug information in quotations ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
@@ -288,8 +298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
-        <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Impedisce che i riferimenti vengano bloccati dal processo F# Interactive</target>
+        <source>Prevents references from being locked by the F# Interactive process ({0} by default)</source>
+        <target state="new">Prevents references from being locked by the F# Interactive process ({0} by default)</target>
         <note />
       </trans-unit>
     </body>

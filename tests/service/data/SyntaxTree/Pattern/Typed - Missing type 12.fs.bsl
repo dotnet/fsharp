@@ -31,14 +31,16 @@ ImplFile
                                         (4,11--4,13));
                                      Named
                                        (SynIdent (j, None), false, None,
-                                        (4,15--4,16))], (4,11--4,16)),
-                                 (4,10--4,17))], None, (4,8--4,17)), None,
-                        Const (Int32 1, (4,20--4,21)), (4,8--4,17), NoneAtLet,
+                                        (4,15--4,16))], [(4,13--4,14)],
+                                    (4,11--4,16)), (4,10--4,17))], None,
+                           (4,8--4,17)), None, Const (Int32 1, (4,20--4,21)),
+                        (4,8--4,17), NoneAtLet,
                         { LeadingKeyword = Let (4,4--4,7)
                           InlineKeyword = None
                           EqualsRange = Some (4,18--4,19) })],
-                    Const (Unit, (6,4--6,6)), (4,4--6,6), { InKeyword = None }),
-                 (3,0--6,6)), (3,0--6,6))],
+                    Const (Unit, (6,4--6,6)), (4,4--6,6),
+                    { LetOrUseKeyword = (4,4--4,7)
+                      InKeyword = None }), (3,0--6,6)), (3,0--6,6))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

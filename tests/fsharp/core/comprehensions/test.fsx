@@ -588,7 +588,7 @@ let pickering() =
    The range sequence should agree with the real sequence under it's natural embedding into reals (+).   
    (+) So, UInt32.MaxValue is considered +ve, not -1.
 
-   Rounding error optimisation:
+   Rounding error optimization:
      With floating arithmetic (single/double),
      when (x1-x1)/dx is clearly integral (and fits inside int32 say),
      then can generate from the underlying int range via {x0 + i.dx}.
@@ -639,7 +639,7 @@ fails (fun () -> [ 10 .. 0 .. 10])      |> check    "10..0..10"
 (* Bug: wrapped arithmetic signed, valid inputs, x0<x1 and dx>0, but termination is incorrect *)
 [ System.Int32.MaxValue-3 .. 2 .. System.Int32.MaxValue ] = [System.Int32.MaxValue-3;System.Int32.MaxValue-1]   |> check "overflow miss endpoint"
 
-(* Bug: floating point inconstencies *)
+(* Bug: floating point inconsistencies *)
 (* Bug: sequence not invariant under scaling *)
 (* Bug: sequence include/exclude end point when known "exact number of steps" depending on rounding error *)
 [| 0.0 .. 0.1      .. 10.0 |].Length = 101              |> check    "float exact range 101"
@@ -1488,7 +1488,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

@@ -112,7 +112,7 @@ module internal ResizeArray =
         res
 
     let mapi f (arr: ResizeArray<_>) =
-        let f = FSharpFunc<_, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _>.Adapt(f)
         let len = length arr
         let res = ResizeArray<_>(len)
 
@@ -122,7 +122,7 @@ module internal ResizeArray =
         res
 
     let iteri f (arr: ResizeArray<_>) =
-        let f = FSharpFunc<_, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _>.Adapt(f)
 
         for i = 0 to arr.Count - 1 do
             f.Invoke(i, arr[i])
@@ -168,7 +168,7 @@ module internal ResizeArray =
         loop 0
 
     let iter2 f (arr1: ResizeArray<'T>) (arr2: ResizeArray<'b>) =
-        let f = FSharpFunc<_, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _>.Adapt(f)
         let len1 = length arr1
 
         if len1 <> length arr2 then
@@ -178,7 +178,7 @@ module internal ResizeArray =
             f.Invoke(arr1[i], arr2[i])
 
     let map2 f (arr1: ResizeArray<'T>) (arr2: ResizeArray<'b>) =
-        let f = FSharpFunc<_, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _>.Adapt(f)
         let len1 = length arr1
 
         if len1 <> length arr2 then
@@ -320,7 +320,7 @@ module internal ResizeArray =
             foldBackSub f arr 0 (arrn - 2) arr[arrn - 1]
 
     let fold2 f (acc: 'T) (arr1: ResizeArray<'T1>) (arr2: ResizeArray<'T2>) =
-        let f = FSharpFunc<_, _, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _, _>.Adapt(f)
         let mutable res = acc
         let len = length arr1
 
@@ -333,7 +333,7 @@ module internal ResizeArray =
         res
 
     let foldBack2 f (arr1: ResizeArray<'T1>) (arr2: ResizeArray<'T2>) (acc: 'b) =
-        let f = FSharpFunc<_, _, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _, _>.Adapt(f)
         let mutable res = acc
         let len = length arr1
 
@@ -359,7 +359,7 @@ module internal ResizeArray =
     let isEmpty (arr: ResizeArray<_>) = length (arr: ResizeArray<_>) = 0
 
     let iteri2 f (arr1: ResizeArray<'T>) (arr2: ResizeArray<'b>) =
-        let f = FSharpFunc<_, _, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _, _>.Adapt(f)
         let len1 = length arr1
 
         if len1 <> length arr2 then
@@ -369,7 +369,7 @@ module internal ResizeArray =
             f.Invoke(i, arr1[i], arr2[i])
 
     let mapi2 (f: int -> 'T -> 'b -> 'c) (arr1: ResizeArray<'T>) (arr2: ResizeArray<'b>) =
-        let f = FSharpFunc<_, _, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _, _>.Adapt(f)
         let len1 = length arr1
 
         if len1 <> length arr2 then
@@ -378,7 +378,7 @@ module internal ResizeArray =
         init len1 (fun i -> f.Invoke(i, arr1[i], arr2[i]))
 
     let scanBackSub f (arr: ResizeArray<'T>) start fin acc =
-        let f = FSharpFunc<_, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _>.Adapt(f)
         let mutable state = acc
         let res = create (2 + fin - start) acc
 
@@ -389,7 +389,7 @@ module internal ResizeArray =
         res
 
     let scanSub f acc (arr: ResizeArray<'T>) start fin =
-        let f = FSharpFunc<_, _, _>.Adapt (f)
+        let f = FSharpFunc<_, _, _>.Adapt(f)
         let mutable state = acc
         let res = create (fin - start + 2) acc
 

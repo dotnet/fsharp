@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.Diagnostics
 open FSharp.Test
 
-[<TestFixture>]
+
 module ``Hash Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Hash of function values``() =
         // Regression test for FSHARP1.0:5436
         // You should not be able to hash F# function values
@@ -25,7 +25,7 @@ hash id |> ignore
             (2, 6, 2, 8)
             "The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type"
 
-    [<Test>]
+    [<Fact>]
     let ``Unchecked hash of function values``() =
         // Regression test for FSHARP1.0:5436
         // You should not be able to hash F# function values

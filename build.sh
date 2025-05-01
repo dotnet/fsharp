@@ -13,4 +13,4 @@ while [[ -h $source ]]; do
 done
 
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
-"$scriptroot/eng/build.sh" --build --restore $@
+time "$scriptroot/eng/build.sh" --build --restore $@

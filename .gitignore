@@ -126,3 +126,14 @@ nCrunchTemp_*
 
 tests/FSharp.Compiler.Service.Tests/FSharp.CompilerService.SurfaceArea.netstandard.actual
 *.vsp
+/tests/AheadOfTime/Trimming/output.txt
+*.svclog
+micro.exe
+positive.exe
+/tests/FSharp.Compiler.ComponentTests/FSharpChecker/StandardError.txt
+/tests/FSharp.Compiler.ComponentTests/FSharpChecker/StandardOutput.txt
+
+# ilverify baseline result files
+*.bsl.actual
+/src/FSharp.DependencyManager.Nuget/StandardError.txt
+/src/FSharp.DependencyManager.Nuget/StandardOutput.txt

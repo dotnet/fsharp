@@ -35,7 +35,7 @@ namespace Tests
 
         let passing_span_returning_span (x: Span<int>) = Span.Empty
 
-        let passing_span_returnin_ref (x: Span<int>) = &x.[0]
+        let passing_span_returning_ref (x: Span<int>) = &x.[0]
 
         let passing_span2 (x: Span<int>) (y: Span<int>) = ()
 
@@ -128,11 +128,11 @@ namespace Tests
 
         let should_not_work10 () =
             let mutable s = Span.Empty
-            &passing_span_returnin_ref s
+            &passing_span_returning_ref s
 
         let should_not_work11 () =
             let mutable s = Span.Empty
-            &passing_span_returnin_ref (passing_span_returning_span s)
+            &passing_span_returning_ref (passing_span_returning_span s)
 
         let should_not_work12 () =
             let mutable s = Span.Empty
@@ -163,7 +163,7 @@ namespace Tests
 
         let should_not_work18 () =
             let mutable s = Span.Empty
-            &passing_span_returnin_ref (passing_span_returning_span s)
+            &passing_span_returning_ref (passing_span_returning_span s)
 
 #if NOT_YET
 
@@ -266,15 +266,15 @@ namespace Tests
 
         let should_work9 () =
             let mutable s = Span.Empty
-            passing_span_returnin_ref s
+            passing_span_returning_ref s
 
         let should_work10 () =
             let mutable s = Span.Empty
-            passing_span_returnin_ref (passing_span_returning_span s)
+            passing_span_returning_ref (passing_span_returning_span s)
 
         let should_work11 () =
             let s = Span.Empty
-            &passing_span_returnin_ref (passing_span_returning_span s)
+            &passing_span_returning_ref (passing_span_returning_span s)
 
         let should_work12 () =
             let s = Span.Empty

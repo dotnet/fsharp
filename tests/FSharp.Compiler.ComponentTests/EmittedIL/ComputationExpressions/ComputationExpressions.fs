@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open System.IO
 open Xunit
@@ -7,9 +7,18 @@ open FSharp.Test.Compiler
 
 module ComputationExpressions =
 
+    let withRealInternalSignature compilation =
+        compilation
+        |> withOptions ["--realsig+"]
+
+    let withoutRealInternalSignature compilation =
+        compilation
+        |> withOptions ["--realsig-"]
+
     let computationExprLibrary =
         FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "ComputationExprLibrary.fs"))
         |> withName "ComputationExprLibrary"
+        |> withoutRealInternalSignature
 
     let verifyCompilation compilation =
         compilation
@@ -23,37 +32,57 @@ module ComputationExpressions =
         |> ignoreWarnings
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr01.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr01.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr02.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr02.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr03.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr03.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr04.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr04.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr04_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr05.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr05.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr05_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr06.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr06.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr06_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ComputationExpr07.fs"|])>]
+    [<Theory; FileInlineData("ComputationExpr07.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr07_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation 
+
+    [<Theory; FileInlineData("CustomCollectionBuilderComputationExpr.fs", Optimize=BooleanOptions.Both)>]
+    let ``CustomCollectionBuilderComputationExpr_fs_OptimizeOff`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withReferences [
+            FsFromPath (Path.Combine (__SOURCE_DIRECTORY__,  "CustomCollectionBuilderComputationExprLibrary.fs"))
+            |> withName "CustomCollectionBuilderComputationExprLibrary"
+        ]
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> verifyILBaseline

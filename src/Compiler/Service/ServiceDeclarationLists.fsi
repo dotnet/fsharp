@@ -60,6 +60,7 @@ type public ToolTipText =
 
 [<RequireQualifiedAccess>]
 type public CompletionItemKind =
+    | SuggestedName
     | Field
     | Property
     | Method of isExtension: bool
@@ -90,6 +91,9 @@ type internal CompletionItem =
       Type: TyconRef option 
 
       Unresolved: UnresolvedSymbol option
+      
+      CustomInsertText: string voption
+      CustomDisplayText: string voption
     }
     member Item: Item
 

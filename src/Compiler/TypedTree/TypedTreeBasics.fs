@@ -19,13 +19,6 @@ assert (sizeof<EntityFlags> = 8)
 assert (sizeof<TyparFlags> = 4)
 #endif
 
-let getNameOfScopeRef sref = 
-    match sref with 
-    | ILScopeRef.Local -> "<local>"
-    | ILScopeRef.Module mref -> mref.Name
-    | ILScopeRef.Assembly aref -> aref.Name
-    | ILScopeRef.PrimaryAssembly -> "<primary>"
-
 /// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
@@ -69,13 +62,12 @@ let arityOfVal (v: Val) =
     | None -> ValReprInfo.emptyValData
     | Some info -> info
 
+let tryGetArityOfValForDisplay (v: Val) =
+    v.ValReprInfoForDisplay
+    |> Option.orElseWith (fun _ -> v.ValReprInfo)
+
 let arityOfValForDisplay (v: Val) =
-    match v.ValReprInfoForDisplay with
-    | Some info -> info
-    | None ->
-         match v.ValReprInfo with
-         | None -> ValReprInfo.emptyValData
-         | Some info -> info
+    tryGetArityOfValForDisplay v |> Option.defaultValue ValReprInfo.emptyValData
 
 let tupInfoRef = TupInfo.Const false
 
@@ -189,15 +181,23 @@ let ccuOfTyconRef eref =
 // Type parameters and inference unknowns
 //-------------------------------------------------------------------------
 
-let mkTyparTy (tp: Typar) = 
+let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
+
+let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
+
+let KnownWithNull = Nullness.Known NullnessInfo.WithNull
+
+let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
+
+let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType 
+    | TyparKind.Type -> tp.AsType KnownWithoutNull
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 // For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
 // process of type inference.
 let copyTypar clearStaticReq (tp: Typar) = 
-    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
+    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs; typar_is_contravariant = tg.typar_is_contravariant  })
     let flags = if clearStaticReq then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags
     Typar.New { typar_id = tp.typar_id
                 typar_flags = flags
@@ -234,9 +234,71 @@ let rec stripUnitEqnsAux canShortcut unt =
     | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
-let rec stripTyparEqnsAux canShortcut ty = 
+let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
+    match nullnessOrig, nullnessNew with
+    | Nullness.Variable _, Nullness.Known NullnessInfo.WithoutNull -> 
+        nullnessOrig
+    | _ -> 
+        match nullnessOrig.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessNew
+        | NullnessInfo.AmbivalentToNull ->
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessOrig
+            | NullnessInfo.WithNull -> nullnessNew
+        | NullnessInfo.WithNull -> 
+            match nullnessNew.Evaluate() with
+            | NullnessInfo.WithoutNull -> nullnessOrig
+            | NullnessInfo.AmbivalentToNull -> nullnessNew
+            | NullnessInfo.WithNull -> nullnessOrig
+
+let nullnessEquiv (nullnessOrig: Nullness) (nullnessNew: Nullness) = LanguagePrimitives.PhysicalEquality nullnessOrig nullnessNew
+
+let tryAddNullnessToTy nullnessNew (ty:TType) = 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> 
+        let nullnessAfter = combineNullness nullnessOrig nullnessNew
+        if nullnessEquiv nullnessAfter nullnessOrig then
+            Some ty
+        else 
+            Some (TType_var (tp, nullnessAfter))
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        let nullnessAfter = combineNullness nullnessOrig nullnessNew
+        if nullnessEquiv nullnessAfter nullnessOrig then
+            Some ty
+        else 
+            Some (TType_app (tcr, tinst, nullnessAfter))
+    | TType_ucase _ -> None
+    | TType_tuple _ -> None
+    | TType_anon _ -> None
+    | TType_fun (d, r, nullnessOrig) ->
+        let nullnessAfter = combineNullness nullnessOrig nullnessNew
+        if nullnessEquiv nullnessAfter nullnessOrig then
+            Some ty
+        else 
+            Some (TType_fun (d, r, nullnessAfter))
+    | TType_forall _ -> None
+    | TType_measure _ -> None
+
+let addNullnessToTy (nullness: Nullness) (ty:TType) =
+    match nullness with
+    | Nullness.Known NullnessInfo.WithoutNull -> ty
+    | Nullness.Variable nv when nv.IsFullySolved && nv.TryEvaluate() = ValueSome NullnessInfo.WithoutNull -> ty
+    | _ -> 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        let tycon = tcr.Deref
+        if tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon then
+            ty
+        else 
+            TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    | _ -> ty
+
+let rec stripTyparEqnsAux nullness0 canShortcut ty = 
     match ty with 
-    | TType_var (r, _) -> 
+    | TType_var (r, nullness) -> 
         match r.Solution with
         | Some soln -> 
             if canShortcut then 
@@ -245,28 +307,39 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var (r2, _) when r2.Constraints.IsEmpty -> 
-                   match r2.Solution with
-                   | None -> ()
-                   | Some _ as soln2 -> 
-                      r.typar_solution <- soln2
+                | TType_var (r2, nullness2) when r2.Constraints.IsEmpty -> 
+                   match nullness2.Evaluate() with 
+                   | NullnessInfo.WithoutNull -> 
+                       match r2.Solution with
+                       | None -> ()
+                       | Some _ as soln2 -> 
+                          r.typar_solution <- soln2
+                   | _ -> ()
                 | _ -> () 
-            stripTyparEqnsAux canShortcut soln
+            stripTyparEqnsAux (combineNullness nullness0 nullness) canShortcut soln
         | None -> 
-            ty
+            addNullnessToTy nullness0 ty
     | TType_measure unt -> 
         TType_measure (stripUnitEqnsAux canShortcut unt)
-    | _ -> ty
+    | _ -> addNullnessToTy nullness0 ty
 
-let stripTyparEqns ty = stripTyparEqnsAux false ty
+let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
 
 let stripUnitEqns unt = stripUnitEqnsAux false unt
 
+let replaceNullnessOfTy nullness (ty:TType) =
+    match stripTyparEqns ty with
+    | TType_var (tp, _) -> TType_var (tp, nullness)
+    | TType_app (tcr, tinst, _) -> TType_app (tcr, tinst, nullness)
+    | TType_fun (d, r, _) -> TType_fun (d, r, nullness)
+    | sty -> sty
+
 /// Detect a use of a nominal type, including type abbreviations.
+[<return: Struct>]
 let (|AbbrevOrAppTy|_|) (ty: TType) =
     match stripTyparEqns ty with
-    | TType_app (tcref, _, _) -> Some tcref
-    | _ -> None
+    | TType_app (tcref, tinst, _) -> ValueSome(tcref, tinst)
+    | _ -> ValueNone
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether
@@ -436,11 +509,11 @@ let primValRefEq compilingFSharpCore fslibCcu (x: ValRef) (y: ValRef) =
 //---------------------------------------------------------------------------
 
 let fullCompPathOfModuleOrNamespace (m: ModuleOrNamespace) = 
-    let (CompPath(scoref, cpath)) = m.CompilationPath
-    CompPath(scoref, cpath@[(m.LogicalName, m.ModuleOrNamespaceType.ModuleOrNamespaceKind)])
+    let (CompPath(scoref, sa, cpath)) = m.CompilationPath
+    CompPath(scoref, sa, cpath@[(m.LogicalName, m.ModuleOrNamespaceType.ModuleOrNamespaceKind)])
 
 // Can cpath2 be accessed given a right to access cpath1. That is, is cpath2 a nested type or namespace of cpath1. Note order of arguments.
-let inline canAccessCompPathFrom (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
+let inline canAccessCompPathFrom (CompPath(scoref1, _, cpath1)) (CompPath(scoref2, _, cpath2)) =
     let rec loop p1 p2 = 
         match p1, p2 with 
         | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
@@ -465,12 +538,20 @@ let accessSubstPaths (newPath, oldPath) (TAccess paths) =
     let subst cpath = if cpath=oldPath then newPath else cpath
     TAccess (List.map subst paths)
 
-let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, []) 
+let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, SyntaxAccess.Unknown, []) 
 let taccessPublic = TAccess []
-let taccessPrivate accessPath = TAccess [accessPath]
-let compPathInternal = CompPath(ILScopeRef.Local, [])
+let compPathInternal = CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])
 let taccessInternal = TAccess [compPathInternal]
-let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
+let taccessPrivate accessPath = let (CompPath(sc,_, paths)) = accessPath in TAccess [CompPath(sc, TypedTree.SyntaxAccess.Private, paths)]
+
+let combineAccess access1 access2 =
+    let (TAccess a1) = access1
+    let (TAccess a2) = access2
+    let combined =
+        if access1 = taccessPublic then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Public
+        elif access1 = taccessInternal then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Internal
+        else (a1@a2)
+    TAccess combined
 
 exception Duplicate of string * string * range
 exception NameClash of string * string * string * range * string * string * range

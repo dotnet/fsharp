@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <TargetFrameworks>$(FSharpNetCoreProductTargetFramework);net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -12,7 +12,7 @@
     <PackageVersion>$(FSCoreUnitTestsPackageVersion)</PackageVersion>
     <PreRelease>true</PreRelease>
     <LangVersion>preview</LangVersion>
-
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
@@ -25,12 +25,10 @@
     <TailCalls>true</TailCalls>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefineConstants Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
-    <DefineConstants Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
@@ -90,6 +88,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
+    <Compile Include="Interop\CSharpCollectionExpressions.fs" />
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.fs" />
   </ItemGroup>

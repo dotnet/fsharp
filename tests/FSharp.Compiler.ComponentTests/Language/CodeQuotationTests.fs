@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Language
+namespace Language
 
 open Xunit
 open FSharp.Test.Compiler
@@ -37,5 +37,24 @@ let z : unit =
         """
         |> asExe
         |> withLangVersion50
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Quotation on decimal literal compiles and runs`` () =
+        FSharp """
+open Microsoft.FSharp.Quotations.DerivedPatterns
+
+[<Literal>]
+let x = 7m
+
+let expr = <@ x @>
+
+match expr with
+| Decimal n -> printfn "%M" n
+| _ -> failwith (string expr)
+        """
+        |> asExe
+        |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed

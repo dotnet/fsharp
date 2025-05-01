@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Compiler.ComponentTests.Miscellaneous.FsharpSuiteMigrated.OverloadResolution
+module Miscellaneous.FsharpSuiteMigrated_OverloadResolution
 
 open Xunit
 open FSharp.Test
-open TestFrameworkAdapter   
+open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter
 
 module ``fsharpqa migrated tests`` =
     let [<FactForDESKTOP>] ``Conformance\Expressions\SyntacticSugar (E_Slices01_fs)`` () = singleNegTest ( "conformance/expressions/syntacticsugar") "E_Slices01"
@@ -15,7 +15,7 @@ module ``fsharpqa migrated tests`` =
     let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoDifferentTypeVariables01rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoDifferentTypeVariables01rec"
     let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
     let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoEqualTypeVariables02_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoEqualTypeVariables02"
-    let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoEqualYypeVariables02rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoEqualYypeVariables02rec"
+    let [<FactForDESKTOP>] ``Conformance\Inference (E_TwoEqualTypeVariables02rec_fs)`` () = singleNegTest ( "conformance/inference") "E_TwoEqualTypeVariables02rec"
     let [<FactForDESKTOP>] ``Conformance\Inference (E_LeftToRightOverloadResolution01_fs)`` () = singleNegTest ( "conformance/inference") "E_LeftToRightOverloadResolution01"
     let [<FactForDESKTOP>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass01_fs)`` () = singleNegTest ( "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
     let [<FactForDESKTOP>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass03_fs)`` () = singleNegTest ( "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"

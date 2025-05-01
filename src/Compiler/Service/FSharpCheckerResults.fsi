@@ -3,8 +3,10 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -26,15 +28,25 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 
+open Internal.Utilities.Collections
+
+[<Experimental "This type is experimental and likely to be removed in the future.">]
+[<RequireQualifiedAccess>]
+type DocumentSource =
+    | FileSystem
+    | Custom of (string -> Async<ISourceText option>)
+
 /// Delays the creation of an ILModuleReader
 [<Sealed>]
-type internal DelayedILModuleReader =
+type DelayedILModuleReader =
 
     new: name: string * getStream: (CancellationToken -> Stream option) -> DelayedILModuleReader
 
+    member OutputFile: string
+
     /// Will lazily create the ILModuleReader.
     /// Is only evaluated once and can be called by multiple threads.
-    member TryGetILModuleReader: unit -> Cancellable<ILModuleReader option>
+    member internal TryGetILModuleReader: unit -> Cancellable<ILModuleReader option>
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
@@ -45,7 +57,7 @@ type public FSharpProjectOptions =
         // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
         ProjectFileName: string
 
-        /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
+        /// This is the unique identifier for the project, it is case-sensitive. If it's None, will key off of ProjectFileName in our caching.
         ProjectId: string option
 
         /// The files in the project
@@ -92,10 +104,31 @@ type public FSharpProjectOptions =
     /// Compute the project directory.
     member internal ProjectDirectory: string
 
-and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
-    internal
+and [<NoComparison; CustomEquality; RequireQualifiedAccess>] FSharpReferencedProject =
+
+    /// <summary>
+    /// A reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="options">The Project Options for this F# project</param>
     | FSharpReference of projectOutputFile: string * options: FSharpProjectOptions
-    | PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+
+    /// <summary>
+    /// A reference for any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    /// If the stream evaluation throws an exception, it will be automatically handled.
+    /// </summary>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="delayedReader">A function that opens a Portable Executable data stream for reading.</param>
+    | PEReference of getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+
+    /// <summary>
+    /// A reference from an ILModuleReader.
+    /// </summary>
+    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
+    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    /// <param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
     | ILModuleReference of
         projectOutputFile: string *
         getStamp: (unit -> DateTime) *
@@ -106,36 +139,6 @@ and [<NoComparison; CustomEquality>] public FSharpReferencedProject =
     /// reference in the project options for this referenced project.
     /// </summary>
     member OutputFile: string
-
-    /// <summary>
-    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
-    /// </summary>
-    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="options">The Project Options for this F# project</param>
-    static member CreateFSharp: projectOutputFile: string * options: FSharpProjectOptions -> FSharpReferencedProject
-
-    /// <summary>
-    /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
-    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
-    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
-    /// If the stream evaluation throws an exception, it will be automatically handled.
-    /// </summary>
-    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
-    /// <param name="getStream">A function that opens a Portable Executable data stream for reading.</param>
-    static member CreatePortableExecutable:
-        projectOutputFile: string * getStamp: (unit -> DateTime) * getStream: (CancellationToken -> Stream option) ->
-            FSharpReferencedProject
-
-    /// <summary>
-    /// Creates a reference from an ILModuleReader.
-    /// </summary>
-    /// <param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <c>-r</c> reference in the project options for this referenced project.</param>
-    /// <param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
-    /// <param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
-    static member CreateFromILModuleReader:
-        projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) ->
-            FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -189,7 +192,7 @@ type public FSharpSymbolUse =
 
     // For internal use only
     internal new:
-        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurence * range: range ->
+        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurrence * range: range ->
             FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions
@@ -226,6 +229,8 @@ type public FSharpParsingOptions =
         IsInteractive: bool
 
         IndentationAwareSyntax: bool option
+
+        StrictIndentation: bool option
 
         CompilingFSharpCore: bool
 
@@ -285,13 +290,17 @@ type public FSharpCheckFileResults =
     /// <param name="completionContextAtPos">
     ///    Completion context for a particular position computed in advance.
     /// </param>
+    /// <param name="genBodyForOverriddenMeth">
+    ///    A switch to determine whether to generate a default implementation body for overridden method when completing.
+    /// </param>
     member GetDeclarationListInfo:
         parsedFileResults: FSharpParseFileResults option *
         line: int *
         lineText: string *
         partialName: PartialLongName *
         ?getAllEntities: (unit -> AssemblySymbol list) *
-        ?completionContextAtPos: (pos * CompletionContext option) ->
+        ?completionContextAtPos: (pos * CompletionContext option) *
+        ?genBodyForOverriddenMeth: bool ->
             DeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
@@ -312,12 +321,16 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
+    /// <param name="genBodyForOverriddenMeth">
+    ///    A switch to determine whether to generate a default implementation body for overridden method when completing.
+    /// </param>
     member GetDeclarationListSymbols:
         parsedFileResults: FSharpParseFileResults option *
         line: int *
         lineText: string *
         partialName: PartialLongName *
-        ?getAllEntities: (unit -> AssemblySymbol list) ->
+        ?getAllEntities: (unit -> AssemblySymbol list) *
+        ?genBodyForOverriddenMeth: bool ->
             FSharpSymbolUse list list
 
     /// <summary>Compute a formatted tooltip for the given keywords</summary>
@@ -390,6 +403,15 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation:
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse option
 
+    /// <summary>Similar to GetSymbolUseAtLocation, but returns all found symbols if there are multiple.</summary>
+    ///
+    /// <param name="line">The line number where the information is being requested.</param>
+    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
+    /// <param name="lineText">The text of the line where the information is being requested.</param>
+    /// <param name="names">The identifiers at the location where the information is being requested.</param>
+    member GetSymbolUsesAtLocation:
+        line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list
+
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
     member GetSemanticClassification: range option -> SemanticClassificationItem[]
 
@@ -426,6 +448,8 @@ type public FSharpCheckFileResults =
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
 
+    member internal CalculateSignatureHash: unit -> int option
+
     /// Internal constructor
     static member internal MakeEmpty:
         fileName: string * creationErrors: FSharpDiagnostic[] * keepAssemblyContents: bool -> FSharpCheckFileResults
@@ -437,8 +461,8 @@ type public FSharpCheckFileResults =
         tcConfig: TcConfig *
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
-        builder: IncrementalBuilder *
-        projectOptions: FSharpProjectOptions *
+        builder: IncrementalBuilder option *
+        projectOptions: FSharpProjectOptions option *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *
@@ -471,7 +495,7 @@ type public FSharpCheckFileResults =
         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
-        builder: IncrementalBuilder *
+        builder: IncrementalBuilder option *
         dependencyFiles: string[] *
         creationErrors: FSharpDiagnostic[] *
         parseErrors: FSharpDiagnostic[] *
@@ -526,7 +550,19 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic[] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option ->
+        details:
+            (TcGlobals *
+            TcImports *
+            CcuThunk *
+            ModuleOrNamespaceType *
+            Choice<IncrementalBuilder, Async<TcSymbolUses seq>> *
+            TopAttribs option *
+            (unit -> IRawFSharpAssemblyData option) *
+            ILAssemblyRef *
+            AccessorDomain *
+            CheckedImplFile list option *
+            string[] *
+            FSharpProjectOptions option) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =
@@ -537,7 +573,9 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool *
-        identCapture: bool ->
+        flatErrors: bool *
+        identCapture: bool *
+        ct: CancellationToken ->
             FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:
@@ -545,8 +583,32 @@ module internal ParseAndCheckFile =
         fileName: string *
         options: FSharpParsingOptions *
         userOpName: string *
-        suggestNamesForErrors: bool ->
+        suggestNamesForErrors: bool *
+        ct: CancellationToken ->
             (range * range)[]
+
+    /// Diagnostics handler for parsing & type checking while processing a single file
+    type DiagnosticsHandler =
+        new:
+            reportErrors: bool *
+            mainInputFileName: string *
+            diagnosticsOptions: FSharpDiagnosticOptions *
+            sourceText: ISourceText *
+            suggestNamesForErrors: bool *
+            flatErrors: bool ->
+                DiagnosticsHandler
+
+        member DiagnosticsLogger: DiagnosticsLogger
+
+        member ErrorCount: int
+
+        member DiagnosticOptions: FSharpDiagnosticOptions with set
+
+        member AnyErrors: bool
+
+        member CollectedPhasedDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) array
+
+        member CollectedDiagnostics: symbolEnv: SymbolEnv option -> FSharpDiagnostic array
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.

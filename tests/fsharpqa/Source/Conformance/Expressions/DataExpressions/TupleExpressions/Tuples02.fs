@@ -1,7 +1,7 @@
 // #Conformance #DataExpressions #Tuples 
 #light
 
-// Verify tuples work right when crossing the '6' boundry
+// Verify tuples work right when crossing the '6' boundary
 
 let tuple5 = 1, 2, 3, 4, 5
 let tuple6 = 1, 2, 3, 4, 5, 6

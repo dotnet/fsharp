@@ -7,13 +7,13 @@
 
 [<AbstractClass>]
 type BaseHashtable<'Entry, 'Key>(initialCapacity) =
-    abstract member Next : entries : array<'Entry> -> int
+    abstract member Next : entries : 'Entry array -> int
 
 [<Struct>]    
 type StrongToWeakEntry<'Value when 'Value : not struct> =
     val mutable public next : int
 
 let f() = { new BaseHashtable<_,_>(2) with
-            override this.Next (entries:array<StrongToWeakEntry<_>>) = 1
+            override this.Next (entries:StrongToWeakEntry<_> array) = 1
             override this.Next entries = 1
           }

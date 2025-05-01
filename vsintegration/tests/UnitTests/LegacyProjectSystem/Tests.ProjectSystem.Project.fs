@@ -8,11 +8,12 @@ open System.Collections.Generic
 open System.IO
 open System.Text.RegularExpressions
 open System.Xml.Linq
-open NUnit.Framework
+open Xunit
 
 // VS namespaces 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.FSharp
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
@@ -22,10 +23,11 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<TestFixture>][<Category "ProjectSystem">]
 type Project() = 
     inherit TheTests()
 
+    do
+        AssemblyResolver.addResolver ()
 
     //TODO: look for a way to remove the helper functions
     static let ANYTREE = Tree("",Nil,Nil)
@@ -34,7 +36,7 @@ type Project() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    [<Test>]    
+    [<Fact>]    
     member public _.NewFolderOnProjectMenu() =
         printfn "starting..."
         let package = new FSharpProjectPackage()
@@ -51,7 +53,7 @@ type Project() =
             Assert.Fail("Unexpected: New Folder was not enabled")
         ()    
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case1``() =
         let compileItems = ["one.fs"; "two.fs"; "three.fs"]
         let expect = Tree("References", ANYTREE,
@@ -63,21 +65,23 @@ type Project() =
         // "one" "three" "two"
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, "", expect)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case2``() =
         let compileItems = [@"A\B\D\foo.fs"; @"A\B\C\bar.fs"]
         let expect = Tree("References", ANYTREE,
-                     Tree("A", 
-                         Tree("B",
-                             Tree("D", 
-                                 Tree("foo.fs", Nil, Nil),
-                             Tree("C", 
-                                 Tree("bar.fs", Nil, Nil),
-                                 Nil)), Nil), Nil))
+                        Tree("A", 
+                            Tree("B",
+                                Tree("D", 
+                                    Tree("foo.fs", Nil, Nil),
+                                    Tree("C",
+                                        Tree("bar.fs", Nil, Nil),Nil)
+                                ), 
+                                Nil),
+                            Nil))
         // no alphabetization of files or folders
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, "", expect)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case3``() =
         let compileItems = [@"B\foo.fs"; @"A\bar.fs"]
         let other = @"
@@ -86,15 +90,18 @@ type Project() =
           </ItemGroup>
           "
         let expect = Tree("References", ANYTREE,
-                     Tree("B",
-                         Tree("foo.fs", Nil, Nil),
-                     Tree("A", 
-                         Tree("bar.fs", Nil, Nil),
-                         Nil)))
+                        Tree("B",
+                            Tree("foo.fs", Nil, Nil),
+                            Tree("A", 
+                                Tree("bar.fs", Nil, Nil),
+                                Nil
+                            )
+                        )
+                     )
         // Including folder should not put folder at front of other folders
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileOrderInFsprojIsRespected.Case4``() =
         let compileItems = [@"foo.fs"; @"A\bar.fs"]
         let other = @"
@@ -103,15 +110,18 @@ type Project() =
           </ItemGroup>
           "
         let expect = Tree("References", ANYTREE,
-                     Tree("foo.fs", Nil,
-                     Tree("A", 
-                         Tree("bar.fs", Nil, Nil),
-                         Nil)))
+                        Tree("foo.fs", Nil,
+                            Tree("A", 
+                                Tree("bar.fs", Nil, Nil),
+                                Nil
+                            )
+                        )
+                     )
         // Including folder should not put folder at front of files
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.LinksIntoFoldersAreRespected``() =
         let compileItems = []
         let other = @"
@@ -124,15 +134,19 @@ type Project() =
           </ItemGroup>
           "
         let expect = Tree("References", ANYTREE,
-                     Tree("foo.fs", Nil,
-                     Tree("A", 
-                         Tree("bar.fs", Nil,
-                         Tree("qux.fs", Nil, Nil)),
-                         Nil)))
+                        Tree("foo.fs", Nil,
+                            Tree("A", 
+                                Tree("bar.fs", Nil,
+                                    Tree("qux.fs", Nil, Nil)
+                                ),
+                                Nil
+                            )
+                        )
+                     )
         this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems, other, expect)
 
 
-    [<Test>]
+    [<Fact>]
     member public this.``Links.AddLinkToRootWorks``() =
         let compileItems = [@"Folder\foo.fs"; @"bar.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
@@ -141,10 +155,13 @@ type Project() =
                 project.AddLinkedItem(project, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
             )
             let expect = Tree("References", ANYTREE,
-                         Tree("Folder", 
-                            Tree("foo.fs",Nil,Nil), 
-                         Tree("bar.fs", Nil,
-                         Tree("qux.fs", Nil,Nil))))
+                            Tree("Folder", 
+                                Tree("foo.fs",Nil,Nil), 
+                                Tree("bar.fs", Nil,
+                                    Tree("qux.fs", Nil,Nil)
+                                )
+                            )
+                         )
             TheTests.AssertSameTree(expect, project.FirstChild)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)
@@ -153,7 +170,7 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``Links.AddLinkToSubfolderWorks``() =
         let compileItems = [@"bar.fs"; @"Folder\foo.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
@@ -163,10 +180,10 @@ type Project() =
                 project.AddLinkedItem(folder, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
             )
             let expect = Tree("References", ANYTREE,
-                         Tree("bar.fs", Nil,
-                         Tree("Folder", 
-                            Tree("foo.fs", Nil,
-                            Tree("qux.fs", Nil,Nil)), Nil)))
+                            Tree("bar.fs", Nil,
+                               Tree("Folder", 
+                                Tree("foo.fs", Nil,
+                                    Tree("qux.fs", Nil,Nil)), Nil)))
             TheTests.AssertSameTree(expect, project.FirstChild)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)
@@ -175,7 +192,7 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``Links.AddLinkToRootWorksForNonFsFile``() =
         let compileItems = [@"Folder\foo.fs"; @"bar.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
@@ -187,10 +204,10 @@ type Project() =
                 )
             )
             let expect = Tree("References", ANYTREE,
-                         Tree("Folder", 
-                            Tree("foo.fs",Nil,Nil), 
-                         Tree("bar.fs", Nil,
-                         Tree("qux.resx", Nil,Nil))))
+                            Tree("Folder", 
+                                Tree("foo.fs",Nil,Nil), 
+                                Tree("bar.fs", Nil,
+                                    Tree("qux.resx", Nil,Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild)
             SaveProject(project)
             let fsprojFileText = File.ReadAllText(fileName)
@@ -199,7 +216,7 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
     
-    [<Test>]
+    [<Fact>]
     member public this.``Removal.ExcludeFileShouldDirtyProjectFileAndBeSeenOnDiskAfterSave``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
@@ -220,7 +237,7 @@ type Project() =
             AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``Removal.RemoveReferenceShouldDirtyProjectFileAndBeSeenOnDiskAfterSave``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], ["System"], items.ToString(), (fun project fileName ->
@@ -241,7 +258,7 @@ type Project() =
             AssertEqualMsg false (fsprojFileText.Contains(toVerify)) "it was not removed from the .fsproj on disk"
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.MoveUpShouldDirtyProject``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
@@ -258,7 +275,7 @@ type Project() =
             TheTests.AssertSameTree(expect, project.FirstChild)
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.MoveDownShouldDirtyProject``() =
         let items = MSBuildItems([CompileItem "foo.fs"; CompileItem "bar.fs"])
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
@@ -282,14 +299,9 @@ type Project() =
     member private this.SampleEmptyFolderEntity = ([FolderItem @"MyFolder\"], fun t -> Tree("MyFolder", Nil, t))
 
     member private this.SampleFolderWithItemsEntity = ([CompileItem @"MyFolder\x1.fs"; CompileItem @"MyFolder\Sub\x2.fs"; CompileItem @"MyFolder\x3.fs"], 
-                                                       fun t -> Tree("MyFolder", 
-                                                                    Tree("x1.fs", Nil, 
-                                                                    Tree("Sub", 
-                                                                        Tree("x2.fs", Nil, Nil), 
-                                                                    Tree("x3.fs", Nil, Nil))),
-                                                                t))
+                                                       fun t -> Tree("MyFolder",Tree("x1.fs", Nil, Tree("Sub", Tree("x2.fs", Nil, Nil), Tree("x3.fs", Nil, Nil))), t))
 
-    [<Test>]
+    [<Fact>]
     member public this.``SpecificVersion.OptionsSavedToFsprojFile``() =
         let items = MSBuildItems( [CompileItem "foo.fs"] )
         this.MakeProjectAndDoWithProjectFile([], ["System"], items.ToString(), (fun project fileName ->
@@ -304,12 +316,12 @@ type Project() =
                             let expected = XDocument.Load(new StringReader(@"<Reference Include=""ANY""><SpecificVersion>True</SpecificVersion></Reference>")).Root
                             TheTests.AssertSimilarXml(expected, e)
                             let inc = e.Attributes() |> WithAttrName "Include" |> Seq.head
-                            Assert.IsTrue(inc.Value.StartsWith("System, Version", StringComparison.Ordinal), "assembly reference lacks version"))
+                            Assert.True(inc.Value.StartsWith("System, Version", StringComparison.Ordinal), "assembly reference lacks version"))
                        false, (fun (e:XElement) -> 
                             let expected = XDocument.Load(new StringReader(@"<Reference Include=""ANY""><SpecificVersion>False</SpecificVersion></Reference>")).Root
                             TheTests.AssertSimilarXml(expected, e)
                             let inc = e.Attributes() |> WithAttrName "Include" |> Seq.head
-                            Assert.IsTrue(inc.Value.StartsWith("System, Version", StringComparison.Ordinal), "assembly reference lacks version")) 
+                            Assert.True(inc.Value.StartsWith("System, Version", StringComparison.Ordinal), "assembly reference lacks version")) 
                     |]
             let props = system.NodeProperties :?> AssemblyReferenceProperties
             for v, f in a do
@@ -323,7 +335,7 @@ type Project() =
                 f refNode
         ))
     
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileRenaming.RenamingAFileDoesNotChangeOrderInSolutionExplorerOrMSBuild``() =
         for entity, treeMaker in [this.SampleFileEntity; this.SampleEmptyFolderEntity] do
             let items = MSBuildItems( [CompileItem "foo.fs"] @ entity )
@@ -380,15 +392,15 @@ type Project() =
                 TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
             ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAboveFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAbove``(this.SampleFileEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAboveEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAbove``(this.SampleEmptyFolderEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAboveFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedUpAbove``(this.SampleFolderWithItemsEntity)
 
@@ -421,15 +433,15 @@ type Project() =
                 TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
             ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelowFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelow``(this.SampleFileEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelowEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelow``(this.SampleEmptyFolderEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelowFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.EntityCanBeMovedDownBelow``(this.SampleFolderWithItemsEntity)
 
@@ -441,14 +453,14 @@ type Project() =
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
             // ensure things look right at start
             let expect = Tree("References", ANYTREE,
-                         otherTreeMaker(
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         Tree("after.fs", Nil, Nil))))
+                            otherTreeMaker(
+                                Tree("A", 
+                                    Tree("foo.fs", Nil,
+                                        Tree("B",
+                                            Tree("qux.fs", Nil, Nil),
+                                            Tree("Empty", Nil,
+                                            Tree("zot.fs", Nil, Nil)))),
+                                        Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild)
             let foo = TheTests.FindNodeWithCaption(project, "A")
             TheTests.EnsureMoveUpEnabled(foo)
@@ -456,14 +468,14 @@ type Project() =
             TheTests.MoveUp(foo)
             // test that it moved up in solution explorer
             let expect = Tree("References", ANYTREE,
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         otherTreeMaker(
-                         Tree("after.fs", Nil, Nil))))
+                            Tree("A", 
+                                Tree("foo.fs", Nil,
+                                    Tree("B",
+                                        Tree("qux.fs", Nil, Nil),
+                                        Tree("Empty", Nil,
+                                            Tree("zot.fs", Nil, Nil)))),
+                                otherTreeMaker(
+                                    Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild) 
             // test that it moved up in MSBuild
             SaveProject(project)
@@ -474,15 +486,15 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAboveFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAbove``(this.SampleFileEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAboveEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAbove``(this.SampleEmptyFolderEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAboveFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedUpAbove``(this.SampleFolderWithItemsEntity)
 
@@ -494,14 +506,14 @@ type Project() =
         this.MakeProjectAndDoWithProjectFile([], [], items.ToString(), (fun project fileName ->
             // ensure things look right at start
             let expect = Tree("References", ANYTREE,
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         otherTreeMaker(
-                         Tree("after.fs", Nil, Nil))))
+                            Tree("A",
+                                Tree("foo.fs", Nil,
+                                    Tree("B",
+                                        Tree("qux.fs", Nil, Nil),
+                                        Tree("Empty", Nil,
+                                            Tree("zot.fs", Nil, Nil)))),
+                                    otherTreeMaker(
+                                        Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild)
             let foo = TheTests.FindNodeWithCaption(project, "A")
             TheTests.EnsureMoveDownEnabled(foo)
@@ -509,14 +521,14 @@ type Project() =
             TheTests.MoveDown(foo)
             // test that it moved down in solution explorer
             let expect = Tree("References", ANYTREE,
-                         otherTreeMaker(
-                         Tree("A", 
-                             Tree("foo.fs", Nil,
-                             Tree("B",
-                                 Tree("qux.fs", Nil, Nil),
-                             Tree("Empty", Nil,
-                             Tree("zot.fs", Nil, Nil)))),
-                         Tree("after.fs", Nil, Nil))))
+                            otherTreeMaker(
+                                Tree("A", 
+                                    Tree("foo.fs", Nil,
+                                        Tree("B",
+                                            Tree("qux.fs", Nil, Nil),
+                                            Tree("Empty", Nil,
+                                                Tree("zot.fs", Nil, Nil)))),
+                                    Tree("after.fs", Nil, Nil))))
             TheTests.AssertSameTree(expect, project.FirstChild) 
             // test that it moved down in MSBuild
             SaveProject(project)
@@ -527,19 +539,19 @@ type Project() =
             TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
         ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelowFile``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelow``(this.SampleFileEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelowEmptyFolder``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelow``(this.SampleEmptyFolderEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelowFolderWithItems``() =
         this.``FsprojFileToSolutionExplorer.FileMovement.FolderWithItemsCanBeMovedDownBelow``(this.SampleFolderWithItemsEntity)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.NegativeTests.EntityCannotBeMovedAboveReferences``() =
         for entity in this.SampleEntities do
             printfn "=========> testing moving %s" (entity.ToString())
@@ -552,7 +564,7 @@ type Project() =
             let foo = TheTests.FindNodeWithCaption(project, entity.Caption())
             TheTests.EnsureMoveUpDisabled(foo)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.NegativeTests.EntityCannotBeMovedUpWhenTopOfFolder``() =
         for entity in this.SampleEntities |> List.map (fun e -> e.IntoFolder(@"Folder\")) do
             printfn "=========> testing moving %s" (entity.ToString())
@@ -565,7 +577,7 @@ type Project() =
             let bar = TheTests.FindNodeWithCaption(project, entity.Caption())
             TheTests.EnsureMoveUpDisabled(bar)
 
-    [<Test>]
+    [<Fact>]
     member public this.``FsprojFileToSolutionExplorer.FileMovement.NegativeTests.EntityCannotBeMovedDownWhenBottomOfFolder``() =
         for entity in this.SampleEntities |> List.map (fun e -> e.IntoFolder(@"Folder\")) do
             printfn "=========> testing moving %s" (entity.ToString())
@@ -578,7 +590,7 @@ type Project() =
             let bar = TheTests.FindNodeWithCaption(project, entity.Caption())
             TheTests.EnsureMoveDownDisabled(bar)
 
-    [<Test>]
+    [<Fact>]
     member public this.``RenameFile.FailureToRenameInRDT.Bug616680.EnsureRevertToKnownConsistentState``() =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -605,7 +617,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Test>]
+    [<Fact>]
     member public this.``RenameFile.FailureToRenameInRDT.Bug616680.EnsureThatFileOrderDidNotChange``() =
         this.MakeProjectAndDo(["a.fs";"b.fs";"orig1.fs";"c.fs";"d.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -636,7 +648,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
 
-    [<Test>]
+    [<Fact>]
     member public this.``RenameFile.VerifyItemIdsRemainsTheSame``() =
         let name1 = "orig.fs"
         let name2 = "orig2.fs"
@@ -658,7 +670,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Test>]
+    [<Fact>]
     member public this.``RenameFile.MainlineSuccessCase``() =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
@@ -684,7 +696,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Test>] //ref bug https://github.com/dotnet/fsharp/issues/259
+    [<Fact>] //ref bug https://github.com/dotnet/fsharp/issues/259
     member public this.``RenameFile.InFolder``() =
         this.MakeProjectAndDo(["file1.fs"; @"Folder1\file2.fs"; @"Folder1\nested1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "Folder1", "nested1.fs")
@@ -735,11 +747,10 @@ type Project() =
                 // ensure right in solution explorer
                 let expect = 
                     Tree("References", ANYTREE,
-                    Tree("file1.fs", Nil,
-                    Tree("Folder1", 
-                       Tree("file2.fs", Nil,
-                       Tree("renamedNested2.fs", Nil, Nil)),
-                    Nil)))
+                        Tree("file1.fs", Nil,
+                            Tree("Folder1", 
+                                Tree("file2.fs", Nil,
+                                    Tree("renamedNested2.fs", Nil, Nil)), Nil)))
                 TheTests.AssertSameTree (expect, project.FirstChild)
 
             finally
@@ -748,7 +759,7 @@ type Project() =
     
 (* Disabled for now - see https://github.com/dotnet/fsharp/pull/3071 - this is testing old project system features
 
-    [<Test>]
+    [<Fact>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =
         let GetTextFromBuildAction (action:VSLangProj.prjBuildAction) =
             match action with
@@ -823,7 +834,7 @@ type Project() =
 *)
 
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``FsprojOutputWindow.ErrorOriginColumnsAreBase1``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
@@ -846,7 +857,7 @@ type Project() =
             AssertEqual (List.length errors) 1
         )
 
-    [<Test>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``FsprojOutputWindow.HighUnicodeCharactersAreProperlyDisplayed``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
         let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)

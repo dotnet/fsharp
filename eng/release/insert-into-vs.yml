@@ -15,7 +15,7 @@ stages:
   - job: Insert_VS
     pool:
       name: NetCore1ESPool-Svc-Internal
-      demands: ImageOverride -equals windows.vs2019.amd64
+      image: windows.vs2022preview.amd64
     variables:
     - group: DotNet-VSTS-Infra-Access
     - name: InsertAccessToken
@@ -31,26 +31,30 @@ stages:
     - name: InsertPayloadName
       value: '${{ parameters.insertTeamName }} $(Build.SourceBranchName) $(Build.BuildNumber)'
     steps:
-    - task: DownloadBuildArtifacts@0
-      displayName: Download Insertion Artifacts
+    - download: current
+      artifact: VSSetup
+    - task: PowerShell@2
+      displayName: List Workspace
       inputs:
-        buildType: current
-        artifactName: VSSetup
+        targetType: 'inline'
+        pwsh: true
+        script: |
+          Tree $(Pipeline.Workspace) /F
     - task: PowerShell@2
       displayName: Get Publish URLs
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetPublishUrls.ps1
-        arguments: -accessToken $(System.AccessToken) -buildId $(Build.BuildId) -insertionDir $(Build.ArtifactStagingDirectory)\VSSetup
+        arguments: -accessToken $(System.AccessToken) -buildId $(Build.BuildId) -insertionDir $(Pipeline.Workspace)\VSSetup
     - task: PowerShell@2
       displayName: Get versions for default.config
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetDefaultConfigVersions.ps1
-        arguments: -packagesDir $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages
+        arguments: -packagesDir $(Pipeline.Workspace)\VSSetup\DevDivPackages
     - task: PowerShell@2
       displayName: Get versions for AssemblyVersions.tt
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetAssemblyVersions.ps1
-        arguments: -assemblyVersionsPath $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
+        arguments: -assemblyVersionsPath $(Pipeline.Workspace)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
     - task: PowerShell@2
       displayName: Calculate autocompletion state
       inputs:

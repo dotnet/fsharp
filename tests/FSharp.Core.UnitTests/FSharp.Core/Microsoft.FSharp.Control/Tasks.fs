@@ -183,6 +183,179 @@ type SmokeTestsForCompilation() =
             t.Wait()
             if t.Result <> 5 then failwith "failed"
 
+    [<Fact>]
+    member _.merge2tasks() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"    
+            
+    [<Fact>]
+    member _.merge3tasks() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            and! z = Task.FromResult(3)
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeYieldAndTask() =
+        task {
+            let! _ = Task.Yield()
+            and! y = Task.FromResult(1)
+            return y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeTaskAndYield() =
+        task {
+            let! x = Task.FromResult(1)
+            and! _ = Task.Yield()
+            return x
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2valueTasks() =
+        task {
+            let! x = ValueTask<int>(Task.FromResult(1))
+            and! y = ValueTask<int>(Task.FromResult(2))
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2valueTasksAndYield() =
+        task {
+            let! x = ValueTask<int>(Task.FromResult(1))
+            and! y = ValueTask<int>(Task.FromResult(2))
+            and! _ = Task.Yield()
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeYieldAnd2tasks() =
+        task {
+            let! _ = Task.Yield()
+            and! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2tasksAndValueTask() =
+        task {
+            let! x = Task.FromResult(1)
+            and! y = Task.FromResult(2)
+            and! z = ValueTask<int>(Task.FromResult(3))
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2asyncs() =
+        task {
+            let! x = async { return 1 }
+            and! y = async { return 2 }
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge3asyncs() =
+        task {
+            let! x = async { return 1 }
+            and! y = async { return 2 }
+            and! z = async { return 3 }
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeYieldAndAsync() =
+        task {
+            let! _ = Task.Yield()
+            and! y = async { return 1 }
+            return y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeAsyncAndYield() =
+        task {
+            let! x = async { return 1 }
+            and! _ = Task.Yield()
+            return x
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 1 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeYieldAnd2asyncs() =
+        task {
+            let! _ = Task.Yield()
+            and! x = async { return 1 }
+            and! y = async { return 2 }
+            return x + y
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 3 then failwith "failed"
+
+    [<Fact>]
+    member _.merge2asyncsAndValueTask() =
+        task {
+            let! x = async { return 1 }
+            and! y = async { return 2 }
+            and! z = ValueTask<int>(Task.FromResult(3))
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
+    [<Fact>]
+    member _.mergeBackgroundTask() =
+        backgroundTask {
+            let! x = async { return 1 }
+            and! y = task { return 2 }
+            and! z = ValueTask<int>(Task.FromResult(3))
+            return x + y + z
+        }
+        |> fun t -> 
+            t.Wait()
+            if t.Result <> 6 then failwith "failed"
+
 exception TestException of string
 
 [<AutoOpen>]
@@ -192,6 +365,7 @@ module Helpers =
     let require x msg = if not x then failwith msg
     let failtest str = raise (TestException str)
 
+[<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type Basics() = 
     [<Fact>]
     member _.testShortCircuitResult() =
@@ -236,15 +410,16 @@ type Basics() =
     [<Fact>]
     member _.testNonBlocking() =
         printfn "Running testNonBlocking..."
-        let sw = Stopwatch()
-        sw.Start()
+        let allowContinue = new SemaphoreSlim(0)
+        let finished = new ManualResetEventSlim()
         let t =
             task {
-                do! Task.Yield()
+                do! allowContinue.WaitAsync()
                 Thread.Sleep(100)
+                finished.Set()
             }
-        sw.Stop()
-        require (sw.ElapsedMilliseconds < 50L) "sleep blocked caller"
+        allowContinue.Release() |> ignore
+        require (not finished.IsSet) "sleep blocked caller"
         t.Wait()
 
     [<Fact>]
@@ -293,6 +468,33 @@ type Basics() =
         t.Wait()
         require (y = 1) "bailed after exn"
         require (x = 0) "ran past failure"
+
+    [<Fact>]
+    member _.testCatchingInApplicative() =
+        printfn "Running testCatchingInApplicative..."
+        let mutable x = 0
+        let mutable y = 0
+        let t =
+            task {
+                try
+                    let! _ = task { 
+                        do! Task.Delay(100)
+                        x <- 1
+                    }
+                    and! _ = task { 
+                        failtest "hello"
+                    }
+                    ()
+                with
+                | TestException msg ->
+                    require (msg = "hello") "message tampered"
+                | _ ->
+                    require false "other exn type"
+                y <- 1
+            }
+        t.Wait()
+        require (y = 1) "bailed after exn"
+        require (x = 1) "exit too early"
 
     [<Fact>]
     member _.testNestedCatching() =
@@ -908,58 +1110,60 @@ type Basics() =
     [<Fact>]
     member _.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
-        for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+        for i in 1 .. 5 do
+            use stepOutside = new SemaphoreSlim(0)
+            use ranInitial = new ManualResetEventSlim()
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 task {
                     try
-                        ranInitial <- true
+                        ranInitial.Set()
                         do! Task.Yield()
                         Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
+                        ranNext.Set()
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "finally exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            require ranInitial.IsSet "didn't run initial"
+            require (not ranNext.IsSet) "ran next too early"
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
 
     [<Fact>]
     member _.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
         for i in 1 .. 5 do 
-            let mutable ranInitial = false
-            let mutable ranNext = false
+            use ranInitial = new ManualResetEventSlim()
+            use continueTask = new SemaphoreSlim(0)
+            use ranNext = new ManualResetEventSlim()
             let mutable ranFinally = 0
             let t =
                 task {
                     try
-                        ranInitial <- true
+                        ranInitial.Set()
+                        do! continueTask.WaitAsync()
+                        ranNext.Set()
                         do! Task.Yield()
-                        Thread.Sleep(100) // shouldn't be blocking so we should get through to requires before this finishes
-                        ranNext <- true
                         failtest "uhoh"
                     finally
                         ranFinally <- ranFinally + 1
                         failtest "2nd exn!"
                 }
-            require ranInitial "didn't run initial"
-            require (not ranNext) "ran next too early"
+            ranInitial.Wait()
+            continueTask.Release() |> ignore
             try
                 t.Wait()
                 require false "shouldn't get here"
             with
             | _ -> ()
-            require ranNext "didn't run next"
+            require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]
@@ -1198,8 +1402,6 @@ type Basics() =
         }
         |> ignore
 
-[<CollectionDefinition("BasicsNotInParallel", DisableParallelization = true)>]
-type BasicsNotInParallel() = 
 
     [<Fact; >]
     member _.testTaskUsesSyncContext() =
@@ -1374,7 +1576,7 @@ module Issue12184c =
         task {
             // The overload resolution for Bind commits to 'Task<_>' via overload since no type annotation is available
             //
-            // This should not do an early commit to "task like" nor propogate SRTP constraints from the task-like overload for Bind.
+            // This should not do an early commit to "task like" nor propagate SRTP constraints from the task-like overload for Bind.
             let! result = t
             return result
         }

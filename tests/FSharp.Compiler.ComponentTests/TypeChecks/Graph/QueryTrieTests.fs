@@ -1,7 +1,8 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.Graph.QueryTrieTests
+﻿module TypeChecks.QueryTrieTests
 
 open System.Collections.Generic
-open NUnit.Framework
+open System.Collections.Immutable
+open Xunit
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.GraphChecking.DependencyResolution
 
@@ -35,7 +36,7 @@ let private nestedModule name content =
 
 let private prefIdent (lid: string) =
     let parts = lid.Split(".")
-    Array.take (parts.Length - 1) parts |> List.ofArray |> PrefixedIdentifier
+    Array.take (parts.Length - 1) parts |> List.ofArray |> FileContentEntry.PrefixedIdentifier
 
 // Some hardcoded files that reflect the file content of the first files in the Fantomas.Core project.
 // See https://github.com/fsprojects/fantomas/tree/0938a3daabec80a22d2e17f82aba38456bb793df/src/Fantomas.Core
@@ -614,15 +615,12 @@ let private files =
     |]
 
 let dictionary<'key, 'value when 'key: equality> (entries: ('key * 'value) seq) =
-    let dict = Dictionary(Seq.length entries)
+    entries
+    |> Seq.map KeyValuePair
+    |> ImmutableDictionary.CreateRange
 
-    for k, v in entries do
-        dict.Add(k, v)
-
-    dict
-
-let private noChildren = Dictionary(0)
-let emptyHS () = HashSet(0)
+let private noChildren = ImmutableDictionary.Empty
+let emptyHS () = ImmutableHashSet.Empty
 
 let indexOf name =
     Array.find (fun (fc: FileContent) -> fc.FileName = name) files |> fun fc -> fc.Idx
@@ -636,7 +634,7 @@ let private fantomasCoreTrie: TrieNode =
                 [|
                     "System",
                     {
-                        Current = TrieNodeInfo.Namespace("System", emptyHS ())
+                        Current = TrieNodeInfo.Namespace("System", emptyHS (), emptyHS ())
                         Children =
                             dictionary
                                 [|
@@ -649,13 +647,35 @@ let private fantomasCoreTrie: TrieNode =
                     }
                     "Fantomas",
                     {
-                        Current = TrieNodeInfo.Namespace("Fantomas", emptyHS ())
+                        Current =
+                            TrieNodeInfo.Namespace(
+                                "Fantomas",
+                                emptyHS (),
+                                ImmutableHashSet.CreateRange [|
+                                   indexOf "ISourceTextExtensions.fs"
+                                   indexOf "RangeHelpers.fs"
+                                   indexOf "AstExtensions.fs"
+                                   indexOf "TriviaTypes.fs"
+                                   indexOf "Utils.fs"
+                                   indexOf "SourceParser.fs"
+                               |])
                         Children =
                             dictionary
                                 [|
                                     "Core",
                                     {
-                                        Current = TrieNodeInfo.Namespace("Core", emptyHS ())
+                                        Current =
+                                            TrieNodeInfo.Namespace(
+                                                "Core",
+                                                emptyHS (),
+                                                ImmutableHashSet.CreateRange [|
+                                                   indexOf "ISourceTextExtensions.fs"
+                                                   indexOf "RangeHelpers.fs"
+                                                   indexOf "AstExtensions.fs"
+                                                   indexOf "TriviaTypes.fs"
+                                                   indexOf "Utils.fs"
+                                                   indexOf "SourceParser.fs"
+                                               |])
                                         Children =
                                             dictionary
                                                 [|
@@ -737,24 +757,24 @@ let private fantomasCoreTrie: TrieNode =
                 |]
     }
 
-[<Test>]
-let ``Query non existing node in trie`` () =
+[<Fact>]
+let ``Query nonexistent node in trie`` () =
     let result =
         queryTrie fantomasCoreTrie [ "System"; "System"; "Runtime"; "CompilerServices" ]
 
     match result with
-    | QueryTrieNodeResult.NodeDoesNotExist -> Assert.Pass()
+    | QueryTrieNodeResult.NodeDoesNotExist -> ()
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
-[<Test>]
+[<Fact>]
 let ``Query node that does not expose data in trie`` () =
     let result = queryTrie fantomasCoreTrie [ "Fantomas"; "Core" ]
 
     match result with
-    | QueryTrieNodeResult.NodeDoesNotExposeData -> Assert.Pass()
+    | QueryTrieNodeResult.NodeDoesNotExposeData -> ()
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
-[<Test>]
+[<Fact>]
 let ``Query module node that exposes one file`` () =
     let result =
         queryTrie fantomasCoreTrie [ "Fantomas"; "Core"; "ISourceTextExtensions" ]
@@ -762,30 +782,16 @@ let ``Query module node that exposes one file`` () =
     match result with
     | QueryTrieNodeResult.NodeExposesData file ->
         let file = Seq.exactlyOne file
-        Assert.AreEqual(indexOf "ISourceTextExtensions.fs", file)
+        Assert.Equal(indexOf "ISourceTextExtensions.fs", file)
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
-[<Test>]
+[<Fact>]
 let ``ProcessOpenStatement full path match`` () =
-    let sourceParser =
-        Array.find (fun (f: FileContent) -> f.FileName = "SourceParser.fs") files
-
     let state =
-        FileContentQueryState.Create
-            sourceParser.Idx
-            (set
-                [|
-                    indexOf "AssemblyInfo.fs"
-                    indexOf "ISourceTextExtensions.fs"
-                    indexOf "RangeHelpers.fs"
-                    indexOf "AstExtensions.fsi"
-                    indexOf "TriviaTypes.fs"
-                    indexOf "Utils.fs"
-                |])
-            Set.empty
+        FileContentQueryState.Create Set.empty
 
     let result =
-        processOpenPath (queryTrie fantomasCoreTrie) [ "Fantomas"; "Core"; "AstExtensions" ] state
+        processOpenPath fantomasCoreTrie [ "Fantomas"; "Core"; "AstExtensions" ] state
 
     let dep = Seq.exactlyOne result.FoundDependencies
-    Assert.AreEqual(indexOf "AstExtensions.fsi", dep)
+    Assert.Equal(indexOf "AstExtensions.fsi", dep)

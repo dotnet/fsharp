@@ -4,11 +4,10 @@ namespace Tests.Compiler.InternalCollections
 
 open System
 open System.IO
-open NUnit.Framework
+open Xunit
 open Internal.Utilities.Collections
        
                 
-[<TestFixture>] 
 type MruCache = 
     new() = { }        
 
@@ -23,23 +22,23 @@ type MruCache =
     member private rb.NumToStringBox n = box (rb.NumToString n)
 
 #if DISABLED_OLD_UNITTESTS
-    [<Test>]
+    [<Fact>]
     member public rb.Basic() = 
         let m = new MruCache<int,string>(3, (fun (x,y) -> x = y))
         let s = m.Get(5)
-        Assert.IsTrue("Five"=s)
+        Assert.True("Five"=s)
         let s = m.Get(6)
-        Assert.IsTrue("Six"=s)
+        Assert.True("Six"=s)
         let s = m.Get(7)
-        Assert.IsTrue("Seven"=s)
+        Assert.True("Seven"=s)
         let s = m.Get(8)
-        Assert.IsTrue("Eight"=s)
+        Assert.True("Eight"=s)
         let (i,s) = Option.get m.MostRecent
-        Assert.AreEqual(8,i)
-        Assert.IsTrue("Eight"=s)
+        Assert.Equal(8,i)
+        Assert.True("Eight"=s)
         ()
 
-    [<Test>]
+    [<Fact>]
     member public rb.MostRecentOfEmpty() = 
         let m = new MruCache<int,string>(3, rb.NumToString, (fun (x,y) -> x = y))
         match m.MostRecent with
@@ -47,21 +46,21 @@ type MruCache =
             | None->()
 
 
-    [<Test>]
+    [<Fact>]
     member public rb.SetAlternate() = 
         let m = new MruCache<int,string>(3, rb.NumToString, (fun (x,y) -> x = y))
         m.SetAlternate(2,"Banana")
         let (i,s) = Option.get m.MostRecent
-        Assert.AreEqual(2,i)
-        Assert.IsTrue("Banana"=s)
+        Assert.Equal(2,i)
+        Assert.True("Banana"=s)
             
     member private rb.AddBanana(m:MruCache<int,obj>) = 
         let banana = new obj()
         m.SetAlternate(2,banana)
         let s = m.Get(2)
-        Assert.AreEqual(banana,s)                    
+        Assert.Equal(banana,s)                    
             
-    [<Test>]
+    [<Fact>]
     member public rb.CacheDepthIsHonored() = 
         let m = new MruCache<int,obj>(3, rb.NumToStringBox, (fun (x,y) -> x = y))
         rb.AddBanana(m) // Separate function to keep 'banana' out of registers
@@ -70,9 +69,9 @@ type MruCache =
         let _ = m.Get(5)
         GC.Collect()
         let s = m.Get(2)
-        Assert.IsTrue("Two"=downcast s)
+        Assert.True("Two"=downcast s)
             
-    [<Test>]
+    [<Fact>]
     member public rb.SubsumptionIsHonored() = 
         let PairToString (s,n) = rb.NumToString n
         let AreSameForSubsumption((s1,n1),(s2,n2)) = n1=n2
@@ -80,13 +79,13 @@ type MruCache =
         let m = new MruCache<string*int,string>(3, PairToString, (fun (x,y) -> x = y), areSimilar=AreSameForSubsumption)
         m.SetAlternate(("x",2),"Banana")
         let s = m.Get (("x",2))
-        Assert.IsTrue("Banana"=s, "Check1")                                      
+        Assert.True("Banana"=s, "Check1")                                      
         let s = m.Get (("y",2))
-        Assert.IsTrue("Two"=s, "Check2")                                      
+        Assert.True("Two"=s, "Check2")                                      
         let s = m.Get (("x",2))
-        Assert.IsTrue("Two"=s, "Check3") // Not banana because it was subsumed
+        Assert.True("Two"=s, "Check3") // Not banana because it was subsumed
 
-    [<Test>]
+    [<Fact>]
     member public rb.OnDiscardIsHonored() = 
         
         let AreSameForSubsumption((s1,n1),(s2,n2)) = s1=s2
@@ -95,27 +94,26 @@ type MruCache =
         let m = new MruCache<string*int,string>(compute=fst, areSimilar=(fun (x,y) -> x = y), areSimilar=AreSameForSubsumption, keepStrongly=2, keepMax=2, onDiscard=(fun s -> discarded := s :: !discarded))
         m.SetAlternate(("x",1),"Banana") // no discard
         printfn "discarded = %A" discarded.Value
-        Assert.IsTrue(discarded.Value = [], "Check1")                                      
+        Assert.True(discarded.Value = [], "Check1")                                      
         m.SetAlternate(("x",2),"Apple") // forces discard of x --> Banana
         printfn "discarded = %A" discarded.Value
-        Assert.IsTrue(discarded.Value = ["Banana"], "Check2")                                      
+        Assert.True(discarded.Value = ["Banana"], "Check2")                                      
         let s = m.Get (("x",3))
         printfn "discarded = %A" discarded.Value
-        Assert.IsTrue(discarded.Value = ["Apple"; "Banana"], "Check3")                                      
+        Assert.True(discarded.Value = ["Apple"; "Banana"], "Check3")                                      
         let s = m.Get (("y",4))
         printfn "discarded = %A" discarded.Value
-        Assert.IsTrue(discarded.Value = ["Apple"; "Banana"], "Check4")                                      
+        Assert.True(discarded.Value = ["Apple"; "Banana"], "Check4")                                      
         let s = m.Get (("z",5)) // forces discard of x --> Bananas
         printfn "discarded = %A" discarded.Value
-        Assert.IsTrue(discarded.Value = ["x"; "Apple";"Banana"], "Check5")                                      
+        Assert.True(discarded.Value = ["x"; "Apple";"Banana"], "Check5")                                      
         let s = m.Get (("w",6)) // forces discard of y
         printfn "discarded = %A" discarded.Value
-        Assert.IsTrue(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
+        Assert.True(discarded.Value = ["y";"x";"Apple";"Banana"], "Check6")                                      
 #endif
 
 type AccessToken() = class end
             
-[<TestFixture>] 
 type AgedLookup() = 
     let mutable hold197 : byte [] = null
     let mutable hold198 : byte [] = null
@@ -127,17 +125,17 @@ type AgedLookup() =
             
         let AssertCached(i,o:byte array) = 
             match al.TryPeekKeyValue(atok,i) with
-            | Some(_,x) -> Assert.IsTrue(obj.ReferenceEquals(o,x), sprintf "Object in cache (%d) does not agree with expectation (%d)" x.[0] i)
-            | None -> Assert.IsTrue(false, "Object fell out of cache")
+            | Some(_,x) -> Assert.True(obj.ReferenceEquals(o,x), sprintf "Object in cache (%d) does not agree with expectation (%d)" x.[0] i)
+            | None -> Assert.True(false, "Object fell out of cache")
                 
         let AssertExistsInCached(i) = 
             match al.TryPeekKeyValue(atok,i) with
             | Some _ -> ()
-            | None -> Assert.IsTrue(false, "Object fell out of cache")                
+            | None -> Assert.True(false, "Object fell out of cache")                
                 
         let AssertNotCached(i) = 
             match al.TryPeekKeyValue(atok,i) with
-            | Some _ -> Assert.IsTrue(false, "Expected key to have fallen out of cache")     
+            | Some _ -> Assert.True(false, "Expected key to have fallen out of cache")     
             | None -> ()         
             
         let f() =
@@ -215,7 +213,7 @@ type AgedLookup() =
         GC.Collect()
         
         
-    [<Test>] member public rb.WeakRef0() = WeakRefTest 0
-    [<Test>] member public rb.WeakRef1() = WeakRefTest 1
-    [<Test>] member public rb.WeakRef2() = WeakRefTest 2
-    [<Test>] member public rb.WeakRef3() = WeakRefTest 3
+    [<Fact>] member public rb.WeakRef0() = WeakRefTest 0
+    [<Fact>] member public rb.WeakRef1() = WeakRefTest 1
+    [<Fact>] member public rb.WeakRef2() = WeakRefTest 2
+    [<Fact>] member public rb.WeakRef3() = WeakRefTest 3

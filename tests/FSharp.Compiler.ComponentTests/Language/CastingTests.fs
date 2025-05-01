@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests
+namespace Language
 
 open Xunit
 open FSharp.Test.Compiler
@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module CastingTests =
 
     [<Fact>]
-    let ``Compile: ValueTuple.Create(1,1) :> IComparable<ValueTuple<int,int>>`` () =
+    let ``Compile: (System.ValueTuple.Create(1,1)) :> IComparable<ValueTuple<int,int>>`` () =
         FSharp """
 module One
 open System
@@ -47,7 +47,7 @@ printfn "%A" y
          |> shouldSucceed
 
     [<Fact>]
-    let ``Script: ValueTuple.Create(0,0) :> IComparable<ValueTuple<int,int>>`` () =
+    let ``Script: (System.ValueTuple.Create(0,0)) :> IComparable<ValueTuple<int,int>>`` () =
         Fsx """
 module One
 open System

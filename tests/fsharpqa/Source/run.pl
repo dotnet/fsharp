@@ -426,7 +426,7 @@ sub RunCompilerCommand {
         # send current directory and full command line to the compiler host process
         print $remote "$currDir|||$compiler_command";
 
-        # first line of respone is the exit code
+        # first line of response is the exit code
         my $ExitCode = 0 + <$remote>;
 
         # remainder of response is output of compiler
@@ -478,7 +478,7 @@ sub RunCommand {
   @CommandOutput = <COMMAND>;
   close COMMAND;
   my $result = $?;
-#  close STDERR; open STDERR, ">&SAVEERR"; #resore stderr
+#  close STDERR; open STDERR, ">&SAVEERR"; #restore stderr
 
   print(join("\n", @CommandOutput)) if ($dumpOutput == 1);
 

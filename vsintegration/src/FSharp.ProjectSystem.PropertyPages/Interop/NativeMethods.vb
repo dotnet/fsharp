@@ -119,7 +119,7 @@ Namespace Microsoft.VisualStudio.Editors.Interop
                     End Try
 
                     If connectionPoint Is Nothing Then
-                        ex = New ArgumentException(String.Format("The source object does not expose the {0} event inteface.", eventInterface.Name))
+                        ex = New ArgumentException(String.Format("The source object does not expose the {0} event interface.", eventInterface.Name))
                     Else
                         Try
                             connectionPoint.Advise(sink, cookie)
@@ -140,7 +140,7 @@ Namespace Microsoft.VisualStudio.Editors.Interop
                     End Try
 
                     If connectionPoint2 Is Nothing Then
-                        ex = New ArgumentException(String.Format("The source object does not expose the {0} event inteface.", eventInterface.Name))
+                        ex = New ArgumentException(String.Format("The source object does not expose the {0} event interface.", eventInterface.Name))
                     Else
                         Dim cookie2 As Integer
                         Try

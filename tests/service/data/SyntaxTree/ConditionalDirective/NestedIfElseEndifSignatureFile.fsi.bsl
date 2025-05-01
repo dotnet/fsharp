@@ -9,8 +9,8 @@ SigFile
                 ([], SynIdent (v, None), SynValTyparDecls (None, true),
                  LongIdent (SynLongIdent ([int], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 Some (Const (Int32 3, (12,8--12,9))), (4,0--12,9),
+                 PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
+                 Single None, Some (Const (Int32 3, (12,8--12,9))), (4,0--12,9),
                  { LeadingKeyword = Val (4,0--4,3)
                    InlineKeyword = None
                    WithKeyword = None

@@ -8,14 +8,13 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Core
+open Internal.Utilities.Library
 
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
 
-    type private TypeInThisAssembly =
-        class
-        end
+    type private TypeInThisAssembly = class end
 
     /// The F# version reported in the banner
     let FSharpBannerVersion =
@@ -23,13 +22,16 @@ module internal FSharpEnvironment =
 
     let FSharpProductName = UtilsStrings.SR.buildProductName (FSharpBannerVersion)
 
-    let versionOf<'t> = typeof<'t>.Assembly.GetName().Version.ToString()
+    let versionOf<'t> : MaybeNull<string> =
+        match typeof<'t>.Assembly.GetName().Version with
+        | null -> null
+        | v -> v.ToString()
 
     let FSharpCoreLibRunningVersion =
         try
             match versionOf<Unit> with
             | null -> None
-            | "" -> None
+            | s when String.IsNullOrEmpty(s) -> None
             | s -> Some(s)
         with _ ->
             None
@@ -41,7 +43,9 @@ module internal FSharpEnvironment =
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
     let isRunningOnCoreClr =
-        typeof<obj>.Assembly.FullName.StartsWith ("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+        match typeof<obj>.Assembly.FullName with
+        | null -> false
+        | name -> name.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     module Option =
         /// Convert string into Option string where null and String.Empty result in None
@@ -69,7 +73,7 @@ module internal FSharpEnvironment =
         try
             // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
             match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
-            | result when not (String.IsNullOrWhiteSpace result) -> Some result
+            | result when not (String.IsNullOrWhiteSpace result) -> Some !!result
             | _ ->
                 let safeExists f =
                     (try
@@ -83,7 +87,8 @@ module internal FSharpEnvironment =
                 | _ ->
                     let fallback () =
                         let d = Assembly.GetExecutingAssembly()
-                        Some(Path.GetDirectoryName d.Location)
+
+                        Some(!!Path.GetDirectoryName(d.Location))
 
                     match tryCurrentDomain () with
                     | None -> fallback ()
@@ -104,6 +109,7 @@ module internal FSharpEnvironment =
     let toolingCompatibleVersions =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [|
+                "net481"
                 "net48"
                 "net472"
                 "net471"
@@ -117,6 +123,8 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net9.0"
+                "net8.0"
                 "net7.0"
                 "net6.0"
                 "net5.0"
@@ -161,12 +169,8 @@ module internal FSharpEnvironment =
         }
 
     let getTypeProviderAssembly
-        (
-            runTimeAssemblyFileName: string,
-            designTimeAssemblyName: string,
-            compilerToolPaths: string list,
-            raiseError
-        ) =
+        (runTimeAssemblyFileName: string, designTimeAssemblyName: string, compilerToolPaths: string list, raiseError)
+        =
         // Find and load the designer assembly for the type provider component.
         // We look in the directories stepping up from the location of the runtime assembly.
         let loadFromLocation designTimeAssemblyPath =
@@ -179,10 +183,10 @@ module internal FSharpEnvironment =
             seq {
                 match path with
                 | None -> ()
-                | Some (p: string) ->
+                | Some(p: string) ->
                     match Path.GetDirectoryName(p) with
-                    | s when s = "" || s = null || Path.GetFileName(p) = "packages" || s = p -> ()
-                    | parentDir -> yield! searchParentDirChain (Some parentDir) assemblyName
+                    | s when String.IsNullOrEmpty(s) || Path.GetFileName(p) = "packages" || s = p -> ()
+                    | parentDir -> yield! searchParentDirChain (Option.ofObj parentDir) assemblyName
 
                 for p in searchToolPaths path compilerToolPaths do
                     let fileName = Path.Combine(p, assemblyName)
@@ -193,7 +197,9 @@ module internal FSharpEnvironment =
 
         let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName =
             let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-            let paths = searchParentDirChain (Some runTimeAssemblyPath) designTimeAssemblyName
+
+            let paths =
+                searchParentDirChain (Option.ofObj runTimeAssemblyPath) designTimeAssemblyName
 
             paths
             |> Seq.tryHead
@@ -201,7 +207,7 @@ module internal FSharpEnvironment =
                 | Some res -> loadFromLocation res
                 | None ->
                     // The search failed, just load from the first location and report an error
-                    let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
+                    let runTimeAssemblyPath = !!Path.GetDirectoryName(runTimeAssemblyFileName)
                     loadFromLocation (Path.Combine(runTimeAssemblyPath, designTimeAssemblyName))
 
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
@@ -212,9 +218,9 @@ module internal FSharpEnvironment =
             // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
             // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
             // and will always succeed.
-            let name = AssemblyName(Path.GetFileNameWithoutExtension designTimeAssemblyName)
+            let name = AssemblyName(!!Path.GetFileNameWithoutExtension(designTimeAssemblyName))
 
-            if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
+            if name.FullName.Equals(name.Name, StringComparison.OrdinalIgnoreCase) then
                 let designTimeFileName = designTimeAssemblyName + ".dll"
                 loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeFileName
             else
@@ -234,7 +240,8 @@ module internal FSharpEnvironment =
     let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =
         let location =
             try
-                Some(Path.GetDirectoryName(defaultLocation.Assembly.Location))
+                let directory = Path.GetDirectoryName(defaultLocation.Assembly.Location)
+                Option.ofObj (directory)
             with _ ->
                 None
 
@@ -263,7 +270,7 @@ module internal FSharpEnvironment =
 
     // Must be alongside the location of FSharp.CompilerService.dll
     let getDefaultFsiLibraryLocation () =
-        Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
+        Path.Combine(!!Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -283,7 +290,7 @@ module internal FSharpEnvironment =
             if String.IsNullOrEmpty(pf) then
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
             else
-                pf
+                !!pf
 
         let candidate = Path.Combine(pf, "dotnet", dotnet)
 
@@ -297,7 +304,7 @@ module internal FSharpEnvironment =
         // How to find dotnet.exe --- woe is me; probing rules make me sad.
         // Algorithm:
         // 1. Look for DOTNET_HOST_PATH environment variable
-        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
+        //    this is the main user programmable override .. provided by user to find a specific dotnet.exe
         // 2. Probe for are we part of an .NetSDK install
         //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
         //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
@@ -308,20 +315,23 @@ module internal FSharpEnvironment =
         let probePathForDotnetHost () =
             let paths =
                 let p = Environment.GetEnvironmentVariable("PATH")
-                if not (isNull p) then p.Split(Path.PathSeparator) else [||]
+
+                match p with
+                | null -> [||]
+                | p -> p.Split(Path.PathSeparator)
 
             paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
 
         match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
         // Value set externally
-        | value when not (String.IsNullOrEmpty(value)) && fileExists value -> Some value
+        | NonEmptyString value when fileExists value -> Some value
         | _ ->
             // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
             let candidate =
                 let assemblyLocation =
                     Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
 
-                Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", dotnet))
+                Path.GetFullPath(Path.Combine(!!assemblyLocation, "..", "..", "..", dotnet))
 
             if fileExists candidate then
                 Some candidate
@@ -339,12 +349,12 @@ module internal FSharpEnvironment =
         [|
             match getDotnetHostPath (), getDotnetGlobalHostPath () with
             | Some hostPath, Some globalHostPath ->
-                yield Path.GetDirectoryName(hostPath)
+                yield !!Path.GetDirectoryName(hostPath)
 
                 if isDotnetMultilevelLookup && hostPath <> globalHostPath then
-                    yield Path.GetDirectoryName(globalHostPath)
-            | Some hostPath, None -> yield Path.GetDirectoryName(hostPath)
-            | None, Some globalHostPath -> yield Path.GetDirectoryName(globalHostPath)
+                    yield !!Path.GetDirectoryName(globalHostPath)
+            | Some hostPath, None -> yield !!Path.GetDirectoryName(hostPath)
+            | None, Some globalHostPath -> yield !!Path.GetDirectoryName(globalHostPath)
             | None, None -> ()
         |]
 

@@ -55,16 +55,30 @@ module FSharpDependencyManager =
                 Version = ver
                 RestoreSources = src
                 Script = script
+                UsePackageTargets = usePackageTargets
             } =
             p
 
+        let usePackageTargets =
+            match usePackageTargets with
+            | false -> "ExcludeAssets='build;buildTransitive;buildMultitargeting'"
+            | true -> ""
+
         seq {
             match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
-            | true, true, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' /></ItemGroup>" inc ver
+            | true, true, false ->
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' %s /></ItemGroup>" inc ver usePackageTargets
             | true, true, true ->
-                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' /></ItemGroup>" inc ver script
-            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' /></ItemGroup>" inc
-            | true, false, true -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
+                yield
+                    sprintf
+                        @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' %s /></ItemGroup>"
+                        inc
+                        ver
+                        script
+                        usePackageTargets
+            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' %s /></ItemGroup>" inc usePackageTargets
+            | true, false, true ->
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' %s /></ItemGroup>" inc script usePackageTargets
             | _ -> ()
 
             match not (String.IsNullOrEmpty(src)) with
@@ -96,6 +110,7 @@ module FSharpDependencyManager =
                         Version = "*"
                         RestoreSources = ""
                         Script = ""
+                        UsePackageTargets = false
                     }
 
             match options with
@@ -114,11 +129,20 @@ module FSharpDependencyManager =
 
                 let setVersion v = Some { current with Version = v }
 
+                let setUsePackageTargets v =
+                    Some { current with UsePackageTargets = v }
+
                 match opt with
                 | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "include", None -> raise (ArgumentException(SR.requiresAValue ("Include")))
                 | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "usepackagetargets", v ->
+                    match v with
+                    | Some v when v.ToLowerInvariant() = "true" -> setUsePackageTargets true
+                    | Some v when v.ToLowerInvariant() = "false" -> setUsePackageTargets false
+                    | _ -> raise (ArgumentException(SR.invalidBooleanValue ("usepackagetargets")))
+                    |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "restoresources", Some v ->
                     Some
                         { current with
@@ -199,12 +223,8 @@ module FSharpDependencyManager =
         |> (fun l -> l, binLogPath, timeout)
 
     let computeHashForResolutionInputs
-        (
-            scriptExt: string,
-            directiveLines: (string * string) seq,
-            targetFrameworkMoniker: string,
-            runtimeIdentifier: string
-        ) : string option =
+        (scriptExt: string, directiveLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string)
+        : string option =
 
         let packageReferences, _, _ =
             directiveLines |> List.ofSeq |> parsePackageDirective scriptExt
@@ -212,12 +232,12 @@ module FSharpDependencyManager =
         let referencesHaveWildCardVersion =
             // Verify to see if the developer specified a wildcard version.  If they did then caching is not possible
             let hasWildCardVersion p =
-                // Todo: named record please
                 let {
                         Include = package
                         Version = ver
                         RestoreSources = _
                         Script = _
+                        UsePackageTargets = _
                     } =
                     p
 
@@ -237,7 +257,7 @@ module FSharpDependencyManager =
                 |> Seq.distinct
                 |> Seq.toArray
                 |> Seq.sort
-                |> Seq.fold (fun acc s -> acc + s) ""
+                |> Seq.fold (+) ""
 
             let value =
                 $"""Tfm={targetFrameworkMoniker}:Rid={runtimeIdentifier}:PackageReferences={packageReferenceText}:Ext={match scriptExt with
@@ -251,16 +271,9 @@ module FSharpDependencyManager =
 
 /// The results of ResolveDependencies
 type ResolveDependenciesResult
-    (
-        success: bool,
-        stdOut: string array,
-        stdError: string array,
-        resolutions: string seq,
-        sourceFiles: string seq,
-        roots: string seq
-    ) =
+    (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
-    /// Succeded?
+    /// Succeeded?
     member _.Success = success
 
     /// The resolution output log
@@ -312,7 +325,19 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
         //   if a path was supplied if it was rooted then use the rooted path as the root
         //   if the path wasn't supplied or not rooted use the temp directory as the root.
         let specialDir =
-            Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".packagemanagement", "nuget")
+            let getProfilePath =
+                // If it has a directory separator remove it
+                let path = Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile)
+
+                if
+                    (path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                    || (path.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                then
+                    path.Substring(0, path.Length - 1)
+                else
+                    path
+            // Build path to cache root
+            $"{getProfilePath}/.packagemanagement/nuget"
 
         let path =
             Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--" + Guid.NewGuid().ToString())
@@ -405,7 +430,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     let tryGetResultsForResolutionHash hash (projectDirectory: Lazy<string>) : PackageBuildResolutionResult option =
         match hash with
-        | Some hash when useResultsCache = true ->
+        | Some hash when useResultsCache ->
             let resolutionsFile =
                 Path.Combine(cacheDirectory.Value, (hash + ".resolvedReferences.paths"))
 

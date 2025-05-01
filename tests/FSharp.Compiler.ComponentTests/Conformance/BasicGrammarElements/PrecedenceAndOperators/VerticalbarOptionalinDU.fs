@@ -3,5 +3,5 @@
 
 
 
-type Monchrome = 
+type Monochrome = 
      Black = 0

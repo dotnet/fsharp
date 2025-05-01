@@ -18,3 +18,6 @@ val TransformAstForNestedUpdates<'a> :
     exprBeingAssigned: SynExpr ->
     withExpr: SynExpr * (range * 'a) ->
         (Ident list * Ident) * SynExpr option
+
+val BindOriginalRecdExpr:
+    withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr

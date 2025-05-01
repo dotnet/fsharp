@@ -2,19 +2,20 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``Decimal Constants`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Product of decimal constants``() =
         let oneOfOneMiDec = 1.0E-6M
         let oneMiDec      = 1.0E+6M
 
         Assert.areEqual 1.0M (oneOfOneMiDec * oneMiDec)
 
-    [<Test>]
+    [<Fact>]
     let ``Sum of decimal constants``() =
         let x = 
             1.0E0M 
@@ -38,13 +39,13 @@ module ``Decimal Constants`` =
 
         Assert.areEqual 987654321.123456789M x
 
-    [<Test>]
+    [<Fact>]
     let ``Sum of decimal literals with leading zero in exponential``() =
         let x = 1.0E00M + 2.0E01M + 3.E02M + 1.E-01M + 2.0E-02M
 
         Assert.areEqual 321.12M x
 
-    [<Test>]
+    [<Fact>]
     let ``Non-representable small values are rounded to zero``() =
         // This test involves rounding of decimals. The F# design is to follow the BCL.
         // This means that the behavior is not deterministic, e.g. Mono and NetFx4 round; NetFx2 gives an error

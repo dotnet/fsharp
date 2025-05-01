@@ -27,7 +27,7 @@ type public Fsc() as this =
     let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
-    let mutable compressMetadata = false
+    let mutable compressmetadata: bool option = None
     let mutable debugSymbols = false
     let mutable debugType: string MaybeNull = null
     let mutable defineConstants: ITaskItem[] = [||]
@@ -49,6 +49,7 @@ type public Fsc() as this =
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
     let mutable outputRefAssembly: string MaybeNull = null
+    let mutable parallelCompilation: bool option = None
     let mutable pathMap: string MaybeNull = null
     let mutable pdbFile: string MaybeNull = null
     let mutable platform: string MaybeNull = null
@@ -56,6 +57,7 @@ type public Fsc() as this =
     let mutable preferredUILang: string MaybeNull = null
     let mutable publicSign: bool = false
     let mutable provideCommandLineArgs: bool = false
+    let mutable realsig: bool option = None
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
     let mutable refOnly: bool = false
@@ -67,7 +69,6 @@ type public Fsc() as this =
     let mutable tailcalls: bool = true
     let mutable targetProfile: string MaybeNull = null
     let mutable targetType: string MaybeNull = null
-    let mutable toolExe: string = "fsc.exe"
 
     let defaultToolPath =
         let locationOfThisDll =
@@ -94,6 +95,7 @@ type public Fsc() as this =
     let mutable vslcid: string MaybeNull = null
     let mutable utf8output: bool = false
     let mutable useReflectionFreeCodeGen: bool = false
+    let mutable nullable: bool option = None
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
@@ -107,7 +109,7 @@ type public Fsc() as this =
 
             array
             |> Array.map (fun item -> item.Trim(wsCharsToTrim))
-            |> Array.filter (fun s -> not (String.IsNullOrEmpty s))
+            |> Array.filter (String.IsNullOrEmpty >> not)
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
@@ -166,8 +168,7 @@ type public Fsc() as this =
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
 
         // CompressMetadata
-        if compressMetadata then
-            builder.AppendSwitch("--compressmetadata")
+        builder.AppendOptionalSwitch("--compressmetadata", compressmetadata)
 
         // DefineConstants
         for item in defineConstants do
@@ -194,9 +195,20 @@ type public Fsc() as this =
         else
             builder.AppendSwitch("--optimize-")
 
+        // realsig
+        builder.AppendOptionalSwitch("--realsig", realsig)
+
         // Tailcalls
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
+
+        // Nullables
+        match nullable with
+        | Some true ->
+            builder.AppendSwitch("--checknulls+")
+            builder.AppendSwitch("--define:NULLABLE")
+        | Some false -> builder.AppendSwitch("--checknulls-")
+        | None -> ()
 
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
@@ -223,16 +235,13 @@ type public Fsc() as this =
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull(
             "--checksumalgorithm:",
-            let ToUpperInvariant (s: string) =
-                if s = null then
-                    null
-                else
-                    s.ToUpperInvariant()
-
-            match ToUpperInvariant(checksumAlgorithm) with
-            | "SHA1" -> "Sha1"
-            | "SHA256" -> "Sha256"
-            | _ -> null
+            match checksumAlgorithm with
+            | Null -> null
+            | NonNull checksumAlgorithm ->
+                match checksumAlgorithm.ToUpperInvariant() with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
+                | _ -> null
         )
 
         // Resources
@@ -337,6 +346,8 @@ type public Fsc() as this =
         if deterministic then
             builder.AppendSwitch("--deterministic+")
 
+        builder.AppendOptionalSwitch("--parallelcompilation", parallelCompilation)
+
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
         capturedArguments <- builder.CapturedArguments()
@@ -373,10 +384,13 @@ type public Fsc() as this =
         with get () = compilerTools
         and set (a) = compilerTools <- a
 
-    // CompressMetadata
+    // compressmetadata[+-]
     member _.CompressMetadata
-        with get () = compressMetadata
-        and set (v) = compressMetadata <- v
+        with get () =
+            match compressmetadata with
+            | Some true -> true
+            | _ -> false
+        and set (v) = compressmetadata <- Some v
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member _.DebugSymbols
@@ -493,6 +507,10 @@ type public Fsc() as this =
         with get () = outputRefAssembly
         and set (s) = outputRefAssembly <- s
 
+    member _.ParallelCompilation
+        with get () = parallelCompilation |> Option.defaultValue false
+        and set (p) = parallelCompilation <- Some p
+
     // --pathmap <string>: Paths to rewrite when producing deterministic builds
     member _.PathMap
         with get () = pathMap
@@ -529,6 +547,14 @@ type public Fsc() as this =
     member _.PublicSign
         with get () = publicSign
         and set (s) = publicSign <- s
+
+    // --realsig[+-]
+    member _.RealSig
+        with get () =
+            match realsig with
+            | Some true -> true
+            | _ -> false
+        and set (b) = realsig <- Some b
 
     // -r <string>: Reference an F# or .NET assembly.
     member _.References
@@ -640,6 +666,18 @@ type public Fsc() as this =
         with get () = subsystemVersion
         and set (p) = subsystemVersion <- p
 
+    member _.Nullable
+        with get () =
+            match nullable with
+            | None -> ""
+            | Some true -> "enable"
+            | Some false -> "disable"
+        and set (p) =
+            match p with
+            | "enable" -> nullable <- Some true
+            | "disable" -> nullable <- Some false
+            | _ -> ()
+
     member _.HighEntropyVA
         with get () = highEntropyVA
         and set (p) = highEntropyVA <- p
@@ -694,8 +732,6 @@ type public Fsc() as this =
             match host with
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
-                let sources = sources |> Array.map (fun i -> i.ItemSpec)
-
                 let invokeCompiler baseCallDelegate =
                     try
                         let ret =
@@ -726,7 +762,7 @@ type public Fsc() as this =
                         ->
                         fsc.Log.LogError(tie.InnerException.Message, [||])
                         -1
-                    | e -> reraise ()
+                    | _ -> reraise ()
 
                 let baseCallDelegate =
                     Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands))
@@ -755,10 +791,10 @@ type public Fsc() as this =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsc.InternalGenerateCommandLineCommands() = fsc.GenerateCommandLineCommands()
 
-    // expose this to internal components (for nunit testing)
+    // expose this to internal components (for unit testing)
     member internal fsc.InternalGenerateResponseFileCommands() = fsc.GenerateResponseFileCommands()
 
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =

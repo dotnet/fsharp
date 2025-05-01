@@ -562,9 +562,9 @@
         <target state="translated">Ungültiger Formatbezeichner: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">Für den dynamischen Formatierer wurde ein ungültiger Integer bereitgestellt.</target>
+        <target state="new">Bad integer supplied to dynamic formatter</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -592,9 +592,9 @@
         <target state="translated">Kein Funktionstyp.</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="translated">Ungültiger Formatbezeichner (precision)</target>
+        <target state="new">Bad format specifier (precision)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">

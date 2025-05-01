@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -6,9 +6,11 @@ open FSharp.Test.Compiler
 
 module Operators =
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"decimal_comparison.fs"|])>]
-    let ``Validate that non generic (fast) code is emitted  for comparison involving decimals`` compilation =
+    // ``Validate that non generic (fast) code is emitted  for comparison involving decimals RealInternalSignatureOff`` compilation =
+    [<Theory; FileInlineData("decimal_comparison.fs", Realsig=BooleanOptions.Both)>]
+    let ``Non generic (fast) code emitted for decimal comparison`` compilation =
         compilation
+        |> getCompilation
         |> asExe
         |> ignoreWarnings
         |> verifyILBaseline

@@ -64,6 +64,40 @@ module internal SourceText =
 
                 member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
                     sourceText.CopyTo(sourceIndex, destination, destinationIndex, count)
+
+                member this.GetSubTextFromRange range =
+                    let totalAmountOfLines = sourceText.Lines.Count
+
+                    if
+                        range.StartLine = 0
+                        && range.StartColumn = 0
+                        && range.EndLine = 0
+                        && range.EndColumn = 0
+                    then
+                        String.Empty
+                    elif
+                        range.StartLine < 1
+                        || (range.StartLine - 1) > totalAmountOfLines
+                        || range.EndLine < 1
+                        || (range.EndLine - 1) > totalAmountOfLines
+                    then
+                        invalidArg (nameof range) "The range is outside the file boundaries"
+                    else
+                        let startLine = range.StartLine - 1
+                        let line = this.GetLineString startLine
+
+                        if range.StartLine = range.EndLine then
+                            let length = range.EndColumn - range.StartColumn
+                            line.Substring(range.StartColumn, length)
+                        else
+                            let firstLineContent = line.Substring(range.StartColumn)
+                            let sb = System.Text.StringBuilder().AppendLine(firstLineContent)
+
+                            for lineNumber in range.StartLine .. range.EndLine - 2 do
+                                sb.AppendLine(this.GetLineString lineNumber) |> ignore
+
+                            let lastLine = this.GetLineString(range.EndLine - 1)
+                            sb.Append(lastLine.Substring(0, range.EndColumn)).ToString()
             }
 
         sourceText

@@ -201,7 +201,7 @@ type public Provider(config: TypeProviderConfig) =
                    yield TypeBuilder.CreateMethod(theType ,"LambdaSmokeTest",typeof<int -> int >, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"LambdaSmokeTest2",typeof<unit -> unit >, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"LambdaSmokeTest3",typeof<int -> int -> int>, isStatic=true, parameters=[|  |]) :> MemberInfo 
-                   yield TypeBuilder.CreateMethod(theType ,"CallInstrinsics",typeof<obj list>, isStatic=true, parameters=[|  |]) :> MemberInfo 
+                   yield TypeBuilder.CreateMethod(theType ,"CallIntrinsics",typeof<obj list>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"NewUnionCaseSmokeTest1",typeof<list<int>>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"NewUnionCaseSmokeTest2",typeof<list<int>>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"NewUnionCaseSmokeTest3",typeof<option<int>>, isStatic=true, parameters=[|  |]) :> MemberInfo 
@@ -597,7 +597,7 @@ type public Provider(config: TypeProviderConfig) =
                     <@@ (%%(parameterExpressions.[1]) : double) @@>
                 elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticDecimalParameter") then 
                     <@@ (%%(parameterExpressions.[1]) : decimal) @@>                     
-                elif syntheticMethodBase.Name = "CallInstrinsics" then 
+                elif syntheticMethodBase.Name = "CallIntrinsics" then 
                      <@@ [ ((true & false) |> box);
                            ((true && false) |> box);
                            ((true || false) |> box);
@@ -843,7 +843,7 @@ type public Provider(config: TypeProviderConfig) =
                        // For example, see the quotation form of this:
                        //  <@@ match (Choice1Of2 3) with Choice1Of2 x -> true | x -> false @@>
                        //
-                       // Normally this doesn't matter, e.g. for an evaluatior. However, for provided expressions we can't cope 
+                       // Normally this doesn't matter, e.g. for an evaluator. However, for provided expressions we can't cope 
                        // with this case as the F# compiler is not aware of the case-types for the union type.
                        //
                        // let o = 
@@ -877,7 +877,7 @@ type public Provider(config: TypeProviderConfig) =
                              else Quotations.Expr.Call(e,tagMeth,[])
                         | _ -> failwith "unreachable: unexpected result from PreComputeUnionTagMemberInfo"
                     let tagNumber = uc.Tag
-                    // Translate to a call the the F# library equality routine
+                    // Translate to a call the F# library equality routine
                     trans <@@ (%%(tagExpr) : int) = tagNumber @@>
 
                 // Handle the generic cases

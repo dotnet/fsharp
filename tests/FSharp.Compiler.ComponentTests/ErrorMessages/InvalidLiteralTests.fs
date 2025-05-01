@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.ErrorMessages
+namespace ErrorMessages
 
 open Xunit
 open FSharp.Test.Compiler
@@ -15,4 +15,4 @@ let [<Literal>] (A x) = 1
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 3396, Line 3, Col 5, Line 3, Col 22, "A [<Literal>] declaration cannot use an active pattern for its identifier")
+        |> withSingleDiagnostic (Error 3396, Line 3, Col 17, Line 3, Col 22, "A [<Literal>] declaration cannot use an active pattern for its identifier")

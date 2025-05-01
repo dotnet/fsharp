@@ -22,6 +22,7 @@ let mutable light = None
 let mutable inputCodePage = None
 let mutable lexlib = "FSharp.Text.Lexing"
 let mutable parslib = "FSharp.Text.Parsing"
+let mutable bufferTypeArgument = "'cty"
 
 let usage =
   [ ArgInfo("-o", ArgType.String (fun s -> out <- Some s), "Name the output file.");
@@ -35,7 +36,8 @@ let usage =
     ArgInfo("--tokens", ArgType.Unit (fun _ -> tokenize <- true), "Simply tokenize the specification file itself."); 
     ArgInfo("--lexlib", ArgType.String (fun s ->  lexlib <- s), "Specify the namespace for the implementation of the lexer (default: FSharp.Text.Lexing)");
     ArgInfo("--parslib", ArgType.String (fun s ->  parslib <- s), "Specify the namespace for the implementation of the parser table interpreter (default: FSharp.Text.Parsing)");
-    ArgInfo("--codepage", ArgType.Int (fun i -> inputCodePage <- Some i), "Assume input lexer specification file is encoded with the given codepage.");  ]
+    ArgInfo("--codepage", ArgType.Int (fun i -> inputCodePage <- Some i), "Assume input lexer specification file is encoded with the given codepage.")
+    ArgInfo("--buffer-type-argument", ArgType.String (fun s -> bufferTypeArgument <- s), "Generic type argument of the LexBuffer type."); ]
 
 let _ = ArgParser.Parse(usage,(fun x -> match input with Some _ -> failwith "more than one input given" | None -> input <- Some x),"fsyacc <filename>")
 
@@ -77,7 +79,8 @@ let main() =
           opens = opens
           lexlib = lexlib
           parslib = parslib
-          compat = compat }
+          compat = compat
+          bufferTypeArgument = bufferTypeArgument }
   writeSpecToFile generatorState spec compiledSpec
 
 let result = 

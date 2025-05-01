@@ -3,7 +3,7 @@
 open System
 open System.IO
 open System.Reflection
-open FSharp.Compiler.ComponentTests.EmittedIL
+open EmittedIL
 
 let  pathToDll =
     let d = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)

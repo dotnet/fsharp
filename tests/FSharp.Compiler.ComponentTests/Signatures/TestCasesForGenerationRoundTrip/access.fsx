@@ -53,7 +53,7 @@ type MyClassStaticMembers =
     static member          SMDefault()  = 12
     
 [<Sealed>]
-type MyClassPropertiyGetters =     
+type MyClassPropertyGetters =     
     member internal x.InstInternal = 12
     member private  x.InstPrivate  = 12
     member public   x.InstPublic   = 12
@@ -248,25 +248,25 @@ module RestrictedRecordsAndUnionsUsingPrivateAndInternalTypes =
                     
             let public getInt (data:Data): int = HelperModule.handle data.Thing               
 
-    module Test7 = 
-        module internal HelperModule = 
-            
-            type Data = 
-                    {
-                        Datum: int
-                    }
-                    
-            let handle (data:Data): int = data.Datum
-            
-        module Module =
-            
-            type Data = 
-                internal
-                    {
-                        Thing: HelperModule.Data
-                    }
-                    
-            let getInt (data:Data): int = HelperModule.handle data.Thing               
+//    module Test7 = 
+//        module internal HelperModule = 
+//            
+//            type Data = 
+//                    {
+//                        Datum: int
+//                    }
+//                    
+//            let handle (data:Data): int = data.Datum
+//            
+//        module Module =
+//            
+//            type Data = 
+//                internal
+//                    {
+//                        Thing: HelperModule.Data
+//                    }
+//                    
+//            let getInt (data:Data): int = HelperModule.handle data.Thing               
 
 
     (*--------------------*)  
@@ -278,7 +278,7 @@ let aa =
   match failures.Value with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

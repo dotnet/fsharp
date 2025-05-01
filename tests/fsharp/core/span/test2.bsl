@@ -31,9 +31,9 @@ test2.fsx(123,14,123,15): typecheck error FS3209: The address of the variable 'y
 
 test2.fsx(127,13,127,42): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(131,14,131,41): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(131,14,131,42): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(135,14,135,71): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(135,14,135,72): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(139,13,139,52): typecheck error FS3235: A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.
 
@@ -49,7 +49,7 @@ test2.fsx(157,13,157,83): typecheck error FS3235: A Span or IsByRefLike value re
 
 test2.fsx(162,13,162,14): typecheck error FS3234: The Span or IsByRefLike variable 'y' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
-test2.fsx(166,14,166,71): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+test2.fsx(166,14,166,72): typecheck error FS3228: The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(190,43,190,44): typecheck error FS3209: The address of the variable 'x' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 

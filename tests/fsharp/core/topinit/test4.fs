@@ -21,16 +21,16 @@ module CheckStatic4 =
         static member P3 = x3
 
     let check4() = 
-        // THis is static initialization in a generic type, and the first access happens here
+        // This is static initialization in a generic type, and the first access happens here
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
 
 
 
         // NOTE NOTE NOTE: the rest of this test may be flakey under 
         //    - NGEN of code
-        //    - Differnt CLRs
+        //    - Different CLRs
 
-        // For generic types, it looks like the CLR implements a semantics where subsequent failure reaise an exception
+        // For generic types, it looks like the CLR implements a semantics where subsequent failure raise an exception
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e1TryA" (try B<int>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e3TryB" (try B<int>.P2 |> ignore; false  with :? System.InvalidOperationException -> true) true
@@ -38,7 +38,7 @@ module CheckStatic4 =
         check "cwknecw021e2TryD" (try B<int>.P3 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e3TryE" (try B<int>.P3 |> ignore; false  with :? System.TypeInitializationException -> true) true
 
-        // THis is static initialization in a generic type, and the first access happens here
+        // This is static initialization in a generic type, and the first access happens here
         check "cwknecw021e1TryA11" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e1TryA" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true
         check "cwknecw021e1TryA" (try B<string>.P1 |> ignore; false  with :? System.TypeInitializationException -> true) true

@@ -2,10 +2,12 @@
 
 namespace FSharp.Editor.Tests
 
+open System.Threading
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.QuickInfo
 open Xunit
 open FSharp.Editor.Tests.Helpers
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module QuickInfo =
     open FSharp.Compiler.EditorServices
@@ -29,9 +31,14 @@ module QuickInfo =
     let internal GetQuickInfo (code: string) caretPosition =
         asyncMaybe {
             let document =
-                RoslynTestHelpers.CreateSolution(code) |> RoslynTestHelpers.GetSingleDocument
+                RoslynTestHelpers.CreateSolution(code, extraFSharpProjectOtherOptions = [| "--realsig+" |])
+                |> RoslynTestHelpers.GetSingleDocument
 
-            let! _, _, _, tooltip = FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+            let! _, _, _, tooltip =
+                FSharpAsyncQuickInfoSource.TryGetToolTip(document, caretPosition)
+                |> CancellableTask.start CancellationToken.None
+                |> Async.AwaitTask
+
             return tooltip
         }
         |> Async.RunSynchronously
@@ -41,15 +48,15 @@ module QuickInfo =
         let sigHelp = GetQuickInfo code caretPosition
 
         match sigHelp with
-        | Some (ToolTipText elements) when not elements.IsEmpty ->
+        | Some(ToolTipText elements) when not elements.IsEmpty ->
             let documentationBuilder =
                 { new IDocumentationBuilder with
-                    override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-                    override _.AppendDocumentation(_, _, _, _, _, _, _) = ()
+                    override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _, _) = ()
+                    override _.AppendDocumentation(_, _, _, _, _, _, _, _) = ()
                 }
 
             let _, mainDescription, docs =
-                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head, XmlDocumentation.DefaultLineLimits)
+                XmlDocumentation.BuildSingleTipText(documentationBuilder, elements.Head, XmlDocumentation.DefaultLineLimits, true)
 
             let mainTextItems = mainDescription |> Seq.map (fun x -> x.Text)
             let docTextItems = docs |> Seq.map (fun x -> x.Text)
@@ -293,7 +300,7 @@ module Test =
 """
 
         let quickInfo = GetQuickInfoTextFromCode code
-        let expected = "val methodSeq: seq<(int -> string * int)>"
+        let expected = "val methodSeq: (int -> string * int) seq"
         Assert.Equal(expected, quickInfo)
         ()
 
@@ -501,24 +508,24 @@ module Test =
         ()
 
     [<Fact>]
-    let ``Automation.LetBindings.InsideType.Instance`` () =
+    let ``Automation.LetBindings.Instance`` () =
         let code =
             """
 namespace FsTest
 
 module Test =
     type T() =
-        let fu$$nc x = ()
+        let private fu$$nc x = ()
 """
 
-        let expectedSignature = "val func: x: 'a -> unit"
+        let expectedSignature = "val private func: x: 'a -> unit"
 
         let tooltip = GetQuickInfoTextFromCode code
 
         Assert.StartsWith(expectedSignature, tooltip)
 
     [<Fact>]
-    let ``Automation.LetBindings.InsideType.Static`` () =
+    let ``Automation.LetBindings.Static`` () =
         let code =
             """
 namespace FsTest
@@ -528,7 +535,7 @@ module Test =
         static let fu$$nc x = ()
 """
 
-        let expectedSignature = "val func: x: 'a -> unit"
+        let expectedSignature = "val private func: x: 'a -> unit"
 
         let tooltip = GetQuickInfoTextFromCode code
 
@@ -536,7 +543,7 @@ module Test =
         ()
 
     [<Fact>]
-    let ``Automation.LetBindings`` () =
+    let ``Automation.LetBindings.Do`` () =
         let code =
             """
 namespace FsTest

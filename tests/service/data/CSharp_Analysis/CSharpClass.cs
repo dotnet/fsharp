@@ -29,7 +29,7 @@ namespace FSharp.Compiler.Service.Tests
     public class CSharpClass : ICSharpInterface, ICSharpExplicitInterface
     {
         /// <summary>
-        /// Documentaton
+        /// Documentation
         /// </summary>
         /// <param name="param"></param>
         public CSharpClass(int param)
@@ -38,7 +38,7 @@ namespace FSharp.Compiler.Service.Tests
         }
 
         /// <summary>
-        /// Documentaton
+        /// Documentation
         /// </summary>
         /// <param name="first"></param>
         /// <param name="param"></param>

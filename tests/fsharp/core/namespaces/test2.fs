@@ -11,6 +11,13 @@ module M =
     type C() =
         member x.P = C()
 
+module UnionTestsWithSignature = 
+    // Check accessing the *.Is* properties of unions through a signature
+    let a = Hello.Goodbye.A
+
+    Hello.Goodbye.Utils.test "vwehlevw1" a.IsA
+    Hello.Goodbye.Utils.test "vwehlevw2" (not a.IsB)
+    Hello.Goodbye.Utils.test "vwehlevw3" (not a.IsC)
 
 #if TESTS_AS_APP
     let RUN() = !Hello.Goodbye.Utils.failures
@@ -21,7 +28,7 @@ module M =
           exit 1
       else   
           stdout.WriteLine "Test Passed"
-          System.IO.File.WriteAllText("test.ok","ok")
+          printf "TEST PASSED OK" ;
           exit 0
 #endif
 

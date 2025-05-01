@@ -270,7 +270,7 @@ let LeaderBoardHandler form measure fileName =
 	DisplaySample form (measure,fileName);
 	form
 	
-/// Handler change to input paramters
+/// Handler change to input parameters
 let ChangeHandler measure path =
 	// Check for tracked players file
 	let trackFile = GetLatestFile path "Track-*.csv" in
@@ -359,7 +359,7 @@ do let folders = GetSubFolderNames !basePath in
 	combo.SelectionChangeCommitted.AddHandler( new EventHandler(ComboSelectHandler) );
 	folderPanel.Controls.Add( combo )
 
-// Group box for measurment types
+// Group box for measurement types
 let groupMeasure = new GroupBox()
 do groupMeasure |> BlueFlash
 do groupMeasure.Dock <- DockStyle.Top
@@ -928,5 +928,5 @@ do Application.Run(mainForm)
 
 let _ = 
    (System.Console.Out.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok", "ok"); 
+        printf "TEST PASSED OK" ; 
         exit 0)

@@ -5,8 +5,7 @@
   <PropertyGroup>
     <TargetFrameworks>net472</TargetFrameworks>
     <PlatformTarget>arm64</PlatformTarget>
-    <TargetExt>.exe</TargetExt>
-    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />

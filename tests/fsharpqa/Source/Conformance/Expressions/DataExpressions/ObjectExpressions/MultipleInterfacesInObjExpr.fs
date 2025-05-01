@@ -47,6 +47,6 @@ verifyInterfaceImplementation<I2> o2
 
 let o2Ty = o2.GetType()
 let toString = o2Ty.GetMethod("ToString") 
-failIfFalse (toString.DeclaringType = o2Ty) "ToString should be overriden"
+failIfFalse (toString.DeclaringType = o2Ty) "ToString should be overridden"
 failIfFalse toString.IsPublic "ToString should be public"
 failIfFalse toString.IsVirtual "ToString should be virtual"

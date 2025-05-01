@@ -3,14 +3,14 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module ``Static Member`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Action on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember01
 
@@ -22,27 +22,59 @@ type C =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public static class [runtime]System.Action 
-        CreateAction() cil managed
-{
-
-  .maxstack  8
-  IL_0000:  ldnull
-  IL_0001:  ldftn      void StaticMember01/CreateAction@8::Invoke()
-  IL_0007:  newobj     instance void [runtime]System.Action::.ctor(object,
-                                                                    native int)
-  IL_000c:  ret
-}
-            """
-            """
-.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
+.class public abstract auto ansi sealed StaticMember01
        extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public C
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+      .method assembly static void  Invoke() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ret
+      } 
+
+    } 
+
+    .method public static void  M() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+    .method public static class [runtime]System.Action CreateAction() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  ldftn      void StaticMember01/C/CreateAction@8::Invoke()
+      IL_0007:  newobj     instance void [runtime]System.Action::.ctor(object,
+                                                                        native int)
+      IL_000c:  ret
+    } 
+
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '<StartupCode$assembly>'.$StaticMember01
+       extends [runtime]System.Object
+{
+} 
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Action on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember02
 
@@ -54,27 +86,54 @@ type C =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public static class [runtime]System.Action`1<int32> 
-        CreateAction() cil managed
-{
-
-  .maxstack  8
-  IL_0000:  ldnull
-  IL_0001:  ldftn      void StaticMember02/CreateAction@8::Invoke(int32)
-  IL_0007:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
-                                                                                   native int)
-  IL_000c:  ret
-}
-            """
-            """
-.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
+.class public abstract auto ansi sealed StaticMember02
        extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public C
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+      .method assembly static void  Invoke(int32 x) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ret
+      } 
+
+    } 
+
+    .method public static void  M(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+    .method public static class [runtime]System.Action`1<int32> CreateAction() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  ldftn      void StaticMember02/C/CreateAction@8::Invoke(int32)
+      IL_0007:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
+                                                                                       native int)
+      IL_000c:  ret
+    } 
+
+  } 
+
+} 
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Action on Static Member with closure``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember03
 
@@ -95,38 +154,100 @@ let main _ =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public static int32  main(string[] _arg1) cil managed
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-  
-  .maxstack  4
-  .locals init (class StaticMember03/MyClass V_0,
-           class [runtime]System.Action`1<int32> V_1,
-           object V_2)
-  IL_0000:  ldc.i4.7
-  IL_0001:  newobj     instance void StaticMember03/MyClass::.ctor(int32)
-  IL_0006:  stloc.0
-  IL_0007:  ldnull
-  IL_0008:  ldftn      void StaticMember03/func@15::Invoke(int32)
-  IL_000e:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
-                                                                                         native int)
-  IL_0013:  stloc.1
-  IL_0014:  ldloc.1
-  IL_0015:  box        class [runtime]System.Action`1<int32>
-  IL_001a:  stloc.2
-  IL_001b:  ldc.i4.0
-  IL_001c:  ret
-} 
-            """
-            """
-.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname func@15
+.class public abstract auto ansi sealed StaticMember03
        extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public C
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public static void  M(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+  } 
+
+  .class auto ansi serializable nested public MyClass
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 x
+    .method public specialname rtspecialname instance void  .ctor(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  stfld      int32 StaticMember03/MyClass::x
+      IL_000f:  ret
+    } 
+
+    .method public hidebysig specialname instance int32  get_X() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 StaticMember03/MyClass::x
+      IL_0006:  ret
+    } 
+
+    .property instance int32 X()
+    {
+      .get instance int32 StaticMember03/MyClass::get_X()
+    } 
+  } 
+
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname func@15
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+    .method assembly static void  Invoke(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ret
+    } 
+
+  } 
+
+  .method public static int32  main(string[] _arg1) cil managed
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  4
+    .locals init (class StaticMember03/MyClass V_0,
+             class [runtime]System.Action`1<int32> V_1,
+             object V_2)
+    IL_0000:  ldc.i4.7
+    IL_0001:  newobj     instance void StaticMember03/MyClass::.ctor(int32)
+    IL_0006:  stloc.0
+    IL_0007:  ldnull
+    IL_0008:  ldftn      void StaticMember03/func@15::Invoke(int32)
+    IL_000e:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
+                                                                                           native int)
+    IL_0013:  stloc.1
+    IL_0014:  ldloc.1
+    IL_0015:  box        class [runtime]System.Action`1<int32>
+    IL_001a:  stloc.2
+    IL_001b:  ldc.i4.0
+    IL_001c:  ret
+  } 
+
+} 
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Func on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember04
 
@@ -139,27 +260,60 @@ type C =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public static class [runtime]System.Func`2<int32,int32> 
-        CreateFunc() cil managed
-{
-
-  .maxstack  8
-  IL_0000:  ldnull
-  IL_0001:  ldftn      int32 StaticMember04/CreateFunc@9::Invoke(int32)
-  IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
-                                                                                       native int)
-  IL_000c:  ret
-}
-            """
-            """
-.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
+.class public abstract auto ansi sealed StaticMember04
        extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public C
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+      .method assembly static int32  Invoke(int32 x) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldc.i4.1
+        IL_0002:  add
+        IL_0003:  ret
+      } 
+
+    } 
+
+    .method public static int32  M(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldc.i4.1
+      IL_0002:  add
+      IL_0003:  ret
+    } 
+
+    .method public static class [runtime]System.Func`2<int32,int32> CreateFunc() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  ldftn      int32 StaticMember04/C/CreateFunc@9::Invoke(int32)
+      IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
+                                                                                           native int)
+      IL_000c:  ret
+    } 
+
+  } 
+
+} 
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Func on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember05
 
@@ -172,27 +326,60 @@ type C =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public static class [runtime]System.Func`2<int32,int32> 
-        CreateFunc() cil managed
-{
-
-  .maxstack  8
-  IL_0000:  ldnull
-  IL_0001:  ldftn      int32 StaticMember05/CreateFunc@9::Invoke(int32)
-  IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
-                                                                                       native int)
-  IL_000c:  ret
-}
-            """
-            """
-.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
+.class public abstract auto ansi sealed StaticMember05
        extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public C
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
+           extends [runtime]System.Object
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+      .method assembly static int32  Invoke(int32 x) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldc.i4.s   43
+        IL_0003:  add
+        IL_0004:  ret
+      } 
+
+    } 
+
+    .method public static int32  M(int32 x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldc.i4.s   43
+      IL_0003:  add
+      IL_0004:  ret
+    } 
+
+    .method public static class [runtime]System.Func`2<int32,int32> CreateFunc() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  ldftn      int32 StaticMember05/C/CreateFunc@9::Invoke(int32)
+      IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
+                                                                                           native int)
+      IL_000c:  ret
+    } 
+
+  } 
+
+} 
             """
             ]))
 
-    [<Test>]
+    [<Fact>]
     let ``Func on Static Member with closure``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember06
 
@@ -245,9 +432,9 @@ let main _ =
             ]))
 
 #if !FX_NO_WINFORMS
-    [<Test>]
+    [<Fact>]
     let ``EventHandler from Regression/83``() =
-        CompilerAssert.CompileLibraryAndVerifyIL(
+        CompilerAssert.CompileLibraryAndVerifyILRealSig(
             """
 module StaticMember07
 
@@ -294,7 +481,7 @@ let _ =
   if !failures then (System.Console.Out.WriteLine "Test Failed"; exit 1) 
 
 do (System.Console.Out.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok", "ok"); 
+    printf "TEST PASSED OK" ; 
     exit 0)
             """,
             (fun verifier -> verifier.VerifyIL [

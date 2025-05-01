@@ -6,13 +6,13 @@ open System
 
   type Guid = Option<Bytes>
 
-  type Document = 
+  type Document =
     { Language: Option<Guid>;
       Vendor: Option<Guid>;
       Type: Option<Guid>;
       File: string; }
 
-  type SourceAnnotation = 
+  type SourceAnnotation =
     { Document: Document;
       Line: int;
       Column: int;
@@ -23,43 +23,43 @@ open System
   type ModuleName = string
   type Locale = string
 
-  type PublicKeyInfo = 
+  type PublicKeyInfo =
     | PublicKey of Bytes
     | PublicKeyToken of Bytes
 
   type VersionInfo = UInt16 * UInt16 * UInt16 * UInt16
 
-  type AssemblyRef = 
+  type AssemblyRef =
     { Name: string;
       Hash: Option<Bytes>;
       PublicKeyInfo: Option<PublicKeyInfo>;
-      Version: Option<VersionInfo>; 
-      Locale: Option<Locale>; } 
+      Version: Option<VersionInfo>;
+      Locale: Option<Locale>; }
 
-  type ModuleRef = 
+  type ModuleRef =
     { Name: string;
       NoMetadata: bool;
-      Hash: Option<Bytes>; } 
+      Hash: Option<Bytes>; }
 
-  type ScopeRef = 
-    | Local 
-    | Module of ModuleRef  
-    | Assembly of AssemblyRef 
+  type ScopeRef =
+    | Local
+    | Module of ModuleRef
+    | Assembly of AssemblyRef
 
-  type BasicCallconv = 
+  type BasicCallconv =
     | Default
-    | Cdecl 
-    | Stdcall 
-    | Thiscall 
-    | Fastcall 
+    | Cdecl
+    | Stdcall
+    | Thiscall
+    | Fastcall
     | Vararg
-      
-  type HasThis = 
+
+  type HasThis =
     | Instance           (* accepts an implicit 'this' pointer *)
     | InstanceExplicit  (* any 'this' pointer is made explicit (C++ only) *)
     | Static             (* no 'this' pointer is passed *)
 
-  type Callconv 
+  type Callconv
     static member InstanceCallconv: Callconv
     static member StaticCallconv: Callconv
     member IsVararg: bool
@@ -72,7 +72,7 @@ open System
   val is_static_callconv: Callconv -> bool
 
   type ArrayShape
-    member Details: (Int32 option * Int32 option) list 
+    member Details: (Int32 option * Int32 option) list
     member Rank: Int32
     static member SingleDimensional: ArrayShape
 
@@ -84,7 +84,7 @@ open System
 
 
 
-  type TypeRef 
+  type TypeRef
      member TypeName:  string
      member FullTypeName:  string
      member EnclosingTypeNames: List<string>
@@ -95,22 +95,22 @@ open System
   val enclosing_tnames_of_tref: TypeRef -> List<string>
   val scoref_of_tref: TypeRef -> ScopeRef
 
-  type TypeSpec 
+  type TypeSpec
     member TypeRef: TypeSpec -> TypeRef
     member TypeName: TypeSpec -> string
     member FullTypeName: TypeSpec -> string
     member ScopeRef: TypeSpec -> ScopeRef
     member EnclosingTypeNames: TypeSpec -> List<string>
-    
-  and Type 
+
+  and Type
   // member Details: (?k:TypeKind. TypeDetails<TypeKind>)
   // These properties let you access the contents of a type in a
-  // semi-safe way - they may throw exceptions.  They could be 
+  // semi-safe way - they may throw exceptions.  They could be
   // given different names.
     member Shape: ArrayShape
     member ElementType: Type
     member TypeSpec: TypeSpec
-    member ParamaterIndex: UInt16
+    member ParameterIndex: UInt16
     member IsRequired: bool
     member CustomModifier: Type
     member ModifiedType: Type
@@ -125,14 +125,14 @@ open System
     static member Tyvar: Callsig -> Type
     static member Modified: bool * Type * Type -> Type
 
-  and TypeKind = 
-    | Void     
-    | Array 
-    | Value 
-    | Boxed 
-    | Ptr 
+  and TypeKind =
+    | Void
+    | Array
+    | Value
+    | Boxed
+    | Ptr
     | Byref
-    | Fptr 
+    | Fptr
     | Tyvar
     | Modified
 
@@ -146,7 +146,7 @@ open System
     member ElementType: Type when k = Array or K = Ptr or k = Byref
     member TypeSpec: TypeSpec when k = Value or k = Boxed
     member Callsig: Callsig when k = Fptr
-    member ParamaterIndex: UInt16 when k = Tyvar
+    member ParameterIndex: UInt16 when k = Tyvar
     member IsRequired: bool when k = Modified
     member CustomModifier: Type when k = Modified
     member ModifiedType: Type when k = Modified
@@ -179,7 +179,7 @@ open System
   val is_tyvar_ty: Type -> bool
 
 
-  type CallSig =  
+  type CallSig =
     { Callconv: Callconv;
       ArgTypes: List<Type>;
       ReturnType: Type }
@@ -192,11 +192,11 @@ open System
 // F# library signature:
 
   //-------------------------------------------------------------------------
-  // This is the primitive interface for implementing events corresponding to 
+  // This is the primitive interface for implementing events corresponding to
   // any delegate type.
   //
   // Note 'a and 'args must correspond - if they do not runtime exceptions will arise.
-  // We could add a constrinat of the form 
+  // We could add a constraint of the form
   //    when 'a :> delegate(object * 'arg -> void)
   type EventForDelegateType<'a> =
     { Add: 'a -> unit;
@@ -205,7 +205,7 @@ open System
   type ListenerListForDelegateType<'a,'arg> =
     { Fire: 'arg -> unit;
       AsEvent: EventForDelegateType<'a> }
- 
+
   val ListenerListForDelegateType: unit -> ListenerListForDelegateType<'a,'arg>  when 'a :> System.Delegate
 
   // This is for the common case for F# where the event type is EventHandler<T>
@@ -215,26 +215,26 @@ open System
     { Fire: 'a -> unit;
       AsEvent: Event<'a> }
 
-  val NewListenerList: unit -> ListenerList<'a>  
-  
+  val NewListenerList: unit -> ListenerList<'a>
+
 // A component signature:
 
   type NoiseLevel = Double
-  
-  type MyComponent 
+
+  type MyComponent
     member OnNoise: Event<NoiseLevel>
     member OnPaint: EventForDelegateType<PaintEventHandler>
-    
-  val NewMyComponent: unit -> MyComponent
-  
-    
 
-  type MethodRef 
+  val NewMyComponent: unit -> MyComponent
+
+
+
+  type MethodRef
     member Name: string
     member Callconv: Callconv
     member Return: Type
     member ArgTypes: List<Type>
-    member Parent: TypeRef 
+    member Parent: TypeRef
     member GenericArity: int
     member CallSig: CallSig
     member Rename: MethodRef -> MethodRef
@@ -245,14 +245,14 @@ open System
   val callconv_of_mref: MethodRef -> Callconv
   val ret_of_mref: MethodRef -> Type
   val args_of_mref: MethodRef -> List<Type>
-  val tref_of_mref: MethodRef -> TypeRef 
+  val tref_of_mref: MethodRef -> TypeRef
   val parent_of_mref: MethodRef -> TypeRef (* same as tref_of_mref *)
   val genarity_of_mref: MethodRef -> int
   val callsig_of_mref: MethodRef -> CallSig
   val rename_mref: string -> MethodRef -> MethodRef
   val relocate_mref: Type -> MethodRef -> MethodRef
 
-  type FieldRef 
+  type FieldRef
     member Type: FieldRef
     member Name: string
     member TypeRef: TypeRef
@@ -318,7 +318,7 @@ open System
   type CodeLabel = string
 
 
-  type BasicType = 
+  type BasicType =
   | DT_R
   | DT_I1
   | DT_U1
@@ -334,91 +334,91 @@ open System
   | DT_U
   | DT_REF
 
-  type LdtokenInfo = 
-  | Token_type of Type 
-  | Token_method of MethodSpec 
+  type LdtokenInfo =
+  | Token_type of Type
+  | Token_method of MethodSpec
   | Token_field of FieldSpec
 
-  type LdcInfo = 
+  type LdcInfo =
   | NUM_I4 of Int32
   | NUM_I8 of Int64
   | NUM_R4 of Single
   | NUM_R8 of Double
 
-  type Tailness = 
+  type Tailness =
   | Tailcall
   | Normalcall
 
-  type Alignment = 
+  type Alignment =
   | Aligned
   | Unaligned_1
   | Unaligned_2
   | Unaligned_4
 
-  type Volatility = 
+  type Volatility =
   | Volatile
   | Nonvolatile
 
-  type Readonly = 
+  type Readonly =
   | ReadonlyAddress
   | NormalAddress
 
   type VarargTypes = Option< List<Type> >
 
   type CompareOp =
-  | BI_beq        
-  | BI_bge        
-  | BI_bge_un     
-  | BI_bgt        
-  | BI_bgt_un        
-  | BI_ble        
-  | BI_ble_un        
-  | BI_blt        
-  | BI_blt_un 
-  | BI_bne_un 
-  | BI_brfalse 
-  | BI_brtrue 
+  | BI_beq
+  | BI_bge
+  | BI_bge_un
+  | BI_bgt
+  | BI_bgt_un
+  | BI_ble
+  | BI_ble_un
+  | BI_blt
+  | BI_blt_un
+  | BI_bne_un
+  | BI_brfalse
+  | BI_brtrue
 
   type ArithmeticOp =
-  | AI_add    
+  | AI_add
   | AI_add_ovf
   | AI_add_ovf_un
-  | AI_and    
-  | AI_div   
+  | AI_and
+  | AI_div
   | AI_div_un
-  | AI_ceq      
-  | AI_cgt      
-  | AI_cgt_un   
-  | AI_clt     
-  | AI_clt_un  
+  | AI_ceq
+  | AI_cgt
+  | AI_cgt_un
+  | AI_clt
+  | AI_clt_un
   | AI_conv      of BasicType
   | AI_conv_ovf  of BasicType
   | AI_conv_ovf_un  of BasicType
-  | AI_mul       
-  | AI_mul_ovf   
+  | AI_mul
+  | AI_mul_ovf
   | AI_mul_ovf_un
-  | AI_rem       
-  | AI_rem_un       
-  | AI_shl       
-  | AI_shr       
+  | AI_rem
+  | AI_rem_un
+  | AI_shl
+  | AI_shr
   | AI_shr_un
-  | AI_sub       
-  | AI_sub_ovf   
-  | AI_sub_ovf_un   
-  | AI_xor       
-  | AI_or        
-  | AI_neg       
-  | AI_not       
-  | AI_ldnull    
-  | AI_dup       
+  | AI_sub
+  | AI_sub_ovf
+  | AI_sub_ovf_un
+  | AI_xor
+  | AI_or
+  | AI_neg
+  | AI_not
+  | AI_ldnull
+  | AI_dup
   | AI_pop
-  | AI_ckfinite 
+  | AI_ckfinite
   | AI_nop
   | AI_ldc       of BasicType * LdcInfo
 
   // A discriminated union automatically defines a kind and a "details"?
 
-  type Instr = 
+  type Instr =
   (* Basic *)
   | I_arith of ArithmeticOp
   | I_ldarg     of UInt16
@@ -435,7 +435,7 @@ open System
   | I_jmp   of MethodSpec
   | I_brcmp of CompareOp * CodeLabel * CodeLabel (* second label is fall-through *)
   | I_switch    of (CodeLabel list * CodeLabel) (* last label is fallthrough *)
-  | I_ret 
+  | I_ret
 
    (* Method call *)
   | I_call     of Tailness * MethodSpec * VarargTypes
@@ -444,7 +444,7 @@ open System
   | I_calli    of Tailness * CallSig * VarargTypes
   | I_ldftn    of MethodSpec
   | I_newobj  of MethodSpec  * VarargTypes
-  
+
   (* Exceptions *)
   | I_throw
   | I_endfinally
@@ -455,7 +455,7 @@ open System
   | I_ldsfld      of Volatility * FieldSpec
   | I_ldfld       of Alignment * Volatility * FieldSpec
   | I_ldsflda     of FieldSpec
-  | I_ldflda      of FieldSpec 
+  | I_ldflda      of FieldSpec
   | I_stsfld      of Volatility  *  FieldSpec
   | I_stfld       of Alignment * Volatility * FieldSpec
   | I_ldstr       of Bytes  (* Beware!  This is a unicode encoding of the string! *)
@@ -483,21 +483,21 @@ open System
   | I_ldlen
 
   | I_mkrefany    of Type
-  | I_refanytype  
+  | I_refanytype
   | I_refanyval   of Type
   | I_rethrow
 
-  | I_break 
-  | I_seqpoint of SourceAnnotation 
+  | I_break
+  | I_seqpoint of SourceAnnotation
 
-  | I_arglist  
+  | I_arglist
 
   | I_localloc
   | I_cpblk of Alignment * Volatility
   | I_initblk of Alignment  * Volatility
 
 
-type basic_block = 
+type basic_block =
     { bblockLabel: CodeLabel;
       bblockInstrs: Instr array }
 
@@ -512,11 +512,11 @@ val instr_is_tailcall: Instr -> bool
 
 
 
-type local_debug_info = 
+type local_debug_info =
     { localNum: int;
       localName: string; }
 
-type Code = 
+type Code =
     | BasicBlock of basic_block
     | GroupBlock of local_debug_info list * Code list
     | RestrictBlock of List<CodeLabel> * Code
@@ -524,12 +524,12 @@ type Code =
 
   member Name: string
   member X : int
-  
+
 and seh =
-  | FaultBlock of Code 
+  | FaultBlock of Code
   | FinallyBlock of Code
   | FilterCatchBlock of (filter * Code) list
-and filter = 
+and filter =
   | TypeFilter of Type
   | CodeFilter of Code
 
@@ -538,11 +538,11 @@ val exits_of_code: Code -> List<CodeLabel>
 val unique_entry_of_code: Code -> CodeLabel
 val unique_exit_of_code: Code -> CodeLabel
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Field Init
  * -------------------------------------------------------------------- *)
 
-type FieldInit = 
+type FieldInit =
   | FieldInit_Bytes of Bytes
   | FieldInit_bool of bool
   | FieldInit_char of UInt16
@@ -558,10 +558,10 @@ type FieldInit =
   | FieldInit_Double of Double
   | FieldInit_ref
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Native Types, for marshalling to the native C interface.
  * These are taken directly from the ILASM syntax, and don't really
- * correspond yet to the ECMA Spec (Partition II, 7.4).  
+ * correspond yet to the ECMA Spec (Partition II, 7.4).
  * -------------------------------------------------------------------- *)
 
 type native_type =
@@ -596,80 +596,80 @@ type native_type =
   | NativeType_as_any
   | (* COM interop *) NativeType_bstr
   | (* COM interop *) NativeType_iunknown
-  | (* COM interop *) NativeType_idsipatch
+  | (* COM interop *) NativeType_idispatch
   | (* COM interop *) NativeType_interface
-  | (* COM interop *) NativeType_error               
-  | (* COM interop *) NativeType_safe_array of variant_type * string option 
+  | (* COM interop *) NativeType_error
+  | (* COM interop *) NativeType_safe_array of variant_type * string option
   | (* COM interop *) NativeType_ansi_bstr
   | (* COM interop *) NativeType_variant_bool
 
-and variant_type = 
+and variant_type =
   | VariantType_empty
   | VariantType_null
   | VariantType_variant
   | VariantType_currency
-  | VariantType_decimal               
-  | VariantType_date               
-  | VariantType_bstr               
-  | VariantType_lpstr               
-  | VariantType_lpwstr               
-  | VariantType_iunknown               
-  | VariantType_idispatch               
-  | VariantType_safearray               
-  | VariantType_error               
-  | VariantType_hresult               
-  | VariantType_carray               
-  | VariantType_userdefined               
-  | VariantType_record               
+  | VariantType_decimal
+  | VariantType_date
+  | VariantType_bstr
+  | VariantType_lpstr
+  | VariantType_lpwstr
+  | VariantType_iunknown
+  | VariantType_idispatch
+  | VariantType_safearray
+  | VariantType_error
+  | VariantType_hresult
+  | VariantType_carray
+  | VariantType_userdefined
+  | VariantType_record
   | VariantType_filetime
-  | VariantType_blob               
-  | VariantType_stream               
-  | VariantType_storage               
-  | VariantType_streamed_object               
-  | VariantType_stored_object               
-  | VariantType_blob_object               
-  | VariantType_cf                
+  | VariantType_blob
+  | VariantType_stream
+  | VariantType_storage
+  | VariantType_streamed_object
+  | VariantType_stored_object
+  | VariantType_blob_object
+  | VariantType_cf
   | VariantType_clsid
-  | VariantType_void 
+  | VariantType_void
   | VariantType_bool
   | VariantType_Int8
-  | VariantType_Int16                
-  | VariantType_Int32                
-  | VariantType_Int64                
-  | VariantType_Single                
-  | VariantType_Double                
-  | VariantType_unsigned_Int8                
-  | VariantType_unsigned_Int16                
-  | VariantType_unsigned_Int32                
-  | VariantType_unsigned_Int64                
-  | VariantType_ptr                
-  | VariantType_array of variant_type                
-  | VariantType_vector of variant_type                
-  | VariantType_byref of variant_type                
-  | VariantType_int                
-  | VariantType_unsigned_int                
+  | VariantType_Int16
+  | VariantType_Int32
+  | VariantType_Int64
+  | VariantType_Single
+  | VariantType_Double
+  | VariantType_unsigned_Int8
+  | VariantType_unsigned_Int16
+  | VariantType_unsigned_Int32
+  | VariantType_unsigned_Int64
+  | VariantType_ptr
+  | VariantType_array of variant_type
+  | VariantType_vector of variant_type
+  | VariantType_byref of variant_type
+  | VariantType_int
+  | VariantType_unsigned_int
 
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Local variables
  * -------------------------------------------------------------------- *)
 
-type local = 
+type local =
     { localType: Type;
       localPinned: bool  }
-    :> Object 
+    :> Object
     :> IComparable
 
 
 val typ_of_local: local -> Type
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * IL method bodies
  * -------------------------------------------------------------------- *)
 
-type CILMethodBody = 
+type CILMethodBody =
     { ilZeroInit: bool;
-      ilMaxStack: Int32; (* strictly speakin should be a UInt16 *)
+      ilMaxStack: Int32; (* strictly speaking should be a UInt16 *)
       ilNoInlining: bool;
       ilLocals: local list;
       ilCode: Code;
@@ -678,26 +678,26 @@ type CILMethodBody =
 val locals_of_ilmbody: CILMethodBody -> local list
 val code_of_ilmbody: CILMethodBody -> Code
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Member Access
  * -------------------------------------------------------------------- *)
 
-type MemberAccess = 
+type MemberAccess =
   | MemAccess_assembly
   | MemAccess_compilercontrolled
   | MemAccess_famandassem
   | MemAccess_famorassem
   | MemAccess_family
-  | MemAccess_private 
-  | MemAccess_public 
+  | MemAccess_private
+  | MemAccess_public
 
 (* --------------------------------------------------------------------
- * Custom attributes: @todo: provide a helper to parse the Bytes 
- * to CustomAttribute_elem's as best as possible.  
+ * Custom attributes: @todo: provide a helper to parse the Bytes
+ * to CustomAttribute_elem's as best as possible.
  * -------------------------------------------------------------------- *)
 
-type CustomAttributeElement = 
-  | String of String  
+type CustomAttributeElement =
+  | String of String
   | Bool of Boolean
   | Char of Char
   | Int8 of SByte
@@ -710,25 +710,25 @@ type CustomAttributeElement =
   | UInt64 of UInt64
   | Single of Single
   | Double of Double
-  | Type of TypeRef  
+  | Type of TypeRef
   | Enum of Type * CustomAttributeElement
 
 type CustomAttribute =
-    { customMethod: MethodSpec;  
+    { customMethod: MethodSpec;
       customData: Bytes }
 
 type CustomAttributes (* Equivalent to CustomAttribute list - use helpers below to construct/destruct these *)
 
 val dest_CustomAttributes: CustomAttributes -> CustomAttribute list
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Method parameters and return values
  * -------------------------------------------------------------------- *)
 
-type param = 
+type param =
     { Name: string option;
       Type: Type;
-      Default: Option<FieldInit>;  
+      Default: Option<FieldInit>;
       Marshal: native_type option; (* Marshalling map for parameters. COM Interop only. *)
       In: bool;
       Out: bool;
@@ -738,29 +738,29 @@ type param =
 val name_of_param: param -> string option
 val typ_of_param: param -> Type
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Method return values
  * -------------------------------------------------------------------- *)
 
-type ReturnSpec = 
+type ReturnSpec =
     { returnMarshal: native_type option;
       returnType: Type; }
 
 val typ_of_return: ReturnSpec -> Type
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Security Permissions
- * 
+ *
  * Attached to various structures...
  * -------------------------------------------------------------------- *)
 
-type SecurityAction = 
-  | Request 
+type SecurityAction =
+  | Request
   | Demand
   | Assert
   | Deny
   | Permitonly
-  | Linkcheck 
+  | Linkcheck
   | Inheritcheck
   | Reqmin
   | Reqopt
@@ -771,7 +771,7 @@ type SecurityAction =
   | Noncaslinkdemand
   | Noncasinheritance
 
-type PermissionValue = 
+type PermissionValue =
     Bool of bool
   | Int32 of Int32
   | String of string
@@ -779,7 +779,7 @@ type PermissionValue =
   | EnumInt16 of TypeRef * Int16
   | EnumInt32 of TypeRef * Int32
 
-type permission = 
+type permission =
   | Permission of SecurityAction * Type * (string * PermissionValue) list
   | PermissionSet of SecurityAction * Bytes
 
@@ -787,11 +787,11 @@ type SecurityDecls (* Opaque type equivalent to permission list - use helpers be
 
 val dest_SecurityDecls: SecurityDecls -> permission list
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * PInvoke attributes.
  * -------------------------------------------------------------------- *)
 
-type pinvoke_Callconv = 
+type pinvoke_Callconv =
   | PInvoke_CC_none
   | PInvoke_CC_cdecl
   | PInvoke_CC_stdcall
@@ -799,13 +799,13 @@ type pinvoke_Callconv =
   | PInvoke_CC_fastcall
   | PInvoke_CC_winapi
 
-type pinvoke_encoding = 
+type pinvoke_encoding =
   | PInvoke_Encoding_none
   | PInvoke_Encoding_ansi
   | PInvoke_Encoding_unicode
   | PInvoke_Encoding_autochar
 
-type pinvoke_attr =  
+type pinvoke_attr =
     { pinvokeWhere: ModuleRef;
       pinvokeName: string;
       pinvokeCallconv: pinvoke_Callconv;
@@ -827,20 +827,20 @@ val formal_CallSig_of_ospec: OverridesSpec -> CallSig
 val actual_CallSig_of_ospec: OverridesSpec -> CallSig
 
 
-type virtual_info = 
-    { Final: bool; 
-      Newslot: bool; 
+type virtual_info =
+    { Final: bool;
+      Newslot: bool;
       Abstract: bool;
       Overrides: OverridesSpec option; }
 
-type method_kind = 
-  | Static 
-  | Cctor 
-  | Ctor 
-  | Nonvirtual 
+type method_kind =
+  | Static
+  | Cctor
+  | Ctor
+  | Nonvirtual
   | Virtual of virtual_info
 
-type MethodBody_details = 
+type MethodBody_details =
   | MethodBody_il of CILMethodBody
   | MethodBody_pinvoke of pinvoke_attr       (* platform invoke to native  *)
   | MethodBody_abstract
@@ -853,17 +853,17 @@ type method_code_kind =
 
 type MethodBody (* isomorphic to MethodBody_details *)
 
-val dest_mbody : MethodBody -> MethodBody_details 
+val dest_mbody : MethodBody -> MethodBody_details
 
-type MethodDef = 
+type MethodDef =
     { mdName: string;
       mdKind: method_kind;
       mdCallconv: Callconv;
       mdParams: List<Param>;
       mdReturn: ReturnSpec;
       mdAccess: MemberAccess;
-      mdBody: MethodBody;   
-      mdCodeKind: method_code_kind;   
+      mdBody: MethodBody;
+      mdCodeKind: method_code_kind;
       mdInternalCall: bool;
       mdManaged: bool;
       mdForwardRef: bool;
@@ -876,9 +876,9 @@ type MethodDef =
       mdSynchronized: bool;
       mdPreserveSig: bool;
       mdMustRun: bool; (* Whidbey feature: SafeHandle finalizer must be run *)
-      mdExport: (Int32 * string option) option; 
+      mdExport: (Int32 * string option) option;
       mdVtableEntry: (Int32 * Int32) option;
-     
+
       (* MS-GENERICS *) mdGenericParams: GenericParams;
       mdCustomAttrs: CustomAttributes; }
 
@@ -893,9 +893,9 @@ val code_of_mdef: MethodDef -> Code
 val entry_of_mdef: MethodDef -> CodeLabel
 val CallSig_of_mdef: MethodDef -> CallSig
 
-(* -------------------------------------------------------------------- 
- * Delegates.  Derived functions for telling if a method/class definition 
- * is really a delegate.  Also for telling if method signatures refer to 
+(* --------------------------------------------------------------------
+ * Delegates.  Derived functions for telling if a method/class definition
+ * is really a delegate.  Also for telling if method signatures refer to
  * delegate methods.
  * -------------------------------------------------------------------- *)
 
@@ -907,9 +907,9 @@ val is_delegate_begin_invoke: MethodDef -> bool
 val is_delegate_end_invoke: MethodDef -> bool
 val dest_delegate_begin_end_invoke: MethodDef -> MethodDef -> List<Type> * Type
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Tables of methods.  Logically equivalent to a list of methods but
- * the table is kept in a form optimized for looking up methods by 
+ * the table is kept in a form optimized for looking up methods by
  * name and arity.
  * -------------------------------------------------------------------- *)
 
@@ -919,20 +919,20 @@ val dest_mdefs: MethodDefs -> MethodDef list
 val filter_mdefs: (MethodDef -> bool) -> MethodDefs -> MethodDefs
 val find_mdefs_by_arity: string * int -> MethodDefs -> MethodDef list
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Field definitions
  * -------------------------------------------------------------------- *)
 
-type FieldDef = 
+type FieldDef =
     { Name: string;
       Type: Type;
       Static: bool;
       Access: MemberAccess;
       Data:  Option<Bytes>;
-      Init: Option<FieldInit>;  
+      Init: Option<FieldInit>;
       Offset:  Int32 option; (* The explicit offset in Bytes when explicit layout is used. *)
       SpecialName: bool;
-      Marshal: native_type option; 
+      Marshal: native_type option;
       NotSerialized: bool;
       Literal: bool ;
       InitOnly: bool;
@@ -941,34 +941,34 @@ type FieldDef =
 val typ_of_fdef : FieldDef -> Type
 val name_of_fdef: FieldDef -> string
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Tables of FieldDefs.  Logically equivalent to a list of FieldDefs but
- * the table is kept in a form optimized for looking up FieldDefs by 
+ * the table is kept in a form optimized for looking up FieldDefs by
  * name.
  * -------------------------------------------------------------------- *)
 
-type FieldDefs (* Abstract type qquivalent to a list of FieldDefs *)
+type FieldDefs (* Abstract type equivalent to a list of FieldDefs *)
 
 val dest_fdefs: FieldDefs -> FieldDef list
 val filter_fdefs: (FieldDef -> bool) -> FieldDefs -> FieldDefs
 val find_fdef: string -> FieldDefs -> FieldDef list
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Event definitions
  * -------------------------------------------------------------------- *)
 
-type EventDef = 
-    { eventType: Type option; 
+type EventDef =
+    { eventType: Type option;
       eventName: string;
       eventRTSpecialName: bool;
       eventSpecialName: bool;
-      eventAddOn: MethodRef; 
+      eventAddOn: MethodRef;
       eventRemoveOn: MethodRef;
       eventFire: Option<MethodRef>;
       eventOther: MethodRef list;
       eventCustomAttrs: CustomAttributes; }
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Table of those events in a type definition.
  * -------------------------------------------------------------------- *)
 
@@ -977,23 +977,23 @@ type EventDefs
 val dest_events: EventDefs -> EventDef list
 val filter_events: (EventDef -> bool) -> EventDefs -> EventDefs
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Property definitions
  * -------------------------------------------------------------------- *)
 
-type PropertyDef = 
+type PropertyDef =
     { propName: string;
       propRTSpecialName: bool;
       propSpecialName: bool;
       propSet: Option<MethodRef>;
       propGet: Option<MethodRef>;
       propCallconv: HasThis;
-      propType: Type;          
+      propType: Type;
       propInit: Option<FieldInit>;
       propArgs: List<Type>;
       propCustomAttrs: CustomAttributes; }
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Table of those properties in a type definition.
  * -------------------------------------------------------------------- *)
 
@@ -1002,15 +1002,15 @@ type ILPropertyDefs
 val dest_properties: properties -> PropertyDef  list
 val filter_properties: (PropertyDef -> bool) -> ILPropertyDefs -> ILPropertyDefs
 
-(* ------------------------------------------------------------------ 
+(* ------------------------------------------------------------------
  * Method Impls
- * 
- * If there is an entry (pms --> ms) in this table, then method [ms] 
- * is used to implement method [pms] for the purposes of this class 
- * and its subclasses. 
+ *
+ * If there is an entry (pms --> ms) in this table, then method [ms]
+ * is used to implement method [pms] for the purposes of this class
+ * and its subclasses.
  * ------------------------------------------------------------------ *)
 
-type MethodImpl = 
+type MethodImpl =
    { mimplOverrides: OverridesSpec;
      mimplOverrideBy: MethodSpec }
 
@@ -1018,18 +1018,18 @@ type MethodImpls
 
 val dest_mimpls: MethodImpls -> MethodImpl list
 
-(* ------------------------------------------------------------------ 
+(* ------------------------------------------------------------------
  * Type Access, Layout etc.
  * ------------------------------------------------------------------ *)
 
 type TypeLayout =
   | TypeLayout_auto
   | TypeLayout_sequential of TypeLayout_info
-  | TypeLayout_explicit of TypeLayout_info 
+  | TypeLayout_explicit of TypeLayout_info
 
 and TypeLayout_info =
     { typeSize: Int32 option;
-      typePack: UInt16 option } 
+      typePack: UInt16 option }
 
 type TypeInit =
   | TypeInit_beforefield
@@ -1040,26 +1040,26 @@ type TypeEncoding =
   | TypeEncoding_autochar
   | TypeEncoding_unicode
 
-type TypeDefAccess = 
-  | TypeAccess_public 
+type TypeDefAccess =
+  | TypeAccess_public
   | TypeAccess_private
-  | TypeAccess_nested of MemberAccess 
+  | TypeAccess_nested of MemberAccess
 
 type delegate_kind = Multicast | Singlecast
-type delegate_info =  
-    { delKind: delegate_kind;  
+type delegate_info =
+    { delKind: delegate_kind;
       delAsync: bool;
       delArgs: List<Type>;
       delRet: Type }
 
-type enum_info =  
-    { enumValues: (string * FieldInit) list;  
+type enum_info =
+    { enumValues: (string * FieldInit) list;
       enumType: Type }
 
 val values_of_enum_info: enum_info -> (string * FieldInit) list
 val typ_of_enum_info: enum_info -> Type
 
-type TypeDefKind = 
+type TypeDefKind =
   | TypeDef_class
   | TypeDef_valuetype
   | TypeDef_interface
@@ -1070,21 +1070,21 @@ type TypeDefKind =
 val split_type_name: string -> List<string> * string
 
 
-type TypeDef =  
+type TypeDef =
     { tdKind: TypeDefKind;
-      tdName: string;  
+      tdName: string;
       tdGenericParams: GenericParams;
-      tdAccess: TypeDefAccess;  
+      tdAccess: TypeDefAccess;
       tdAbstract: bool;
-      tdSealed: bool; 
-      tdSerializable: bool; 
-      tdComInterop: bool; (* Class or interface generated for COM interop *) 
+      tdSealed: bool;
+      tdSerializable: bool;
+      tdComInterop: bool; (* Class or interface generated for COM interop *)
       tdLayout: TypeLayout;
       tdSpecialName: bool;
       tdEncoding: TypeEncoding;
       tdNested: TypeDefs;
-      tdImplements: List<Type>;  
-      tdExtends: Type option; 
+      tdImplements: List<Type>;
+      tdExtends: Type option;
       tdMethodDefs: MethodDefs;
       tdSecurityDecls: SecurityDecls;
       tdFieldDefs: FieldDefs;
@@ -1132,50 +1132,49 @@ val iter_lazy_tdefs: (string -> TypeDef Lazy.t -> unit) -> TypeDefs -> unit
 val tname_for_toplevel: string
 val is_toplevel_tname: string -> bool
 val dest_tdefs_with_toplevel_first: TypeDefs -> TypeDef list
-
-(* -------------------------------------------------------------------- 
- * "Classes Elsewhere" - classes in auxillary modules.
+(* --------------------------------------------------------------------
+ * "Classes Elsewhere" - classes in auxiliary modules.
  *
- * Manifests include declarations for all the classes in an 
+ * Manifests include declarations for all the classes in an
  * assembly, regardless of which module they are in.
  *
- * The ".class extern" construct describes so-called exported Types -- 
- * these are public classes defined in the auxillary modules of this assembly,
- * i.e. modules other than the manifest-carrying module. 
- * 
- * For example, if you have a two-module 
- * assembly (A.DLL and B.DLL), and the manifest resides in the A.DLL, 
+ * The ".class extern" construct describes so-called exported Types --
+ * these are public classes defined in the auxiliary modules of this assembly,
+ * i.e. modules other than the manifest-carrying module.
+ *
+ * For example, if you have a two-module
+ * assembly (A.DLL and B.DLL), and the manifest resides in the A.DLL,
  * then in the manifest all the public classes declared in B.DLL should
- * be defined as exported Types, i.e., as ".class extern". The public classes 
- * defined in A.DLL should not be defined as ".class extern" -- they are 
- * already available in the manifest-carrying module. The union of all 
- * public classes defined in the manifest-carrying module and all 
- * exported Types defined there is the set of all classes exposed by 
- * this assembly. Thus, by analysing the metadata of the manifest-carrying 
- * module of an assembly, you can identify all the classes exposed by 
+ * be defined as exported Types, i.e., as ".class extern". The public classes
+ * defined in A.DLL should not be defined as ".class extern" -- they are
+ * already available in the manifest-carrying module. The union of all
+ * public classes defined in the manifest-carrying module and all
+ * exported Types defined there is the set of all classes exposed by
+ * this assembly. Thus, by analysing the metadata of the manifest-carrying
+ * module of an assembly, you can identify all the classes exposed by
  * this assembly, and where to find them.
  *
- * Nested classes found in external modules should also be located in 
+ * Nested classes found in external modules should also be located in
  * this table, suitably nested inside another "class_elsewhere"
  * definition.
  * -------------------------------------------------------------------- *)
 
 (* these are only found in the "Nested" field of class_elsewhere objects *)
-type nested_class_elsewhere = 
+type nested_class_elsewhere =
     { Name: string;
       Access: MemberAccess;
       Nested: nested_classes_elsewhere;
-      CustomAttrs: CustomAttributes } 
+      CustomAttrs: CustomAttributes }
 
 and nested_classes_elsewhere
 
 (* these are only found in the classes_elsewhere table in the manifest *)
-type class_elsewhere = 
+type class_elsewhere =
     { Module: ModuleRef;
       Name: string;
       Access: TypeDefAccess;
       Nested: nested_classes_elsewhere;
-      CustomAttrs: CustomAttributes } 
+      CustomAttrs: CustomAttributes }
 
 type classes_elsewhere
 
@@ -1183,28 +1182,28 @@ val dest_nested_classes_elsewhere: nested_classes_elsewhere -> nested_class_else
 val dest_classes_elsewhere: classes_elsewhere -> class_elsewhere list
 val find_class_elsewhere: string -> classes_elsewhere -> class_elsewhere
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * "Manifest Resources" are chunks of resource data, being one of:
- *   - the data section of the current module (Bytes of resource given directly) 
- *   - in an external file in this assembly (offset given in the resource_where field) 
- *   - as a resources in another assembly of the same name.  
+ *   - the data section of the current module (Bytes of resource given directly)
+ *   - in an external file in this assembly (offset given in the resource_where field)
+ *   - as a resources in another assembly of the same name.
  * -------------------------------------------------------------------- *)
 
-type resource_access = 
-  | Public 
-  | Private 
-type resource_where = 
-  | Local of Bytes 
+type resource_access =
+  | Public
+  | Private
+type resource_where =
+  | Local of Bytes
   | File of ModuleRef * Int32
   | Assembly of AssemblyRef
 
-type Resource = 
+type Resource =
     { Name: string;
       Where: resource_where;
       Access: resource_access;
       CustomAttrs: CustomAttributes }
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Table of resources in a module
  * -------------------------------------------------------------------- *)
 
@@ -1212,7 +1211,7 @@ type Resources
 
 val dest_resources: Resources -> Resource  list
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Fixups are pretty obscure stuff for C++ code.  These are not
  * yet correctly represented in the AbstractIL syntax.
  * -------------------------------------------------------------------- *)
@@ -1220,20 +1219,20 @@ val dest_resources: Resources -> Resource  list
 (* type fixup = Fixup of (Int32 * List<string> * data_label) *)
 (* type fixups = fixup list *)
 
-(* -------------------------------------------------------------------- 
- * Manifests, The "main" module of an assembly, and Assemblies. 
- * 
+(* --------------------------------------------------------------------
+ * Manifests, The "main" module of an assembly, and Assemblies.
+ *
  * The main module of an assembly is a module plus some manifest information.
  *
- * An assembly is built by joining together a "main" module plus 
- * several auxiliary modules. 
+ * An assembly is built by joining together a "main" module plus
+ * several auxiliary modules.
  * -------------------------------------------------------------------- *)
 
-type manifest = 
+type manifest =
     { Name: string;
-      AuxModuleHashAlgorithm: Int32; 
+      AuxModuleHashAlgorithm: Int32;
       SecurityDecls: SecurityDecls;
-      PublicKey: Option<Bytes>;  
+      PublicKey: Option<Bytes>;
       Version: VersionInfo option;
       Locale: Locale option;
       CustomAttrs: CustomAttributes;
@@ -1244,17 +1243,17 @@ type manifest =
       NoMachine: bool;
       ClassesElsewhere: classes_elsewhere;
       EntrypointElsewhere: ModuleRef option;
-    } 
+    }
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * One module in the "current" assembly, either a main-module or
  * an auxiliary module.  The main module will have a manifest.
  *
- * The abbreviation "modul" is used frequently throught the OCaml source
- * code because "module" is a resesrved word in OCaml.
+ * The abbreviation "modul" is used frequently throughout the OCaml source
+ * code because "module" is a reserved word in OCaml.
  * -------------------------------------------------------------------- *)
 
-type modul = 
+type modul =
     { Manifest: manifest option;
       CustomAttrs: CustomAttributes;
       Name: string;
@@ -1265,7 +1264,7 @@ type modul =
       VirtAlignment: Int32;
       PhysAlignment: Int32;
       ImageBase: Int32;
-      Resources: Resources; 
+      Resources: Resources;
       NativeResources: Bytes Lazy.t option; (* e.g. win86 resources, as the exact contents of a .res or .obj file *)
     }
 
@@ -1275,33 +1274,33 @@ val assemblyName_of_mainmod: modul -> AssemblyName
 
 (* ====================================================================
  * PART 2
- * 
- * Making metadata.  Where no explicit static member 
- * is given, you should create the concrete datatype directly, 
+ *
+ * Making metadata.  Where no explicit static member
+ * is given, you should create the concrete datatype directly,
  * e.g. by filling in all appropriate record FieldDefs.
  * ==================================================================== *)
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Generate references to existing assemblies and modules
  * -------------------------------------------------------------------- *)
 
 val mk_simple_assemblyRef: AssemblyName -> AssemblyRef
 val mk_simple_modref: ModuleName -> ModuleRef
 
-val mk_simple_scoref_from_assemblyName: AssemblyName -> ScopeRef 
-val mk_simple_scoref_from_assemblyRef: AssemblyRef -> ScopeRef 
+val mk_simple_scoref_from_assemblyName: AssemblyName -> ScopeRef
+val mk_simple_scoref_from_assemblyRef: AssemblyRef -> ScopeRef
 
 val assemblyRef_for_manifest: manifest -> AssemblyRef
 val assemblyRef_for_mainmod: modul -> AssemblyRef
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Take apart MethodSpecs
  * -------------------------------------------------------------------- *)
 
 val rename_mspec: string -> MethodSpec -> MethodSpec
 val relocate_mspec: Type -> MethodSpec -> MethodSpec (* deprecated *)
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Make type refs
  * -------------------------------------------------------------------- *)
 
@@ -1314,7 +1313,7 @@ val mk_nested_tref: ScopeRef * List<string> * string -> TypeRef
 val mk_tref: ScopeRef * string -> TypeRef
 val mk_tref_in_tref: TypeRef * string -> TypeRef
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Make type specs
  * -------------------------------------------------------------------- *)
 
@@ -1322,7 +1321,7 @@ val mk_nongeneric_tspec: TypeRef -> TypeSpec
 val mk_tspec: TypeRef * Instantiation -> TypeSpec
 val mk_Callconv: HasThis -> Callconv
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Make Types
  * -------------------------------------------------------------------- *)
 
@@ -1336,7 +1335,7 @@ val mk_nongeneric_value_typ: TypeRef -> Type
 val mk_array_ty: Type * ArrayShape -> Type
 val mk_sdarray_ty: Type -> Type
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Make method references and specs
  * -------------------------------------------------------------------- *)
 
@@ -1399,8 +1398,8 @@ val mk_mspec_to_mdef: Type * MethodDef * Instantiation -> MethodSpec
 
 val mk_CallSig: Callconv * List<Type> * Type -> CallSig
 
-(* -------------------------------------------------------------------- 
- * Make generalized verions of possibly-generic Types,
+(* --------------------------------------------------------------------
+ * Make generalized versions of possibly-generic Types,
  * e.g. Given the TypeDef for List, return the type "List<T>".
  * -------------------------------------------------------------------- *)
 
@@ -1413,17 +1412,17 @@ val gparam_of_gactual: Type -> GenericParam
 val gparams_of_inst: Instantiation -> GenericParam list
 val generalize_gparams: GenericParam list -> List<Type>
 
-(* -------------------------------------------------------------------- 
- * Custom attributes 
+(* --------------------------------------------------------------------
+ * Custom attributes
  * -------------------------------------------------------------------- *)
 
-val mk_CustomAttributeibute: 
-    TypeRef * 
-    List<CustomAttributeElement> (* fixed args: values and implicit Types *) * 
-    List<(FieldSpec * bool * CustomAttributeElement)> (* named args: vluaes and flags indicating if they are FieldDefs or properties *) 
+val mk_CustomAttributeibute:
+    TypeRef *
+    List<CustomAttributeElement> (* fixed args: values and implicit Types *) *
+    List<(FieldSpec * bool * CustomAttributeElement)> (* named args: vluaes and flags indicating if they are FieldDefs or properties *)
       -> CustomAttribute
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Making code.
  * -------------------------------------------------------------------- *)
 
@@ -1451,7 +1450,7 @@ type ('a, 'b) choice = Choice1of2 of 'a | Choice2of2 of 'b
 val mk_try_multi_filter_catch_block:
   Code * (((CodeLabel * Code), typ) choice * (CodeLabel * Code)) list -> Code
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Injecting code into existing code blocks.  A branch will
  * be added from the given instructions to the (unique) entry of
  * the code, and the first instruction will be the new entry
@@ -1466,7 +1465,7 @@ val prepend_instrs_to_code: Instr list -> Code -> Code
 val prepend_instrs_to_ilmbody: Instr list -> CILMethodBody -> CILMethodBody
 val prepend_instrs_to_mdef: Instr list -> MethodDef -> MethodDef
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Default values for some of the strange flags in a module.
  * -------------------------------------------------------------------- *)
 
@@ -1475,13 +1474,13 @@ val default_modulVirtAlignment: Int32
 val default_modulPhysAlignment: Int32
 val default_modulImageBase: Int32
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Helper to check a class is really an enum
  * -------------------------------------------------------------------- *)
 val check_enum_FieldDefs:
    TypeRef -> FieldDef list -> Type * FieldDef list
 
-(* -------------------------------------------------------------------- 
+(* --------------------------------------------------------------------
  * Derived functions for making some instructions
  * -------------------------------------------------------------------- *)
 
@@ -1543,7 +1542,7 @@ val tspec_for_nested_tdef: ScopeRef -> TypeDef list * TypeDef -> TypeSpec
 
 val prepend_instrs_to_cctor: Instr list -> Option<SourceAnnotation> -> TypeDef -> TypeDef
 
-type tmps = { num_old_locals: int; mutable newlocals: local list; } 
+type tmps = { num_old_locals: int; mutable newlocals: local list; }
 val alloc_tmp: tmps -> local -> UInt16
 
 val mk_storage_ctor: Option<SourceAnnotation> -> Instr list -> TypeSpec -> (string * typ) list -> MethodDef
@@ -1551,7 +1550,7 @@ val mk_simple_storage_ctor: Option<SourceAnnotation> -> TypeSpec option -> TypeS
 
 val and_Tailness: Tailness -> bool -> Tailness
 
-val mk_ctor_mspec_for_delegate_tdef: ScopeRef * TypeDef * Instantiation -> MethodSpec 
+val mk_ctor_mspec_for_delegate_tdef: ScopeRef * TypeDef * Instantiation -> MethodSpec
 
 val tref_for_toplevel: ScopeRef -> TypeRef
 val tspec_for_toplevel: ScopeRef -> TypeSpec
@@ -1622,31 +1621,31 @@ val rescope_tspec: ScopeRef -> TypeSpec -> TypeSpec
 val rescope_typ: ScopeRef -> Type -> Type
 val rescope_mspec: ScopeRef -> MethodSpec -> MethodSpec
 val rescope_ospec: ScopeRef -> OverridesSpec -> OverridesSpec
-val rescope_mref: ScopeRef -> MethodRef -> MethodRef 
+val rescope_mref: ScopeRef -> MethodRef -> MethodRef
 val rescope_fref: ScopeRef -> FieldRef -> FieldRef
 val rescope_fspec: ScopeRef -> FieldSpec -> FieldSpec
 
 
-type seh_clause = 
+type seh_clause =
   | SEH_finally of (CodeLabel * CodeLabel)
   | SEH_fault  of (CodeLabel * CodeLabel)
   | SEH_filter_catch of (CodeLabel * CodeLabel) * (CodeLabel * CodeLabel)
   | SEH_type_catch of Type * (CodeLabel * CodeLabel)
 
-type exception_spec = 
+type exception_spec =
     { exnRange: (CodeLabel * CodeLabel);
       exnClauses: seh_clause list }
 
-type local_spec = 
+type local_spec =
     { locRange: (CodeLabel * CodeLabel);
       locInfos: local_debug_info list }
 
 val build_code:
     string ->
-    (CodeLabel -> int) -> 
-    Instr array -> 
-    exception_spec list -> 
-    local_spec list -> 
+    (CodeLabel -> int) ->
+    Instr array ->
+    exception_spec list ->
+    local_spec list ->
     Code
 
 val inst_tspec_aux: int -> Instantiation -> TypeSpec -> TypeSpec
@@ -1821,7 +1820,7 @@ val mspec_Object_Equals: MethodSpec
 val mspec_Object_GetHashCode: MethodSpec
 val mspec_IComparable_CompareTo: MethodSpec
 val mspec_Console_WriteLine: MethodSpec
-val mspec_RuntimeHelpers_InitializeArray: MethodSpec 
+val mspec_RuntimeHelpers_InitializeArray: MethodSpec
 
 val mk_DebuggableAttribute: bool (* debug tracking *) * bool (* disable JIT optimizations *) -> CustomAttribute
 
@@ -1849,11 +1848,10 @@ val intern_tspec: TypeSpec -> TypeSpec
 val intern_typ: Type -> Type
 val intern_instr: Instr -> Instr
 
-type refs = 
-    { refsAssembly: AssemblyRef list; 
+type refs =
+    { refsAssembly: AssemblyRef list;
       refsModul: ModuleRef list; }
 
 val refs_of_module: modul -> refs
 val combine_refs: refs -> refs -> refs
 val empty_refs: refs
-

@@ -219,7 +219,7 @@
   </data>
   <data name="AddSvcRefDlg_OPSelectContract" xml:space="preserve">
     <value>Select a service contract to view its operations.</value>
-    <comment>This is the message displayed when user selects non-cotract nodes.</comment>
+    <comment>This is the message displayed when user selects non-contract nodes.</comment>
   </data>
   <data name="CSRDlg_Title" xml:space="preserve">
     <value>Service Reference Settings</value>

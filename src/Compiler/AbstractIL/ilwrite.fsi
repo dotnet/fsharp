@@ -25,11 +25,12 @@ type options =
       dumpDebugInfo: bool
       referenceAssemblyOnly: bool
       referenceAssemblyAttribOpt: ILAttribute option
+      referenceAssemblySignatureHash: int option
       pathMap: PathMap }
 
 /// Write a binary to the file system.
 val WriteILBinaryFile: options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
 
-/// Write a binary to an array of bytes auitable for dynamic loading.
+/// Write a binary to an array of bytes suitable for dynamic loading.
 val WriteILBinaryInMemory:
     options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> byte[] * byte[] option

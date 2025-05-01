@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.CompilerOptions.FscSourceFilesArguments
+module CompilerOptions.Fsc.FscSourceFilesArguments
 
 open Xunit
 open FSharp.Test

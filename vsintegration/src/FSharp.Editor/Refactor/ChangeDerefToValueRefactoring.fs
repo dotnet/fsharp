@@ -15,6 +15,7 @@ open FSharp.Compiler.Syntax
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
+open CancellableTasks
 
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ChangeDerefToValue"); Shared>]
 type internal FSharpChangeDerefToValueRefactoring [<ImportingConstructor>] () =
@@ -27,6 +28,8 @@ type internal FSharpChangeDerefToValueRefactoring [<ImportingConstructor>] () =
 
             let! parseResults =
                 document.GetFSharpParseResultsAsync(nameof (FSharpChangeDerefToValueRefactoring))
+                |> CancellableTask.start context.CancellationToken
+                |> Async.AwaitTask
                 |> liftAsync
 
             let selectionRange =

@@ -3,16 +3,17 @@
 namespace FSharp.Compiler.UnitTests
 
 open System.Collections.Immutable
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 
-[<TestFixture>]
+
 module OptionalInteropTests =
 
-    [<TestCase("5.0")>]
-    [<TestCase("preview")>]
+    [<Theory>]
+    [<InlineData("5.0")>]
+    [<InlineData("preview")>]
     let ``C# method with an optional parameter and called with an option type should compile`` langVersion =
         let csSrc =
             """

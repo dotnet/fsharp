@@ -11,7 +11,7 @@ open FSharp.Compiler.CodeAnalysis
 open Internal.Utilities.Library 
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
-open NUnit.Framework
+open Xunit
 open System.IO
 
 type Check = 
@@ -51,122 +51,121 @@ type Check =
         FileSystem.FileDeleteShim("watson-test.fs")
 
 
-[<TestFixture>] 
 module WatsonTests = 
 
-    [<Test>]
+    [<Fact>]
     let FscOutOfMemory() = Check.FscLevelException<System.OutOfMemoryException>("fsc-oom")
 
-    [<Test>]
+    [<Fact>]
     let FscArgumentNull() = Check.FscLevelException<System.ArgumentNullException>("fsc-an")        
     
-    [<Test>]
+    [<Fact>]
     let FscInvalidOperation() = Check.FscLevelException<System.InvalidOperationException>("fsc-invop")        
 
 // As of .NET 4.0 some exception types cannot be caught. As a result, we cannot test this case. I did visually confirm a Watson report is sent, though.
-//    [<Test>]
+//    [<Fact>]
 //    let FscAccessViolation() = Check.FscLevelException<System.AccessViolationException>("fsc-ac")        
 
-    [<Test>]
+    [<Fact>]
     let FscArgumentOutOfRange() = Check.FscLevelException<System.ArgumentOutOfRangeException>("fsc-aor")        
 
-    [<Test>]
+    [<Fact>]
     let FscDivideByZero() = Check.FscLevelException<System.DivideByZeroException>("fsc-dv0")        
 
-    [<Test>]
+    [<Fact>]
     let FscNotFiniteNumber() = Check.FscLevelException<System.NotFiniteNumberException>("fsc-nfn")        
 
-    [<Test>]
+    [<Fact>]
     let FscOverflow() = Check.FscLevelException<System.OverflowException>("fsc-oe")        
 
-    [<Test>]
+    [<Fact>]
     let FscArrayTypeMismatch() = Check.FscLevelException<System.ArrayTypeMismatchException>("fsc-atmm")        
 
-    [<Test>]
+    [<Fact>]
     let FscBadImageFormat() = Check.FscLevelException<System.BadImageFormatException>("fsc-bif")        
 
-    [<Test>]
+    [<Fact>]
     let FscKeyNotFound() = Check.FscLevelException<System.Collections.Generic.KeyNotFoundException>("fsc-knf")        
 
-    [<Test>]
+    [<Fact>]
     let FscIndexOutOfRange() = Check.FscLevelException<System.IndexOutOfRangeException>("fsc-ior")        
 
-    [<Test>]
+    [<Fact>]
     let FscInvalidCast() = Check.FscLevelException<System.InvalidCastException>("fsc-ic")        
 
-    [<Test>]
+    [<Fact>]
     let FscInvalidProgram() = Check.FscLevelException<System.InvalidProgramException>("fsc-ip")        
 
-    [<Test>]
+    [<Fact>]
     let FscMemberAccess() = Check.FscLevelException<System.MemberAccessException>("fsc-ma")        
 
-    [<Test>]
+    [<Fact>]
     let FscNotImplemented() = Check.FscLevelException<System.NotImplementedException>("fsc-ni")        
 
-    [<Test>]
+    [<Fact>]
     let FscNullReference() = Check.FscLevelException<System.NullReferenceException>("fsc-nr")        
 
-    [<Test>]
+    [<Fact>]
     let FscOperationCancelled() = Check.FscLevelException<System.OperationCanceledException>("fsc-oc")        
     
-    //[<Test>]
+    //[<Fact>]
     //let FscFailure() = Check.FscLevelException<Microsoft.FSharp.Core.FailureException>("fsc-fail")            
       
-    [<Test>]
+    [<Fact>]
     let TypeCheckOutOfMemory() = Check.FscLevelException<System.OutOfMemoryException>("tc-oom")
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckArgumentNull() = Check.FscLevelException<System.ArgumentNullException>("tc-an")        
     
-    [<Test>]
+    [<Fact>]
     let TypeCheckInvalidOperation() = Check.FscLevelException<System.InvalidOperationException>("tc-invop")        
 
 // As of .NET 4.0 some exception types cannot be caught. As a result, we cannot test this case. I did visually confirm a Watson report is sent, though.
-//    [<Test>]
+//    [<Fact>]
 //    let TypeCheckAccessViolation() = Check.FscLevelException<System.AccessViolationException>("tc-ac")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckArgumentOutOfRange() = Check.FscLevelException<System.ArgumentOutOfRangeException>("tc-aor")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckDivideByZero() = Check.FscLevelException<System.DivideByZeroException>("tc-dv0")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckNotFiniteNumber() = Check.FscLevelException<System.NotFiniteNumberException>("tc-nfn")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckOverflow() = Check.FscLevelException<System.OverflowException>("tc-oe")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckArrayTypeMismatch() = Check.FscLevelException<System.ArrayTypeMismatchException>("tc-atmm")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckBadImageFormat() = Check.FscLevelException<System.BadImageFormatException>("tc-bif")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckKeyNotFound() = Check.FscLevelException<System.Collections.Generic.KeyNotFoundException>("tc-knf")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckIndexOutOfRange() = Check.FscLevelException<System.IndexOutOfRangeException>("tc-ior")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckInvalidCast() = Check.FscLevelException<System.InvalidCastException>("tc-ic")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckInvalidProgram() = Check.FscLevelException<System.InvalidProgramException>("tc-ip")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckMemberAccess() = Check.FscLevelException<System.MemberAccessException>("tc-ma")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckNotImplemented() = Check.FscLevelException<System.NotImplementedException>("tc-ni")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckNullReference() = Check.FscLevelException<System.NullReferenceException>("tc-nr")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckOperationCancelled() = Check.FscLevelException<System.OperationCanceledException>("tc-oc")        
 
-    [<Test>]
+    [<Fact>]
     let TypeCheckFailure() = Check.FscLevelException<System.Exception>("tc-fail")            
 

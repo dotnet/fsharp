@@ -3,7 +3,7 @@
 //
 // Expressions
 //
-// Rigit type annotation
+// Rigid type annotation
 // expr : ty
 //
 // Misc test on 'null'

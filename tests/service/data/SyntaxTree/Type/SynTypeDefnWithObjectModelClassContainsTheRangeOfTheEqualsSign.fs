@@ -1,4 +1,0 @@
-
-type Foobar () =
-    class
-    end

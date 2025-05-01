@@ -26,7 +26,7 @@ namespace NS
           static member StaticExtensionProperty002 with get() = 12
           static member StaticExtensionProperty003 with get() = 13
           static member StaticExtensionProperty003 with set(i:int) = ()
-// Invalid: can't cross the assembly bounday anymore
+// Invalid: can't cross the assembly boundary anymore
 //          static member StaticExtensionProperty004 
 //            with get () = Lib.staticField
 //            and set (inp : int) = Lib.staticField <- inp             
@@ -62,7 +62,7 @@ namespace NS
           static member StaticExtensionProperty002 with get() = 12
           static member StaticExtensionProperty003 with get() = 13
           static member StaticExtensionProperty003 with set(i:int) = ()
-// Invalid: can't cross the assembly bounday anymore
+// Invalid: can't cross the assembly boundary anymore
 //          static member StaticExtensionProperty004 
 //            with get () = Lib.staticField
 //            and set inp  = Lib.staticField <- inp
@@ -90,7 +90,7 @@ namespace NS
       printf "Lib.ExtensionProperty003 failed\n"
       res <- false
 
-// Invalid: can't cross the assembly bounday anymore
+// Invalid: can't cross the assembly boundary anymore
 //  a.ExtensionProperty004 <- 4
 //  if not (a.ExtensionProperty004 = 4) then
 //    printf "Lib.ExtensionProperty004 failed\n"
@@ -113,7 +113,7 @@ namespace NS
       res <- false
 
 
-// Invalid: can't cross the assembly bounday anymore
+// Invalid: can't cross the assembly boundary anymore
 //  Lib.StaticExtensionProperty004 <- 5
 //  if not (Lib.StaticExtensionProperty004 = 5) then
 //    printf "Lib.StaticExtensionProperty004 failed\n"

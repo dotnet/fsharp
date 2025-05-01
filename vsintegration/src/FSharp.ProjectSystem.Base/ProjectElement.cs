@@ -40,7 +40,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// This class represent a project item (usualy a file) and allow getting and
+    /// This class represent a project item (usually a file) and allow getting and
     /// setting attribute on it.
     /// This class allow us to keep the public details of our items hidden from
     /// our derived classes.
@@ -407,7 +407,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             Debug.Assert(!element1.IsVirtual || !element2.IsVirtual, "Cannot compare virtual nodes");
 
-            // Cannot compare vitual items.
+            // Cannot compare virtual items.
             if (element1.IsVirtual || element2.IsVirtual)
             {
                 return false;

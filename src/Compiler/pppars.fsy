@@ -2,8 +2,8 @@
 
 %{
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Syntax
+
+#nowarn "3261"  // the generated code would need to properly annotate nulls, e.g. changing System.Object to `obj|null`
 
 let dummy       = IfdefId("DUMMY")
 

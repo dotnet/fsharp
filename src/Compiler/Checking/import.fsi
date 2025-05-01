@@ -10,6 +10,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
+open System.Collections.Concurrent
+
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif
@@ -35,6 +37,25 @@ type AssemblyLoader =
     abstract RecordGeneratedTypeRoot: ProviderGeneratedType -> unit
 #endif
 
+[<Struct; NoComparison>]
+type CanCoerce =
+    | CanCoerce
+    | NoCoerce
+
+[<Struct; NoComparison; CustomEquality>]
+type TTypeCacheKey =
+    interface System.IEquatable<TTypeCacheKey>
+    private new: ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
+
+    static member FromStrippedTypes:
+        ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
+
+    val ty1: TType
+    val ty2: TType
+    val canCoerce: CanCoerce
+    val tcGlobals: TcGlobals
+    override GetHashCode: unit -> int
+
 /// Represents a context used for converting AbstractIL .NET and provided types to F# internal compiler data structures.
 /// Also cache the conversion of AbstractIL ILTypeRef nodes, based on hashes of these.
 ///
@@ -50,6 +71,29 @@ type ImportMap =
 
     /// The TcGlobals for the import context
     member g: TcGlobals
+
+    /// Type subsumption cache
+    member TypeSubsumptionCache: ConcurrentDictionary<TTypeCacheKey, bool>
+
+module Nullness =
+
+    [<Struct; NoEquality; NoComparison>]
+    type AttributesFromIL =
+        | AttributesFromIL of metadataIndex: int * attrs: ILAttributesStored
+
+        member Read: unit -> ILAttributes
+
+    [<Struct; NoEquality; NoComparison>]
+    type NullableContextSource =
+        | FromClass of AttributesFromIL
+        | FromMethodAndClass of methodAttrs: AttributesFromIL * classAttrs: AttributesFromIL
+
+    [<Struct; NoEquality; NoComparison>]
+    type NullableAttributesSource =
+        { DirectAttributes: AttributesFromIL
+          Fallback: NullableContextSource }
+
+        static member Empty: NullableAttributesSource
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
 val internal ImportILTypeRef: ImportMap -> range -> ILTypeRef -> TyconRef
@@ -79,7 +123,13 @@ val internal ImportProvidedMethodBaseAsILMethodRef: ImportMap -> range -> Tainte
 
 /// Import a set of Abstract IL generic parameter specifications as a list of new F# generic parameters.
 val internal ImportILGenericParameters:
-    (unit -> ImportMap) -> range -> ILScopeRef -> TType list -> ILGenericParameterDef list -> Typar list
+    (unit -> ImportMap) ->
+    range ->
+    ILScopeRef ->
+    TType list ->
+    Nullness.NullableContextSource ->
+    ILGenericParameterDef list ->
+        Typar list
 
 /// Import an IL assembly as a new TAST CCU
 val internal ImportILAssembly:
@@ -100,7 +150,19 @@ val internal ImportILAssemblyTypeForwarders:
 
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.
-val RescopeAndImportILType:
+/// This function fully skips the 'nullness checking' metadata flags.
+val RescopeAndImportILTypeSkipNullness:
     scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilTy: ILType -> TType
+
+/// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
+/// being compiled. importInst gives the context for interpreting type variables.
+val RescopeAndImportILType:
+    scoref: ILScopeRef ->
+    amap: ImportMap ->
+    m: range ->
+    importInst: TType list ->
+    nullnessSource: Nullness.NullableAttributesSource ->
+    ilTy: ILType ->
+        TType
 
 val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilTy: ILType -> bool

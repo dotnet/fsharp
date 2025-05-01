@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiDetailedHelpLink">
+        <source>See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</source>
+        <target state="new">See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
         <target state="translated">FSI 中未调用具有 [&lt;EntryPoint&gt;] 的函数。未调用“{0}”。执行“{1} &lt;args&gt;”，以便使用命令行参数的相应字符串数组调用“{2}”。</target>
@@ -17,6 +22,11 @@
         <target state="translated">清除屏幕</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
+        <target state="translated">显示标识符的文档，例如#help \"List.map\";;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">由于早期错误，无法完成操作</target>
@@ -28,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
-        <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">发出多个程序集(默认打开)</target>
+        <source>Emit multiple assemblies ({0} by default)</source>
+        <target state="new">Emit multiple assemblies ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -103,8 +113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
-        <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">在 Windows 窗体事件循环中执行交互(默认情况下启用)</target>
+        <source>Execute interactions on a Windows Forms event loop ({0} by default)</source>
+        <target state="new">Execute interactions on a Windows Forms event loop ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
@@ -113,13 +123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
-        <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">支持控制台中的 Tab 完成操作(默认情况下启用)</target>
+        <source>Support TAB completion in console ({0} by default)</source>
+        <target state="new">Support TAB completion in console ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">发出用引号引起来的调试信息</target>
+        <source>Emit debug information in quotations ({0} by default)</source>
+        <target state="new">Emit debug information in quotations ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
@@ -288,8 +298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
-        <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">防止引用被 F# 交互窗口进程锁定</target>
+        <source>Prevents references from being locked by the F# Interactive process ({0} by default)</source>
+        <target state="new">Prevents references from being locked by the F# Interactive process ({0} by default)</target>
         <note />
       </trans-unit>
     </body>

@@ -7,7 +7,7 @@ open Hints
 
 module OptionParser =
 
-    let getHintKinds options =
+    let inline getHintKinds options =
         Set
             [
                 if options.IsInlineTypeHintsEnabled then

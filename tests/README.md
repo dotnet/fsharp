@@ -19,12 +19,11 @@
 
 ## Framework for testing
 
-The following test frameworks and libraries will be used for new test projects **[xUnit Test Framework](https://xunit.net/), [FluentAssertions](https://fluentassertions.com/) (+ [FsUnit](https://fsprojects.github.io/FsUnit/) and [FsCheck](https://github.com/fscheck/FsCheck) when needed)**. All existing NUnit test suites will be migrated to xUnit.
+The following test frameworks and libraries will be used for new test projects **[xUnit Test Framework](https://xunit.net/) and [FsCheck](https://github.com/fscheck/FsCheck) when needed)**.
 
 **Justification:**
 
 * **xUnit** is an extensible, TDD adherent, testing framework, which was successfully adopted by many .NET engineering teams, including Roslyn, AspNetCore, EFcore, etc, has a "cleaner" approach for writing test suites (i.e. class constructor for setup, implementing IDisposable for teardown, as oppose to custom attributes). More info [here](https://xunit.net/docs/comparisons).
-* **FluentAssertions** makes it easier to write scoped assertions, provides better error messages.
 
 **Alternatives:** NUnit, MSBuild, Expecto
 
@@ -89,18 +88,17 @@ For all new and migrated tests, any common/helper functionality shall be factore
 
 ## Migrating existing tests
 
-Existing FSharpQA and Cambridge need to be migrated to corresponding test projects: component-style tests to the `FSharp.Compiler.ComponentTests` and unittest-style tests - `FSharp.Compiler.UnitTests`, `FSharp.Compiler.Private.Scripting.UnitTests`, `FSharp.Build.UnitTests`, etc.
+Existing FSharpQA and Cambridge need to be migrated to corresponding test projects: component-style tests to the `FSharp.Compiler.ComponentTests` and unittest-style tests - `FSharp.Compiler.Private.Scripting.UnitTests`, `FSharp.Build.UnitTests`, etc.
 
 ## Next steps
 
-* [**In Progress**] Migrate existing `NUnit` tests to xUnit.
 * Clean up CompilerAssert.
 * Make PEVerify tests work in netcore/non-windows environment.
 * Start migration of existing (namely, FSharpQA and Cambridge) suites to xUnit-based projects.
 
 ## Open questions:
 
-* As far as I know, [FSharp.Compiler.Service](https://github.com/fsharp/FSharp.Compiler.Service) is dependant on some of the F# compiler tests. Does it have to be changed as well?
+* As far as I know, [FSharp.Compiler.Service](https://github.com/fsharp/FSharp.Compiler.Service) is dependent on some of the F# compiler tests. Does it have to be changed as well?
 
 ## Other
 

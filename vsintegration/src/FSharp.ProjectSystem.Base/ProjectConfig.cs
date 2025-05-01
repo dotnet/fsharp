@@ -119,7 +119,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="canonicalName">The canonicalName name.</param>
         /// <param name="configName">The name of the configuration.</param>
         /// <param name="platformName">The name of the platform.</param>
-        /// <returns>true if successfull.</returns>
+        /// <returns>true if successful.</returns>
         internal static bool TrySplitConfigurationCanonicalName(string canonicalName, out string configName, out string platformName)
         {
             // TODO rationalize this code with callers and ProjectNode.OnHandleConfigurationRelatedGlobalProperties, ProjectNode.TellMSBuildCurrentSolutionConfiguration, etc
@@ -484,7 +484,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             set
             {
-                // for an emtpy string, convert to the cwd
+                // for an empty string, convert to the cwd
                 if (value == string.Empty)
                     value = @".\";
                     
@@ -856,7 +856,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Implementation of the IVsSpecifyProjectDesignerPages. It will retun the pages that are configuration dependent.
+        /// Implementation of the IVsSpecifyProjectDesignerPages. It will return the pages that are configuration dependent.
         /// </summary>
         /// <param name="pages">The pages to return.</param>
         /// <returns>VSConstants.S_OK</returns>        
@@ -1048,7 +1048,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     }
 
                     if (!Directory.Exists(fullPath))
-                        throw new WorkingDirectoryNotExistsException(fullPath);
+                        throw new WorkingDirectoryNonexistentException(fullPath);
                     
                     info.bstrCurDir = fullPath;
                 }
@@ -1065,7 +1065,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             property = GetConfigurationProperty("EnableUnmanagedDebugging", false);
             if (property != null && string.Compare(property, "true", StringComparison.OrdinalIgnoreCase) == 0)
             {
-                //Set the unmanged debugger
+                //Set the unmanaged debugger
                 //TODO change to vsconstant when it is available in VsConstants. It should be guidCOMPlusNativeEng
                 info.clsidCustom = new Guid("{92EF0900-2251-11D2-B72E-0000F87572EF}");
             }
@@ -1338,7 +1338,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             if (this.evaluatedProject == null)
-               throw new Exception("Failed to retrive properties");
+               throw new Exception("Failed to retrieve properties");
 
             // return property asked for
             return this.evaluatedProject.GetProperty(propertyName);
@@ -1362,7 +1362,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "pages");
             }
 
-            // Retrive the list of guids from hierarchy properties.
+            // Retrieve the list of guids from hierarchy properties.
             // Because a flavor could modify that list we must make sure we are calling the outer most implementation of IVsHierarchy
             string guidsList = String.Empty;
             IVsHierarchy hierarchy = project.InteropSafeIVsHierarchy;
@@ -1591,7 +1591,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project.ProjectIDGuid, out activeConfig) ||
                 activeConfig != this.ConfigCanonicalName)
             {
-                logger.WriteLine("Not up to date: active confic does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
+                logger.WriteLine("Not up to date: active config does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
                 if (!testing)
                     return false;
             }
@@ -1674,7 +1674,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             if (outputTimeValue < inputTimeValue)
             {
-                logger.WriteLine("Declaring project NOT up to date, ouput {0} is stale", output);
+                logger.WriteLine("Declaring project NOT up to date, output {0} is stale", output);
                 return false;
             }
 
@@ -1687,9 +1687,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public ClassLibraryCannotBeStartedDirectlyException() : base(SR.GetStringWithCR(SR.CannotStartLibraries)) { }
     }
 
-    internal class WorkingDirectoryNotExistsException : COMException
+    internal class WorkingDirectoryNonexistentException : COMException
     {
-        public WorkingDirectoryNotExistsException(string path) : base(string.Format(SR.GetStringWithCR(SR.WorkingDirectoryNotExists), path)) { }
+        public WorkingDirectoryNonexistentException(string path) : base(string.Format(SR.GetStringWithCR(SR.WorkingDirectoryNonexistent), path)) { }
     }
 
     //=============================================================================
@@ -1954,7 +1954,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Now repaint references if that is needed. 
                 // We hardly rely here on the fact the ResolveAssemblyReferences target has been run as part of the build.
-                // One scenario to think at is when an assembly reference is renamed on disk thus becomming unresolvable, 
+                // One scenario to think at is when an assembly reference is renamed on disk thus becoming unresolvable, 
                 // but msbuild can actually resolve it.
                 // Another one if the project was opened only for browsing and now the user chooses to build or rebuild.
                 if (shouldRepaintReferences && (result.IsSuccessful))

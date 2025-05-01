@@ -12,7 +12,7 @@ let test1 = "
     D
 "
 
-// Verify no conditional compliation occured
+// Verify no conditional compilation occurred
 if test1.IndexOf("A") = -1 then exit 1
 if test1.IndexOf("B") = -1 then exit 1
 if test1.IndexOf("C") = -1 then exit 1

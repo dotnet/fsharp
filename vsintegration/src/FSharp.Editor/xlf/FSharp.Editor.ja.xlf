@@ -17,9 +17,19 @@
         <target state="translated">見つからないインスタンス メンバー パラメーターを追加する</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingSeq">
+        <source>Add missing 'seq'</source>
+        <target state="new">Add missing 'seq'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' キーワードを追加する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddReturnTypeAnnotation">
+        <source>Add return type annotation</source>
+        <target state="translated">戻り値の型の注釈の追加</target>
         <note />
       </trans-unit>
       <trans-unit id="AddTypeAnnotation">
@@ -36,18 +46,25 @@ Inline hints;
 Display inline type hints (preview);
 Display return type hints (preview);
 Display inline parameter name hints (preview);
+Use Transparent Compiler (experimental);
 Live Buffers;
-Use live (unsaved) buffers for checking</source>
-        <target state="needs-review-translation">ブロック構造ガイド;
-F# コードの構造ガイドラインを表示します。
-アウトライン;
-F# コードのアウトラインと折りたたみ可能なノードを表示します。
+Use live (unsaved) buffers for analysis</source>
+        <target state="translated">ブロック構造のガイド;
+F# コードの構造のガイドラインを表示;
+アウトライン表示;
+F# コードのアウトラインおよび折りたたみ可能なノードを表示する;
 インライン ヒント;
 インライン型のヒントを表示する (プレビュー);
 戻り値型のヒントを表示する (プレビュー);
-インライン パラメーター名のヒントを表示する (プレビュー);ビール;
+インライン パラメーター名のヒントを表示 (プレビュー);
+Transparent Compiler を使用する (試験段階);
 ライブ バッファー;
-ライブ (未保存) バッファーをチェックに使用する</target>
+分析にライブ (未保存) バッファーを使用する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangeEqualsInFieldTypeToColon">
+        <source>Use ':' for type in field declaration</source>
+        <target state="translated">フィールド宣言の型に ':' を使用する</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeFixesPageKeywords">
@@ -162,19 +179,17 @@ Time until stale results are used (in milliseconds);
 Parallelization (requires restart);
 Enable parallel type checking with signature files;
 Enable parallel reference resolution;
-Enable fast find references &amp; rename (experimental);
-Cache parsing results (experimental)</source>
-        <target state="translated">F# プロジェクトとキャッシュのパフォーマンス オプション;
-メモリ内のプロジェクト間参照を有効にする。
+Enable fast find references &amp; rename (restart required)</source>
+        <target state="new">F# Project and Caching Performance Options;
+Enable in-memory cross project references;
 Enable_partial_type_checking;
-IntelliSense パフォーマンス オプション;
-IntelliSense 機能の古いデータを有効にする。
-古い結果が使用されるまでの時間 (ミリ秒);
-並列化 (再起動が必要);
-署名ファイルを使用して並列型チェックを有効にする。
-並列参照解決を有効にする;
-高速検索参照の有効化と名前の変更 (試験段階);
-キャッシュ解析の結果 (試験段階)</target>
+IntelliSense Performance Options;
+Enable stale data for IntelliSense features;
+Time until stale results are used (in milliseconds);
+Parallelization (requires restart);
+Enable parallel type checking with signature files;
+Enable parallel reference resolution;
+Enable fast find references &amp; rename (restart required)</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -190,15 +205,22 @@ Navigation links;
 Show navigation links as;
 Solid underline;
 Dot underline;
-Dash underline;</source>
-        <target state="translated">書式 設定;
-希望の説明の幅 (文字数);
-F# 構文規則に準拠するよう、改行を追加して指定された幅に署名を書式設定します;
+Dash underline;
+Show remarks in Quick Info</source>
+        <target state="translated">書式設定;
+優先する説明の文字幅;
+F# 構文規則に準拠した改行を追加して、署名を指定された幅に書式設定する;
 ナビゲーション リンク;
-ナビゲーション リンクを次のように表示します:
-塗りつぶしの下線;
+次としてナビゲーション リンクを表示;
+実線の下線;
 ドットの下線;
-ダッシュ下線;</target>
+破線の下線;
+クイック ヒントに注釈を表示する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemarksHeader">
+        <source>Remarks:</source>
+        <target state="translated">注釈:</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveReturn">
@@ -209,6 +231,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">'return!' の削除</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnnecessaryParentheses">
+        <source>Remove unnecessary parentheses</source>
+        <target state="translated">不要なかっこの削除</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
@@ -229,6 +256,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">'{0}' から '_' に名前を変更する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReturnsHeader">
+        <source>Returns:</source>
+        <target state="translated">戻り値:</target>
         <note />
       </trans-unit>
       <trans-unit id="SimplifyName">
@@ -259,6 +291,11 @@ F# 構文規則に準拠するよう、改行を追加して指定された幅�
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">未使用の Open 宣言を削除する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
+        <source>Unexpected symbol '=' in field declaration. Expected ':' or other token.</source>
+        <target state="translated">フィールド宣言で予期しないシンボル '=' が発生しました。':' またはその他のトークンが必要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnusedOpens">

@@ -4,14 +4,14 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open FSharp.Compiler.Diagnostics
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
 #if NETCOREAPP
-[<TestFixture>]
+
 module SpanTests =
 
-    [<Test>]
+    [<Fact>]
     let Script_SpanForInDo() =
         let script = 
             """
@@ -30,7 +30,7 @@ test ()
             """
         
         CompilerAssert.RunScript script []
-    [<Test>]
+    [<Fact>]
     let Script_SpanForInBoundsDo() =
         let script = 
             """
@@ -50,7 +50,7 @@ test ()
         
         CompilerAssert.RunScript script []
 
-    [<Test>]
+    [<Fact>]
     let Script_EmptySpanForInBoundsDo() =
         let script = 
             """
@@ -70,7 +70,7 @@ test ()
         
         CompilerAssert.RunScript script []
 
-    [<Test>]
+    [<Fact>]
     let Script_ReadOnlySpanForInDo() =
         let script = 
             """
@@ -90,7 +90,7 @@ test ()
     
         CompilerAssert.RunScript script []
 
-    [<Test>]
+    [<Fact>]
     let Script_ReadOnlySpanForInBoundsDo() =
         let script = 
             """
@@ -111,7 +111,7 @@ test ()
         CompilerAssert.RunScript script []
 
 
-    [<Test>]
+    [<Fact>]
     let ``Invalid usage of type abbreviated span should fail to compile``() =
         CompilerAssert.TypeCheckWithErrors """
 open System
@@ -148,7 +148,7 @@ let test () =
                 FSharpDiagnosticSeverity.Error, 412, (19, 27, 19, 29), "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Type abbreviation that boxes a span should fail to compile``() =
         CompilerAssert.TypeCheckWithErrors """
 open System
@@ -161,7 +161,7 @@ let f (x: TA) = ()
                 FSharpDiagnosticSeverity.Error, 3300, (6, 8, 6, 9), "The parameter 'x' has an invalid type 'TA'. This is not permitted by the rules of Common IL."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``A custom IsByRefLikeAttribute can define a ref struct``() =
         CompilerAssert.TypeCheckWithErrors """
 namespace System.Runtime.CompilerServices
@@ -175,4 +175,22 @@ type IsByRefLikeAttribute() = inherit Attribute()
 type T(span: Span<byte>) = struct end
              """
              [| |]
+
+    [<Fact>]
+    let ``A byref struct with custom attr can be passed as typar``() =
+        CompilerAssert.TypeCheckWithErrors """
+namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.Struct)>]
+type IsByRefLikeAttribute() = inherit Attribute()
+
+[<IsByRefLike>]
+type T(span: Span<byte>) = struct end
+
+module WhatEver = 
+    let processT (a: Action<T>, ie: seq<T>, asList: list<T>) = ()
+             """
+             [| FSharpDiagnosticSeverity.Error, 3300, (13, 45, 13, 51), "The parameter 'asList' has an invalid type 'T list'. This is not permitted by the rules of Common IL." |]
 #endif

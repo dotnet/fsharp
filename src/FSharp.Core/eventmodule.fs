@@ -12,7 +12,7 @@ module Event =
     [<CompiledName("Map")>]
     let map mapping (sourceEvent: IEvent<'Delegate, 'T>) =
         let ev = new Event<_>()
-        sourceEvent.Add(fun x -> ev.Trigger(mapping x))
+        sourceEvent.Add(mapping >> ev.Trigger)
         ev.Publish
 
     [<CompiledName("Filter")>]

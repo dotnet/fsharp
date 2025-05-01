@@ -3,14 +3,13 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture()>]
 module ForInDoMutableRegressionTest =
 
     /// This test is to ensure we initialize locals inside loops.
-    [<Test>]
+    [<Fact>]
     let Script_ForInDoMutableRegressionTest() =
         let script = 
             """

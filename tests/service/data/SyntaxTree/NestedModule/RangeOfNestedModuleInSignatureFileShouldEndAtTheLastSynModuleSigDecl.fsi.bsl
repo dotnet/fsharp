@@ -41,11 +41,19 @@ SigFile
                         ([],
                          Some
                            (PostfixList
-                              ([SynTyparDecl ([], SynTypar (T1, None, false));
-                                SynTyparDecl ([], SynTypar (T2, None, false));
-                                SynTyparDecl ([], SynTypar (T3, None, false));
-                                SynTyparDecl ([], SynTypar (T4, None, false))],
-                               [], (13,14--13,31))), [], [Tuple],
+                              ([SynTyparDecl
+                                  ([], SynTypar (T1, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T2, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T3, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T4, None, false), [],
+                                   { AmpersandRanges = [] })], [],
+                               (13,14--13,31))), [], [Tuple],
                          PreXmlDoc ((13,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (13,9--13,14)),
                       ObjectModel
@@ -117,7 +125,7 @@ SigFile
                                      SynArgInfo ([], false, None)]],
                                    SynArgInfo ([], false, None)), false, false,
                                 PreXmlDoc ((17,8), FSharp.Compiler.Xml.XmlDocCollector),
-                                None, None, (17,8--17,61),
+                                Single None, None, (17,8--17,61),
                                 { LeadingKeyword = New (17,8--17,11)
                                   InlineKeyword = None
                                   WithKeyword = None
@@ -137,7 +145,7 @@ SigFile
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
                                 PreXmlDoc ((18,8), FSharp.Compiler.Xml.XmlDocCollector),
-                                None, None, (18,8--18,35),
+                                Single None, None, (18,8--18,35),
                                 { LeadingKeyword = Member (18,8--18,14)
                                   InlineKeyword = None
                                   WithKeyword = Some (18,27--18,31)
@@ -157,7 +165,7 @@ SigFile
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
                                 PreXmlDoc ((19,8), FSharp.Compiler.Xml.XmlDocCollector),
-                                None, None, (19,8--19,35),
+                                Single None, None, (19,8--19,35),
                                 { LeadingKeyword = Member (19,8--19,14)
                                   InlineKeyword = None
                                   WithKeyword = Some (19,27--19,31)
@@ -177,7 +185,7 @@ SigFile
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
                                 PreXmlDoc ((20,8), FSharp.Compiler.Xml.XmlDocCollector),
-                                None, None, (20,8--20,35),
+                                Single None, None, (20,8--20,35),
                                 { LeadingKeyword = Member (20,8--20,14)
                                   InlineKeyword = None
                                   WithKeyword = Some (20,27--20,31)
@@ -197,7 +205,7 @@ SigFile
                                 SynValInfo ([], SynArgInfo ([], false, None)),
                                 false, false,
                                 PreXmlDoc ((21,8), FSharp.Compiler.Xml.XmlDocCollector),
-                                None, None, (21,8--21,35),
+                                Single None, None, (21,8--21,35),
                                 { LeadingKeyword = Member (21,8--21,14)
                                   InlineKeyword = None
                                   WithKeyword = Some (21,27--21,31)
@@ -255,13 +263,25 @@ SigFile
                             Range = (28,4--28,38) }],
                          Some
                            (PostfixList
-                              ([SynTyparDecl ([], SynTypar (T1, None, false));
-                                SynTyparDecl ([], SynTypar (T2, None, false));
-                                SynTyparDecl ([], SynTypar (T3, None, false));
-                                SynTyparDecl ([], SynTypar (T4, None, false));
-                                SynTyparDecl ([], SynTypar (T5, None, false));
-                                SynTyparDecl ([], SynTypar (T6, None, false))],
-                               [], (29,15--29,40))), [], [Choice],
+                              ([SynTyparDecl
+                                  ([], SynTypar (T1, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T2, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T3, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T4, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T5, None, false), [],
+                                   { AmpersandRanges = [] });
+                                SynTyparDecl
+                                  ([], SynTypar (T6, None, false), [],
+                                   { AmpersandRanges = [] })], [],
+                               (29,15--29,40))), [], [Choice],
                          PreXmlDoc ((27,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (29,9--29,15)),
                       Simple
@@ -277,7 +297,8 @@ SigFile
                                          (31,22--31,25)), false,
                                       PreXmlDoc ((31,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (31,22--31,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((31,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (30,6--31,25),
                                 { BarRange = Some (31,6--31,7) });
@@ -291,7 +312,8 @@ SigFile
                                          (33,22--33,25)), false,
                                       PreXmlDoc ((33,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (33,22--33,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((33,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (32,6--33,25),
                                 { BarRange = Some (33,6--33,7) });
@@ -305,7 +327,8 @@ SigFile
                                          (35,22--35,25)), false,
                                       PreXmlDoc ((35,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (35,22--35,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((35,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (34,6--35,25),
                                 { BarRange = Some (35,6--35,7) });
@@ -319,7 +342,8 @@ SigFile
                                          (37,22--37,25)), false,
                                       PreXmlDoc ((37,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (37,22--37,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((37,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (36,6--37,25),
                                 { BarRange = Some (37,6--37,7) });
@@ -333,7 +357,8 @@ SigFile
                                          (39,22--39,25)), false,
                                       PreXmlDoc ((39,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (39,22--39,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((39,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (38,6--39,25),
                                 { BarRange = Some (39,6--39,7) });
@@ -347,7 +372,8 @@ SigFile
                                          (41,22--41,25)), false,
                                       PreXmlDoc ((41,22), FSharp.Compiler.Xml.XmlDocCollector),
                                       None, (41,22--41,25),
-                                      { LeadingKeyword = None })],
+                                      { LeadingKeyword = None
+                                        MutableKeyword = None })],
                                 PreXmlDoc ((41,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (40,6--41,25),
                                 { BarRange = Some (41,6--41,7) })],
@@ -374,8 +400,10 @@ SigFile
                         ([],
                          Some
                            (PostfixList
-                              ([SynTyparDecl ([], SynTypar (T, None, false))],
-                               [], (49,16--49,20))), [], [[,]],
+                              ([SynTyparDecl
+                                  ([], SynTypar (T, None, false), [],
+                                   { AmpersandRanges = [] })], [],
+                               (49,16--49,20))), [], [[,]],
                          PreXmlDoc ((49,4), FSharp.Compiler.Xml.XmlDocCollector),
                          true, None, (49,9--49,16)),
                       Simple (None (49,9--61,26), (49,9--61,26)),
@@ -401,7 +429,7 @@ SigFile
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
                              PreXmlDoc ((51,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, None, (50,8--52,28),
+                             Single None, None, (50,8--52,28),
                              { LeadingKeyword = Member (52,8--52,14)
                                InlineKeyword = None
                                WithKeyword = None
@@ -435,7 +463,7 @@ SigFile
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
                              PreXmlDoc ((54,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, None, (53,8--55,28),
+                             Single None, None, (53,8--55,28),
                              { LeadingKeyword = Member (55,8--55,14)
                                InlineKeyword = None
                                WithKeyword = None
@@ -468,7 +496,7 @@ SigFile
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
                              PreXmlDoc ((57,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, None, (56,8--58,26),
+                             Single None, None, (56,8--58,26),
                              { LeadingKeyword = Member (58,8--58,14)
                                InlineKeyword = None
                                WithKeyword = None
@@ -501,7 +529,7 @@ SigFile
                              SynValInfo ([], SynArgInfo ([], false, None)),
                              false, false,
                              PreXmlDoc ((60,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             None, None, (59,8--61,26),
+                             Single None, None, (59,8--61,26),
                              { LeadingKeyword = Member (61,8--61,14)
                                InlineKeyword = None
                                WithKeyword = None

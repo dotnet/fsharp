@@ -156,7 +156,14 @@ type Regexp =
   | Macro of Ident
 type Clause = Regexp * Code
 
-type Rule = Ident * Ident list * Clause list
+/// Capture the name of the argument inside a rule.
+/// When the rule is typed, the type name is expected to have a single identifier.
+/// This is a known limitation and the caller can get around this by using a type alias.
+type RuleArgument =
+    | Ident of name:Ident
+    | Typed of name:Ident * typeName:Ident
+
+type Rule = Ident * RuleArgument list * Clause list
 type Macro = Ident * Regexp
 
 type Spec =
@@ -251,7 +258,7 @@ let LexerStateToNfa ctx (macros: Map<string,_>) (clauses: Clause list) =
         // These cases unwind the difficult cases in the syntax that rely on knowing the
         // entire alphabet.
         //
-        // Note we've delayed the expension of these until we've worked out all the 'special' Unicode characters
+        // Note we've delayed the expansion of these until we've worked out all the 'special' Unicode characters
         // mentioned in the entire lexer spec, i.e. we wait until GetAlphabet returns a reliable and stable answer.
         | Inp (UnicodeCategory uc) ->
             let re = Alt(fun ctx -> 

@@ -26,7 +26,7 @@ module internal VsOpsUtils =
     val CloseSolution                     : OpenSolution -> unit
 
     val CreateProject                     : OpenSolution * string -> OpenProject
-    /// Add a new file not in any particulare project.
+    /// Add a new file not in any particular project.
     val NewFile                           : VisualStudio * string * string list -> File
     val DeleteFileFromDisk : VisualStudio * File -> unit
     val AddFileFromText                   : OpenProject * string * string list -> File

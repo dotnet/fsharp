@@ -3,13 +3,18 @@
   <file datatype="xml" source-language="en" target-language="fr" original="../FSDependencyManager.resx">
     <body>
       <trans-unit id="cantReferenceSystemPackage">
-        <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager ne peut pas référencer le package système '{0}'</target>
+        <source>PackageManager cannot reference the System Package '{0}'</source>
+        <target state="new">PackageManager cannot reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
         <target state="translated">avec la version la plus récente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="invalidBooleanValue">
+        <source>Invalid value for boolean '{0}', valid values: true or false</source>
+        <target state="new">Invalid value for boolean '{0}', valid values: true or false</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">

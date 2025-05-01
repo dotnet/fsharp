@@ -10,7 +10,6 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Control.AsyncBuilderImpl
 open Microsoft.FSharp.Control.AsyncPrimitives
-open Microsoft.FSharp.Collections
 
 module AsyncHelpers =
 
@@ -56,12 +55,13 @@ module AsyncHelpers =
         )
         // Note: It is ok to use "NoDirectCancel" here because the started computations use the same
         //       cancellation token and will register a cancelled result if cancellation occurs.
-        // Note: It is ok to use "NoDirectTimeout" here because the child compuation above looks after the timeout.
+        // Note: It is ok to use "NoDirectTimeout" here because the child computation above looks after the timeout.
         resultCell.AwaitResult_NoDirectCancelOrTimeout
 
 [<Sealed>]
 [<AutoSerializable(false)>]
-type Mailbox<'Msg>(cancellationSupported: bool) =
+type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: bool) =
+    let mutable isDisposed = false
     let mutable inboxStore = null
     let arrivals = Queue<'Msg>()
     let syncRoot = arrivals
@@ -92,7 +92,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                     lock syncRoot (fun () ->
                         if arrivals.Count = 0 then
                             // OK, no arrival so deschedule
-                            savedCont <- Some(fun res -> ctxt.QueueContinuationWithTrampoline res)
+                            savedCont <- Some(ctxt.QueueContinuationWithTrampoline)
                             true
                         else
                             false)
@@ -175,9 +175,12 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
 
     member x.Post msg =
         lock syncRoot (fun () ->
-
-            // Add the message to the arrivals queue
-            arrivals.Enqueue msg
+            if isDisposed then
+                if isThrowExceptionAfterDisposed then
+                    raise (ObjectDisposedException(nameof Mailbox))
+            else
+                // Add the message to the arrivals queue
+                arrivals.Enqueue msg
 
             // Cooperatively unblock any waiting reader. If there is no waiting
             // reader we just leave the message in the incoming queue
@@ -205,7 +208,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                     | Choice1Of2 true -> return! scan timeoutAsync timeoutCts
                     | Choice1Of2 false ->
                         return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
-                    | Choice2Of2 () ->
+                    | Choice2Of2() ->
                         lock syncRoot (fun () ->
                             // Cancel the outstanding wait for messages installed by waitOneWithCancellation
                             //
@@ -332,8 +335,16 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
 
     interface System.IDisposable with
         member _.Dispose() =
-            if isNotNull pulse then
-                (pulse :> IDisposable).Dispose()
+            lock syncRoot (fun () ->
+                if isNotNull inboxStore then
+                    inboxStore.Clear()
+
+                arrivals.Clear()
+                isDisposed <- true
+
+                if isNotNull pulse then
+                    (pulse :> IDisposable).Dispose()
+                    pulse <- null)
 
 #if DEBUG
     member x.UnsafeContents = (x.inbox, arrivals, pulse, savedCont) |> box
@@ -348,14 +359,22 @@ type AsyncReplyChannel<'Reply>(replyf: 'Reply -> unit) =
 [<Sealed>]
 [<AutoSerializable(false)>]
 [<CompiledName("FSharpMailboxProcessor`1")>]
-type MailboxProcessor<'Msg>(body, ?cancellationToken) =
+type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationToken) =
 
     let cancellationSupported = cancellationToken.IsSome
     let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-    let mailbox = new Mailbox<'Msg>(cancellationSupported)
+
+    let mailbox =
+        new Mailbox<'Msg>(cancellationSupported, isThrowExceptionAfterDisposed)
+
     let mutable defaultTimeout = Threading.Timeout.Infinite
     let mutable started = false
     let errorEvent = new Event<Exception>()
+
+    new(body, ?cancellationToken: CancellationToken) =
+        match cancellationToken with
+        | None -> new MailboxProcessor<'Msg>(body, false)
+        | Some ct -> new MailboxProcessor<'Msg>(body, false, ct)
 
     member _.CurrentQueueLength = mailbox.CurrentQueueLength // nb. unprotected access gives an approximation of the queue length
 
@@ -370,7 +389,10 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
     member _.UnsafeMessageQueueContents = mailbox.UnsafeContents
 #endif
 
-    member x.Start() =
+    /// Mark the agent as started if not started and return the asynchronous computation to be started.
+    /// If the agent has already been started, then throw an exception. Because the agent is internally
+    /// marked as started in this method, be sure to subsequently start the agent after calling this method.
+    member private x.PrepareToStart() =
         if started then
             raise (new InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
         else
@@ -379,15 +401,20 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
             // Protect the execution and send errors to the event.
             // Note that exception stack traces are lost in this design - in an extended design
             // the event could propagate an ExceptionDispatchInfo instead of an Exception.
-            let p =
-                async {
-                    try
-                        do! body x
-                    with exn ->
-                        errorEvent.Trigger exn
-                }
+            async {
+                try
+                    do! body x
+                with exn ->
+                    errorEvent.Trigger exn
+            }
 
-            Async.Start(computation = p, cancellationToken = cancellationToken)
+    member x.Start() =
+        let p = x.PrepareToStart()
+        Async.Start(computation = p, cancellationToken = cancellationToken)
+
+    member x.StartImmediate() =
+        let p = x.PrepareToStart()
+        Async.StartImmediate(computation = p, cancellationToken = cancellationToken)
 
     member _.Post message =
         mailbox.Post message
@@ -497,4 +524,25 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
             new MailboxProcessor<'Msg>(body, ?cancellationToken = cancellationToken)
 
         mailboxProcessor.Start()
+        mailboxProcessor
+
+    static member Start(body, isThrowExceptionAfterDisposed, ?cancellationToken) =
+        let mailboxProcessor =
+            new MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationToken = cancellationToken)
+
+        mailboxProcessor.Start()
+        mailboxProcessor
+
+    static member StartImmediate(body, ?cancellationToken) =
+        let mailboxProcessor =
+            new MailboxProcessor<'Msg>(body, ?cancellationToken = cancellationToken)
+
+        mailboxProcessor.StartImmediate()
+        mailboxProcessor
+
+    static member StartImmediate(body, isThrowExceptionAfterDisposed, ?cancellationToken) =
+        let mailboxProcessor =
+            new MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationToken = cancellationToken)
+
+        mailboxProcessor.StartImmediate()
         mailboxProcessor

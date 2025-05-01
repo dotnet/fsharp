@@ -8,6 +8,7 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.IO
 
@@ -23,12 +24,12 @@ type internal ProbingPathsStore() =
         else
             p
 
-    static member RemoveProbeFromProcessPath probePath =
+    static member RemoveProbeFromProcessPath(probePath: string) =
         if not (String.IsNullOrWhiteSpace(probePath)) then
             let probe = ProbingPathsStore.AppendPathSeparator probePath
 
             let path =
-                ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH"))
+                ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH") |> defaultIfNull "")
 
             if path.Contains(probe) then
                 Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
@@ -37,7 +38,7 @@ type internal ProbingPathsStore() =
         let probe = ProbingPathsStore.AppendPathSeparator probePath
 
         let path =
-            ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH"))
+            ProbingPathsStore.AppendPathSeparator(Environment.GetEnvironmentVariable("PATH") |> defaultIfNull "")
 
         if not (path.Contains(probe)) then
             Environment.SetEnvironmentVariable("PATH", path + probe)
@@ -71,9 +72,9 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
 
     let nativeLibraryTryLoad =
         let nativeLibraryType: Type =
-            Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
+            !!Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
 
-        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType () |])
+        !!nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
 
     let loadNativeLibrary path =
         let arguments = [| path :> obj; IntPtr.Zero :> obj |]
@@ -88,7 +89,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
         let isRooted = Path.IsPathRooted name
 
         let useSuffix s =
-            not (name.Contains(s + ".") || name.EndsWith(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
+            not (name.Contains(s + ".") || name.EndsWithOrdinal(s)) // linux devs often append version # to libraries I.e mydll.so.5.3.2
 
         let usePrefix =
             name.IndexOf(Path.DirectorySeparatorChar) = -1 // If name has directory information no add no prefix
@@ -156,14 +157,12 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
     // netstandard 2.1 has this property, unfortunately we don't build with that yet
     //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
     let assemblyLoadContextType: Type =
-        Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
+        !!Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
     let eventInfo, handler, defaultAssemblyLoadContext =
-        assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
+        !!assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
         Func<Assembly, string, IntPtr> resolveUnmanagedDll,
-        assemblyLoadContextType
-            .GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)
-            .GetValue(null, null)
+        (!!assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public)).GetValue(null, null)
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
@@ -184,7 +183,7 @@ type NativeDllResolveHandler(nativeProbingRoots: NativeResolutionProbe option) =
         |> Option.filter (fun _ -> isRunningOnCoreClr)
         |> Option.map (fun _ -> new NativeDllResolveHandlerCoreClr(nativeProbingRoots))
 
-    new(nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
+    new(nativeProbingRoots: NativeResolutionProbe | null) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
         handler |> Option.iter (fun handler -> handler.RefreshPathsInEnvironment(roots))

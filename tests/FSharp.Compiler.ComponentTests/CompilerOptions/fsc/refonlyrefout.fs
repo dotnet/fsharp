@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
@@ -34,7 +34,7 @@ module RefOnlyRefOut =
         ]
 
     [<Fact>]
-    let ``fsc --refout:. --standalone``() =
+    let ``fsc --refout:_ --standalone``() =
         FSharp """
         """
         |> asExe
@@ -46,7 +46,7 @@ module RefOnlyRefOut =
         ]
 
     [<Fact>]
-    let ``fsc --standalone --refout:.``() =
+    let ``fsc --standalone --refout:_``() =
         FSharp """
         """
         |> asExe
@@ -59,7 +59,7 @@ module RefOnlyRefOut =
 
     // Test refout/refonly alongside staticlink
     [<Fact>]
-    let ``fsc --refonly --staticlink:.``() =
+    let ``fsc --refonly --staticlink:_``() =
         FSharp """
         """
         |> asExe
@@ -71,7 +71,7 @@ module RefOnlyRefOut =
         ]
 
     [<Fact>]
-    let ``fsc --staticlink:. --refonly ``() =
+    let ``fsc --staticlink:_ --refonly ``() =
         FSharp """
         """
         |> asExe
@@ -83,7 +83,7 @@ module RefOnlyRefOut =
         ]
 
     [<Fact>]
-    let ``fsc --refout:. --staticlink:.``() =
+    let ``fsc --refout:_ --staticlink:_``() =
         FSharp """
         """
         |> asExe
@@ -95,7 +95,7 @@ module RefOnlyRefOut =
         ]
 
     [<Fact>]
-    let ``fsc --staticlink:. --refout:.``() =
+    let ``fsc --staticlink:_ --refout:_``() =
         FSharp """
         """
         |> asExe

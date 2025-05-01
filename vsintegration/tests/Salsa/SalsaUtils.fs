@@ -9,7 +9,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
-open NUnit.Framework
+open Xunit
 
 open Salsa.Salsa
 
@@ -208,7 +208,7 @@ module internal VsOpsUtils =
     let AssertCompListIsEmpty (completions : CompletionItem[]) = 
       if not (Array.isEmpty completions) then
           printfn "Expected empty completion list but got: %A" (completions |> Array.map (fun (CompletionItem(nm, _, _, _, _)) -> nm))
-      Assert.IsTrue(Array.isEmpty completions, "Expected empty completion list but got some items")
+      Assert.True(Array.isEmpty completions, "Expected empty completion list but got some items")
 
     /// Verify that the given completion list contains a member with the given name
     let AssertCompListContains(completions : CompletionItem[], membername) =
@@ -263,7 +263,7 @@ module internal VsOpsUtils =
         // Check that the marker is unique, otherwise we can't determine where to put the '.'
         let markerLines = orgFileContents |> Seq.filter (fun line -> line.Contains(marker)) |> Seq.length 
         if markerLines = 0 then Assert.Fail("Unable to find marker in source code.")
-        if markerLines > 1 then Assert.Fail <| sprintf "Found marker [%s] multiple times in source file." marker
+        if markerLines > 1 then Assert.Fail(sprintf "Found marker [%s] multiple times in source file." marker)
         
         // Replace marker with "<marker>."
         let replaceMarker =
@@ -282,7 +282,7 @@ module internal VsOpsUtils =
 
         let compList = AutoCompleteAtCursor(file)
        
-        // Now restore the origional file contents
+        // Now restore the original file contents
         ReplaceFileInMemory file orgFileContents
         
         compList
@@ -295,7 +295,7 @@ module internal VsOpsUtils =
 
     // ------------------------------------------------------------------------
  
-    /// Abbreviation for 'None', to indiciate a GotoDefn failure
+    /// Abbreviation for 'None', to indicate a GotoDefn failure
     let GotoDefnFailure       = None : (string * string) option
     /// Abbreviation for 'Some(ident, lineOfCode)'
     let GotoDefnSuccess x y = Some (x, y) : (string * string) option
@@ -310,11 +310,11 @@ module internal VsOpsUtils =
             ->  match GetIdentifierAtCursor file with
                 | None         ->   Assert.Fail ("No identifier at cursor. This indicates a bug in GotoDefinition.")
                 | Some (id, _) ->   // Are we on the identifier we expect?
-                                    Assert.AreEqual (toFind, id)
+                                    Assert.Equal (toFind, id)
                                     // Do the lines of code match what we expect?
                                     // - Eliminate white space to eliminate trivial errors
                                     // - +1 to adjust for 1-index line numbers
-                                    Assert.AreEqual (
+                                    Assert.Equal (
                                         expLine.Trim(), 
                                         (span.iStartLine |> (+) 1 |> GetLineNumber (OpenFileViaOpenFile(file.VS, actFile))).Trim ()
                                     ) 
@@ -327,8 +327,8 @@ module internal VsOpsUtils =
         
         // Error cases
         | (Some (x,_), None)     
-            -> Assert.Fail <| sprintf "Expected to find the definition of '%s' but GotoDefn failed." x
+            -> Assert.Fail(sprintf "Expected to find the definition of '%s' but GotoDefn failed." x)
 
         | (None, Some (_,file)) 
-            -> Assert.Fail <| sprintf "Expected GotoDefn to fail, but it went to a definition in file %s" file
+            -> Assert.Fail(sprintf "Expected GotoDefn to fail, but it went to a definition in file %s" file)
 

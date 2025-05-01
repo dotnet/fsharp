@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.ComponentTests.Language
+﻿namespace Language
 
 open FSharp.Test
 open Xunit
@@ -19,7 +19,7 @@ type Foo =
 
 let f (b:int) = b.PlusOne()
             """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
 
@@ -35,7 +35,7 @@ type Foo =
 
 let f (b:int) = b.PlusOne()
             """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         
@@ -73,7 +73,7 @@ and Bar =
 
 let f (b:int) = b.PlusOne()
             """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
     
@@ -90,7 +90,7 @@ type Foo =
     [<Extension>]
     static member PlusOne (a:int) : int = a + 1
 """
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "FSLib"
 
         let csharp =
@@ -172,7 +172,7 @@ and Bar =
     [<Extension>]
     static member PlusOne (a:int) : int = a + 1
 """
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "FSLib"
 
         let csharp =
@@ -210,7 +210,7 @@ module Foo =
     [<Extension>]
     let PlusOne (a:int) : int = a + 1
 """
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "FSLib"
 
         let csharp =
@@ -247,7 +247,7 @@ module Foo =
     [<Extension>]
     let PlusOne (a:int) : int = a + 1
 """
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "FSLib"
 
         let csharp =
@@ -281,7 +281,7 @@ namespace Consumer
     [<System.Runtime.CompilerServices.Extension>]
     let PlusOne (a:int) = a + 1
     """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withName "FSLib"
         
         let csharp =
@@ -314,7 +314,7 @@ namespace Consumer
     [<System.Runtime.CompilerServices.Extension>]
     let PlusOne (a:int) = a + 1
     """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withName "FSLib"
         
         let csharp =
@@ -348,7 +348,7 @@ namespace Consumer
     [<System.Runtime.CompilerServices.Extension>]
     let PlusOne (a:int) = a + 1
     """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withName "FSLib"
         
         let csharp =
@@ -381,7 +381,7 @@ namespace Consumer
     [<System.Runtime.CompilerServices.Extension>]
     let PlusOne (a:int) = a + 1
     """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withName "FSLib"
         
         let csharp =
@@ -416,7 +416,7 @@ type Bar =
     [<System.Runtime.CompilerServices.Extension>]
     static member PlusOne (a:int) = a + 1
     """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withName "FSLib"
         
         let csharp =
@@ -449,7 +449,7 @@ type Bar =
     [<System.Runtime.CompilerServices.Extension>]
     static member PlusOne (a:int) = a + 1
     """
-            |> withLangVersionPreview
+            |> withLangVersion80
             |> withName "FSLib"
         
         let csharp =
@@ -499,7 +499,7 @@ type Bar =
     [<Extension>]
     static member PlusOne: a: int -> int
 """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withAdditionalSourceFile implementation
            |> withName "FSLib"
         
@@ -550,7 +550,7 @@ type Bar =
     [<Extension>]
     static member PlusOne: a: int -> int
 """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withAdditionalSourceFile implementation
            |> withName "FSLib"
         
@@ -586,7 +586,7 @@ type Bar =
     [<System.Runtime.CompilerServices.Extension>]
     let MinusOne (a:int) = a - 1
     """
-           |> withLangVersionPreview
+           |> withLangVersion80
            |> withName "FSLib"
         
         let csharp =
@@ -609,3 +609,79 @@ type Bar =
             |> withReferences [ fsharp ]
         
         csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Abbreviated CSharp type with extensions`` () =
+        let csharp =
+            CSharp """
+namespace CSharpLib {
+
+    public interface I
+    {
+        public int P { get; }
+    }
+
+    public static class Ext
+    {
+        public static void M(this I i)
+        {
+        }
+    }
+}
+    """
+            |> withName "CSLib"
+        
+        let fsharp =
+            FSharp """
+module Module
+
+open CSharpLib
+
+module M =
+    type Ext2 = CSharpLib.Ext
+ 
+    let f (i: I) =
+        i.M()
+"""
+           |> withLangVersion80
+           |> withName "FSLib"
+           |> withReferences [ csharp ]
+        
+        fsharp |> compile |> shouldSucceed
+        
+    [<Fact>]
+    let ``F# CSharpStyleExtensionMethod consumed in F#`` () =
+        let producer =
+            FSharp
+                """
+namespace Producer
+
+open System.Runtime.CompilerServices
+
+type WidgetBuilder<'msg, 'marker>() = class end
+
+type IMarkerOne = interface end
+
+// Commenting out [<Extension>] breaks
+//[<Extension>]
+type WidgetBuilderExtensions =
+    [<Extension>]
+    static member inline one(this: WidgetBuilder<'msg, #IMarkerOne>) = this
+"""
+            |> withLangVersion80
+            |> withName "FSLibProducer"
+
+        let fsharp2 =
+            FSharp
+                """
+namespace Consumer
+
+open Producer
+
+module FSLibConsumer =   
+    let x = WidgetBuilder<int, IMarkerOne>().one()
+"""
+            |> withName "FSLibConsumer"
+            |> withReferences [ producer ]
+
+        fsharp2 |> compile |> shouldSucceed

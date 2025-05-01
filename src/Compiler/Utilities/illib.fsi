@@ -7,13 +7,31 @@ open System.Threading
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+[<Class>]
+type InterruptibleLazy<'T> =
+    new: valueFactory: (unit -> 'T) -> InterruptibleLazy<'T>
+
+    member IsValueCreated: bool
+
+    member Value: 'T
+    member Force: unit -> 'T
+
+    static member FromValue: value: 'T -> InterruptibleLazy<'T>
+
+module InterruptibleLazy =
+    val force: InterruptibleLazy<'T> -> 'T
+
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
     /// Logical shift right treating int32 as unsigned integer.
     /// Code that uses this should probably be adjusted to use unsigned integer types.
     val (>>>&): x: int32 -> n: int32 -> int32
 
-    val notlazy: v: 'a -> Lazy<'a>
+    val notlazy: v: 'a -> InterruptibleLazy<'a>
+
+    val (|InterruptibleLazy|): l: InterruptibleLazy<'T> -> 'T
+
+    val (|RecoverableException|_|): exn: Exception -> Exception voption
 
     val inline isNil: l: 'a list -> bool
 
@@ -22,25 +40,6 @@ module internal PervasiveAutoOpens =
 
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l: 'a list -> bool
-
-    /// Returns true if the argument is non-null.
-    val inline isNotNull: x: 'T -> bool when 'T: null
-
-    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
-    /// replacement for 'string?' for example for future FS-1060.
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
-
-    /// Asserts the argument is non-null and raises an exception if it is
-    val inline (|NonNullQuick|): 'T MaybeNull -> 'T
-
-    /// Match on the nullness of an argument.
-    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit, 'T>
-
-    /// Asserts the argument is non-null and raises an exception if it is
-    val inline nonNull: x: 'T MaybeNull -> 'T
-
-    /// Checks the argument is non-null
-    val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
 
     val inline (===): x: 'a -> y: 'a -> bool when 'a: not struct
 
@@ -61,6 +60,12 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinalIgnoreCase: value: string -> bool
 
+        member inline IndexOfOrdinal: value: string -> int
+
+        member inline IndexOfOrdinal: value: string * startIndex: int -> int
+
+        member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
+
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
@@ -70,19 +75,20 @@ module internal PervasiveAutoOpens =
 
     val notFound: unit -> 'a
 
-[<Struct>]
-type internal InlineDelayInit<'T when 'T: not struct> =
+[<AbstractClass>]
+type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
+    new: f: (unit -> 'T[]) -> DelayInitArrayMap<'T, 'TDictKey, 'TDictValue>
 
-    new: f: (unit -> 'T) -> InlineDelayInit<'T>
-    val mutable store: 'T
-    val mutable func: Func<'T>
-    member Value: 'T
+    member GetArray: unit -> 'T[]
+    member GetDictionary: unit -> IDictionary<'TDictKey, 'TDictValue>
+
+    abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
 module internal Order =
 
-    val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison
+    val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison and 'T: not null and 'T: not struct
 
-    val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T>
+    val orderOn: p: ('T -> 'U) -> pxOrder: IComparer<'U> -> IComparer<'T> when 'T: not null and 'T: not struct
 
     val toFunction: pxOrder: IComparer<'U> -> x: 'U -> y: 'U -> int
 
@@ -125,6 +131,8 @@ module internal Array =
 
     /// Returns true if one array has trailing elements equal to another's.
     val endsWith: suffix: 'a[] -> whole: 'a[] -> bool when 'a: equality
+
+    val prepend: item: 'T -> array: 'T[] -> 'T[]
 
 module internal Option =
 
@@ -211,6 +219,14 @@ module internal List =
 
     val isSingleton: xs: 'T list -> bool
 
+    val prependIfSome: x: 'a option -> l: 'a list -> 'a list
+
+    val vMapFold<'T, 'State, 'Result> :
+        mapping: ('State -> 'T -> struct ('Result * 'State)) ->
+        state: 'State ->
+        list: 'T list ->
+            struct ('Result list * 'State)
+
 module internal ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
@@ -223,11 +239,8 @@ module internal ResizeArray =
     /// probability of smaller collections. Stop-the-world is still possible, just less likely.
     val mapToSmallArrayChunks: f: ('t -> 'a) -> inp: ResizeArray<'t> -> 'a[][]
 
-module internal ValueOptionInternal =
-
-    val inline ofOption: x: 'a option -> 'a voption
-
-    val inline bind: f: ('a -> 'b voption) -> x: 'a voption -> 'b voption
+module internal Span =
+    val inline exists: predicate: ('T -> bool) -> span: Span<'T> -> bool
 
 module internal String =
 
@@ -266,7 +279,7 @@ module internal String =
 
     val (|StartsWith|_|): pattern: string -> value: string -> unit option
 
-    val (|Contains|_|): pattern: string -> value: string -> unit option
+    val (|Contains|_|): pattern: string -> value: string | null -> unit option
 
     val getLines: str: string -> string[]
 
@@ -288,9 +301,7 @@ module internal Lazy =
     val force: x: Lazy<'T> -> 'T
 
 /// Represents a permission active at this point in execution
-type internal ExecutionToken =
-    interface
-    end
+type internal ExecutionToken = interface end
 
 /// Represents a token that indicates execution on the compilation thread, i.e.
 ///   - we have full access to the (partially mutable) TAST and TcImports data structures
@@ -362,67 +373,8 @@ module internal ResultOrException =
 
     val otherwise: f: (unit -> ResultOrException<'a>) -> x: ResultOrException<'a> -> ResultOrException<'a>
 
-[<RequireQualifiedAccess; Struct>]
-type internal ValueOrCancelled<'TResult> =
-    | Value of result: 'TResult
-    | Cancelled of ``exception``: OperationCanceledException
-
-/// Represents a synchronous, cold-start, cancellable computation with explicit representation of a cancelled result.
-///
-/// A cancellable computation may be cancelled via a CancellationToken, which is propagated implicitly.
-/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
-[<Struct>]
-type internal Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
-
-module internal Cancellable =
-
-    /// Run a cancellable computation using the given cancellation token
-    val inline run: ct: CancellationToken -> Cancellable<'T> -> ValueOrCancelled<'T>
-
-    val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
-
-    /// Run the computation in a mode where it may not be cancelled. The computation never results in a
-    /// ValueOrCancelled.Cancelled.
-    val runWithoutCancellation: comp: Cancellable<'T> -> 'T
-
-    /// Bind the cancellation token associated with the computation
-    val token: unit -> Cancellable<CancellationToken>
-
-    val toAsync: Cancellable<'T> -> Async<'T>
-
-type internal CancellableBuilder =
-
-    new: unit -> CancellableBuilder
-
-    member inline BindReturn: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> 'U) -> Cancellable<'U>
-
-    member inline Bind: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> Cancellable<'U>) -> Cancellable<'U>
-
-    member inline Combine: comp1: Cancellable<unit> * comp2: Cancellable<'T> -> Cancellable<'T>
-
-    member inline Delay: [<InlineIfLambda>] f: (unit -> Cancellable<'T>) -> Cancellable<'T>
-
-    member inline Return: v: 'T -> Cancellable<'T>
-
-    member inline ReturnFrom: v: Cancellable<'T> -> Cancellable<'T>
-
-    member inline TryFinally: comp: Cancellable<'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> Cancellable<'T>
-
-    member inline TryWith:
-        comp: Cancellable<'T> * [<InlineIfLambda>] handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
-
-    member inline Using:
-        resource: 'Resource * [<InlineIfLambda>] comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T>
-            when 'Resource :> IDisposable
-
-    member inline Zero: unit -> Cancellable<unit>
-
-[<AutoOpen>]
-module internal CancellableAutoOpens =
-    val cancellable: CancellableBuilder
-
 /// Generates unique stamps
-type internal UniqueStampGenerator<'T when 'T: equality> =
+type internal UniqueStampGenerator<'T when 'T: equality and 'T: not null> =
 
     new: unit -> UniqueStampGenerator<'T>
 
@@ -431,7 +383,7 @@ type internal UniqueStampGenerator<'T when 'T: equality> =
     member Table: ICollection<'T>
 
 /// Memoize tables (all entries cached, never collected unless whole table is collected)
-type internal MemoizationTable<'T, 'U> =
+type internal MemoizationTable<'T, 'U when 'T: not null> =
 
     new:
         compute: ('T -> 'U) * keyComparer: IEqualityComparer<'T> * ?canMemoize: ('T -> bool) -> MemoizationTable<'T, 'U>
@@ -439,7 +391,7 @@ type internal MemoizationTable<'T, 'U> =
     member Apply: x: 'T -> 'U
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionary<'T, 'U> =
+type internal StampedDictionary<'T, 'U when 'T: not null> =
 
     new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
 
@@ -472,7 +424,11 @@ type internal LazyWithContext<'T, 'ctxt> =
 
 /// Intern tables to save space.
 module internal Tables =
+#if NET8_0_OR_GREATER
+    val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality and 'a: not null
+#else
     val memoize: f: ('a -> 'b) -> ('a -> 'b) when 'a: equality
+#endif
 
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
@@ -481,7 +437,9 @@ type internal IPartialEqualityComparer<'T> =
 
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
-    val On: f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
+    val On:
+        f: ('a -> 'b) -> c: IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
+            when 'a: not null and 'a: not struct
 
     /// Like Seq.distinctBy but only filters out duplicates for some of the elements
     val partialDistinctBy: per: IPartialEqualityComparer<'T> -> seq: 'T list -> 'T list
@@ -594,6 +552,8 @@ module internal MultiMap =
     val empty: MultiMap<'a, 'b> when 'a: comparison
 
     val initBy: f: ('a -> 'b) -> xs: seq<'a> -> MultiMap<'b, 'a> when 'b: comparison
+
+    val ofList: xs: ('a * 'b) list -> MultiMap<'a, 'b> when 'a: comparison
 
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
 

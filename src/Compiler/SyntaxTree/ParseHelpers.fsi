@@ -38,25 +38,6 @@ val rhs2: parseState: IParseState -> i: int -> j: int -> range
 
 val rhs: parseState: IParseState -> i: int -> range
 
-type IParseState with
-
-    member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
-    member ResetSynArgNameGenerator: unit -> unit
-
-module LexbufLocalXmlDocStore =
-
-    val ClearXmlDoc: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    val SaveXmlDocLine: lexbuf: UnicodeLexing.Lexbuf * lineText: string * range: range -> unit
-
-    val GrabXmlDocBeforeMarker: lexbuf: UnicodeLexing.Lexbuf * markerRange: range -> PreXmlDoc
-
-    val AddGrabPoint: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    val AddGrabPointDelayed: lexbuf: UnicodeLexing.Lexbuf -> unit
-
-    val ReportInvalidXmlDocPositions: lexbuf: UnicodeLexing.Lexbuf -> range list
-
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
@@ -67,41 +48,14 @@ type LexerIfdefStack = LexerIfdefStackEntries
 
 type LexerEndlineContinuation =
     | Token
-    | Skip of int * range: range
-
-type LexerIfdefExpression =
-    | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
-    | IfdefOr of LexerIfdefExpression * LexerIfdefExpression
-    | IfdefNot of LexerIfdefExpression
-    | IfdefId of string
-
-val LexerIfdefEval: lookup: (string -> bool) -> _arg1: LexerIfdefExpression -> bool
-
-module LexbufIfdefStore =
-
-    val SaveIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * expr: LexerIfdefExpression * range: range -> unit
-
-    val SaveElseHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
-
-    val SaveEndIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
-
-    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> ConditionalDirectiveTrivia list
-
-module LexbufCommentStore =
-
-    val SaveSingleLineComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
-
-    val SaveBlockComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
-
-    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> CommentTrivia list
-
-    val ClearComments: lexbuf: UnicodeLexing.Lexbuf -> unit
+    | IfdefSkip of int * range: range
 
 [<RequireQualifiedAccess>]
 type LexerStringStyle =
     | Verbatim
     | TripleQuote
     | SingleQuote
+    | ExtendedInterpolated
 
 [<RequireQualifiedAccess; Struct>]
 type LexerStringKind =
@@ -117,7 +71,7 @@ type LexerStringKind =
 
     static member String: LexerStringKind
 
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * int * range option * range) list
 
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LexerContinuation =
@@ -128,6 +82,7 @@ type LexerContinuation =
         nesting: LexerInterpolatedStringNesting *
         style: LexerStringStyle *
         kind: LexerStringKind *
+        delimLen: int *
         range: range
     | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
@@ -149,14 +104,24 @@ type LexerContinuation =
 and LexCont = LexerContinuation
 
 val ParseAssemblyCodeInstructions:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr[]
+    s: string ->
+    reportLibraryOnlyFeatures: bool ->
+    langVersion: LanguageVersion ->
+    strictIndentation: bool option ->
+    m: range ->
+        ILInstr[]
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 
 val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc
 
 val ParseAssemblyCodeType:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
+    s: string ->
+    reportLibraryOnlyFeatures: bool ->
+    langVersion: LanguageVersion ->
+    strictIndentation: bool option ->
+    m: range ->
+        ILType
 
 val reportParseErrorAt: range -> (int * string) -> unit
 
@@ -166,7 +131,14 @@ val mkSynMemberDefnGetSet:
     parseState: IParseState ->
     opt_inline: range option ->
     mWith: range ->
-    classDefnMemberGetSetElements: (range option * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements:
+        (range option *
+        SynAttributeList list *
+        (SynPat * range) *
+        (range option * SynReturnInfo) option *
+        range option *
+        SynExpr *
+        range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->
@@ -236,3 +208,52 @@ val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a 
 val rangeOfLongIdent: lid: LongIdent -> range
 
 val appendValToLeadingKeyword: mVal: range -> leadingKeyword: SynLeadingKeyword -> SynLeadingKeyword
+
+val mkSynUnionCase:
+    attributes: SynAttributes ->
+    access: SynAccess option ->
+    id: SynIdent ->
+    kind: SynUnionCaseKind ->
+    mDecl: range ->
+    (PreXmlDoc * range) ->
+        SynUnionCase
+
+val mkAutoPropDefn:
+    mVal: range ->
+    access: SynAccess option ->
+    ident: Ident ->
+    typ: SynType option ->
+    mEquals: range option ->
+    expr: SynExpr ->
+    accessors: range option * (SynMemberKind * GetSetKeywords option * SynAccess option * SynAccess option) ->
+        xmlDoc: PreXmlDoc ->
+        attribs: SynAttributes ->
+        flags: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
+            rangeStart: range ->
+                SynMemberDefn
+
+val mkValField:
+    parseState: IParseState ->
+    mVal: range ->
+    isMutable: range option ->
+    access: SynAccess option ->
+    idOpt: Ident option ->
+    typ: SynType option ->
+    rangeStart: range ->
+    SynAttributes ->
+    range option ->
+        SynMemberDefn
+
+val mkSynField:
+    parseState: IParseState ->
+    idOpt: Ident option ->
+    t: SynType option ->
+    isMutable: range option ->
+    vis: SynAccess option ->
+    attributes: SynAttributeList list ->
+    mStatic: range option ->
+    rangeStart: range ->
+    leadingKeyword: SynLeadingKeyword option ->
+        SynField
+
+val leadingKeywordIsAbstract: SynLeadingKeyword -> bool

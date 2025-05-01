@@ -554,7 +554,7 @@ module QueryExecutionOverIEnumerable =
         (query { yield (1,(2,3)) } |> Seq.toList) 
         [ (1,(2,3)) ]
 
-    // Smoke test for returnng a tuple, size = 7
+    // Smoke test for returning a tuple, size = 7
     checkCommuteSeq "smcnewnc07" 
         (query { yield (1,2,3,4,5,6,7) } |> Seq.toList) 
         [ (1,2,3,4,5,6,7) ]
@@ -586,7 +586,7 @@ module QueryExecutionOverIEnumerable =
         (query { for x in db do yield (1,(2,3)) } |> Seq.toList) 
         (seq { for x in db do yield (1,(2,3)) } |> Seq.toList) 
 
-    // Smoke test for returnng a tuple, size = 7
+    // Smoke test for returning a tuple, size = 7
     checkCommuteSeq "smcnewnc07x" 
         (query { for x in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
         (seq { for x in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
@@ -619,7 +619,7 @@ module QueryExecutionOverIEnumerable =
         (query { for x in db do for y in db do yield (1,(2,3)) } |> Seq.toList) 
         (seq { for x in db do for y in db do yield (1,(2,3)) } |> Seq.toList) 
 
-    // Smoke test for returnng a tuple, size = 7, nested for loops
+    // Smoke test for returning a tuple, size = 7, nested for loops
     checkCommuteSeq "smcnewnc07xx" 
         (query { for x in db do for y in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
         (seq { for x in db do for y in db do yield (1,2,3,4,5,6,7) } |> Seq.toList) 
@@ -849,7 +849,7 @@ module MiscTestsForImplicitExpressionConversion =
 
         module Histogram = 
             let histogram k (input: System.Linq.IQueryable<string>) =
-                // Problem - type annotation requried on input variable 
+                // Problem - type annotation required on input variable 
                 // Problem - upcast required of return result of function (no covariance for functions)
                 let words = input.SelectMany(fun x -> x.Split(' ') :> seq<_>)
                 let groups = words.GroupBy(fun x -> x)
@@ -1002,7 +1002,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

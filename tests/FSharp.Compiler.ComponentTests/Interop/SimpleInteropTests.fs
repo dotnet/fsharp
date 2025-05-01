@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Interop
+namespace Interop
 
 open Xunit
 open FSharp.Test.Compiler
@@ -38,7 +38,7 @@ let a = AMaker.makeA()
             FSharp """
 namespace Interop.FS
 type Bicycle(manufacturer: string) =
-    member this.Manufactirer = manufacturer
+    member this.Manufacturer = manufacturer
         """ |> withName "FSLib"
 
         let app =
@@ -59,7 +59,7 @@ public class BicycleShop {
             FSharp """
 namespace Interop.FS
 type Bicycle(manufacturer: string) =
-    member this.Manufactirer = manufacturer
+    member this.Manufacturer = manufacturer
         """ |> withName "FSLib"
 
         let app =

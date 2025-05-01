@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
 
-    /// Succeded?
+    /// Succeeded?
     abstract Success: bool
 
     /// The resolution output log
@@ -39,7 +39,6 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 /// Wraps access to a DependencyManager implementation
-[<AllowNullLiteral>]
 type IDependencyManagerProvider =
 
     /// Name of the dependency manager
@@ -51,7 +50,7 @@ type IDependencyManagerProvider =
     ///     paket: indicates that this DM is for paket scripts, which manage nuget packages, github source dependencies etc ...
     abstract Key: string
 
-    /// The help messages for this dependency manager inster
+    /// The help messages for this dependency manager instance
     abstract HelpMessages: string[]
 
     /// Clear the results cache
@@ -106,10 +105,10 @@ type DependencyProvider =
             DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
-    member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]
+    member GetRegisteredDependencyManagerHelpText: string seq * string MaybeNull * ResolvingErrorReport -> string[]
 
     /// Clear the DependencyManager results caches
-    member ClearResultsCache: string seq * string * ResolvingErrorReport -> unit
+    member ClearResultsCache: string seq * string MaybeNull * ResolvingErrorReport -> unit
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string
@@ -121,7 +120,7 @@ type DependencyProvider =
         packageManagerTextLines: (string * string) seq *
         reportError: ResolvingErrorReport *
         executionTfm: string *
-        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string *
+        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string MaybeNull *
         [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string *
         [<Optional; DefaultParameterValue("")>] mainScriptName: string *
         [<Optional; DefaultParameterValue("")>] fileName: string *
@@ -131,9 +130,9 @@ type DependencyProvider =
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey:
         compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string ->
-            IDependencyManagerProvider MaybeNull
+            IDependencyManagerProvider | null
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
     member TryFindDependencyManagerInPath:
         compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string ->
-            string MaybeNull * IDependencyManagerProvider MaybeNull
+            string | null * IDependencyManagerProvider | null

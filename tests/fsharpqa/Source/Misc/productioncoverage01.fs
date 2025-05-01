@@ -14,7 +14,7 @@ let f1< > (x:int) = x
 assert ((f1 42) = 42)
 
 //376 headBindingPattern -> headBindingPattern COLON_COLON headBindingPattern 
-// Note: no parantheses on pattern
+// Note: no parentheses on pattern
 
 let (h::t) = [3]
 assert (h = 3)
@@ -40,11 +40,11 @@ let ($) a b = a + b
 let v = 3 $ 4
 
 // 496      declExpr -> declExpr QMARK_QMARK declExpr 
-//let nullThingey = "foo" ?? null
-//assert (nullThingey = "foo")
+//let nullThingy = "foo" ?? null
+//assert (nullThingy = "foo")
 
-//let nullThingey2 = null ?? "bar"
-//assert (nullThingey2 = "bar")
+//let nullThingy2 = null ?? "bar"
+//assert (nullThingy2 = "bar")
 
 //717 topAppType -> attributes appType 
 //715 topAppType -> attributes appType COLON appType 

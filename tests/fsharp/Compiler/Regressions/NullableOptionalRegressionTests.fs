@@ -2,13 +2,13 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Compiler
 
-[<TestFixture()>]
 module NullableOptionalRegressionTests =
 
-    [<Test>]
+    //Disabled, see RFC for nullable
+    //[<Test(Enabled=false)>]
     let ``Should compile with generic overloaded nullable methods``() =
         Fsx """
 open System
@@ -34,7 +34,7 @@ let test () =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Method should infer 'z' correctly``() =
         let fsSrc =
             """
@@ -50,12 +50,12 @@ type Test with
     static member nullable codec z = Test.nullableE(codec, z)
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Method should infer correctly``() =
         let fsSrc =
             """
@@ -71,12 +71,12 @@ type Test with
     static member nullable codec = Test.nullableE codec
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``Method should infer correctly 2``() =
         let fsSrc =
             """
@@ -92,7 +92,7 @@ type Test with
     static member nullable codec = Test.nullableE codec
             """
         FSharp fsSrc
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> typecheck
         |> shouldSucceed
         |> ignore

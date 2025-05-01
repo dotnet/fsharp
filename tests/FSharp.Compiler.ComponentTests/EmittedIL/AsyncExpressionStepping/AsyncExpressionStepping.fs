@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -17,28 +17,38 @@ module AsyncExpressionStepping =
         |> verifyBaseline
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsyncExpressionSteppingTest1.fs"|])>]
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest1.fs", Realsig=BooleanOptions.Both)>]
     let ``AsyncExpressionSteppingTest1_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsyncExpressionSteppingTest2.fs"|])>]
-    let ``AsyncExpressionSteppingTest2_fs`` compilation =
-        verifyCompilation compilation
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest2.fs", Realsig=BooleanOptions.Both)>]
+    let ``AsyncExpressionSteppingTest2`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsyncExpressionSteppingTest3.fs"|])>]
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest3.fs", Realsig=BooleanOptions.Both)>]
     let ``AsyncExpressionSteppingTest3_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsyncExpressionSteppingTest4.fs"|])>]
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest4.fs", Realsig=BooleanOptions.Both)>]
     let ``AsyncExpressionSteppingTest4_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsyncExpressionSteppingTest5.fs"|])>]
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest5.fs", Realsig=BooleanOptions.Both)>]
     let ``AsyncExpressionSteppingTest5_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AsyncExpressionSteppingTest6.fs"|])>]
+    [<Theory; FileInlineData("AsyncExpressionSteppingTest6.fs", Realsig=BooleanOptions.Both)>]
     let ``AsyncExpressionSteppingTest6_fs`` compilation =
-        verifyCompilation compilation
-
-
+        compilation
+        |> getCompilation
+        |> verifyCompilation

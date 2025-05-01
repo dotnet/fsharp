@@ -16,15 +16,9 @@ do ()
 [<AutoOpen>]
 module Utils =
 
-    /// Match on the nullness of an argument.
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit, 'T> =
-        match x with
-        | null -> Null
-        | v -> NonNull v
-
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
-    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
+    type MaybeNull<'T when 'T: not null and 'T: not struct> = 'T | null
 
 type FSharpCommandLineBuilder() =
 
@@ -83,6 +77,12 @@ type FSharpCommandLineBuilder() =
 
         if s <> String.Empty then
             args <- s :: args
+
+    member this.AppendOptionalSwitch(switch: string, value: bool option) =
+        match value with
+        | Some true -> this.AppendSwitch($"{switch}+")
+        | Some false -> this.AppendSwitch($"{switch}-")
+        | None -> ()
 
     member _.AppendSwitchUnquotedIfNotNull(switch: string, value: string MaybeNull) =
         assert (switch = "") // we only call this method for "OtherFlags"

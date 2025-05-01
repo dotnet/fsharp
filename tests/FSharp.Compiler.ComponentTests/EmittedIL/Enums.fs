@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 
 open Xunit
 open FSharp.Test.Compiler
@@ -20,7 +20,7 @@ type Flags =
     | B = (one <<< 1)
     | C = (one <<< (one * 2))
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldSucceed
         |> verifyIL [
@@ -38,7 +38,7 @@ type E =
     | A = (1L <<< 0)
     | B = (1 <<< 1)
         """
-        |> withLangVersionPreview
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResult {

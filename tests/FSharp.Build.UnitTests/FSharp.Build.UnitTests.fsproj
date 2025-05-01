@@ -3,21 +3,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="WriteCodeFragmentTests.fs" />
-    <Compile Include="MapSourceRootsTests.fs"/>
+    <Compile Include="MapSourceRootsTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content> 
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

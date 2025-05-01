@@ -6,7 +6,7 @@
 let mutable finallyBlockHit = false
 
 let testPassed =
-    // Even though the finally block is exeucted, we still need to catch the exception :)
+    // Even though the finally block is executed, we still need to catch the exception :)
     try
         try
             failwith "epicfail"

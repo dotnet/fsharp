@@ -32,13 +32,13 @@ module BasicAnalysisTests =
     let rec infiniteLoop2 (x1:int) (x2:int) : int = infiniteLoop2 x1 x2
     let callGenericInfiniteLoop (x:'a) : 'a = genericInfiniteLoop x
 
-    let rec loopViaModuleFunction1 (f: 'T -> bool) (arr:array<'T>) i =
+    let rec loopViaModuleFunction1 (f: 'T -> bool) (arr: 'T array) i =
         loopViaModuleFunction1 f arr (i+1)
 
-    let rec loopViaModuleFunction (f: 'T -> bool) (arr:array<'T>) i =
+    let rec loopViaModuleFunction (f: 'T -> bool) (arr: 'T array) i =
         i >= arr.Length || (f arr.[i] && loopViaModuleFunction f arr (i+1))
 
-    let loopViaInnerFunction (f: 'T -> bool) (array:array<'T>) =
+    let loopViaInnerFunction (f: 'T -> bool) (array: 'T array) =
         let len = array.Length
         let rec loop i = i >= len || (f array.[i] && loop (i+1))
         loop 0

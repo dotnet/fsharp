@@ -1,0 +1,9 @@
+# Because this repository uses squash/rebase merges, commits added to a branch
+# referencing earlier commits in the same branch and squash/rebased merged as part of a PR
+# will need to be rewritten in a subsequent PR to the corresponding squashed/rebased commit SHAs.
+
+# Format src/Compiler/Checking/CheckComputationExpressions.fs, https://github.com/dotnet/fsharp/pull/16512
+0318afd91f38533879cc89d598e0431c312ad57e
+
+# Spelling, https://github.com/dotnet/fsharp/pull/16212
+23e91e1322363a7e9c34baaeabbf0391c4b7eafd

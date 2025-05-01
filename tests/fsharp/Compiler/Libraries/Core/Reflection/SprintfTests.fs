@@ -2,14 +2,15 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``Sprintf Tests`` =
 
     type MyR = {c:int;b:int;a:int}
 
-    [<Test>]
+    [<Fact>]
     let ``Sprintf %A of record type``() =
         // Regression test for FSHARP1.0:5113
 
@@ -20,7 +21,7 @@ module ``Sprintf Tests`` =
 
     type MyT = MyC of int * string * bool
 
-    [<Test>]
+    [<Fact>]
     let ``Sprintf %A of discriminated union type``() =
         // Regression test for FSHARP1.0:5113
 

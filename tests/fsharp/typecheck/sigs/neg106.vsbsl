@@ -46,16 +46,16 @@ neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M
 Known types of arguments: string * inref<int>
 
 Available overloads:
- - static member C.M: a: int * x: byref<int> -> unit // Argument 'a' doesn't match
- - static member C.M: a: string * x: byref<int> -> unit // Argument 'x' doesn't match
+ - static member C.M: a: int * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'a' doesn't match
+ - static member C.M: a: string * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'x' doesn't match
 
 neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: int * inref<int>
 
 Available overloads:
- - static member C.M: a: int * x: byref<int> -> unit // Argument 'x' doesn't match
- - static member C.M: a: string * x: byref<int> -> unit // Argument 'a' doesn't match
+ - static member C.M: a: int * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'x' doesn't match
+ - static member C.M: a: string * [<System.Runtime.InteropServices.Out>] x: byref<int> -> unit // Argument 'a' doesn't match
 
 neg106.fs(49,22,49,26): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    
@@ -164,14 +164,6 @@ neg106.fs(142,38,142,42): typecheck error FS0001: Type mismatch. Expecting a
 but given a
     'inref<'a>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
-
-neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(147,34,147,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(148,34,148,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
-
-neg106.fs(149,34,149,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
 neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 

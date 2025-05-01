@@ -84,7 +84,7 @@ module NullableOperators3 =
  
     let a = new System.Nullable<int>(0)
     let b = new System.Nullable<int>(1)
-    if a ?=? b then printfn "Same" else printfn "Differerent"
+    if a ?=? b then printfn "Same" else printfn "Different"
 
 module QuerySyntaxWithValidOverloading = 
 

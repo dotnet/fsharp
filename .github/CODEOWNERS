@@ -1,1 +1,3 @@
 * @dotnet/fsharp-team-msft
+/eng/DotNetBuild.props @dotnet/product-construction
+/eng/SourceBuild* @dotnet/source-build

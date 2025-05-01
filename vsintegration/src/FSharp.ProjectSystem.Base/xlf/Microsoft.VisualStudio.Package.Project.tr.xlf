@@ -52,6 +52,11 @@
         <target state="translated">Derleme çıktısında ne kadar bilgi bulunduğunu belirtin</target>
         <note />
       </trans-unit>
+      <trans-unit id="WorkingDirectoryNonexistent">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="new">The working directory does not exist:\n'{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="cli1">
         <source>ECMA-335 CLI compatible framework (location must be provided)</source>
         <target state="translated">ECMA-335 CLI uyumlu Framework (konum sağlanmalıdır)</target>
@@ -72,9 +77,9 @@
         <target state="translated">'{0}' adlı bir dosya zaten var ve bir düzenleyicide açık. Lütfen eklemekte olduğunuz öğeye benzersiz bir ad verin veya önce var olan öğeyi silin.</target>
         <note />
       </trans-unit>
-      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+      <trans-unit id="CannotSaveFileNotOpenInEditor">
         <source>Cannot save '{0}' as it is not open in the editor.</source>
-        <target state="translated">'{0}' düzenleyicide açık olmadığından kaydedilemedi.</target>
+        <target state="new">Cannot save '{0}' as it is not open in the editor.</target>
         <note />
       </trans-unit>
       <trans-unit id="Content">
@@ -713,11 +718,6 @@
       <trans-unit id="CannotBuildWhenBuildInProgress">
         <source>Cannot start a build, because another build is already in progress.</source>
         <target state="translated">Zaten devam eden başka bir yapı olduğu için yapı başlatılamaz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="WorkingDirectoryNotExists">
-        <source>The working directory does not exist:\n'{0}'.</source>
-        <target state="translated">Çalışma dizini yok:\n'{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectReferencesDifferentFramework">

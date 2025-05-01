@@ -87,7 +87,7 @@ module internal Guids =
 
     [<Literal>]
     /// "9007718C-357A-4327-A193-AB3EC38D7EE8"
-    let advancedSettingsPageIdSring = "9007718C-357A-4327-A193-AB3EC38D7EE8"
+    let advancedSettingsPageIdString = "9007718C-357A-4327-A193-AB3EC38D7EE8"
 
     [<Literal>]
     /// "9EBEBCE8-A79B-46B0-A8C5-A9818AEED17D"
@@ -97,6 +97,19 @@ module internal Guids =
 
 [<RequireQualifiedAccess>]
 module internal CodeFix =
+
+    [<Literal>]
+    let AddParentheses = "AddParentheses"
+
+    [<Literal>]
+    let AddTypeAnnotationToObjectOfIndeterminateType =
+        "AddTypeAnnotationToObjectOfIndeterminateType"
+
+    [<Literal>]
+    let AddMissingRecToMutuallyRecFunctions = "AddMissingRecToMutuallyRecFunctions"
+
+    [<Literal>]
+    let ConvertToAnonymousRecord = "ConvertToAnonymousRecord"
 
     [<Literal>]
     let AddInstanceMemberParameter = "AddInstanceMemberParameter"
@@ -120,13 +133,22 @@ module internal CodeFix =
     let ChangeToUpcast = "ChangeToUpcast"
 
     [<Literal>]
+    let ChangeEqualsInFieldTypeToColon = "ChangeEqualsInFieldTypeToColon"
+
+    [<Literal>]
     let UseMutationWhenValueIsMutable = "UseMutationWhenValueIsMutable"
 
     [<Literal>]
     let RenameUnusedValue = "RenameUnusedValue"
 
     [<Literal>]
+    let PrefixUnusedValue = "PrefixUnusedValue"
+
+    [<Literal>]
     let FixIndexerAccess = "FixIndexerAccess"
+
+    [<Literal>]
+    let ImplementInterface = "ImplementInterface"
 
     [<Literal>]
     let RemoveReturnOrYield = "RemoveReturnOrYield"
@@ -145,11 +167,17 @@ module internal CodeFix =
     let MakeDeclarationMutable = "MakeDeclarationMutable"
 
     [<Literal>]
+    let MissingReference = "MissingReference"
+
+    [<Literal>]
     let ChangePrefixNegationToInfixSubtraction =
         "ChangePrefixNegationToInfixSubtraction"
 
     [<Literal>]
     let AddMissingFunKeyword = "AddMissingFunKeyword"
+
+    [<Literal>]
+    let ProposeUppercaseLabel = "ProposeUppercaseLabel"
 
     [<Literal>]
     let AddNewKeyword = "AddNewKeyword"
@@ -177,3 +205,9 @@ module internal CodeFix =
 
     [<Literal>]
     let RemoveSuperfluousCapture = "RemoveSuperfluousCapture"
+
+    [<Literal>]
+    let RemoveUnnecessaryParentheses = "RemoveUnnecessaryParentheses"
+
+    [<Literal>]
+    let AddMissingSeq = "AddMissingSeq"

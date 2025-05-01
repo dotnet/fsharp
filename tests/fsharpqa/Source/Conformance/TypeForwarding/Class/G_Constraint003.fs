@@ -2,7 +2,7 @@
 // constraint:  origin type has no constraint but forwarded type has
 // non-violated constraint
 
-let gc = new Constraint_NonVialatedForwarder<string>()
+let gc = new Constraint_NonViolatedForwarder<string>()
 let rv =gc.getValue()
 
 exit rv

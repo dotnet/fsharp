@@ -438,7 +438,7 @@ check "fderuy"
             _ -> 
                 match !f1,!f2 with
                 |   true,true -> "ok"
-                |   _ -> "not all finallies run"
+                |   _ -> "not all finallys run"
     result)
     "ok"
                 
@@ -573,7 +573,7 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
     }
 
     //
-    // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence epression tailcalls",
+    // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence expression tailcalls",
     // i.e. by compiling them to a state machine
     let tests() = 
         printfn "starting seqOneUnusedNonCapturing"
@@ -768,7 +768,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

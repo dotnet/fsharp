@@ -196,7 +196,6 @@ type FileIndexTable() =
         match fileToIndexTable.TryGetValue filePath with
         | true, idx -> idx
         | _ ->
-
             // Try again looking for a normalized entry.
             let normalizedFilePath =
                 if normalize then
@@ -208,26 +207,30 @@ type FileIndexTable() =
             | true, idx ->
                 // Record the non-normalized entry if necessary
                 if filePath <> normalizedFilePath then
-                    lock fileToIndexTable (fun () -> fileToIndexTable[filePath] <- idx)
+                    fileToIndexTable[filePath] <- idx
 
                 // Return the index
                 idx
 
             | _ ->
-                lock fileToIndexTable (fun () ->
-                    // Get the new index
-                    let idx = indexToFileTable.Count
+                lock indexToFileTable (fun () ->
+                    // See if it was added on another thread
+                    match fileToIndexTable.TryGetValue normalizedFilePath with
+                    | true, idx -> idx
+                    | _ ->
+                        // Okay it's really not there
+                        let idx = indexToFileTable.Count
 
-                    // Record the normalized entry
-                    indexToFileTable.Add normalizedFilePath
-                    fileToIndexTable[normalizedFilePath] <- idx
+                        // Record the normalized entry
+                        indexToFileTable.Add normalizedFilePath
+                        fileToIndexTable[normalizedFilePath] <- idx
 
-                    // Record the non-normalized entry if necessary
-                    if filePath <> normalizedFilePath then
-                        fileToIndexTable[filePath] <- idx
+                        // Record the non-normalized entry if necessary
+                        if filePath <> normalizedFilePath then
+                            fileToIndexTable[filePath] <- idx
 
-                    // Return the index
-                    idx)
+                        // Return the index
+                        idx)
 
     member t.IndexToFile n =
         if n < 0 then
@@ -359,7 +362,7 @@ type Range(code1: int64, code2: int64) =
                 if FileSystem.IsInvalidPathShim m.FileName then
                     "path invalid: " + m.FileName
                 elif not (FileSystem.FileExistsShim m.FileName) then
-                    "non existing file: " + m.FileName
+                    "nonexistent file: " + m.FileName
                 else
                     FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
                     |> Seq.skip (m.StartLine - 1)
@@ -445,10 +448,22 @@ module Range =
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
     let posOrder =
-        Order.orderOn (fun (p: pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
+        let pairOrder = Pair.order (Int32.order, Int32.order)
+        let lineAndColumn = fun (p: pos) -> p.Line, p.Column
+
+        { new IComparer<pos> with
+            member _.Compare(x, xx) =
+                pairOrder.Compare(lineAndColumn x, lineAndColumn xx)
+        }
 
     let rangeOrder =
-        Order.orderOn (fun (r: range) -> r.FileName, (r.Start, r.End)) (Pair.order (String.order, Pair.order (posOrder, posOrder)))
+        let tripleOrder = Pair.order (String.order, Pair.order (posOrder, posOrder))
+        let fileLineColumn = fun (r: range) -> r.FileName, (r.Start, r.End)
+
+        { new IComparer<range> with
+            member _.Compare(x, xx) =
+                tripleOrder.Compare(fileLineColumn x, fileLineColumn xx)
+        }
 
     let outputRange (os: TextWriter) (m: range) =
         fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
@@ -457,10 +472,9 @@ module Range =
     let unionRanges (m1: range) (m2: range) =
         if m1.FileIndex <> m2.FileIndex then
             m2
-        else
+        else if
 
-        // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
-        if
+            // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
             m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2
         then
             m1
@@ -491,6 +505,20 @@ module Range =
                 m.MakeSynthetic()
             else
                 m
+
+    let withStartEnd (startPos: Position) (endPos: Position) (r: range) = range (r.FileIndex, startPos, endPos)
+
+    let withStart (startPos: Position) (r: range) = range (r.FileIndex, startPos, r.End)
+
+    let withEnd (endPos: Position) (r: range) = range (r.FileIndex, r.Start, endPos)
+
+    let shiftStart (lineDelta: int) (columnDelta: int) (r: range) =
+        let shiftedStart = mkPos (r.Start.Line + lineDelta) (r.StartColumn + columnDelta)
+        range (r.FileIndex, shiftedStart, r.End)
+
+    let shiftEnd (lineDelta: int) (columnDelta: int) (r: range) =
+        let shiftedEnd = mkPos (r.End.Line + lineDelta) (r.EndColumn + columnDelta)
+        range (r.FileIndex, r.Start, shiftedEnd)
 
     let rangeContainsRange (m1: range) (m2: range) =
         m1.FileIndex = m2.FileIndex && posGeq m2.Start m1.Start && posGeq m1.End m2.End
@@ -534,19 +562,22 @@ module Range =
 
     let mkFirstLineOfFile (file: string) =
         try
-            let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
+            if not (FileSystem.FileExistsShim file) then
+                mkRange file (mkPos 1 0) (mkPos 1 80)
+            else
+                let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
 
-            let nonWhiteLine =
-                lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrWhiteSpace s))
+                let nonWhiteLine =
+                    lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrWhiteSpace s))
 
-            match nonWhiteLine with
-            | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
-            | None ->
+                match nonWhiteLine with
+                | Some(i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
+                | None ->
 
-                let nonEmptyLine = lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrEmpty s))
+                    let nonEmptyLine = lines |> Seq.tryFind (fun (_, s) -> not (String.IsNullOrEmpty s))
 
-                match nonEmptyLine with
-                | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
-                | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
+                    match nonEmptyLine with
+                    | Some(i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
+                    | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)

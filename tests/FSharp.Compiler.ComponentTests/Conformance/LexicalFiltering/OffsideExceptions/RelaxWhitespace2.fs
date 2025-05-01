@@ -1,4 +1,4 @@
-﻿// #Conformance #LexFilter #Exceptions 
+// #Conformance #LexFilter #Exceptions 
 #light
 
 [<AutoOpen>]
@@ -3434,7 +3434,7 @@ let c = f' {
 let d = f' {|
     X = 2 (* FS0058	Possible incorrect indentation:
 this token is offside of context started at position (12:11).
-Try indenting this token further or using standard formatting conventions. *)
+Try indenting this further.\nTo continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7 *)
 |}
 let e = f' {|
             X = 2 // Indenting further is needed
@@ -3568,7 +3568,7 @@ and             ^a
          > () = 
             member inline __.X = ()
         with
-        static member inline Y = ()
+            static member inline Y = ()
         
 type TypeWithALongName< ^a
     when ^a:(static member(+):'a * 'a -> 'a )

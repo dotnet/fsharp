@@ -5,7 +5,7 @@ namespace Tests.LanguageService.Script
 open System
 open System.IO
 open System.Reflection
-open NUnit.Framework
+open Xunit
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
@@ -13,8 +13,6 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
-[<Category "LanguageService">]
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests() 
 
@@ -53,13 +51,13 @@ type UsingMSBuild() as this =
         | Some(severity,message) ->
             Assert.Fail(sprintf "Expected no squiggle but got '%A' with message: %s" severity message)
 
-    let VerifyErrorListContainedExpetedStr(expectedStr:string,project : OpenProject) = 
+    let VerifyErrorListContainedExpectedStr(expectedStr:string,project : OpenProject) = 
         let errorList = GetErrors(project)
         let GetErrorMessages(errorList : Error list) =
             [ for i = 0 to errorList.Length - 1 do
                 yield errorList.[i].Message]
             
-        Assert.IsTrue(errorList
+        Assert.True(errorList
                           |> GetErrorMessages
                           |> Seq.exists (fun errorMessage ->
                                 errorMessage.Contains(expectedStr)))
@@ -92,7 +90,7 @@ type UsingMSBuild() as this =
             match squiggleOption with
             | None -> Assert.Fail("Expected a squiggle but none was seen.")
             | Some(severity,message) ->
-                Assert.IsTrue((severity=expectedSeverity), sprintf "Expected %s but saw %s: %s" nameOfExpected nameOfNotExpected message)
+                Assert.True((severity=expectedSeverity), sprintf "Expected %s but saw %s: %s" nameOfExpected nameOfNotExpected message)
                 assertf(message,containing)        
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error    "Error"    "Warning" AssertContains,
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertContains,
@@ -100,16 +98,16 @@ type UsingMSBuild() as this =
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains 
 
 
-    //Verify the error list in fsx file containd the expected string
+    //Verify the error list in fsx file contained the expected string
     member private this.VerifyFSXErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
-        VerifyErrorListContainedExpetedStr(expectedStr,project)    
+        VerifyErrorListContainedExpectedStr(expectedStr,project)    
 
     //Verify no error list in fsx file 
     member private this.VerifyFSXNoErrorList(fileContents : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
         AssertNoErrorsOrWarnings(project)  
-    //Verify QuickInfo Containd In Fsx file
+    //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile (code : string) marker expected =
 
         let (_, _, file) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
@@ -117,14 +115,14 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Containd In Fsx file
+    //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile (code : string) marker expected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 
         MoveCursorToStartOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Not Containd In Fsx file     
+    //Verify QuickInfo Not Contained In Fsx file     
     member public this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile code marker notexpected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 
@@ -133,27 +131,26 @@ type UsingMSBuild() as this =
         AssertNotContains(tooltip, notexpected)
 
     /// There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.Squiggles.ShowInFsxFiles``() =  
         let fileContent = """open Thing1.Thing2"""
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Thing1")
         
-    /// Regression test for FSharp1.0:4861 - #r to non-existent file causes the first line to be squiggled
+    /// Regression test for FSharp1.0:4861 - #r to nonexistent file causes the first line to be squiggled
     /// There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.Hash.RProperSquiggleForNonExistentFile``() =  
         let fileContent = """#r "NonExistent" """
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"was not found or is invalid") 
 
     /// Nonexistent hash. There was a problem with Salsa that caused squiggles not to be shown for .fsx files.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.Hash.RDoesNotExist.Bug3325``() =  
         let fileContent = """#r "ThisDLLDoesNotExist" """
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"'ThisDLLDoesNotExist' was not found or is invalid") 
 
     // There was a spurious error message on the first line.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.Bug4861``() =  
         let code = 
                                       ["#light" // First line is important in this repro
@@ -162,7 +159,7 @@ type UsingMSBuild() as this =
         let (project, _) = createSingleFileFsxFromLines code
         AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 1)   // ...and not an error on the first line.
         
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  
         let fileContent = """
             #light
@@ -171,8 +168,7 @@ type UsingMSBuild() as this =
         this.VerifyFSXErrorListContainedExpectedString(fileContent,"Bar.fs") 
 
     // Transitive to existing property.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ScriptClosure.TransitiveLoad1``() = 
         use _guard = this.UsingNewVS() 
         let solution = this.CreateSolution()
@@ -196,8 +192,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)
 
     // Transitive to nonexisting property.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ScriptClosure.TransitiveLoad2``() = 
         use _guard = this.UsingNewVS()  
         let solution = this.CreateSolution()
@@ -219,8 +214,7 @@ type UsingMSBuild() as this =
         AssertExactlyOneErrorSeenContaining(project, "NonExistingProperty")
 
     /// FEATURE: Typing a #r into a file will cause it to be recognized by intellisense.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashR.AddedIn``() =  
         let code =
                                     ["#light"
@@ -228,7 +222,7 @@ type UsingMSBuild() as this =
                                      "open System.Transactions"
                                      ]
         let (project, file) = createSingleFileFsxFromLines code
-        VerifyErrorListContainedExpetedStr("Transactions",project)
+        VerifyErrorListContainedExpectedStr("Transactions",project)
         
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         ReplaceFileInMemory file
@@ -240,7 +234,7 @@ type UsingMSBuild() as this =
         gpatcc.AssertExactly(notAA[file],notAA[file], true (* expectCreate, because dependent DLL set changed *))
 
     // FEATURE: Adding a #load to a file will cause types from that file to be visible in intellisense
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashLoad.Added``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -259,7 +253,7 @@ type UsingMSBuild() as this =
                                      "printfn \"%d\" x"
                                      ])    
         let fsx = OpenFile(project,"File2.fsx")    
-        VerifyErrorListContainedExpetedStr("MyNamespace",project)
+        VerifyErrorListContainedExpectedStr("MyNamespace",project)
         
         ReplaceFileInMemory fsx
                          ["#light"
@@ -271,7 +265,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)
 
     // FEATURE: Removing a #load to a file will cause types from that file to no longer be visible in intellisense
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashLoad.Removed``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -299,9 +293,9 @@ type UsingMSBuild() as this =
                           "printfn \"%d\" x"
                           ]
         TakeCoffeeBreak(this.VS)
-        VerifyErrorListContainedExpetedStr("MyNamespace",project)
+        VerifyErrorListContainedExpectedStr("MyNamespace",project)
     
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashLoad.Conditionals``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -330,14 +324,13 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(fsx, "InDifferentFS.")
         let completion = AutoCompleteAtCursor fsx
         let completion = completion |> Array.map (fun (CompletionItem(name, _, _, _, _)) -> name) |> set
-        Assert.AreEqual(Set.count completion, 2, "Expected 2 elements in the completion list")
-        Assert.IsTrue(completion.Contains "x", "Completion list should contain x because INTERACTIVE is defined")
-        Assert.IsTrue(completion.Contains "B", "Completion list should contain B because DEBUG is not defined")
+        Assert.Equal(Set.count completion, 2)
+        Assert.True(completion.Contains "x", "Completion list should contain x because INTERACTIVE is defined")
+        Assert.True(completion.Contains "B", "Completion list should contain B because DEBUG is not defined")
         
 
     /// FEATURE: Removing a #r into a file will cause it to no longer be seen by intellisense.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashR.Removed``() =  
         let code =
                                     ["#light"
@@ -356,14 +349,13 @@ type UsingMSBuild() as this =
                          ]
         SaveFileToDisk(file)
         TakeCoffeeBreak(this.VS)
-        VerifyErrorListContainedExpetedStr("Transactions",project)
+        VerifyErrorListContainedExpectedStr("Transactions",project)
         gpatcc.AssertExactly(notAA[file], notAA[file], true (* expectCreate, because dependent DLL set changed *))
     
 
 
     // Corecursive load to existing property.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad3``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -387,8 +379,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)
         
     // #load of .fsi is respected (for non-hidden property)
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad9``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -416,8 +407,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project) 
 
     // #load of .fsi is respected at second #load level (for non-hidden property) 
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad10``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -448,8 +438,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project) 
 
     // #load of .fsi is respected when dispersed between two #load levels (for non-hidden property)
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad11``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -480,8 +469,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #load of .fsi is respected when dispersed between two #load levels (the other way) (for non-hidden property)
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad12``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -512,8 +500,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)  
         
     // #nowarn seen in closed .fsx is global to the closure
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.ScriptClosure.TransitiveLoad16``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -534,7 +521,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)   
 
     /// FEATURE: #r in .fsx to a .dll name works.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.NoError.HashR.DllWithNoPath``() =  
         let fileContent = """
             #light
@@ -543,7 +530,7 @@ type UsingMSBuild() as this =
         this.VerifyFSXNoErrorList(fileContent)
 
 
-    [<Test>]
+    [<Fact>]
     // 'System' is in the default set. Make sure we can still resolve it.
     member public this.``Fsx.NoError.HashR.BugDefaultReferenceFileIsAlsoResolved``() =  
         let fileContent = """
@@ -552,8 +539,7 @@ type UsingMSBuild() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.HashR.DoubleReference``() =  
         let fileContent = """
             #light
@@ -562,8 +548,7 @@ type UsingMSBuild() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     // 'CustomMarshalers' is loaded from the GAC _and_ it is available on XP and above.
     member public this.``Fsx.NoError.HashR.ResolveFromGAC``() =  
         let fileContent = """
@@ -572,17 +557,14 @@ type UsingMSBuild() as this =
             """
         this.VerifyFSXNoErrorList(fileContent)
 
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoError.HashR.ResolveFromFullyQualifiedPath``() =
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" )
         let code = ["#light";"#r @\"" + fullyqualifiepathtoddll + "\""]
         let (project, _) = createSingleFileFsxFromLines code
         AssertNoErrorsOrWarnings(project)
 
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath1``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -618,8 +600,7 @@ type UsingMSBuild() as this =
         let ans = GetSquiggleAtCursor(script1)
         AssertNoSquiggle(ans)
 
-    [<Test; Category("fsx closure")>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Fact(Skip = "Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath2``() = 
         use _guard = this.UsingNewVS()  
         let solution = this.CreateSolution()
@@ -656,7 +637,7 @@ type UsingMSBuild() as this =
         AssertNoSquiggle(ans)
 
      /// FEATURE: #load in an .fsx file will include that file in the 'build' of the .fsx.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.NoError.HashLoad.Simple``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -678,8 +659,7 @@ type UsingMSBuild() as this =
         AssertNoErrorsOrWarnings(project)
 
     // In this bug the #loaded file contains a level-4 warning (copy to avoid mutation). This warning was reported at the #load in file2.fsx but shouldn't have been.s
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.NoWarn.OnLoadedFile.Bug4837``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -699,8 +679,7 @@ type UsingMSBuild() as this =
 
     /// FEATURE: .fsx files have automatic imports of certain system assemblies.
     //There is a test bug here. The actual scenario works. Need to revisit.
-    [<Test>]
-    [<Category("ReproX")>]  
+    [<Fact>]
     member public this.``Fsx.NoError.AutomaticImportsForFsxFiles``() =
         let fileContent = """
             #light
@@ -717,8 +696,7 @@ type UsingMSBuild() as this =
         this.VerifyFSXNoErrorList(fileContent) 
 
     // Corecursive load to nonexisting property.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad4``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -741,8 +719,7 @@ type UsingMSBuild() as this =
         AssertExactlyOneErrorSeenContaining(project, "NonExistingProperty")  
 
     // #load of .fsi is respected
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad5``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -770,8 +747,7 @@ type UsingMSBuild() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty")   
 
     // #load of .fsi is respected at second #load level
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad6``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -802,8 +778,7 @@ type UsingMSBuild() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty") 
         
     // #load of .fsi is respected when dispersed between two #load levels
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad7``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -834,8 +809,7 @@ type UsingMSBuild() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty")    
         
     // #load of .fsi is respected when dispersed between two #load levels (the other way)
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad8``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -866,8 +840,7 @@ type UsingMSBuild() as this =
         AssertExactlyOneErrorSeenContaining(project, "HiddenProperty")   
         
     // Bug seen during development: A #load in an .fs would be followed.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ExactlyOneError.ScriptClosure.TransitiveLoad15``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -890,7 +863,7 @@ type UsingMSBuild() as this =
         TakeCoffeeBreak(this.VS)
         AssertExactlyOneErrorSeenContaining(project, "Namespace")  
 
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.Bug4311HoverOverReferenceInFirstLine``() =
         let fileContent = """#r "PresentationFramework.dll"
                              
@@ -899,7 +872,7 @@ type UsingMSBuild() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "PresentationFramework.dll"
         this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker "multiple results"
 
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.QuickInfo.Bug4979``() =
         let code = 
                 ["System.ConsoleModifiers.Shift |> ignore "
@@ -919,13 +892,13 @@ type UsingMSBuild() as this =
     //
     //      %program files%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0
     //
-    // because this is where the the .XML files are.
+    // because this is where the .XML files are.
     //
     // When executing scripts, however, we need to _not_ resolve from these directories because
     // they may be metadata-only assemblies.
     //
     // "Reference Assemblies" was only introduced in 3.5sp1, so not all 2.0 F# boxes will have it, so only run on 4.0
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.Bug5073``() =
         let fileContent = """#r "System" """
         let marker = "#r \"System"
@@ -933,35 +906,32 @@ type UsingMSBuild() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker ".NET Framework"
 
     /// FEATURE: Hovering over a resolved #r file will show a data tip with the fully qualified path to that file.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashR_QuickInfo.ShowFilenameOfResolvedAssembly``() =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
             """#r "System.Transactions" """ // Pick anything that isn't in the standard set of assemblies.
             "#r \"System.Tra" "System.Transactions.dll"
 
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashR_QuickInfo.BugDefaultReferenceFileIsAlsoResolved``() =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
             """#r "System" """  // 'System' is in the default set. Make sure we can still resolve it.
             "#r \"Syst" "System.dll"
         
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashR_QuickInfo.DoubleReference``() =
         let fileContent = """#r "System" // Mark1
                              #r "System" // Mark2 """   // The same reference repeated twice. 
         this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile fileContent "tem\" // Mark1" "System.dll"
         this.AssertQuickInfoContainsAtStartOfMarkerInFsxFile fileContent "tem\" // Mark2" "System.dll"
         
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromGAC``() = 
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile
             """#r "CustomMarshalers" """        // 'mscorcfg' is loaded from the GAC _and_ it is available on XP and above.
             "#r \"Custo" ".NET Framework"
 
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashR_QuickInfo.ResolveFromFullyQualifiedPath``() = 
         let fullyqualifiepathtoddll = System.IO.Path.Combine( System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.configuration.dll" ) // Can be any fully qualified path to an assembly
         let expectedtooltip = System.Reflection.Assembly.ReflectionOnlyLoadFrom(fullyqualifiepathtoddll).FullName
@@ -970,7 +940,7 @@ type UsingMSBuild() as this =
         this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker expectedtooltip
         //this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile fileContent marker ".dll"
 
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.InvalidHashReference.ShouldBeASquiggle.Bug3012``() =  
         let code = 
             ["#light"
@@ -979,11 +949,10 @@ type UsingMSBuild() as this =
         MoveCursorToEndOfMarker(file,"#r \"Ba") 
         let squiggle = GetSquiggleAtCursor(file)
         TakeCoffeeBreak(this.VS)
-        Assert.IsTrue(snd squiggle.Value |> fun str -> str.Contains("Bar.dll"))
+        Assert.True(snd squiggle.Value |> fun str -> str.Contains("Bar.dll"))
 
     // Bug seen during development: The unresolved reference error would x-ray through to the root.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ScriptClosure.TransitiveLoad14``() =  
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1014,25 +983,25 @@ type UsingMSBuild() as this =
         let ans = GetSquiggleAtCursor(file)
         match ans with
         | Some(sev,msg) -> 
-            AssertEqual(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,sev)
-            AssertContains(msg,expectedStr)
-        | _ -> Assert.Fail() 
+            AssertEqual(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error, sev)
+            AssertContains(msg, expectedStr)
+        | _ -> failwith ""
 
     /// FEATURE: #r, #I, #load are all errors when running under the language service
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case1``() =  
-        this.TestFsxHashDirectivesAreErrors("#r \"Joe","#r")
+        this.TestFsxHashDirectivesAreErrors("#r \"Joe", "may only be used in F# script files")
      
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case2``() =  
-        this.TestFsxHashDirectivesAreErrors("#I \"","#I")      
+        this.TestFsxHashDirectivesAreErrors("#I \"", "may only be used in F# script files")
         
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashDirectivesAreErrors.InNonScriptFiles.Case3``() =  
-        this.TestFsxHashDirectivesAreErrors("#load \"Doo","may only be used in F# script files")      
+        this.TestFsxHashDirectivesAreErrors("#load \"Doo", "may only be used in F# script files")
 
     /// FEATURE: #reference against a non-assembly .EXE gives a reasonable error message
-    //[<Test>]
+    //[<Fact>]
     member public this.``Fsx.HashReferenceAgainstNonAssemblyExe``() = 
         let windows = System.Environment.GetEnvironmentVariable("windir")
         let code =
@@ -1048,8 +1017,7 @@ type UsingMSBuild() as this =
     (* ---------------------------------------------------------------------------------- *)
 
      // FEATURE: A #loaded file is squiggled with an error if there are errors in that file.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashLoadedFileWithErrors.Bug3149``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1074,8 +1042,7 @@ type UsingMSBuild() as this =
         
         
      // FEATURE: A #loaded file is squiggled with a warning if there are warning that file.
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashLoadedFileWithWarnings.Bug3149``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1098,8 +1065,7 @@ type UsingMSBuild() as this =
         AssertSquiggleIsWarningContaining(ans, "WarningHere")  
 
      // Bug: #load should report the first error message from a file
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.HashLoadedFileWithErrors.Bug3652``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1125,7 +1091,7 @@ type UsingMSBuild() as this =
         AssertSquiggleIsErrorNotContaining(ans, "foo")
 
     // In this bug the .fsx project directory was wrong so it couldn't reference a relative file.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.ScriptCanReferenceBinDirectoryOutput.Bug3151``() =
         use _guard = this.UsingNewVS()
         let stopWatch = new System.Diagnostics.Stopwatch()
@@ -1155,8 +1121,7 @@ type UsingMSBuild() as this =
                
 
     /// In this bug, multiple references to mscorlib .dll were causing problem in load closure
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.BugAllowExplicitReferenceToMsCorlib``() =  
         let code =
                                     ["#r \"mscorlib\""
@@ -1169,8 +1134,7 @@ type UsingMSBuild() as this =
         AssertCompListContains(completions,"CommandLineArgs")        
         
     /// FEATURE: There is a global fsi module that should be in scope for script files.        
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.Bug2530FsiObject``() =  
         let code = 
                                     ["#light"
@@ -1183,8 +1147,7 @@ type UsingMSBuild() as this =
         AssertCompListContains(completions,"CommandLineArgs")
   
     // Ensure that the script closure algorithm gets the right order of hash directives
-    [<Test>]
-    [<Category("fsx closure")>]
+    [<Fact>]
     member public this.``Fsx.ScriptClosure.SurfaceOrderOfHashes``() =  
         let code = 
                                     ["#r \"System.Runtime.Remoting\""
@@ -1199,12 +1162,12 @@ type UsingMSBuild() as this =
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
-        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.SourceFiles.[0])
-        Assert.AreEqual(1, fas.SourceFiles.Length)
+        Assert.Equal(Path.Combine(projectFolder,"File1.fsx"), fas.SourceFiles.[0])
+        Assert.Equal(1, fas.SourceFiles.Length)
 
 
     /// FEATURE: #reference against a strong name should work.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.HashReferenceAgainstStrongName``() = 
         let code =
                                             ["#light"
@@ -1217,7 +1180,7 @@ type UsingMSBuild() as this =
 
 
     /// Try out some bogus file names in #r, #I and #load.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.InvalidMetaCommandFilenames``() =
         let code = 
                                     [
@@ -1236,7 +1199,7 @@ type UsingMSBuild() as this =
         TakeCoffeeBreak(this.VS) // This used to assert
 
     /// FEATURE: .fsx files have INTERACTIVE #defined
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.INTERACTIVEIsDefinedInFsxFiles``() =
         let code =
                                     [
@@ -1249,9 +1212,7 @@ type UsingMSBuild() as this =
         AssertEqual(TokenType.Identifier ,GetTokenTypeAtCursor(file))  
 
     // Ensure that basic compile of an .fsx works        
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_1``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1260,14 +1221,12 @@ type UsingMSBuild() as this =
         let file1 = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["printfn \"Hello world\""])
         let build = time1 Build project "Time to build project"
-        Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")
         ShowErrors(project)
         
 
     // Compile a script which #loads a source file. The build can't succeed without the loaded file.      
-    [<Test; Category("Expensive")>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_2``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1285,12 +1244,10 @@ type UsingMSBuild() as this =
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")
         
     // Compile a script which #loads a source file. The build can't succeed without 
-    [<Test; Category("Expensive")>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_3``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1308,12 +1265,10 @@ type UsingMSBuild() as this =
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")        
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")        
         
     // Must be explicitly referenced by compile.
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_Bug5416_1``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1325,12 +1280,10 @@ type UsingMSBuild() as this =
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")    
+        Assert.True(not(build.BuildSucceeded), "Expected build to fail")    
         
     // Must be explicitly referenced by compile.
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Fsx.CompileFsx_Bug5416_2``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1356,13 +1309,11 @@ type UsingMSBuild() as this =
             for line in lines do printfn "%s" line
             ()
         if not(SupportsOutputWindowPane(this.VS)) then  
-            Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")                
+            Assert.True(build.BuildSucceeded, "Expected build to succeed")                
         
         
     // Ensure that #load order is preserved when #loading multiple files. 
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_5``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1387,13 +1338,11 @@ type UsingMSBuild() as this =
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")          
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")          
         
     // If an fs file is explicitly passed in to the compiler and also #loaded then 
     // the command-line order is respected rather than the #load order
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_6``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1418,14 +1367,12 @@ type UsingMSBuild() as this =
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed") 
+        Assert.True(build.BuildSucceeded, "Expected build to succeed") 
 
         
         
     // If a #loaded file does not exist, there should be an error
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_7``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1440,13 +1387,11 @@ type UsingMSBuild() as this =
             for line in lines do printfn "%s" line
             AssertListContainsInOrder(lines, ["error FS0079: Could not load file"; "NonexistentFile.fs"; "because it does not exist or is inaccessible"])            
             
-        Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")       
+        Assert.True(not(build.BuildSucceeded), "Expected build to fail")       
         
         
     // #r references should be respected.
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_8``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1461,13 +1406,11 @@ type UsingMSBuild() as this =
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             
-        Assert.IsTrue(build.BuildSucceeded, "Expected build to succeed")          
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")          
         
         
     // Missing script file should be a reasonable failure, not a callstack.
-    [<Test>]
-    [<Category("fsx closure")>]
-    [<Category("fsx compile")>]
+    [<Fact>]
     member public this.``Fsx.CompileFsx_Bug5414``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -1485,11 +1428,11 @@ type UsingMSBuild() as this =
                 printfn "%s" line
                 AssertNotContains(line,"error MSB") // Microsoft.FSharp.Targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
 
-        Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")                                  
+        Assert.True(not(build.BuildSucceeded), "Expected build to fail")                                  
         
         
     /// There was a problem in which synthetic tokens like #load were causing asserts
-    [<Test; Category("Expensive")>]
+    [<Fact>]
     member public this.``Fsx.SyntheticTokens``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1502,7 +1445,7 @@ type UsingMSBuild() as this =
             )
                                  
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.ShouldBeAbleToReference30Assemblies.Bug2050``() =     
         let code = 
                                     ["#light"
@@ -1515,7 +1458,7 @@ type UsingMSBuild() as this =
         AssertCompListContains(completions,"Linq")
 
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.UnclosedHashReference.Case1``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1523,7 +1466,7 @@ type UsingMSBuild() as this =
             "#reference \"" // Unclosed
             "#reference \"Hello There\""]    
             )
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.UnclosedHashReference.Case2``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner,
@@ -1533,7 +1476,7 @@ type UsingMSBuild() as this =
            )
                                      
     /// There was a problem where an unclosed reference picked up the text of the reference on the next line.
-    [<Test>]
+    [<Fact>]
     member public this.``Fsx.UnclosedHashLoad``() =     
         Helper.ExhaustivelyScrutinize(
             this.TestRunner, 
@@ -1542,8 +1485,7 @@ type UsingMSBuild() as this =
               "#load \"Hello There\""]
             ) 
 
-    [<Test>]
-    [<Category("TypeProvider")>]
+    [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``TypeProvider.UnitsOfMeasure.SmokeTest1``() =
         let code =
                                     ["open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames"
@@ -1563,41 +1505,41 @@ type UsingMSBuild() as this =
         use _guard = this.UsingNewVS()
         let providerAssemblyName = PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
         let providerAssembly = System.Reflection.Assembly.LoadFrom providerAssemblyName
-        Assert.IsNotNull(providerAssembly, "provider assembly should not be null")
+        Assert.NotNull(providerAssembly)
         let providerCounters = providerAssembly.GetType("DummyProviderForLanguageServiceTesting.GlobalCounters")
-        Assert.IsNotNull(providerCounters, "provider counters module should not be null")
+        Assert.NotNull(providerCounters)
         let totalCreationsMeth = providerCounters.GetMethod("GetTotalCreations")
-        Assert.IsNotNull(totalCreationsMeth, "totalCreationsMeth should not be null")
+        Assert.NotNull(totalCreationsMeth)
         let totalDisposalsMeth = providerCounters.GetMethod("GetTotalDisposals")
-        Assert.IsNotNull(totalDisposalsMeth, "totalDisposalsMeth should not be null")
+        Assert.NotNull(totalDisposalsMeth)
         let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
-        Assert.IsNotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
+        Assert.NotNull(checkConfigsMeth)
 
         let providerCounters2 = providerAssembly.GetType("ProviderImplementation.ProvidedTypes.GlobalCountersForInvalidation")
-        Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
-        let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
-        Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")
-        let totalInvaldiationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
-        Assert.IsNotNull(totalInvaldiationHandlersRemovedMeth, "totalInvaldiationHandlersRemovedMeth should not be null")
+        Assert.NotNull(providerCounters2)
+        let totalInvalidationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
+        Assert.NotNull(totalInvalidationHandlersAddedMeth)
+        let totalInvalidationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
+        Assert.NotNull(totalInvalidationHandlersRemovedMeth)
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
         let checkConfigsDisposed() = checkConfigsMeth.Invoke(null, [| |]) |> ignore
-        let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
-        let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
+        let totalInvalidationHandlersAdded() = totalInvalidationHandlersAddedMeth.Invoke(null, [| |]) :?> int
+        let totalInvalidationHandlersRemoved() = totalInvalidationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
          
         let startCreations = totalCreations()
         let startDisposals = totalDisposals()
-        let startInvaldiationHandlersAdded = totalInvaldiationHandlersAdded()
-        let startInvaldiationHandlersRemoved =  totalInvaldiationHandlersRemoved()
+        let startInvalidationHandlersAdded = totalInvalidationHandlersAdded()
+        let startInvalidationHandlersRemoved =  totalInvalidationHandlersRemoved()
         let countCreations() = totalCreations() - startCreations
         let countDisposals() = totalDisposals() - startDisposals
-        let countInvaldiationHandlersAdded() = totalInvaldiationHandlersAdded() - startInvaldiationHandlersAdded
-        let countInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemoved() - startInvaldiationHandlersRemoved
+        let countInvalidationHandlersAdded() = totalInvalidationHandlersAdded() - startInvalidationHandlersAdded
+        let countInvalidationHandlersRemoved() = totalInvalidationHandlersRemoved() - startInvalidationHandlersRemoved
 
-        Assert.IsTrue(startCreations >= startDisposals, "Check0")
-        Assert.IsTrue(startInvaldiationHandlersAdded >= startInvaldiationHandlersRemoved, "Check0")
+        Assert.True(startCreations >= startDisposals, "Check0")
+        Assert.True(startInvalidationHandlersAdded >= startInvalidationHandlersRemoved, "Check0")
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
@@ -1622,18 +1564,18 @@ type UsingMSBuild() as this =
             let d = countDisposals()
 
             // Creations should always be greater or equal to disposals
-            Assert.IsTrue(c >= d, "Check2, countCreations() >= countDisposals(), iteration " + string i + ", countCreations() = " + string c + ", countDisposals() = " + string d)
+            Assert.True(c >= d, "Check2, countCreations() >= countDisposals(), iteration " + string i + ", countCreations() = " + string c + ", countDisposals() = " + string d)
 
             // Creations can run ahead of iterations if the background checker resurrects the builder for a project
             // even after we've moved on from it.
-            Assert.IsTrue((c >= i), "Check3, countCreations() >= i, iteration " + string i + ", countCreations() = " + string c)
+            Assert.True((c >= i), "Check3, countCreations() >= i, iteration " + string i + ", countCreations() = " + string c)
 
             if not clearing then 
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
                 if i >= 3 then 
-                    Assert.IsTrue(c >= d + 3, "Check4a, c >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
-                    printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
+                    Assert.True(c >= d + 3, "Check4a, c >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
+                    printfn "Check4a2, i = %d, countInvalidationHandlersRemoved() = %d" i (countInvalidationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
@@ -1642,31 +1584,30 @@ type UsingMSBuild() as this =
                 let d = countDisposals()
 
                 // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
-                Assert.IsTrue((c = d), "Check4b, countCreations() = countDisposals(), iteration " + string i)
-                Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check4b2, all invlidation handlers removed, iteration " + string i)
+                Assert.True((c = d), "Check4b, countCreations() = countDisposals(), iteration " + string i)
+                Assert.True((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check4b2, all invalidation handlers removed, iteration " + string i)
         
         let c = countCreations()
         let d = countDisposals()
-        Assert.IsTrue(c >= 50, "Check5, at end, countCreations() >= 50")
+        Assert.True(c >= 50, "Check5, at end, countCreations() >= 50")
 
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
 
         let c = countCreations()
         let d = countDisposals()
         // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
-        Assert.IsTrue((c = d), "Check6b, at end, countCreations() = countDisposals() after explicit clearing")
-        Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+        Assert.True((c = d), "Check6b, at end, countCreations() = countDisposals() after explicit clearing")
+        Assert.True((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit clearing")
         checkConfigsDisposed()
 
-    [<Test;Category("TypeProvider"); Category("Expensive"); Ignore("Flaky test, unclear if it is valuable")>]
+    [<Fact(Skip = "Flaky test, unclear if it is valuable")>]
     member public this.``TypeProvider.Disposal.SmokeTest1``() = this.TypeProviderDisposalSmokeTest(true)
 
-    [<Test;Category("TypeProvider"); Ignore("Flaky test, unclear if it is valuable")>]
+    [<Fact(Skip ="Flaky test, unclear if it is valuable")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
 
 // Context project system
-[<TestFixture>] 
 type UsingProjectSystem() = 
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

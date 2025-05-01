@@ -17,6 +17,6 @@ neg_invalid_constructor.fs (7,30)-(7,60) typecheck error A unique overload for m
 Known type of argument: 'a list
 
 Candidates:
- - new: col: 'b -> ImmutableStack<'a> when 'b :> seq<'c>
+ - new: col: 'b -> ImmutableStack<'a> when 'b :> 'c seq
  - private new: items: 'a list -> ImmutableStack<'a>
 neg_invalid_constructor.fs (7,30)-(7,60) typecheck error This is not a valid object construction expression. Explicit object constructors must either call an alternate constructor or initialize all fields of the object and specify a call to a super class constructor.

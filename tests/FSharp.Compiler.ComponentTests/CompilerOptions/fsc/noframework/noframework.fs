@@ -1,18 +1,19 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.CompilerOptions.fsc
+namespace CompilerOptions.Fsc
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module noframework =
+module Noframework =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/noframework)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"noframework02.fs"|])>]
-    let ``noframework - noframework02.fs - --noframework`` compilation =
+    [<Theory; FileInlineData("noframework02.fs")>]
+    let ``noframework - noframework02_fs - --noframework`` compilation =
         compilation
+        |> getCompilation 
         |> asFsx
         |> withOptions ["--noframework"]
         |> compile

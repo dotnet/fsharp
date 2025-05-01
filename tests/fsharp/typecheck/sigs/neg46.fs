@@ -7,7 +7,7 @@ type System.Random with
        static member Factory() = 1
 
 type System.Random with
-       static let gen = Random()
+       static let gen = System.Random()
        static member Factory() = 1
 
 type System.Random with

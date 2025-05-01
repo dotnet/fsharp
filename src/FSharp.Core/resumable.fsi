@@ -49,7 +49,7 @@ and
     member ResumptionFunc: ResumptionFunc<'Data> with get, set 
     
     /// Additional data associated with the state machine
-    member ResumptionData: obj with get, set 
+    member ResumptionData: objnull with get, set 
 
     /// Executes the MoveNext implementation of the state machine
     abstract MoveNext: machine: byref<ResumableStateMachine<'Data>> -> unit
@@ -90,7 +90,7 @@ module ResumableCode =
     val inline TryWith: body: ResumableCode<'Data, 'T> * catch: (exn -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T>
 
     /// Specifies resumable code which executes with 'use' semantics
-    val inline Using: resource: 'Resource * body: ('Resource -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T> when 'Resource :> IDisposable
+    val inline Using: resource: 'Resource * body: ('Resource -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T> when 'Resource :> IDisposable|null
 
     /// Specifies resumable code which executes a loop
     val inline While: [<InlineIfLambda>] condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> ResumableCode<'Data, unit>

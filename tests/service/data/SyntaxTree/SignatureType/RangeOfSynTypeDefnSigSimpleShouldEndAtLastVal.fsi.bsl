@@ -17,8 +17,8 @@ SigFile
                          LongIdent (SynLongIdent ([int], [], [None])), false,
                          PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                          None, (4,4--4,23),
-                         { LeadingKeyword = Some (Val (4,4--4,7)) }),
-                      (4,4--4,23));
+                         { LeadingKeyword = Some (Val (4,4--4,7))
+                           MutableKeyword = None }), (4,4--4,23));
                    ValField
                      (SynField
                         ([], false, Some SomeThingElse,
@@ -28,8 +28,8 @@ SigFile
                             (5,24--5,37), { ArrowRange = (5,28--5,30) }), false,
                          PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                          None, (5,4--5,37),
-                         { LeadingKeyword = Some (Val (5,4--5,7)) }),
-                      (5,4--5,37))], (3,5--5,37),
+                         { LeadingKeyword = Some (Val (5,4--5,7))
+                           MutableKeyword = None }), (5,4--5,37))], (3,5--5,37),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = None
                     WithKeyword = Some (3,20--3,24) })], (3,0--5,37))],

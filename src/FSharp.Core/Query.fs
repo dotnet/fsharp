@@ -244,7 +244,7 @@ type QueryBuilder() =
         QuerySource (Enumerable.Join(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
     member _.GroupJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
-        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x g)))
+        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
     member _.LeftOuterJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
         QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x (g.DefaultIfEmpty()))))
@@ -372,7 +372,7 @@ module Query =
 
     let CallGenericStaticMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        fun (tyargs: Type list, args: obj list) ->
+        fun (tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(null, Array.ofList args)
@@ -381,7 +381,7 @@ module Query =
 
     let CallGenericInstanceMethod (methHandle:System.RuntimeMethodHandle) =
         let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
-        fun (objExpr:obj, tyargs: Type list, args: obj list) ->
+        fun (objExpr:obj, tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(objExpr, Array.ofList args)
@@ -403,7 +403,7 @@ module Query =
         (fun (obj: Expr, tyargs: Type list, args: Expr list) -> Expr.Call (obj, BindGenericStaticMethod methInfo tyargs, args))
 
     let ImplicitExpressionConversionHelperMethodInfo =
-        methodhandleof (fun e -> LeafExpressionConverter.ImplicitExpressionConversionHelper e)
+        methodhandleof (LeafExpressionConverter.ImplicitExpressionConversionHelper)
         |> System.Reflection.MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -467,7 +467,7 @@ module Query =
             else
                 ME ([srcItemTy], [src; key])
 
-        let Call (isIQ, srcItemTy, src:obj, key: Expr) =
+        let Call (isIQ, srcItemTy, src:objnull, key: Expr) =
             let key = key |> LeafExpressionConverter.EvaluateQuotation
             let C = if isIQ then CQ else CE
             C ([srcItemTy], [src; box key])
@@ -496,7 +496,7 @@ module Query =
             else
                 ME ([srcItemTy; keyElemTy], [src; valSelector])
 
-        let Call (isIQ, srcItemTy: Type, _keyItemTy: Type, src:obj, keyElemTy: Type, v: Var, res: Expr) =
+        let Call (isIQ, srcItemTy: Type, _keyItemTy: Type, src:objnull, keyElemTy: Type, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, keyElemTy, v, res)
                 CQ ([srcItemTy; keyElemTy], [src; box selector])
@@ -505,7 +505,7 @@ module Query =
                 CE ([srcItemTy; keyElemTy], [src; selector])
         Make, Call
 
-    let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * obj * Type * Var * Expr -> obj) =
+    let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * objnull * Type * Var * Expr -> obj) =
         let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Min(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Min(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
@@ -539,7 +539,7 @@ module Query =
             else
                 ME ([srcItemTy], [src; predicate])
 
-        let Call (isIQ, srcItemTy: Type, src:obj, v: Var, res: Expr) =
+        let Call (isIQ, srcItemTy: Type, src:objnull, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, boolTy, v, res)
                 CQ ([srcItemTy], [src; box selector])
@@ -612,7 +612,7 @@ module Query =
                     let selector = Expr.Lambda (v, res)
                     ME (qb, [srcItemTy; qTy; resTyNoNullable], [src; selector])
 
-        let Call (qb:obj, isIQ, srcItemTy: Type, resTyNoNullable: Type, src:obj, resTy: Type, v: Var, res: Expr) =
+        let Call (qb:obj, isIQ, srcItemTy: Type, resTyNoNullable: Type, src:objnull, resTy: Type, v: Var, res: Expr) =
             if isIQ then
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, resTy, v, res)
                 let caller =
@@ -722,21 +722,21 @@ module Query =
             (if isIQ then CQ else CE) ([srcItemTy], [src])
         Make, Call
 
-    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.First x)) (methodhandleof (fun x -> Enumerable.First x))
+    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.First)) (methodhandleof (Enumerable.First))
 
-    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.FirstOrDefault x)) (methodhandleof (fun x -> Enumerable.FirstOrDefault x))
+    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.FirstOrDefault)) (methodhandleof (Enumerable.FirstOrDefault))
 
-    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Last x)) (methodhandleof (fun x -> Enumerable.Last x))
+    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Last)) (methodhandleof (Enumerable.Last))
 
-    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.LastOrDefault x)) (methodhandleof (fun x -> Enumerable.LastOrDefault x))
+    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.LastOrDefault)) (methodhandleof (Enumerable.LastOrDefault))
 
-    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Single x)) (methodhandleof (fun x -> Enumerable.Single x))
+    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Single)) (methodhandleof (Enumerable.Single))
 
-    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.SingleOrDefault x)) (methodhandleof (fun x -> Enumerable.SingleOrDefault x))
+    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.SingleOrDefault)) (methodhandleof (Enumerable.SingleOrDefault))
 
-    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (fun x -> System.Linq.Queryable.Count x)) (methodhandleof (fun x -> Enumerable.Count x))
+    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Count)) (methodhandleof (Enumerable.Count))
 
-    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (fun x -> Enumerable.DefaultIfEmpty x))
+    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (Enumerable.DefaultIfEmpty))
 
     /// Indicates if we can eliminate redundant 'Select(x=>x)' nodes
     type CanEliminate =
@@ -898,8 +898,8 @@ module Query =
             (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.TakeWhile(x, y)))
 
     let MakeDistinct =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun x -> System.Linq.Queryable.Distinct x))
-        let FE = MakeGenericStaticMethod (methodhandleof (fun x -> Enumerable.Distinct x))
+        let FQ = MakeGenericStaticMethod (methodhandleof (System.Linq.Queryable.Distinct))
+        let FE = MakeGenericStaticMethod (methodhandleof (Enumerable.Distinct))
         fun (isIQ, srcItemTy, src: Expr) ->
             if isIQ then
                 FQ ([srcItemTy], [src])
@@ -1260,12 +1260,12 @@ module Query =
         | TransInnerResult.Select(canElim, isQTy, mutSource, mutSelectorVar, mutSelectorBody) ->
             MakeSelect(canElim, isQTy, CommitTransInnerResult mutSource, mutSelectorVar, mutSelectorBody)
 
-    /// Given a the inner of query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
+    /// Given the inner of query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
     /// in terms of LINQ operators, operating over mutable tuples. Return the conversion
     /// information for the immutable-to-mutable conversion performed so we can undo it where needed.
     ///
-    /// Here 'inner' refers the the part of the query that produces a sequence of results.
+    /// Here 'inner' refers the part of the query that produces a sequence of results.
     ///
     /// The output query will use either Queryable.* or Enumerable.* operators depending on whether
     /// the inputs to the queries have type IQueryable or IEnumerable.
@@ -1605,7 +1605,7 @@ module Query =
     // propagate a immutable-->mutable-->immutable translation if any.
     //
     /// This is used on recursive translations of yielded elements to translate nested queries
-    /// in 'yield' position and still propagate information about a possible imutable->mutable->mutable
+    /// in 'yield' position and still propagate information about a possible immutable->mutable->mutable
     //  translation.
     //      e.g. yield (1, query { ... })
     and TransInnerNoCheck e =
@@ -1657,7 +1657,7 @@ module Query =
 
     /// Given a query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
-    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postifx" in-memory transformation
+    /// in terms of LINQ operators, operating over mutable tuples. If necessary, also add a "postfix" in-memory transformation
     /// converting the data back to immutable tuples and records.
     let TransInnerWithFinalConsume canElim immutSource =
         let mutSource, sourceConv = TransInnerAndCommit canElim true immutSource

@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
-
+open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host
@@ -14,23 +14,15 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open Microsoft.VisualStudio.Shell
 
 type internal FSharpCompletionService
-    (
-        workspace: Workspace,
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider,
-        settings: EditorOptions
-    ) =
+    (workspace: Workspace, serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
     inherit FSharpCompletionServiceWithProviders(workspace)
 
     let projectInfoManager =
-        workspace
-            .Services
-            .GetRequiredService<IFSharpWorkspaceService>()
-            .FSharpProjectOptionsManager
+        workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
     let builtInProviders =
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider, settings),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager))
         )
 
@@ -44,31 +36,36 @@ type internal FSharpCompletionService
             | NewlineOnCompleteWord -> EnterKeyRule.AfterFullyTypedWord
             | AlwaysNewline -> EnterKeyRule.Always
 
-        CompletionRules
-            .Default
-            .WithDismissIfEmpty(true)
-            .WithDismissIfLastCharacterDeleted(true)
-            .WithDefaultEnterKeyRule(enterKeyRule)
+        CompletionRules.Default.WithDismissIfEmpty(true).WithDismissIfLastCharacterDeleted(true).WithDefaultEnterKeyRule(enterKeyRule)
 
     /// Indicates the text span to be replaced by a committed completion list item.
     override _.GetDefaultCompletionListSpan(sourceText, caretIndex) =
         let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
-        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-        CompletionUtils.getDefaultCompletionListSpan (sourceText, caretIndex, documentId, document.FilePath, defines)
+
+        let defines, langVersion, strictIndentation =
+            projectInfoManager.GetCompilationDefinesAndLangVersionForEditingDocument(document)
+
+        CompletionUtils.getDefaultCompletionListSpan (
+            sourceText,
+            caretIndex,
+            documentId,
+            document.FilePath,
+            defines,
+            Some langVersion,
+            strictIndentation,
+            CancellationToken.None
+        )
 
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpCompletionServiceFactory [<ImportingConstructor>]
-    (
-        serviceProvider: SVsServiceProvider,
-        assemblyContentProvider: AssemblyContentProvider,
-        settings: EditorOptions
-    ) =
+type internal FSharpCompletionServiceFactory
+    [<ImportingConstructor>]
+    (serviceProvider: SVsServiceProvider, assemblyContentProvider: AssemblyContentProvider, settings: EditorOptions) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
             upcast
-                new FSharpCompletionService(
+                FSharpCompletionService(
                     hostLanguageServices.WorkspaceServices.Workspace,
                     serviceProvider,
                     assemblyContentProvider,

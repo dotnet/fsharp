@@ -142,7 +142,7 @@ module internal ProjectOptionsBuilder =
                 { projectOptions with
                     Options =
                         { projectOptions.Options with
-                            ReferencedProjects = referenceList |> Array.map FSharpReferencedProject.CreateFSharp
+                            ReferencedProjects = referenceList |> Array.map FSharpReferencedProject.FSharpReference
                             OtherOptions = otherOptions
                         }
                 })

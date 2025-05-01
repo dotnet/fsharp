@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiDetailedHelpLink">
+        <source>See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</source>
+        <target state="new">See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
         <target state="translated">FSI 中未叫用具有 [&lt;EntryPoint&gt;] 的函數。未叫用'{0}'。執行 '{1} &lt;args&gt;'，以使用適當的命令列引數字串陣列叫用 '{2}'。</target>
@@ -17,6 +22,11 @@
         <target state="translated">清空螢幕</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
+        <target state="translated">顯示識別碼的文件，例如#help \"List.map\";;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">因為先前發生錯誤，所以無法完成作業</target>
@@ -28,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
-        <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">發出多組件 (預設為開啟)</target>
+        <source>Emit multiple assemblies ({0} by default)</source>
+        <target state="new">Emit multiple assemblies ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -103,8 +113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
-        <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">在 Windows Forms 事件迴圈上執行互動 (預設為開啟)</target>
+        <source>Execute interactions on a Windows Forms event loop ({0} by default)</source>
+        <target state="new">Execute interactions on a Windows Forms event loop ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
@@ -113,13 +123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
-        <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">支援主控台中的 TAB 鍵自動完成 (預設為開啟)</target>
+        <source>Support TAB completion in console ({0} by default)</source>
+        <target state="new">Support TAB completion in console ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">發出在引號內的偵錯資訊</target>
+        <source>Emit debug information in quotations ({0} by default)</source>
+        <target state="new">Emit debug information in quotations ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
@@ -288,8 +298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
-        <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">避免參考遭 F# 互動處理序封鎖</target>
+        <source>Prevents references from being locked by the F# Interactive process ({0} by default)</source>
+        <target state="new">Prevents references from being locked by the F# Interactive process ({0} by default)</target>
         <note />
       </trans-unit>
     </body>

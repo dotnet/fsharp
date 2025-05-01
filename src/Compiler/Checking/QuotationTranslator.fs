@@ -167,33 +167,37 @@ exception IgnoringPartOfQuotedTermWarning of string * range
 
 let wfail e = raise (InvalidQuotedTerm e)
 
+[<return: Struct>]
 let (|ModuleValueOrMemberUse|_|) g expr =
     let rec loop expr args =
         match stripExpr expr with
         | Expr.App (InnerExprPat(Expr.Val (vref, vFlags, _) as f), fty, tyargs, actualArgs, _m) when vref.IsMemberOrModuleBinding ->
-            Some(vref, vFlags, f, fty, tyargs, actualArgs @ args)
+            ValueSome(vref, vFlags, f, fty, tyargs, actualArgs @ args)
         | Expr.App (f, _fTy, [], actualArgs, _) ->
             loop f (actualArgs @ args)
         | Expr.Val (vref, vFlags, _m) as f when (match vref.TryDeclaringEntity with ParentNone -> false | _ -> true) ->
             let fty = tyOfExpr g f
-            Some(vref, vFlags, f, fty, [], args)
+            ValueSome(vref, vFlags, f, fty, [], args)
         | _ ->
-            None
+            ValueNone
     loop expr []
 
+[<return: Struct>]
 let (|SimpleArrayLoopUpperBound|_|) expr =
     match expr with
-    | Expr.Op (TOp.ILAsm ([AI_sub], _), _, [Expr.Op (TOp.ILAsm ([I_ldlen; AI_conv ILBasicType.DT_I4], _), _, _, _); Expr.Const (Const.Int32 1, _, _) ], _) -> Some ()
-    | _ -> None
+    | Expr.Op (TOp.ILAsm ([AI_sub], _), _, [Expr.Op (TOp.ILAsm ([I_ldlen; AI_conv ILBasicType.DT_I4], _), _, _, _); Expr.Const (Const.Int32 1, _, _) ], _) -> ValueSome ()
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|SimpleArrayLoopBody|_|) g expr =
     match expr with
     | Expr.Lambda (_, a, b, ([_] as args), DebugPoints (Expr.Let (TBind(forVarLoop, DebugPoints (Expr.Op (TOp.ILAsm ([I_ldelem_any(ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx], m1), _), seqPoint), body, m2, freeVars), _), m, ty) ->
         let body = Expr.Let (TBind(forVarLoop, mkCallArrayGet g m1 elemTy arr idx, seqPoint), body, m2, freeVars)
         let expr = Expr.Lambda (newUnique(), a, b, args, body, m, ty)
-        Some (arr, elemTy, expr)
-    | _ -> None
+        ValueSome (arr, elemTy, expr)
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|ObjectInitializationCheck|_|) g expr =
     // recognize "if this.init@ < 1 then failinit"
     match expr with
@@ -207,10 +211,8 @@ let (|ObjectInitializationCheck|_|) g expr =
             name.StartsWithOrdinal("init") &&
             selfRef.IsMemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
-            isUnitTy g resultTy -> Some()
-    | _ -> None
-
-let isSplice g vref = valRefEq g vref g.splice_expr_vref || valRefEq g vref g.splice_raw_expr_vref
+            isUnitTy g resultTy -> ValueSome()
+    | _ -> ValueNone
 
 let rec EmitDebugInfoIfNecessary cenv env m astExpr : ExprData =
     // do not emit debug info if emitDebugInfoInQuotations = false or it was already written for the given expression
@@ -263,11 +265,12 @@ and ConvWitnessInfo cenv env m traitInfo =
     let witnessInfo = traitInfo.GetWitnessInfo()
     let env = { env with suppressWitnesses = true }
     // First check if this is a witness in ReflectedDefinition code
-    if env.witnessesInScope.ContainsKey witnessInfo then 
-        let witnessArgIdx = env.witnessesInScope[witnessInfo]
+    match env.witnessesInScope.TryGetValue witnessInfo with
+    | true, witnessesInScopeValue ->
+        let witnessArgIdx = witnessesInScopeValue
         QP.mkVar witnessArgIdx
     // Otherwise it is a witness in a quotation literal 
-    else
+    | false, _ ->
         let holeTy = GenWitnessTy g witnessInfo
         let idx = cenv.exprSplices.Count
         let fillExpr = Expr.WitnessArg(traitInfo, m)
@@ -293,7 +296,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     match expr with
     // Detect expression tree exprSplices
     | Expr.App (InnerExprPat(Expr.Val (vref, _, _)), _, _, x0 :: rest, m)
-           when isSplice g vref ->
+           when g.isSpliceOperator vref ->
         let idx = cenv.exprSplices.Count
         let ty = tyOfExpr g expr
 
@@ -306,7 +309,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR, ConvExpr cenv env arg))
 
     | ModuleValueOrMemberUse g (vref, vFlags, _f, _fTy, tyargs, curriedArgs)
-        when not (isSplice g vref) ->
+        when not (g.isSpliceOperator vref) ->
         let m = expr.Range
 
         let numEnclTypeArgs, _, isNewObj, valUseFlags, isSelfInit, takesInstanceArg, isPropGet, isPropSet =
@@ -579,7 +582,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ExnConstr tcref, _, args    ->
             let _rgtypR = ConvTyconRef cenv tcref m
-            let _typ = mkAppTy tcref []
+            let _typ = mkWoNullAppTy tcref []
             let parentTyconR = ConvTyconRef cenv tcref m
             let argTys = tcref |> recdFieldsOfExnDefRef  |> List.map (fun rfld -> rfld.FormalType)
             let methArgTypesR = ConvTypes cenv env m argTys
@@ -708,7 +711,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
 
         | TOp.TraitCall traitInfo, _, args ->
-            let g = g
+            //let g = g
             let inWitnessPassingScope = not env.witnessesInScope.IsEmpty
             let witnessArgInfo = 
                 if g.generateWitnesses && inWitnessPassingScope then 
@@ -1218,7 +1221,7 @@ and ConvILType cenv env m ty =
 and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
-    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
+    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty_withNulls))
     | _ -> None
 #endif
 

@@ -65,7 +65,7 @@ type AlternativeMeh() =
         : obj =
         null
 
-let somethingTupledReturingSomethingTupled
+let somethingTupledReturningSomethingTupled
     (
         a: int,
         b: int,

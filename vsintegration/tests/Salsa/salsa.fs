@@ -91,7 +91,7 @@ module internal Salsa =
                                   | _ -> failwith "multiple projects found"
                     match project with
                     | null ->
-                        let project = GlobalEngine().LoadProject(projectFileName)
+                        let project = GlobalEngine().LoadProject(projectFileName, "4.0")
                         // Set global properties.
                         SetGlobalProperty(project, "AssemblySearchPaths", "{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}")
                         SetGlobalProperty(project, "BuildingInsideVisualStudio", "true")
@@ -227,7 +227,7 @@ module internal Salsa =
         MSBuild.CreateFSharpManifestResourceName(projectFileName,configuration,platform)
 
     module Filenames = 
-        /// Compare two file names to eachother.
+        /// Compare two file names to each other.
         let AreSame f1 f2 = 
             let result = 
                    System.String.Compare(f1,f2,StringComparison.CurrentCultureIgnoreCase)=0
@@ -299,8 +299,17 @@ module internal Salsa =
         newProjectSite
         
     /// Token types.
-    type TokenType = Text | Keyword | Comment | Identifier | String | Number | InactiveCode | PreprocessorKeyword | Operator
-        with override this.ToString() =
+    type TokenType =
+        | Text 
+        | Keyword 
+        | Comment 
+        | Identifier 
+        | String 
+        | Number 
+        | InactiveCode 
+        | PreprocessorKeyword 
+        | Operator
+        override this.ToString() =
             match this with
             | Text                  -> "Text"
             | Keyword               -> "Keyword"
@@ -454,7 +463,7 @@ module internal Salsa =
     // Result of querying the completion list
     and CompletionItem = CompletionItem of name: string * displayText: string * nameInCode: string * (unit -> string) * DeclarationType
 
-    /// Representes the information that is displayed in the navigation bar
+    /// Represents the information that is displayed in the navigation bar
     and NavigationBarResult = 
       { TypesAndModules : DropDownMember[]
         Members : DropDownMember[]
@@ -1046,7 +1055,7 @@ module internal Salsa =
                         let linestarts = Array.create (lines.Length+1) 0 // One extra to save the state at the end of the file.
                         VsMocks.setFileText fileName view lines (RecolorizeLines view solution.Vs.GetColorizer lines linestarts) (fun line->linestarts.[line])
                         
-                        // The invisible project does not have a hiearchy.
+                        // The invisible project does not have a hierarchy.
                         if hier <> null then 
                             // Put the file in the hierarchy
                             behaviorHooks.AddFileToHierarchyHook(fileName, hier)
@@ -1101,7 +1110,7 @@ module internal Salsa =
             
             member file.GetFileName() = fileName
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(fileName, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(fileName, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, previewEnabled=false, loadedTimeStamp=System.DateTime(2000,1,1), otherFlags=[| |]) 
                 |> Async.RunImmediate
                 |> fst // drop diagnostics
                  
@@ -1467,7 +1476,7 @@ module internal Salsa =
             vs.LanguageService <- ls
             vs :> VisualStudio
         with e -> 
-            // Need to just print the error because NUnit has not fully initialized the exception at this point.
+            // Need to just print the error because the framework has not fully initialized the exception at this point.
             printf "Error in createSimple: %A" e
             reraise() 
     

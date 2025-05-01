@@ -14,6 +14,7 @@ Welcome to [the F# compiler and tools repository](https://github.com/dotnet/fsha
 * [Large inputs and stack overflows](large-inputs-and-stack-overflows.md)
 * [Memory usage](memory-usage.md)
 * [Optimizations](optimizations.md)
+* [Equality optimizations](optimizations-equality.md)
 * [Project builds](project-builds.md)
 * [Tooling features](tooling-features.md)
 

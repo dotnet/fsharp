@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Contains logic to prepare, post-process, filter and emit compiler diagnsotics
+/// Contains logic to prepare, post-process, filter and emit compiler diagnostics
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
@@ -61,14 +61,8 @@ type PhasedDiagnostic with
     /// Format the core of the diagnostic as a string. Doesn't include the range information.
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string
 
-    /// Indicates if a diagnostic should be reported as an informational
-    member ReportAsInfo: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
-
-    /// Indicates if a diagnostic should be reported as a warning
-    member ReportAsWarning: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
-
-    /// Indicates if a diagnostic should be reported as an error
-    member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+    /// Compute new severity according to the various diagnostics options
+    member AdjustSeverity: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> FSharpDiagnosticSeverity
 
     /// Output all of a diagnostic to a buffer, including range
     member Output: buf: StringBuilder * tcConfig: TcConfig * severity: FSharpDiagnosticSeverity -> unit
@@ -113,7 +107,9 @@ type FormattedDiagnosticCanonicalInformation =
 type FormattedDiagnosticDetailedInfo =
     { Location: FormattedDiagnosticLocation option
       Canonical: FormattedDiagnosticCanonicalInformation
-      Message: string }
+      Message: string
+      Context: string option
+      DiagnosticStyle: DiagnosticStyle }
 
 /// Used internally and in LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]

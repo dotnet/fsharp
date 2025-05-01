@@ -1,6 +1,6 @@
 // #Regression #NoMT #FSI #NoMono 
 // Regression for FSB 1711
-// Generic Interface requires a method implementation that in some cases is not suppored by FSI
+// Generic Interface requires a method implementation that in some cases is not supported by FSI
 
 type IFoo<'a> =
     abstract InterfaceMethod<'b> : 'a -> 'b

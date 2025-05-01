@@ -9,6 +9,7 @@ open System.IO
 open System.Threading
 open System.Collections.Generic
 
+open FSharp.Compiler.Parser
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -26,6 +27,7 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
+open FSharp.Compiler.LexerStore
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
@@ -72,34 +74,34 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) =
 
 let QualFileNameOfSpecs fileName specs =
     match specs with
-    | [ SynModuleOrNamespaceSig (longId = modname; kind = kind; range = m) ] when kind.IsModule ->
+    | [ SynModuleOrNamespaceSig(longId = modname; kind = kind; range = m) ] when kind.IsModule ->
         QualFileNameOfModuleName m fileName modname
-    | [ SynModuleOrNamespaceSig (kind = kind; range = m) ] when not kind.IsModule -> QualFileNameOfFilename m fileName
+    | [ SynModuleOrNamespaceSig(kind = kind; range = m) ] when not kind.IsModule -> QualFileNameOfFilename m fileName
     | _ -> QualFileNameOfFilename (mkRange fileName pos0 pos0) fileName
 
 let QualFileNameOfImpls fileName specs =
     match specs with
-    | [ SynModuleOrNamespace (longId = modname; kind = kind; range = m) ] when kind.IsModule -> QualFileNameOfModuleName m fileName modname
-    | [ SynModuleOrNamespace (kind = kind; range = m) ] when not kind.IsModule -> QualFileNameOfFilename m fileName
+    | [ SynModuleOrNamespace(longId = modname; kind = kind; range = m) ] when kind.IsModule -> QualFileNameOfModuleName m fileName modname
+    | [ SynModuleOrNamespace(kind = kind; range = m) ] when not kind.IsModule -> QualFileNameOfFilename m fileName
     | _ -> QualFileNameOfFilename (mkRange fileName pos0 pos0) fileName
 
 let PrependPathToQualFileName x (QualifiedNameOfFile q) =
     ComputeQualifiedNameOfFileFromUniquePath(q.idRange, pathOfLid x @ [ q.idText ])
 
-let PrependPathToImpl x (SynModuleOrNamespace (longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)) =
+let PrependPathToImpl x (SynModuleOrNamespace(longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)) =
     SynModuleOrNamespace(x @ longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)
 
-let PrependPathToSpec x (SynModuleOrNamespaceSig (longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)) =
+let PrependPathToSpec x (SynModuleOrNamespaceSig(longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)) =
     SynModuleOrNamespaceSig(x @ longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)
 
 let PrependPathToInput x inp =
     match inp with
-    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e, trivia, i)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(b, c, q, d, hd, impls, e, trivia, i)) ->
         ParsedInput.ImplFile(
             ParsedImplFileInput(b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e, trivia, i)
         )
 
-    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia, i)) ->
+    | ParsedInput.SigFile(ParsedSigFileInput(b, q, d, hd, specs, trivia, i)) ->
         ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia, i))
 
 let IsValidAnonModuleName (modname: string) =
@@ -127,7 +129,7 @@ let FileRequiresModuleOrNamespaceDecl isLast isExe fileName =
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) =
     match impl with
-    | ParsedImplFileFragment.NamedModule (SynModuleOrNamespace (lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)) ->
+    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)) ->
         let lid =
             match lid with
             | [ id ] when kind.IsModule && id.idText = MangledGlobalName ->
@@ -137,7 +139,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
         SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)
 
-    | ParsedImplFileFragment.AnonModule (defs, m) ->
+    | ParsedImplFileFragment.AnonModule(defs, m) ->
         let isLast, isExe = isLastCompiland
 
         if FileRequiresModuleOrNamespaceDecl isLast isExe fileName then
@@ -155,7 +157,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
         SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
 
-    | ParsedImplFileFragment.NamespaceFragment (lid, isRecursive, kind, decls, xmlDoc, attributes, range, trivia) ->
+    | ParsedImplFileFragment.NamespaceFragment(lid, isRecursive, kind, decls, xmlDoc, attributes, range, trivia) ->
         let lid, kind =
             match lid with
             | id :: rest when id.idText = MangledGlobalName ->
@@ -172,7 +174,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
 let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) =
     match intf with
-    | ParsedSigFileFragment.NamedModule (SynModuleOrNamespaceSig (lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)) ->
+    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)) ->
         let lid =
             match lid with
             | [ id ] when kind.IsModule && id.idText = MangledGlobalName ->
@@ -182,7 +184,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRec, SynModuleOrNamespaceKind.NamedModule, decls, xmlDoc, attribs, access, m, trivia)
 
-    | ParsedSigFileFragment.AnonModule (defs, m) ->
+    | ParsedSigFileFragment.AnonModule(defs, m) ->
         let isLast, isExe = isLastCompiland
 
         if FileRequiresModuleOrNamespaceDecl isLast isExe fileName then
@@ -200,7 +202,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
 
-    | ParsedSigFileFragment.NamespaceFragment (lid, isRecursive, kind, decls, xmlDoc, attributes, range, trivia) ->
+    | ParsedSigFileFragment.NamespaceFragment(lid, isRecursive, kind, decls, xmlDoc, attributes, range, trivia) ->
         let lid, kind =
             match lid with
             | id :: rest when id.idText = MangledGlobalName ->
@@ -215,15 +217,22 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let GetScopedPragmasForHashDirective hd =
+let GetScopedPragmasForHashDirective hd (langVersion: LanguageVersion) =
     [
         match hd with
-        | ParsedHashDirective ("nowarn", numbers, m) ->
-            for s in numbers do
-                match s with
-                | ParsedHashDirectiveArgument.SourceIdentifier _ -> ()
-                | ParsedHashDirectiveArgument.String (s, _, _) ->
-                    match GetWarningNumber(m, s) with
+        | ParsedHashDirective("nowarn", args, _) ->
+            for arg in args do
+                let rangeAndDescription =
+                    match arg with
+                    | ParsedHashDirectiveArgument.Int32(n, m) -> Some(m, WarningDescription.Int32 n)
+                    | ParsedHashDirectiveArgument.Ident(ident, m) -> Some(m, WarningDescription.Ident ident)
+                    | ParsedHashDirectiveArgument.String(s, _, m) -> Some(m, WarningDescription.String s)
+                    | _ -> None
+
+                match rangeAndDescription with
+                | None -> ()
+                | Some(m, description) ->
+                    match GetWarningNumber(m, description, langVersion, WarningNumberSource.CompilerDirective) with
                     | None -> ()
                     | Some n -> ScopedPragma.WarningOff(m, n)
         | _ -> ()
@@ -231,7 +240,7 @@ let GetScopedPragmasForHashDirective hd =
 
 let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComments: range list) =
     [
-        yield! LexbufCommentStore.GetComments(lexbuf)
+        yield! CommentStore.GetComments(lexbuf)
         yield! (List.map CommentTrivia.LineComment tripleSlashComments)
     ]
     |> List.sortBy (function
@@ -243,7 +252,7 @@ let PostParseModuleImpls
         defaultNamespace,
         fileName,
         isLastCompiland,
-        ParsedImplFile (hashDirectives, impls),
+        ParsedImplFile(hashDirectives, impls),
         lexbuf: UnicodeLexing.Lexbuf,
         tripleSlashComments: range list,
         identifiers: Set<string>
@@ -252,7 +261,7 @@ let PostParseModuleImpls
         impls
         |> List.rev
         |> List.tryPick (function
-            | ParsedImplFileFragment.NamedModule (SynModuleOrNamespace (longId = lid)) -> Some lid
+            | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(longId = lid)) -> Some lid
             | _ -> None)
 
     match othersWithSameName with
@@ -268,16 +277,16 @@ let PostParseModuleImpls
 
     let scopedPragmas =
         [
-            for SynModuleOrNamespace (decls = decls) in impls do
+            for SynModuleOrNamespace(decls = decls) in impls do
                 for d in decls do
                     match d with
-                    | SynModuleDecl.HashDirective (hd, _) -> yield! GetScopedPragmasForHashDirective hd
+                    | SynModuleDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
                     | _ -> ()
             for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd
+                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
-    let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
+    let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
     let codeComments = collectCodeComments lexbuf tripleSlashComments
 
     let trivia: ParsedImplFileInputTrivia =
@@ -295,7 +304,7 @@ let PostParseModuleSpecs
         defaultNamespace,
         fileName,
         isLastCompiland,
-        ParsedSigFile (hashDirectives, specs),
+        ParsedSigFile(hashDirectives, specs),
         lexbuf: UnicodeLexing.Lexbuf,
         tripleSlashComments: range list,
         identifiers: Set<string>
@@ -304,7 +313,7 @@ let PostParseModuleSpecs
         specs
         |> List.rev
         |> List.tryPick (function
-            | ParsedSigFileFragment.NamedModule (SynModuleOrNamespaceSig (longId = lid)) -> Some lid
+            | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(longId = lid)) -> Some lid
             | _ -> None)
 
     match othersWithSameName with
@@ -319,16 +328,16 @@ let PostParseModuleSpecs
 
     let scopedPragmas =
         [
-            for SynModuleOrNamespaceSig (decls = decls) in specs do
+            for SynModuleOrNamespaceSig(decls = decls) in specs do
                 for d in decls do
                     match d with
-                    | SynModuleSigDecl.HashDirective (hd, _) -> yield! GetScopedPragmasForHashDirective hd
+                    | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
                     | _ -> ()
             for hd in hashDirectives do
-                yield! GetScopedPragmasForHashDirective hd
+                yield! GetScopedPragmasForHashDirective hd lexbuf.LanguageVersion
         ]
 
-    let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
+    let conditionalDirectives = IfdefStore.GetTrivia(lexbuf)
     let codeComments = collectCodeComments lexbuf tripleSlashComments
 
     let trivia: ParsedSigFileInputTrivia =
@@ -342,8 +351,8 @@ let PostParseModuleSpecs
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameOfFile: QualifiedNameOfFile) =
-    let path = Path.GetDirectoryName fileName
+let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) (fileName: string) (qualNameOfFile: QualifiedNameOfFile) =
+    let path = !!Path.GetDirectoryName(fileName)
 
     let path =
         if FileSystem.IsPathRootedShim path then
@@ -356,9 +365,9 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 
     match moduleNamesDict.TryGetValue qualNameOfFile.Text with
     | true, paths ->
-        if paths.ContainsKey path then
-            paths[path], moduleNamesDict
-        else
+        match paths.TryGetValue path with
+        | true, pathV -> pathV, moduleNamesDict
+        | false, _ ->
             let count = paths.Count + 1
             let id = qualNameOfFile.Id
 
@@ -382,7 +391,7 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
     | ParsedInput.ImplFile implFile ->
-        let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)) =
+        let (ParsedImplFileInput(fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)) =
             implFile
 
         let qualNameOfFileR, moduleNamesDictR =
@@ -394,7 +403,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
         let inputR = ParsedInput.ImplFile implFileR
         inputR, moduleNamesDictR
     | ParsedInput.SigFile sigFile ->
-        let (ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia, identifiers)) =
+        let (ParsedSigFileInput(fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia, identifiers)) =
             sigFile
 
         let qualNameOfFileR, moduleNamesDictR =
@@ -424,7 +433,7 @@ let ParseInput
             "ParseAndCheckFile.parseFile"
             [|
                 Activity.Tags.fileName, fileName
-                Activity.Tags.buildPhase, BuildPhase.Parse.ToString()
+                Activity.Tags.buildPhase, !!BuildPhase.Parse.ToString()
                 Activity.Tags.userOpName, userOpName |> Option.defaultValue ""
             |]
 
@@ -480,15 +489,13 @@ let ParseInput
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 let impl = Parser.implementationFile lexer lexbuf
 
-                let tripleSlashComments =
-                    LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+                let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
                 PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 let intfs = Parser.signatureFile lexer lexbuf
 
-                let tripleSlashComments =
-                    LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+                let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
                 PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
             else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
@@ -508,11 +515,24 @@ let ParseInput
 type Tokenizer = unit -> Parser.token
 
 // Show all tokens in the stream, for testing purposes
-let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
+let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
+    let mutable indent = 0
+
     while true do
-        printf "tokenize - getting one token from %s\n" shortFilename
         let t = tokenizer ()
-        printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
+
+        indent <-
+            match t with
+            | OBLOCKEND_IS_HERE -> max (indent - 1) 0
+            | _ -> indent
+
+        let indentStr = String.replicate indent "  "
+        printfn $"{indentStr}{token_to_string t} {lexbuf.LexemeRange}"
+
+        indent <-
+            match t with
+            | OBLOCKBEGIN -> indent + 1
+            | _ -> indent
 
         match t with
         | Parser.EOF _ -> exiter.Exit 0
@@ -525,7 +545,7 @@ let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer
 let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
         match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
-        | ParsedScriptInteraction.Definitions (l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
+        | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
 
     exiter.Exit 0
 
@@ -534,17 +554,17 @@ let ReportParsingStatistics res =
     let rec flattenSpecs specs =
         specs
         |> List.collect (function
-            | SynModuleSigDecl.NestedModule (moduleDecls = subDecls) -> flattenSpecs subDecls
+            | SynModuleSigDecl.NestedModule(moduleDecls = subDecls) -> flattenSpecs subDecls
             | spec -> [ spec ])
 
     let rec flattenDefns specs =
         specs
         |> List.collect (function
-            | SynModuleDecl.NestedModule (decls = subDecls) -> flattenDefns subDecls
+            | SynModuleDecl.NestedModule(decls = subDecls) -> flattenDefns subDecls
             | defn -> [ defn ])
 
-    let flattenModSpec (SynModuleOrNamespaceSig (decls = decls)) = flattenSpecs decls
-    let flattenModImpl (SynModuleOrNamespace (decls = decls)) = flattenDefns decls
+    let flattenModSpec (SynModuleOrNamespaceSig(decls = decls)) = flattenSpecs decls
+    let flattenModImpl (SynModuleOrNamespace(decls = decls)) = flattenDefns decls
 
     match res with
     | ParsedInput.SigFile sigFile -> printfn "parsing yielded %d specs" (List.collect flattenModSpec sigFile.Contents).Length
@@ -609,9 +629,6 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                 tcConfig.applyLineDirectives
             )
 
-        // Set up the initial lexer arguments
-        let shortFilename = SanitizeFileName fileName tcConfig.implicitIncludeDir
-
         let input =
             usingLexbufForParsing (lexbuf, fileName) (fun lexbuf ->
 
@@ -625,7 +642,8 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                                 indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
-                                lexbuf
+                                lexbuf,
+                                tcConfig.tokenize = TokenizeOption.Debug
                             )
                             .GetToken,
                         true
@@ -635,14 +653,15 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                                 indentationSyntaxStatus,
                                 tcConfig.compilingFSharpCore,
                                 Lexer.token lexargs skipWhitespaceTokens,
-                                lexbuf
+                                lexbuf,
+                                tcConfig.tokenize = TokenizeOption.Debug
                             )
                             .GetToken,
                         false
 
                 // If '--tokenize' then show the tokens now and exit
                 if tokenizeOnly then
-                    ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf, tcConfig.exiter)
+                    ShowAllTokensAndExit(tokenizer, lexbuf, tcConfig.exiter)
 
                 // Test hook for one of the parser entry points
                 if tcConfig.testInteractionParser then
@@ -670,7 +689,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
         input
 
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -684,36 +703,23 @@ let checkInputFile (tcConfig: TcConfig) fileName =
         error (Error(FSComp.SR.buildInvalidSourceFileExtension (SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup))
 
 let parseInputStreamAux
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        retryLocked,
-        stream: Stream
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream)
+    =
     use reader = stream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
+        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 let parseInputSourceTextAux
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        sourceText: ISourceText
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
+    =
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, sourceText)
+        UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, sourceText)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
@@ -725,41 +731,28 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 
     // Set up the LexBuffer for the file
     let lexbuf =
-        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
+        UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, tcConfig.strictIndentation, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 /// Parse an input from stream
 let ParseOneInputStream
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        retryLocked,
-        stream: Stream
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream)
+    =
     try
         parseInputStreamAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream)
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
 /// Parse an input from source text
 let ParseOneInputSourceText
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        fileName,
-        isLastCompiland,
-        diagnosticsLogger,
-        sourceText: ISourceText
-    ) =
+    (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
+    =
     try
         parseInputSourceTextAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -768,7 +761,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
     try
         checkInputFile tcConfig fileName
         parseInputFileAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked)
-    with exn ->
+    with RecoverableException exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
@@ -781,7 +774,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// NOTE: Max errors is currently counted separately for each logger. When max errors is reached on one compilation
 /// the given Exiter will be called.
 ///
-/// NOTE: this needs to be improved to commit diagnotics as soon as possible
+/// NOTE: this needs to be improved to commit diagnostics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
 let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
@@ -809,7 +802,7 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
         sourceFilesWithDelayLoggers
         |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
-            let directoryName = Path.GetDirectoryName fileName
+            let directoryName = !!(Path.GetDirectoryName fileName)
 
             let input =
                 parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
@@ -822,7 +815,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
 
     sourceFiles
     |> Array.map (fun (fileName, isLastCompiland) ->
-        let directoryName = Path.GetDirectoryName fileName
+        let directoryName = !!(Path.GetDirectoryName fileName)
 
         let input =
             ParseOneInputFile(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), diagnosticsLogger, retryLocked)
@@ -833,7 +826,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
 /// Parse multiple input files from disk
 let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     try
-        if tcConfig.concurrentBuild then
+        if tcConfig.parallelParsing then
             ParseInputFilesInParallel(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
         else
             ParseInputFilesSequential(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
@@ -843,9 +836,11 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagno
         tcConfig.exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
-    (nowarnF: 'state -> range * string -> 'state,
-     hashReferenceF: 'state -> range * string * Directive -> 'state,
-     loadSourceF: 'state -> range * string -> unit)
+    (
+        nowarnF: 'state -> range * string -> 'state,
+        hashReferenceF: 'state -> range * string * Directive -> 'state,
+        loadSourceF: 'state -> range * string -> unit
+    )
     (tcConfig: TcConfigBuilder, inp: ParsedInput, pathOfMetaCommandSource, state0)
     =
 
@@ -862,7 +857,7 @@ let ProcessMetaCommandsFromInput
 
         match args with
         | [ path ] ->
-            let p = if String.IsNullOrWhiteSpace(path) then "" else path
+            let p = if String.IsNullOrWhiteSpace(path) then "" else !!path
 
             hashReferenceF state (m, p, directive)
 
@@ -875,56 +870,92 @@ let ProcessMetaCommandsFromInput
 
         try
             match hash with
-            | ParsedHashDirective ("I", ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective("I", [ path ], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashIncludeNotAllowedInNonScript m)
+                else
+                    let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
 
-                match args with
-                | [ path ] ->
-                    matchedm <- m
-                    tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                    state
-                | _ ->
-                    errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
-                    state
-            | ParsedHashDirective ("nowarn", ParsedHashDirectiveArguments numbers, m) ->
-                List.fold (fun state d -> nowarnF state (m, d)) state numbers
-
-            | ParsedHashDirective (("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
-                matchedm <- m
-                ProcessDependencyManagerDirective Directive.Resolution args m state
-
-            | ParsedHashDirective ("i", ParsedHashDirectiveArguments args, m) ->
-                matchedm <- m
-                ProcessDependencyManagerDirective Directive.Include args m state
-
-            | ParsedHashDirective ("load", ParsedHashDirectiveArguments args, m) ->
-                if not canHaveScriptMetaCommands then
-                    errorR (HashDirectiveNotAllowedInNonScript m)
-
-                match args with
-                | _ :: _ ->
-                    matchedm <- m
-                    args |> List.iter (fun path -> loadSourceF state (m, path))
-                | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
+                    match arguments with
+                    | [ path ] ->
+                        matchedm <- m
+                        tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashIDirective (), m))
 
                 state
-            | ParsedHashDirective ("time", ParsedHashDirectiveArguments args, m) ->
+
+            | ParsedHashDirective("nowarn", hashArguments, m) ->
+                let arguments = parsedHashDirectiveArgumentsNoCheck hashArguments
+
+                List.fold (fun state d -> nowarnF state (m, d)) state arguments
+
+            | ParsedHashDirective(("reference" | "r") as c, [], m) ->
                 if not canHaveScriptMetaCommands then
                     errorR (HashDirectiveNotAllowedInNonScript m)
+                else
+                    let arg = (parsedHashDirectiveArguments [] tcConfig.langVersion)
+                    warning (Error((FSComp.SR.fsiInvalidDirective (c, String.concat " " arg)), m))
 
-                match args with
-                | [] -> ()
-                | [ "on" | "off" ] -> ()
-                | _ -> errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
+                state
+
+            | ParsedHashDirective(("reference" | "r"), [ reference ], m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                    state
+                else
+                    let arguments =
+                        parsedHashDirectiveStringArguments [ reference ] tcConfig.langVersion
+
+                    match arguments with
+                    | [ reference ] ->
+                        matchedm <- m
+                        ProcessDependencyManagerDirective Directive.Resolution [ reference ] m state
+                    | _ -> state
+
+            | ParsedHashDirective("i", [ path ], m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                    state
+                else
+                    matchedm <- m
+                    let arguments = parsedHashDirectiveStringArguments [ path ] tcConfig.langVersion
+
+                    match arguments with
+                    | [ path ] -> ProcessDependencyManagerDirective Directive.Include [ path ] m state
+                    | _ -> state
+
+            | ParsedHashDirective("load", paths, m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                else
+                    let arguments = parsedHashDirectiveArguments paths tcConfig.langVersion
+
+                    match arguments with
+                    | _ :: _ ->
+                        matchedm <- m
+                        arguments |> List.iter (fun path -> loadSourceF state (m, path))
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashloadDirective (), m))
+
+                state
+
+            | ParsedHashDirective("time", switch, m) ->
+                if not canHaveScriptMetaCommands then
+                    errorR (HashDirectiveNotAllowedInNonScript m)
+                else
+                    let arguments = parsedHashDirectiveArguments switch tcConfig.langVersion
+
+                    match arguments with
+                    | [] -> matchedm <- m
+                    | [ "on" | "off" ] -> matchedm <- m
+                    | _ -> errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
 
                 state
 
             | _ ->
-
                 (* warning(Error("This meta-command has been ignored", m)) *)
                 state
-        with e ->
+
+        with RecoverableException e ->
             errorRecovery e matchedm
             state
 
@@ -932,36 +963,36 @@ let ProcessMetaCommandsFromInput
         decls
         |> List.iter (fun d ->
             match d with
-            | SynModuleSigDecl.HashDirective (_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
-            | SynModuleSigDecl.NestedModule (moduleDecls = subDecls) -> WarnOnIgnoredSpecDecls subDecls
+            | SynModuleSigDecl.HashDirective(_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
+            | SynModuleSigDecl.NestedModule(moduleDecls = subDecls) -> WarnOnIgnoredSpecDecls subDecls
             | _ -> ())
 
     let rec WarnOnIgnoredImplDecls decls =
         decls
         |> List.iter (fun d ->
             match d with
-            | SynModuleDecl.HashDirective (_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
-            | SynModuleDecl.NestedModule (decls = subDecls) -> WarnOnIgnoredImplDecls subDecls
+            | SynModuleDecl.HashDirective(_, m) -> warning (Error(FSComp.SR.buildDirectivesInModulesAreIgnored (), m))
+            | SynModuleDecl.NestedModule(decls = subDecls) -> WarnOnIgnoredImplDecls subDecls
             | _ -> ())
 
-    let ProcessMetaCommandsFromModuleSpec state (SynModuleOrNamespaceSig (decls = decls)) =
+    let ProcessMetaCommandsFromModuleSpec state (SynModuleOrNamespaceSig(decls = decls)) =
         List.fold
             (fun s d ->
                 match d with
-                | SynModuleSigDecl.HashDirective (h, _) -> ProcessMetaCommand s h
-                | SynModuleSigDecl.NestedModule (moduleDecls = subDecls) ->
+                | SynModuleSigDecl.HashDirective(h, _) -> ProcessMetaCommand s h
+                | SynModuleSigDecl.NestedModule(moduleDecls = subDecls) ->
                     WarnOnIgnoredSpecDecls subDecls
                     s
                 | _ -> s)
             state
             decls
 
-    let ProcessMetaCommandsFromModuleImpl state (SynModuleOrNamespace (decls = decls)) =
+    let ProcessMetaCommandsFromModuleImpl state (SynModuleOrNamespace(decls = decls)) =
         List.fold
             (fun s d ->
                 match d with
-                | SynModuleDecl.HashDirective (h, _) -> ProcessMetaCommand s h
-                | SynModuleDecl.NestedModule (decls = subDecls) ->
+                | SynModuleDecl.HashDirective(h, _) -> ProcessMetaCommand s h
+                | SynModuleDecl.NestedModule(decls = subDecls) ->
                     WarnOnIgnoredImplDecls subDecls
                     s
                 | _ -> s)
@@ -1023,7 +1054,7 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
                 TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (checkOperatorsModule, initm)
 
             tcEnv, openDecls0 @ openDecls1
-        with e ->
+        with RecoverableException e ->
             errorRecovery e initm
             tcEnv, openDecls0
     else
@@ -1032,25 +1063,25 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
 /// Inject faults into checking
 let CheckSimulateException (tcConfig: TcConfig) =
     match tcConfig.simulateException with
-    | Some ("tc-oom") -> raise (OutOfMemoryException())
-    | Some ("tc-an") -> raise (ArgumentNullException("simulated"))
-    | Some ("tc-invop") -> raise (InvalidOperationException())
-    | Some ("tc-av") -> raise (AccessViolationException())
-    | Some ("tc-nfn") -> raise (NotFiniteNumberException())
-    | Some ("tc-aor") -> raise (ArgumentOutOfRangeException())
-    | Some ("tc-dv0") -> raise (DivideByZeroException())
-    | Some ("tc-oe") -> raise (OverflowException())
-    | Some ("tc-atmm") -> raise (ArrayTypeMismatchException())
-    | Some ("tc-bif") -> raise (BadImageFormatException())
-    | Some ("tc-knf") -> raise (KeyNotFoundException())
-    | Some ("tc-ior") -> raise (IndexOutOfRangeException())
-    | Some ("tc-ic") -> raise (InvalidCastException())
-    | Some ("tc-ip") -> raise (InvalidProgramException())
-    | Some ("tc-ma") -> raise (MemberAccessException())
-    | Some ("tc-ni") -> raise (NotImplementedException())
-    | Some ("tc-nr") -> raise (NullReferenceException())
-    | Some ("tc-oc") -> raise (OperationCanceledException())
-    | Some ("tc-fail") -> failwith "simulated"
+    | Some("tc-oom") -> raise (OutOfMemoryException())
+    | Some("tc-an") -> raise (ArgumentNullException("simulated"))
+    | Some("tc-invop") -> raise (InvalidOperationException())
+    | Some("tc-av") -> raise (AccessViolationException())
+    | Some("tc-nfn") -> raise (NotFiniteNumberException())
+    | Some("tc-aor") -> raise (ArgumentOutOfRangeException())
+    | Some("tc-dv0") -> raise (DivideByZeroException())
+    | Some("tc-oe") -> raise (OverflowException())
+    | Some("tc-atmm") -> raise (ArrayTypeMismatchException())
+    | Some("tc-bif") -> raise (BadImageFormatException())
+    | Some("tc-knf") -> raise (KeyNotFoundException())
+    | Some("tc-ior") -> raise (IndexOutOfRangeException())
+    | Some("tc-ic") -> raise (InvalidCastException())
+    | Some("tc-ip") -> raise (InvalidProgramException())
+    | Some("tc-ma") -> raise (MemberAccessException())
+    | Some("tc-ni") -> raise (NotImplementedException())
+    | Some("tc-nr") -> raise (NullReferenceException())
+    | Some("tc-oc") -> raise (OperationCanceledException())
+    | Some("tc-fail") -> failwith "simulated"
     | _ -> ()
 
 //----------------------------------------------------------------------------
@@ -1167,14 +1198,14 @@ let AddCheckResultsToTcState
 
     // Add the implementation as to the implementation env
     let tcImplEnv =
-        AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
+        AddLocalRootModuleOrNamespace tcGlobals amap m tcImplEnv implFileSigType
 
     // Add the implementation as to the signature env (unless it had an explicit signature)
     let tcSigEnv =
         if hadSig then
             tcState.tcsTcSigEnv
         else
-            AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
+            AddLocalRootModuleOrNamespace tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
 
     // Open the prefixPath for fsi.exe (tcImplEnv)
     let tcImplEnv, openDecls =
@@ -1365,7 +1396,7 @@ let CheckOneInput
                 let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
                 return result, tcState
 
-        with e ->
+        with RecoverableException e ->
             errorRecovery e range0
             return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
     }
@@ -1376,15 +1407,17 @@ let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
-    // Equip loggers to locally filter w.r.t. scope pragmas in each input
-    use _ =
-        UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
+    cancellable {
+        // Equip loggers to locally filter w.r.t. scope pragmas in each input
+        use _ =
+            UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
 
-    use _ = UseBuildPhase BuildPhase.TypeCheck
+        use _ = UseBuildPhase BuildPhase.TypeCheck
 
-    RequireCompilationThread ctok
+        RequireCompilationThread ctok
 
-    CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
+        return! CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
+    }
     |> Cancellable.runWithoutCancellation
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
@@ -1455,30 +1488,32 @@ type NodeToTypeCheck =
     /// This can be either an implementation or a signature file.
     | PhysicalFile of fileIndex: FileIndex
     /// An artificial node that will add the earlier processed signature information to the TcEnvFromImpls.
-    /// Dependants on this type of node will perceive that a file is known in both TcEnvFromSignatures and TcEnvFromImpls.
+    /// Dependents on this type of node will perceive that a file is known in both TcEnvFromSignatures and TcEnvFromImpls.
     /// Even though the actual implementation file was not type-checked.
     | ArtificialImplFile of signatureFileIndex: FileIndex
-
-let folder (state: State) (finisher: Finisher<State, FinalFileResult>) : FinalFileResult * State = finisher.Invoke(state)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 /// <returns>a callback functions that takes a `TcState` and will add the checked result to it.</returns>
 let CheckOneInputWithCallback
-    ((checkForErrors,
-      tcConfig: TcConfig,
-      tcImports: TcImports,
-      tcGlobals,
-      prefixPathOpt,
-      tcSink,
-      tcState: TcState,
-      inp: ParsedInput,
-      _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<Finisher<TcState, PartialResult>> =
+    (node: NodeToTypeCheck)
+    (
+        (checkForErrors,
+         tcConfig: TcConfig,
+         tcImports: TcImports,
+         tcGlobals,
+         prefixPathOpt,
+         tcSink,
+         tcState: TcState,
+         input: ParsedInput,
+         _skipImplIfSigExists: bool):
+            (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool
+    )
+    : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
     cancellable {
         try
             CheckSimulateException tcConfig
 
-            let m = inp.Range
+            let m = input.Range
             let amap = tcImports.GetImportMap()
 
             let conditionalDefines =
@@ -1487,7 +1522,7 @@ let CheckOneInputWithCallback
                 else
                     Some tcConfig.conditionalDefines
 
-            match inp with
+            match input with
             | ParsedInput.SigFile file ->
                 let qualNameOfFile = file.QualifiedName
 
@@ -1522,25 +1557,29 @@ let CheckOneInputWithCallback
                         TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
 
                 return
-                    Finisher(fun tcState ->
-                        let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
+                    Finisher(
+                        node,
+                        (fun tcState ->
+                            let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
-                        let tcSigEnv =
-                            AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
+                            let tcSigEnv =
+                                AddLocalRootModuleOrNamespace tcGlobals amap m tcState.tcsTcSigEnv sigFileType
 
-                        // Add the signature to the signature env (unless it had an explicit signature)
-                        let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
+                            // Add the signature to the signature env (unless it had an explicit signature)
+                            let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
-                        let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
+                            let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
 
-                        let tcState =
-                            { tcState with
-                                tcsTcSigEnv = tcSigEnv
-                                tcsRootSigs = rootSigs
-                                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                            }
+                            let tcState =
+                                { tcState with
+                                    tcsTcSigEnv = tcSigEnv
+                                    tcsRootSigs = rootSigs
+                                    tcsCreatesGeneratedProvidedTypes =
+                                        tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                }
 
-                        partialResult, tcState)
+                            partialResult, tcState)
+                    )
 
             | ParsedInput.ImplFile file ->
                 let qualNameOfFile = file.QualifiedName
@@ -1566,29 +1605,39 @@ let CheckOneInputWithCallback
                     )
 
                 return
-                    Finisher(fun tcState ->
-                        // Check if we've already seen an implementation for this fragment
-                        if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                            errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+                    Finisher(
+                        node,
+                        (fun tcState ->
+                            // Check if we've already seen an implementation for this fragment
+                            if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+                                errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
 
-                        let ccuSigForFile, fsTcState =
-                            AddCheckResultsToTcState
-                                (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
-                                tcState
+                            let ccuSigForFile, fsTcState =
+                                AddCheckResultsToTcState
+                                    (tcGlobals,
+                                     amap,
+                                     false,
+                                     prefixPathOpt,
+                                     tcSink,
+                                     tcState.tcsTcImplEnv,
+                                     qualNameOfFile,
+                                     implFile.Signature)
+                                    tcState
 
-                        let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                            let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
 
-                        let tcState =
-                            { fsTcState with
-                                tcsCreatesGeneratedProvidedTypes =
-                                    fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                            }
+                            let tcState =
+                                { fsTcState with
+                                    tcsCreatesGeneratedProvidedTypes =
+                                        fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                }
 
-                        partialResult, tcState)
+                            partialResult, tcState)
+                    )
 
-        with e ->
+        with RecoverableException e ->
             errorRecovery e range0
-            return Finisher(fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState)
+            return Finisher(node, (fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState))
     }
 
 let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
@@ -1613,9 +1662,157 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
 
             partialResult, tcState
 
+module private TypeCheckingGraphProcessing =
+    open FSharp.Compiler.GraphChecking.GraphProcessing
+
+    // TODO Do we need to suppress some error logging if we
+    // TODO apply the same partial results multiple times?
+    // TODO Maybe we can enable logging only for the final fold
+    /// <summary>
+    /// Combine type-checking results of dependencies needed to type-check a 'higher' node in the graph
+    /// </summary>
+    /// <param name="emptyState">Initial state</param>
+    /// <param name="deps">Direct dependencies of a node</param>
+    /// <param name="transitiveDeps">Transitive dependencies of a node</param>
+    /// <param name="folder">A way to fold a single result into existing state</param>
+    let private combineResults
+        (emptyState: State)
+        (deps: ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>> array)
+        (transitiveDeps: ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>> array)
+        (folder: State -> Finisher<NodeToTypeCheck, State, FinalFileResult> -> State)
+        : State =
+        match deps with
+        | [||] -> emptyState
+        | _ ->
+            // Instead of starting with empty state,
+            // reuse state produced by the dependency with the biggest number of transitive dependencies.
+            // This is to reduce the number of folds required to achieve the final state.
+            let biggestDependency =
+                let sizeMetric (node: ProcessedNode<_, _>) = node.Info.TransitiveDeps.Length
+                deps |> Array.maxBy sizeMetric
+
+            let firstState = biggestDependency.Result |> fst
+
+            // Find items not already included in the state.
+            let itemsPresent =
+                set
+                    [|
+                        yield! biggestDependency.Info.TransitiveDeps
+                        yield biggestDependency.Info.Item
+                    |]
+
+            let resultsToAdd =
+                transitiveDeps
+                |> Array.filter (fun dep -> not (itemsPresent.Contains dep.Info.Item))
+                |> Array.distinctBy (fun dep -> dep.Info.Item)
+                |> Array.sortWith (fun a b ->
+                    // We preserve the order in which items are folded to the state.
+                    match a.Info.Item, b.Info.Item with
+                    | NodeToTypeCheck.PhysicalFile aIdx, NodeToTypeCheck.PhysicalFile bIdx
+                    | NodeToTypeCheck.ArtificialImplFile aIdx, NodeToTypeCheck.ArtificialImplFile bIdx -> aIdx.CompareTo bIdx
+                    | NodeToTypeCheck.PhysicalFile _, NodeToTypeCheck.ArtificialImplFile _ -> -1
+                    | NodeToTypeCheck.ArtificialImplFile _, NodeToTypeCheck.PhysicalFile _ -> 1)
+                |> Array.map (fun dep -> dep.Result |> snd)
+
+            // Fold results not already included and produce the final state
+            let state = Array.fold folder firstState resultsToAdd
+            state
+
+    /// <summary>
+    /// Process a graph of items.
+    /// A version of 'GraphProcessing.processGraph' with a signature specific to type-checking.
+    /// </summary>
+    let processTypeCheckingGraph
+        (graph: Graph<NodeToTypeCheck>)
+        (work: NodeToTypeCheck -> State -> Finisher<NodeToTypeCheck, State, FinalFileResult>)
+        (emptyState: State)
+        (ct: CancellationToken)
+        : (int * FinalFileResult) list * State =
+
+        let workWrapper
+            (getProcessedNode: NodeToTypeCheck -> ProcessedNode<NodeToTypeCheck, State * Finisher<NodeToTypeCheck, State, FinalFileResult>>)
+            (node: NodeInfo<NodeToTypeCheck>)
+            : State * Finisher<NodeToTypeCheck, State, FinalFileResult> =
+            let folder (state: State) (Finisher(finisher = finisher)) : State = finisher state |> snd
+            let deps = node.Deps |> Array.except [| node.Item |] |> Array.map getProcessedNode
+
+            let transitiveDeps =
+                node.TransitiveDeps
+                |> Array.except [| node.Item |]
+                |> Array.map getProcessedNode
+
+            let inputState = combineResults emptyState deps transitiveDeps folder
+
+            let singleRes = work node.Item inputState
+            let state = folder inputState singleRes
+            state, singleRes
+
+        let results = processGraph graph workWrapper ct
+
+        let finalFileResults, state =
+            (([], emptyState),
+             results
+             |> Array.choose (fun (item, res) ->
+                 match item with
+                 | NodeToTypeCheck.ArtificialImplFile _ -> None
+                 | NodeToTypeCheck.PhysicalFile file -> Some(file, res)))
+            ||> Array.fold (fun (fileResults, state) (item, (_, Finisher(finisher = finisher))) ->
+                let fileResult, state = finisher state
+                (item, fileResult) :: fileResults, state)
+
+        finalFileResults, state
+
+let TransformDependencyGraph (graph: Graph<FileIndex>, filePairs: FilePairMap) =
+    let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
+    let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
+
+    /// Map any signature dependencies to the ArtificialImplFile counterparts,
+    /// unless the signature dependency is the backing file of the current (implementation) file.
+    let mapDependencies idx deps =
+        Array.map
+            (fun dep ->
+                if filePairs.IsSignature dep then
+                    let implIdx = filePairs.GetImplementationIndex dep
+
+                    if implIdx = idx then
+                        // This is the matching signature for the implementation.
+                        // Retain the direct dependency onto the signature file.
+                        mkPhysicalFile dep
+                    else
+                        mkArtificialImplFile dep
+                else
+                    mkPhysicalFile dep)
+            deps
+
+    // Transform the graph to include ArtificialImplFile nodes when necessary.
+    graph
+    |> Seq.collect (fun (KeyValue(fileIdx, deps)) ->
+        if filePairs.IsSignature fileIdx then
+            // Add an additional ArtificialImplFile node for the signature file.
+            [|
+                // Mark the current file as physical and map the dependencies.
+                mkPhysicalFile fileIdx, mapDependencies fileIdx deps
+                // Introduce a new node that depends on the signature.
+                mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
+            |]
+        else
+            [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
+    |> Graph.make
+
 /// Constructs a file dependency graph and type-checks the files in parallel where possible.
 let CheckMultipleInputsUsingGraphMode
-    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    (
+        (ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs):
+            'a *
+            (unit -> bool) *
+            TcConfig *
+            TcImports *
+            TcGlobals *
+            LongIdent option *
+            TcState *
+            (PhasedDiagnostic -> PhasedDiagnostic) *
+            ParsedInput list
+    )
     : FinalFileResult list * TcState =
     use cts = new CancellationTokenSource()
 
@@ -1630,46 +1827,9 @@ let CheckMultipleInputsUsingGraphMode
             })
 
     let filePairs = FilePairMap(sourceFiles)
+    let graph, trie = DependencyResolution.mkGraph filePairs sourceFiles
 
-    let graph =
-        DependencyResolution.mkGraph tcConfig.compilingFSharpCore filePairs sourceFiles
-
-    let nodeGraph =
-        let mkArtificialImplFile n = NodeToTypeCheck.ArtificialImplFile n
-        let mkPhysicalFile n = NodeToTypeCheck.PhysicalFile n
-
-        /// Map any signature dependencies to the ArtificialImplFile counterparts,
-        /// unless the signature dependency is the backing file of the current (implementation) file.
-        let mapDependencies idx deps =
-            Array.map
-                (fun dep ->
-                    if filePairs.IsSignature dep then
-                        let implIdx = filePairs.GetImplementationIndex dep
-
-                        if implIdx = idx then
-                            // This is the matching signature for the implementation.
-                            // Retain the direct dependency onto the signature file.
-                            mkPhysicalFile dep
-                        else
-                            mkArtificialImplFile dep
-                    else
-                        mkPhysicalFile dep)
-                deps
-
-        // Transform the graph to include ArtificialImplFile nodes when necessary.
-        graph
-        |> Seq.collect (fun (KeyValue (fileIdx, deps)) ->
-            if filePairs.IsSignature fileIdx then
-                // Add an additional ArtificialImplFile node for the signature file.
-                [|
-                    // Mark the current file as physical and map the dependencies.
-                    mkPhysicalFile fileIdx, mapDependencies fileIdx deps
-                    // Introduce a new node that depends on the signature.
-                    mkArtificialImplFile fileIdx, [| mkPhysicalFile fileIdx |]
-                |]
-            else
-                [| mkPhysicalFile fileIdx, mapDependencies fileIdx deps |])
-        |> Graph.make
+    let nodeGraph = TransformDependencyGraph(graph, filePairs)
 
     // Persist the graph to a Mermaid diagram if specified.
     if tcConfig.typeCheckingConfig.DumpGraph then
@@ -1678,15 +1838,16 @@ let CheckMultipleInputsUsingGraphMode
             let outputFile = FileSystem.GetFullPathShim(outputFile)
             let graphFile = FileSystem.ChangeExtensionShim(outputFile, ".graph.md")
 
+            let trieFile = FileSystem.ChangeExtensionShim(outputFile, ".trie.md")
+            TrieMapping.serializeToMermaid trieFile sourceFiles trie
+
             graph
             |> Graph.map (fun idx ->
                 let friendlyFileName =
-                    sourceFiles[idx]
-                        .FileName.Replace(tcConfig.implicitIncludeDir, "")
-                        .TrimStart([| '\\'; '/' |])
+                    sourceFiles[idx].FileName.Replace(tcConfig.implicitIncludeDir, "").TrimStart([| '\\'; '/' |])
 
                 (idx, friendlyFileName))
-            |> Graph.serialiseToMermaid graphFile)
+            |> Graph.writeMermaidToFile graphFile)
 
     let _ = ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -1695,38 +1856,58 @@ let CheckMultipleInputsUsingGraphMode
     // somewhere in the files processed prior to each one, or in the processing of this particular file.
     let priorErrors = checkForErrors ()
 
-    let processArtificialImplFile (input: ParsedInput) ((currentTcState, _currentPriorErrors): State) : Finisher<State, PartialResult> =
-        Finisher(fun (state: State) ->
-            let tcState, currentPriorErrors = state
+    let processArtificialImplFile
+        (node: NodeToTypeCheck)
+        (input: ParsedInput)
+        ((currentTcState, _currentPriorErrors): State)
+        : Finisher<NodeToTypeCheck, State, PartialResult> =
+        Finisher(
+            node,
+            (fun (state: State) ->
+                let tcState, currentPriorErrors = state
 
-            let f =
-                // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
-                AddSignatureResultToTcImplEnv(tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, currentTcState, input)
+                let f =
+                    // Retrieve the type-checked signature information and add it to the TcEnvFromImpls.
+                    AddSignatureResultToTcImplEnv(tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, currentTcState, input)
 
-            // The `partialResult` will be excluded at the end of `GraphProcessing.processGraph`.
-            // The important thing is that `nextTcState` will populated the necessary information to TcEnvFromImpls.
-            let partialResult, nextTcState = f tcState
-            partialResult, (nextTcState, currentPriorErrors))
+                // The `partialResult` will be excluded at the end of `GraphProcessing.processGraph`.
+                // The important thing is that `nextTcState` will populated the necessary information to TcEnvFromImpls.
+                let partialResult, nextTcState = f tcState
+                partialResult, (nextTcState, currentPriorErrors))
+        )
 
     let processFile
+        (node: NodeToTypeCheck)
         ((input, logger): ParsedInput * DiagnosticsLogger)
         ((currentTcState, _currentPriorErrors): State)
-        : Finisher<State, PartialResult> =
-        use _ = UseDiagnosticsLogger logger
-        let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-        let tcSink = TcResultsSink.NoSink
+        : Finisher<NodeToTypeCheck, State, PartialResult> =
 
-        let finisher =
-            CheckOneInputWithCallback(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+        let (Finisher(finisher = finisher)) =
+            cancellable {
+                use _ = UseDiagnosticsLogger logger
+
+                let checkForErrors2 () =
+                    priorErrors || (logger.CheckForRealErrorsIgnoringWarnings)
+
+                let tcSink = TcResultsSink.NoSink
+
+                return!
+                    CheckOneInputWithCallback
+                        node
+                        (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+            }
             |> Cancellable.runWithoutCancellation
 
-        Finisher(fun (state: State) ->
-            let tcState, priorErrors = state
-            let (partialResult: PartialResult, tcState) = finisher.Invoke(tcState)
-            let hasErrors = logger.ErrorCount > 0
-            let priorOrCurrentErrors = priorErrors || hasErrors
-            let state: State = tcState, priorOrCurrentErrors
-            partialResult, state)
+        Finisher(
+            node,
+            (fun (state: State) ->
+                let tcState, priorErrors = state
+                let (partialResult: PartialResult, tcState) = finisher tcState
+                let hasErrors = logger.CheckForRealErrorsIgnoringWarnings
+                let priorOrCurrentErrors = priorErrors || hasErrors
+                let state: State = tcState, priorOrCurrentErrors
+                partialResult, state)
+        )
 
     UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1737,30 +1918,19 @@ let CheckMultipleInputsUsingGraphMode
                 let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
                 input, logger)
 
-        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<State, PartialResult> =
+        let processFile (node: NodeToTypeCheck) (state: State) : Finisher<NodeToTypeCheck, State, PartialResult> =
             match node with
             | NodeToTypeCheck.ArtificialImplFile idx ->
                 let parsedInput, _ = inputsWithLoggers[idx]
-                processArtificialImplFile parsedInput state
+                processArtificialImplFile node parsedInput state
             | NodeToTypeCheck.PhysicalFile idx ->
                 let parsedInput, logger = inputsWithLoggers[idx]
-                processFile (parsedInput, logger) state
+                processFile node (parsedInput, logger) state
 
         let state: State = tcState, priorErrors
 
-        let finalStateItemChooser node =
-            match node with
-            | NodeToTypeCheck.ArtificialImplFile _ -> None
-            | NodeToTypeCheck.PhysicalFile file -> Some file
-
         let partialResults, (tcState, _) =
-            TypeCheckingGraphProcessing.processTypeCheckingGraph<NodeToTypeCheck, int, State, FinalFileResult>
-                nodeGraph
-                processFile
-                folder
-                finalStateItemChooser
-                state
-                cts.Token
+            TypeCheckingGraphProcessing.processTypeCheckingGraph nodeGraph processFile state cts.Token
 
         let partialResults =
             partialResults
@@ -1774,7 +1944,7 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive) ->
+        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,
                 checkForErrors,

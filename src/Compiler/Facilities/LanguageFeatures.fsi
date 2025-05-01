@@ -10,6 +10,7 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
+    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -27,11 +28,13 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
@@ -44,6 +47,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
@@ -56,6 +60,37 @@ type LanguageFeature =
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
+    | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
+    | ConstraintIntersectionOnFlexibleTypes
+    | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
+    | UnmanagedConstraintCsharpInterop
+    | WhileBang
+    | ReuseSameFieldsInStructUnions
+    | ExtendedFixedBindings
+    | PreferStringGetPinnableReference
+    /// RFC-1137
+    | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
+    | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargets
+    | LowerInterpolatedStringToConcat
+    | LowerIntegralRangesToFastLoops
+    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
+    | LowerSimpleMappingsInComprehensionsToFastLoops
+    | ParsedHashDirectiveArgumentNonQuotes
+    | EmptyBodiedComputationExpressions
+    | AllowObjectExpressionWithoutOverrides
+    | DontWarnOnUppercaseIdentifiersInBindingPatterns
+    | UseTypeSubsumptionCache
+    | DeprecatePlacesWhereSeqCanBeOmitted
+    | SupportValueOptionsAsOptionalParameters
+    | WarnWhenUnitPassedToObjArg
+    | UseBangBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion =

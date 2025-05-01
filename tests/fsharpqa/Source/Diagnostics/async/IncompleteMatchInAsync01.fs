@@ -15,7 +15,7 @@ let a = async {
 
 let a1 = async {
     let! [| r1; r2 |] = Async.Parallel [| async.Return(1); async.Return(2) |]
-    let y = 4    // squiggle spanes this line and next
+    let y = 4    // squiggle spans this line and next
     return r1,r2 // array incomplete match reported on this line, rather than lines above
     }
 

@@ -1,12 +1,8 @@
 module Collections
 
 open BenchmarkDotNet.Attributes
-open BenchmarkDotNet.Running
-open BenchmarkDotNet.Configs
-open BenchmarkDotNet.Diagnosers
-open System.Runtime.CompilerServices
 
-[<SimpleJob(launchCount = 2, warmupCount = 1, targetCount = 2)>]
+[<SimpleJob(launchCount = 2, warmupCount = 1, iterationCount = 2)>]
 [<GcServer(true)>]
 [<MemoryDiagnoser>]
 [<MarkdownExporterAttribute.GitHub>]
@@ -15,7 +11,7 @@ type CollectionsBenchmark() =
     let mutable list = []
     let mutable array = [||]
             
-    [<Params( (* 0, 1, 100, *) 1000, 10000)>]
+    [<Params(1000, 10000)>]
     member this.Length
         with get () = length
         and set (value) = 

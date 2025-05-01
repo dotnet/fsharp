@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Language
+namespace Language
 
 open Xunit
 open FSharp.Test.Compiler
@@ -103,6 +103,61 @@ let compute () =
 for i in 1 .. 100 do
     compute().Wait ()
 """
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>] // https://github.com/dotnet/fsharp/issues/16068
+    let ``Decision tree with 32+ binds with nested expression is not getting splitted and state machine is successfully statically compiles``() = 
+        FSharp """
+module Testing
+
+let test () =
+    task {
+        if true then
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            let c = failwith ""
+            ()
+    }
+
+[<EntryPoint>]
+let main _ =
+    test () |> ignore
+    printfn "Hello, World!"
+    0
+"""
+        |> ignoreWarnings
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed

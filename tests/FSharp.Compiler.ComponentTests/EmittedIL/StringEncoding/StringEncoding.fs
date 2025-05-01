@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL
 
 open System
 open Xunit
@@ -32,7 +32,7 @@ module StringEncoding =
 
     let normalization_CSharp (form:string) start =
         let lines = [|
-            yield "namespace FSharp.Compiler.ComponentTests.EmittedIL.StringEncoding.NormalizationForm"
+            yield "namespace EmittedIL.StringEncoding.NormalizationForm"
             yield "{"
             yield "    using System;"
             yield "    using System.Collections.Generic;"
@@ -56,7 +56,7 @@ module StringEncoding =
     let normalization_FSharp (form:string) start =
 
         let lines = [|
-            yield $"module FSharp.Compiler.ComponentTests.EmittedIL.StringEncoding.NormalizationForm.Normalization{form}FSharp_%04x{start}"
+            yield $"module EmittedIL.StringEncoding.NormalizationForm.Normalization{form}FSharp_%04x{start}"
             yield "open System.Collections.Generic"
             yield "open System.Text"
             yield ""
@@ -81,28 +81,31 @@ module StringEncoding =
         |> shouldSucceed
 
     //SOURCE="dummy.fs testcase.fs" PRECMD="\$FSI_PIPE --exec NormalizationFormD.fsx > oracle.cs && \$CSC_PIPE oracle.cs && oracle.exe>testcase.fs"	# FormD
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NormalizationFormD.fs"|])>]
+    [<Theory; FileInlineData("NormalizationFormD.fs")>]
     let ``NormalizationForm_D`` compilation =
         compilation
+        |> getCompilation
         |> withReferences([normalization_CSharp "FormD" 0; normalization_FSharp "FormD" 0])
         |> withReferences([normalization_CSharp "FormD" 0x80; normalization_FSharp "FormD" 0x80])
         |>  compileExeAndRun
         |> shouldSucceed
 
     //SOURCE="dummy.fs testcase.fs" PRECMD="\$FSI_PIPE --exec NormalizationFormKC.fsx > oracle.cs && \$CSC_PIPE oracle.cs && oracle.exe>testcase.fs"	# FormKC
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NormalizationFormKC.fs"|])>]
+    [<Theory; FileInlineData("NormalizationFormKC.fs")>]
     let ``NormalizationForm_KC`` compilation =
         compilation
+        |> getCompilation
         |> withReferences([normalization_CSharp "FormKC" 0; normalization_FSharp "FormKC" 0])
         |> withReferences([normalization_CSharp "FormKC" 0x80; normalization_FSharp "FormKC" 0x80])
         |>  compileExeAndRun
         |> shouldSucceed
 
     //SOURCE="dummy.fs testcase.fs" PRECMD="\$FSI_PIPE --exec NormalizationFormKD.fsx > oracle.cs && \$CSC_PIPE oracle.cs && oracle.exe>testcase.fs"	# FormKD
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NormalizationFormKD.fs"|])>]
+    [<Theory; FileInlineData("NormalizationFormKD.fs")>]
     let ``NormalizationForm_KD`` compilation =
         compilation
+        |> getCompilation
         |> withReferences([normalization_CSharp "FormKD" 0; normalization_FSharp "FormKD" 0])
         |> withReferences([normalization_CSharp "FormKD" 0x80; normalization_FSharp "FormKD" 0x80])
-        |>  compileExeAndRun
+        |> compileExeAndRun
         |> shouldSucceed

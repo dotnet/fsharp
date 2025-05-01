@@ -93,7 +93,7 @@ type DistributionOps<'Distribution> =
 // 1D Gaussian
 //***************************************************
 
-/// The 1D Gaussian class for probability distribtion.
+/// The 1D Gaussian class for probability distribution.
 type Gaussian1D =
   class 
     /// The precision mean of the Gaussian
@@ -104,7 +104,7 @@ type Gaussian1D =
     /// The standard constructor.
     new () = 
       { tau = 0.0; pi = 0.0; }
-    /// The parameterised constructor.
+    /// The parameterized constructor.
     new (precisionMean, precision) = 
       { tau = precisionMean; pi = precision; }
     
@@ -204,7 +204,7 @@ type IFactorNode =
     abstract VariableNodes : IEnumerable< IVariableNode >
     /// The list of messages from the factor to all its variables.
     abstract Messages : IEnumerable< IDistribution >
-    /// Abstract update (computation) mechansim
+    /// Abstract update (computation) mechanism
     abstract UpdateMessage : int -> float 
   end
 
@@ -276,7 +276,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

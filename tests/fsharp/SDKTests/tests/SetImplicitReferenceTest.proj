@@ -7,7 +7,7 @@
     <ValueTupleImplicitPackageVersion>44.44.44</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
 
-  <!-- if $(FSharpCoreImplicitPackgeVersion) is specified, ensure that's used -->
+  <!-- if $(FSharpCoreImplicitPackageVersion) is specified, ensure that's used -->
   <!-- if $(ValueTupleImplicitPackageVersion) is specified, ensure that's used -->
 
   <PropertyGroup>

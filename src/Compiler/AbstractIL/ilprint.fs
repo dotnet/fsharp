@@ -253,7 +253,7 @@ and goutput_typ env os ty =
         output_string os " "
         goutput_gactuals env os tspec.GenericArgs
     | ILType.Void -> output_string os "void"
-    | ILType.Array (bounds, ty) ->
+    | ILType.Array(bounds, ty) ->
         goutput_typ env os ty
         output_string os "["
         output_arr_bounds os bounds
@@ -272,7 +272,7 @@ and output_tyvar os d =
 
 and goutput_typ_with_shortened_class_syntax env os =
     function
-    | ILType.Boxed tspec when tspec.GenericArgs = [] -> goutput_tref env os tspec.TypeRef
+    | ILType.Boxed tspec when List.isEmpty tspec.GenericArgs -> goutput_tref env os tspec.TypeRef
     | typ2 -> goutput_typ env os typ2
 
 and goutput_gactuals env os inst =
@@ -334,7 +334,7 @@ and goutput_permission _env os p =
              | ILSecurityAction.DemandChoice -> "demandchoice")
 
     match p with
-    | ILSecurityDecl (sa, b) ->
+    | ILSecurityDecl(sa, b) ->
         output_string os " .permissionset "
         output_security_action os sa
         output_string os " = ("
@@ -366,7 +366,7 @@ and output_bcc os bcc =
          | ILArgConvention.Default -> " "
          | ILArgConvention.VarArg -> "vararg ")
 
-and output_callconv os (Callconv (hasthis, cc)) =
+and output_callconv os (Callconv(hasthis, cc)) =
     output_string
         os
         (match hasthis with
@@ -562,13 +562,13 @@ let goutput_fdef _tref env os (fd: ILFieldDef) =
 
 let rec goutput_apps env os =
     function
-    | Apps_tyapp (actual, cs) ->
+    | Apps_tyapp(actual, cs) ->
         output_angled (goutput_gactual env) os actual
         output_string os " "
         output_angled (goutput_gparam env) os (mkILSimpleTypar "T")
         output_string os " "
         goutput_apps env os cs
-    | Apps_app (ty, cs) ->
+    | Apps_app(ty, cs) ->
         output_parens (goutput_typ env) os ty
         output_string os " "
         goutput_apps env os cs
@@ -752,8 +752,9 @@ let goutput_superclass env os =
         output_string os "extends "
         (goutput_typ_with_shortened_class_syntax env) os typ
 
-let goutput_implements env os (imp: ILTypes) =
+let goutput_implements env os (imp: InterfaceImpl list) =
     if not (List.isEmpty imp) then
+        let imp = imp |> Seq.map _.Type
         output_string os "implements "
         output_seq ", " (goutput_typ_with_shortened_class_syntax env) os imp
 
@@ -834,9 +835,9 @@ let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
         output_sqstring os cd.Name
         goutput_gparams env os cd.GenericParams
         output_string os "\n\t"
-        goutput_superclass env os cd.Extends
+        goutput_superclass env os cd.Extends.Value
         output_string os "\n\t"
-        goutput_implements env os cd.Implements
+        goutput_implements env os cd.Implements.Value
         output_string os "\n{\n "
 
         if contents then
@@ -856,11 +857,11 @@ and output_init_semantics os f =
 
 and goutput_lambdas env os lambdas =
     match lambdas with
-    | Lambdas_forall (gf, l) ->
+    | Lambdas_forall(gf, l) ->
         output_angled (goutput_gparam env) os gf
         output_string os " "
         (goutput_lambdas env) os l
-    | Lambdas_lambda (ps, l) ->
+    | Lambdas_lambda(ps, l) ->
         output_parens (goutput_param env) os ps
         output_string os " "
         (goutput_lambdas env) os l
@@ -905,7 +906,7 @@ let goutput_resource env os r =
 
     match r.Location with
     | ILResourceLocation.Local _ -> output_string os " /* loc nyi */ "
-    | ILResourceLocation.File (mref, off) ->
+    | ILResourceLocation.File(mref, off) ->
         output_string os " .file "
         output_sqstring os mref.Name
         output_string os "  at "

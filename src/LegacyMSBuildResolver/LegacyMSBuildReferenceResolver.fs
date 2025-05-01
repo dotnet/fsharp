@@ -38,7 +38,7 @@ let DotNetFrameworkReferenceAssembliesRootDirectory =
 // 1. List of frameworks
 // 2. DeriveTargetFrameworkDirectoriesFor45Plus
 // 3. HighestInstalledRefAssembliesOrDotNETFramework
-// 4. GetPathToDotNetFrameworkImlpementationAssemblies
+// 4. GetPathToDotNetFrameworkImplementationAssemblies
 [<Literal>]
 let private Net45 = "v4.5"
 
@@ -74,7 +74,7 @@ let SupportedDesktopFrameworkVersions =
 
 /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
 /// This is only used to specify the "last resort" path for assembly resolution.
-let GetPathToDotNetFrameworkImlpementationAssemblies v : string list =
+let GetPathToDotNetFrameworkImplementationAssemblies v : string list =
     let v =
         match v with
         | Net45 -> Some TargetDotNetFrameworkVersion.Version45
@@ -114,60 +114,27 @@ let GetPathToDotNetFrameworkReferenceAssemblies version =
 let HighestInstalledRefAssembliesOrDotNETFramework () =
     let getHighestInstalledDotNETFramework () =
         try
-            if
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48))
-                <> null
-            then
+            if not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)))) then
                 Net48
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)))) then
                 Net472
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)))) then
                 Net471
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)))) then
                 Net47
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)))) then
                 Net462
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)))) then
                 Net461
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)))) then
                 Net461
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)))) then
                 Net46
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)))) then
                 Net452
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)))) then
                 Net451
-            elif
-                box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45))
-                <> null
-            then
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)))) then
                 Net45
             else
                 Net45 // version is 4.5 assumed since this code is running.
@@ -198,7 +165,7 @@ let HighestInstalledRefAssembliesOrDotNETFramework () =
 
     match
         SupportedDesktopFrameworkVersions
-        |> Seq.tryFind (fun v -> checkFrameworkForReferenceAssemblies v)
+        |> Seq.tryFind checkFrameworkForReferenceAssemblies
     with
     | Some v -> v
     | None -> getHighestInstalledDotNETFramework ()
@@ -374,7 +341,7 @@ let ResolveCore
                 yield "{AssemblyFolders}"
                 yield "{GAC}"
                 // use path to implementation assemblies as the last resort
-                yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
+                yield! GetPathToDotNetFrameworkImplementationAssemblies targetFrameworkVersion
             |]
 
         let assemblies =
@@ -465,7 +432,8 @@ let getResolver () =
                 |]
 
             let rooted, unrooted =
-                references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
+                references
+                |> Array.partition (fun (path, _) -> FileSystem.IsPathRootedShim(path))
 
             let rootedResults =
                 ResolveCore(

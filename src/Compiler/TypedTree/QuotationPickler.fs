@@ -249,7 +249,7 @@ let PickleBufferCapacity = 100000
 
 module SimplePickle =
 
-    type Table<'T> =
+    type Table<'T when 'T:not null> =
         { tbl: HashMultiMap<'T, int> // This should be "Dictionary"
           mutable rows: 'T list
           mutable count: int }

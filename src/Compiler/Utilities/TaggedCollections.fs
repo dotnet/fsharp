@@ -9,6 +9,7 @@ namespace Internal.Utilities.Collections.Tagged
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open System.Collections.Generic
+open Internal.Utilities.Library
 
 [<NoEquality; NoComparison>]
 [<AllowNullLiteral>]
@@ -141,7 +142,7 @@ module SetTree =
                 | _ -> add comparer k (add comparer t2.Key t1)
             | _ -> add comparer k (add comparer t1.Key t2)
 
-    let rec split (comparer: IComparer<'T>) pivot (t: SetTree<'T>) =
+    let rec split (comparer: IComparer<'T>) (pivot: 'T) (t: SetTree<'T>) =
         // Given a pivot and a set t
         // Return { x in t s.t. x < pivot }, pivot in t?, { x in t s.t. x > pivot }
         if isEmpty t then
@@ -178,7 +179,7 @@ module SetTree =
                     let k3, l' = spliceOutSuccessor tn.Left in k3, mk l' tn.Key tn.Right
             | _ -> t.Key, empty
 
-    let rec remove (comparer: IComparer<'T>) k (t: SetTree<'T>) =
+    let rec remove (comparer: IComparer<'T>) (k: 'T) (t: SetTree<'T>) =
         if isEmpty t then
             t
         else
@@ -200,7 +201,7 @@ module SetTree =
                     rebalance tn.Left tn.Key (remove comparer k tn.Right)
             | _ -> if c = 0 then empty else t
 
-    let rec contains (comparer: IComparer<'T>) k (t: SetTree<'T>) =
+    let rec contains (comparer: IComparer<'T>) (k: 'T) (t: SetTree<'T>) =
         if isEmpty t then
             false
         else
@@ -382,12 +383,12 @@ module SetTree =
 
     let minimumElement s =
         match minimumElementOpt s with
-        | Some (k) -> k
+        | Some(k) -> k
         | None -> failwith "minimumElement"
 
     let maximumElement s =
         match maximumElementOpt s with
-        | Some (k) -> k
+        | Some(k) -> k
         | None -> failwith "maximumElement"
 
     //--------------------------------------------------------------------------
@@ -615,9 +616,9 @@ type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer:
 
     member s.ForAll predicate = SetTree.forall predicate tree
 
-    static member (-)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Difference (a, b)
+    static member (-)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Difference(a, b)
 
-    static member (+)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Union (a, b)
+    static member (+)(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) = Set<_, _>.Union(a, b)
 
     static member Intersection(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) : Set<'T, 'ComparerTag> =
         if SetTree.isEmpty b.Tree then
@@ -666,8 +667,8 @@ type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer:
     interface System.IComparable with
         // Cast s2 to the exact same type as s1, see 4884.
         // It is not OK to cast s2 to seq<'T>, since different compares could permute the elements.
-        member s1.CompareTo(s2: obj) =
-            SetTree.compare s1.Comparer s1.Tree (s2 :?> Set<'T, 'ComparerTag>).Tree
+        member s1.CompareTo(s2: objnull) =
+            SetTree.compare s1.Comparer s1.Tree (!!s2 :?> Set<'T, 'ComparerTag>).Tree
 
     member this.ComputeHashCode() =
         let combineHash x y = (x <<< 1) + y + 631
@@ -809,7 +810,7 @@ module MapTree =
     let indexNotFound () =
         raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
-    let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =
+    let rec tryGetValue (comparer: IComparer<'Key>) (k: 'Key) (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =
         if isEmpty m then
             false
         else
@@ -823,7 +824,7 @@ module MapTree =
                 | :? MapTreeNode<'Key, 'Value> as mn -> tryGetValue comparer k &v (if c < 0 then mn.Left else mn.Right)
                 | _ -> false
 
-    let find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+    let find (comparer: IComparer<'Key>) (k: 'Key) (m: MapTree<'Key, 'Value>) =
         let mutable v = Unchecked.defaultof<'Value>
 
         if tryGetValue comparer k &v m then v else indexNotFound ()
@@ -882,7 +883,7 @@ module MapTree =
                     let k3, v3, l' = spliceOutSuccessor mn.Left in k3, v3, mk l' mn.Key mn.Value mn.Right
             | _ -> m.Key, m.Value, empty
 
-    let rec remove (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+    let rec remove (comparer: IComparer<'Key>) (k: 'Key) (m: MapTree<'Key, 'Value>) =
         if isEmpty m then
             empty
         else
@@ -904,7 +905,7 @@ module MapTree =
                     rebalance mn.Left mn.Key mn.Value (remove comparer k mn.Right)
             | _ -> if c = 0 then empty else m
 
-    let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+    let rec mem (comparer: IComparer<'Key>) (k: 'Key) (m: MapTree<'Key, 'Value>) =
         if isEmpty m then
             false
         else
@@ -1016,7 +1017,14 @@ module MapTree =
     let foldBack f m x =
         foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
-    let foldSectionOpt (comparer: IComparer<'Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
+    let foldSectionOpt
+        (comparer: IComparer<'Key>)
+        (lo: 'Key)
+        (hi: 'Key)
+        (f: OptimizedClosures.FSharpFunc<_, _, _, _>)
+        (m: MapTree<'Key, 'Value>)
+        x
+        =
         let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
             if isEmpty m then
                 x
@@ -1238,7 +1246,7 @@ type internal Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(c
         | _ -> false
 
     interface System.IComparable with
-        member m1.CompareTo(m2: obj) =
+        member m1.CompareTo(m2: objnull) =
             Seq.compareWith
                 (fun (kvp1: KeyValuePair<_, _>) (kvp2: KeyValuePair<_, _>) ->
                     let c = m1.Comparer.Compare(kvp1.Key, kvp2.Key) in
@@ -1250,13 +1258,13 @@ type internal Map<'Key, 'T, 'ComparerTag> when 'ComparerTag :> IComparer<'Key>(c
                 // Cast m2 to the exact same type as m1, see 4884.
                 // It is not OK to cast m2 to seq<KeyValuePair<'Key,'T>>, since different compares could permute the KVPs.
                 m1
-                (m2 :?> Map<'Key, 'T, 'ComparerTag>)
+                (!!m2 :?> Map<'Key, 'T, 'ComparerTag>)
 
     member this.ComputeHashCode() =
         let combineHash x y = (x <<< 1) + y + 631
         let mutable res = 0
 
-        for KeyValue (x, y) in this do
+        for KeyValue(x, y) in this do
             res <- combineHash res (Unchecked.hash x)
             res <- combineHash res (Unchecked.hash y)
 

@@ -22,14 +22,14 @@
         <target state="translated">Pour en savoir plus sur F#, consultez :</target>
         <note />
       </trans-unit>
-      <trans-unit id="SeeDocumentaton">
-        <source>To see this tutorial in documentation form, see:</source>
-        <target state="translated">Pour afficher ce didacticiel au format documentation, consultez :</target>
-        <note />
-      </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
         <target state="translated">Pour en savoir plus sur la programmation F# appliquée, utilisez</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SeeDocumentation">
+        <source>To see this tutorial in documentation form, see:</source>
+        <target state="new">To see this tutorial in documentation form, see:</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
@@ -743,8 +743,8 @@
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line1">
-        <source>You can modify the contents of an an array element by using the left arrow assignment operator.</source>
-        <target state="translated">Vous pouvez modifier le contenu d'un élément de tableau à l'aide de l'opérateur d'assignation flèche gauche.</target>
+        <source>You can modify the contents of an array element by using the left arrow assignment operator.</source>
+        <target state="new">You can modify the contents of an array element by using the left arrow assignment operator.</target>
         <note />
       </trans-unit>
       <trans-unit id="ArrayAssignment-Line2">
@@ -1008,8 +1008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="CardRank">
-        <source>A Disciminated Union can also be used to represent the rank of a playing card.</source>
-        <target state="translated">Une union discriminée peut également servir à représenter le rang d'une carte à jouer.</target>
+        <source>A Discriminated Union can also be used to represent the rank of a playing card.</source>
+        <target state="new">A Discriminated Union can also be used to represent the rank of a playing card.</target>
         <note />
       </trans-unit>
       <trans-unit id="CardRankValue">
@@ -1028,8 +1028,8 @@
         <note />
       </trans-unit>
       <trans-unit id="CardType-Line2">
-        <source>It's common to use both Records and Disciminated Unions when representing data.</source>
-        <target state="translated">Il est fréquent d'utiliser à la fois des enregistrements et des unions discriminées pour représenter des données.</target>
+        <source>It's common to use both Records and Discriminated Unions when representing data.</source>
+        <target state="new">It's common to use both Records and Discriminated Unions when representing data.</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
@@ -1088,8 +1088,8 @@
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line1">
-        <source>Disciminated Unions also support recursive definitions.</source>
-        <target state="translated">Les unions discriminées prennent également en charge les définitions récursives.</target>
+        <source>Discriminated Unions also support recursive definitions.</source>
+        <target state="new">Discriminated Unions also support recursive definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line2">

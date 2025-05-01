@@ -347,3 +347,16 @@ type ListType() =
         Assert.AreEqual(lst.[-3..(-4)], ([]: int list))
         Assert.AreEqual(lst.[-4..(-3)], ([]: int list))
 
+#if NET8_0_OR_GREATER
+
+#nowarn "1204" // FS1204: This type/method is for compiler use and should not be used directly.
+
+/// Tests for methods on the static, non-generic List type.
+module FSharpList =
+    [<Fact>]
+    let ``List.Create creates a list from a ReadOnlySpan`` () =
+        let expected = [1..10]
+        let span = ReadOnlySpan [|1..10|]
+        let actual = List.Create span
+        Assert.Equal<int list>(expected, actual)
+#endif

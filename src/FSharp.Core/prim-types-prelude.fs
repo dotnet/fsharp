@@ -6,6 +6,7 @@ namespace Microsoft.FSharp.Core
     // Basic type abbreviations
 
     type obj = System.Object
+    type objnull = obj | null
     type exn = System.Exception
     type nativeint = System.IntPtr
     type unativeint = System.UIntPtr
@@ -119,3 +120,4 @@ namespace Microsoft.FSharp.Core
     type voidptr = (# "void*" #)
 
     type ilsigptr<'T> = (# "!0*" #)
+

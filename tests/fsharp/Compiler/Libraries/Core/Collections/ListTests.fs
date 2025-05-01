@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+
 module ``List Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``List hd should not exist``() =
         // Regression test for FSharp1.0:5641
         // Title: List.hd/tl --> List.head/tail
@@ -25,7 +25,7 @@ List.hd [1] |> ignore
 
         
         
-    [<Test>]
+    [<Fact>]
     let ``List tl should not exist``() =
         // Regression test for FSharp1.0:5641
         // Title: List.hd/tl --> List.head/tail
@@ -39,19 +39,19 @@ List.tl [1] |> ignore
             (2, 6, 2, 8)
             "The value, constructor, namespace or type 'tl' is not defined."
 
-    [<Test>]
+    [<Fact>]
     let ``List head of empty list``() =
-        let testDelegate = TestDelegate (fun _ -> (List.head [] |> ignore))
+        let testDelegate = fun _ -> (List.head [] |> ignore)
 
         Assert.Throws<System.ArgumentException> testDelegate |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``List tail of empty list``() =
-        let testDelegate = TestDelegate (fun _ -> (List.tail [] |> ignore))
+        let testDelegate = fun _ -> (List.tail [] |> ignore)
 
         Assert.Throws<System.ArgumentException> testDelegate |> ignore
 
-    [<Test>]
+    [<Fact>]
     let ``List head and tail``() =
         Assert.areEqual 1 (List.head [1 .. 10])
         Assert.areEqual "a" (List.head ["a"])

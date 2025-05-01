@@ -1275,7 +1275,7 @@ type DontPressThisButtonAttribute =
   end
 
 // BUG:
-type [<DontPressThisButton("Please don't press this again")>] button = Buttpon
+type [<DontPressThisButton("Please don't press this again")>] button = Button
 let  [<DontPressThisButton("Please don't press this again")>] button () = 1
 
 //---------------------------------------------------------------------
@@ -2142,7 +2142,7 @@ let fails = ff.Invoke()
 
 
 
-module RecursiveClassCefinitions = begin
+module RecursiveClassDefinitions = begin
 
   type t1 = 
      class
@@ -2211,7 +2211,7 @@ module RecursiveAbstractClassDefinitions = begin
        default t1.M2() = t1.M1(t1.t2)
        default t1.M3(t2:t2) = 
            // Note we can use object expressions within the recursive
-           // definition of the type itself.  This requries real care - the
+           // definition of the type itself.  This requires real care - the
            // exact set of abstract members that still need implementing
            // must have been determined correctly before any expressions are
            // analyzed.
@@ -3481,7 +3481,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

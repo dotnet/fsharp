@@ -84,7 +84,7 @@ module KindB1 =
     // Access code may not be generic except through existing member constraints
 
 
-    // To speciy a struct representation use this:
+    // To specify a struct representation use this:
     let data3 = struct {| X = 1 |}
 
     // Types can be written with the same syntax
@@ -110,7 +110,7 @@ module TestInAttributes =
 
 module KindB2 = 
 
-    // Gives object that has full C#-compatibe anonymous metadata. Compiles to an instantiation of a generic type in the declaring assembly with appropriate .NET 
+    // Gives object that has full C#-compatible anonymous metadata. Compiles to an instantiation of a generic type in the declaring assembly with appropriate .NET 
     // metadata (property names). The types are CLIMutable to be C#-compatible. The identity of the types are implicitly assembly-qualified.
     let data1 =   {| X = 1 |}
 

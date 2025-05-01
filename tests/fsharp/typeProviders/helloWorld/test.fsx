@@ -312,7 +312,7 @@ module BasicErasedProvidedTypeTest =
                    
 
     let testIntrinsics() = 
-            FSharp.HelloWorld.HelloWorldType.CallInstrinsics()
+            FSharp.HelloWorld.HelloWorldType.CallIntrinsics()
 
     testIntrinsics()
 
@@ -1018,7 +1018,7 @@ module BasicGenerativeTest2Public =
         <@ (fun (x : TheGeneratedType4) -> x) @>.Type
         typeof<TheGeneratedType4 -> TheGeneratedType4>
 
-    // Check a simple quotation of a pirce of code that manipulates a nested generated type by taking the quotation and checking the type of the quotation tree
+    // Check a simple quotation of a piece of code that manipulates a nested generated type by taking the quotation and checking the type of the quotation tree
     check "cwpmew901"
         <@ (fun (x : TheOuterType.TheNestedGeneratedType) -> x) @>.Type
         typeof<TheOuterType.TheNestedGeneratedType -> TheOuterType.TheNestedGeneratedType>
@@ -1192,7 +1192,7 @@ let _ =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 
 do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
+    printf "TEST PASSED OK"; 
     exit 0)
 
 

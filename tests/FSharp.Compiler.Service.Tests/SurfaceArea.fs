@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Tests.Service.SurfaceArea
+namespace FSharp.Compiler.Service.Tests.SurfaceArea
 
 open System.IO
 open System.Reflection
-open NUnit.Framework
+open Xunit
 
 type SurfaceAreaTest() =
     // This relies on a set of baselines to update the baseline set an environment variable before running the tests, then on failure the baselines will be updated
@@ -17,7 +17,7 @@ type SurfaceAreaTest() =
     // Linux/macOS:
     //    export TEST_UPDATE_BSL=1
 
-    [<Test>]
+    [<Fact>]
     member _.VerifySurfaceAreaFSharpCompilerService() =
 
         let platform = "netstandard20"
@@ -35,4 +35,3 @@ type SurfaceAreaTest() =
         let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.bsl")
         let outFileName = $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.out"
         FSharp.Test.SurfaceArea.verify assembly baseline outFileName
-

@@ -2,9 +2,10 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``DefaultOf Tests`` =
 
     type DUType = 
@@ -31,14 +32,14 @@ module ``DefaultOf Tests`` =
         member this.SValue = this.m_svalue
     end
 
-    [<Test>]
+    [<Fact>]
     let `` Unchecked defaultof reference types``() =
-        Assert.areEqual Unchecked.defaultof<ClassType> null
+        Assert.areEqual Unchecked.defaultof<ClassType|null> null
         Assert.areEqual (box Unchecked.defaultof<DUType>) null
         Assert.areEqual (box Unchecked.defaultof<RecordType>) null
         Assert.areEqual (box Unchecked.defaultof<InterfaceType>) null
 
-    [<Test>]
+    [<Fact>]
     let ``Unchecked defaultof stack types``() =
         Assert.areEqual Unchecked.defaultof<int> 0
         Assert.areEqual Unchecked.defaultof<float> 0.0
@@ -51,7 +52,7 @@ module ``DefaultOf Tests`` =
     type S = struct val mutable x : int end
     type C() = class end
 
-    [<Test>]
+    [<Fact>]
     let ``Unchecked defaultof and equality``() =
         // FSharp1.0:5417 - Unchecked.defaultof<_> on records/unions can cause structural equality check to throw
         // Check that Unchecked.defaultof<_> works correctly on various types, mostly structs/unions/records

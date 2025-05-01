@@ -2,13 +2,12 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Compiler.UnitTests
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
-[<TestFixture>]
 module CeEdiThrow =
 
-    [<Test>]
+    [<Fact>]
     let ``Emits EDI.Throw``() =
         CompilerAssert.CompileLibraryAndVerifyIL(
             """
@@ -29,8 +28,7 @@ let foo = Try(){
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-  .method public strict virtual instance int32
-          Invoke(class [runtime]System.Exception _arg1) cil managed
+  .method public strict virtual instance int32 Invoke(class [runtime]System.Exception _arg1) cil managed
   {
 
     .maxstack  5

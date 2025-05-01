@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiDetailedHelpLink">
+        <source>See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</source>
+        <target state="new">See https://learn.microsoft.com/dotnet/fsharp/language-reference/fsharp-interactive-options for more details.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
         <target state="translated">Функции с [&lt;EntryPoint&gt;] не вызываются в FSI. "{0}" не вызван. Выполните "{1} &lt;args&gt;", чтобы вызвать "{2}" с соответствующим строковым массивом аргументов командной строки.</target>
@@ -17,6 +22,11 @@
         <target state="translated">Очистить экран</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpdocInfo">
+        <source>Display documentation for an identifier, e.g. #help \"List.map\";;</source>
+        <target state="translated">Отобразить документацию для идентификатора, например #help \"List.map\";;</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">Операция не может быть завершена из-за предыдущей ошибки</target>
@@ -28,8 +38,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
-        <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">Выпуск нескольких сборок (включено по умолчанию)</target>
+        <source>Emit multiple assemblies ({0} by default)</source>
+        <target state="new">Emit multiple assemblies ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -103,8 +113,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
-        <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">Выполнение взаимодействий при зацикливании события Windows Forms (включено по умолчанию)</target>
+        <source>Execute interactions on a Windows Forms event loop ({0} by default)</source>
+        <target state="new">Execute interactions on a Windows Forms event loop ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
@@ -113,13 +123,13 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
-        <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">Поддержка заполнения нажатием клавиши TAB в консоли (включено по умолчанию)</target>
+        <source>Support TAB completion in console ({0} by default)</source>
+        <target state="new">Support TAB completion in console ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
-        <source>Emit debug information in quotations</source>
-        <target state="translated">Вывод отладочной информации в кавычках</target>
+        <source>Emit debug information in quotations ({0} by default)</source>
+        <target state="new">Emit debug information in quotations ({0} by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
@@ -288,8 +298,8 @@
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
-        <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Предотвращает блокировку ссылок интерактивным процессом F#.</target>
+        <source>Prevents references from being locked by the F# Interactive process ({0} by default)</source>
+        <target state="new">Prevents references from being locked by the F# Interactive process ({0} by default)</target>
         <note />
       </trans-unit>
     </body>

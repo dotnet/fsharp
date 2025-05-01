@@ -34,11 +34,14 @@ ImplFile
                                     (Some
                                        (PostfixList
                                           ([SynTyparDecl
-                                              ([], SynTypar (a, HeadType, false));
+                                              ([], SynTypar (a, HeadType, false),
+                                               [], { AmpersandRanges = [] });
                                             SynTyparDecl
-                                              ([], SynTypar (b, HeadType, false));
+                                              ([], SynTypar (b, HeadType, false),
+                                               [], { AmpersandRanges = [] });
                                             SynTyparDecl
-                                              ([], SynTypar (c, HeadType, false))],
+                                              ([], SynTypar (c, HeadType, false),
+                                               [], { AmpersandRanges = [] })],
                                            [WhereTyparSupportsMember
                                               (Var
                                                  (SynTypar (b, HeadType, false),
@@ -82,7 +85,8 @@ ImplFile
                                                           ([], false, None)),
                                                      false, false,
                                                      PreXmlDoc ((3,55), FSharp.Compiler.Xml.XmlDocCollector),
-                                                     None, None, (3,55--3,91),
+                                                     Single None, None,
+                                                     (3,55--3,91),
                                                      { LeadingKeyword =
                                                         StaticMember
                                                           ((3,55--3,61),
@@ -120,8 +124,8 @@ ImplFile
                                             Var
                                               (SynTypar (b, HeadType, false),
                                                (3,104--3,106)), (3,101--3,106))],
-                                        (3,94--3,106)), (3,93--3,107))], None,
-                               (3,25--3,107)), None,
+                                        [(3,99--3,100)], (3,94--3,106)),
+                                     (3,93--3,107))], None, (3,25--3,107)), None,
                             Paren
                               (TraitCall
                                  (Var
@@ -155,7 +159,7 @@ ImplFile
                                            SynArgInfo ([], false, None)), false,
                                         false,
                                         PreXmlDoc ((4,15), FSharp.Compiler.Xml.XmlDocCollector),
-                                        None, None, (4,15--4,51),
+                                        Single None, None, (4,15--4,51),
                                         { LeadingKeyword =
                                            StaticMember
                                              ((4,15--4,21), (4,22--4,28))

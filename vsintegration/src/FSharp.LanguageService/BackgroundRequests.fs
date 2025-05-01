@@ -98,7 +98,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
                             let checker = getInteractiveChecker()
-                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName,  FSharp.Compiler.Text.SourceText.ofString sourceText, SessionsProperties.fsiPreview, timestamp, [| |]) |> Async.RunImmediate
+                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName, FSharp.Compiler.Text.SourceText.ofString sourceText, previewEnabled=SessionsProperties.fsiPreview, loadedTimeStamp=timestamp, otherFlags=[| |]) |> Async.RunImmediate
                             let referencedProjectFileNames = [| |]
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite
@@ -281,7 +281,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
     member fls.TriggerParseFile(view: IVsTextView, source: ISource) = 
         source.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.ParseFile, view, RequireFreshResults.No, new BackgroundRequestResultHandler(source.HandleUntypedParseOrFullTypeCheckResponse))
 
-    // Called before a Goto Definition to wait a moment to synchonize the parse
+    // Called before a Goto Definition to wait a moment to synchronize the parse
     member fls.TrySynchronizeParseFileInformation(view: IVsTextView, source: ISource, millisecondsTimeout:int) =
 
         if isNull lastParseFileRequest || lastParseFileRequest.Timestamp <> source.ChangeCount then

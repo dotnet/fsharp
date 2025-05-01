@@ -5,7 +5,7 @@
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET](https://dotnet.microsoft.com/).
 
-You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
+You will also need .NET SDK installed from [here](https://dotnet.microsoft.com/download/dotnet), exact version can be found in the global.json file in the root of the repository.
 
 ## Contributing
 
@@ -57,9 +57,31 @@ After it's finished, open `FSharp.sln` in your editor of choice.
 
 Even if you find a single-character typo, we're happy to take the change! Although the codebase can feel daunting for beginners, we and other contributors are happy to help you along.
 
+Not sure where to contribute?
+Look at the [curated list of issues asking for help](https://github.com/dotnet/fsharp/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22help%20wanted%22). If you want to tackle any of those, use the comments section of the chosen issue to indicate interest and feel free to ask for initial guidance. We are happy to help with resolving outstanding issues while making a successful PR addressing the issue.
+
+The issues in this repository can have big differences in the complexity for fixing them.
+Are you getting started? We do have a label for [good first issues](https://github.com/dotnet/fsharp/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) as well.
+
 ## Per-build NuGet packages
 
-Per-build [versions](https://dev.azure.com/dnceng/public/_packaging?_a=package&feed=dotnet-tools&view=versions&package=FSharp.Compiler.Service&protocolType=NuGet) of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json`
+### 7.0.40x series
+
+[FSharp.Compiler.Service 43.7.400-preview](https://dev.azure.com/dnceng/public/_artifacts/feed/dotnet7/NuGet/FSharp.Compiler.Service/versions/)
+
+```xml
+<add key="fsharp-prerelease" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet7/nuget/v3/index.json" />
+```
+
+### 8.0.10x series
+
+[FSharp.Compiler.Service 43.8.100-preview](https://dev.azure.com/dnceng/public/_artifacts/feed/dotnet8/NuGet/FSharp.Compiler.Service/versions/)
+
+```xml
+<add key="fsharp-prerelease" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet8/nuget/v3/index.json" />
+```
+
+**NOTE:** Official NuGet releases of FCS and FSharp.Core are synched with SDK releases (on purpose - we want to be in sync). Nightly packages release to Azure feeds on every successful insertion.
 
 ## Branches
 

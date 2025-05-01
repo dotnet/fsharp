@@ -17,7 +17,7 @@ using System.Diagnostics.CodeAnalysis;
 
 /* This file provides a basefunctionallity for IVsCfgProvider2.
    Instead of using the IVsProjectCfgEventsHelper object we have our own little sink and call our own helper methods
-   similiar to the interface. But there is no real benefit in inheriting from the interface in the first place. 
+   similar to the interface. But there is no real benefit in inheriting from the interface in the first place. 
    Using the helper object seems to be:  
     a) undocumented
     b) not really wise in the managed world
@@ -67,7 +67,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates new Project Configuartion objects based on the configuration name.
+        /// Creates new Project Configuration objects based on the configuration name.
         /// </summary>
         /// <param name="canonicalName">The name of the configuration</param>
         /// <returns>An instance of a ProjectConfig object.</returns>
@@ -199,7 +199,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             foreach (var platform in platforms)
             {
-                // If we have any property groups to clone, and we do not have sourec for this platform, skip
+                // If we have any property groups to clone, and we do not have source for this platform, skip
                 if (configToClone.Count > 0 && !configToClone.ContainsKey(platform)) continue;
                 var newCanonicalName = new ConfigCanonicalName(name, platform);
 
@@ -311,7 +311,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             foreach (var configName in configNames)
             {
-                // If we have any property groups to clone, and we do not have sourec for this config, skip
+                // If we have any property groups to clone, and we do not have source for this config, skip
                 if (configToClone.Count > 0 && !configToClone.ContainsKey(configName)) continue;
                 var newCanonicalName = new ConfigCanonicalName(configName, platformName);
 
@@ -680,7 +680,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Proved access to an IDispatchable object being a list of configuration properties
         /// </summary>
         /// <param name="configurationName">Combined Name and Platform for the configuration requested</param>
-        /// <param name="configurationProperties">The IDispatchcable object</param>
+        /// <param name="configurationProperties">The IDispatchable object</param>
         /// <returns>S_OK if successful</returns>
         public virtual int GetAutomationObject(string configurationName, out object configurationProperties)
         {
@@ -818,7 +818,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <devremark>The platforms array is never null. It is assured by the callers.</devremark>
         private static int GetPlatforms(uint celt, string[] names, uint[] actual, string[] platforms)
         {
-            Debug.Assert(platforms != null, "The plaforms array should never be null");
+            Debug.Assert(platforms != null, "The platforms array should never be null");
             if (names == null)
             {
                 if (actual == null || actual.Length == 0)
@@ -830,7 +830,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return VSConstants.S_OK;
             }
 
-            //Degenarate case
+            //Degenerate case
             if (celt == 0)
             {
                 if (actual != null && actual.Length != 0)

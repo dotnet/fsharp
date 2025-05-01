@@ -12,7 +12,9 @@ open FSharp.Test
 
 type SyntacticClassificationServiceTests() =
 
-    member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
+    member private this.ExtractMarkerData
+        (fileContents: string, marker: string, defines: string list, langVersion: string option, isScriptFile: Option<bool>)
+        =
         let textSpan = TextSpan(0, fileContents.Length)
 
         let fileName =
@@ -23,30 +25,31 @@ type SyntacticClassificationServiceTests() =
 
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-        let tokens =
-            Tokenizer.getClassifiedSpans (
-                documentId,
-                SourceText.From(fileContents),
-                textSpan,
-                Some(fileName),
-                defines,
-                CancellationToken.None
-            )
+        let tokens = ResizeArray<_>()
+
+        Tokenizer.classifySpans (
+            documentId,
+            SourceText.From(fileContents),
+            textSpan,
+            Some(fileName),
+            defines,
+            langVersion,
+            None,
+            tokens,
+            CancellationToken.None
+        )
 
         let markerPosition = fileContents.IndexOf(marker)
         Assert.True(markerPosition >= 0, $"Cannot find marker '{marker}' in file contents")
         (tokens, markerPosition)
 
     member private this.VerifyColorizerAtStartOfMarker
-        (
-            fileContents: string,
-            marker: string,
-            defines: string list,
-            classificationType: string,
-            ?isScriptFile: bool
-        ) =
+        (fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool, ?langVersion: string)
+        =
+        let langVersion = langVersion |> Option.orElse (Some "preview")
+
         let (tokens, markerPosition) =
-            this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+            this.ExtractMarkerData(fileContents, marker, defines, langVersion, isScriptFile)
 
         match tokens |> Seq.tryFind (fun token -> token.TextSpan.Contains(markerPosition)) with
         | None -> failwith "Cannot find colorization data for start of marker"
@@ -55,15 +58,12 @@ type SyntacticClassificationServiceTests() =
             |> Assert.shouldBeEqualWith classificationType "Classification data doesn't match for start of marker"
 
     member private this.VerifyColorizerAtEndOfMarker
-        (
-            fileContents: string,
-            marker: string,
-            defines: string list,
-            classificationType: string,
-            ?isScriptFile: bool
-        ) =
+        (fileContents: string, marker: string, defines: string list, classificationType: string, ?isScriptFile: bool, ?langVersion: string)
+        =
+        let langVersion = langVersion |> Option.orElse (Some "preview")
+
         let (tokens, markerPosition) =
-            this.ExtractMarkerData(fileContents, marker, defines, isScriptFile)
+            this.ExtractMarkerData(fileContents, marker, defines, langVersion, isScriptFile)
 
         match
             tokens
@@ -86,7 +86,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     [<Fact>]
-    member this.Conment_SingleLine_MultiConments() =
+    member this.Comment_SingleLine_MultiComments() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
@@ -101,7 +101,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)""",
             marker = "Test1",
@@ -114,7 +114,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -128,7 +128,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtEndOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -142,7 +142,7 @@ type SyntacticClassificationServiceTests() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
                 """
-                let mutliLine x = 5(* Test1MultiLine
+                let multiLine x = 5(* Test1MultiLine
                      Test2MultiLine <@@asdf@@>
                 Test3MultiLine*) + 1(*Test4*)
                 """,
@@ -285,7 +285,7 @@ type SyntacticClassificationServiceTests() =
                   abstract member Poke: int -> unit
                 end
 
-                type wodget = class
+                type widget = class
                   val mutable state: int 
                   interface IPeekPoke with(*Few Lines Later2*)
                     member x.Poke(n) = x.state <- x.state + n
@@ -307,7 +307,7 @@ type SyntacticClassificationServiceTests() =
                   abstract member Poke: int -> unit
                 end
 
-                type wodget = class
+                type widget = class
                   val mutable state: int 
                   interface IPeekPoke with(*Few Lines Later2*)
                     member x.Poke(n) = x.state <- x.state + n
@@ -1073,7 +1073,7 @@ type SyntacticClassificationServiceTests() =
         )
 
     /// FEATURE: Preprocessor keywords #light\#if\#else\#endif are colored with the PreprocessorKeyword color.
-    /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with with InactiveCode color.
+    /// FEATURE: All code in the inactive side of #if\#else\#endif is colored with the InactiveCode color.
     [<Theory>]
     [<InlineData("light (*Light*)", ClassificationTypeNames.PreprocessorKeyword)>]
     [<InlineData("(*Inactive*)", ClassificationTypeNames.ExcludedCode)>]
@@ -1102,7 +1102,7 @@ type SyntacticClassificationServiceTests() =
     /// FEATURE: Preprocessor extended grammar basic check.
     /// FEATURE:  More extensive grammar test is done in compiler unit tests
     [<Fact>]
-    member public this.Preprocesso_ExtendedIfGrammar_Basic01() =
+    member public this.Preprocessor_ExtendedIfGrammar_Basic01() =
         this.VerifyColorizerAtStartOfMarker(
             fileContents =
                 """
@@ -1202,4 +1202,71 @@ type SyntacticClassificationServiceTests() =
             marker = "(*Bob*)typ",
             defines = [],
             classificationType = ClassificationTypeNames.Keyword
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_1Dollar() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_2Dollars() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{41+1}} = {42}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+    [<Fact>]
+    member public this.InterpolatedString_6Dollars() =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "42",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "41+1",
+            defines = [],
+            classificationType = ClassificationTypeNames.StringLiteral
+        )
+
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$$$$$\"\"\"{{41+1}} = {42} = {{{{{{40+2}}}}}}\"\"\"",
+            marker = "40+2",
+            defines = [],
+            classificationType = ClassificationTypeNames.NumericLiteral
+        )
+
+    [<Theory>]
+    [<InlineData("10+1", ClassificationTypeNames.NumericLiteral)>]
+    [<InlineData("20+2", ClassificationTypeNames.StringLiteral)>]
+    [<InlineData("30+3", ClassificationTypeNames.NumericLiteral)>]
+    member public this.InterpolatedString_1DollarNestedIn2Dollars(marker: string, classificationType: string) =
+        this.VerifyColorizerAtEndOfMarker(
+            fileContents = "$$\"\"\"{{ $\"{10+1}\" }} {20+2} {{30+3}}\"\"\"",
+            marker = marker,
+            defines = [],
+            classificationType = classificationType
         )

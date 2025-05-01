@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -18,29 +18,34 @@ module CompiledNameAttribute =
         |> verifyBaseline
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute01.fs"|])>]
+    [<Theory; FileInlineData("CompiledNameAttribute01.fs")>]
     let ``CompiledNameAttribute01_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute02.fs"|])>]
+    [<Theory; FileInlineData("CompiledNameAttribute02.fs")>]
     let ``CompiledNameAttribute02_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute03.fs"|])>]
+    [<Theory; FileInlineData("CompiledNameAttribute03.fs")>]
     let ``CompiledNameAttribute03_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute04.fs"|])>]
-    let ``CompiledNameAttribute04_fs`` compilation =
+    [<Theory; FileInlineData("CompiledNameAttribute04.fs", Realsig=BooleanOptions.Both)>]
+    let ``CompiledNameAttribute04_RealInternalSignatureOn_fs`` compilation =
         compilation
+        |> getCompilation
         |> verifyCompilation 
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CompiledNameAttribute05.fs"|])>]
+    [<Theory; FileInlineData("CompiledNameAttribute05.fs")>]
     let ``CompiledNameAttribute05_fs`` compilation =
         compilation
+        |> getCompilation
         |> asFs
         |> asExe
         |> withEmbeddedPdb

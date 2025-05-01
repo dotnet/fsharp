@@ -1,0 +1,3 @@
+E_NoChangeForEvent.fsx (9,9)-(9,30) typecheck warning It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value
+E_NoChangeForEvent.fsx (10,1)-(10,11) typecheck error This value is not a function and cannot be applied.
+E_NoChangeForEvent.fsx (18,1)-(18,11) typecheck error This value is not a function and cannot be applied.

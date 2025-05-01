@@ -98,10 +98,10 @@ but given a
     'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(80,23,80,39): typecheck error FS0193: Type constraint mismatch. The type 
+neg20.fs(80,30,80,39): typecheck error FS0193: Type constraint mismatch. The type 
     'C list'    
 is not compatible with type
-    'seq<B>'    
+    'B seq'    
 
 
 neg20.fs(81,34,81,43): typecheck error FS0001: Type mismatch. Expecting a
@@ -135,19 +135,19 @@ neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
     'B * B -> 'a'    
 but given a
     'A * A -> Data'    
-The type 'B' does not match the type 'A'
+The type 'A' does not match the type 'B'
 
 neg20.fs(109,12,109,16): typecheck error FS0001: Type mismatch. Expecting a
     'A * B -> 'a'    
 but given a
     'A * A -> Data'    
-The type 'B' does not match the type 'A'
+The type 'A' does not match the type 'B'
 
 neg20.fs(110,12,110,16): typecheck error FS0001: Type mismatch. Expecting a
     'B * A -> 'a'    
 but given a
     'A * A -> Data'    
-The type 'B' does not match the type 'A'
+The type 'A' does not match the type 'B'
 
 neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -181,7 +181,7 @@ neg20.fs(157,28,157,29): typecheck error FS0495: The member or object constructo
 
 neg20.fs(158,13,158,36): typecheck error FS0502: The member or object constructor 'SM4' takes 1 type argument(s) but is here given 2. The required signature is 'static member C.SM4: y: 'a * z: 'b -> int'.
 
-neg20.fs(159,13,159,32): typecheck error FS0502: The member or object constructor 'SM5' takes 2 type argument(s) but is here given 1. The required signature is 'static member C.SM5: y: 'a * z: 'b -> int'.
+neg20.fs(159,13,159,32): typecheck error FS0502: The member or object constructor 'SM5' takes 2 type argument(s) but is here given 1. The required signature is 'static member C.SM5<'b,'c> : y: 'a * z: 'b -> int'.
 
 neg20.fs(162,13,162,24): typecheck error FS0502: The member or object constructor 'M1' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M1: unit -> int'.
 
@@ -193,11 +193,11 @@ neg20.fs(165,27,165,28): typecheck error FS0495: The member or object constructo
 
 neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructor 'M4' takes 1 type argument(s) but is here given 2. The required signature is 'member C.M4: y: 'a * z: 'b -> int'.
 
-neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5: y: 'a * z: 'b -> int'.
+neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5<'b,'c> : y: 'a * z: 'b -> int'.
 
 neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'.
 
-Known types of arguments: string * obj
+Known types of arguments: string * objnull
 
 Available overloads:
  - static member C2.M: fmt: string * [<System.ParamArray>] args: int array -> string // Argument 'args' doesn't match
@@ -206,22 +206,12 @@ Available overloads:
 neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
-
-neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
-
-neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(183,14,183,41): typecheck error FS0001: This expression was expected to have type
     'unit'    
@@ -231,26 +221,16 @@ but here has type
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
-
-neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    'obj'    
-
-neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'.
 
-Known types of arguments: string * obj
+Known types of arguments: string * objnull
 
 Available overloads:
  - static member C3.M: fmt: string * [<System.ParamArray>] args: string array -> string // Argument 'args' doesn't match
@@ -259,22 +239,12 @@ Available overloads:
 neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
-
-neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
-
-neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(189,14,189,41): typecheck error FS0001: This expression was expected to have type
     'unit'    
@@ -284,28 +254,18 @@ but here has type
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
-
-neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
-    'obj'    
-
-neg20.fs(190,34,190,39): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
-    'obj'    
+    'objnull'    
 
 neg20.fs(195,5,195,10): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(198,5,198,11): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(201,3,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
+neg20.fs(202,7,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
 
 neg20.fs(204,5,204,14): typecheck error FS0842: This attribute is not valid for use on this language element
 

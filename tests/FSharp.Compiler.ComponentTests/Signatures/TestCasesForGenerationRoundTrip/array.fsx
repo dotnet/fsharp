@@ -180,7 +180,7 @@ let test_find () =
          with _ -> true)
 
 module Array = 
-    let findIndexi f (array : array<_>) = 
+    let findIndexi f (array : _ array) = 
         let len = array.Length 
         let rec go n = 
             if n >= len then 
@@ -191,7 +191,7 @@ module Array =
                 go (n+1)
         go 0
 
-    let tryFindIndexi f (array : array<_>) = 
+    let tryFindIndexi f (array : _ array) = 
         let len = array.Length 
         let rec go n = if n >= len then None elif f n array.[n] then Some n else go (n+1)
         go 0 
@@ -1092,7 +1092,7 @@ module manyIndexes =
     let CompileIndexerTest = 
         let test = Test ()
     
-        // No problems with method having vaiable number of parameters
+        // No problems with method having variable number of parameters
         let u1 = test.Foo(null, null, null, null)
         let u2 = test.Foo(null, null, null, null, null)
         let u3 = test.Foo(null, null, null, null, null, null, null, null, null)
@@ -1142,7 +1142,7 @@ let aa =
   match failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

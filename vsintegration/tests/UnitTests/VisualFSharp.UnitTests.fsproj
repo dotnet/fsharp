@@ -7,15 +7,17 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
     <Compile Include="AssemblyResolver.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\InternalCollections.fsi">
       <Link>Internal.Utilities.Collections.fsi</Link>
@@ -57,9 +59,9 @@
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
-	  <Compile Include="DocCommentIdParserTests.fs">
-		  <Link>CompilerService\DocCommentIdParserTests.fs</Link>
-	  </Compile>
+    <Compile Include="DocCommentIdParserTests.fs">
+      <Link>CompilerService\DocCommentIdParserTests.fs</Link>
+    </Compile>
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
@@ -67,7 +69,7 @@
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </NoneSubstituteText>
-    <None Include="app.runsettings" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" />
@@ -104,6 +106,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />

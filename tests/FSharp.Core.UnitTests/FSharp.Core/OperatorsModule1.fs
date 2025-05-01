@@ -3,11 +3,18 @@
 // Various tests for the:
 // Microsoft.FSharp.Core.Operators module
 
+// For information on the runtime-dependent behavior differences in this file, see:
+// - https://github.com/dotnet/runtime/issues/61885
+// - https://github.com/dotnet/runtime/pull/97529
+
 namespace FSharp.Core.UnitTests.Operators
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
+
+#nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
+// Why warned - the tests here are actually trying to test that when this happens (unit passed), it indeed results in a null
 
 type OperatorsModule1() =
 
@@ -278,18 +285,24 @@ type OperatorsModule1() =
         // Overflow
         let result = Operators.byte Single.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Single.MaxValue
-        Assert.AreEqual(0uy, result)
-        
+        if Info.isNetFramework then
+            Assert.AreEqual(0uy, result)
+        else
+            Assert.AreEqual(255uy, result)
+
         // Overflow
         let result = Operators.byte Double.MinValue
         Assert.AreEqual(0uy, result)
-        
+
         // Overflow
         let result = Operators.byte Double.MaxValue
-        Assert.AreEqual(0uy, result)
+        if Info.isNetFramework then
+            Assert.AreEqual(0uy, result)
+        else
+            Assert.AreEqual(255uy, result)
         
         // Overflow
         let result = Operators.byte (Int64.MaxValue * 8L)
@@ -343,9 +356,15 @@ type OperatorsModule1() =
 
         // Overflow
         Assert.AreEqual('\000', Operators.char Single.MinValue)
-        Assert.AreEqual('\000', Operators.char Double.MinValue)
-        Assert.AreEqual('\000', Operators.char Single.MaxValue)
-        Assert.AreEqual('\000', Operators.char Double.MaxValue)
+        if Info.isNetFramework then
+            Assert.AreEqual('\000', Operators.char Single.MaxValue)
+        else
+            Assert.AreEqual('\uffff', Operators.char Single.MaxValue)
+
+        if Info.isNetFramework then
+            Assert.AreEqual('\000', Operators.char Double.MaxValue)
+        else
+            Assert.AreEqual('\uffff', Operators.char Double.MaxValue)
         CheckThrowsOverflowException(fun () -> Operators.char Decimal.MinValue |> ignore)
         
         // string type

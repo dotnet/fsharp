@@ -300,10 +300,10 @@ type internal FsiToolWindow() as this =
                 strHandle.Free()
         )
 
-    let executeTextNoHistory sourceFile (text:string) =
+    let executeTextNoHistory sourceFile (text: unit -> string) =
         sessions.Ensure(sourceFile)
         textStream.DirectWriteLine()
-        sessions.SendInput(text)
+        sessions.SendInput(text())
         setCursorAtEndOfBuffer()
         
     let executeUserInput() = 
@@ -374,7 +374,7 @@ type internal FsiToolWindow() as this =
                 0
         textView.SetSelection(line, endColumn, line, startColumn) |> throwOnFailure0
 
-    /// Hanlde no-op, used to overwrite some standard command with an empty action.
+    /// Handle no-op, used to overwrite some standard command with an empty action.
     let onNoAction (sender:obj) (e:EventArgs) = ()
     
     
@@ -424,7 +424,7 @@ type internal FsiToolWindow() as this =
         if not Session.SessionsProperties.fsiUseNetCore then 
             sessions.Restart(null)
 
-    /// Handle RETURN, unless Intelisense completion is in progress.
+    /// Handle RETURN, unless Intellisense completion is in progress.
     let onReturn (sender:obj) (e:EventArgs) =    
         lock textLines (fun () ->
             if not sessions.Alive then
@@ -530,20 +530,34 @@ type internal FsiToolWindow() as this =
         try
             showNoActivate()
             let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
-            let text = "\n" + text + "\n" + directiveC + "\n;;\n"
+            let text() = "\n" + text + "\n" + directiveC + "\n;;\n"
             executeTextNoHistory null text
         with _ -> ()
 
+    let hide () =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "hide" """
+        else
+            ""
+
+    let show () =
+        if sessions.SupportsInteractivePrompt then
+            """#interactiveprompt "show" """
+        else
+            ""
+
     let executeInteraction dbgBreak dir filename topLine (text:string) =
-        let interaction = $"""
-#interactiveprompt "hide"
+        let interaction() = $"""
+{    hide()}
 #silentCd @"{dir}";;
 {if dbgBreak then "#dbgbreak" else ""}
-#{topLine} @"{filename}"
+# {topLine} @"{filename}"
 {text.ToString()}
-#1 "stdin"
-#interactiveprompt "show";;
+;;
+# 1 "stdin"
+{    show()};;
 """
+
         executeTextNoHistory filename interaction
 
     let sendSelectionToFSI action =
@@ -613,7 +627,7 @@ type internal FsiToolWindow() as this =
         oleCommandTarget.Exec(&cmdSetGuid, uint32 VSStd97CmdID.Copy, 0u, IntPtr.Zero, IntPtr.Zero) |> ignore
 
     // Set the image that will appear on the tab of the window frame
-    // when docked with an other window
+    // when docked with another window
     // The resource ID correspond to the one defined in the resx file
     // while the Index is the offset in the bitmap strip. Each image in
     // the strip being 16x16.
@@ -669,7 +683,7 @@ type internal FsiToolWindow() as this =
 
             let originalFilter = textView.AddCommandFilter(this :> IOleCommandTarget) |> throwOnFailure1
             // Create a command service that will use the previous command target
-            // as parent target and will route to it the commands that it can not handle.
+            // as parent target and will route to it the commands that it cannot handle.
             if isNull commandService then
                 commandService <-             
                     if isNull originalFilter then                    
@@ -824,7 +838,7 @@ type internal FsiToolWindow() as this =
             base.GetService(serviceType)
 
     override this.PreProcessMessage msg =
-        // we do not want to process any keyboard commands; all shortcut are prrocessed by standard VS command routing machanism
+        // we do not want to process any keyboard commands; all shortcut are processed by standard VS command routing mechanism
         false
 
     interface IVsUIElementPane with

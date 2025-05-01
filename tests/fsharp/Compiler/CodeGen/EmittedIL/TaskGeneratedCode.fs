@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Test
-open NUnit.Framework
+open Xunit
 
 open System
 open System.Threading.Tasks
@@ -12,7 +12,7 @@ open System.Threading.Tasks
 // The code generated changes slightly in debug mode
 #if !DEBUG 
 // Check the exact code produced for tasks
-[<TestFixture>]
+
 module TaskGeneratedCode =
 
     // This tests the exact optimized code generated for the MoveNext for a trivial task - we expect 'MoveNext' to be there
@@ -26,10 +26,10 @@ module TaskGeneratedCode =
     //   IL_000e:  ldc.i4.1
     //   IL_000f:  stfld      int32 Test/testTask@4::Result
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of simple task debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -37,8 +37,7 @@ let testTask() = task { return 1 }
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-.method public strict virtual instance void 
-MoveNext() cil managed
+.method public strict virtual instance void MoveNext() cil managed
 {
     .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
           
@@ -114,10 +113,10 @@ MoveNext() cil managed
     //   IL_000e:  ldc.i4.1
     //   IL_000f:  stfld      int32 Test/testTask@4::Result
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of simple task optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -188,10 +187,10 @@ let testTask() = task { return 1 }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of simple binding task debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview"; "/debug:portable"; "/optimize-"; "/tailcalls-" |],
+            [| "/debug:portable";"--realsig+"; "/optimize-"; "/tailcalls-" |],
             """
 module Test
 open System.Threading.Tasks
@@ -368,10 +367,10 @@ let testTask(t: Task<int>) = task { let! res = t in return res+1 }
 
 module TaskTryFinallyGeneration =
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/finally optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -477,10 +476,10 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/finally debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -594,10 +593,10 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
 
 module TaskTryWithGeneration =
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/with optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -707,10 +706,10 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task try/with debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -827,10 +826,10 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
 
 module TaskWhileLoopGeneration =
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task while loop optimized``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
+            [| "/optimize+"; "/debug:portable";"--realsig+"; "/tailcalls+" |],
             """
 module Test
 
@@ -925,10 +924,10 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
             ]))
 
 
-    [<Test>]
+    [<Fact>]
     let ``check MoveNext of task while loop debug``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1028,10 +1027,10 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
 module TaskTypeInference =
     // This tests the compilation of a case that hits corner cases in SRTP constraint processing.
     // See https://github.com/dotnet/fsharp/issues/12188
-    [<Test>]
+    [<Fact>]
     let ``check initially ambiguous SRTP task code ``() =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "/langversion:preview"; "/optimize-"; "/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1048,10 +1047,10 @@ let myTuple : (string -> Task<unit>) * int = (fun (_s: string) -> Task.FromResul
             """)
 
     // Test task code in generic position
-    [<Test>]
+    [<Fact>]
     let ``check generic task code ``() =
         CompilerAssert.CompileExeAndRunWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1081,10 +1080,10 @@ printfn "test passed"
 
 #if !DEBUG 
 
-    [<Test>]
+    [<Fact>]
     let ``check generic task exact code``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions(
-            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
+            [| "/optimize-"; "/debug:portable";"--realsig+"; "/tailcalls-" |],
             """
 module Test
 
@@ -1097,207 +1096,295 @@ type Generic1InGeneric1<'T>() =
             """,
             (fun verifier -> verifier.VerifyIL [
             """
-    .method assembly hidebysig instance class [runtime]System.Threading.Tasks.Task`1<!!A> 
-            run<A>(class [runtime]System.Threading.Tasks.Task`1<!!A> computation) cil managed
+.class public abstract auto ansi sealed Test
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public beforefieldinit Generic1InGeneric1`1<T>
+         extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .class auto autochar sealed nested assembly beforefieldinit specialname clo@7<T,A>
+           extends [runtime]System.ValueType
+           implements [runtime]System.Runtime.CompilerServices.IAsyncStateMachine,
+                      class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>>
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
+      .field public valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A> Data
+      .field public int32 ResumptionPoint
+      .field public class [runtime]System.Threading.Tasks.Task`1<!A> computation
+      .field public valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!A> awaiter
+      .method public strict virtual instance void MoveNext() cil managed
+      {
+        .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
+        
+        .maxstack  5
+        .locals init (int32 V_0,
+                 class [runtime]System.Exception V_1,
+                 bool V_2,
+                 class [runtime]System.Threading.Tasks.Task`1<!A> V_3,
+                 bool V_4,
+                 bool V_5,
+                 !A V_6,
+                 !A V_7,
+                 valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!A> V_8,
+                 class [runtime]System.Exception V_9,
+                 class [runtime]System.Exception V_10)
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::ResumptionPoint
+        IL_0006:  stloc.0
+        IL_0007:  ldloc.0
+        IL_0008:  ldc.i4.1
+        IL_0009:  sub
+        IL_000a:  switch     ( 
+                              IL_0015)
+        IL_0013:  br.s       IL_0018
+
+        IL_0015:  nop
+        IL_0016:  br.s       IL_001b
+
+        IL_0018:  nop
+        IL_0019:  ldnull
+        IL_001a:  stloc.1
+        .try
+        {
+          IL_001b:  ldloc.0
+          IL_001c:  ldc.i4.1
+          IL_001d:  sub
+          IL_001e:  switch     ( 
+                                IL_0029)
+          IL_0027:  br.s       IL_002c
+
+          IL_0029:  nop
+          IL_002a:  br.s       IL_0055
+
+          IL_002c:  nop
+          IL_002d:  ldarg.0
+          IL_002e:  ldfld      class [runtime]System.Threading.Tasks.Task`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::computation
+          IL_0033:  stloc.3
+          IL_0034:  ldarg.0
+          IL_0035:  ldloc.3
+          IL_0036:  callvirt   instance valuetype [netstandard]System.Runtime.CompilerServices.TaskAwaiter`1<!0> class [netstandard]System.Threading.Tasks.Task`1<!A>::GetAwaiter()
+          IL_003b:  stfld      valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::awaiter
+          IL_0040:  ldc.i4.1
+          IL_0041:  stloc.s    V_4
+          IL_0043:  ldarg.0
+          IL_0044:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::awaiter
+          IL_0049:  call       instance bool valuetype [netstandard]System.Runtime.CompilerServices.TaskAwaiter`1<!A>::get_IsCompleted()
+          IL_004e:  brfalse.s  IL_0052
+
+          IL_0050:  br.s       IL_006b
+
+          IL_0052:  ldc.i4.0
+          IL_0053:  brfalse.s  IL_0059
+
+          IL_0055:  ldc.i4.1
+          IL_0056:  nop
+          IL_0057:  br.s       IL_0062
+
+          IL_0059:  ldarg.0
+          IL_005a:  ldc.i4.1
+          IL_005b:  stfld      int32 valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::ResumptionPoint
+          IL_0060:  ldc.i4.0
+          IL_0061:  nop
+          IL_0062:  stloc.s    V_5
+          IL_0064:  ldloc.s    V_5
+          IL_0066:  stloc.s    V_4
+          IL_0068:  nop
+          IL_0069:  br.s       IL_006c
+
+          IL_006b:  nop
+          IL_006c:  ldloc.s    V_4
+          IL_006e:  brfalse.s  IL_0092
+
+          IL_0070:  ldarg.0
+          IL_0071:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::awaiter
+          IL_0076:  call       instance !0 valuetype [netstandard]System.Runtime.CompilerServices.TaskAwaiter`1<!A>::GetResult()
+          IL_007b:  stloc.s    V_6
+          IL_007d:  ldloc.s    V_6
+          IL_007f:  stloc.s    V_7
+          IL_0081:  ldarg.0
+          IL_0082:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+          IL_0087:  ldloc.s    V_7
+          IL_0089:  stfld      !0 valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::Result
+          IL_008e:  ldc.i4.1
+          IL_008f:  nop
+          IL_0090:  br.s       IL_00ab
+
+          IL_0092:  ldarg.0
+          IL_0093:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+          IL_0098:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
+          IL_009d:  ldarg.0
+          IL_009e:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::awaiter
+          IL_00a3:  ldarg.0
+          IL_00a4:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::AwaitUnsafeOnCompleted<valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!1>,valuetype Test/Generic1InGeneric1`1/clo@7<!0,!1>>(!!0&,
+                                                                                                                                                                                                                                                                                 !!1&)
+          IL_00a9:  ldc.i4.0
+          IL_00aa:  nop
+          IL_00ab:  brfalse.s  IL_00c1
+
+          IL_00ad:  ldarg.0
+          IL_00ae:  ldloca.s   V_8
+          IL_00b0:  initobj    valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!A>
+          IL_00b6:  ldloc.s    V_8
+          IL_00b8:  stfld      valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::awaiter
+          IL_00bd:  ldc.i4.1
+          IL_00be:  nop
+          IL_00bf:  br.s       IL_00c3
+
+          IL_00c1:  ldc.i4.0
+          IL_00c2:  nop
+          IL_00c3:  stloc.2
+          IL_00c4:  ldloc.2
+          IL_00c5:  brfalse.s  IL_00e4
+
+          IL_00c7:  ldarg.0
+          IL_00c8:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+          IL_00cd:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
+          IL_00d2:  ldarg.0
+          IL_00d3:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+          IL_00d8:  ldfld      !0 valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::Result
+          IL_00dd:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::SetResult(!0)
+          IL_00e2:  leave.s    IL_00f2
+
+          IL_00e4:  leave.s    IL_00f2
+
+        }  
+        catch [runtime]System.Object 
+        {
+          IL_00e6:  castclass  [runtime]System.Exception
+          IL_00eb:  stloc.s    V_9
+          IL_00ed:  ldloc.s    V_9
+          IL_00ef:  stloc.1
+          IL_00f0:  leave.s    IL_00f2
+
+        }  
+        IL_00f2:  ldloc.1
+        IL_00f3:  stloc.s    V_10
+        IL_00f5:  ldloc.s    V_10
+        IL_00f7:  brtrue.s   IL_00fa
+
+        IL_00f9:  ret
+
+        IL_00fa:  ldarg.0
+        IL_00fb:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+        IL_0100:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
+        IL_0105:  ldloc.s    V_10
+        IL_0107:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::SetException(class [netstandard]System.Exception)
+        IL_010c:  ret
+      } 
+
+      .method public strict virtual instance void SetStateMachine(class [runtime]System.Runtime.CompilerServices.IAsyncStateMachine state) cil managed
+      {
+        .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::SetStateMachine
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+        IL_0006:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
+        IL_000b:  ldarg.1
+        IL_000c:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::SetStateMachine(class [netstandard]System.Runtime.CompilerServices.IAsyncStateMachine)
+        IL_0011:  ret
+      } 
+
+      .method public strict virtual instance int32 get_ResumptionPoint() cil managed
+      {
+        .override  method instance int32 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>>::get_ResumptionPoint()
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      int32 valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::ResumptionPoint
+        IL_0006:  ret
+      } 
+
+      .method public strict virtual instance valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A> get_Data() cil managed
+      {
+        .override  method instance !0 class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>>::get_Data()
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+        IL_0006:  ret
+      } 
+
+      .method public strict virtual instance void set_Data(valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A> 'value') cil managed
+      {
+        .override  method instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.IResumableStateMachine`1<valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>>::set_Data(!0)
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldarg.1
+        IL_0002:  stfld      valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!A>::Data
+        IL_0007:  ret
+      } 
+
+    } 
+
+    .method public specialname rtspecialname instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  pop
+      IL_0008:  ret
+    } 
+
+    .method public hidebysig instance class [runtime]System.Threading.Tasks.Task`1<int32> Run() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  ldc.i4.3
+      IL_0002:  call       class [runtime]System.Threading.Tasks.Task`1<!!0> [runtime]System.Threading.Tasks.Task::FromResult<int32>(!!0)
+      IL_0007:  callvirt   instance class [runtime]System.Threading.Tasks.Task`1<!!0> class Test/Generic1InGeneric1`1<!T>::run<int32>(class [runtime]System.Threading.Tasks.Task`1<!!0>)
+      IL_000c:  ret
+    } 
+
+    .method assembly hidebysig instance class [runtime]System.Threading.Tasks.Task`1<!!A> run<A>(class [runtime]System.Threading.Tasks.Task`1<!!A> computation) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  4
-      .locals init (valuetype Test/clo@7<!!A> V_0,
-               valuetype Test/clo@7<!!A>& V_1)
+      .locals init (valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A> V_0,
+               valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>& V_1)
       IL_0000:  ldloca.s   V_0
-      IL_0002:  initobj    valuetype Test/clo@7<!!A>
+      IL_0002:  initobj    valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>
       IL_0008:  ldloca.s   V_0
       IL_000a:  stloc.1
       IL_000b:  ldloc.1
       IL_000c:  ldarg.1
-      IL_000d:  stfld      class [runtime]System.Threading.Tasks.Task`1<!0> valuetype Test/clo@7<!!A>::computation
+      IL_000d:  stfld      class [runtime]System.Threading.Tasks.Task`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::computation
       IL_0012:  ldloc.1
-      IL_0013:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!!A>::Data
+      IL_0013:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
       IL_0018:  call       valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!A>::Create()
       IL_001d:  stfld      valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
       IL_0022:  ldloc.1
-      IL_0023:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!!A>::Data
+      IL_0023:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
       IL_0028:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
       IL_002d:  ldloc.1
-      IL_002e:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!0>::Start<valuetype Test/clo@7<!!0>>(!!0&)
+      IL_002e:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!0>::Start<valuetype Test/Generic1InGeneric1`1/clo@7<!0,!!0>>(!!0&)
       IL_0033:  ldloc.1
-      IL_0034:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!!A>::Data
+      IL_0034:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!1> valuetype Test/Generic1InGeneric1`1/clo@7<!T,!!A>::Data
       IL_0039:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!!A>::MethodBuilder
       IL_003e:  call       instance class [netstandard]System.Threading.Tasks.Task`1<!0> valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!!A>::get_Task()
       IL_0043:  ret
     } 
-                """
-            """
-    .method public strict virtual instance void 
-            MoveNext() cil managed
-    {
-      .override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext
-      
-      .maxstack  5
-      .locals init (int32 V_0,
-               class [runtime]System.Exception V_1,
-               bool V_2,
-               class [runtime]System.Threading.Tasks.Task`1<!A> V_3,
-               bool V_4,
-               bool V_5,
-               !A V_6,
-               !A V_7,
-               valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!A> V_8,
-               class [runtime]System.Exception V_9,
-               class [runtime]System.Exception V_10)
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 valuetype Test/clo@7<!A>::ResumptionPoint
-      IL_0006:  stloc.0
-      IL_0007:  ldloc.0
-      IL_0008:  ldc.i4.1
-      IL_0009:  sub
-      IL_000a:  switch     ( 
-                            IL_0015)
-      IL_0013:  br.s       IL_0018
 
-      IL_0015:  nop
-      IL_0016:  br.s       IL_001b
+  } 
 
-      IL_0018:  nop
-      IL_0019:  ldnull
-      IL_001a:  stloc.1
-      .try
-      {
-        IL_001b:  ldloc.0
-        IL_001c:  ldc.i4.1
-        IL_001d:  sub
-        IL_001e:  switch     ( 
-                              IL_0029)
-        IL_0027:  br.s       IL_002c
-
-        IL_0029:  nop
-        IL_002a:  br.s       IL_0055
-
-        IL_002c:  nop
-        IL_002d:  ldarg.0
-        IL_002e:  ldfld      class [runtime]System.Threading.Tasks.Task`1<!0> valuetype Test/clo@7<!A>::computation
-        IL_0033:  stloc.3
-        IL_0034:  ldarg.0
-        IL_0035:  ldloc.3
-        IL_0036:  callvirt   instance valuetype [netstandard]System.Runtime.CompilerServices.TaskAwaiter`1<!0> class [netstandard]System.Threading.Tasks.Task`1<!A>::GetAwaiter()
-        IL_003b:  stfld      valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0> valuetype Test/clo@7<!A>::awaiter
-        IL_0040:  ldc.i4.1
-        IL_0041:  stloc.s    V_4
-        IL_0043:  ldarg.0
-        IL_0044:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0> valuetype Test/clo@7<!A>::awaiter
-        IL_0049:  call       instance bool valuetype [netstandard]System.Runtime.CompilerServices.TaskAwaiter`1<!A>::get_IsCompleted()
-        IL_004e:  brfalse.s  IL_0052
-
-        IL_0050:  br.s       IL_006b
-
-        IL_0052:  ldc.i4.0
-        IL_0053:  brfalse.s  IL_0059
-
-        IL_0055:  ldc.i4.1
-        IL_0056:  nop
-        IL_0057:  br.s       IL_0062
-
-        IL_0059:  ldarg.0
-        IL_005a:  ldc.i4.1
-        IL_005b:  stfld      int32 valuetype Test/clo@7<!A>::ResumptionPoint
-        IL_0060:  ldc.i4.0
-        IL_0061:  nop
-        IL_0062:  stloc.s    V_5
-        IL_0064:  ldloc.s    V_5
-        IL_0066:  stloc.s    V_4
-        IL_0068:  nop
-        IL_0069:  br.s       IL_006c
-
-        IL_006b:  nop
-        IL_006c:  ldloc.s    V_4
-        IL_006e:  brfalse.s  IL_0092
-
-        IL_0070:  ldarg.0
-        IL_0071:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0> valuetype Test/clo@7<!A>::awaiter
-        IL_0076:  call       instance !0 valuetype [netstandard]System.Runtime.CompilerServices.TaskAwaiter`1<!A>::GetResult()
-        IL_007b:  stloc.s    V_6
-        IL_007d:  ldloc.s    V_6
-        IL_007f:  stloc.s    V_7
-        IL_0081:  ldarg.0
-        IL_0082:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!A>::Data
-        IL_0087:  ldloc.s    V_7
-        IL_0089:  stfld      !0 valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::Result
-        IL_008e:  ldc.i4.1
-        IL_008f:  nop
-        IL_0090:  br.s       IL_00ab
-
-        IL_0092:  ldarg.0
-        IL_0093:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!A>::Data
-        IL_0098:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
-        IL_009d:  ldarg.0
-        IL_009e:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0> valuetype Test/clo@7<!A>::awaiter
-        IL_00a3:  ldarg.0
-        IL_00a4:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::AwaitUnsafeOnCompleted<valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0>,valuetype Test/clo@7<!0>>(!!0&,
-                                                                                                                                                                                                                                                             !!1&)
-        IL_00a9:  ldc.i4.0
-        IL_00aa:  nop
-        IL_00ab:  brfalse.s  IL_00c1
-
-        IL_00ad:  ldarg.0
-        IL_00ae:  ldloca.s   V_8
-        IL_00b0:  initobj    valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!A>
-        IL_00b6:  ldloc.s    V_8
-        IL_00b8:  stfld      valuetype [runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0> valuetype Test/clo@7<!A>::awaiter
-        IL_00bd:  ldc.i4.1
-        IL_00be:  nop
-        IL_00bf:  br.s       IL_00c3
-
-        IL_00c1:  ldc.i4.0
-        IL_00c2:  nop
-        IL_00c3:  stloc.2
-        IL_00c4:  ldloc.2
-        IL_00c5:  brfalse.s  IL_00e4
-
-        IL_00c7:  ldarg.0
-        IL_00c8:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!A>::Data
-        IL_00cd:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
-        IL_00d2:  ldarg.0
-        IL_00d3:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!A>::Data
-        IL_00d8:  ldfld      !0 valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::Result
-        IL_00dd:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::SetResult(!0)
-        IL_00e2:  leave.s    IL_00f2
-
-        IL_00e4:  leave.s    IL_00f2
-
-      }  
-      catch [runtime]System.Object 
-      {
-        IL_00e6:  castclass  [runtime]System.Exception
-        IL_00eb:  stloc.s    V_9
-        IL_00ed:  ldloc.s    V_9
-        IL_00ef:  stloc.1
-        IL_00f0:  leave.s    IL_00f2
-
-      }  
-      IL_00f2:  ldloc.1
-      IL_00f3:  stloc.s    V_10
-      IL_00f5:  ldloc.s    V_10
-      IL_00f7:  brtrue.s   IL_00fa
-
-      IL_00f9:  ret
-
-      IL_00fa:  ldarg.0
-      IL_00fb:  ldflda     valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!0> valuetype Test/clo@7<!A>::Data
-      IL_0100:  ldflda     valuetype [runtime]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Control.TaskStateMachineData`1<!A>::MethodBuilder
-      IL_0105:  ldloc.s    V_10
-      IL_0107:  call       instance void valuetype [netstandard]System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<!A>::SetException(class [netstandard]System.Exception)
-      IL_010c:  ret
-    } 
+} 
             """
             ]))
 #endif
 
 
 #if NETCOREAPP
-[<TestFixture>]
+
 module ``Check stack traces`` = 
-    [<Test>]
+    [<Fact>]
     let ``check stack trace of async exception from task``() =
         let t() =
             task {
@@ -1320,20 +1407,20 @@ module ``Check stack traces`` =
            failwith "expected MoveNext() on stack trace"
 
         if stackTrace.Contains("End of stack trace from previous location") then
-           failwith "expected emit of CompilerGeneratedAtrtibute to suppress message in .NET Core stack walking "
+           failwith "expected emit of CompilerGeneratedAttribute to suppress message in .NET Core stack walking "
 #endif
 
 
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
-[<TestFixture>]
+
 module ``Check return attributes`` = 
     let incr (x:int) : [<Experimental("a")>] (int -> int) = (fun a -> a + x)
 
-    // Putting a return atribute of any kind on f function should be respected
+    // Putting a return attribute of any kind on f function should be respected
     // If the function is curried its inferred arity should be no more than 
     // the declared arguments (the F# rule that infers additional arguments 
     // should not kick in).
-    [<Test>]
+    [<Fact>]
     let ``check return attribute of curried function``() =
         match <@ incr 3 4 @> with
         | Quotations.Patterns.Application (Quotations.Patterns.Call(None, mi, [Quotations.DerivedPatterns.Int32 3]), Quotations.DerivedPatterns.Int32 4) ->

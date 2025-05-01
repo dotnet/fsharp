@@ -87,7 +87,7 @@ The intended debug points for constructs are determined by syntax as follows.  P
 
 * The bodies of functions, methods, lambdas and initialization code for top-level-bindings are all processed as control flow
 
-* Each CAPITAL-EXPR below is processed as control-flow (the bodies of loops, conditionals etc.)
+* Each Upper-Cased EXPR below is processed as control-flow (the bodies of loops, conditionals etc.)
 
 * Leaf expressions are the other composite expressions like applications that are not covered by the other constructs.
 
@@ -480,7 +480,7 @@ See [shadowed locals mini-spec](https://github.com/dotnet/fsharp/pull/12018).
 
 ### Discriminated union debug display text
 
-For discriminated union types and all implied subtypes we emit a `DebuggerDisplayAttrubte` and a private `__DebugDisplay()` method that uses `sprintf "%+0.8A" obj` to format the object.
+For discriminated union types and all implied subtypes we emit a `DebuggerDisplayAttribute` and a private `__DebugDisplay()` method that uses `sprintf "%+0.8A" obj` to format the object.
 
 ## Missing debug emit
 

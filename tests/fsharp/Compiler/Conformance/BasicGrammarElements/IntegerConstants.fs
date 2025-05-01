@@ -2,12 +2,13 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``Integer Constants`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Operations with negative one``() =
         // Verify the ability to specify negative numbers
         // (And not get confused wrt subtraction.)
@@ -19,7 +20,7 @@ module ``Integer Constants`` =
         Assert.areEqual  1 (x * x)
         Assert.areEqual  1 (x / x)
 
-    [<Test>]
+    [<Fact>]
     let ``Operations with negative integers``() =
         // Verify the ability to specify negative numbers
         // (And not get confused wrt subtraction.)
@@ -32,7 +33,7 @@ module ``Integer Constants`` =
         Assert.areEqual -2       fiveMinusSeven 
         Assert.areEqual (-1 * 7) negativeSeven  
 
-    [<Test>]
+    [<Fact>]
     let ``Functions with negative integers``() =
         // Verify the ability to specify negative numbers
         // (And not get confused wrt subtraction.)

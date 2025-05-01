@@ -1,7 +1,7 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
 #light
 
-// Regression test for FSHARP1.0:575 - Augmentations lead to unsoundnesses in the treatment of constraints.  Availalbe instances should be lexically scoped
+// Regression test for FSHARP1.0:575 - Augmentations lead to unsoundnesses in the treatment of constraints.  Available instances should be lexically scoped
 //<Expects id="FS0430" span="(16,21-16,22)" status="error">The member '\(\+\)' is used in an invalid way\. A use of '\(\+\)' has been inferred prior to its definition.+</Expects>
 
 type genmat = M of int

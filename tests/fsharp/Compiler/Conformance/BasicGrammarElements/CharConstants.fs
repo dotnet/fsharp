@@ -2,20 +2,22 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``Char Constants`` =
 
-    [<TestCase('\a', 7 )>] // alert
-    [<TestCase('\b', 8 )>] // backspace
-    [<TestCase('\t', 9 )>] // horizontal tab
-    [<TestCase('\n', 10)>] // new line
-    [<TestCase('\v', 11)>] // vertical tab
-    [<TestCase('\f', 12)>] // form feed
-    [<TestCase('\r', 13)>] // return
-    [<TestCase('\"', 34)>] // double quote
-    [<TestCase('\'', 39)>] // single quote
-    [<TestCase('\\', 92)>] // backslash
+    [<Theory>]
+    [<InlineData('\a', 7 )>] // alert
+    [<InlineData('\b', 8 )>] // backspace
+    [<InlineData('\t', 9 )>] // horizontal tab
+    [<InlineData('\n', 10)>] // new line
+    [<InlineData('\v', 11)>] // vertical tab
+    [<InlineData('\f', 12)>] // form feed
+    [<InlineData('\r', 13)>] // return
+    [<InlineData('\"', 34)>] // double quote
+    [<InlineData('\'', 39)>] // single quote
+    [<InlineData('\\', 92)>] // backslash
     let ``Escape characters`` character value =
         Assert.areEqual character (char value)

@@ -109,7 +109,7 @@ public struct Constraint_Both<T> where T : struct
 
 
 
-public struct Constraint_BothVialated<T> where T : struct
+public struct Constraint_BothViolated<T> where T : struct
 {
     public int getValue()
     {

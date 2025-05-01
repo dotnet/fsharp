@@ -1,7 +1,7 @@
 
-neg113.fs(5,50,5,61): typecheck error FS0001: This anonymous record does not have enough fields. Add the missing fields [b].
+neg113.fs(5,50,5,61): typecheck error FS0001: This anonymous record is missing field 'b'.
 
-neg113.fs(7,41,7,52): typecheck error FS0001: This is the wrong anonymous record. It should have the fields [b].
+neg113.fs(7,41,7,52): typecheck error FS0001: This anonymous record should have field 'b' but here has field 'a'.
 
 neg113.fs(10,27,10,55): typecheck error FS0059: The type '{| a: int |}' does not have any proper subtypes and need not be used as the target of a static coercion
 

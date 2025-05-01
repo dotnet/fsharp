@@ -12,7 +12,8 @@ open FSharp.Editor.Tests.Helpers
 open FSharp.Test
 
 type IndentationServiceTests() =
-    let checker = FSharpChecker.Create()
+    let checker =
+        FSharpChecker.Create(useTransparentCompiler = CompilerAssertHelpers.UseTransparentCompiler)
 
     let filePath = "C:\\test.fs"
 
@@ -117,7 +118,7 @@ while true do
 // should not be indented $Indent: 0$
 
     // Even if the line before only had comment like this
-// The follwing line should inherit that indentation too $Indent: 4$
+// The following line should inherit that indentation too $Indent: 4$
 "
 
     let testCases =

@@ -7,14 +7,20 @@ module internal FSharp.Compiler.SignatureConformance
 open System.Text
 
 open FSharp.Compiler
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.InfoReader
 
+type TypeMismatchSource =
+    | NullnessOnlyMismatch
+    | RegularMismatch
+
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
 exception ValueNotContained of
+    kind: TypeMismatchSource *
     DisplayEnv *
     InfoReader *
     ModuleOrNamespaceRef *
@@ -26,9 +32,27 @@ exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase *
 
 exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
-exception FieldNotContained of DisplayEnv * InfoReader * Tycon * RecdField * RecdField * (string * string -> string)
+exception FieldNotContained of
+    kind: TypeMismatchSource *
+    DisplayEnv *
+    InfoReader *
+    Tycon *
+    Tycon *
+    RecdField *
+    RecdField *
+    (string * string -> string)
 
 exception InterfaceNotRevealed of DisplayEnv * TType * range
+
+exception ArgumentsInSigAndImplMismatch of sigArg: Ident * implArg: Ident
+
+exception DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer of
+    denv: DisplayEnv *
+    implTycon: Tycon *
+    sigTycon: Tycon *
+    implTypeAbbrev: TType *
+    sigTypeAbbrev: TType *
+    range: range
 
 type Checker =
 

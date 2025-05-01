@@ -29,9 +29,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Enumerates the nested hierachies present that will participate in the build dependency update.
+        /// Enumerates the nested hierarchies present that will participate in the build dependency update.
         /// </summary>
-        /// <returns>A list of hierrachies.</returns>
+        /// <returns>A list of hierarchies.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Hierachies")]
         IVsHierarchy[] EnumNestedHierachiesForBuildDependency();
     }
@@ -58,7 +58,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         void AddBuildDependency(IVsBuildDependency dependency);
 
         /// <summary>
-        /// Removes the builddependency from teh container.
+        /// Removes the builddependency from the container.
         /// </summary>
         /// <param name="dependency">The dependency to add</param>
         void RemoveBuildDependency(IVsBuildDependency dependency);
@@ -86,7 +86,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the events that are internally defined for communication with other subsytems.
+    /// Defines the events that are internally defined for communication with other subsystems.
     /// </summary>
     [ComVisible(true)]
     public interface IProjectEvents
@@ -105,7 +105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// Defines the interface that will specify ehethrr the object is a project events listener.
+    /// Defines the interface that will specify whether the object is a project events listener.
     /// </summary>
     [ComVisible(true)]
     public interface IProjectEventsListener

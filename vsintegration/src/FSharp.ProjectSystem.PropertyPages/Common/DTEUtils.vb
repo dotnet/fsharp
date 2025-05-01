@@ -26,7 +26,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         Private Const PROJECTPROPERTY_BUILDACTION As String = "BuildAction"
 
         ''' <summary>
-        ''' This is a shared class - disallow instantation.
+        ''' This is a shared class - disallow instantiation.
         ''' </summary>
         ''' <remarks></remarks>
         Private Sub New()
@@ -196,7 +196,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         End Function
 
         ''' <summary>
-        ''' Tries to set the Build Action property of the given project item to the given build action (enumation).  
+        ''' Tries to set the Build Action property of the given project item to the given build action (enumeration).  
         '''   If this project system doesn't have that property, this call is a NOP.
         ''' </summary>
         ''' <param name="Item">The ProjectItem on which to set the property</param>
@@ -209,7 +209,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         End Sub
 
         ''' <summary>
-        ''' Tries to get the Build Action property of the given project item to the given build action (enumation).  
+        ''' Tries to get the Build Action property of the given project item to the given build action (enumeration).  
         '''   If this project system doesn't have that property, returns prjBuildActionNone.
         ''' </summary>
         ''' <param name="Item">The ProjectItem on which to set the property</param>
@@ -241,7 +241,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         End Sub
 
         ''' <summary>
-        ''' Tries to get the Build Action property of the given project item to the given build action (enumation).  
+        ''' Tries to get the Build Action property of the given project item to the given build action (enumeration).  
         '''   If this project system doesn't have that property, returns "".
         ''' </summary>
         ''' <param name="Item">The ProjectItem on which to set the property</param>

@@ -49,7 +49,7 @@ let sumOverSeq () =
     sum
 
 // sum over seq covers a regression case when Dictionary<int,int>
-// shouldn'be mistaken for an IList
+// shouldn't be mistaken for an IList
 let sumOverDictionary () =
     let inner xs =
         let d = Dictionary<int,int>()
@@ -168,5 +168,5 @@ let RUN() = !failures
 #else
 let aa =
     if !failures then stdout.WriteLine "Test Failed"; exit 1
-    else stdout.WriteLine "Test Passed"; System.IO.File.WriteAllText("test.ok","ok"); exit 0
+    else stdout.WriteLine "Test Passed"; printf "TEST PASSED OK"; exit 0
 #endif

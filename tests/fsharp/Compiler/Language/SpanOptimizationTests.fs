@@ -2,14 +2,14 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test
 
 #if NETCOREAPP
-[<TestFixture>]
+
 module SpanOptimizationTests =
 
-    [<Test>]
+    [<Fact>]
     let SpanForInDo() =
         let source =
             """
@@ -62,7 +62,7 @@ let test () =
   }"""
                                 ]))
 
-    [<Test>]
+    [<Fact>]
     let ReadOnlySpanForInDo() =
         let source =
             """
@@ -114,7 +114,7 @@ let test () =
   }"""
                             ]))
 
-    [<Test>]
+    [<Fact>]
     let ExplicitSpanTypeForInDo() =
 
         let source =
@@ -203,7 +203,7 @@ module Test =
 """
                         ]))
 
-    [<Test>]
+    [<Fact>]
     let SpanForInBoundsDo() =
         let source =
             """
@@ -212,9 +212,9 @@ module Test
 open System
 
 let test () =
-let span = Span<obj>.Empty
-for i in 0 .. span.Length-1 do
-    Console.WriteLine(span.[i])
+    let span = Span<obj>.Empty
+    for i in 0 .. span.Length-1 do
+        Console.WriteLine(span.[i])
         """
 
         CompilerAssert.CompileLibraryAndVerifyIL(
@@ -254,7 +254,7 @@ for i in 0 .. span.Length-1 do
   }"""
                             ]))
 
-    [<Test>]
+    [<Fact>]
     let ReadOnlySpanForInBoundsDo() =
         let source =
             """
@@ -263,9 +263,9 @@ module Test
 open System
 
 let test () =
-let span = ReadOnlySpan<obj>.Empty
-for i in 0 .. span.Length-1 do
-Console.WriteLine(span.[i])
+    let span = ReadOnlySpan<obj>.Empty
+    for i in 0 .. span.Length-1 do
+        Console.WriteLine(span.[i])
     """
 
         CompilerAssert.CompileLibraryAndVerifyIL(

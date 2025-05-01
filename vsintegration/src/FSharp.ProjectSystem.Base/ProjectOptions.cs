@@ -58,8 +58,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public bool EncodeOutputInUTF8;
 
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Qualifiy")]
-        public bool FullyQualifiyPaths;
+        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Qualify")]
+        public bool FullyQualifyPaths;
 
         public int FileAlignment;
 

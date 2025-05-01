@@ -7,9 +7,6 @@
 // The one implementation file is used because we keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However F# Interactive has
 // a richer feature set.
-
-#nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-
 #if COMPILER
 namespace FSharp.Compiler.Text
 #else
@@ -17,8 +14,14 @@ namespace FSharp.Compiler.Text
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
 
+#nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
+// 3261 and 3262 Nullness warnings - this waits for LKG update, since this file is included in fsharp.core and fsharp.compiler.service and goes via proto build.
+// Supporting all possible combinations of available library+compiler versions would complicate code in this source files too much at the moment.
+#nowarn "3261"
+#nowarn "3262"
+
 // Breakable block layout implementation.
-// This is a fresh implementation of pre-existing ideas.
+// This is a fresh implementation of preexisting ideas.
 
 open System
 open System.IO
@@ -29,6 +32,9 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Collections
+#if COMPILER
+open Internal.Utilities.Library
+#endif
 
 [<StructuralEquality; NoComparison>]
 type TextTag =
@@ -95,20 +101,20 @@ type Layout =
 
     member layout.JuxtapositionLeft =
         match layout with
-        | ObjLeaf (jl, _, _) -> jl
-        | Leaf (jl, _, _) -> jl
-        | Node (left, _, _) -> left.JuxtapositionLeft
-        | Attr (_, _, subLayout) -> subLayout.JuxtapositionLeft
+        | ObjLeaf(jl, _, _) -> jl
+        | Leaf(jl, _, _) -> jl
+        | Node(left, _, _) -> left.JuxtapositionLeft
+        | Attr(_, _, subLayout) -> subLayout.JuxtapositionLeft
 
     static member JuxtapositionMiddle(left: Layout, right: Layout) =
         left.JuxtapositionRight || right.JuxtapositionLeft
 
     member layout.JuxtapositionRight =
         match layout with
-        | ObjLeaf (_, _, jr) -> jr
-        | Leaf (_, _, jr) -> jr
-        | Node (_, right, _) -> right.JuxtapositionRight
-        | Attr (_, _, subLayout) -> subLayout.JuxtapositionRight
+        | ObjLeaf(_, _, jr) -> jr
+        | Leaf(_, _, jr) -> jr
+        | Node(_, right, _) -> right.JuxtapositionRight
+        | Attr(_, _, subLayout) -> subLayout.JuxtapositionRight
 
 [<NoEquality; NoComparison>]
 type IEnvironment =
@@ -252,6 +258,11 @@ module TaggedText =
     let rightBracketAngle = tagPunctuation ">]"
     let star = tagOperator "*"
     let keywordNew = tagKeyword "new"
+    let keywordInline = tagKeyword "inline"
+    let keywordModule = tagKeyword "module"
+    let keywordNamespace = tagKeyword "namespace"
+    let keywordReturn = tagKeyword "return"
+    let punctuationUnit = tagPunctuation "()"
 #endif
 
 [<AutoOpen>]
@@ -275,15 +286,15 @@ module Layout =
 
     let isEmptyL layout =
         match layout with
-        | Leaf (true, s, true) -> s.Text = ""
+        | Leaf(true, s, true) -> String.IsNullOrEmpty(s.Text)
         | _ -> false
 
 #if COMPILER
     let rec endsWithL (text: string) layout =
         match layout with
-        | Leaf (_, s, _) -> s.Text.EndsWith(text)
-        | Node (_, r, _) -> endsWithL text r
-        | Attr (_, _, l) -> endsWithL text l
+        | Leaf(_, s, _) -> s.Text.EndsWith(text, StringComparison.Ordinal)
+        | Node(_, r, _) -> endsWithL text r
+        | Attr(_, _, l) -> endsWithL text l
         | ObjLeaf _ -> false
 #endif
 
@@ -361,7 +372,7 @@ module Layout =
         match layouts with
         | [] -> emptyL
         | [ x ] -> x
-        | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
+        | x :: ys -> List.fold (@@) x ys
 
     let optionL selector value =
         match value with
@@ -370,7 +381,8 @@ module Layout =
 
     let listL selector value =
         leftL leftBracket
-        ^^ sepListL (sepL semicolon) (List.map selector value) ^^ rightL rightBracket
+        ^^ sepListL (sepL semicolon) (List.map selector value)
+        ^^ rightL rightBracket
 
     let squareBracketL layout =
         leftL leftBracket ^^ layout ^^ rightL rightBracket
@@ -386,7 +398,7 @@ module Layout =
             else
                 match project z with
                 | None -> [] // exhausted input
-                | Some (x, z) ->
+                | Some(x, z) ->
                     if n <= 0 then
                         [ wordL (tagPunctuation "...") ] // hit print_length limit
                     else
@@ -404,7 +416,7 @@ type FormatOptions =
         FloatingPointFormat: string
         AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
-        PrintIntercepts: (IEnvironment -> obj -> Layout option) list
+        PrintIntercepts: (IEnvironment -> objnull -> Layout option) list
         StringLimit: int
 #endif
         FormatProvider: IFormatProvider
@@ -491,7 +503,7 @@ module ReflectUtils =
         // of an F# value.
         let GetValueInfoOfObject (bindingFlags: BindingFlags) (obj: obj) =
             match obj with
-            | null -> NullValue
+            | Null -> NullValue
             | _ ->
                 let reprty = obj.GetType()
 
@@ -507,7 +519,7 @@ module ReflectUtils =
                         FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs[i]))
 
                     let tupleType =
-                        if reprty.Name.StartsWith "ValueTuple" then
+                        if reprty.Name.StartsWith("ValueTuple", StringComparison.Ordinal) then
                             TupleType.Value
                         else
                             TupleType.Reference
@@ -554,11 +566,11 @@ module ReflectUtils =
         // statically-known type information to aid in the
         // analysis of null values.
 
-        let GetValueInfo bindingFlags (x: 'a, ty: Type) (* x could be null *)  =
+        let GetValueInfo bindingFlags (x: 'a, ty: Type) (* x could be null *) =
             let obj = (box x)
 
             match obj with
-            | null ->
+            | Null ->
                 let isNullaryUnion =
                     match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
                     | [| :? CompilationRepresentationAttribute as attr |] ->
@@ -576,7 +588,7 @@ module ReflectUtils =
                     UnitValue
                 else
                     NullValue
-            | _ -> GetValueInfoOfObject bindingFlags obj
+            | NonNull obj -> GetValueInfoOfObject bindingFlags obj
 
 module Display =
     open ReflectUtils
@@ -619,7 +631,7 @@ module Display =
     let chunkN = 400
     let breaks0 () = Breaks(0, 0, Array.create chunkN 0)
 
-    let pushBreak saving (Breaks (next, outer, stack)) =
+    let pushBreak saving (Breaks(next, outer, stack)) =
         let stack =
             if next = stack.Length then
                 Array.init (next + chunkN) (fun i -> if i < next then stack[i] else 0) // expand if full
@@ -629,7 +641,7 @@ module Display =
         stack[next] <- saving
         Breaks(next + 1, outer, stack)
 
-    let popBreak (Breaks (next, outer, stack)) =
+    let popBreak (Breaks(next, outer, stack)) =
         if next = 0 then
             raise (Failure "popBreak: underflow")
 
@@ -640,7 +652,7 @@ module Display =
         let next = next - 1
         Breaks(next, outer, stack), topBroke
 
-    let forceBreak (Breaks (next, outer, stack)) =
+    let forceBreak (Breaks(next, outer, stack)) =
         if outer = next then
             // all broken
             None
@@ -671,13 +683,13 @@ module Display =
 
                 let breaks, layout, pos, offset =
                     match layout with
-                    | Attr (tag, attrs, l) ->
+                    | Attr(tag, attrs, l) ->
                         let breaks, layout, pos, offset = fit breaks (pos, l)
                         let layout = Attr(tag, attrs, layout)
                         breaks, layout, pos, offset
 
-                    | Leaf (jl, text, jr)
-                    | ObjLeaf (jl, ObjToTaggedText text, jr) ->
+                    | Leaf(jl, text, jr)
+                    | ObjLeaf(jl, ObjToTaggedText text, jr) ->
                         // save the formatted text from the squash
                         let layout = Leaf(jl, text, jr)
                         let textWidth = length text
@@ -688,13 +700,13 @@ module Display =
                             else
                                 match forceBreak breaks with
                                 | None -> breaks, layout, pos + textWidth, textWidth // tough, no more breaks
-                                | Some (breaks, saving) ->
+                                | Some(breaks, saving) ->
                                     let pos = pos - saving
                                     fitLeaf breaks pos
 
                         fitLeaf breaks pos
 
-                    | Node (l, r, joint) ->
+                    | Node(l, r, joint) ->
                         let jm = Layout.JuxtapositionMiddle(l, r)
                         let mid = if jm then 0 else 1
 
@@ -757,19 +769,19 @@ module Display =
         // addL: pos is tab level
         let rec addL z pos layout =
             match layout with
-            | ObjLeaf (_, obj, _) ->
+            | ObjLeaf(_, obj, _) ->
                 let text = leafFormatter obj
                 addText z text
 
-            | Leaf (_, obj, _) -> addText z obj.Text
+            | Leaf(_, obj, _) -> addText z obj.Text
 
-            | Node (l, r, Broken indent) when not (opts.PrintWidth = 0) ->
+            | Node(l, r, Broken indent) when opts.PrintWidth <> 0 ->
                 let z = addL z pos l
                 let z = newLine z (pos + indent)
                 let z = addL z (pos + indent) r
                 z
 
-            | Node (l, r, _) ->
+            | Node(l, r, _) ->
                 let jm = Layout.JuxtapositionMiddle(l, r)
                 let z = addL z pos l
                 let z = if jm then z else addText z " "
@@ -777,7 +789,7 @@ module Display =
                 let z = addL z pos r
                 z
 
-            | Attr (_, _, l) -> addL z pos l
+            | Attr(_, _, l) -> addL z pos l
 
         let rstrs, _ = addL z0 0 layout
         extract rstrs
@@ -803,23 +815,23 @@ module Display =
         // addL: pos is tab level
         let rec addL z pos layout =
             match layout with
-            | ObjLeaf (_, obj, _) ->
+            | ObjLeaf(_, obj, _) ->
                 let text = leafFormatter obj
                 addText z text
-            | Leaf (_, obj, _) -> addText z obj
-            | Node (l, r, Broken indent) ->
+            | Leaf(_, obj, _) -> addText z obj
+            | Node(l, r, Broken indent) ->
                 let z = addL z pos l
                 let z = newLine z (pos + indent)
                 let z = addL z (pos + indent) r
                 z
-            | Node (l, r, _) ->
+            | Node(l, r, _) ->
                 let jm = Layout.JuxtapositionMiddle(l, r)
                 let z = addL z pos l
                 let z = if jm then z else addText z space
                 let pos = index z
                 let z = addL z pos r
                 z
-            | Attr (tag, attrs, l) ->
+            | Attr(tag, attrs, l) ->
                 let _ = outAttribute tag attrs true
                 let z = addL z pos l
                 let _ = outAttribute tag attrs false
@@ -836,11 +848,11 @@ module Display =
 
     let getListValueInfo bindingFlags (x: obj, ty: Type) =
         match x with
-        | null -> None
-        | _ ->
+        | Null -> None
+        | NonNull x ->
             match Value.GetValueInfo bindingFlags (x, ty) with
-            | UnionCaseValue ("Cons", recd) -> Some(unpackCons recd)
-            | UnionCaseValue ("Empty", [||]) -> None
+            | UnionCaseValue("Cons", recd) -> Some(unpackCons recd)
+            | UnionCaseValue("Empty", [||]) -> None
             | _ -> failwith "List value had unexpected ValueInfo"
 
     let structL = wordL (tagKeyword "struct")
@@ -865,7 +877,7 @@ module Display =
             ^^ (match v with
                 | None -> wordL questionMark
                 | Some xL -> xL)
-               ^^ (rightL semicolon)
+            ^^ (rightL semicolon)
 
         let braceL xs =
             (leftL leftBrace) ^^ xs ^^ (rightL rightBrace)
@@ -874,11 +886,13 @@ module Display =
 
     let makeListL itemLs =
         (leftL leftBracket)
-        ^^ sepListL (rightL semicolon) itemLs ^^ (rightL rightBracket)
+        ^^ sepListL (rightL semicolon) itemLs
+        ^^ (rightL rightBracket)
 
     let makeArrayL xs =
         (leftL (tagPunctuation "[|"))
-        ^^ sepListL (rightL semicolon) xs ^^ (rightL (tagPunctuation "|]"))
+        ^^ sepListL (rightL semicolon) xs
+        ^^ (rightL (tagPunctuation "|]"))
 
     let makeArray2L xs =
         leftL leftBracket ^^ aboveListL xs ^^ rightL rightBracket
@@ -929,7 +943,7 @@ module Display =
     //
     // Note: The layout code forces breaks based on leaf size and possible break points.
     //       It does not force leaf size based on width.
-    //       So long leaf-string width can not depend on their printing context...
+    //       So long leaf-string width cannot depend on their printing context...
     //
     // The suffix like "+[dd chars]" is 11 chars.
     //                  12345678901
@@ -962,6 +976,13 @@ module Display =
         && (ty.GetGenericTypeDefinition() = typedefof<Map<_, _>>
             || ty.GetGenericTypeDefinition() = typedefof<Set<_>>)
 
+    let messageRegexLookup =
+        @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
+        |> System.Text.RegularExpressions.Regex
+
+    let illFormedBracketPatternLookup =
+        @"(?<!\\){|(?<!\\)}" |> System.Text.RegularExpressions.Regex
+
     // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
     // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
     // Calls to layout proper sub-objects should pass showMode = ShowAll.
@@ -984,7 +1005,7 @@ module Display =
         // Recursive descent
         let rec nestedObjL depthLim prec (x: obj, ty: Type) = objL ShowAll depthLim prec (x, ty)
 
-        and objL showMode depthLim prec (x: obj, ty: Type) =
+        and objL showMode depthLim prec (x: objnull, ty: Type) =
             let info = Value.GetValueInfo bindingFlags (x, ty)
 
             try
@@ -992,8 +1013,8 @@ module Display =
                     wordL (tagPunctuation "...")
                 else
                     match x with
-                    | null -> reprL showMode (depthLim - 1) prec info x
-                    | _ ->
+                    | Null -> reprL showMode (depthLim - 1) prec info x
+                    | NonNull x ->
                         if (path.ContainsKey(x)) then
                             wordL (tagPunctuation "...")
                         else
@@ -1008,9 +1029,10 @@ module Display =
                                 else
                                     // Try the StructuredFormatDisplayAttribute extensibility attribute
                                     match ty.GetCustomAttributes(typeof<StructuredFormatDisplayAttribute>, true) with
-                                    | null
+                                    | Null
                                     | [||] -> None
-                                    | res -> structuredFormatObjectL showMode ty depthLim (res[0] :?> StructuredFormatDisplayAttribute) x
+                                    | NonNull res ->
+                                        structuredFormatObjectL showMode ty depthLim (res[0] :?> StructuredFormatDisplayAttribute) x
 
 #if COMPILER
                             // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
@@ -1044,11 +1066,9 @@ module Display =
         and structuredFormatObjectL showMode ty depthLim (attr: StructuredFormatDisplayAttribute) (obj: obj) =
             let txt = attr.Value
 
-            if isNull txt || txt.Length <= 1 then
+            if isNull (box txt) || txt.Length <= 1 then
                 None
             else
-                let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
-                let illFormedBracketPattern = @"(?<!\\){|(?<!\\)}"
 
                 let rec buildObjMessageL (txt: string) (layouts: Layout list) =
 
@@ -1059,12 +1079,11 @@ module Display =
                     //  1) Everything up to the first opening bracket not preceded by a "\", lazily
                     //  2) Everything between that opening bracket and a closing bracket not preceded by a "\", lazily
                     //  3) Everything after that closing bracket
-                    let m = System.Text.RegularExpressions.Regex.Match(txt, messageRegexPattern)
+                    let m = messageRegexLookup.Match txt
 
                     if not m.Success then
                         // there isn't a match on the regex looking for a property, so now let's make sure we don't have an ill-formed format string (i.e. mismatched/stray brackets)
-                        let illFormedMatch =
-                            System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
+                        let illFormedMatch = illFormedBracketPatternLookup.IsMatch txt
 
                         if illFormedMatch then
                             None // there are mismatched brackets, bail out
@@ -1101,8 +1120,8 @@ module Display =
 
                                 countNodes 0 // 0 means we do not count the preText and postText
 
-                                let postTextMatch =
-                                    System.Text.RegularExpressions.Regex.Match(postText, messageRegexPattern)
+                                let postTextMatch = messageRegexLookup.Match postText
+
                                 // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists
                                 let currentPostText =
                                     match postTextMatch.Success with
@@ -1114,7 +1133,7 @@ module Display =
                                     :: layouts
 
                                 match postText with
-                                | "" ->
+                                | _ when String.IsNullOrEmpty(postText) ->
                                     //We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                     Some(spaceListL (List.rev newLayouts))
 
@@ -1122,10 +1141,7 @@ module Display =
 
                                     // look for stray brackets in the text before the next opening bracket
                                     let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(
-                                            postTextMatch.Groups["pre"].Value,
-                                            illFormedBracketPattern
-                                        )
+                                        illFormedBracketPatternLookup.IsMatch postTextMatch.Groups["pre"].Value
 
                                     if strayClosingMatch then
                                         None
@@ -1134,10 +1150,9 @@ module Display =
                                         let openingBracketIndex = postTextMatch.Groups["prop"].Index - 1
                                         buildObjMessageL remainingPropertyText[openingBracketIndex..] newLayouts
 
-                                | remaingPropertyText ->
+                                | remainingPropertyText ->
                                     // make sure we don't have any stray brackets
-                                    let strayClosingMatch =
-                                        System.Text.RegularExpressions.Regex.IsMatch(remaingPropertyText, illFormedBracketPattern)
+                                    let strayClosingMatch = illFormedBracketPatternLookup.IsMatch remainingPropertyText
 
                                     if strayClosingMatch then
                                         None
@@ -1148,7 +1163,8 @@ module Display =
                                             spaceListL (
                                                 List.rev (
                                                     (sepL (tagText preText)
-                                                     ^^ alternativeObjL ^^ sepL (tagText (replaceEscapedBrackets (remaingPropertyText))))
+                                                     ^^ alternativeObjL
+                                                     ^^ sepL (tagText (replaceEscapedBrackets (remainingPropertyText))))
                                                     :: layouts
                                                 )
                                             )
@@ -1166,7 +1182,7 @@ module Display =
             | txs ->
                 leftL leftParen
                 ^^ commaListL (List.map (snd >> nestedObjL depthLim Precedence.BracketIfTuple) txs)
-                   ^^ rightL rightParen
+                ^^ rightL rightParen
 
         and bracketIfL flag basicL =
             if flag then
@@ -1301,7 +1317,8 @@ module Display =
                         rowsL
                     else
                         wordL (tagText ("bound1=" + string_of_int b1))
-                        :: wordL (tagText ("bound2=" + string_of_int b2)) :: rowsL
+                        :: wordL (tagText ("bound2=" + string_of_int b2))
+                        :: rowsL
                 )
             | n -> makeArrayL [ wordL (tagText ("rank=" + string_of_int n)) ]
 
@@ -1317,9 +1334,6 @@ module Display =
 
                 if
                     word = "map"
-                    && (match v with
-                        | null -> false
-                        | _ -> true)
                     && tyv.IsGenericType
                     && tyv.GetGenericTypeDefinition() = typedefof<KeyValuePair<int, int>>
                 then
@@ -1453,20 +1467,20 @@ module Display =
                      |> Array.toList
                      |> makePropertiesL)
 
-        and reprL showMode depthLim prec repr x (* x could be null *)  =
+        and reprL showMode depthLim prec repr x (* x could be null *) =
             match repr with
-            | TupleValue (tupleType, vals) -> tupleValueL depthLim prec vals tupleType
+            | TupleValue(tupleType, vals) -> tupleValueL depthLim prec vals tupleType
 
             | RecordValue items -> recordValueL depthLim (Array.toList items)
 
-            | UnionCaseValue (constr, recd) when // x is List<T>. Note: "null" is never a valid list value.
-                x <> null && isListType (x.GetType())
+            | UnionCaseValue(constr, recd) when // x is List<T>. Note: "null" is never a valid list value.
+                (not (isNull x)) && isListType (x.GetType())
                 ->
                 listValueL depthLim constr recd
 
-            | UnionCaseValue (unionCaseName, recd) -> unionCaseValueL depthLim prec unionCaseName (Array.toList recd)
+            | UnionCaseValue(unionCaseName, recd) -> unionCaseValueL depthLim prec unionCaseName (Array.toList recd)
 
-            | ExceptionValue (exceptionType, recd) -> fsharpExceptionL depthLim prec exceptionType (Array.toList recd)
+            | ExceptionValue(exceptionType, recd) -> fsharpExceptionL depthLim prec exceptionType (Array.toList recd)
 
             | FunctionClosureValue closureType -> functionClosureL showMode closureType
 
@@ -1514,7 +1528,7 @@ module Display =
 
     let leafFormatter (opts: FormatOptions) (obj: obj) =
         match obj with
-        | null -> tagKeyword "null"
+        | Null -> tagKeyword "null"
         | :? double as d ->
             let s = d.ToString(opts.FloatingPointFormat, opts.FormatProvider)
 
@@ -1578,7 +1592,7 @@ module Display =
 
                     match text with
                     | null -> ""
-                    | _ -> text
+                    | text -> text
                 with e ->
                     // If a .ToString() call throws an exception, catch it and use the message as the result.
                     // This may be informative, e.g. division by zero etc...

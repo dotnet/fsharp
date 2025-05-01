@@ -58,7 +58,7 @@ val IsIdentifierName: name: string -> bool
 /// TBD: needs unit testing
 val IsActivePatternName: name: string -> bool
 
-val internal DoesIdentifierNeedBackticks: string -> bool
+val DoesIdentifierNeedBackticks: string -> bool
 
 /// Adds double backticks if necessary to make a valid identifier, e.g.
 ///     op_Addition  -->  op_Addition
@@ -114,7 +114,7 @@ val internal ConvertLogicalNameToDisplayName: name: string -> string
 /// In any cases it is used it probably indicates that text is being
 /// generated which:
 ///    1. does not contain double-backticks for non-identifiers
-///    2. does not put parentheses arounf operators or active pattern names
+///    2. does not put parentheses around operators or active pattern names
 ///
 /// If the text is immediately in quotes, this is generally ok, e.g.
 ///
@@ -228,6 +228,7 @@ type internal ActivePatternInfo =
 
     member ActiveTags: string list
     member ActiveTagsWithRanges: (string * range) list
+    member LogicalName: string
     member IsTotal: bool
     member Range: range
 
@@ -267,9 +268,17 @@ val internal FSharpOptimizationDataResourceName: string
 
 val internal FSharpSignatureDataResourceName: string
 
+val internal FSharpOptimizationDataResourceNameB: string
+
+val internal FSharpSignatureDataResourceNameB: string
+
 val internal FSharpOptimizationCompressedDataResourceName: string
 
 val internal FSharpSignatureCompressedDataResourceName: string
+
+val internal FSharpOptimizationCompressedDataResourceNameB: string
+
+val internal FSharpSignatureCompressedDataResourceNameB: string
 
 val internal FSharpOptimizationDataResourceName2: string
 

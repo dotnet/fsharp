@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #Delegates 
 #light
 
-// FSB 151, Cannot construt delegate values that accept byref arguments
+// FSB 151, Cannot construct delegate values that accept byref arguments
 
 type Foo = delegate of byref<int> * byref<int> -> string
 

@@ -562,9 +562,9 @@
         <target state="translated">不正確的格式規範: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfBadIntegerForDynamicFomatter">
+      <trans-unit id="printfBadIntegerForDynamicFormatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">提供給動態格式器的整數錯誤</target>
+        <target state="new">Bad integer supplied to dynamic formatter</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -592,9 +592,9 @@
         <target state="translated">不是函式類型</target>
         <note />
       </trans-unit>
-      <trans-unit id="printfPrecisonSpecifierIllegal">
+      <trans-unit id="printfPrecisionSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="translated">不正確的格式修飾詞 (精確度)</target>
+        <target state="new">Bad format specifier (precision)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">

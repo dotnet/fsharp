@@ -16,14 +16,15 @@ SigFile
                 ([], SynIdent (a, None), SynValTyparDecls (None, true),
                  LongIdent (SynLongIdent ([unit], [], [None])),
                  SynValInfo ([], SynArgInfo ([], false, None)), false, false,
-                 PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                 None, (5,0--5,11), { LeadingKeyword = Val (5,0--5,3)
-                                      InlineKeyword = None
-                                      WithKeyword = None
-                                      EqualsRange = None }), (5,0--5,11))],
+                 PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
+                 Single None, None, (5,0--5,11),
+                 { LeadingKeyword = Val (5,0--5,3)
+                   InlineKeyword = None
+                   WithKeyword = None
+                   EqualsRange = None }), (5,0--5,11))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,11), { LeadingKeyword = Module (1,0--1,6) })],
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,0)-(5,3) parse error Unexpected keyword 'val' in signature file. Expected ':', '=' or other token.
+(3,9)-(5,0) parse error Incomplete structured construct at or before this point in signature file. Expected ':', '=' or other token.

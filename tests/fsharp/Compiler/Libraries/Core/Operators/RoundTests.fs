@@ -2,19 +2,20 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test
 
-[<TestFixture>]
+
 module ``Round Tests`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Round of integers``() =
         for i in [1 .. 10000] do
             Assert.areEqual (i |> float   |> round) (float   i)
             Assert.areEqual (i |> float32 |> round) (float32 i)
             Assert.areEqual (i |> decimal |> round) (decimal i)
 
-    [<Test>]
+    [<Fact>]
     let ``Round of floats``() =
         // Round down
         Assert.areEqual (round 1.1) 1.0

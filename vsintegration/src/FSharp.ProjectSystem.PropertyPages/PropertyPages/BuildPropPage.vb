@@ -60,9 +60,9 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Friend WithEvents chkOptimizeCode As System.Windows.Forms.CheckBox
         Friend WithEvents chkTailcalls As System.Windows.Forms.CheckBox
         Friend WithEvents lblWarningLevel As System.Windows.Forms.Label
-        Friend WithEvents lblSupressWarnings As System.Windows.Forms.Label
+        Friend WithEvents lblSuppressWarnings As System.Windows.Forms.Label
         Friend WithEvents cboWarningLevel As System.Windows.Forms.ComboBox
-        Friend WithEvents txtSupressWarnings As System.Windows.Forms.TextBox
+        Friend WithEvents txtSuppressWarnings As System.Windows.Forms.TextBox
         Friend WithEvents rbWarningNone As System.Windows.Forms.RadioButton
         Friend WithEvents rbWarningSpecific As System.Windows.Forms.RadioButton
         Friend WithEvents rbWarningAll As System.Windows.Forms.RadioButton
@@ -112,8 +112,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Me.chkTailcalls = New System.Windows.Forms.CheckBox()
             Me.lblWarningLevel = New System.Windows.Forms.Label()
             Me.cboWarningLevel = New System.Windows.Forms.ComboBox()
-            Me.lblSupressWarnings = New System.Windows.Forms.Label()
-            Me.txtSupressWarnings = New System.Windows.Forms.TextBox()
+            Me.lblSuppressWarnings = New System.Windows.Forms.Label()
+            Me.txtSuppressWarnings = New System.Windows.Forms.TextBox()
             Me.rbWarningNone = New System.Windows.Forms.RadioButton()
             Me.rbWarningSpecific = New System.Windows.Forms.RadioButton()
             Me.rbWarningAll = New System.Windows.Forms.RadioButton()
@@ -205,15 +205,15 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Me.cboWarningLevel.Items.AddRange(New Object() {resources.GetString("cboWarningLevel.Items"), resources.GetString("cboWarningLevel.Items1"), resources.GetString("cboWarningLevel.Items2"), resources.GetString("cboWarningLevel.Items3"), resources.GetString("cboWarningLevel.Items4"), resources.GetString("cboWarningLevel.Items5")})
             Me.cboWarningLevel.Name = "cboWarningLevel"
             '
-            'lblSupressWarnings
+            'lblSuppressWarnings
             '
-            resources.ApplyResources(Me.lblSupressWarnings, "lblSupressWarnings")
-            Me.lblSupressWarnings.Name = "lblSupressWarnings"
+            resources.ApplyResources(Me.lblSuppressWarnings, "lblSuppressWarnings")
+            Me.lblSuppressWarnings.Name = "lblSuppressWarnings"
             '
-            'txtSupressWarnings
+            'txtSuppressWarnings
             '
-            resources.ApplyResources(Me.txtSupressWarnings, "txtSupressWarnings")
-            Me.txtSupressWarnings.Name = "txtSupressWarnings"
+            resources.ApplyResources(Me.txtSuppressWarnings, "txtSuppressWarnings")
+            Me.txtSuppressWarnings.Name = "txtSuppressWarnings"
             '
             'rbWarningNone
             '
@@ -279,8 +279,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Me.overarchingTableLayoutPanel.Controls.Add(Me.rbWarningSpecific, 0, 15)
             Me.overarchingTableLayoutPanel.Controls.Add(Me.txtSpecificWarnings, 1, 15)
             Me.overarchingTableLayoutPanel.Controls.Add(Me.rbWarningNone, 0, 14)
-            Me.overarchingTableLayoutPanel.Controls.Add(Me.txtSupressWarnings, 1, 12)
-            Me.overarchingTableLayoutPanel.Controls.Add(Me.lblSupressWarnings, 0, 12)
+            Me.overarchingTableLayoutPanel.Controls.Add(Me.txtSuppressWarnings, 1, 12)
+            Me.overarchingTableLayoutPanel.Controls.Add(Me.lblSuppressWarnings, 0, 12)
             Me.overarchingTableLayoutPanel.Controls.Add(Me.cboWarningLevel, 1, 11)
             Me.overarchingTableLayoutPanel.Controls.Add(Me.lblWarningLevel, 0, 11)
             Me.overarchingTableLayoutPanel.Controls.Add(Me.cboPlatformTarget, 1, 4)
@@ -425,7 +425,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         '//   of the controls related to conditional compilation symbols (the data in the
         '//   controls is not sufficient because they could be indeterminate, and we are acting
         '//   as if we have three separate properties, so we need the original property values).
-        '// Array same length and indexing as the objects passed in to SetObjects.
+        '// Array same length and indexing as the objects passed into SetObjects.
         Protected m_stCondCompSymbols() As String
 
         Protected Const Const_DebugConfiguration As String = "Debug" 'Name of the debug configuration
@@ -460,7 +460,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                      New SingleConfigPropertyControlData(SingleConfigPropertyControlData.Configs.Release,
                         VsProjPropId.VBPROJPROPID_AllowUnsafeBlocks, "Tailcalls", Me.chkTailcalls),
                      New PropertyControlData(VsProjPropId.VBPROJPROPID_WarningLevel, "WarningLevel", Me.cboWarningLevel, AddressOf WarningLevelSet, AddressOf WarningLevelGet, ControlDataFlags.None, New Control() {lblWarningLevel}),
-                     New PropertyControlData(VsProjPropId2.VBPROJPROPID_NoWarn, "NoWarn", Me.txtSupressWarnings, New Control() {Me.lblSupressWarnings}),
+                     New PropertyControlData(VsProjPropId2.VBPROJPROPID_NoWarn, "NoWarn", Me.txtSuppressWarnings, New Control() {Me.lblSuppressWarnings}),
                      New PropertyControlData(VsProjPropId.VBPROJPROPID_TreatWarningsAsErrors, "TreatWarningsAsErrors", Me.rbWarningAll, AddressOf TreatWarningsInit, AddressOf TreatWarningsGet),
                      New PropertyControlData(VsProjPropId80.VBPROJPROPID_TreatSpecificWarningsAsErrors, "TreatSpecificWarningsAsErrors", Me.txtSpecificWarnings, AddressOf TreatSpecificWarningsInit, AddressOf TreatSpecificWarningsGet),
                      New SingleConfigPropertyControlData(SingleConfigPropertyControlData.Configs.Release,
@@ -497,7 +497,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
             Dim PlatformEntries As New List(Of String)
 
-            ' Let's try to sniff the supported platforms from our hiearchy (if any)
+            ' Let's try to sniff the supported platforms from our hierarchy (if any)
             If Me.ProjectHierarchy IsNot Nothing Then
                 Dim oCfgProv As Object = Nothing
                 Dim hr As Integer
@@ -734,7 +734,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                         End If
                     End If
                 Else
-                    '// Indeterminate. Leave all the radio buttons unchecled
+                    '// Indeterminate. Leave all the radio buttons unchecked
                     bIndeterminateState = True
                 End If
 
@@ -1057,8 +1057,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     Dim stAssemblyName As String
                     Dim obj As Object = Nothing
 
-                    '// Get OutputPath for all configs. We're going to calcuate the documentation file
-                    '// for each config (and the value is dependant on the OutputPath
+                    '// Get OutputPath for all configs. We're going to calculate the documentation file
+                    '// for each config (and the value is dependent on the OutputPath
 
                     Dim RawDocFiles() As Object = RawPropertiesObjects(GetPropertyControlData(VsProjPropId.VBPROJPROPID_DocumentationFile))
                     Dim OutputPathData() As Object
@@ -1156,7 +1156,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
 
         ''' <summary>
-        ''' Fired when the conditional compilations contants textbox has changed.  We are manually handling
+        ''' Fired when the conditional compilations contents textbox has changed.  We are manually handling
         '''   events associated with this control, so we need to recalculate related values
         ''' </summary>
         ''' <param name="sender"></param>
@@ -1338,7 +1338,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         '    should only affect the Debug configuration.
         '    For the TRACE constant checkbox, we want the normal behavior (show indeterminate if they're different, but they
         '    won't be for the default templates in simplified configs mode).
-        '    The conditional compilation textbox likewise should show indetermine if the debug and release values differ, but
+        '    The conditional compilation textbox likewise should show indeterminate if the debug and release values differ, but
         '    for the default templates they won't.
         '    This behavior is not easy to get, because the DEBUG/TRACE checkboxes are not actual properties in C# like they
         '    are in VB, but are rather parsed from the conditional compilation value.  The conditional compilation textbox
@@ -1355,7 +1355,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
 
         ''' <summary>
-        ''' Fired when the conditional compilations contants textbox has changed.  We are manually handling
+        ''' Fired when the conditional compilations contents textbox has changed.  We are manually handling
         '''   events associated with this control, so we need to recalculate related values
         ''' </summary>
         ''' <param name="sender"></param>
@@ -1552,7 +1552,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
                 'Figure out whether the values each configuration are the same or different.  For each
                 '  of these properties, get either the value which is the same across all of the values,
-                '  or get a value of Inderminate.
+                '  or get a value of Indeterminate.
                 Dim DebugDefined As Object = GetValueOrIndeterminateFromArray(DebugDefinedValues)
                 Dim TraceDefined As Object = GetValueOrIndeterminateFromArray(TraceDefinedValues)
                 Dim OtherConstants As Object = GetValueOrIndeterminateFromArray(OtherConstantsValues)

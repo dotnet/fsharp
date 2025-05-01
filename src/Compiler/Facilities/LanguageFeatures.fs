@@ -20,6 +20,7 @@ type LanguageFeature =
     | WildCardInForLoop
     | RelaxWhitespace
     | RelaxWhitespace2
+    | StrictIndentation
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -37,11 +38,13 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | NullnessChecking
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
     | RefCellNotationInformationals
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
@@ -54,6 +57,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
@@ -66,6 +70,36 @@ type LanguageFeature =
     | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
     | NestedCopyAndUpdate
+    | ExtendedStringInterpolation
+    | WarningWhenMultipleRecdTypeChoice
+    | ImprovedImpliedArgumentNames
+    | DiagnosticForObjInference
+    | ConstraintIntersectionOnFlexibleTypes
+    | StaticLetInRecordsDusEmptyTypes
+    | WarningWhenTailRecAttributeButNonTailRecUsage
+    | UnmanagedConstraintCsharpInterop
+    | WhileBang
+    | ReuseSameFieldsInStructUnions
+    | ExtendedFixedBindings
+    | PreferStringGetPinnableReference
+    | PreferExtensionMethodOverPlainProperty
+    | WarningIndexedPropertiesGetSetSameType
+    | WarningWhenTailCallAttrOnNonRec
+    | BooleanReturningAndReturnTypeDirectedPartialActivePattern
+    | EnforceAttributeTargets
+    | LowerInterpolatedStringToConcat
+    | LowerIntegralRangesToFastLoops
+    | AllowAccessModifiersToAutoPropertiesGettersAndSetters
+    | LowerSimpleMappingsInComprehensionsToFastLoops
+    | ParsedHashDirectiveArgumentNonQuotes
+    | EmptyBodiedComputationExpressions
+    | AllowObjectExpressionWithoutOverrides
+    | DontWarnOnUppercaseIdentifiersInBindingPatterns
+    | UseTypeSubsumptionCache
+    | DeprecatePlacesWhereSeqCanBeOmitted
+    | SupportValueOptionsAsOptionalParameters
+    | WarnWhenUnitPassedToObjArg
+    | UseBangBindingValueDiscard
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -76,10 +110,12 @@ type LanguageVersion(versionText) =
     static let languageVersion50 = 5.0m
     static let languageVersion60 = 6.0m
     static let languageVersion70 = 7.0m
+    static let languageVersion80 = 8.0m
+    static let languageVersion90 = 9.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion70 // Language version when default specified
+    static let defaultVersion = languageVersion90 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion70 // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion90 // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
@@ -91,6 +127,8 @@ type LanguageVersion(versionText) =
                 languageVersion50
                 languageVersion60
                 languageVersion70
+                languageVersion80
+                languageVersion90
             |]
 
     static let features =
@@ -141,21 +179,58 @@ type LanguageVersion(versionText) =
                 LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
                 LanguageFeature.SelfTypeConstraints, languageVersion70
 
-                // F# preview
-                LanguageFeature.FromEndSlicing, previewVersion
-                LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
-                LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
-                LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
-                LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, previewVersion
-                LanguageFeature.EscapeDotnetFormattableStrings, previewVersion
-                LanguageFeature.ArithmeticInLiterals, previewVersion
-                LanguageFeature.ErrorReportingOnStaticClasses, previewVersion
-                LanguageFeature.TryWithInSeqExpression, previewVersion
-                LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, previewVersion
-                LanguageFeature.StaticMembersInInterfaces, previewVersion
-                LanguageFeature.NonInlineLiteralsAsPrintfFormat, previewVersion
-                LanguageFeature.NestedCopyAndUpdate, previewVersion
+                // F# 8.0
+                LanguageFeature.AccessorFunctionShorthand, languageVersion80
+                LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, languageVersion80
+                LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
+                LanguageFeature.ErrorForNonVirtualMembersOverrides, languageVersion80
+                LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, languageVersion80
+                LanguageFeature.EscapeDotnetFormattableStrings, languageVersion80
+                LanguageFeature.ArithmeticInLiterals, languageVersion80
+                LanguageFeature.ErrorReportingOnStaticClasses, languageVersion80
+                LanguageFeature.TryWithInSeqExpression, languageVersion80
+                LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
+                LanguageFeature.StaticMembersInInterfaces, languageVersion80
+                LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
+                LanguageFeature.NestedCopyAndUpdate, languageVersion80
+                LanguageFeature.ExtendedStringInterpolation, languageVersion80
+                LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
+                LanguageFeature.ImprovedImpliedArgumentNames, languageVersion80
+                LanguageFeature.DiagnosticForObjInference, languageVersion80
+                LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
+                LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
+                LanguageFeature.StrictIndentation, languageVersion80
+                LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
+                LanguageFeature.WhileBang, languageVersion80
+                LanguageFeature.ExtendedFixedBindings, languageVersion80
+                LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
+                // F# 9.0
+                LanguageFeature.NullnessChecking, languageVersion90
+                LanguageFeature.ReuseSameFieldsInStructUnions, languageVersion90
+                LanguageFeature.PreferExtensionMethodOverPlainProperty, languageVersion90
+                LanguageFeature.WarningIndexedPropertiesGetSetSameType, languageVersion90
+                LanguageFeature.WarningWhenTailCallAttrOnNonRec, languageVersion90
+                LanguageFeature.UnionIsPropertiesVisible, languageVersion90
+                LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern, languageVersion90
+                LanguageFeature.LowerInterpolatedStringToConcat, languageVersion90
+                LanguageFeature.LowerIntegralRangesToFastLoops, languageVersion90
+                LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
+                LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
+                LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
+
+                // F# preview
+                LanguageFeature.EnforceAttributeTargets, previewVersion // Not enabled due to a number of external library dependencies on unenforced attributes
+                LanguageFeature.UseTypeSubsumptionCache, previewVersion
+                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
+                LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
+                LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
+                LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
+                LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
+                LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
+                LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
+                LanguageFeature.UseBangBindingValueDiscard, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -175,6 +250,10 @@ type LanguageVersion(versionText) =
         | "6" -> languageVersion60
         | "7.0"
         | "7" -> languageVersion70
+        | "8.0"
+        | "8" -> languageVersion80
+        | "9.0"
+        | "9" -> languageVersion90
         | _ -> 0m
 
     let specified = getVersionFromString versionText
@@ -236,6 +315,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang ()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
@@ -250,6 +330,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue ()
+        | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions ()
@@ -262,6 +343,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
+        | LanguageFeature.AccessorFunctionShorthand -> FSComp.SR.featureAccessorFunctionShorthand ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
@@ -276,6 +358,42 @@ type LanguageVersion(versionText) =
         | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
         | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
         | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
+        | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
+        | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
+        | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
+        | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
+
+        | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
+        | LanguageFeature.StrictIndentation -> FSComp.SR.featureStrictIndentation ()
+        | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
+        | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
+        | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
+        | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
+        | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
+        | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
+        | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
+        | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
+        | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
+        | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
+        | LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern ->
+            FSComp.SR.featureBooleanReturningAndReturnTypeDirectedPartialActivePattern ()
+        | LanguageFeature.EnforceAttributeTargets -> FSComp.SR.featureEnforceAttributeTargets ()
+        | LanguageFeature.LowerInterpolatedStringToConcat -> FSComp.SR.featureLowerInterpolatedStringToConcat ()
+        | LanguageFeature.LowerIntegralRangesToFastLoops -> FSComp.SR.featureLowerIntegralRangesToFastLoops ()
+        | LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters ->
+            FSComp.SR.featureAllowAccessModifiersToAutoPropertiesGettersAndSetters ()
+        | LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops ->
+            FSComp.SR.featureLowerSimpleMappingsInComprehensionsToFastLoops ()
+        | LanguageFeature.ParsedHashDirectiveArgumentNonQuotes -> FSComp.SR.featureParsedHashDirectiveArgumentNonString ()
+        | LanguageFeature.EmptyBodiedComputationExpressions -> FSComp.SR.featureEmptyBodiedComputationExpressions ()
+        | LanguageFeature.AllowObjectExpressionWithoutOverrides -> FSComp.SR.featureAllowObjectExpressionWithoutOverrides ()
+        | LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns ->
+            FSComp.SR.featureDontWarnOnUppercaseIdentifiersInBindingPatterns ()
+        | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
+        | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
+        | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
+        | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
+        | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

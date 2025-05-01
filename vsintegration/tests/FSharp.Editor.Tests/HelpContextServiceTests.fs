@@ -10,6 +10,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.IO
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.Text
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type HelpContextServiceTests() =
     let getMarkers (source: string) =
@@ -41,17 +42,32 @@ type HelpContextServiceTests() =
                     let textLine = sourceText.Lines.GetLineFromPosition(marker)
                     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-                    let classifiedSpans =
-                        Tokenizer.getClassifiedSpans (documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+                    let classifiedSpans = ResizeArray<_>()
 
-                    FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
-                    |> Async.RunSynchronously
+                    Tokenizer.classifySpans (
+                        documentId,
+                        sourceText,
+                        textLine.Span,
+                        Some "test.fs",
+                        [],
+                        None,
+                        None,
+                        classifiedSpans,
+                        CancellationToken.None
+                    )
+
+                    let task =
+                        FSharpHelpContextService.GetHelpTerm(document, span, classifiedSpans)
+                        |> CancellableTask.start CancellationToken.None
+
+                    task.Result
             ]
 
         let equalLength = (expectedKeywords.Length = res.Length)
         Assert.True(equalLength)
 
         for (exp, res) in List.zip expectedKeywords res do
+            let exp = Option.defaultValue "" exp
             Assert.Equal(exp, res)
 
     let TestF1Keywords (expectedKeywords, lines) =
@@ -82,7 +98,7 @@ type HelpContextServiceTests() =
         TestF1Keywords(keywords, file)
 
     [<Fact>]
-    member _.``F1 help keyword Regression.DotNetMethod.854364``() =
+    member _.``F1 help keyword Regression.DotNetMethod-854364``() =
         let file = [ "let i : int = 42"; "i.ToStri$ng()"; "i.ToStri$ng(\"format\")" ]
         let keywords = [ Some "System.Int32.ToString"; Some "System.Int32.ToString" ]
         TestF1Keywords(keywords, file)
@@ -319,16 +335,16 @@ type HelpContextServiceTests() =
         TestF1Keywords(keywords, file)
 
     [<Fact>]
-    member _.``F1 help keyword Regression.NewInstance.854367``() =
+    member _.``F1 help keyword Regression.NewInstance-854367``() =
         let file = [ "let q : System.Runtime.Remoting.TypeE$ntry = null" ]
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]
         TestF1Keywords(keywords, file)
 
     [<Fact>]
-    member _.``F1 help keyword Regression.NewInstance.854367.2``() =
+    member _.``F1 help keyword Regression.NewInstance-854367-2``() =
         let file =
             [
-                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor exists but is not accessible (it is protected), but the help entry still goes to the type
+                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this constructor exists but is not accessible (it is protected), but the help entry still goes to the type
             ]
 
         let keywords = [ Some "System.Runtime.Remoting.TypeEntry" ]

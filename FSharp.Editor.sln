@@ -19,6 +19,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.VS.FSI", "vsintegrat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.Editor.IntegrationTests", "vsintegration\tests\FSharp.Editor.IntegrationTests\FSharp.Editor.IntegrationTests.csproj", "{42BE0F2F-BC45-437B-851D-E88A83201339}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{B7148170-93C5-4F2F-B31D-85316D3248CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +75,12 @@ Global
 		{42BE0F2F-BC45-437B-851D-E88A83201339}.Proto|Any CPU.Build.0 = Debug|Any CPU
 		{42BE0F2F-BC45-437B-851D-E88A83201339}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42BE0F2F-BC45-437B-851D-E88A83201339}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7148170-93C5-4F2F-B31D-85316D3248CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7148170-93C5-4F2F-B31D-85316D3248CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7148170-93C5-4F2F-B31D-85316D3248CF}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7148170-93C5-4F2F-B31D-85316D3248CF}.Proto|Any CPU.Build.0 = Debug|Any CPU
+		{B7148170-93C5-4F2F-B31D-85316D3248CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7148170-93C5-4F2F-B31D-85316D3248CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

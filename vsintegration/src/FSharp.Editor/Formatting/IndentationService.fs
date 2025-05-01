@@ -23,18 +23,22 @@ open FSharp.Compiler.Tokenization
 type internal FSharpIndentationService [<ImportingConstructor>] () =
 
     static member IndentShouldFollow
-        (
-            documentId: DocumentId,
-            sourceText: SourceText,
-            filePath: string,
-            position: int,
-            parsingOptions: FSharpParsingOptions
-        ) =
+        (documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions)
+        =
         let lastTokenOpt =
             let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens =
-                Tokenizer.tokenizeLine (documentId, sourceText, position, filePath, defines, CancellationToken.None)
+                Tokenizer.tokenizeLine (
+                    documentId,
+                    sourceText,
+                    position,
+                    filePath,
+                    defines,
+                    Some parsingOptions.LangVersionText,
+                    parsingOptions.StrictIndentation,
+                    CancellationToken.None
+                )
 
             tokens
             |> Array.rev
@@ -136,4 +140,4 @@ type internal FSharpIndentationService [<ImportingConstructor>] () =
 
             match indent with
             | None -> Nullable()
-            | Some (indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))
+            | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))

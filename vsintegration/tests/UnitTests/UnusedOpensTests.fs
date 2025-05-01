@@ -1,16 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-[<NUnit.Framework.TestFixture>]
+
 module Tests.ServiceAnalysis.UnusedOpens
 
 open System
-open NUnit.Framework
+open Xunit
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-
-/// like "should equal", but validates same-type
-let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
 
 let private filePath = "C:\\test.fs"
 
@@ -43,9 +40,9 @@ let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int *
     
     unusedOpenRanges 
     |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn))
-    |> shouldEqual expectedRanges
+    |> fun actual -> Assert.Equal<(int * (int * int)) list>(expectedRanges, actual)
 
-[<Test>]
+[<Fact>]
 let ``unused open declaration in top level module``() =
     """
 module TopModule
@@ -55,7 +52,7 @@ let _ = DateTime.Now
 """
     => [ 4, (5, 14) ]
 
-[<Test>]
+[<Fact>]
 let ``unused open declaration in namespace``() =
     """
 namespace TopNamespace
@@ -66,7 +63,7 @@ module Nested =
 """
     => [ 4, (5, 14) ]
 
-[<Test>]
+[<Fact>]
 let ``unused open declaration in nested module``() =
     """
 namespace TopNamespace
@@ -77,7 +74,7 @@ module Nested =
 """
     => [ 5, (9, 18) ]
 
-[<Test>] 
+[<Fact>] 
 let ``unused open declaration due to partially qualified symbol``() =
     """
 module TopModule
@@ -87,7 +84,7 @@ let _ = IO.File.Create ""
 """
     => [ 4, (5, 14) ]
 
-[<Test>]
+[<Fact>]
 let ``unused parent open declaration due to partially qualified symbol``() =
     """
 module TopModule
@@ -97,7 +94,7 @@ let _ = File.Create ""
 """
     => [ 3, (5, 11) ]
 
-[<Test>]
+[<Fact>]
 let ``open statement duplication in parent module is unused``() =
     """
 module TopModule
@@ -108,7 +105,7 @@ module Nested =
 """
     => [ 5, (9, 18) ]
 
-[<Test>]
+[<Fact>]
 let ``open statement duplication in parent module is marked as unused even though it seems to be used in its scope``() =
     """
 module TopModule
@@ -120,14 +117,14 @@ let _ = File.Create ""
 """
     => [ 5, (9, 18) ]
 
-[<Test>]
+[<Fact>]
 let ``multiple open declaration in the same line``() =
     """
 open System.IO; let _ = File.Create "";; open System.IO
 """
     => [ 2, (46, 55) ]
 
-[<Test>]
+[<Fact>]
 let ``open a nested module inside another one is not unused``() =
     """
 module Top
@@ -139,7 +136,7 @@ module M2 =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open a nested module inside another one is not unused, complex hierarchy``() =
     """
 module Top =
@@ -153,7 +150,7 @@ module Top =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open a nested module inside another one is not unused, even more complex hierarchy``() =
     """
 module Top =
@@ -169,7 +166,7 @@ module Top =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``opening auto open module after it's parent module was opened should be marked as unused``() =
     """
 module NormalModule =
@@ -188,7 +185,7 @@ let _ = Class()
 """
     => [ 13, (5, 68) ]
 
-[<Test>]
+[<Fact>]
 let ``opening parent module after one of its auto open module was opened should be marked as unused``() =
     """
 module NormalModule =
@@ -207,7 +204,7 @@ let _ = Class()
 """
     => [ 13, (5, 52) ]
     
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if there is a shortened attribute symbol from it``() =
     """
 open System
@@ -216,7 +213,7 @@ type Class() = class end
 """
     => []
     
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if an extension property is used``() =
     """
 module Module =
@@ -227,7 +224,7 @@ let _ = "a long string".ExtensionProperty
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is marked as unused if an extension property is not used``() =
     """
 module Module =
@@ -238,7 +235,7 @@ let _ = "a long string".Trim()
 """
     => [ 5, (5, 11) ]
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if an extension method is used``() =
     """
 type Class() = class end
@@ -251,7 +248,7 @@ let _ = x.ExtensionMethod()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is marked as unused if an extension method is not used``() =
     """
 type Class() = class end
@@ -263,7 +260,7 @@ let x = Class()
 """
     => [ 6, (5, 11) ]
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if one of its types is used in a constructor signature``() =
     """
 module M =
@@ -273,7 +270,7 @@ type Site (x: Class -> unit) = class end
 """
     => []   
 
-[<Test>]
+[<Fact>]
 let ``open declaration is marked as unused if nothing from it is used``() =
     """
 module M =
@@ -283,7 +280,7 @@ type Site (x: int -> unit) = class end
 """
     => [ 4, (5, 6) ]
 
-[<Test>]
+[<Fact>]
 let ``static extension method applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -295,7 +292,7 @@ let _ = DateTime.ExtensionMethod
 """
     => []
     
-[<Test>]
+[<Fact>]
 let ``static extension property applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -307,7 +304,7 @@ let _ = DateTime.ExtensionProperty
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``accessing property on a variable should not force the namespace in which the type is declared to be marked as used``() =
     """
 let dt = System.DateTime.Now
@@ -317,7 +314,7 @@ module M =
 """
     => [4, (9, 15) ]
 
-[<Test>]
+[<Fact>]
 let ``either of two open declarations are not marked as unused if symbols from both of them are used``() =
     """
 module M1 =
@@ -332,7 +329,7 @@ let _ = func2()
 """
     => []
         
-[<Test>]
+[<Fact>]
 let ``open module with ModuleSuffix attribute value applied is not marked as unused if a symbol declared in it is used``() =
     """
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -343,7 +340,7 @@ let _ = func()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open module all of which symbols are used by qualifier is marked as unused``() =
     """
 module M =
@@ -353,7 +350,7 @@ let _ = M.func 1
 """
     => [4, (5, 6) ]
 
-[<Test>]
+[<Fact>]
 let ``open module is not marked as unused if a symbol defined in it is used in OCaml-style type annotation``() =
     """
 module M =
@@ -363,7 +360,7 @@ let func (arg: Class list) = ()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``auto open module``() =
     """
 module Top =
@@ -375,7 +372,7 @@ let _ = func()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``auto open module with namespace``() =
     """
 namespace Module1Namespace
@@ -390,7 +387,7 @@ module Module3 =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``auto open module in the middle of hierarchy``() =
     """
 namespace Ns
@@ -404,7 +401,7 @@ module M2 =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if a delegate defined in it is used``() =
     """
 open System
@@ -412,7 +409,7 @@ let _ = Func<int, int>(fun _ -> 1)
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if a unit of measure defined in it is used``() =
     """
 module M = 
@@ -423,7 +420,7 @@ module N =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if an attribute defined in it is applied on an interface member argument``() =
     """
 open System.Runtime.InteropServices
@@ -431,7 +428,7 @@ type T = abstract M: [<DefaultParameterValue(null)>] ?x: int -> unit
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``relative module open declaration``() =
     """
 module Top =
@@ -443,7 +440,7 @@ let _ = x
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is used if a symbol defined in it is used in a module top-level do expression``() =
     """
 module Top
@@ -453,7 +450,7 @@ File.ReadAllLines ""
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``redundant opening a module with ModuleSuffix attribute value is marks as unused``() =
     """
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -465,7 +462,7 @@ module M =
 """
     => [ 6, (9, 33) ]
     
-[<Test>]
+[<Fact>]
 let ``redundant opening a module is marks as unused``() =
     """
 module InternalModuleWithSuffix =
@@ -476,7 +473,7 @@ module M =
 """
     => [ 5, (9, 33) ]
 
-[<Test>]
+[<Fact>]
 let ``usage of an unqualified union case doesn't make an opening module where it's defined to be marked as unused``() =
     """
 module M =
@@ -486,7 +483,7 @@ let _ = Case1
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``usage of qualified union case doesn't make an opening module where it's defined to be marked as unused``() =
     """
 module M =
@@ -496,7 +493,7 @@ let _ = DU.Case1
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``type with different DisplayName``() =
     """
 open Microsoft.FSharp.Quotations
@@ -504,7 +501,7 @@ let _ = Expr.Coerce (<@@ 1 @@>, typeof<int>)
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``auto open module with ModuleSuffix attribute value``() =
     """
 module Top =
@@ -517,7 +514,7 @@ module Module1 =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``a type which has more than one DisplayName causes the namespace it's defined in to be not marked as unused``() =
     """
 open System
@@ -525,7 +522,7 @@ let _ = IntPtr.Zero
 """ 
     => []
 
-[<Test>]
+[<Fact>]
 let ``usage of an operator makes the module it's defined in to be not marked as unused``() =
     """
 module M =
@@ -535,7 +532,7 @@ let _ = 1 ++| 2
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``usage of an operator makes the module /with Module suffix/ it's defined in to be not marked as unused``() =
     """
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -546,7 +543,7 @@ let _ = 1 ++| 2
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``type used in pattern matching with "as" keyword causes the module in which the type is defined to be not marked as unused``() =
     """
 module M = 
@@ -558,7 +555,7 @@ let _ = match obj() with
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``a function from printf family prevents Printf module from marking as unused``() =
     """
 open Microsoft.FSharp.Core.Printf
@@ -567,7 +564,7 @@ let _ = bprintf (StringBuilder()) "%A" 1
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``assembly level attribute prevents namespace in which it's defined to be marked as unused``() =
     """
 open System
@@ -576,7 +573,7 @@ open System
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if a related type extension is used``() =
     """
 module Module =
@@ -586,7 +583,7 @@ module Module =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``open declaration is not marked as unused if a symbol defined in it is used in type do block``() =
     """
 open System.IO.Compression
@@ -597,7 +594,7 @@ type OutliningHint() as self =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``should not mark open declaration with global prefix``() =
     """
 module Module =
@@ -606,7 +603,7 @@ module Module =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``record fields should be taken into account``() = 
     """
 module M1 =
@@ -617,7 +614,7 @@ module M2 =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``handle type alias``() = 
     """
 module TypeAlias =
@@ -628,7 +625,7 @@ module Usage =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``handle override members``() = 
     """
 type IInterface =
@@ -642,7 +639,7 @@ let f (x: IClass) = (x :> IInterface).Property
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``active pattern cases should be taken into account``() =
     """
 module M = 
@@ -652,7 +649,7 @@ let f (Pattern _) = ()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``active patterns applied as a function should be taken into account``() =
     """
 module M = 
@@ -662,7 +659,7 @@ let _ = (|Pattern|_|) ()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``not used active pattern does not make the module in which it's defined to not mark as unused``() =
     """
 module M = 
@@ -672,7 +669,7 @@ let _ = 1
 """
     => [ 4, (5, 6) ]
     
-[<Test>]
+[<Fact>]
 let ``type in type parameter constraint should be taken into account``() =
     """
 open System
@@ -680,7 +677,7 @@ let f (x: 'a when 'a :> IDisposable) = ()
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``namespace declaration should never be marked as unused``() =
     """
 namespace Library2
@@ -688,7 +685,7 @@ type T() = class end
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``auto open module opened before enclosing one is handled correctly``() =
     """
 module M =
@@ -703,7 +700,7 @@ let _ = y
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``single relative open declaration opens two independent modules in different parent modules``() =
     """
 module M =
@@ -722,7 +719,7 @@ let _ = x
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``C# extension methods are taken into account``() =
     """
 open System.Linq
@@ -733,7 +730,7 @@ module Test =
 """ 
     => []      
 
-[<Test>]
+[<Fact>]
 let ``namespace which contains types with C# extension methods is marked as unused if no extension is used``() =
     """
 open System.Linq
@@ -743,7 +740,7 @@ module Test =
 """ 
     => [ 2, (5, 16) ]      
 
-[<Test>]
+[<Fact>]
 let ``a type from an auto open module is taken into account``() =
     """
 module M1 =
@@ -757,7 +754,7 @@ module M2 =
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``unused open declaration in top level rec module``() =
     """
 module rec TopModule
@@ -767,7 +764,7 @@ let _ = DateTime.Now
 """
     => [ 4, (5, 14) ]
 
-[<Test>]
+[<Fact>]
 let ``unused open declaration in rec namespace``() =
     """
 namespace rec TopNamespace
@@ -778,7 +775,7 @@ module Nested =
 """
     => [ 4, (5, 14) ]
 
-[<Test>]
+[<Fact>]
 let ``unused inner module open declaration in rec module``() =
     """
 module rec TopModule
@@ -793,7 +790,7 @@ open Nested
 """
     => [ 10, (5, 11) ]
 
-[<Test>]
+[<Fact>]
 let ``used inner module open declaration in rec module``() =
     """
 module rec TopModule
@@ -810,7 +807,7 @@ let _ = f 1
 """
     => []
 
-[<Test>]
+[<Fact>]
 let ``used open C# type``() =
     """
 open type System.Console
@@ -819,7 +816,7 @@ WriteLine("Hello World")
     """
     => []
     
-[<Test>]
+[<Fact>]
 let ``unused open C# type``() =
     """
 open type System.Console
@@ -828,7 +825,7 @@ printfn "%s" "Hello World"
     """
     => [2, (10, 24)]
     
-[<Test>]
+[<Fact>]
 let ``used open type from module``() =
     """
 module MyModule =
@@ -841,7 +838,7 @@ printfn "%A" Thing
     """
     => []
         
-[<Test>]
+[<Fact>]
 let ``unused open type from module``() =
     """
 module MyModule =

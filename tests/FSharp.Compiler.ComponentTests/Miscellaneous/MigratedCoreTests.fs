@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.ComponentTests.Miscellaneous.FsharpSuiteMigrated.CoreTests
+module Miscellaneous.FsharpSuiteMigrated_CoreTests
 
 open Xunit
 open FSharp.Test
 open FSharp.Test.ScriptHelpers 
-open TestFrameworkAdapter    
-      
+open System.Runtime.InteropServices
+open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter
 
 // These tests are enabled for .NET Framework and .NET Core
 [<Fact>]
@@ -28,13 +28,13 @@ let ``apporder-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/apporder" FSC_OP
 let ``apporder-FSI`` () = singleTestBuildAndRun "core/apporder" FSI
 
 [<Fact>]
-let ``array-FSC_DEBUG-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG LangVersion.V50
+let ``array-FSC_DEBUG-5_0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG LangVersion.V50
 
 [<Fact>]
-let ``array-FSC_OPTIMIZED-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.V50
+let ``array-FSC_OPTIMIZED-5_0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.V50
 
 [<Fact>]
-let ``array-FSI-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI LangVersion.V50
+let ``array-FSI-5_0`` () = singleTestBuildAndRunVersion "core/array" FSI LangVersion.V50
 
 [<Fact>]
 let ``array-FSC_OPTIMIZED-preview`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED LangVersion.Preview
@@ -78,11 +78,11 @@ let ``auto-widen-minimal``() =
 
 [<Fact>]
 let ``auto-widen-version-preview-warns-on``() = 
-    singleVersionedNegTestAux "core/auto-widen/preview" ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+    singleVersionedNegTestAux "core/auto-widen/preview" ["--warnon:3388";"--warnon:3389";"--warnon:3395";"--warnaserror+";"--define:NEGATIVE"] LangVersion.V80 "test"
 
 [<Fact>]
 let ``auto-widen-version-preview-default-warns``() = 
-    singleVersionedNegTestAux "core/auto-widen/preview-default-warns" ["--warnaserror+";"--define:NEGATIVE"] LangVersion.Preview "test"
+    singleVersionedNegTestAux "core/auto-widen/preview-default-warns" ["--warnaserror+";"--define:NEGATIVE"] LangVersion.V80 "test"
 
 [<Fact>]
 let ``comprehensions-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_DEBUG
@@ -93,14 +93,17 @@ let ``comprehensions-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/comprehens
 [<Fact>]
 let ``comprehensions-FSI`` () = singleTestBuildAndRun "core/comprehensions" FSI
 
-[<Fact>]
-let ``comprehensionshw-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_DEBUG
+// Cancels default token.
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module Comprehensionshw =
+    [<Fact>]
+    let ``comprehensionshw-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_DEBUG
 
-[<Fact>]
-let ``comprehensionshw-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_OPTIMIZED
+    [<Fact>]
+    let ``comprehensionshw-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_OPTIMIZED
 
-[<Fact>]
-let ``comprehensionshw-FSI`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI
+    [<Fact>]
+    let ``comprehensionshw-FSI`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI
 
 [<Fact>]
 let ``genericmeasures-FSC_DEBUG`` () = singleTestBuildAndRun "core/genericmeasures" FSC_DEBUG
@@ -121,10 +124,10 @@ let ``innerpoly-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/innerpoly" FSC_
 let ``innerpoly-FSI`` () = singleTestBuildAndRun "core/innerpoly" FSI
 
 [<Fact>]
-let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
+let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRunVersion "core/namespaces" COMPILED_EXE_APP LangVersion.Preview
 
 [<Fact>]
-let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" COMPILED_EXE_APP
+let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/namespaces" COMPILED_EXE_APP LangVersion.Preview
 
 [<Fact>]
 let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG // TODO: fails on coreclr
@@ -211,7 +214,7 @@ let ``nested-FSI`` () = singleTestBuildAndRun "core/nested" FSI
 let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPTIMIZED
 
 [<FactForDESKTOP>]
-let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPTIMIZED
+let ``members-basics-hw-mutrec-realinternalsignature`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_DEBUG//OPTIMIZED
 
 [<FactForDESKTOP>]
 let ``members-incremental-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/incremental" FSC_OPTIMIZED
@@ -349,13 +352,13 @@ let ``subtype-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/subtype" FSC_OPTI
 let ``subtype-FSI`` () = singleTestBuildAndRun "core/subtype" FSI
 
 [<Fact>]
-let ``syntax-FSC_DEBUG`` () = singleTestBuildAndRun "core/syntax" FSC_DEBUG
+let ``syntax-FSC_DEBUG`` () = singleTestBuildAndRunIsolated "core/syntax" FSC_DEBUG
 
 [<Fact>]
-let ``syntax-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/syntax" FSC_OPTIMIZED
+let ``syntax-FSC_OPTIMIZED`` () = singleTestBuildAndRunIsolated "core/syntax" FSC_OPTIMIZED
 
 [<Fact>]
-let ``syntax-FSI`` () = singleTestBuildAndRun "core/syntax" FSI
+let ``syntax-FSI`` () = singleTestBuildAndRunIsolated "core/syntax" FSI
 
 [<Fact>]
 let ``test int32-FSC_DEBUG`` () = singleTestBuildAndRun "core/int32" FSC_DEBUG
@@ -366,16 +369,6 @@ let ``test int32-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/int32" FSC_OPT
 [<Fact>]
 let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
-// This test stays in FsharpSuite for desktop framework for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside
-[<FactForNETCOREAPP>]
-let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
-
-[<FactForNETCOREAPP>]
-let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
-
-[<FactForNETCOREAPP>]
-let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
-
 [<Fact>]
 let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
 
@@ -385,18 +378,21 @@ let ``recordResolution-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/recordRe
 [<Fact>]
 let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
 
-// This test has hardcoded expectations about current synchronization context
-// Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
-[<FactForNETCOREAPP>]
-let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
+// Cancels default token.
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module CoreControl =
+    // This test has hardcoded expectations about current synchronization context
+    // Will be moved out of FsharpSuite.Tests in a later phase for desktop framework
+    [<FactForNETCOREAPP>]
+    let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
 
-[<FactForNETCOREAPP>]
-let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
+    [<FactForNETCOREAPP>]
+    let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
 
-[<FactForNETCOREAPP>]
-let ``control --tailcalls`` () =
-    let cfg =  "core/control"
-    singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
+    [<FactForNETCOREAPP>]
+    let ``control --tailcalls`` () =
+        let cfg =  "core/control"
+        singleTestBuildAndRunAux cfg  ["--tailcalls"] FSC_OPTIMIZED
 
 [<Fact>]
 let ``controlChamenos-FSC_OPTIMIZED`` () =
@@ -457,21 +453,19 @@ let ``fsi_load-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/fsi-load" FSC_OP
 let ``fsi_load-FSI`` () = singleTestBuildAndRun "core/fsi-load" FSI
 
 [<Fact>]
-let ``reflect-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/reflect" FSC_OPTIMIZED
+let ``reflect-FSC_OPTIMIZED`` () = singleTestBuildAndRunIsolated "core/reflect" FSC_OPTIMIZED
 
 [<Fact>]
-let ``reflect-FSI`` () = singleTestBuildAndRun "core/reflect" FSI
+let ``reflect-FSI`` () = singleTestBuildAndRunIsolated "core/reflect" FSI
 
-module PInvokeTests = 
-    open System.Runtime.InteropServices
-    let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
-    [<Fact()>]
-    let ``pinvoke-FSC_OPTIMIZED`` () =   
-        if isWindows then
-            singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
+[<Fact()>]
+let ``pinvoke-FSC_OPTIMIZED`` () =   
+    if isWindows then
+        singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
 
-    [<Fact>]
-    let ``pinvoke-FSI`` () =
-        if isWindows then
-            singleTestBuildAndRun "core/pinvoke" FSI
+[<Fact>]
+let ``pinvoke-FSI`` () =
+    if isWindows then
+        singleTestBuildAndRun "core/pinvoke" FSI

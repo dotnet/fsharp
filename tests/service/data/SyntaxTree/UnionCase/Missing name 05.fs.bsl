@@ -25,7 +25,8 @@ ImplFile
                                   LongIdent (SynLongIdent ([int], [], [None])),
                                   false,
                                   PreXmlDoc ((5,18), FSharp.Compiler.Xml.XmlDocCollector),
-                                  None, (5,18--5,21), { LeadingKeyword = None })],
+                                  None, (5,18--5,21), { LeadingKeyword = None
+                                                        MutableKeyword = None })],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                             None, (5,6--5,21), { BarRange = Some (5,4--5,5) });
                          SynUnionCase
@@ -41,5 +42,5 @@ ImplFile
       { ConditionalDirectives = []
         CodeComments = [] }, set []))
 
-(5,6)-(5,14) parse error Accessibility modifiers are not permitted on union cases. Use 'type U = internal ...' or 'type U = private ...' to give an accessibility to the whole representation.
 (5,15)-(5,17) parse error Missing union case name
+(5,6)-(5,14) parse error Accessibility modifiers are not permitted on union cases. Use 'type U = internal ...' or 'type U = private ...' to give an accessibility to the whole representation.

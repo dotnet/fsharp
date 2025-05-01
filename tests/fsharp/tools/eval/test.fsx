@@ -1886,7 +1886,7 @@ module QuotationTests =
 *)
 
 
-module LargerAutomaticDiferentiationTest_FSharp_1_0_Bug_3498 = 
+module LargerAutomaticDifferentiationTest_FSharp_1_0_Bug_3498 = 
 
     let q = 
         <@ (fun (x1:double) -> 
@@ -1997,7 +1997,7 @@ module QuotationCompilation =
         q.Compile() |> ignore  
         q.Eval()
         
-    // This tried to use non-existent 'Action' delegate with 5 type arguments
+    // This tried to use nonexistent 'Action' delegate with 5 type arguments
     let q =
         <@  (fun () -> 
                 let a = ref 0
@@ -2797,5 +2797,5 @@ let _ =
       exit 1
   else  
       stdout.WriteLine "Test Passed"; 
-      System.IO.File.WriteAllText("test.ok","ok"); 
+      printf "TEST PASSED OK"; 
       exit 0

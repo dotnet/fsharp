@@ -66,7 +66,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.Unhooked = unhooked
     member this.DocumentationBuilder = documentationBuilder.Value
     
-    /// Handle late intialization pieces
+    /// Handle late initialization pieces
     member this.Initialize (sp, dp, prefs, sourceFact) = 
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState        
         artifacts <- Some (ProjectSitesAndFiles())
@@ -136,7 +136,7 @@ type internal FSharpLanguageServiceTestable() as this =
 
     member this.BackgroundRequests = bgRequests
     
-    /// Unittestable complement to LanguageServce.CreateSource_DEPRECATED
+    /// Unittestable complement to LanguageService.CreateSource_DEPRECATED
     member this.CreateSource_DEPRECATED(buffer:IVsTextLines) : IFSharpSource_DEPRECATED =
     
         // Each time a source is created, also verify that the IProjectSite has been initialized to listen to changes to the project.
@@ -212,7 +212,7 @@ type internal FSharpLanguageServiceTestable() as this =
                     let fileName = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
                     let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, fileName, this.FSharpChecker)
-                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName))
+                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName), None, None)
                     sourceTokenizer.CreateLineTokenizer(source))
 
             let colorizer = new FSharpColorizer_DEPRECATED(this.CloseColorizer, buffer, scanner) 

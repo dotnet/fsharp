@@ -8,6 +8,7 @@ module internal FSharp.Compiler.AbstractIL.ILX.EraseUnions
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
+open FSharp.Compiler.TcGlobals
 
 /// Make the instruction sequence for a "newdata" operation
 val mkNewData: ilg: ILGlobals -> cuspec: IlxUnionSpec * cidx: int -> ILInstr list
@@ -39,7 +40,7 @@ val mkClassUnionDef:
     addFieldGeneratedAttrs: (ILFieldDef -> ILFieldDef) *
     addFieldNeverAttrs: (ILFieldDef -> ILFieldDef) *
     mkDebuggerTypeProxyAttribute: (ILType -> ILAttribute) ->
-        ilg: ILGlobals ->
+        g: TcGlobals ->
         tref: ILTypeRef ->
         td: ILTypeDef ->
         cud: IlxUnionInfo ->

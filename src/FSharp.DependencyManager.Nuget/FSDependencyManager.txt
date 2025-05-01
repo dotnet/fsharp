@@ -1,5 +1,5 @@
 # FSharp.Build resource strings 
-cantReferenceSystemPackage,"PackageManager can not reference the System Package '%s'"
+cantReferenceSystemPackage,"PackageManager cannot reference the System Package '%s'"
 requiresAValue,"%s requires a value"
 unableToApplyImplicitArgument,"Unable to apply implicit argument number %d"
 notUsed,"Not used"
@@ -10,3 +10,4 @@ sourceDirectoryDoesntExist,"The source directory '%s' not found"
 timedoutResolvingPackages,"Timed out resolving packages, process: '%s' '%s'"
 invalidTimeoutValue,"Invalid value for timeout '%s', valid values: none, -1 and integer milliseconds to wait"
 missingTimeoutValue,"Missing value for timeout"
+invalidBooleanValue,"Invalid value for boolean '%s', valid values: true or false"

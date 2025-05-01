@@ -7,6 +7,8 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Editor
 
+open FSharp.Compiler.Diagnostics
+
 [<RequireQualifiedAccess>]
 type LogType =
     | Info
@@ -44,7 +46,7 @@ type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] ser
 
     let getPane () =
         match outputWindow |> Option.map (fun x -> x.GetPane(ref fsharpOutputGuid)) with
-        | Some (0, pane) ->
+        | Some(0, pane) ->
             pane.Activate() |> ignore
             Some pane
         | _ -> None
@@ -93,7 +95,10 @@ module Logging =
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
     let private logger = lazy Logger(Logger.GlobalServiceProvider)
-    let private log logType msg = logger.Value.Log(logType, msg)
+
+    let private log logType msg =
+        logger.Value.Log(logType, msg)
+        System.Diagnostics.Trace.TraceInformation(msg)
 
     let logMsg msg = log LogType.Message msg
     let logInfo msg = log LogType.Info msg
@@ -113,7 +118,12 @@ module Logging =
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
+#if DEBUG
 module Activity =
+
+    open OpenTelemetry.Resources
+    open OpenTelemetry.Trace
+
     let listen filter =
         let indent (activity: Activity) =
             let rec loop (activity: Activity) n =
@@ -142,4 +152,13 @@ module Activity =
 
         ActivitySource.AddActivityListener(listener)
 
+    let export () =
+        OpenTelemetry.Sdk
+            .CreateTracerProviderBuilder()
+            .AddSource(ActivityNames.FscSourceName)
+            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName = "F#", serviceVersion = "1.0.0"))
+            .AddOtlpExporter()
+            .Build()
+
     let listenToAll () = listen ""
+#endif

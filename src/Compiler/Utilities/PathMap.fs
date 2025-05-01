@@ -6,6 +6,7 @@ namespace Internal.Utilities
 open System
 open System.IO
 
+open Internal.Utilities.Library
 open FSharp.Compiler.IO
 
 type PathMap = PathMap of Map<string, string>
@@ -22,7 +23,7 @@ module internal PathMap =
         let normalSrc = FileSystem.GetFullPathShim src
 
         let oldPrefix =
-            if normalSrc.EndsWith dirSepStr then
+            if normalSrc.EndsWithOrdinal dirSepStr then
                 normalSrc
             else
                 normalSrc + dirSepStr
@@ -41,7 +42,7 @@ module internal PathMap =
             // oldPrefix always ends with a path separator, so there's no need
             // to check if it was a partial match
             // e.g. for the map /goo=/bar and file name /goooo
-            if filePath.StartsWith(oldPrefix, StringComparison.Ordinal) then
+            if filePath.StartsWithOrdinal oldPrefix then
                 let replacement = replacementPrefix + filePath.Substring(oldPrefix.Length - 1)
 
                 // Normalize the path separators if used uniformly in the replacement
@@ -60,7 +61,7 @@ module internal PathMap =
         |> Option.defaultValue filePath
 
     let applyDir pathMap (dirName: string) : string =
-        if dirName.EndsWith dirSepStr then
+        if dirName.EndsWithOrdinal dirSepStr then
             apply pathMap dirName
         else
             let mapped = apply pathMap (dirName + dirSepStr)

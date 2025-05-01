@@ -42,7 +42,7 @@ open System.Diagnostics
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>] 
 #endif
 
-let main = ()
+let main () = ()
 
     
 (* attribute on a type *)
@@ -254,7 +254,7 @@ type DontPressThisButtonAttribute =
     new(s:string) = { inherit System.Attribute(); v=s; someOtherField="" }
   end
 
-type [<DontPressThisButton("Please don't press this again",SomeOtherField="nor me")>] button = Buttpon
+type [<DontPressThisButton("Please don't press this again",SomeOtherField="nor me")>] button = Button
 
 let ca5 = typeof<button>.GetCustomAttributes(typeof<DontPressThisButtonAttribute>,false)
 do if Array.length ca5 <> 1 then report_failure (sprintf "could not get parameterized CA on type, num CAs = %d" (Array.length ca5))
@@ -274,7 +274,7 @@ type DontPressThisButton2Attribute =
     new(s:string) = { inherit System.Attribute(); v=s; SomeOtherField="" }
   end
 
-type [<DontPressThisButton2("Please don't press this again",SomeOtherField="nor me again")>] button2 = Buttpon2
+type [<DontPressThisButton2("Please don't press this again",SomeOtherField="nor me again")>] button2 = Button2
 
 let ca6 = typeof<button2>.GetCustomAttributes(typeof<DontPressThisButton2Attribute>,false)
 do if Array.length ca6 <> 1 then report_failure (sprintf "could not get parameterized CA on type, num CAs = %d" (Array.length ca6))
@@ -299,7 +299,7 @@ type DontPressThisButton3Attribute =
     new(n,obj1,obj2) = { inherit System.Attribute(); v=n; obj1= obj1; obj2=obj2  }
   end
 
-type [<DontPressThisButton3(-1, "", -2)>] button3 = Buttpon3
+type [<DontPressThisButton3(-1, "", -2)>] button3 = Button3
 
 let ca7 = typeof<button3>.GetCustomAttributes(typeof<DontPressThisButton3Attribute>,false)
 do if Array.length ca7 <> 1 then report_failure (sprintf "could not get parameterized CA on type, num CAs = %d" (Array.length ca7))
@@ -310,13 +310,13 @@ do if (Array.get ca7 0 :?> DontPressThisButton3Attribute).Object2    <> box (-2)
 
 [<DontPressThisButton3(1, "", -2)>]
 [<type: DontPressThisButton3(2, "", -2)>]
-type button4 = Buttpon4
+type button4 = Button4
 let ca7b = typeof<button4>.GetCustomAttributes(typeof<DontPressThisButton3Attribute>,false)
 do if Array.length ca7b <> 2 then report_failure (sprintf "could not get parameterized CA on type, num CAs = %d" (Array.length ca7b))
 
 [<DontPressThisButton3(1, "", -2);
   DontPressThisButton3(2, "", -2)>]
-type button5 = Buttpon5
+type button5 = Button5
 let ca7c = typeof<button4>.GetCustomAttributes(typeof<DontPressThisButton3Attribute>,false)
 do if Array.length ca7c <> 2 then report_failure (sprintf "could not get parameterized CA on type, num CAs = %d" (Array.length ca7c))
 
@@ -362,7 +362,7 @@ module AttributesOnUnionCases = begin
 
 end
 
-module CheckGenericParameterAttibutesAndNames = 
+module CheckGenericParameterAttributesAndNames = 
    
     // identical in signature and implementation
     type Cases() = 
@@ -1358,7 +1358,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

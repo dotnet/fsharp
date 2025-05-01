@@ -1,0 +1,2 @@
+ShadowWithLastOpenedTypeExtensions.fsx (18,9)-(18,14) typecheck error This value is not a function and cannot be applied.
+ShadowWithLastOpenedTypeExtensions.fsx (37,9)-(37,14) typecheck error This value is not a function and cannot be applied.

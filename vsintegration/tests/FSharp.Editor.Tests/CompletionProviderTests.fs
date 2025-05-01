@@ -2,10 +2,13 @@
 
 namespace FSharp.Editor.Tests
 
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+
 module CompletionProviderTests =
 
     open System
     open System.Linq
+    open System.Threading
     open Microsoft.CodeAnalysis
     open Microsoft.CodeAnalysis.Completion
     open Microsoft.CodeAnalysis.Text
@@ -16,6 +19,9 @@ module CompletionProviderTests =
 
     let filePath = "C:\\test.fs"
 
+    let mkGetInfo documentId =
+        fun () -> documentId, filePath, [], (Some "preview"), None
+
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
 
@@ -23,14 +29,15 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = Array.ofSeq opts)
             |> RoslynTestHelpers.GetSingleDocument
 
         let results =
-            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
-            |> Async.RunSynchronously
-            |> Option.defaultValue (ResizeArray())
-            |> Seq.map (fun result -> result.DisplayText)
+            let task =
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result |> Seq.map (fun result -> result.DisplayText)
 
         let expectedFound = expected |> List.filter results.Contains
 
@@ -70,13 +77,15 @@ module CompletionProviderTests =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document =
-            RoslynTestHelpers.CreateSolution(fileContents)
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = Array.ofSeq opts)
             |> RoslynTestHelpers.GetSingleDocument
 
         let actual =
-            FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []))
-            |> Async.RunSynchronously
-            |> Option.defaultValue (ResizeArray())
+            let task =
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), false)
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result
             |> Seq.toList
             // sort items as Roslyn do - by `SortText`
             |> List.sortBy (fun x -> x.SortText)
@@ -93,6 +102,40 @@ module CompletionProviderTests =
     let VerifyCompletionListExactly (fileContents: string, marker: string, expected: string list) =
         VerifyCompletionListExactlyWithOptions(fileContents, marker, expected, [||])
 
+    /// Verify completion code. Only verify the expected completion items
+    let VerifyCompletionCode (genBodyForOverriddenMeth, fileContents: string, marker: string, expected: Map<string, string>) =
+        let getNameInCode (item: CompletionItem) =
+            match item.Properties.TryGetValue "NameInCode" with
+            | true, x -> x
+            | _ -> item.DisplayText
+
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents, extraFSharpProjectOtherOptions = [||])
+            |> RoslynTestHelpers.GetSingleDocument
+
+        let actual =
+            let task =
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [||]), genBodyForOverriddenMeth)
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result
+            |> Seq.toList
+            |> List.choose (fun x ->
+                if expected.ContainsKey x.DisplayText then
+                    Some(x.DisplayText, getNameInCode x)
+                else
+                    None)
+            |> Map.ofList
+
+        if actual <> expected then
+            failwithf
+                "Expected:\n%s,\nbut was:\n%s\nactual with DisplayText:\n%s"
+                (String.Join("\n", expected.Values |> Seq.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual.Values |> Seq.map (sprintf "\"%s\"")))
+                (String.Join("\n", actual |> Seq.map (fun (KeyValue(fst, snd)) -> sprintf "%s => %s" fst snd)))
+
     let VerifyNoCompletionList (fileContents: string, marker: string) =
         VerifyCompletionListExactly(fileContents, marker, [])
 
@@ -102,7 +145,16 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [])
+            CompletionUtils.getDefaultCompletionListSpan (
+                sourceText,
+                caretPosition,
+                documentId,
+                filePath,
+                [],
+                None,
+                None,
+                CancellationToken.None
+            )
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -130,15 +182,15 @@ System.Console.WriteLine(x + y)
 
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
-                    IntelliSenseOptions.Default
+                    mkGetInfo documentId,
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             triggered
@@ -152,15 +204,15 @@ System.Console.WriteLine(x + y)
             let fileContents = "System.Console.WriteLine(123)"
             let caretPosition = fileContents.IndexOf("rite")
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     triggerKind,
-                    getInfo,
-                    IntelliSenseOptions.Default
+                    mkGetInfo documentId,
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -170,15 +222,15 @@ System.Console.WriteLine(x + y)
         let fileContents = "let literal = \"System.Console.WriteLine()\""
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -195,15 +247,15 @@ System.Console.WriteLine()
 
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -233,15 +285,15 @@ let z = $"abc  {System.Console.WriteLine(x + y)} def"
         for (marker, shouldBeTriggered) in testCases do
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
-                    IntelliSenseOptions.Default
+                    mkGetInfo documentId,
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             triggered
@@ -260,15 +312,15 @@ System.Console.WriteLine()
 
         let caretPosition = fileContents.IndexOf("System.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
@@ -284,15 +336,15 @@ let f() =
 
         let caretPosition = fileContents.IndexOf("|.")
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.False(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
@@ -308,15 +360,15 @@ module Foo = module end
         let marker = "A"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(triggered, "Completion should trigger on Attributes.")
@@ -332,15 +384,15 @@ printfn "%d" !f
         let marker = "!f"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
@@ -357,15 +409,15 @@ use ptr = fixed &p
         let marker = "&p"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
@@ -391,21 +443,21 @@ xVal**y
         for marker in markers do
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let getInfo () = documentId, filePath, []
 
             let triggered =
                 FSharpCompletionProvider.ShouldTriggerCompletionAux(
                     SourceText.From(fileContents),
                     caretPosition,
                     CompletionTriggerKind.Insertion,
-                    getInfo,
-                    IntelliSenseOptions.Default
+                    mkGetInfo documentId,
+                    IntelliSenseOptions.Default,
+                    CancellationToken.None
                 )
 
             Assert.True(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
     [<Fact>]
-    let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let ShouldTriggerCompletionAtStartOfFileWithInsertion () =
         let fileContents =
             """
 l"""
@@ -413,15 +465,15 @@ l"""
         let marker = "l"
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo () = documentId, filePath, []
 
         let triggered =
             FSharpCompletionProvider.ShouldTriggerCompletionAux(
                 SourceText.From(fileContents),
                 caretPosition,
                 CompletionTriggerKind.Insertion,
-                getInfo,
-                IntelliSenseOptions.Default
+                mkGetInfo documentId,
+                IntelliSenseOptions.Default,
+                CancellationToken.None
             )
 
         Assert.True(
@@ -867,9 +919,10 @@ type T() =
 """
 
         VerifyNoCompletionList(fileContents, "member this.M(p:int, h")
+        VerifyNoCompletionList(fileContents, "member this.M(p")
 
     [<Fact>]
-    let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` =
+    let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` () =
         let fileContents =
             """
 type Interface =
@@ -923,6 +976,7 @@ type T(p:int, h) =
 """
 
         VerifyNoCompletionList(fileContents, "type T(p:int, h")
+        VerifyNoCompletionList(fileContents, "type T(p")
 
     [<Fact>]
     let ``Provide completion on implicit constructor argument type hint`` () =
@@ -1118,6 +1172,31 @@ type A<'lType> = { Field: l }
         VerifyCompletionList(fileContents, "Field: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
     [<Fact>]
+    let ``Completion list at record declaration site contains type parameter and record`` () =
+        let fileContents =
+            """
+type ARecord<'keyType> = {
+    Field: key
+    Field2: AR
+    Field3: ARecord<ke
+}
+    with
+        static member Create () = { F }
+        member x.F () = typeof<AR
+        member _.G = typeof<ke
+
+let x = { F }
+"""
+
+        VerifyCompletionList(fileContents, ": key", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, ": AR", [ "ARecord" ], [])
+        VerifyCompletionList(fileContents, ": ARecord<ke", [ "ARecord" ], [])
+        VerifyCompletionList(fileContents, "typeof<AR", [ "ARecord" ], [])
+        VerifyCompletionList(fileContents, "typeof<ke", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "Create () = { F", [ "Field"; "Field2"; "Field3" ], [])
+        VerifyCompletionList(fileContents, "let x = { F", [ "Field"; "Field2"; "Field3" ], [])
+
+    [<Fact>]
     let ``No completion on record stub with no fields at declaration site`` () =
         let fileContents =
             """
@@ -1180,14 +1259,99 @@ type A<'lType> =
         VerifyCompletionList(fileContents, "of l", [ "LanguagePrimitives"; "List"; "lType" ], [ "let"; "log" ])
 
     [<Fact>]
-    let ``Completion list on union case type at declaration site contains type parameter`` () =
+    let ``Completion list at union declaration site contains type parameter and union`` () =
         let fileContents =
             """
-type A<'keyType> =
+type AUnion<'keyType> =
     | Case of key
+    | Case2 of AU
+    | Case3 of AUnion<ke
+
+    with
+        static member Create () = Cas
+        member x.F () = typeof<AU
+        member _.G = typeof<ke
+
+let x = c
 """
 
         VerifyCompletionList(fileContents, "of key", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "of AU", [ "AUnion" ], [])
+        VerifyCompletionList(fileContents, "of AUnion<ke", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "typeof<AU", [ "AUnion" ], [])
+        VerifyCompletionList(fileContents, "typeof<ke", [ "keyType" ], [])
+        VerifyCompletionList(fileContents, "= Cas", [ "Case"; "Case2"; "Case3" ], [])
+        VerifyCompletionList(fileContents, "let x = c", [ "Case"; "Case2"; "Case3" ], [])
+
+    [<Fact>]
+    let ``Completion list on a union identifier and a dot in a match clause contains union cases`` () =
+        let fileContents =
+            """
+type DU =
+    | A
+    | B
+    | C
+
+match A with
+|  DU. -> ()
+
+match A with
+| B
+|   DU.
+| A -> ()
+
+match A with
+| DU.
+"""
+
+        VerifyCompletionListExactly(fileContents, "| DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|  DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|   DU.", [ "A"; "B"; "C" ])
+
+    [<Fact>]
+    let ``Completion list on a union identifier and a dot in a match clause contains union cases2`` () =
+        let fileContents =
+            """
+type DU =
+    | A
+    | B
+    | C
+
+match None with
+| Some DU.
+
+match A, () with
+| DU.
+
+match A, () with
+|  Some DU., _ -> ()
+
+match (), A with
+| _, DU.
+"""
+
+        VerifyCompletionListExactly(fileContents, "| Some DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "| DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "|  Some DU.", [ "A"; "B"; "C" ])
+        VerifyCompletionListExactly(fileContents, "| _, DU.", [ "A"; "B"; "C" ])
+
+    [<Fact>]
+    let ``Completion list on a module identifier and a dot in a match clause contains module contents`` () =
+        let fileContents =
+            """
+module M =
+    type DU =
+        | A
+
+match M.A with
+| M. -> ()
+
+match M.A with
+|  M.DU. ->
+"""
+
+        VerifyCompletionListExactly(fileContents, "| M.", [ "A"; "DU" ])
+        VerifyCompletionListExactly(fileContents, "|  M.DU.", [ "A" ])
 
     [<Fact>]
     let ``Completion list on type alias contains modules and types but not keywords or functions`` () =
@@ -1199,14 +1363,37 @@ type A = l
         VerifyCompletionList(fileContents, "= l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
 
     [<Fact>]
+    let ``Completion list on return type annotation contains modules and types but not keywords or functions`` () =
+        let fileContents =
+            """
+let a: l
+let b (): l
+
+type X =
+    member _.c: l
+    member x.d (): l
+    static member e: l
+"""
+
+        VerifyCompletionList(fileContents, "let a: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "let b (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member _.c: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "member x.d (): l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+        VerifyCompletionList(fileContents, "static member e: l", [ "LanguagePrimitives"; "List" ], [ "let"; "log" ])
+
+    [<Fact>]
     let ``No completion on enum case identifier at declaration site`` () =
         let fileContents =
             """
+let [<Literal>] lit = 1
+
 type A =
     | C = 0
+    | D = l
 """
 
         VerifyNoCompletionList(fileContents, "| C")
+        VerifyCompletionList(fileContents, "| D = l", [ "lit" ], [])
 
     [<Fact>]
     let ``Completion list in generic function body contains type parameter`` () =
@@ -1346,10 +1533,10 @@ type A =
             """
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: AnotherNestedRecTy }
+type NestedRecTy = { B: string; C: AnotherNestedRecTy }
 
 module F =
-    type RecTy = { D: NestdRecTy; E: string option }
+    type RecTy = { D: NestedRecTy; E: string option }
 
 open F
 
@@ -1373,7 +1560,7 @@ let t9 = { t2 with d }
 
 let t10 x = { x with d } 
 
-let t11 = { t2 with NestdRecTy.C. }
+let t11 = { t2 with NestedRecTy.C. }
 
 let t12 x = { x with F.RecTy.d }
 
@@ -1400,7 +1587,7 @@ let t13 x = { x with RecTy.D. }
         // The type of `x` is not known, so show fields of records in scope
         VerifyCompletionList(fileContents, "let t10 x = { x with d", [ "A"; "B"; "C"; "D"; "E" ], [])
 
-        VerifyNoCompletionList(fileContents, "let t11 = { t2 with NestdRecTy.C.")
+        VerifyNoCompletionList(fileContents, "let t11 = { t2 with NestedRecTy.C.")
 
         VerifyCompletionListExactly(fileContents, "let t12 x = { x with F.RecTy.d", [ "D"; "E" ])
 
@@ -1412,13 +1599,13 @@ let t13 x = { x with RecTy.D. }
             """
 type AnotherNestedRecTy = { A: int }
 
-type NestdRecTy = { B: string; C: {| C: AnotherNestedRecTy |} }
+type NestedRecTy = { B: string; C: {| C: AnotherNestedRecTy |} }
 
-type RecTy = { D: NestdRecTy; E: {| a: string |} }
+type RecTy = { D: NestedRecTy; E: {| a: string |} }
 
 let t1 x = { x with D.C.C.A = 12; E.a = "a" }
 
-let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B = "z" |}
+let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B = "z" |}
 """
 
         VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.", [ "B"; "C" ])
@@ -1427,17 +1614,565 @@ let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = "a"; D.B =
         VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; ", [ "D"; "E" ])
         VerifyCompletionListExactly(fileContents, "let t1 x = { x with D.C.C.A = 12; E.", [ "a" ])
 
-        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with ", [ "D"; "E" ])
-        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.", [ "a" ])
+        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with ", [ "D"; "E" ])
+        VerifyCompletionListExactly(fileContents, "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.", [ "a" ])
 
         VerifyCompletionListExactly(
             fileContents,
-            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ",
+            "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; ",
             [ "D"; "E" ]
         )
 
         VerifyCompletionListExactly(
             fileContents,
-            "let t2 (x: {| D: NestdRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
+            "let t2 (x: {| D: NestedRecTy; E: {| a: string |} |}) = {| x with E.a = \"a\"; D.",
             [ "B"; "C" ]
+        )
+
+    [<Fact>]
+    let ``Completion list for nested copy and update contains correct record fields, nominal, recursive, generic`` () =
+        let fileContents =
+            """
+type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
+
+let fz (a: RecordA<int>) = { a with Zoo.F = 1; Zoo.Zoo.B = 2; F } 
+"""
+
+        VerifyCompletionListExactly(fileContents, "with Zoo.F", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "Zoo.Zoo.B", [ "Bar"; "Foo"; "Zoo" ])
+        VerifyCompletionListExactly(fileContents, "; F", [ "Bar"; "Foo"; "Zoo" ])
+
+    [<Fact>]
+    let ``Anonymous record fields have higher priority than methods`` () =
+        let fileContents =
+            """
+let x = [ {| Goo = 1; Foo = "foo" |} ]
+x[0].
+"""
+
+        VerifyCompletionListExactly(fileContents, "x[0].", [ "Foo"; "Goo"; "Equals"; "GetHashCode"; "GetType"; "ToString" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern with one field, and no valrefs other than literals`` () =
+        let fileContents =
+            """
+let logV = 1
+let [<Literal>] logLit = 1
+
+type DU = A of logField: int
+
+let (|Even|Odd|) input = Odd
+
+match A 1 with
+| A l -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| A", [ "A"; "DU"; "logLit"; "Even"; "Odd"; "System" ], [ "logV"; "failwith"; "false" ])
+        VerifyCompletionList(fileContents, "| A l", [ "logField"; "logLit"; "num" ], [ "logV"; "log" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern in a match clause unless the field name is generated`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * rest: Du list
+    | D of int
+
+let x du =
+    match du with
+    | C (f, [ D i; C (first = s) ]) -> ()
+    | C (rest = r) -> ()
+    | _ -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| C (f", [ "first"; "du" ], [ "rest"; "item"; "num" ])
+        VerifyCompletionList(fileContents, "| C (f, [ D i", [ "num" ], [ "rest"; "first"; "du"; "item" ])
+        VerifyCompletionList(fileContents, "| C (f, [ D i; C (first = s", [ "first"; "du" ], [ "rest"; "num" ])
+        VerifyCompletionList(fileContents, "| C (rest = r", [ "rest"; "list" ], [ "first"; "du"; "item"; "num" ])
+
+    [<Fact>]
+    let ``Completion list does not contain suggested names which are already used in the same pattern`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: string option * rest: Du list
+
+let x (du: Du list) =
+    match du with
+    | [ C (first = first); C (first = f) ] -> ()
+    | [ C (first, rest); C (f, l) ] -> ()
+    | _ -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| [ C (first = first); C (first = f", [ "option" ], [ "first" ])
+        VerifyCompletionList(fileContents, "| [ C (first, rest); C (f", [ "option" ], [ "first" ])
+        VerifyCompletionList(fileContents, "| [ C (first, rest); C (f, l", [ "list" ], [ "rest" ])
+
+    [<Fact>]
+    let ``Completion list contains relevant items for the correct union case field pattern before its identifier has been typed`` () =
+        let fileContents =
+            """
+type Du =
+    | C of first: Du * second: Result<int, string>
+
+let x du =
+    match du with
+    | C () -> ()
+    | C  (ff, ) -> ()
+    | C  (first = f;) -> ()
+"""
+
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(fileContents, "| C (", [ "first"; "du"; "second" ], [ "result" ])
+        VerifyCompletionList(fileContents, "| C  (ff, ", [ "second"; "result" ], [ "first"; "du" ])
+        VerifyCompletionListExactly(fileContents, "| C  (first = f;", [ "second" ])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern in a let binding, lambda and member`` () =
+        let fileContents =
+            """
+type Ids = Ids of customerId: int * orderId: string option
+
+let x (Ids (c)) = ()
+let xy (Ids (c, o)) = ()
+let xyz (Ids c) = ()
+
+fun (Ids (c, o)) -> ()
+fun (Some v) -> ()
+
+type C =
+    member _.M (Ids (c, o)) = ()
+
+
+type MyAlias = int
+
+type Id2<'a> = Id2 of fff: 'a
+
+let r: Id2<MyAlias> = Id2 3
+
+match r with
+| Id2 (a) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "let x (Ids (c", [ "customerId"; "num" ], [])
+        VerifyCompletionList(fileContents, "let xy (Ids (c", [ "customerId"; "num" ], [])
+        VerifyCompletionList(fileContents, "let xy (Ids (c, o", [ "orderId"; "option" ], [])
+        VerifyCompletionList(fileContents, "let xyz (Ids c", [ "option" ], [ "customerId"; "orderId"; "num" ]) // option is on the list as a type
+        VerifyCompletionList(fileContents, "fun (Ids (c", [ "customerId"; "num" ], [])
+        VerifyCompletionList(fileContents, "fun (Ids (c, o", [ "orderId"; "option" ], [])
+        VerifyCompletionList(fileContents, "fun (Some v", [ "value" ], [])
+        VerifyCompletionList(fileContents, "member _.M (Ids (c", [ "customerId"; "num" ], [ "orderId" ])
+
+        // Respecting the type alias
+        VerifyCompletionList(fileContents, "| Id2 (a", [ "fff"; "myAlias" ], [ "num" ])
+
+    [<Fact>]
+    let ``Completion list does not contain suggested names in tuple deconstruction`` () =
+        let fileContents =
+            """
+match Some (1, 2) with
+| Some v -> ()
+| Some (a, b) -> ()
+| Some (c) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| Some v", [ "value" ], [])
+        VerifyCompletionList(fileContents, "| Some (a", [], [ "value" ])
+        VerifyCompletionList(fileContents, "| Some (a, b", [], [ "value" ])
+
+        // Binding the whole tuple here, so the field name should be present
+        VerifyCompletionList(fileContents, "| Some (c", [ "value" ], [])
+
+    [<Fact>]
+    let ``Completion list contains suggested names for union case field pattern based on the name of the generic type's solution`` () =
+        let fileContents =
+            """
+type Tab =
+    | A
+    | B
+
+match Some A with
+| Some a -> ()
+
+type G<'x, 'y> =
+    | U1 of xxx: 'x * yyy: 'y
+    | U2 of fff: string
+
+match U1 (1, A) with
+| U2 s -> ()
+| U1 (x, y) -> ()
+"""
+
+        VerifyCompletionList(fileContents, "| Some a", [ "value"; "tab" ], [])
+        VerifyCompletionList(fileContents, "| U2 s", [ "fff"; "string" ], [ "tab"; "xxx"; "yyy" ])
+        VerifyCompletionList(fileContents, "| U1 (x", [ "xxx"; "num" ], [ "tab"; "yyy"; "fff" ])
+        VerifyCompletionList(fileContents, "| U1 (x, y", [ "yyy"; "tab" ], [ "xxx"; "num"; "fff" ])
+
+    [<Fact>]
+    let ``Completion list for union case field identifier in a pattern contains available fields`` () =
+        let fileContents =
+            """
+type PatternContext =
+    | PositionalUnionCaseField of fieldIndex: int option * isTheOnlyField: bool * caseIdRange: range
+    | NamedUnionCaseField of fieldName: string * caseIdRange: range
+    | UnionCaseFieldIdentifier of referencedFields: string list * caseIdRange: range
+    | Other
+
+match PositionalUnionCaseField (None, 0, range0) with
+| PositionalUnionCaseField (fieldIndex = _; a)
+| NamedUnionCaseField (fieldName = a; z)
+| NamedUnionCaseField (x)
+"""
+
+        VerifyCompletionListExactly(fileContents, "PositionalUnionCaseField (fieldIndex = _; a", [ "caseIdRange"; "isTheOnlyField" ])
+        VerifyCompletionListExactly(fileContents, "NamedUnionCaseField (fieldName = a; z", [ "caseIdRange" ])
+
+        // This has the potential to become either a positional field pattern or a named field identifier, so we want to see completions for both:
+        // - suggested name based on the first field's identifier and a suggested name based on the first field's type
+        // - names of all fields
+        VerifyCompletionList(
+            fileContents,
+            "NamedUnionCaseField (x",
+            [ "string"; "fieldName"; "caseIdRange" ],
+            [ "range"; "fieldIndex"; "referencedFields"; "isTheOnlyField" ]
+        )
+
+    [<Fact>]
+    let ``Completion list does not contain methods and non-literals when dotting into a type or module in a pattern`` () =
+        let fileContents =
+            """
+module G =
+    let a = 1
+
+    [<Literal>]
+    let b = 1
+
+    let c () = ()
+
+type A =
+    | B of a: int
+    | C of float
+
+    static member Aug () = ()
+
+for G. in [] do
+
+let y x =
+    match x with
+    | [ B G. ] -> ()
+    | A.
+
+for Some ((0, C System.Double. ))
+"""
+
+        VerifyCompletionListExactly(fileContents, "for G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| [ B G.", [ "b" ])
+        VerifyCompletionListExactly(fileContents, "| A.", [ "B"; "C" ])
+        VerifyCompletionList(fileContents, "for Some ((0, C System.Double.", [ "Epsilon"; "MaxValue" ], [ "Abs" ])
+
+    [<Fact>]
+    let ``Completion list for override does not contain virtual method if there is a sealed override higher up in the hierarchy`` () =
+        let fileContents =
+            """
+[<AbstractClass>]
+type A () =
+    inherit System.Dynamic.SetIndexBinder (null)
+
+    override _.a
+
+[<AbstractClass>]
+type B () =
+    inherit System.Dynamic.DynamicMetaObjectBinder ()
+
+    override x.
+
+let _ =
+    { new System.Dynamic.SetIndexBinder (null) with
+        member x.
+    }
+
+let _ =
+    { new System.Dynamic.DynamicMetaObjectBinder () with
+        member this.
+    }
+"""
+
+        // SetIndexBinder inherits from DynamicMetaObjectBinder, but overrides and seals Bind and the ReturnType property
+        [ "override _.a"; "member x." ]
+        |> List.iter (fun i ->
+            VerifyCompletionListExactly(
+                fileContents,
+                i,
+                [
+                    "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
+                    "Equals (obj: obj): bool"
+                    "FallbackSetIndex (target: System.Dynamic.DynamicMetaObject, indexes: System.Dynamic.DynamicMetaObject array, value: System.Dynamic.DynamicMetaObject, errorSuggestion: System.Dynamic.DynamicMetaObject): System.Dynamic.DynamicMetaObject"
+                    "Finalize (): unit"
+                    "GetHashCode (): int"
+                    "ToString (): string"
+                ]
+            ))
+
+        [ "override x."; "member this." ]
+        |> List.iter (fun i ->
+            VerifyCompletionListExactly(
+                fileContents,
+                i,
+                [
+                    "ReturnType with get (): System.Type"
+                    "Bind (target: System.Dynamic.DynamicMetaObject, args: System.Dynamic.DynamicMetaObject array): System.Dynamic.DynamicMetaObject"
+                    "BindDelegate (site: System.Runtime.CompilerServices.CallSite<'T>, args: obj array): 'T"
+                    "Equals (obj: obj): bool"
+                    "Finalize (): unit"
+                    "GetHashCode (): int"
+                    "ToString (): string"
+                ]
+            ))
+
+    [<Fact>]
+    let ``Completion list for override does not contain virtual method if it is already overridden in the same type`` () =
+        let fileContents =
+            """
+type G<'a> () =
+    override _.
+
+    override x.ToString () = ""
+
+[<AbstractClass]
+type A () =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+
+    member NotVirtual () = ()
+
+type B () =
+    inherit A ()
+
+    override A1 () = ()
+    override x.b
+
+type C () =
+    inherit A () =
+
+    override A1 () = ()
+    override x.c
+    override A1 s = ()
+"""
+
+        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.b",
+            [
+                "A1 (arg: string): unit"
+                "A2 (): unit"
+                "Equals (obj: obj): bool"
+                "Finalize (): unit"
+                "GetHashCode (): int"
+                "ToString (): string"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "override x.c",
+            [
+                "A2 (): unit"
+                "Equals (obj: obj): bool"
+                "Finalize (): unit"
+                "GetHashCode (): int"
+                "ToString (): string"
+            ]
+        )
+
+    [<Fact>]
+    let ``Completion list for override in interface implements does not contain method which is already overridden in the same type`` () =
+        let fileContents =
+            """
+type IA =
+    static abstract member A3: unit -> unit
+    static abstract member A4: unit -> unit
+    static abstract member P1: value: int -> int with get, set
+    static abstract member P2: int with get, set
+    
+type IB =
+    abstract member A1: unit -> unit
+    abstract member A1: string -> unit
+    abstract member A2: unit -> unit
+    abstract member P1: int * bool -> int with get, set
+    abstract member P2: int with get, set
+
+type TA() =
+    interface IA with
+        static member 
+        static member A3 (): unit = ()
+        static member P2
+            with get (): int = raise (System.NotImplementedException())
+    interface IB with
+        member this.A1 (arg1: string): unit = ()
+        member this.P2
+            with get (): int = raise (System.NotImplementedException())
+        member thisTA.
+"""
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "static member ",
+            [
+                "P1 with get (value: int): int and set (value: int) (value_1: int)"
+                "P2 with set (value: int)"
+                "A4 (): unit"
+            ]
+        )
+
+        VerifyCompletionListExactly(
+            fileContents,
+            "member thisTA.",
+            [
+                "P1 with get (arg: int, arg_1: bool): int and set (arg: int, arg_1: bool) (value: int)"
+                "P2 with set (value: int)"
+                "A1 (): unit"
+                "A2 (): unit"
+            ]
+        )
+
+    [<Fact>]
+    let ``Completion list for override is empty when the caret is on the self identifier`` () =
+        let fileContents =
+            """
+type A () =
+    override a
+
+type B () =
+    override _
+
+type C () =
+    override c.b () = ()
+"""
+
+        VerifyNoCompletionList(fileContents, "override a")
+        VerifyNoCompletionList(fileContents, "override _")
+        VerifyNoCompletionList(fileContents, "override c")
+
+    [<Fact>]
+    let ``Completion list for record field identifier in a pattern contains available fields, modules, namespaces and record types`` () =
+        let fileContents =
+            """
+open System
+
+type DU =
+    | X
+
+type R1 = { A: int; B: int }
+type R2 = { C: int; D: int }
+
+match [] with
+| [ { A = 2; l = 2 } ] -> ()
+
+match { A = 1; B = 2 } with
+| { A = 1;  } -> ()
+| { A = 2; s } -> ()
+| { B = } -> ()
+| { X = ; A = 3 } -> ()
+| {   } -> ()
+"""
+
+        VerifyCompletionList(
+            fileContents,
+            "| [ { A = 2; l",
+            [ "B"; "R1"; "R2"; "System"; "LanguagePrimitives" ],
+            [ "A"; "C"; "D"; "DU"; "X"; "log"; "let"; "Lazy" ]
+        )
+
+        VerifyCompletionList(fileContents, "| { A = 1; ", [ "B"; "R1"; "R2" ], [ "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { A = 2; s", [ "B"; "R1"; "R2" ], [ "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { B =", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { B = ", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { X =", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+        VerifyCompletionList(fileContents, "| { X = ", [ "R1"; "R2"; "Some"; "None"; "System"; "DU" ], [ "A"; "B"; "C"; "D" ])
+
+        // Ideally C and D should not be present here, but right now we're not able to filter fields in an empty record pattern stub
+        VerifyCompletionList(fileContents, "| {  ", [ "A"; "B"; "C"; "D"; "R1"; "R2" ], [])
+
+    [<Fact>]
+    let ``Completion list for record field identifier in a pattern contains fields of all records in scope when the record type is not known yet``
+        ()
+        =
+        let fileContents =
+            """
+type R1 = { A: int; B: int }
+type R2 = { C: int; D: int }
+
+match { A = 1; B = 2 } with
+| { f = () }
+"""
+
+        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
+
+    [<Fact>]
+    let ``issue #16260 [TO-BE-IMPROVED] operators are fumbling for now`` () =
+        let fileContents =
+            """
+module Ops =
+let (|>>) a b = a + b
+module Foo =
+  let (|>>) a b = a + b
+Ops.Foo.()
+Ops.Foo.(
+Ops.(
+Ops.()
+"""
+
+        VerifyCompletionList(fileContents, "Ops.Foo.(", [], [ "|>>"; "(|>>)" ])
+        VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])
+
+    [<Fact>]
+    let ``Check code generation for completion to overridable slots`` () =
+        let fileContents =
+            """
+let _ =
+  { new System.IO.Stream() with
+      member x.
+  }
+"""
+
+        let nl = Environment.NewLine
+
+        let toCheckCompletionItems =
+            [
+                "CanRead with get (): bool"
+                "Position with get (): int64 and set (value: int64)"
+                "ToString (): string"
+            ]
+
+        VerifyCompletionCode(
+            true,
+            fileContents,
+            "member x.",
+            List.zip
+                toCheckCompletionItems
+                [
+                    $"CanRead{nl}        with get (): bool = raise (System.NotImplementedException())"
+                    $"Position{nl}        with get (): int64 = raise (System.NotImplementedException()){nl}         and set (value: int64) = raise (System.NotImplementedException())"
+                    $"ToString (): string = {nl}        base.ToString()"
+                ]
+            |> Map.ofList
+        )
+
+        VerifyCompletionCode(
+            false,
+            fileContents,
+            "member x.",
+            List.zip
+                toCheckCompletionItems
+                [
+                    $"CanRead{nl}        with get (): bool = "
+                    $"Position{nl}        with get (): int64 = {nl}         and set (value: int64) = "
+                    $"ToString (): string = {nl}        "
+                ]
+            |> Map.ofList
         )

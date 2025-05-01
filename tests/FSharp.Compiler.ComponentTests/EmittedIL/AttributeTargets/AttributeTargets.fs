@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.ComponentTests.EmittedIL
+namespace EmittedIL.RealInternalSignature
 
 open Xunit
 open FSharp.Test
@@ -17,14 +17,20 @@ module AttributeTargets =
         |> verifyBaseline
         |> verifyILBaseline
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Default.fs"|])>]
+    [<Theory; FileInlineData("Default.fs", Realsig=BooleanOptions.Both)>]
     let ``Default_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Field.fs"|])>]
+    [<Theory; FileInlineData("Field.fs", Realsig=BooleanOptions.Both)>]
     let ``Field_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Property.fs"|])>]
+    [<Theory; FileInlineData("Property.fs", Realsig=BooleanOptions.Both)>]
     let ``Property_fs`` compilation =
-        verifyCompilation compilation
+        compilation
+        |> getCompilation
+        |> verifyCompilation

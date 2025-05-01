@@ -1,0 +1,1 @@
+let myFunc = _.ThisIsMyFunction a b c

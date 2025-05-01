@@ -6,14 +6,11 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
-
-
-[<Literal>]
-let FSharpCategory = "fsharp"
-
+open BenchmarkDotNet.Engines
+open FSharp.Benchmarks.Common.Categories
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(LongCategory)>]
 type BackgroundCompilerBenchmarks () =
 
     let size = 50
@@ -103,13 +100,13 @@ type BackgroundCompilerBenchmarks () =
         this.Benchmark.DeleteProjectDir()
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(ShortCategory)>]
 type ParsingBenchmark() =
 
     let mutable checker: FSharpChecker = Unchecked.defaultof<_>
     let mutable parsingOptions: FSharpParsingOptions = Unchecked.defaultof<_>
 
-    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "CheckExpressions.fs"
+    let filePath = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Checking" ++ "Expressions" ++ "CheckExpressions.fs"
     let source = File.ReadAllText filePath |> SourceText.ofString
 
     [<ParamsAllValues>]
@@ -133,7 +130,7 @@ type ParsingBenchmark() =
             failwith "ParseHadErrors"
 
 [<MemoryDiagnoser>]
-[<BenchmarkCategory(FSharpCategory)>]
+[<BenchmarkCategory(LongCategory)>]
 type NoFileSystemCheckerBenchmark() =
 
     let size = 30
@@ -152,10 +149,7 @@ type NoFileSystemCheckerBenchmark() =
     let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
 
     [<ParamsAllValues>]
-    member val UseGetSource = true with get,set
-
-    [<ParamsAllValues>]
-    member val UseChangeNotifications = true with get,set
+    member val UseInMemoryDocuments = true with get,set
 
     [<ParamsAllValues>]
     member val EmptyCache = true with get,set
@@ -165,8 +159,8 @@ type NoFileSystemCheckerBenchmark() =
         benchmark <-
             ProjectWorkflowBuilder(
             project,
-            useGetSource = this.UseGetSource,
-            useChangeNotifications = this.UseChangeNotifications).CreateBenchmarkBuilder()
+            useGetSource = this.UseInMemoryDocuments,
+            useChangeNotifications = this.UseInMemoryDocuments).CreateBenchmarkBuilder()
 
     [<IterationSetup>]
     member this.EditFirstFile_OnlyInternalChange() =
@@ -178,15 +172,14 @@ type NoFileSystemCheckerBenchmark() =
     member this.ExampleWorkflow() =
 
         use _ = Activity.start "Benchmark" [
-            "UseGetSource", this.UseGetSource.ToString()
-            "UseChangeNotifications", this.UseChangeNotifications.ToString()
+            "UseInMemoryDocuments", this.UseInMemoryDocuments.ToString()
         ]
 
         let first = "File001"
         let middle = $"File%03d{size / 2}"
         let last = $"File%03d{size}"
 
-        if this.UseGetSource && this.UseChangeNotifications then
+        if this.UseInMemoryDocuments then
 
             benchmark {
                 updateFile first updatePublicSurface
@@ -221,3 +214,215 @@ type NoFileSystemCheckerBenchmark() =
     [<GlobalCleanup>]
     member this.Cleanup() =
         benchmark.DeleteProjectDir()
+
+
+
+type TestProjectType =
+    | DependencyChain = 1
+    | DependentGroups = 2
+    | ParallelGroups = 3
+
+
+[<MemoryDiagnoser>]
+[<ThreadingDiagnoser>]
+[<SimpleJob(warmupCount=1,iterationCount=4)>]
+[<BenchmarkCategory(LongCategory)>]
+type TransparentCompilerBenchmark() =
+
+    let size = 30
+
+    let groups = 6
+    let filesPerGroup = size / groups
+    let somethingToCompile = File.ReadAllText (__SOURCE_DIRECTORY__ ++ "SomethingToCompileSmaller.fs")
+
+    let projects = Map [
+
+        TestProjectType.DependencyChain,
+            SyntheticProject.Create("SingleDependencyChain", [|
+                sourceFile $"File%03d{0}" []
+                for i in 1..size do
+                    { sourceFile $"File%03d{i}" [$"File%03d{i-1}"] with ExtraSource = somethingToCompile }
+            |])
+
+        TestProjectType.DependentGroups,
+            SyntheticProject.Create("GroupDependenciesProject", [|
+                for group in 1..groups do
+                    for i in 1..filesPerGroup do
+                        { sourceFile $"G{group}_F%03d{i}" [
+                            if group > 1 then $"G1_F%03d{1}"
+                            if i > 1 then $"G{group}_F%03d{i - 1}" ]
+                            with ExtraSource = somethingToCompile }
+            |])
+
+        TestProjectType.ParallelGroups,
+            SyntheticProject.Create("ParallelGroupsProject", [|
+                for group in 1..groups do
+                    for i in 1..filesPerGroup do
+                        { sourceFile $"G{group}_F%03d{i}" [
+                            if group > 1 then
+                                for i in 1..filesPerGroup do
+                                    $"G{group-1}_F%03d{i}" ]
+                            with ExtraSource = somethingToCompile }
+            |])
+    ]
+
+    let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
+
+    member val UseGetSource = true with get,set
+
+    member val UseChangeNotifications = true with get,set
+
+    //[<ParamsAllValues>]
+    member val EmptyCache = false with get,set
+
+    [<ParamsAllValues>]
+    member val UseTransparentCompiler = true with get,set
+
+    [<ParamsAllValues>]
+    member val ProjectType = TestProjectType.ParallelGroups with get,set
+
+    member this.Project = projects[this.ProjectType]
+
+    [<GlobalSetup>]
+    member this.Setup() =
+        benchmark <-
+            ProjectWorkflowBuilder(
+            this.Project,
+            useGetSource = this.UseGetSource,
+            useChangeNotifications = this.UseChangeNotifications,
+            useTransparentCompiler = this.UseTransparentCompiler,
+            runTimeout = 15_000).CreateBenchmarkBuilder()
+
+    [<IterationSetup>]
+    member this.EditFirstFile_OnlyInternalChange() =
+        if this.EmptyCache then
+            benchmark.Checker.InvalidateAll()
+            benchmark.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    [<Benchmark>]
+    member this.ExampleWorkflow() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        let first = this.Project.SourceFiles[0].Id
+        let middle = this.Project.SourceFiles[size / 2].Id
+        let last = this.Project.SourceFiles |> List.last |> fun f -> f.Id
+
+        benchmark {
+            updateFile first updatePublicSurface
+            checkFile first expectSignatureChanged
+            checkFile last expectSignatureChanged
+            updateFile middle updatePublicSurface
+            checkFile last expectOk
+            addFileAbove middle (sourceFile "addedFile" [first])
+            updateFile middle (addDependency "addedFile")
+            checkFile middle expectSignatureChanged
+            checkFile last expectOk
+        }
+
+    [<GlobalCleanup>]
+    member this.Cleanup() =
+        benchmark.DeleteProjectDir()
+
+
+// needs Giraffe repo somewhere nearby, hence benchmarks disabled
+[<MemoryDiagnoser>]
+[<ThreadingDiagnoser>]
+[<SimpleJob(warmupCount=1,iterationCount=8)>]
+type TransparentCompilerGiraffeBenchmark() =
+
+    let mutable benchmark : ProjectWorkflowBuilder = Unchecked.defaultof<_>
+
+    let rng = System.Random()
+
+    let addComment s = $"{s}\n// {rng.NextDouble().ToString()}"
+    let prependSlash s = $"/{s}\n// {rng.NextDouble()}"
+
+    let modify (sourceFile: SyntheticSourceFile) =
+        { sourceFile with Source = addComment sourceFile.Source }
+
+    let break' (sourceFile: SyntheticSourceFile) =
+        { sourceFile with Source = prependSlash sourceFile.Source }
+
+    let fix (sourceFile: SyntheticSourceFile) =
+        { sourceFile with Source = sourceFile.Source.Substring 1 }
+
+    [<ParamsAllValues>]
+    member val UseTransparentCompiler = true with get,set
+
+    [<ParamsAllValues>]
+    member val SignatureFiles = true with get,set
+
+    member this.Project =
+        let projectDir = if this.SignatureFiles then "Giraffe-signatures" else "Giraffe"
+
+        let project = SyntheticProject.CreateFromRealProject (__SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".." ++ ".." ++ projectDir ++ "src/Giraffe")
+        { project with OtherOptions = "--nowarn:FS3520"::project.OtherOptions }
+
+    [<GlobalSetup>]
+    member this.Setup() =
+        benchmark <-
+            ProjectWorkflowBuilder(
+            this.Project,
+            useGetSource = true,
+            useChangeNotifications = true,
+            useTransparentCompiler = this.UseTransparentCompiler,
+            runTimeout = 15_000).CreateBenchmarkBuilder()
+
+    //[<Benchmark>]
+    member this.ChangeFirstCheckLast() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        benchmark {
+            updateFile this.Project.SourceFiles.Head.Id modify
+            checkFile (this.Project.SourceFiles |> List.last).Id expectOk
+        }
+
+    //[<Benchmark>]
+    member this.ChangeSecondCheckLast() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        benchmark {
+            updateFile this.Project.SourceFiles[1].Id modify
+            checkFile (this.Project.SourceFiles |> List.last).Id expectOk
+        }
+
+    // [<Benchmark>]
+    member this.SomeWorkflow() =
+
+        use _ = Activity.start "Benchmark" [
+            "UseTransparentCompiler", this.UseTransparentCompiler.ToString()
+        ]
+
+        benchmark {
+            updateFile "Json" modify
+            checkFile "Json" expectOk
+            checkFile "ModelValidation" expectOk
+            updateFile "ModelValidation" modify
+            checkFile "ModelValidation" expectOk
+            updateFile "Xml" modify
+            checkFile "Xml" expectOk
+            updateFile "ModelValidation" modify
+            checkFile "ModelValidation" expectOk
+
+            updateFile "Core" break'
+            checkFile "Core" expectErrors
+            checkFile "Routing" (if this.SignatureFiles then expectOk else expectErrors)
+            updateFile "Routing" modify
+            checkFile "Streaming" (if this.SignatureFiles then expectOk else expectErrors)
+            checkFile "EndpointRouting" (if this.SignatureFiles then expectOk else expectErrors)
+
+            updateFile "Core" fix
+            checkFile "Core" expectOk
+            checkFile "Routing" expectOk
+            checkFile "Streaming" expectOk
+            checkFile "EndpointRouting" expectOk
+        }

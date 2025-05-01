@@ -42,9 +42,9 @@ val x9: Lazy<string>
 type ClassInFile2 =
   new: unit -> ClassInFile2
 
-> val x1: seq<string>
-val x2: seq<string>
-val x3: seq<string>
+> val x1: string seq
+val x2: string seq
+val x3: string seq
 val f1: System.Windows.Forms.Form = System.Windows.Forms.Form, Text: f1 form
 val fs: System.Windows.Forms.Form array =
   [|System.Windows.Forms.Form, Text: fs #0;
@@ -206,7 +206,7 @@ val sxs0: Set<string> = set []
 > module M =
   val a: string = "sub-binding"
   val b:
-    (seq<string> * seq<string> * seq<string> * System.Windows.Forms.Form) option *
+    (string seq * string seq * string seq * System.Windows.Forms.Form) option *
     (string list * string list * string array2d) option =
     (Some (<seq>, <seq>, <seq>, System.Windows.Forms.Form, Text: f1 form),
      Some
@@ -4060,6 +4060,7 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
+    #help "idn";;                                 // Display documentation for an identifier, e.g. #help "List.map";;
     #clear;;                                      // Clear screen
     #quit;;                                       // Exit
 
@@ -4067,6 +4068,27 @@ type 'a T4063 = | AT4063 of 'a
 
 
 
+> val it: string = "Check #help for an identifier"
+
+
+Description:
+Builds a new collection whose elements are the results of applying the given function
+to each of the elements of the collection.
+
+Parameters:
+- mapping: The function to transform elements from the input list.
+- list: The input list.
+Returns:
+The list of transformed elements.
+
+Examples:
+let inputs = [ "a"; "bbb"; "cc" ]
+
+inputs |> List.map (fun x -> x.Length)
+// Evaluates to [ 1; 3; 2 ]
+
+Full name: Microsoft.FSharp.Collections.ListModule.map
+Assembly: FSharp.Core.dll
 > val it: string = "Check #time on and then off"
 
 > 
@@ -4989,7 +5011,7 @@ module internal PrivateM =
   type private T14 =
     new: unit -> T14
 
-> val it: seq<int * string * int> =
+> val it: (int * string * int) seq =
   seq
     [(43, "10/28/2008", 1); (46, "11/18/2008", 1); (56, "1/27/2009", 2);
      (58, "2/10/2009", 1)]
@@ -5032,15 +5054,15 @@ module Test4343d =
   val xOption: int option = Some 12
   val xArray2: (int * int) array2d = [[(0, 0); (0, 1)]
                                       [(1, 0); (1, 1)]]
-  val xSeq: seq<int>
+  val xSeq: int seq
 module Test4343e =
   type C =
     new: x: int -> C
   val cA: C
   val cB: C
   val cAB: C * C * C list =
-    (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
-     [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
+    (FSI_0092+Test4343e+C, FSI_0092+Test4343e+C,
+     [FSI_0092+Test4343e+C; FSI_0092+Test4343e+C])
   type D =
     new: x: int -> D
     override ToString: unit -> string
@@ -5053,8 +5075,8 @@ module Test4343e =
     val cA: C
     val cB: C
     val cAB: C * C * C list =
-      (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
-       [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
+      (FSI_0092+Test4343e+C, FSI_0092+Test4343e+C,
+       [FSI_0092+Test4343e+C; FSI_0092+Test4343e+C])
     type D<'a> =
       new: x: 'a -> D<'a>
       override ToString: unit -> string
@@ -5062,7 +5084,7 @@ module Test4343e =
     val dB: D<int> = D(2)
     val dAB: D<int> * D<int> * D<int> list = (D(1), D(2), [D(1); D(2)])
     val dC: D<bool> = D(True)
-    val boxed_dABC: obj list = [D(1); D(2); D(True)]
+    val boxed_dABC: objnull list = [D(1); D(2); D(True)]
 type F1 =
   inherit System.Windows.Forms.Form
   interface System.IDisposable
@@ -5076,8 +5098,8 @@ type F1 =
   static member C: unit -> int
   abstract AAA: int
   abstract BBB: bool with set
-  member D2: int
-  member E: int
+  member D2: int with get, set
+  member E: int with get, set
   abstract ZZZ: int
   static val mutable private sx: F1
   static val mutable private sx2: F1
@@ -5229,7 +5251,7 @@ module Regression5218 =
 type Regression4469 =
   new: unit -> Regression4469
   member ToString: unit -> string
-val r4469: Regression4469 = FSI_0106+Regression4469
+val r4469: Regression4469 = FSI_0108+Regression4469
 val it: unit = ()
 
 > Expect ABC = ABC
@@ -6203,7 +6225,7 @@ type System.Int32 with
 
 > val f: ``parameter with spaces in name`` : int -> int
 
-> val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
+> val functionWhichTakesAParameterPreciselyPlusButNotOpAddition:
   ``+`` : (int -> int -> int) -> int
 
 > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int

@@ -11,6 +11,7 @@ fsharp_max_array_or_list_width=80
 fsharp_max_array_or_list_number_of_items=5
 fsharp_max_dot_get_expression_width=80
 fsharp_multiline_block_brackets_on_same_column=true
+fsharp_multiline_bracket_style=aligned
 fsharp_keep_max_number_of_blank_lines=1
 
 [*.fsi]

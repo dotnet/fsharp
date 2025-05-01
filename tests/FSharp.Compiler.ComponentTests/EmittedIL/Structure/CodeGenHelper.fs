@@ -111,12 +111,12 @@ let notContainMember membName (ty : Type) =
     | null | [| |] -> ()
     | _    -> failwithf "Error: Type %s does contain member %s" ty.Name membName
 
-/// Has airity (number of arguments and types)
+/// Has arity (number of arguments and types)
 let takeParams (args : Type list) (methInfo : MethodInfo) =
     let parameters = methInfo.GetParameters()
     if parameters.Length <> List.length args then
         failwithf 
-            "Error: Method [%s] doesn't have expected airity. Method takes %d params, but expected %d"
+            "Error: Method [%s] doesn't have expected arity. Method takes %d params, but expected %d"
             methInfo.Name
             parameters.Length
             (List.length args)
@@ -161,13 +161,13 @@ let useEventHandler eventHandlerType (eventInfo : EventInfo) =
     ()  
     
 /// Verify the object contains a custom attribute with the given name. E.g. "ObsoleteAttribute"
-let haveAttribute attrName thingey =
+let haveAttribute attrName thingy =
     let containsAttrWithName attrList =
         attrList
         |> Array.filter (fun att -> att.GetType().Name = attrName)
         |> Array.length > 0
     let containsAttribute =
-        match box thingey with
+        match box thingy with
         | :? Type as ty 
             -> ty.GetCustomAttributes(false)
                |> containsAttrWithName
@@ -180,13 +180,13 @@ let haveAttribute attrName thingey =
         | :? EventInfo as ei
             -> ei.GetCustomAttributes(false)
                |> containsAttrWithName
-        | _ -> failwith "Error: Unsuported primitive type, unable to get custom attributes."
+        | _ -> failwith "Error: Unsupported primitive type, unable to get custom attributes."
     if not containsAttribute then
         failwithf "Error: Unable to locate attribute %s." attrName
     else
         ()
 
-/// Asserts a propety's return value
+/// Asserts a property's return value
 let haveType ty (propInfo : PropertyInfo) =
     if propInfo.PropertyType <> ty then
         failwithf 
@@ -196,13 +196,13 @@ let haveType ty (propInfo : PropertyInfo) =
     ()
 
 /// Verify the object does not contain any custom attributes.
-let doesn'tHaveAttribute attrName thingey =
+let doesn'tHaveAttribute attrName thingy =
     let doesn'tContainsAttrWithName attrList =
         attrList
         |> Array.filter (fun att -> att.GetType().Name = attrName)
         |> Array.length = 0
     let containsAttribute =
-        match box thingey with
+        match box thingy with
         | :? Type as ty 
             -> ty.GetCustomAttributes(false)
                |> doesn'tContainsAttrWithName
@@ -215,7 +215,7 @@ let doesn'tHaveAttribute attrName thingey =
         | :? EventInfo as ei
             -> ei.GetCustomAttributes(false)
                |> doesn'tContainsAttrWithName
-        | _ -> failwith "Error: Unsuported primitive type, unable to get custom attributes."
+        | _ -> failwith "Error: Unsupported primitive type, unable to get custom attributes."
     if containsAttribute then
         failwithf "Error: Able to locate attribute %s, didn't expect to find." attrName
     else

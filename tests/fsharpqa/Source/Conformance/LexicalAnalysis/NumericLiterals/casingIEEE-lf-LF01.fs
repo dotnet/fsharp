@@ -1,5 +1,5 @@
 // #Conformance #LexicalAnalysis #Constants 
-// Number type specifier LF/lf are case sensitive
+// Number type specifier LF/lf are case-sensitive
 // IEEE32/IEEE64 - lf vs LF
 //<Expects status="success"></Expects>
 #light

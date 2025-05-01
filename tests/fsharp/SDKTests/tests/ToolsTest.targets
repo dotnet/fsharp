@@ -4,9 +4,10 @@
 
   <Import Project="$(TargetsDirectory)\Microsoft.FSharp.targets" />
 
-  <Target Name="Test">
+  <Target Name="Test" DependsOnTargets="FSharpSourceCodeCompileOrder">
     <Message Importance="High" Text="===========================================================================================================" />
     <Message Importance="High" Text="Testing : $(MSBuildProjectName)" />
+
 
     <!-- check for expected settings -->
     <Error Condition="'$(ExpectedFSharpShimPresent)' != '$(FSharp_Shim_Present)'" Text="FSharp_Shim_Present expected:'$(ExpectedFSharpShimPresent)' actual: '$(FSharp_Shim_Present)'" />
@@ -16,6 +17,8 @@
     <Error Condition="'$(ExpectedFscToolExe)' != '$(FscToolExe)'" Text="FscToolExe:  expected:'$(ExpectedFscToolExe)' actual:'$(FscToolExe)'" />
 
     <Error Condition="'$(ExpectedFscToolPath)' != '$(FscToolPath)'" Text="FscToolPath:  expected:'$(ExpectedFscToolPath)' actual:'$(FscToolPath)'" />
+
+    <Error Condition="'$(ExpectedCompile)' != '' and  '$(ExpectedCompile)' != '@(Compile)'" Text="ExpectedCompile:  expected:'$(ExpectedCompile)' actual:'@(Compile)'" />
 
     <Error Condition="'$(ExpectedDotnetFscCompilerPath)' == '' and '$(DotnetFscCompilerPath)' != ''" Text="DotnetFscCompilerPath expected to be empty actual:'$(DotnetFscCompilerPath)'" />
 

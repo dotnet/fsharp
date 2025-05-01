@@ -13,10 +13,10 @@
 // constraint generic type forwarding
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_OnlyOrigin<>))]
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_OnlyForwarder<>))]
-[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_NonVialatedForwarder<>))]
+[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_NonViolatedForwarder<>))]
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_Both<>))]
-[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_BothNonVialated<>))]
-[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_BothVialated<>))]
+[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_BothNonViolated<>))]
+[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Constraint_BothViolated<>))]
 
 // generic class and generic method test
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(Method_NotInForwarder<>))]
@@ -110,7 +110,7 @@ public class Constraint_OnlyForwarder<T>
     }
 }
 
-public class Constraint_NonVialatedForwarder<T>
+public class Constraint_NonViolatedForwarder<T>
 {
     public int getValue()
     {
@@ -126,7 +126,7 @@ public class Constraint_Both<T> where T : class
     }
 }
 
-public class Constraint_BothNonVialated<T> where T : new()
+public class Constraint_BothNonViolated<T> where T : new()
 {
     public int getValue()
     {
@@ -134,7 +134,7 @@ public class Constraint_BothNonVialated<T> where T : new()
     }
 
 }
-public class Constraint_BothVialated<T> where T : class
+public class Constraint_BothViolated<T> where T : class
 {
     public int getValue()
     {

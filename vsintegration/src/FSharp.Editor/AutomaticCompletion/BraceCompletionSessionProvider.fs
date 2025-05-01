@@ -22,14 +22,11 @@ open Microsoft.CodeAnalysis.Classification
 [<AutoOpen>]
 module BraceCompletionSessionProviderHelpers =
 
-    let tryGetCaretPoint (buffer: ITextBuffer) (session: IBraceCompletionSession) =
-        let point =
-            session.TextView.Caret.Position.Point.GetPoint(buffer, PositionAffinity.Predecessor)
+    let inline tryGetCaretPoint (buffer: ITextBuffer) (session: IBraceCompletionSession) =
+        ValueOption.ofNullable (session.TextView.Caret.Position.Point.GetPoint(buffer, PositionAffinity.Predecessor))
 
-        if point.HasValue then Some point.Value else None
-
-    let tryGetCaretPosition session =
-        session |> tryGetCaretPoint session.SubjectBuffer
+    let inline tryGetCaretPosition (session: IBraceCompletionSession) =
+        tryGetCaretPoint session.SubjectBuffer session
 
     let tryInsertAdditionalBracePair (session: IBraceCompletionSession) openingChar closingChar =
         let sourceCode = session.TextView.TextSnapshot
@@ -134,13 +131,13 @@ type BraceCompletionSession
                                 // exit without setting the closing point which will take us off the stack
                                 edit.Cancel()
                                 undo.Cancel()
-                                None
+                                ValueNone
                             else
-                                Some(edit.Apply()) // FIXME: perhaps, it should be ApplyAndLogExceptions()
+                                ValueSome(edit.Apply()) // FIXME: perhaps, it should be ApplyAndLogExceptions()
 
                         match nextSnapshot with
-                        | None -> ()
-                        | Some (nextSnapshot) ->
+                        | ValueNone -> ()
+                        | ValueSome(nextSnapshot) ->
 
                             let beforePoint = beforeTrackingPoint.GetPoint(textView.TextSnapshot)
 
@@ -185,7 +182,7 @@ type BraceCompletionSession
 
         if closingSnapshotPoint.Position > 0 then
             match tryGetCaretPosition this with
-            | Some caretPos when not (this.HasNoForwardTyping(caretPos, closingSnapshotPoint.Subtract(1))) -> true
+            | ValueSome caretPos when not (this.HasNoForwardTyping(caretPos, closingSnapshotPoint.Subtract(1))) -> true
             | _ -> false
         else
             false
@@ -265,7 +262,7 @@ type BraceCompletionSession
 
                     match caretPos with
                     // ensure that we are within the session before clearing
-                    | Some caretPos when
+                    | ValueSome caretPos when
                         caretPos.Position < closingSnapshotPoint.Position
                         && closingSnapshotPoint.Position > 0
                         ->
@@ -310,7 +307,7 @@ type BraceCompletionSession
 
         member this.PostReturn() =
             match tryGetCaretPosition this with
-            | Some caretPos ->
+            | ValueSome caretPos ->
                 let closingSnapshotPoint = closingPoint.GetPoint(subjectBuffer.CurrentSnapshot)
 
                 if
@@ -499,15 +496,19 @@ type EditorBraceCompletionSessionFactory() =
         let sourceCode = sourceCodeTask.Result
 
         position = 0
-        || (let colorizationData =
-                Tokenizer.getClassifiedSpans (
-                    document.Id,
-                    sourceCode,
-                    TextSpan(position - 1, 1),
-                    Some(document.FilePath),
-                    [],
-                    cancellationToken
-                )
+        || (let colorizationData = ResizeArray<_>()
+
+            Tokenizer.classifySpans (
+                document.Id,
+                sourceCode,
+                TextSpan(position - 1, 1),
+                Some(document.FilePath),
+                [],
+                None,
+                None,
+                colorizationData,
+                cancellationToken
+            )
 
             colorizationData.Count = 0
             || colorizationData.Exists(fun classifiedSpan ->
@@ -563,11 +564,9 @@ type EditorBraceCompletionSessionFactory() =
 [<BracePair(VerticalBar.OpenCharacter, VerticalBar.CloseCharacter)>]
 [<BracePair(AngleBrackets.OpenCharacter, AngleBrackets.CloseCharacter)>]
 [<BracePair(Asterisk.OpenCharacter, Asterisk.CloseCharacter)>]
-type BraceCompletionSessionProvider [<ImportingConstructor>]
-    (
-        undoManager: ITextBufferUndoManagerProvider,
-        editorOperationsFactoryService: IEditorOperationsFactoryService
-    ) =
+type BraceCompletionSessionProvider
+    [<ImportingConstructor>]
+    (undoManager: ITextBufferUndoManagerProvider, editorOperationsFactoryService: IEditorOperationsFactoryService) =
 
     interface IBraceCompletionSessionProvider with
 
@@ -576,13 +575,13 @@ type BraceCompletionSessionProvider [<ImportingConstructor>]
                 maybe {
                     let! document =
                         openingPoint.Snapshot.GetOpenDocumentInCurrentContextWithChanges()
-                        |> Option.ofObj
+                        |> ValueOption.ofObj
 
                     let! sessionFactory = document.TryGetLanguageService<IEditorBraceCompletionSessionFactory>()
 
                     let! session =
                         sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None)
-                        |> Option.ofObj
+                        |> ValueOption.ofObj
 
                     let undoHistory =
                         undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory

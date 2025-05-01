@@ -4,7 +4,6 @@ buildtools/
 docs/
 eng/
 fcs-samples/
-scripts/
 setup/
 tests/
 vsintegration/*
@@ -12,14 +11,16 @@ vsintegration/*
 !vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
-# Explicitly unformatted implementation 
+# For some reason, it tries to format files from remotes (Processing ./.git/refs/remotes/<remote>/FSComp.fsi)
+.git/
+
+# Explicitly unformatted implementation
 src/Compiler/Checking/AccessibilityLogic.fs
 src/Compiler/Checking/AttributeChecking.fs
 src/Compiler/Checking/AugmentWithHashCompare.fs
 src/Compiler/Checking/CheckBasics.fs
-src/Compiler/Checking/CheckComputationExpressions.fs
 src/Compiler/Checking/CheckDeclarations.fs
-src/Compiler/Checking/CheckExpressions.fs
+src/Compiler/Checking/Expressions/CheckExpressions.fs
 src/Compiler/Checking/CheckFormatStrings.fs
 src/Compiler/Checking/CheckIncrementalClasses.fs
 src/Compiler/Checking/CheckPatterns.fs
@@ -39,9 +40,6 @@ src/Compiler/Checking/SignatureConformance.fs
 src/Compiler/Checking/TypeHierarchy.fs
 src/Compiler/Checking/TypeRelations.fs
 
-# Incorrectly formatted: https://github.com/dotnet/fsharp/pull/14645/commits/49443a67ea8a17670c8a7c80c8bdf91f82231e91 or https://github.com/fsprojects/fantomas/issues/2733
-# This CompilerImports.fs behavior is not fixed yet, following up in  https://github.com/fsprojects/fantomas/issues/2733
-src/Compiler/Driver/CompilerImports.fs
 # The following files were formatted, but the "format, --check" loop is not stable.
 # Fantomas formats them, but still thinks they need formatting
 src/Compiler/Optimize/DetupleArgs.fs
@@ -85,7 +83,6 @@ src/FSharp.Core/printf.fs
 src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
-
 # Fantomas limitations on implementation files  (to investigate)
 
 src/Compiler/AbstractIL/ilwrite.fs
@@ -94,6 +91,7 @@ src/Compiler/Service/IncrementalBuild.fs
 src/Compiler/Service/ServiceAssemblyContent.fs
 src/Compiler/Service/ServiceDeclarationLists.fs
 src/Compiler/Service/ServiceErrorResolutionHints.fs
+vsintegration/src/FSharp.Editor/Common/CancellableTasks.fs
 
 # Fantomas limitations on signature files  (to investigate)
 
@@ -113,4 +111,3 @@ src/FSharp.Core/list.fsi
 src/FSharp.Core/Query.fsi
 src/FSharp.Core/resumable.fsi
 src/FSharp.Core/async.fsi
-

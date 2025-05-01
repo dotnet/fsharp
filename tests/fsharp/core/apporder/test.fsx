@@ -949,7 +949,7 @@ module OrderOfRecordInitialisation =
           B = 2
           C = 3 }
 
-    let ShouldInitialzeInGivenOrder1 = 
+    let ShouldInitializeInGivenOrder1 = 
         let order = ref ""
         let actual =
           { A = let _ = order := !order + "1" in 1
@@ -959,7 +959,7 @@ module OrderOfRecordInitialisation =
         check "cnclewlecp2" expected actual
         check "ceiewoi" "123" !order
 
-    let ShouldInitialzeInGivenOrder2 = 
+    let ShouldInitializeInGivenOrder2 = 
         let order = ref ""
         let actual =
           { A = let _ = order := !order + "1" in 1
@@ -969,7 +969,7 @@ module OrderOfRecordInitialisation =
         check "cd33289e0ewn1" expected actual
         check "ewlknewv90we2" "123" !order
 
-    let ShouldInitialzeInGivenOrder3 = 
+    let ShouldInitializeInGivenOrder3 = 
         let order = ref ""
         let actual =
           { B = let _ = order := !order + "1" in 2
@@ -980,7 +980,7 @@ module OrderOfRecordInitialisation =
         check "cewekcjnwe4" "123" !order
 
 
-    let ShouldInitialzeInGivenOrder4 = 
+    let ShouldInitializeInGivenOrder4 = 
         let order = ref ""
         let actual =
           { B = let _ = order := !order + "1" in 2
@@ -991,7 +991,7 @@ module OrderOfRecordInitialisation =
         check "cewekcjnwe6" "123" !order
 
 
-    let ShouldInitialzeInGivenOrder5 = 
+    let ShouldInitializeInGivenOrder5 = 
         let order = ref ""
         let actual =
           { C = let _ = order := !order + "1" in 3
@@ -1002,7 +1002,7 @@ module OrderOfRecordInitialisation =
         check "cewekcjnwe8" "123" !order
 
 
-    let ShouldInitialzeInGivenOrder6 = 
+    let ShouldInitializeInGivenOrder6 = 
         let order = ref ""
         let actual =
           { C = let _ = order := !order + "1" in 3
@@ -1020,7 +1020,7 @@ type RecordWithDifferentTypes =
       D : RecordWithInts }
 
 
-module RecordInitialisationWithDifferentTxpes = 
+module RecordInitialisationWithDifferentTypes = 
 
     let expected =  
         { A = 1
@@ -1032,7 +1032,7 @@ module RecordInitialisationWithDifferentTxpes =
               C = 6 }}
 
 
-    let ShouldInitialzeInGivenOrder1 = 
+    let ShouldInitializeInGivenOrder1 = 
         let order = ref ""
         let actual =
           { A = let _ = order := !order + "1" in 1
@@ -1047,7 +1047,7 @@ module RecordInitialisationWithDifferentTxpes =
         check "cewekcjnwe12" "1234567" !order
 
 
-    let ShouldInitialzeInGivenOrder2 = 
+    let ShouldInitializeInGivenOrder2 = 
         let order = ref ""
         let actual =
           { A = let _ = order := !order + "1" in 1            
@@ -1063,7 +1063,7 @@ module RecordInitialisationWithDifferentTxpes =
         check "cewekcjnwe14" "1234567" !order
 
 
-    let ShouldInitialzeInGivenOrder3 = 
+    let ShouldInitializeInGivenOrder3 = 
         let order = ref ""
         let actual =
           { A = let _ = order := !order + "1" in 1            
@@ -1079,7 +1079,7 @@ module RecordInitialisationWithDifferentTxpes =
 
 
 
-    let ShouldInitialzeInGivenOrder4 = 
+    let ShouldInitializeInGivenOrder4 = 
         let order = ref ""
         let actual =
           { B = let _ = order := !order + "1" in "2"
@@ -1094,7 +1094,7 @@ module RecordInitialisationWithDifferentTxpes =
         check "cewekcjnwe18" "1234567" !order
 
 
-    let ShouldInitialzeInGivenOrder5 = 
+    let ShouldInitializeInGivenOrder5 = 
         let order = ref ""
         let actual =
           { D = let _ = order := !order + "1" in 
@@ -1109,7 +1109,7 @@ module RecordInitialisationWithDifferentTxpes =
         check "cewekcjnwe20" "1234567" !order
 
 
-    let ShouldInitialzeInGivenOrder6 = 
+    let ShouldInitializeInGivenOrder6 = 
         let order = ref ""
         let actual =
           { D = let _ = order := !order + "1" in 
@@ -1130,7 +1130,7 @@ let aa =
   match !failures with 
   | [] -> 
       stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
+      printf "TEST PASSED OK" ;
       exit 0
   | _ -> 
       stdout.WriteLine "Test Failed"

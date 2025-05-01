@@ -913,14 +913,14 @@ Error:</source>
         <target state="translated">引用属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="PropPage_ProgramNonexistent">
+        <source>The external program cannot be found. Please enter a valid executable file.</source>
+        <target state="new">The external program cannot be found. Please enter a valid executable file.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PropPage_RemoteMachineBlankError">
         <source>The remote machine name cannot be blank.  Please specify the name of the machine to debug remotely.</source>
         <target state="translated">远程计算机名称不能为空。请指定要远程调试的计算机的名称。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ProgramNotExist">
-        <source>The external program cannot be found. Please enter a valid executable file.</source>
-        <target state="translated">未能找到外部程序。请输入有效的可执行文件。</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedExternalProgram">
@@ -941,6 +941,11 @@ Error:</source>
       <trans-unit id="PropPage_InvalidURL">
         <source>The URL is invalid. Please enter a valid URL like "http://www.microsoft.com/"</source>
         <target state="translated">URL 无效。请输入有效的 URL，如“http://www.microsoft.com/”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PropPage_ResourceFileNonexistent">
+        <source>"The resource file entered does not exist."</source>
+        <target state="new">"The resource file entered does not exist."</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_WorkingDirError">
@@ -991,11 +996,6 @@ Error:</source>
       <trans-unit id="PropPage_NeedResFile">
         <source>"Resource files must have a .res file extension. Please enter a valid resource file name."</source>
         <target state="translated">“资源文件必须具有文件扩展名 .res。请输入有效的资源文件名。”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PropPage_ResourceFileNotExist">
-        <source>"The resource file entered does not exist."</source>
-        <target state="translated">"输入的资源文件不存在。"</target>
         <note />
       </trans-unit>
       <trans-unit id="APPDES_Title">
@@ -1610,6 +1610,21 @@ Error:</source>
         <target state="translated">要求:</target>
         <note />
       </trans-unit>
+      <trans-unit id="RES_PersistenceMode_Embedded">
+        <source>Embedded in .resx</source>
+        <target state="new">Embedded in .resx</target>
+        <note>File Persistence Mode</note>
+      </trans-unit>
+      <trans-unit id="RSE_CategoriesLabel">
+        <source>&amp;Categories:</source>
+        <target state="new">&amp;Categories:</target>
+        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
+      </trans-unit>
+      <trans-unit id="RSE_Err_CantSaveResourceDiscard_1Arg">
+        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
+        <target state="new">The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</target>
+        <note>{0} - name list of the resource</note>
+      </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
         <source>Name</source>
         <target state="translated">名称</target>
@@ -1763,11 +1778,6 @@ Do you really want to edit this file?</source>
         <source>The resource item uses the type '{0}', which is not supported in this project.</source>
         <target state="translated">资源项使用“{0}”类型，但该类型在此项目中不受支持。</target>
         <note>{0} - name of the type</note>
-      </trans-unit>
-      <trans-unit id="RSE_Err_CantSaveResouce_1Arg">
-        <source>The resource item(s) {0} cannot be saved correctly.  The item(s) will be discarded.</source>
-        <target state="translated">无法正确保存资源项 {0}。将弃用此项(或这些项)。</target>
-        <note>{0} - name list of the resource</note>
       </trans-unit>
       <trans-unit id="RSE_Err_Name">
         <source>'{0}'</source>
@@ -2001,11 +2011,6 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">在编译时链接</target>
         <note>File Persistence Mode</note>
       </trans-unit>
-      <trans-unit id="RES_PersistenceMode_Embeded">
-        <source>Embedded in .resx</source>
-        <target state="translated">嵌入在 .resx 中</target>
-        <note>File Persistence Mode</note>
-      </trans-unit>
       <trans-unit id="RSE_Filter_Bitmap">
         <source>Bitmaps</source>
         <target state="translated">位图</target>
@@ -2229,11 +2234,6 @@ CONSIDER: get this from CodeDom</note>
         <source>Delete values in {0} cell(s)</source>
         <target state="translated">删除 {0} 个单元格中的值</target>
         <note>{0} = number of cells cleared</note>
-      </trans-unit>
-      <trans-unit id="RSE_CategiesLabel">
-        <source>&amp;Categories:</source>
-        <target state="translated">类别(&amp;C):</target>
-        <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
         <source>Name used to identify the resource in code.</source>

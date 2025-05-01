@@ -191,7 +191,7 @@ module Array =
         Array.length l1 = Array.length l2 && Array.forall2 p l1 l2
 
     let order (eltOrder: IComparer<'T>) =
-        { new IComparer<array<'T>> with
+        { new IComparer<'T array> with
             member _.Compare(xs, ys) =
                 let c = compare xs.Length ys.Length
 
@@ -654,7 +654,7 @@ module String =
     let uppercase (s: string) = s.ToUpperInvariant()
 
     // Scripts that distinguish between upper and lower case (bicameral) DU Discriminators and Active Pattern identifiers are required to start with an upper case character.
-    // For valid identifiers where the case of the identifier can not be determined because there is no upper and lower case we will allow DU Discriminators and upper case characters
+    // For valid identifiers where the case of the identifier cannot be determined because there is no upper and lower case we will allow DU Discriminators and upper case characters
     // to be used.  This means that developers using unicameral scripts such as hindi, are not required to prefix these identifiers with an Upper case latin character.
     //
     let isLeadingIdentifierCharacterUpperCase (s: string) =

@@ -3,9 +3,13 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FSharp.Editor.IntegrationTests.Extensions;
+using FSharp.Editor.IntegrationTests.Helpers;
+using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 
@@ -67,5 +71,24 @@ internal partial class EditorInProcess
         view.Caret.MoveTo(new SnapshotPoint(view.TextSnapshot, view.Selection.AnchorPoint.Position.Position));
 
         view.Selection.Clear();
+    }
+
+    public async Task<IEnumerable<SuggestedActionSet>> InvokeCodeActionListAsync(CancellationToken cancellationToken)
+    {
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var shell = await GetRequiredGlobalServiceAsync<SVsUIShell, IVsUIShell>(cancellationToken);
+        var cmdGroup = typeof(VSConstants.VSStd14CmdID).GUID;
+        var cmdExecOpt = OLECMDEXECOPT.OLECMDEXECOPT_DONTPROMPTUSER;
+
+        var cmdID = VSConstants.VSStd14CmdID.ShowQuickFixes;
+        object? obj = null;
+        shell.PostExecCommand(cmdGroup, (uint)cmdID, (uint)cmdExecOpt, ref obj);
+
+        var view = await GetActiveTextViewAsync(cancellationToken);
+        var broker = await GetComponentModelServiceAsync<ILightBulbBroker>(cancellationToken);
+
+        var lightbulbs = await LightBulbHelper.WaitForItemsAsync(broker, view, cancellationToken);
+        return lightbulbs;
     }
 }
