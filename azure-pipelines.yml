@@ -111,6 +111,10 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: NuGetAuthenticate@1
+            inputs:
+              nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
+              forceReinstallCredentialProvider: true
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
