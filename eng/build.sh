@@ -232,6 +232,7 @@ function Test() {
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$job.xml"
   args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
+
   if [[ "$job" != "" ]]; then
     args="$args --filter batch=$job"
   fi
