@@ -29,29 +29,27 @@ type CacheOptions =
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{ToString()}")>]
 type CachedEntity<'Key, 'Value> =
-    val mutable Key: 'Key
-    val mutable Value: 'Value
-    val mutable AccessCount: int64
-    val mutable Node: LinkedListNode<CachedEntity<'Key, 'Value>> voption
+    val mutable private key: 'Key
+    val mutable private value: 'Value
 
-    new(key, value) =
-        {
-            Key = key
-            Value = value
-            AccessCount = 0L
-            Node = ValueNone
-        }
+    [<DefaultValue(false)>]
+    val mutable private node: LinkedListNode<CachedEntity<'Key, 'Value>>
 
-    // This is one time initialization, outside of the constructor because of circular reference.
-    // The contract is that each CachedEntity that the EntityPool produces, has Node assigned.
-    member this.WithNode() =
-        this.Node <- ValueSome(LinkedListNode this)
-        this
+    private new(key, value) = { key = key; value = value }
+
+    member this.Node = this.node
+    member this.Key = this.key
+    member this.Value = this.value
+
+    static member Create(key: 'Key, value: 'Value) =
+        let entity = CachedEntity(key, value)
+        // The contract is that each CachedEntity produced by the EntityPool always has Node referencing itself.
+        entity.node <- LinkedListNode(entity)
+        entity
 
     member this.ReUse(key, value) =
-        this.Key <- key
-        this.Value <- value
-        this.AccessCount <- 0L
+        this.key <- key
+        this.value <- value
         this
 
     override this.ToString() = $"{this.Key}"
@@ -142,21 +140,15 @@ type CacheMetrics(cacheId) =
 // More than totalCapacity can be created, but it will hold for reuse at most totalCapacity.
 type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
-    let mutable created = 0
 
-    let overCapacity =
-        CacheMetrics.Meter.CreateCounter<int64>("over-capacity", "count", cacheId)
+    let created = CacheMetrics.Meter.CreateCounter<int64>("created", "count", cacheId)
 
     member _.Acquire(key, value) =
         match pool.TryTake() with
         | true, entity -> entity.ReUse(key, value)
         | _ ->
-            if Interlocked.Increment &created > totalCapacity then
-                overCapacity.Add 1L
-
-            // Associate a LinkedListNode with freshly created entity.
-            // This is a one time initialization.
-            CachedEntity(key, value).WithNode()
+            created.Add 1L
+            CachedEntity.Create(key, value)
 
     member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
         if pool.Count < totalCapacity then
