@@ -10,7 +10,8 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <IsTestProject>false</IsTestProject>
+    <UnitTestType>xunit</UnitTestType>
+    <IsTestProject>true</IsTestProject>
     <OtherFlags>$(OtherFlags) --warnon:1182 --realsig-</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
@@ -23,10 +24,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectCapability Remove="TestContainer" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
@@ -46,11 +46,10 @@
     <Compile Include="ReflectionHelper.fs" />
     <Compile Include="SurfaceArea.fs" />
     <Compile Include="XunitHelpers.fs" />
+    <Compile Include="XunitSetup.fs" />
+    <Compile Include="Tests.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="XunitSetup.fs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
@@ -68,11 +67,6 @@
     <!-- CompilerAssert dependencies.
          Make sure they are getting built with the Utilities. -->
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
-  </ItemGroup>
-
-
-  <ItemGroup>
-    <PackageReference Include="xunit" Version="$(XUnitVersion)" />
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->

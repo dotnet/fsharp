@@ -6,6 +6,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);1182</NoWarn> <!-- suppress warning for unused values in FSharp.Compiler.Service.Tests tests, very often checker results are needed, but not used -->
+    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
@@ -25,6 +26,7 @@
       <Link>XunitSetup.fs</Link>
     </Compile>
     <Compile Include="Common.fs" />
+    <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />
     <Compile Include="ModuleReaderCancellationTests.fs" />
