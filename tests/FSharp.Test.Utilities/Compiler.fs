@@ -1154,7 +1154,17 @@ module rec Compiler =
             evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
-    let getSessionForEval args version = new FSharpScript(additionalArgs=args,quiet=true,langVersion=version)
+    let internal sessionCache = 
+        Collections.Concurrent.ConcurrentDictionary<Set<string> * LangVersion, FSharpScript>()
+    
+    let getSessionForEval args version =
+        let key = Set args, version
+        match sessionCache.TryGetValue(key) with
+        | true, script -> script
+        | _ -> 
+            let script = new FSharpScript(additionalArgs=args,quiet=true,langVersion=version)
+            sessionCache.TryAdd(key, script) |> ignore
+            script
 
     let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
         match cUnit with
