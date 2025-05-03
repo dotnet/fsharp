@@ -227,6 +227,15 @@ let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) =
         | CommentTrivia.LineComment r
         | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
 
+let private collectParsedInputTrivia lexbuf diagnosticOptions isScript submoduleRanges =
+    WarnScopes.MergeInto diagnosticOptions isScript submoduleRanges lexbuf
+
+    {
+        ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
+        WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
+        CodeComments = collectCodeComments lexbuf
+    }
+
 let private getImplSubmoduleRanges (impls: ParsedImplFileFragment list) =
     let getDecls (impl: ParsedImplFileFragment) =
         match impl with
@@ -268,15 +277,8 @@ let PostParseModuleImpls
 
     let isScript = IsScript fileName
 
-    lexbuf
-    |> WarnScopes.MergeInto diagnosticOptions isScript (getImplSubmoduleRanges impls)
-
-    let trivia: ParsedInputTrivia =
-        {
-            ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-            WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
-            CodeComments = collectCodeComments lexbuf
-        }
+    let trivia =
+        collectParsedInputTrivia lexbuf diagnosticOptions isScript (getImplSubmoduleRanges impls)
 
     let othersWithSameName =
         impls
@@ -308,15 +310,8 @@ let PostParseModuleSpecs
         identifiers: Set<string>
     ) =
 
-    lexbuf
-    |> WarnScopes.MergeInto diagnosticOptions false (getSpecSubmoduleRanges specs)
-
-    let trivia: ParsedInputTrivia =
-        {
-            ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
-            WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
-            CodeComments = collectCodeComments lexbuf
-        }
+    let trivia =
+        collectParsedInputTrivia lexbuf diagnosticOptions false (getSpecSubmoduleRanges specs)
 
     let othersWithSameName =
         specs
