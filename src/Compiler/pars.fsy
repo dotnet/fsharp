@@ -3776,7 +3776,11 @@ atomicPattern:
             mkSynPatMaybeVar lidwd vis (lhs parseState)
         else
            let synIdent = List.head lidwd.IdentsWithTrivia
-           SynPat.Named(synIdent, false, vis, synIdent.Range) }
+           let m =
+               match vis with
+               | Some vis -> unionRanges vis.Range synIdent.Range
+               | _ -> synIdent.Range
+           SynPat.Named(synIdent, false, vis, m) }
 
   | constant
       { SynPat.Const(fst $1, snd $1) }
