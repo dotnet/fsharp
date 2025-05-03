@@ -33,22 +33,7 @@ type CommentTrivia =
     | BlockComment of range: range
 
 [<NoEquality; NoComparison>]
-type ParsedImplFileInputTrivia =
-    {
-        ConditionalDirectives: ConditionalDirectiveTrivia list
-        WarnDirectives: WarnDirectiveTrivia list
-        CodeComments: CommentTrivia list
-    }
-
-    static member Empty =
-        {
-            ConditionalDirectives = []
-            WarnDirectives = []
-            CodeComments = []
-        }
-
-[<NoEquality; NoComparison>]
-type ParsedSigFileInputTrivia =
+type ParsedInputTrivia =
     {
         ConditionalDirectives: ConditionalDirectiveTrivia list
         WarnDirectives: WarnDirectiveTrivia list

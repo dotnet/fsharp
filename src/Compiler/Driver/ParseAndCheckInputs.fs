@@ -271,7 +271,7 @@ let PostParseModuleImpls
     lexbuf
     |> WarnScopes.MergeInto diagnosticOptions isScript (getImplSubmoduleRanges impls)
 
-    let trivia: ParsedImplFileInputTrivia =
+    let trivia: ParsedInputTrivia =
         {
             ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
             WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
@@ -311,7 +311,7 @@ let PostParseModuleSpecs
     lexbuf
     |> WarnScopes.MergeInto diagnosticOptions false (getSpecSubmoduleRanges specs)
 
-    let trivia: ParsedSigFileInputTrivia =
+    let trivia: ParsedInputTrivia =
         {
             ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
             WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
@@ -550,7 +550,7 @@ let ReportParsingStatistics res =
 let EmptyParsedInput (fileName, isLastCompiland) =
     if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
         ParsedInput.SigFile(
-            ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], ParsedSigFileInputTrivia.Empty, Set.empty)
+            ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], ParsedInputTrivia.Empty, Set.empty)
         )
     else
         ParsedInput.ImplFile(
@@ -561,7 +561,7 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 [],
                 [],
                 isLastCompiland,
-                ParsedImplFileInputTrivia.Empty,
+                ParsedInputTrivia.Empty,
                 Set.empty
             )
         )

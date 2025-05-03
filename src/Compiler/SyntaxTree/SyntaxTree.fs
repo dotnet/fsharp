@@ -1778,7 +1778,7 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia *
+        trivia: ParsedInputTrivia *
         identifiers: Set<string>
 
     member x.QualifiedName =
@@ -1807,7 +1807,7 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia *
+        trivia: ParsedInputTrivia *
         identifiers: Set<string>
 
     member x.QualifiedName =

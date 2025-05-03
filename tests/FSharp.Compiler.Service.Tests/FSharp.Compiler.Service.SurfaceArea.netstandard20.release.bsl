@@ -6272,15 +6272,15 @@ FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsLastCompiland()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_isScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean isScript
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile qualifiedNameOfFile
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia Trivia
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia get_Trivia()
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia get_trivia()
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia trivia
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia Trivia
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_Trivia()
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_trivia()
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia trivia
 FSharp.Compiler.Syntax.ParsedImplFileInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedImplFileInput: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
@@ -6389,15 +6389,15 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFi
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: System.String ToString()
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile qualifiedNameOfFile
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia Trivia
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia get_Trivia()
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia get_trivia()
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia trivia
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia Trivia
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_Trivia()
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_trivia()
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia trivia
 FSharp.Compiler.Syntax.ParsedSigFileInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileInput: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
@@ -10255,22 +10255,14 @@ FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] WarnDirectives
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] get_WarnDirectives()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] WarnDirectives
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] get_WarnDirectives()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] WarnDirectives
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] get_WarnDirectives()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: FSharp.Compiler.Text.Range ParenRange
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: FSharp.Compiler.Text.Range get_ParenRange()
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: System.String ToString()

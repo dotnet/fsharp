@@ -2473,7 +2473,7 @@ type internal FsiDynamicCompiler
                     [],
                     [ impl ],
                     (isLastCompiland, isExe),
-                    ParsedImplFileInputTrivia.Empty,
+                    ParsedInputTrivia.Empty,
                     Set.empty
                 )
             )

@@ -130,7 +130,7 @@ module IncrementalBuildSyntaxTree =
                     [],
                     [],
                     isLastCompiland,
-                    ParsedImplFileInputTrivia.Empty,
+                    ParsedInputTrivia.Empty,
                     Set.empty
                 )
             ), sourceRange, fileName, [||]

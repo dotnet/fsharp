@@ -1957,7 +1957,7 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia *
+        trivia: ParsedInputTrivia *
         identifiers: Set<string>
 
     member FileName: string
@@ -1970,7 +1970,7 @@ type ParsedImplFileInput =
 
     member Contents: SynModuleOrNamespace list
 
-    member Trivia: ParsedImplFileInputTrivia
+    member Trivia: ParsedInputTrivia
 
     member IsLastCompiland: bool
 
@@ -1984,7 +1984,7 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia *
+        trivia: ParsedInputTrivia *
         identifiers: Set<string>
 
     member FileName: string
@@ -1995,7 +1995,7 @@ type ParsedSigFileInput =
 
     member Contents: SynModuleOrNamespaceSig list
 
-    member Trivia: ParsedSigFileInputTrivia
+    member Trivia: ParsedInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
