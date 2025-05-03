@@ -100,8 +100,10 @@ module TestCaseCustomizations =
     let NumberOfBatchesInMultiAgentTesting = 4u
 
     let addBatchTrait (testCase: ITestCase) =
-        // Get a batch number stable between executions / compilations.
-        let data = Text.Encoding.UTF8.GetBytes testCase.DisplayName
+        // Get a batch number stable between multiple test runs. 
+        // UniqueID is ideal here, it does not change across many compilations of the same code
+        // and it will split theories with member data into many batches.
+        let data = Text.Encoding.UTF8.GetBytes testCase.UniqueID
         let hashCode = BitConverter.ToUInt32(sha.ComputeHash(data), 0)
         let batch = hashCode % NumberOfBatchesInMultiAgentTesting + 1u
         testCase.Traits.Add("batch", ResizeArray [ string batch ])
