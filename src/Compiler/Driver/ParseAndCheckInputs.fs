@@ -549,9 +549,7 @@ let ReportParsingStatistics res =
 
 let EmptyParsedInput (fileName, isLastCompiland) =
     if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-        ParsedInput.SigFile(
-            ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], ParsedInputTrivia.Empty, Set.empty)
-        )
+        ParsedInput.SigFile(ParsedSigFileInput(fileName, QualFileNameOfImpls fileName [], [], [], ParsedInputTrivia.Empty, Set.empty))
     else
         ParsedInput.ImplFile(
             ParsedImplFileInput(
