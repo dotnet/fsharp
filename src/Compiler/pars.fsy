@@ -3755,18 +3755,32 @@ atomicPattern:
       { SynPat.ArrayOrList(true, $2, lhs parseState) }
 
   | UNDERSCORE
-      { SynPat.Wild(lhs parseState) }
+      { (* Underscore pattern ('_') is represented as SynPat.Wild
+           This wild pattern is used in all binding forms:
+           - let _ = ...
+           - use _ = ...
+           - let! _ = ...
+           - use! _ = ...
+           This ensures consistent representation of wildcard bindings in the AST *)
+        SynPat.Wild(lhs parseState) }
 
   | QMARK ident
       { SynPat.OptionalVal($2, lhs parseState) }
 
   | atomicPatternLongIdent %prec prec_atompat_pathop
-      { let vis, lidwd = $1
+      { (* This rule handles identifiers in patterns like 'use! __' *)
+        (* For simple identifiers (like '__'), it creates a SynPat.Named AST node *)
+        (* For complex paths (A.B.C) or uppercase ids, it calls mkSynPatMaybeVar *)
+        let vis, lidwd = $1
         if not (isNilOrSingleton lidwd.LongIdent) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.LongIdent).idText then
             mkSynPatMaybeVar lidwd vis (lhs parseState)
         else
            let synIdent = List.head lidwd.IdentsWithTrivia
-           SynPat.Named(synIdent, false, vis, synIdent.Range) }
+           let m =
+               match vis with
+               | Some vis -> unionRanges vis.Range synIdent.Range
+               | _ -> synIdent.Range
+           SynPat.Named(synIdent, false, vis, m) }
 
   | constant
       { SynPat.Const(fst $1, snd $1) }
@@ -4441,7 +4455,13 @@ declExpr:
        SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll, trivia) }
 
   | BINDER headBindingPattern EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
+     { (* This rule handles the 'use!' and 'let!' binding expressions in computation expressions *)
+       (* The BINDER token represents keywords like 'use!' or 'let!' *)
+       (* headBindingPattern represents patterns in the binding:
+          - Underscore ('_') patterns are preserved as SynPat.Wild
+          - Named patterns ('__') are represented as SynPat.Named
+          - Identifiers (like 'value') are represented as SynPat.LongIdent *)
+       let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
