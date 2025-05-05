@@ -1669,7 +1669,8 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, mty, contents, false, false, StampMap.Empty, Map.empty)
 
-let dynamicCcuName = "FSI-ASSEMBLY"
+let dynamicCcuName (isEmitMulti) =
+    $"""FSI-ASSEMBLY{if isEmitMulti then "-MULTI" else ""}"""
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
@@ -1719,7 +1720,11 @@ type internal FsiDynamicCompiler
             None
         else
             let assemBuilder, moduleBuilder =
-                mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, fsiCollectible)
+                mkDynamicAssemblyAndModule (
+                    dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit),
+                    tcConfigB.optSettings.LocalOptimizationsEnabled,
+                    fsiCollectible
+                )
 
             dynamicAssemblies.Add(assemBuilder)
             Some(assemBuilder, moduleBuilder)
@@ -1809,7 +1814,7 @@ type internal FsiDynamicCompiler
 
             let attrs =
                 [
-                    tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName)
+                    tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit))
                     yield! manifest.CustomAttrs.AsList()
                 ]
 
@@ -1956,7 +1961,9 @@ type internal FsiDynamicCompiler
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         ReportTime tcConfig "Linking"
-        let ilxMainModule = CreateModuleFragment(tcConfigB, dynamicCcuName, codegenResults)
+
+        let ilxMainModule =
+            CreateModuleFragment(tcConfigB, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit), codegenResults)
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
@@ -2644,7 +2651,7 @@ type internal FsiDynamicCompiler
 
         let tcEnv, asms =
             try
-                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName, resolutions)
+                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit), resolutions)
             with _ ->
                 for (path, _, _, m) in refs do
                     tcConfigB.RemoveReferencedAssemblyByPath(m, path)
@@ -3010,7 +3017,7 @@ type internal FsiDynamicCompiler
         let emEnv0 =
             if tcConfigB.fsiMultiAssemblyEmit then
                 let emEnv =
-                    ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName)
+                    ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit))
 
                 MultipleInMemoryAssemblies emEnv
             else
@@ -3026,10 +3033,10 @@ type internal FsiDynamicCompiler
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
                 SingleRefEmitAssembly(cenv, emEnv)
 
-        let tcEnv, openDecls0 =
-            GetInitialTcEnv(dynamicCcuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
+        let ccuName = dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit)
 
-        let ccuName = dynamicCcuName
+        let tcEnv, openDecls0 =
+            GetInitialTcEnv(ccuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
 
         let tcState =
             GetInitialTcState(rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)

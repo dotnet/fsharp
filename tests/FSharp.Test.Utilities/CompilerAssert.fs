@@ -470,7 +470,7 @@ module CompilerAssertHelpers =
                         yield source.WithFileName(destFileName)
             ]
         rawCompile outputFilePath isExe options targetFramework sources
-    
+
     let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errorMessage (error: FSharpDiagnostic) =
             let errN, range, message = error.ErrorNumber, error.Range, error.Message
@@ -697,6 +697,9 @@ Updated automatically, please check diffs in your pull request, changes must be 
         let ignoreWarnings = defaultArg ignoreWarnings false
         compileCompilation ignoreWarnings cmpl (fun ((errors, _, _), _) ->
             assertErrors 0 ignoreWarnings errors expectedErrors)
+
+    static member assertWithErrors(libAdjust, ignoreWarnings, errors, expectedErrors) =
+        assertErrors libAdjust, ignoreWarnings, errors, expectedErrors
 
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
         CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
