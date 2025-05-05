@@ -316,12 +316,6 @@ type BoundModel private (
                     })
         | _ -> None
 
-    let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
-        async {
-            let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
-            return tcInfo
-        } |> GraphNode
-
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         async {
             let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
@@ -370,11 +364,14 @@ type BoundModel private (
             return diags
         } |> GraphNode
 
-    let startComputingFullTypeCheck =
+    let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
         async {
-            let! _ = tcInfoExtras.GetOrComputeValue()
-            return! diagnostics.GetOrComputeValue()
-        }
+            if not tcInfoExtras.HasValue then
+                // Also start computing extras, so that typeCheckNode can be GC'd quickly, but don't wait for it.
+                do! tcInfoExtras.GetOrComputeValue() |> Async.StartChild |> Async.Ignore
+            let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
+            return tcInfo
+        } |> GraphNode
 
     let tcInfo, tcInfoExtras =
         match tcStateOpt with
@@ -385,8 +382,6 @@ type BoundModel private (
                 // For skipped implementation sources do full type check only when requested.
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
-                // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async.Catch |> Async.Ignore |> Async.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
