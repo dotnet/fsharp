@@ -646,10 +646,11 @@ stages:
               coreclr_release:
                 _configuration: Release
                 _testKind: testCoreclr
+                transparentCompilerPart: ""
               transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
-                transparentCompiler: 1
+                TEST_TRANSPARENT_COMPILER: 1 #Pipeline variables map to env vars.
                 transparentCompilerPart: " TransparentCompiler"
           steps:
           - checkout: self
@@ -667,7 +668,6 @@ stages:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              TEST_TRANSPARENT_COMPILER: $(transparentCompiler)
               NativeToolsOnMachine: true
             displayName: Test
 
@@ -675,7 +675,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata $(_testKind)$(transparentCompilerPart)
+              testRunTitle: 'WindowsCompressedMetadata $(_testKind)$(transparentCompilerPart)'
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
