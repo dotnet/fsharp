@@ -642,18 +642,16 @@ stages:
           variables:
           - name: _SignType
             value: Test
-          strategy:
-            parallel: 4
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr --testbatch $(System.JobPositionInPhase)
-            displayName: Build / Test batch $(System.JobPositionInPhase)
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+            displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: Linux -testBatch $(System.JobPositionInPhase)
+              testRunTitle: Linux
               testResultsFiles: '*.xml'
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
@@ -663,7 +661,7 @@ stages:
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs batch $(System.JobPositionInPhase)'
+              ArtifactName: 'Linux $(_BuildConfig) test logs'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -674,7 +672,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux -batch $(System.JobPositionInPhase)'
+              ArtifactName: 'NuGetPackageContents Linux'
               publishLocation: Container
             continueOnError: true
             condition: failed()
