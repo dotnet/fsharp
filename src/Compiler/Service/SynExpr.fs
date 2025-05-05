@@ -1078,6 +1078,8 @@ module SynExpr =
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
                 true
 
+            | SynExpr.InterpolatedString _, SynExpr.Record _
+            | SynExpr.InterpolatedString _, SynExpr.AnonRecd _
             | SynExpr.InterpolatedString _, SynExpr.Sequential _
             | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
