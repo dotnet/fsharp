@@ -452,7 +452,7 @@ let ParseInput
     let mutable scopedPragmas = []
 
     try
-        let input =
+        let input, sourceTextOpt =
             let identStore = HashSet<string>()
 
             let lexer =
@@ -491,20 +491,21 @@ let ParseInput
 
                 let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
-                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
+                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore),
+                Some lexbuf.SourceText
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 let intfs = Parser.signatureFile lexer lexbuf
 
                 let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
-                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
+                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore), None
             else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                 error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
             else
                 error (Error(FSComp.SR.buildInvalidSourceFileExtension fileName, rangeStartup))
 
         scopedPragmas <- input.ScopedPragmas
-        input
+        input, sourceTextOpt
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
         let filteringDiagnosticsLogger =
@@ -668,7 +669,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     TestInteractionParserAndExit(tokenizer, lexbuf, tcConfig.exiter)
 
                 // Parse the input
-                let res =
+                let res, sourceTextOpt =
                     ParseInput(
                         (fun _ -> tokenizer ()),
                         tcConfig.diagnosticsOptions,
@@ -685,13 +686,13 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                 if tcConfig.reportNumDecls then
                     ReportParsingStatistics res
 
-                res)
+                res, sourceTextOpt)
 
         input
 
     with RecoverableException exn ->
         errorRecovery exn rangeStartup
-        EmptyParsedInput(fileName, isLastCompiland)
+        EmptyParsedInput(fileName, isLastCompiland), None
 
 let ValidSuffixes = FSharpSigFileSuffixes @ FSharpImplFileSuffixes
 
@@ -713,6 +714,7 @@ let parseInputStreamAux
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+    |> fst
 
 let parseInputSourceTextAux
     (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText)
@@ -723,6 +725,7 @@ let parseInputSourceTextAux
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
+    |> fst
 
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked) =
     // Get a stream reader for the file
@@ -763,7 +766,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
         parseInputFileAux (tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked)
     with RecoverableException exn ->
         errorRecovery exn rangeStartup
-        EmptyParsedInput(fileName, isLastCompiland)
+        EmptyParsedInput(fileName, isLastCompiland), None
 
 /// Prepare to process inputs independently, e.g. partially in parallel.
 ///
@@ -1287,7 +1290,8 @@ let CheckOneInput
         prefixPathOpt: LongIdent option,
         tcSink: TcResultsSink,
         tcState: TcState,
-        input: ParsedInput
+        input: ParsedInput,
+        sourceTextOpt: ISourceText option
     ) : Cancellable<PartialResult * TcState> =
     cancellable {
         try
@@ -1380,7 +1384,8 @@ let CheckOneInput
                         tcState.tcsTcImplEnv,
                         rootSigOpt,
                         file,
-                        tcConfig.diagnosticsOptions
+                        tcConfig.diagnosticsOptions,
+                        sourceTextOpt
                     )
 
                 let tcState =
@@ -1406,7 +1411,7 @@ let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger
     GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input =
+let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState (input, sourceTextOpt) =
     cancellable {
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
         use _ =
@@ -1416,7 +1421,18 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
 
         RequireCompilationThread ctok
 
-        return! CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
+        return!
+            CheckOneInput(
+                checkForErrors,
+                tcConfig,
+                tcImports,
+                tcGlobals,
+                prefixPathOpt,
+                TcResultsSink.NoSink,
+                tcState,
+                input,
+                sourceTextOpt
+            )
     }
     |> Cancellable.runWithoutCancellation
 
@@ -1435,7 +1451,7 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
-        let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
+        let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, None)
         let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
         return finishedResult
     }
@@ -1505,8 +1521,18 @@ let CheckOneInputWithCallback
          tcSink,
          tcState: TcState,
          input: ParsedInput,
-         _skipImplIfSigExists: bool):
-            (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool
+         _skipImplIfSigExists: bool,
+         sourceTextOpt: ISourceText option):
+            (unit -> bool) *
+            TcConfig *
+            TcImports *
+            TcGlobals *
+            LongIdent option *
+            TcResultsSink *
+            TcState *
+            ParsedInput *
+            bool *
+            ISourceText option
     )
     : Cancellable<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
     cancellable {
@@ -1601,7 +1627,8 @@ let CheckOneInputWithCallback
                         tcState.tcsTcImplEnv,
                         rootSigOpt,
                         file,
-                        tcConfig.diagnosticsOptions
+                        tcConfig.diagnosticsOptions,
+                        sourceTextOpt
                     )
 
                 return
@@ -1811,7 +1838,7 @@ let CheckMultipleInputsUsingGraphMode
             LongIdent option *
             TcState *
             (PhasedDiagnostic -> PhasedDiagnostic) *
-            ParsedInput list
+            (ParsedInput * ISourceText option) list
     )
     : FinalFileResult list * TcState =
     use cts = new CancellationTokenSource()
@@ -1819,7 +1846,7 @@ let CheckMultipleInputsUsingGraphMode
     let sourceFiles: FileInProject array =
         inputs
         |> List.toArray
-        |> Array.mapi (fun idx (input: ParsedInput) ->
+        |> Array.mapi (fun idx (input: ParsedInput, _) ->
             {
                 Idx = idx
                 FileName = input.FileName
@@ -1878,7 +1905,7 @@ let CheckMultipleInputsUsingGraphMode
 
     let processFile
         (node: NodeToTypeCheck)
-        ((input, logger): ParsedInput * DiagnosticsLogger)
+        ((input, logger, sourceTextOpt): ParsedInput * DiagnosticsLogger * ISourceText option)
         ((currentTcState, _currentPriorErrors): State)
         : Finisher<NodeToTypeCheck, State, PartialResult> =
 
@@ -1894,7 +1921,7 @@ let CheckMultipleInputsUsingGraphMode
                 return!
                     CheckOneInputWithCallback
                         node
-                        (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
+                        (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false, sourceTextOpt)
             }
             |> Cancellable.runWithoutCancellation
 
@@ -1914,18 +1941,18 @@ let CheckMultipleInputsUsingGraphMode
         let inputsWithLoggers =
             inputsWithLoggers
             |> List.toArray
-            |> Array.map (fun (input, oldLogger) ->
+            |> Array.map (fun ((input, sourceTextOpt), oldLogger) ->
                 let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
-                input, logger)
+                input, sourceTextOpt, logger)
 
         let processFile (node: NodeToTypeCheck) (state: State) : Finisher<NodeToTypeCheck, State, PartialResult> =
             match node with
             | NodeToTypeCheck.ArtificialImplFile idx ->
-                let parsedInput, _ = inputsWithLoggers[idx]
+                let parsedInput, _, _ = inputsWithLoggers[idx]
                 processArtificialImplFile node parsedInput state
             | NodeToTypeCheck.PhysicalFile idx ->
-                let parsedInput, logger = inputsWithLoggers[idx]
-                processFile node (parsedInput, logger) state
+                let parsedInput, sourceTextOpt, logger = inputsWithLoggers[idx]
+                processFile node (parsedInput, logger, sourceTextOpt) state
 
         let state: State = tcState, priorErrors
 
