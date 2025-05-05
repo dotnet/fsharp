@@ -14,11 +14,18 @@ open FSharp.Test.ScriptHelpers
 module Configuration = 
     let supportedNames = set ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
 
+[<RequireQualifiedAccess>]
+type ScriptSessionIsolation = Shared | Isolated
+
 module ScriptRunner = 
     open Internal.Utilities.Library
     
-    let private createEngine(args,version) = 
-        getSessionForEval args version
+    let private getOrCreateEngine(args,version) sessionIsolation =
+        match sessionIsolation with
+        | ScriptSessionIsolation.Isolated ->
+            new FSharpScript(args, true, version)
+        | ScriptSessionIsolation.Shared ->
+            getSessionForEval args version
 
     let defaultDefines = 
         [ 
@@ -27,12 +34,12 @@ module ScriptRunner =
 #endif
         ]
 
-    let runScriptFile version (cu:CompilationUnit)  =
+    let runScriptFile version sessionIsolation (cu:CompilationUnit) =
         let cu  = cu |> withDefines defaultDefines
         match cu with 
         | FS fsSource ->
             use capture = new TestConsole.ExecutionCapture()
-            let engine = createEngine (fsSource.Options |> Array.ofList,version)
+            let engine = getOrCreateEngine (fsSource.Options |> Array.ofList,version) sessionIsolation
             let res = evalScriptFromDiskInSharedSession engine cu
             match res with
             | CompilationResult.Failure _ -> res
@@ -88,7 +95,7 @@ module TestFrameworkAdapter =
         | LangVersion.SupportsMl -> "5.0",  "--mlcompatibility" :: bonusArgs       
 
 
-    let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion = 
+    let singleTestBuildAndRunAuxVersion (folder:string) bonusArgs mode langVersion sessionIsolation = 
         let absFolder = Path.Combine(baseFolder,folder)
         let supportedNames, files = 
             match mode with 
@@ -137,17 +144,17 @@ module TestFrameworkAdapter =
                 cu 
                 |> withDebug 
                 |> withNoOptimize  
-                |> ScriptRunner.runScriptFile langVersion 
+                |> ScriptRunner.runScriptFile langVersion sessionIsolation
                 |> shouldSucceed 
             | FSC_OPTIMIZED -> 
                 cu 
                 |> withOptimize 
                 |> withNoDebug 
-                |> ScriptRunner.runScriptFile langVersion 
+                |> ScriptRunner.runScriptFile langVersion sessionIsolation
                 |> shouldSucceed 
             | FSI -> 
                 cu 
-                |> ScriptRunner.runScriptFile langVersion 
+                |> ScriptRunner.runScriptFile langVersion sessionIsolation
                 |> shouldSucceed 
             | COMPILED_EXE_APP -> 
                 cu 
@@ -161,7 +168,8 @@ module TestFrameworkAdapter =
 
     let singleTestBuildAndRunAux folder bonusArgs mode = singleTestBuildAndRunAuxVersion folder bonusArgs mode LangVersion.Latest
     let singleTestBuildAndRunVersion folder mode version = singleTestBuildAndRunAuxVersion folder [] mode version
-    let singleTestBuildAndRun folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest
+    let singleTestBuildAndRun folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest ScriptSessionIsolation.Shared
+    let singleTestBuildAndRunIsolated folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest ScriptSessionIsolation.Isolated
 
     let singleVersionedNegTestAux folder bonusArgs version testName =
         singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version

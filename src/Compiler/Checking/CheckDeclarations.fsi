@@ -13,8 +13,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-val AddLocalRootModuleOrNamespace:
-    TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
+val AddLocalRootModuleOrNamespace: TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
 
 val CreateInitialTcEnv:
     TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list ->

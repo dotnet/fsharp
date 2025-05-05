@@ -342,6 +342,16 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
           yield! allSymbolsInEntities compGen entity.NestedEntities ]
 
 
+let getCursorPosAndPrepareSource (source: string) : string * string * pos =
+    let lines = source.Split([|"\r\n"; "\n"|], StringSplitOptions.None)
+    let line = lines |> Seq.findIndex _.Contains("{caret}")
+    let lineText = lines[line]
+    let column = lineText.IndexOf("{caret}")
+
+    let source = source.Replace("{caret}", "")
+    let lineText = lineText.Replace("{caret}", "")
+    source, lineText, Position.mkPos (line + 1) (column - 1)
+
 let getParseResults (source: string) =
     parseSourceCode("Test.fsx", source)
 

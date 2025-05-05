@@ -1201,14 +1201,14 @@ let AddCheckResultsToTcState
 
     // Add the implementation as to the implementation env
     let tcImplEnv =
-        AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
+        AddLocalRootModuleOrNamespace tcGlobals amap m tcImplEnv implFileSigType
 
     // Add the implementation as to the signature env (unless it had an explicit signature)
     let tcSigEnv =
         if hadSig then
             tcState.tcsTcSigEnv
         else
-            AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
+            AddLocalRootModuleOrNamespace tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
 
     // Open the prefixPath for fsi.exe (tcImplEnv)
     let tcImplEnv, openDecls =
@@ -1589,7 +1589,7 @@ let CheckOneInputWithCallback
                             let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
                             let tcSigEnv =
-                                AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
+                                AddLocalRootModuleOrNamespace tcGlobals amap m tcState.tcsTcSigEnv sigFileType
 
                             // Add the signature to the signature env (unless it had an explicit signature)
                             let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
