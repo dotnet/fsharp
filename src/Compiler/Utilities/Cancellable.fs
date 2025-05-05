@@ -100,7 +100,7 @@ module Cancellable =
 
     let toAsync c =
         async {
-            use! _ = Cancellable.UseToken()
+            use! _holder = Cancellable.UseToken()
 
             let! ct = Async.CancellationToken
 
