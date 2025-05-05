@@ -577,22 +577,33 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs =
-            (*
-                The attributes of a union case decl get attached to the generated "static factory" method.
-                Enforce union-cases AttributeTargets:
-                - AttributeTargets.Method
-                    type SomeUnion =
-                    | Case1 of int // Compiles down to a static method
-                - AttributeTargets.Property
-                    type SomeUnion =
-                    | Case1 // Compiles down to a static property
-            *)
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
-                let target = if rfields.IsEmpty then AttributeTargets.Property else AttributeTargets.Method
-                TcAttributes cenv env target synAttrs
-            else
-                TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+        let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+        (*
+            The attributes of a union case decl get attached to the generated "static factory" method.
+            Enforce union-cases AttributeTargets:
+            - AttributeTargets.Method
+                type SomeUnion =
+                | Case1 of int // Compiles down to a static method
+            - AttributeTargets.Property
+                type SomeUnion =
+                | Case1 // Compiles down to a static property
+        *)
+        if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+            let attrTargets =
+                attrs
+                |> List.collect (fun attr ->
+                    attr.TyconRef.Attribs
+                    |> List.choose (fun attr ->
+                        match attr with
+                        | Attrib(unnamedArgs = [ AttribInt32Arg validOn ]) -> Some validOn
+                        | _ -> None))
+                
+            attrTargets
+            |> List.iter (fun target ->
+                // If the union case has fields, and the target is not AttributeTargets.Method || AttributeTargets.All. Then we raise a separate opt-in warning
+                let targetEnum = enum<AttributeTargets> target
+                if targetEnum <> AttributeTargets.Method && targetEnum <> AttributeTargets.All then
+                    warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
         
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
