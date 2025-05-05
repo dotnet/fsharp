@@ -675,7 +675,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata $(_testKind)
+              testRunTitle: WindowsCompressedMetadata $(_testKind)$(transparentCompilerPart)
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
@@ -758,7 +758,7 @@ stages:
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch=$(System.JobPositionInPhase)
+              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
@@ -769,14 +769,14 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps batch=$(System.JobPositionInPhase)'
+                ArtifactName: 'Windows testDesktop process dumps batch $(System.JobPositionInPhase)'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch=$(System.JobPositionInPhase)'
+              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
               publishLocation: Container
             continueOnError: true
             condition: always()
