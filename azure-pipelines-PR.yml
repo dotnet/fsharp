@@ -14,7 +14,7 @@ trigger:
     - docs/*
     - .vscode/*
     - .devcontainer/*
-    - tests/scripts/
+    - tests/scripts/*
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -256,8 +256,7 @@ stages:
                 ArtifactName: 'Windows Release WindowsLangVersionPreview process dumps'
                 ArtifactType: Container
                 parallel: true
-
-        - job: WindowsNoRealsig_testCoreclr
+        - job: WindowsNoRealsig_Build
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
@@ -270,13 +269,19 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
+          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -configuration Release
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
+            
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Pipeline Artifact'
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts'
+              artifact: WindowsNoRealsig_Build
 
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
@@ -293,11 +298,65 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'Windows Release WindowsNoRealsig_Build process dumps'
+                ArtifactType: Container
+                parallel: true
+
+        - job: WindowsNoRealsig_testCoreclr
+          dependsOn: WindowsNoRealsig_Build
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          steps:
+          - checkout: self
+            clean: true
+            
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Build Artifact'
+            inputs:
+              artifact: WindowsNoRealsig_Build
+              path: '$(Build.SourcesDirectory)/artifacts'
+              
+          - script: |
+              echo "Listing downloaded pipeline artifact"
+              dir "$(Build.SourcesDirectory)/artifacts"
+            displayName: 'List Pipeline Workspace'
+
+          - pwsh: eng\Build.ps1 -ci -restore -testCoreclr -configuration Release
+            env:
+              DOTNET_DbgEnableMiniDump: 1
+              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+              NativeToolsOnMachine: true
+            displayName: Build
+            
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsNoRealsig_testCoreclr
+              mergeTestResults: true
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            continueOnError: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: failed()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
                 ArtifactName: 'Windows Release WindowsNoRealsig_testCoreclr process dumps'
                 ArtifactType: Container
                 parallel: true
 
         - job: WindowsNoRealsig_testDesktop
+          dependsOn: WindowsNoRealsig_Build
           pool:
             # The PR build definition sets this variable:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
@@ -311,8 +370,14 @@ stages:
           steps:
           - checkout: self
             clean: true
-
-          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
+            
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Build Artifact'
+            inputs:
+              artifact: WindowsNoRealsig_Build
+              path: '$(Build.SourcesDirectory)/artifacts'
+            
+          - pwsh: eng\Build.ps1 -ci -restore -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -329,15 +394,7 @@ stages:
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             continueOnError: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
+
           - task: PublishBuildArtifacts@1
             displayName: Publish Dumps
             condition: failed()
@@ -424,11 +481,8 @@ stages:
                 ArtifactType: Container
                 parallel: true
 
-        # Windows With Compressed Metadata
-        - job: WindowsCompressedMetadata
+        - job: WindowsCompressedMetadata_vs
           variables:
-          - name: XUNIT_LOGS
-            value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
           - name: __VSNeverShowWhatsNew
             value: 1
           pool:
@@ -440,63 +494,29 @@ stages:
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
-            maxParallel: 4
+            maxParallel: 2
             matrix:
-              coreclr_release:
-                _configuration: Release
-                _testKind: testCoreclr
               fsharpqa_release:
                 _configuration: Release
                 _testKind: testFSharpQA
               vs_release:
                 _configuration: Release
                 _testKind: testVs
-              transparent_compiler_release:
-                _configuration: Release
-                _testKind: testCoreclr
-
-              ${{ if eq(variables['Build.Reason'], 'Flaky, disabled, was PullRequest') }}:
-                inttests_release:
-                  _configuration: Release
-                  _testKind: testIntegration
+              # inttests_release:
+              #   _configuration: Release
+              #   _testKind: testIntegration
           steps:
           - checkout: self
-            clean: true
-
+            clean: true          
           - powershell: eng\SetupVSHive.ps1
             displayName: Setup VS Hive
-            condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
-
-          # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release -$(_testKind)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
-            displayName: Build / Test
-            condition: and( ne(variables['_testKind'], 'testIntegration'), ne(variables['System.JobName'], 'transparent_compiler_release') )
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
-              TEST_TRANSPARENT_COMPILER: 1
-              NativeToolsOnMachine: true
-            displayName: Build / Test Transparent Compiler
-            condition: and( eq(variables['System.JobName'], 'transparent_compiler_release'), ne(variables['_testKind'], 'testIntegration') )
-
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
-            env:
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build / Integration Test
-            continueOnError: true
-            condition: eq(variables['_testKind'], 'testIntegration')
-
+            displayName: Build      
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -545,8 +565,162 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Windows With Compressed Metadata
+        - job: WindowsCompressedMetadata_Build
+          variables:
+          - name: __VSNeverShowWhatsNew
+            value: 1
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+
+          steps:
+          - checkout: self
+            clean: true
+
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release
+            env:
+              DOTNET_DbgEnableMiniDump: 1
+              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+              NativeToolsOnMachine: true
+            displayName: Build
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Pipeline Artifact'
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts'
+              artifact: 'WindowsCompressedMetadata_Build'
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Tests BinLog
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'WindowsCompressedMetadata test binlogs'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: failed()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
+                ArtifactName: 'WindowsCompressedMetadata process dumps'
+                ArtifactType: Container
+                parallel: true
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents WindowsCompressedMetadata'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+     
+        - job: WindowsCompressedMetadata_Test
+          dependsOn: WindowsCompressedMetadata_Build 
+          variables:
+          - name: XUNIT_LOGS
+            value: $(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)
+          - name: __VSNeverShowWhatsNew
+            value: 1
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: $(DncEngPublicBuildPool)
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          strategy:
+            maxParallel: 4
+            matrix:
+              coreclr_release:
+                _configuration: Release
+                _testKind: testCoreclr
+              transparent_compiler_release:
+                _configuration: Release
+                _testKind: testCoreclr
+                transparentCompiler: 1
+                transparentCompilerPart: " TransparentCompiler"
+          steps:
+          - checkout: self
+            clean: true
+             
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Build Artifact'
+            inputs:
+              artifact: WindowsCompressedMetadata_Build
+              path: '$(Build.SourcesDirectory)/artifacts'   
+            
+          - pwsh: ./eng/Build.ps1 -ci -restore -configuration $(_configuration) -$(_testKind)
+            workingDirectory: $(Build.SourcesDirectory)
+            env:
+              DOTNET_DbgEnableMiniDump: 1
+              DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
+              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+              TEST_TRANSPARENT_COMPILER: $(transparentCompiler)
+              NativeToolsOnMachine: true
+            displayName: Test
+
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsCompressedMetadata $(_testKind)
+              mergeTestResults: true
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
+            continueOnError: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Tests BinLog
+            condition: always()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
+                ArtifactName: 'Windows $(_configuration) $(_testKind)$(transparentCompilerPart) test binlogs'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Dumps
+            condition: failed()
+            continueOnError: true
+            inputs:
+                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\$(_configuration)'
+                ArtifactName: 'Windows $(_configuration) $(_testKind)$(transparentCompilerPart) process dumps'
+                ArtifactType: Container
+                parallel: true
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
+              ArtifactName: 'Windows $(_configuration) $(_testKind)$(transparentCompilerPart) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows $(_testKind)$(transparentCompilerPart)'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+            
           # Windows With Compressed Metadata Desktop
-        - job: WindowsCompressedMetadata_Desktop
+        - job: WindowsCompressedMetadata_testDesktop
+          dependsOn: WindowsCompressedMetadata_Build 
           variables:
           - name: XUNIT_LOGS
             value: $(Build.SourcesDirectory)\artifacts\TestResults\Release
@@ -562,66 +736,50 @@ stages:
           timeoutInMinutes: 120
           strategy:
             parallel: 4
-
           steps:
           - checkout: self
-            clean: true
+            clean: true    
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Build Artifact'
+            inputs:
+              artifact: WindowsCompressedMetadata_Build
+              path: '$(Build.SourcesDirectory)/artifacts'
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
+          - pwsh: ./eng/Build.ps1 -ci -restore -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
-            displayName: Build / Test
+            displayName: Test
 
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata testDesktop batch $(System.JobPositionInPhase)
+              testRunTitle: WindowsCompressedMetadata testDesktop batch=$(System.JobPositionInPhase)
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             continueOnError: true
-
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Tests BinLog
-            condition: eq(variables['System.JobPositionInPhase'], 1)
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.sln.binlog'
-                ArtifactName: 'Windows testDesktop test binlogs'
-                ArtifactType: Container
-                parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Dumps
             condition: failed()
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows testDesktop process dumps $(System.JobPositionInPhase)'
+                ArtifactName: 'Windows testDesktop process dumps batch=$(System.JobPositionInPhase)'
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\Release'
-              ArtifactName: 'Windows testDesktop test logs batch $(System.JobPositionInPhase)'
+              ArtifactName: 'Windows testDesktop test logs batch=$(System.JobPositionInPhase)'
               publishLocation: Container
             continueOnError: true
             condition: always()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Windows testDesktop $(System.JobPositionInPhase)'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
 
         # Mock official build
         - job: MockOfficial
