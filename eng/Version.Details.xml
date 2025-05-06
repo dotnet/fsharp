@@ -1,17 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
   <ProductDependencies>
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.25223.3">
-      <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
-      <Sha>19eb5ea4e5f9c4e5256843a92805c8c9e942207d</Sha>
-      <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
-    </Dependency>
-    <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.25-preview-25214-09">
-      <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
-      <SourceBuild RepoName="msbuild" ManagedOnly="true" />
-    </Dependency>
     <Dependency Name="Microsoft.Build" Version="17.13.25">
       <Uri>https://github.com/dotnet/msbuild</Uri>
       <Sha>7ad4e1c76585d0ed6e438da2d4f9394326934399</Sha>
@@ -45,12 +34,6 @@
     <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="9.0.0-beta.25255.3">
       <Uri>https://github.com/dotnet/arcade</Uri>
       <Sha>dba26274ff5a0906a1880443fc3c0466d1a298ae</Sha>
-    </Dependency>
-    <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.arcade" Version="9.0.0-beta.25255.3">
-      <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>dba26274ff5a0906a1880443fc3c0466d1a298ae</Sha>
-      <SourceBuild RepoName="arcade" ManagedOnly="true" />
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.24462.2">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
