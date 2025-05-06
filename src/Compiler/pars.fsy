@@ -4421,10 +4421,28 @@ declExpr:
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
        SynExpr.YieldOrReturn(($1, not $1), typedExpr, (unionRanges (rhs parseState 1) $4.Range), trivia) }
 
+  | YIELD declExpr opt_topReturnTypeWithTypeConstraints
+     { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       let expr = 
+           match $3 with
+           | None -> $2
+           | Some(_, SynReturnInfo((ty, _), m)) -> 
+               SynExpr.Typed($2, ty, unionRanges $2.Range m)
+       SynExpr.YieldOrReturn(($1, not $1), expr, (unionRanges (rhs parseState 1) expr.Range), trivia) }
+
   | YIELD_BANG declExpr COLON typ
     {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
        SynExpr.YieldOrReturnFrom(($1, not $1), typedExpr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
+
+  | YIELD_BANG declExpr opt_topReturnTypeWithTypeConstraints
+    {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
+       let expr = 
+           match $3 with
+           | None -> $2
+           | Some(_, SynReturnInfo((ty, _), m)) -> 
+               SynExpr.Typed($2, ty, unionRanges $2.Range m)
+       SynExpr.YieldOrReturnFrom(($1, not $1), expr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
   | YIELD_BANG declExpr
      {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
