@@ -1078,6 +1078,14 @@ module SynExpr =
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
                 true
 
+            // $"{({ A = 3 })}"
+            // $"{({| A = 3 |})}"
+            // $"{({1..10})}"
+            // $"{(();1)}"
+            // $"{(1,2)}"
+            | SynExpr.InterpolatedString _, SynExpr.Record _
+            | SynExpr.InterpolatedString _, SynExpr.AnonRecd _
+            | SynExpr.InterpolatedString _, SynExpr.ComputationExpr _
             | SynExpr.InterpolatedString _, SynExpr.Sequential _
             | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
