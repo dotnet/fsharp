@@ -73,7 +73,11 @@ module Cancellable =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
-            oper ct
+            try
+                oper ct
+            with
+            | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
+            | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
 
     let fold f acc seq =
         Cancellable(fun ct ->
@@ -101,14 +105,10 @@ module Cancellable =
             let! ct = Async.CancellationToken
 
             return!
-                Async.FromContinuations(fun (cont, econt, ccont) ->
-                    try
-                        match run ct c with
-                        | ValueOrCancelled.Value v -> cont v
-                        | ValueOrCancelled.Cancelled ce -> ccont ce
-                    with
-                    | :? OperationCanceledException as ce when ct.IsCancellationRequested -> ccont ce
-                    | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> econt)
+                Async.FromContinuations(fun (cont, _econt, ccont) ->
+                    match run ct c with
+                    | ValueOrCancelled.Value v -> cont v
+                    | ValueOrCancelled.Cancelled ce -> ccont ce)
         }
 
     let token () = Cancellable(ValueOrCancelled.Value)
