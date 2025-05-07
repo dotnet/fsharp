@@ -60,9 +60,6 @@ type LoadClosure =
         /// The original #load references, including those that didn't resolve
         OriginalLoadReferences: (range * string * string) list
 
-        /// The #nowarns
-        NoWarns: (string * range list) list
-
         /// Diagnostics seen while processing resolutions
         ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 

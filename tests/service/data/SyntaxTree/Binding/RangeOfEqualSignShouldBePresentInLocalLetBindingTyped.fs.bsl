@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInLocalLetBindingTyped.fs",
       false,
       QualifiedNameOfFile RangeOfEqualSignShouldBePresentInLocalLetBindingTyped,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInLocalLetBindingTyped], false,
           AnonModule,
@@ -35,4 +35,5 @@ ImplFile
                       InKeyword = None }), (2,0--4,6)), (2,0--4,6))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

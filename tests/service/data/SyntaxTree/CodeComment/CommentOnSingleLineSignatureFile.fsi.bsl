@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/CodeComment/CommentOnSingleLineSignatureFile.fsi",
-      QualifiedNameOfFile CommentOnSingleLineSignatureFile, [], [],
+      QualifiedNameOfFile CommentOnSingleLineSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, DeclaredNamespace,
           [Val
@@ -17,4 +17,5 @@ SigFile
                    EqualsRange = None }), (4,0--4,10))], PreXmlDocEmpty, [],
           None, (2,0--4,10), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (3,0--3,11)] }, set []))

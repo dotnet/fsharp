@@ -152,7 +152,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 /* These are artificial */
 %token <string> LEX_FAILURE
 %token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
-%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF
+%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF WARN_DIRECTIVE
 
 %start signatureFile implementationFile interaction typedSequentialExprEOF typEOF
 %type <SynExpr> typedSequentialExprEOF
@@ -474,7 +474,7 @@ interactiveSeparator:
   | OBLOCKSEP { }
 
 /*--------------------------------------------------------------------------*/
-/* #directives - used by both F# Interactive directives and #nowarn etc.    */
+/* #directives - used by F# Interactive directives                                    */
 
 
 /* A #directive in a module, namespace or an interaction */

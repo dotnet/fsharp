@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/CodeComment/TripleSlashCommentShouldNotBeCaptured.fs", false,
-      QualifiedNameOfFile TripleSlashCommentShouldNotBeCaptured, [], [],
+      QualifiedNameOfFile TripleSlashCommentShouldNotBeCaptured, [],
       [SynModuleOrNamespace
          ([TripleSlashCommentShouldNotBeCaptured], false, AnonModule,
           [Let
@@ -18,4 +18,5 @@ ImplFile
                     EqualsRange = Some (3,6--3,7) })], (2,0--3,9))],
           PreXmlDocEmpty, [], None, (3,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

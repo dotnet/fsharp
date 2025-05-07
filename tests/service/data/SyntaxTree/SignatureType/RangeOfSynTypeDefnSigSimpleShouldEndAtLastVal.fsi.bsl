@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfSynTypeDefnSigSimpleShouldEndAtLastVal.fsi",
-      QualifiedNameOfFile RangeOfSynTypeDefnSigSimpleShouldEndAtLastVal, [], [],
+      QualifiedNameOfFile RangeOfSynTypeDefnSigSimpleShouldEndAtLastVal, [],
       [SynModuleOrNamespaceSig
          ([Z], false, DeclaredNamespace,
           [Types
@@ -36,4 +36,5 @@ SigFile
           PreXmlDocEmpty, [], None, (2,0--5,37),
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
