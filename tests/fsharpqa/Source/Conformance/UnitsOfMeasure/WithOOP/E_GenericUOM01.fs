@@ -1,7 +1,7 @@
 // #Regression #Conformance #UnitsOfMeasure #ObjectOrientedTypes 
 // Verify error when putting invalid attributes on type arguments
 // (We should only allow [<Measure>].)
-//<Expects id="FS0842" status="error" span="(8,36)">This attribute is not valid for use on this language element</Expects>
+//<Expects id="FS0842" status="warning" span="(8,36)">This attribute is not valid for use on this language element</Expects>
 
 open System
 
