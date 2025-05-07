@@ -24,6 +24,41 @@ let x = lb {1; 2;}
         |> ignore
 
     [<Fact>]
+    let ``Allow CE return and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+open System
+
+type MyType() =
+    interface IDisposable with
+        member this.Dispose () = ()
+
+let f () =
+    async {
+        return new MyType() : IDisposable
+    }
+
+let f1 () =
+    async {
+        return new MyType() :> IDisposable
+    }
+        
+let f2 () : Async<IDisposable> =
+    async {
+        return new MyType()
+    }
+        
+let f3 () =
+    async {
+        return (new MyType() : IDisposable)
+    }
+        """
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
     let ``A CE explicitly using Zero fails without a defined Zero``() =
         FSharp """
 module ComputationExpressionTests
