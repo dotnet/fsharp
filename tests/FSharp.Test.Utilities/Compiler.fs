@@ -1629,7 +1629,8 @@ Actual:
 
             (sourceErrors, expectedErrors)
             ||> List.iter2 (fun actual expected ->
-                Assert.Equal(expected, actual))
+                try Assert.Equal(expected, actual)
+                with | _ -> failwith $"%s{what}:\nactual:\n  %s{actual}\nexpected:\n  %s{expected}")
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with

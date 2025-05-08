@@ -140,16 +140,6 @@ Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
 Conformance08			Conformance\TypesAndTypeConstraints\TypeParameterDefinitions
 
-Conformance08			Conformance\UnitsOfMeasure\Basic
-Conformance08			Conformance\UnitsOfMeasure\Bounds
-Conformance08			Conformance\UnitsOfMeasure\Constants
-Conformance08			Conformance\UnitsOfMeasure\Diagnostics
-Conformance08			Conformance\UnitsOfMeasure\Operators
-Conformance08			Conformance\UnitsOfMeasure\Parenthesis
-Conformance08			Conformance\UnitsOfMeasure\Parsing
-Conformance08			Conformance\UnitsOfMeasure\TypeChecker
-Conformance08			Conformance\UnitsOfMeasure\WithOOP
-
 Misc01			Diagnostics\async
 Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
