@@ -86,7 +86,6 @@ Conformance05			Conformance\InferenceProcedures\ResolvingApplicationExpressions
 Conformance05			Conformance\InferenceProcedures\TypeInference
 Conformance05			Conformance\InferenceProcedures\WellFormednessChecking
 
-Conformance05			Conformance\LexicalAnalysis\Comments
 Conformance05			Conformance\LexicalAnalysis\ConditionalCompilation
 Conformance05			Conformance\LexicalAnalysis\Directives
 Conformance05			Conformance\LexicalAnalysis\HiddenTokens
