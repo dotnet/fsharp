@@ -478,7 +478,8 @@ module Internal =
             static member Bind(g: Generator<'T>, cont) =
                 match g with
                 | :? GenerateThen<'T> as g ->
-                    GenerateThen<_>.Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
+                    GenerateThen<_>
+                        .Bind(g.Generator, (fun () -> GenerateThen<_>.Bind(g.Cont(), cont)))
                 | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
 
         let bindG g cont =
@@ -1463,15 +1464,40 @@ module Seq =
         else
             mkDelayedSeq (fun () -> countByRefType projection source)
 
-    [<CompiledName("Sum")>]
-    let inline sum (source: seq< ^a >) : ^a =
+    let inline private fsharpSumImpl (source: seq< ^a >) : ^a =
         use e = source.GetEnumerator()
         let mutable acc = LanguagePrimitives.GenericZero< ^a>
 
         while e.MoveNext() do
             acc <- Checked.(+) acc e.Current
 
-        acc
+        acc 
+
+    let isNetFramework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Framework"
+
+    [<CompiledName("Sum")>]
+    let inline sum (source: seq< ^a >) : ^a =
+        fsharpSumImpl source
+        when ^a: int64 = 
+            if isNetFramework then fsharpSumImpl source
+            else 
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<int64> -> int64) (# "" source : IEnumerable<int64> #)
+                (# "" r : 'a #)
+        when ^a: int = 
+            if isNetFramework then fsharpSumImpl source
+            else
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<int> -> int) (# "" source : IEnumerable<int> #)
+                (# "" r : 'a #)
+        when ^a: float32 = 
+            if isNetFramework then fsharpSumImpl source
+            else 
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<float32> -> float32) (# "" source : IEnumerable<float32> #)
+                (# "" r : 'a #)
+        when ^a: float = 
+            if isNetFramework then fsharpSumImpl source
+            else
+                let r = (System.Linq.Enumerable.Sum: IEnumerable<float> -> float) (# "" source : IEnumerable<float> #)
+                (# "" r : 'a #)
 
     [<CompiledName("SumBy")>]
     let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (source: seq<'T>) : ^U =
