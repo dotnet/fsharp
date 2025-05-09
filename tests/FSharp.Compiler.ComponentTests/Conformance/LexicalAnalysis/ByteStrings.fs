@@ -29,7 +29,10 @@ module ByteStrings =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 1252, Line 3, Col 10, Line 3, Col 14, invalidCharWarningMsg "\\837" "\\069")
+        |> withDiagnostics [
+            (Warning 1252, Line 3, Col 14, Line 3, Col 18, """'\837' is not a valid character literal.
+Note: Currently the value is wrapped around byte range to '\069'. In a future F# version this warning will be promoted to an error.""")
+        ]
 
     [<Fact>]
     let ``Decimal char between 128 and 256 is not valid``() =
@@ -39,7 +42,9 @@ module ByteStrings =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 1253, Line 3, Col 9, Line 3, Col 16, invalidAsciiWarningMsg 1)
+        |> withDiagnostics [
+              (Warning 1253, Line 3, Col 13, Line 3, Col 20, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
+        ]
 
     [<Fact>]
     let ``Decimal char < 128 is valid``() =
@@ -73,11 +78,11 @@ module ByteStrings =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 1253, Line 3, Col 5, Line 3, Col  9, invalidAsciiWarningMsg 1)
-            (Warning 1253, Line 4, Col 5, Line 4, Col 12, invalidAsciiWarningMsg 1)
-            (Warning 1253, Line 5, Col 5, Line 5, Col 12, invalidAsciiWarningMsg 1)
-            (Warning 1253, Line 6, Col 5, Line 6, Col 14, invalidAsciiWarningMsg 1)
-            (Warning 1253, Line 7, Col 5, Line 7, Col 18, invalidAsciiWarningMsg 1)
+            (Warning 1253, Line 3, Col 9, Line 3, Col 13, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
+            (Warning 1253, Line 4, Col 9, Line 4, Col 16, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
+            (Warning 1253, Line 5, Col 9, Line 5, Col 16, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
+            (Warning 1253, Line 6, Col 9, Line 6, Col 18, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
+            (Warning 1253, Line 7, Col 9, Line 7, Col 22, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
         ]
     
     [<Fact>]
@@ -89,17 +94,10 @@ module ByteStrings =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1245, Line 2, Col 23, Line 2, Col 33, "\\U12345678 is not a valid Unicode character escape sequence")
-
-
-            // Note: Error for `\U00005678` spans full byte string:
-            //       Is a valid char, but two bytes -> not valid inside byte string
-            //       But check for correct byte happens after string is finished 
-            //           (because `B` suffix -> only know at end if it's a byte string)
-            //       -> Don't have direct access to range of invalid char any more
-            (Error 1140, Line 2, Col 1, Line 2, Col 54,invalidTwoByteErrorMsg 1)
-
-            (Warning 1252, Line 2, Col 14, Line 2, Col 18, invalidCharWarningMsg "\\837" "\\069")
+            (Error 1245, Line 2, Col 27, Line 2, Col 37, "\\U12345678 is not a valid Unicode character escape sequence")
+            (Error 1140, Line 2, Col 5, Line 2, Col 58, "This byte array literal contains 1 characters that do not encode as a single byte")
+            (Warning 1252, Line 2, Col 18, Line 2, Col 22, """'\837' is not a valid character literal.
+Note: Currently the value is wrapped around byte range to '\069'. In a future F# version this warning will be promoted to an error.""")
         ]
 
     [<Fact>]
@@ -119,8 +117,9 @@ module ByteStrings =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 1252, Line 3, Col 10, Line 3, Col 14, invalidCharWarningMsg "\\937" "\\169")
-            (Warning 1253, Line 3, Col  9, Line 3, Col 16, invalidAsciiWarningMsg 1)
+            (Warning 1252, Line 3, Col 14, Line 3, Col 18, """'\937' is not a valid character literal.
+Note: Currently the value is wrapped around byte range to '\169'. In a future F# version this warning will be promoted to an error.""")
+            (Warning 1253, Line 3, Col 13, Line 3, Col 20, "This byte array literal contains 1 non-ASCII characters. All characters should be < 128y.")
         ]
 
     [<Fact>]
@@ -131,6 +130,6 @@ module ByteStrings =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1140, Line 2, Col 9, Line 2, Col 44,invalidTwoByteErrorMsg 5)
-            (Warning 1253, Line 2, Col  9, Line 2, Col 44, invalidAsciiWarningMsg 3)
+            (Error 1140, Line 2, Col 13, Line 2, Col 48, "This byte array literal contains 5 characters that do not encode as a single byte")
+            (Warning 1253, Line 2, Col 13, Line 2, Col 48, "This byte array literal contains 3 non-ASCII characters. All characters should be < 128y.")
         ]
