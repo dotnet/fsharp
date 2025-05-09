@@ -6,19 +6,19 @@
 module Nested01
 
 #if UNDEFINED1
-exit 1
+ignore 1
 #else
     #if UNDEFINED2
-        exit 1
+        ignore 1
     #else
         #if UNDEFINED3
-            exit 1
+            ignore 1
         #else
             #if UNDEFINED4
-                exit 1
+                ignore 1
             #else
                 #if UNDEFINED5
-                    exit 1
+                    ignore 1
                 #else
                     (*Active Code5*)let legitCode5 = 5
                 #endif
@@ -39,10 +39,10 @@ exit 1
         (*Active Code7*)
                                     let legitCode7 = 7
     #else
-        exit 1
+        ignore 1
     #endif
 #else
-    exit 1
+    ignore 1
 #endif
 
 // If the code wasn't enabled, this would cause syntax errors
@@ -56,4 +56,4 @@ exit 1
                                                     legitCode7
                                                 ]
     
-                                    exit 0
+                                    ignore 0

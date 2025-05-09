@@ -85,4 +85,4 @@ exit 1
                                                                          legitCodeB
                                                                      ]
                                                         
-                                                         exit 0
+                                                         ignore 0

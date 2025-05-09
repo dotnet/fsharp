@@ -91,6 +91,7 @@
     <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
     <Compile Include="Conformance\InferenceProcedures\RecursiveSafetyAnalysis\RecursiveSafetyAnalysis.fs" />
     <Compile Include="Conformance\LexicalAnalysis\CharByteLiterals.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\ConditionalCompilation\ConditionalCompilation.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Comments\Comments.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ByteStrings.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />

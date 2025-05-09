@@ -7,4 +7,4 @@
 exit 0
 #endif
 
-exit 1
+ignore 1

@@ -6,4 +6,4 @@
 let t8 (x : #if_) = ()
 let t7 (x : #endif_) = ()
 
-exit 1
+ignore 1
