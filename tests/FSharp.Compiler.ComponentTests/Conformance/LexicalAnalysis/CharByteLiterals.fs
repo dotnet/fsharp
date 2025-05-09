@@ -56,13 +56,14 @@ module CharByteLiterals =
     |> ignore
         """
         |> typecheck
+        |> shouldFail
         |> withDiagnostics [
-            (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-
-            (Warning 1157, Line 4, Col 5, Line 4, Col 12, invalidTrigraphCharWarningMsg)
+            (Error 1157, Line 3, Col 9, Line 3, Col 13, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 5, Col 9, Line 5, Col 16, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 6, Col 9, Line 6, Col 18, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 7, Col 9, Line 7, Col 22, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Warning 1157, Line 4, Col 9, Line 4, Col 16, """This is not a valid byte character literal. The value must be less than or equal to '\127'B.
+Note: In a future F# version this warning will be promoted to an error.""")
         ]
 
     [<Fact>]
@@ -79,6 +80,7 @@ module CharByteLiterals =
         """
         |> typecheck
         |> shouldSucceed
+
     [<Fact>]
     let ``128uy fails typecheck in char notations``() =
         Fs """
@@ -92,12 +94,13 @@ module CharByteLiterals =
     |> ignore
         """
         |> typecheck
+        |> shouldFail
         |> withDiagnostics [
-            (Error 1157, Line 5, Col 5, Line 5, Col 12, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-
-            (Warning 1157, Line 4, Col 5, Line 4, Col 12, invalidTrigraphCharWarningMsg)
+            (Error 1157, Line 5, Col 9, Line 5, Col 16, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 6, Col 9, Line 6, Col 18, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 7, Col 9, Line 7, Col 22, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Warning 1157, Line 4, Col 9, Line 4, Col 16, """This is not a valid byte character literal. The value must be less than or equal to '\127'B.
+Note: In a future F# version this warning will be promoted to an error.""")
         ]
 
     [<Fact>]
@@ -113,10 +116,10 @@ module CharByteLiterals =
     |> ignore
         """
         |> typecheck
+        |> shouldFail
         |> withDiagnostics [
-            (Error 1157, Line 3, Col 5, Line 3, Col  9, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 4, Col 5, Line 4, Col 12, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-
-            (Error 1157, Line 6, Col 5, Line 6, Col 14, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
-            (Error 1157, Line 7, Col 5, Line 7, Col 18, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 3, Col 9, Line 3, Col 13, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 4, Col 9, Line 4, Col 16, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 6, Col 9, Line 6, Col 18, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
+            (Error 1157, Line 7, Col 9, Line 7, Col 22, "This is not a valid byte character literal. The value must be less than or equal to '\\127'B.")
         ]

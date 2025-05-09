@@ -6,4 +6,4 @@
 
 let (<=$=>) x y = x + y
 
-exit 0
+ignore 0

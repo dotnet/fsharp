@@ -17,7 +17,11 @@ module Strings =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 1252, Line 2, Col 11, Line 2, Col 15, invalidCharWarningMsg "\\937" "\\169")
+        |> withDiagnostics [
+            (Warning 1252, Line 2, Col 15, Line 2, Col 19, """'\937' is not a valid character literal.
+Note: Currently the value is wrapped around byte range to '\169'. In a future F# version this warning will be promoted to an error.""")
+        ]
+
 
     [<Fact>]
     let ``Decimal char between 128 and 256 is valid``() =
@@ -50,7 +54,10 @@ module Strings =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 1252, Line 2, Col 13, Line 2, Col 17, invalidCharWarningMsg "\\937" "\\169")
+        |> withDiagnostics [
+            (Warning 1252, Line 2, Col 17, Line 2, Col 21, """'\937' is not a valid character literal.
+Note: Currently the value is wrapped around byte range to '\169'. In a future F# version this warning will be promoted to an error.""")
+        ]
 
     [<Fact>]
     let ``Error messages for different notations only span invalid notation``() =
@@ -60,6 +67,7 @@ module Strings =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1245, Line 2, Col 31, Line 2, Col 41, "\\U12345678 is not a valid Unicode character escape sequence")
-            (Warning 1252, Line 2, Col 22, Line 2, Col 26,  invalidCharWarningMsg "\\937" "\\169")
+            (Error 1245, Line 2, Col 35, Line 2, Col 45, "\\U12345678 is not a valid Unicode character escape sequence");
+            (Warning 1252, Line 2, Col 26, Line 2, Col 30, """'\937' is not a valid character literal.
+Note: Currently the value is wrapped around byte range to '\169'. In a future F# version this warning will be promoted to an error.""")
         ]
