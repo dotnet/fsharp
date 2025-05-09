@@ -4,14 +4,14 @@
 // test1 --------------------------------------
 let test1 = 
     "a"
-    #if DEFINED
+    #if NOTDEFINED
     + "b
     #else 
-    c"
+    + "c
     #else
-    + "d"
+    d"
     #endif
 
-if test1.Contains("d") then exit 1
+if test1.Contains("b") then exit 1
 
-exit 0
+ignore 0

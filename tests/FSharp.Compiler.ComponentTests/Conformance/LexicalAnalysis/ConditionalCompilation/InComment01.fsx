@@ -23,6 +23,6 @@ let y =
     (* Note the previous comment is immediately terminated *)
     2
     #endif
-if y <> 2 then exit 1
+if y <> 2 then ignore 1
 
-exit 0
+ignore 0
