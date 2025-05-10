@@ -8,4 +8,4 @@ let obsoleteIdentifier = 12
 
 let f UpperCaseArgument = obsoleteIdentifier
 
-exit 0
+ignore 0
