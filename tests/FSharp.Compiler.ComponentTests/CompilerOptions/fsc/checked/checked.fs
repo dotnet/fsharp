@@ -12,7 +12,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> compile
         |> shouldSucceed
