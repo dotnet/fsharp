@@ -3,4 +3,4 @@
 // #R is not supported anymore.
 //<Expects status="success">Invalid directive</Expects>
 #R "somefile"
-exit 0;;
+ignore 0;;
