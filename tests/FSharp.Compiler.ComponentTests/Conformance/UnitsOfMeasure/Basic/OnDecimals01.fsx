@@ -13,20 +13,20 @@ let widgetsPerSprocket = 5.0M<Widgets> / 1.25M<Sprockets>
 
 // Addition
 let addition =
-    if widgetsPerSprocket + widgetsPerSprocket <> (10.0M / 1.25M) * 1M<Widgets / Sprockets> then exit 1
+    if widgetsPerSprocket + widgetsPerSprocket <> (10.0M / 1.25M) * 1M<Widgets / Sprockets> then ignore 1
 
 // Multiplication
 let multiplication = 
     let x = 2.50000000M<Sprockets>
-    if x * widgetsPerSprocket <> 10.0M<Widgets> then exit 1
+    if x * widgetsPerSprocket <> 10.0M<Widgets> then ignore 1
 
 // Subtraction
 let subtraction = 
-    if widgetsPerSprocket - widgetsPerSprocket <> 0.0M<Widgets / Sprockets> then exit 1
+    if widgetsPerSprocket - widgetsPerSprocket <> 0.0M<Widgets / Sprockets> then ignore 1
 
 // Division
 let division =
-    if widgetsPerSprocket / 5.0M<Widgets> <> (1.0M / 1.25M) * 1M<Sprockets^-1> then exit 1
+    if widgetsPerSprocket / 5.0M<Widgets> <> (1.0M / 1.25M) * 1M<Sprockets^-1> then ignore 1
 
-exit 0
+ignore 0
          

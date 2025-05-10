@@ -17,5 +17,5 @@ let factoryRate2 = makeWidget16() / 1s<s>
 let factoryRate3 = makeWidget32() / 1<s>
 let factoryRate4 = makeWidget64() / 1L<s>
 
-exit 0
+ignore 0
 

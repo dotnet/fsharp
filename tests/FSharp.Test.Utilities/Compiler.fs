@@ -1179,7 +1179,11 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs ->
-            let source = fs.Source.GetSourceText |> Option.defaultValue ""
+            let source =
+                match fs.Source.GetSourceText with
+                | Some text -> text
+                | None -> File.ReadAllText(fs.Source.GetSourceFileName)
+
             let name = fs.Name |> Option.defaultValue "unnamed"
             let options = fs.Options |> Array.ofList
             let outputDirectory =
@@ -1204,23 +1208,30 @@ module rec Compiler =
                                 opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
                     | _ -> ()
                 opts.ToArray()
-            let errors, stdOut, stdErr = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+            let diagnostics, messages, stdOut, stdErr = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+            let errorCount, diagnostics =
+                let errors, warnings =
+                    diagnostics
+                    |> fromFSharpDiagnostic
+                    |> List.map snd
+                    |> List.partition(fun d -> d.Error.IsError)
+                errors.Length, errors @ warnings
 
             let mkResult output =
               { OutputPath   = None
                 Dependencies = []
                 Adjust       = 0
-                Diagnostics  = []
+                Diagnostics  = diagnostics
                 PerFileErrors= []
                 Output       = Some output
                 Compilation  = cUnit }
 
-            if errors.Count = 0 then
+            if errorCount = 0 then
                 let output =
                     ExecutionOutput { Outcome = NoExitCode; StdOut = stdOut; StdErr = stdErr }
                 CompilationResult.Success (mkResult output)
             else
-                let err = (errors |> String.concat "\n").Replace("\r\n","\n")
+                let err = (messages |> String.concat "\n").Replace("\r\n","\n")
                 let output =
                     ExecutionOutput {Outcome = NoExitCode; StdOut = String.Empty; StdErr = err }
                 CompilationResult.Failure (mkResult output)

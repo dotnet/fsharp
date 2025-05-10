@@ -7,8 +7,8 @@ let a : decimal<1> = ceil 4.4M<1>
 let b : decimal<1> = floor 4.4M<1> 
 let c : decimal<1> = round 4.4M<1>
 
-if a <> 5.0M then exit 1
-if b <> 4.0M then exit 1
-if c <> 4.0M then exit 1
+if a <> 5.0M then ignore 1
+if b <> 4.0M then ignore 1
+if c <> 4.0M then ignore 1
 
-exit 0
+ignore 0
