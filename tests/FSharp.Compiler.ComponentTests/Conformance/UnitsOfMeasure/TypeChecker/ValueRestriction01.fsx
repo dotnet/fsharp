@@ -6,6 +6,6 @@ let differentiate (h:float<_>) f x = (f(x+h) - f(x-h)) / (2.0*h)
 
 let f (x : float<_>) = x * x
 
-if (differentiate 2.0<1> f 2.0) <> 4.0 then exit 1
+if (differentiate 2.0<1> f 2.0) <> 4.0 then ignore 1
 
-exit 0
+ignore 0

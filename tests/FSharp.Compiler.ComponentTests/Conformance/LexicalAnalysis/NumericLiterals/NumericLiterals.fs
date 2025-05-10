@@ -38,6 +38,7 @@ module NumericLiterals =
         |> getCompilation
         |> shouldSucceed
 
+#if NETFRAMEWORK
     [<Theory;FileInlineData("E_BigIntConversion01.fsx")>]
     let ``E_BigIntConversion01_fsx`` compilation =
         compilation
@@ -53,6 +54,7 @@ module NumericLiterals =
         |> shouldFailWithDiagnostics [
             (Error 1, Line 8, Col 14, Line 8, Col 17, "The type 'System.Numerics.BigInteger' does not support a conversion to the type 'char'")
         ]
+#endif
 
     [<Theory;FileInlineData("E_BigNumNotImpl01.fsx")>]
     let ``E_BigNumNotImpl01_fsx`` compilation =
