@@ -456,6 +456,7 @@ type public FSharpTokenKind =
     | Comma
     | RightArrow
     | GreaterBarRightBracket
+    | GreaterBarRightBrace
     | LeftParenthesisStarRightParenthesis
     | Open
     | Or

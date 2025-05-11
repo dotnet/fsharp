@@ -283,6 +283,7 @@ module internal TokenClassifications =
         | LBRACE_BAR -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces)
 
         | GREATER_RBRACK
+        | GREATER_BAR_RBRACE
         | GREATER_BAR_RBRACK -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None)
 
         | RQUOTE _
@@ -1371,6 +1372,7 @@ type FSharpTokenKind =
     | Comma
     | RightArrow
     | GreaterBarRightBracket
+    | GreaterBarRightBrace
     | LeftParenthesisStarRightParenthesis
     | Open
     | Or
@@ -1581,6 +1583,7 @@ type FSharpToken =
         | STAR -> FSharpTokenKind.Star
         | COMMA -> FSharpTokenKind.Comma
         | RARROW -> FSharpTokenKind.RightArrow
+        | GREATER_BAR_RBRACE -> FSharpTokenKind.GreaterBarRightBrace
         | GREATER_BAR_RBRACK -> FSharpTokenKind.GreaterBarRightBracket
         | LPAREN_STAR_RPAREN -> FSharpTokenKind.LeftParenthesisStarRightParenthesis
         | OPEN -> FSharpTokenKind.Open
