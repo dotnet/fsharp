@@ -19,6 +19,23 @@ module AnonRecd =
         |> shouldFail
         |> withErrorCode 3522
         |> withMessage "The field 'A' appears multiple times in this record expression."
+
+    [<Fact>]
+    let ``Anonymous Record with unit of measures`` () =
+        FSharp """
+namespace FSharpTest
+
+[<Measure>]
+type m
+
+module AnonRecd =
+    let a = {|a=1<m>|}
+    let b = {|a=1<m>; b=2<m>|}
+    let c = {|a=1<m> |}
+    let d = {| a=1<m>; b=2<m>; c=3<m> |}   
+"""
+        |> compile
+        |> shouldSucceed
     
     [<Fact>]
     let ``Anonymous Record missing single field`` () =
