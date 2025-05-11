@@ -11296,6 +11296,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Function
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 FunkyOperatorName
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Global
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Greater
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 GreaterBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 GreaterBarRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 GreaterRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Hash
@@ -11491,6 +11492,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsFunction
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsFunkyOperatorName
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGlobal
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreater
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreaterBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreaterBarRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreaterRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHash
@@ -11682,6 +11684,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsFunction()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsFunkyOperatorName()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGlobal()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreater()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreaterBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreaterBarRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreaterRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHash()
@@ -11873,6 +11876,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind FunkyOperatorName
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Global
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Greater
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind GreaterBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind GreaterBarRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind GreaterRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Hash
@@ -12064,6 +12068,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_FunkyOperatorName()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Global()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Greater()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_GreaterBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_GreaterBarRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_GreaterRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Hash()
