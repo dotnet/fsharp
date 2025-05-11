@@ -38,6 +38,45 @@ module AnonRecd =
         |> shouldSucceed
     
     [<Fact>]
+    let ``Anonymous Record with typeof`` () =
+        FSharp """
+namespace FSharpTest
+module AnonRecd =
+    let a = {|a=typeof<int>|}
+    let b = {|a=typeof<int> |}
+    let c = {| a=typeof<int>|}
+    let d = {| a=typeof<int> |}
+"""
+        |> compile
+        |> shouldSucceed    
+    
+    [<Fact>]
+    let ``Anonymous Record with typedefof`` () =
+        FSharp """
+namespace FSharpTest
+module AnonRecd =
+    let a = {|a=typedefof<_ option>|}
+    let b = {|a=typedefof<_ option> |}
+    let c = {| a=typedefof<_ option>|}
+    let d = {| a=typedefof<_ option> |}
+"""
+        |> compile
+        |> shouldSucceed    
+    
+    [<Fact>]
+    let ``Anonymous Record with nameof`` () =
+        FSharp """
+namespace FSharpTest
+module AnonRecd =
+    let a<'T> = {|a=nameof<'T>|}
+    let b<'T> = {|a=nameof<'T> |}
+    let c<'T> = {| a=nameof<'T>|}
+    let d<'T> = {| a=nameof<'T> |}
+"""
+        |> compile
+        |> shouldSucceed
+    
+    [<Fact>]
     let ``Anonymous Record missing single field`` () =
         Fsx """
 let x () : {| A: int; B: string  |} =  {| A = 123 |}
