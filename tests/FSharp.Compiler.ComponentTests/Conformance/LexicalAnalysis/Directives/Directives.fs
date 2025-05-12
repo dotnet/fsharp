@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Conformance.LexicalAnalysis
 
+open System.IO
+
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -38,8 +40,6 @@ module Directives =
         |> shouldSucceed
 
     [<FileInlineData("dummy.fsx")>]
-    [<FileInlineData("dummy2.fsx")>]
-    [<FileInlineData("load_script_with_multiple_nowarn01.fsx")>]
     [<FileInlineData("multiple_nowarn01.fsx")>]
     [<FileInlineData("multiple_nowarn02.fsx")>]
     [<FileInlineData("multiple_nowarn_many.fsx")>]
@@ -50,8 +50,13 @@ module Directives =
         |> getCompilation
         |> compileAndRunAsFsxShouldSucceed
 
+    [<Fact>]
+    let ``load_script_with_multiple_nowarn01`` () =
+
+        Fsx $"""#load @"{Path.Combine(__SOURCE_DIRECTORY__, "multiple_nowarn01.fsx")}" """
+        |> compileAndRunAsFsxShouldSucceed
+
     [<FileInlineData("dummy.fsx")>]
-    [<FileInlineData("dummy2.fsx")>]
     [<FileInlineData("multiple_nowarn01.fsx")>]
     [<FileInlineData("multiple_nowarn02.fsx")>]
     [<FileInlineData("multiple_nowarn_many.fsx")>]
