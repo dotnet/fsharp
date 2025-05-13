@@ -7,7 +7,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-module IdentifiersAndKeywords =
+module LineDirectives =
 
     let shouldFailWithDiagnostics expectedDiagnostics compilation =
         compilation
