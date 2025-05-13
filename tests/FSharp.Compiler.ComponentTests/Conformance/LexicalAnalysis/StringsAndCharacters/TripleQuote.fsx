@@ -4,4 +4,4 @@
 
 let x = """this could one day be a multi-line verbatim string?"""
 
-exit 0
+ignore 0

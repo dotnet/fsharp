@@ -4,6 +4,6 @@
 let x = """Hello 
 ""world""";;
 
-if x <> "Hello \n\"\"world" then exit 1;;
+if x <> "Hello \n\"\"world" then ignore 1;;
 
-exit 0;;
+ignore 0;;

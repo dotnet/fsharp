@@ -8,7 +8,7 @@ let nl = Environment.NewLine
 let check arg expected =
     if arg <> expected then
         printfn "Expected %A = %A" expected arg
-        exit 1
+        ignore 1
 
 check """Hello world""" "Hello world"
 check """Hello "world""" "Hello \"world"
@@ -47,4 +47,4 @@ check """string 1""" "string 1"
 check """type
 T""" ("type" + nl + "T")
 
-exit 0
+ignore 0

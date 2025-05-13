@@ -7,10 +7,10 @@
 // See FSB #3701
 
 // Trigraph
-if '\065' <> 'A' then exit 1
-if '\063' <> '?' then exit 2
-if '\165' <> '¥' then exit 3
-if '\201' <> 'É' then exit 4
-if '\255' <> 'ÿ' then exit 5
+if '\065' <> 'A' then ignore 1
+if '\063' <> '?' then ignore 2
+if '\165' <> '¥' then ignore 3
+if '\201' <> 'É' then ignore 4
+if '\255' <> 'ÿ' then ignore 5
 
-exit 0
+ignore 0

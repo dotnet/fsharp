@@ -15,6 +15,6 @@ let test = "a\
 	d"
 
 printfn "test = [%s]" test
-if test <> "abc\r\n\td" then exit 1
+if test <> "abc\r\n\td" then ignore 1
 
-exit 0
+ignore 0

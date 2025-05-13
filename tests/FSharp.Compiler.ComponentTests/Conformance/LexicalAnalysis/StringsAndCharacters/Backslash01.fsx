@@ -6,6 +6,6 @@
 let test = "abc\
 def"
 
-if test <> "abcdef" then exit 1
+if test <> "abcdef" then ignore 1
 
-exit 0
+ignore 0

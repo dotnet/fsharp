@@ -6,4 +6,4 @@
 #light
 let some_unicode_char = '\u00D6' 
 let another_unicode_char = '\U000007FF' 
-exit 0
+ignore 0
