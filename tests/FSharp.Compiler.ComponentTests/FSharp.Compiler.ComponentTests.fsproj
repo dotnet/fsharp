@@ -75,6 +75,7 @@
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
@@ -128,10 +129,15 @@
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Bounds\Bounds.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Constants\Constants.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics\Diagnostics.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Operators\Operators.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parenthesis\Parenthesis.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
@@ -300,6 +306,7 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\Caches.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
