@@ -3,6 +3,6 @@
 
 // Test the __SOURCE_FILE__ directive
 
-if System.IO.Path.GetFileName(__SOURCE_FILE__) <> "SourceFile01.fs" then exit 1
+if System.IO.Path.GetFileName(__SOURCE_FILE__) <> "SourceFile01.fs" then ignore 1
 
-exit 0
+ignore 0

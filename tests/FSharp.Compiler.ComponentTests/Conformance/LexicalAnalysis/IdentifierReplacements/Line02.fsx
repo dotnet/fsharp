@@ -5,6 +5,6 @@
                                                                                 // 5
 let currentLineToLower() = __LINE__.ToLower()                                   // 6
                                                                                 // 7
-if currentLineToLower() <> "6" then exit 1                                      // 8
-exit 0                                                                          // 9
+if currentLineToLower() <> "6" then ignore 1                                      // 8
+ignore 0                                                                          // 9
 

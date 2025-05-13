@@ -86,7 +86,6 @@ Conformance05			Conformance\InferenceProcedures\ResolvingApplicationExpressions
 Conformance05			Conformance\InferenceProcedures\TypeInference
 Conformance05			Conformance\InferenceProcedures\WellFormednessChecking
 
-Conformance05			Conformance\LexicalAnalysis\IdentifierReplacements
 Conformance05			Conformance\LexicalAnalysis\IdentifiersAndKeywords
 Conformance05			Conformance\LexicalAnalysis\LineDirectives
 Conformance06			Conformance\LexicalAnalysis\StringsAndCharacters
