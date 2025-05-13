@@ -69,7 +69,7 @@ module printing =
     [<FileInlineData("Quotation01.fsx")>]
     [<FileInlineData("SignatureWithOptionalArgs01.fsx")>]
     [<FileInlineData("ToStringOnCollections.fsx")>]
-    [<FileInlineData("UnitsOfMeasureIdentifiersRoundTrip01.fsx ")>]
+    [<FileInlineData("UnitsOfMeasureIdentifiersRoundTrip01.fsx")>]
     [<FileInlineData("UnitsOfMeasuresGenericSignature01.fsx")>]
     [<FileInlineData("UnitsOfMeasuresGenericSignature02.fsx")>]
     [<FileInlineData("VariantTypes01.fsx")>]
