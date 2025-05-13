@@ -97,6 +97,7 @@
     <Compile Include="Conformance\LexicalAnalysis\ByteStrings.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ElseIfBug14761.fs" />
     <Compile Include="Conformance\LexicalAnalysis\IdentifierReplacements\IdentifierReplacements.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\IdentifiersAndKeywords\IdentifiersAndKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\NumericLiterals\NumericLiterals.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Shift\Shift.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Strings.fs" />

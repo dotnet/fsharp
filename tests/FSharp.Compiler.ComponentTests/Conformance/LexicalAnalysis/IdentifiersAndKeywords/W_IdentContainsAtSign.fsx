@@ -4,4 +4,4 @@
 
 let ``abc@def`` = 42
 
-exit 0
+ignore 0

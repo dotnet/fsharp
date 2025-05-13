@@ -72,8 +72,8 @@ do
     test "Lots of comma's and other characters in type name from quotation"   (eval <@@ ``Lots of comma's and other characters in type name``.``One, 2, Three, 4, Five``.x @@> 17)
 
 let aa =
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
+  if !failures then (stdout.WriteLine "Test Failed"; ignore 1) 
 
 do (stdout.WriteLine "Test Passed";
     printf "TEST PASSED OK";
-    exit 0)
+    ignore 0)

@@ -8,4 +8,4 @@ let type = 2
 
 let f class = 5
 
-exit 1
+ignore 1
