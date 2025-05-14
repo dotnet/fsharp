@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/CodeComment/CommentAfterSourceCodeSignatureFile.fsi",
-      QualifiedNameOfFile CommentAfterSourceCodeSignatureFile, [], [],
+      QualifiedNameOfFile CommentAfterSourceCodeSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, DeclaredNamespace,
           [Val
@@ -17,4 +17,5 @@ SigFile
                    EqualsRange = None }), (4,0--4,13))], PreXmlDocEmpty, [],
           None, (2,0--4,13), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (4,14--4,25)] }, set []))
