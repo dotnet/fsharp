@@ -59,7 +59,7 @@ module UseBangBindingsVersion9 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1228, Line 43, Col 14, Line 43, Col 15, "'use!' bindings must be of the form 'use! <var> = <expr>'")
+            (Error 1228, Line 40, Col 14, Line 40, Col 29, "'use!' bindings must be of the form 'use! <var> = <expr>'")
         ]
 
 module UseBangBindingsPreview =

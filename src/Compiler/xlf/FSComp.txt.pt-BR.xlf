@@ -292,6 +292,11 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowTypedLetOrUseBang">
+        <source>Allow typed let! and use! bindings in computation expressions</source>
+        <target state="new">Allow typed let! and use! bindings in computation expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">expressões de computação aplicáveis</target>
