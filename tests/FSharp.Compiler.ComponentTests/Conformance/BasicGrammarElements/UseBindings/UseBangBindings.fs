@@ -59,7 +59,9 @@ module UseBangBindingsVersion9 =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1228, Line 40, Col 14, Line 40, Col 29, "'use!' bindings must be of the form 'use! <var> = <expr>'")
+            (Error 3350, Line 43, Col 14, Line 43, Col 28, "Feature 'Allow typed let! and use! bindings in computation expressions' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 41, Col 14, Line 41, Col 28, "Feature 'Allow typed let! and use! bindings in computation expressions' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 40, Col 14, Line 40, Col 29, "Feature 'Allow typed let! and use! bindings in computation expressions' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
 
 module UseBangBindingsPreview =
