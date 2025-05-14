@@ -3,7 +3,7 @@ ImplFile
      ("/root/Type/SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword.fs",
       false,
       QualifiedNameOfFile SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithXmlDocContainsTheRangeOfTheTypeKeyword], false,
           AnonModule,
@@ -34,4 +34,5 @@ ImplFile
                     WithKeyword = None })], (2,0--5,9))], PreXmlDocEmpty, [],
           None, (4,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (3,0--3,8)] }, set []))
