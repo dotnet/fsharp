@@ -27,8 +27,7 @@
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
-    <WarnOn>$(WarnOn);1182</WarnOn>
-    <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
+    <WarningsAsErrors>0025;$(WarningsAsErrors)</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
     <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
     <OtherFlags Condition="$(AdditionalFscCmdFlags) != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>

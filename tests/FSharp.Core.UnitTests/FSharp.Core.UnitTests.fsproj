@@ -12,8 +12,7 @@
     <PackageVersion>$(FSCoreUnitTestsPackageVersion)</PackageVersion>
     <PreRelease>true</PreRelease>
     <LangVersion>preview</LangVersion>
-    <NoWarn>$(NoWarn);1182</NoWarn> <!-- suppress warning for unused values in FSharp.Core tests, there are way too many of edge case scenarios tested -->
-    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
