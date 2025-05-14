@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ModuleOrNamespaceSig/Namespace - Keyword 01.fsi",
-      QualifiedNameOfFile Namespace - Keyword 01, [], [],
+      QualifiedNameOfFile Namespace - Keyword 01, [],
       [SynModuleOrNamespaceSig
          ([Foo], false, DeclaredNamespace,
           [NestedModule
@@ -24,4 +24,5 @@ SigFile
                 EqualsRange = Some (3,11--3,12) })], PreXmlDocEmpty, [], None,
           (1,0--4,14), { LeadingKeyword = Namespace (1,0--1,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

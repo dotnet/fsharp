@@ -48,7 +48,7 @@ module WithOOP =
         compilation
         |> getCompilation
         |> shouldFailWithDiagnostics [
-            (Error 842, Line 8, Col 36, Line 8, Col 51, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 8, Col 36, Line 8, Col 51, "This attribute is not valid for use on this language element")
         ]
 
     [<Theory; FileInlineData("E_NoConstructorOnMeasure01.fsx")>]

@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/DirectivesInMultilineCommentAreNotReportedAsTriviaSignatureFile.fsi",
       QualifiedNameOfFile
-        DirectivesInMultilineCommentAreNotReportedAsTriviaSignatureFile, [], [],
+        DirectivesInMultilineCommentAreNotReportedAsTriviaSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val
@@ -19,4 +19,5 @@ SigFile
           PreXmlDocEmpty, [], None, (2,0--10,6),
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [BlockComment (5,0--9,2)] }, set []))
