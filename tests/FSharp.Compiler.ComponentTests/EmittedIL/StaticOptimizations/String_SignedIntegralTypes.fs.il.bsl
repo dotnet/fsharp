@@ -46,60 +46,48 @@
     {
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  box        [runtime]System.SByte
-      IL_0006:  unbox.any  [runtime]System.IFormattable
-      IL_000b:  ldnull
-      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
-      IL_0011:  tail.
-      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
-                                                                                      class [netstandard]System.IFormatProvider)
-      IL_0018:  ret
+      IL_0000:  ldarga.s   'value'
+      IL_0002:  ldnull
+      IL_0003:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0008:  call       instance string [netstandard]System.SByte::ToString(string,
+                                                                               class [netstandard]System.IFormatProvider)
+      IL_000d:  ret
     } 
 
     .method public static string  'string int16'(int16 'value') cil managed
     {
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  box        [runtime]System.Int16
-      IL_0006:  unbox.any  [runtime]System.IFormattable
-      IL_000b:  ldnull
-      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
-      IL_0011:  tail.
-      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
-                                                                                      class [netstandard]System.IFormatProvider)
-      IL_0018:  ret
+      IL_0000:  ldarga.s   'value'
+      IL_0002:  ldnull
+      IL_0003:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0008:  call       instance string [netstandard]System.Int16::ToString(string,
+                                                                               class [netstandard]System.IFormatProvider)
+      IL_000d:  ret
     } 
 
     .method public static string  'string int32'(int32 'value') cil managed
     {
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  box        [runtime]System.Int32
-      IL_0006:  unbox.any  [runtime]System.IFormattable
-      IL_000b:  ldnull
-      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
-      IL_0011:  tail.
-      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
-                                                                                      class [netstandard]System.IFormatProvider)
-      IL_0018:  ret
+      IL_0000:  ldarga.s   'value'
+      IL_0002:  ldnull
+      IL_0003:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0008:  call       instance string [netstandard]System.Int32::ToString(string,
+                                                                               class [netstandard]System.IFormatProvider)
+      IL_000d:  ret
     } 
 
     .method public static string  'string int64'(int64 'value') cil managed
     {
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  box        [runtime]System.Int64
-      IL_0006:  unbox.any  [runtime]System.IFormattable
-      IL_000b:  ldnull
-      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
-      IL_0011:  tail.
-      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
-                                                                                      class [netstandard]System.IFormatProvider)
-      IL_0018:  ret
+      IL_0000:  ldarga.s   'value'
+      IL_0002:  ldnull
+      IL_0003:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0008:  call       instance string [netstandard]System.Int64::ToString(string,
+                                                                               class [netstandard]System.IFormatProvider)
+      IL_000d:  ret
     } 
 
   } 
