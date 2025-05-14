@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/GenericTypeNotNullAndOtherConstraint.fs", false,
-      QualifiedNameOfFile GenericTypeNotNullAndOtherConstraint, [], [],
+      QualifiedNameOfFile GenericTypeNotNullAndOtherConstraint, [],
       [SynModuleOrNamespace
          ([GenericTypeNotNullAndOtherConstraint], false, AnonModule,
           [Types
@@ -28,4 +28,5 @@ ImplFile
                     WithKeyword = None })], (1,0--1,56))], PreXmlDocEmpty, [],
           None, (1,0--2,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

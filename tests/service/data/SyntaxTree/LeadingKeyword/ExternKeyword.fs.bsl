@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/ExternKeyword.fs", false,
-      QualifiedNameOfFile ExternKeyword, [], [],
+      QualifiedNameOfFile ExternKeyword, [],
       [SynModuleOrNamespace
          ([ExternKeyword], false, AnonModule,
           [Let
@@ -42,4 +42,5 @@ ImplFile
                     EqualsRange = None })], (2,0--2,17))], PreXmlDocEmpty, [],
           None, (2,0--2,17), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
