@@ -391,6 +391,18 @@ namespace Microsoft.FSharp.Core
     type TailCallAttribute() =
         inherit System.Attribute()
 
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// A marker type that only compilers that support the <c>when 'T : Enum</c>
+    /// library-only static optimization constraint will recognize.
+    /// </summary>
+    [<Sealed; AbstractClass>]
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    type SupportsWhenTEnum = class end
+
 #if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
 
@@ -5149,11 +5161,10 @@ namespace Microsoft.FSharp.Core
              when ^T : decimal    = (# "conv.i" (int64 (# "" value : decimal #)) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
-        [<CompiledName("ToString")>]
-        let inline string (value: 'T) = 
-             anyToString "" value
+        let inline defaultString (value : 'T) =
+            anyToString "" value
 
-             when 'T : string =
+            when 'T : string =
                 if value = unsafeDefault<'T> then ""
                 else (# "" value : string #)     // force no-op
 
@@ -5186,7 +5197,6 @@ namespace Microsoft.FSharp.Core
              when 'T : uint32     = let x = (# "" value : 'T #) in x.ToString()
              when 'T : uint64     = let x = (# "" value : 'T #) in x.ToString()
 
-
              // other common mscorlib System struct types
              when 'T : DateTime       = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
              when 'T : DateTimeOffset = let x = (# "" value : DateTimeOffset #) in x.ToString(null, CultureInfo.InvariantCulture)
@@ -5205,6 +5215,29 @@ namespace Microsoft.FSharp.Core
              when 'T : IFormattable =
                 if value = unsafeDefault<'T> then ""
                 else let x = (# "" value : IFormattable #) in defaultIfNull "" (x.ToString(null, CultureInfo.InvariantCulture))
+
+        [<CompiledName("ToString")>]
+        let inline string (value: 'T) = 
+             defaultString value
+
+             // Only compilers that understand `when 'T : SupportsWhenTEnum` will understand `when 'T : Enum`.
+             when 'T : CompilerServices.SupportsWhenTEnum =
+                (
+                    let inline string (value : 'T) =
+                        defaultString value
+
+                        // Special handling for enums whose underlying type is a signed integral type.
+                        // The runtime value may be outside the defined members of the enum, and the negative sign may be overridden.
+                        when 'T : Enum  = let x = (# "" value : 'T #) in x.ToString() // Use 'T to constrain the call to the specific enum type.
+
+                        // For compilers that understand `when 'T : Enum`, we can safely make a constrained call on the integral type itself here.
+                        when 'T : sbyte = let x = (# "" value : sbyte #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int16 = let x = (# "" value : int16 #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int32 = let x = (# "" value : int32 #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int64 = let x = (# "" value : int64 #) in x.ToString(null, CultureInfo.InvariantCulture)
+
+                    string value
+                )
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
