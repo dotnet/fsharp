@@ -994,6 +994,18 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute
         new : unit -> TailCallAttribute
 
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// A marker type that only compilers that support the <c>when 'T : Enum</c>
+    /// library-only static optimization constraint will recognize.
+    /// </summary>
+    [<Sealed; AbstractClass>]
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    type SupportsWhenTEnum = class end
+
 namespace System.Diagnostics.CodeAnalysis
 
     open System
