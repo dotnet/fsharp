@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Member/SynTypeDefnWithMemberWithSetget.fs", false,
-      QualifiedNameOfFile SynTypeDefnWithMemberWithSetget, [], [],
+      QualifiedNameOfFile SynTypeDefnWithMemberWithSetget, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithMemberWithSetget], false, AnonModule,
           [Types
@@ -112,4 +112,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,62))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

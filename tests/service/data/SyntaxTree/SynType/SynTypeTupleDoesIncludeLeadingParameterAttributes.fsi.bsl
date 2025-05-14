@@ -2,7 +2,6 @@ SigFile
   (ParsedSigFileInput
      ("/root/SynType/SynTypeTupleDoesIncludeLeadingParameterAttributes.fsi",
       QualifiedNameOfFile SynTypeTupleDoesIncludeLeadingParameterAttributes, [],
-      [],
       [SynModuleOrNamespaceSig
          ([SynTypeTupleDoesIncludeLeadingParameterAttributes], false, AnonModule,
           [Types
@@ -92,4 +91,5 @@ SigFile
                                  WithKeyword = None })], (2,0--3,63))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

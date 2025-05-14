@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/MultipleSynUnionCasesHaveBarRange.fs", false,
-      QualifiedNameOfFile MultipleSynUnionCasesHaveBarRange, [], [],
+      QualifiedNameOfFile MultipleSynUnionCasesHaveBarRange, [],
       [SynModuleOrNamespace
          ([MultipleSynUnionCasesHaveBarRange], false, AnonModule,
           [Types
@@ -43,4 +43,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,17))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
