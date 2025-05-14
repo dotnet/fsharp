@@ -35,31 +35,30 @@ type IfDirectiveExpression =
     | Ident of string
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
+type WarnDirectiveTrivia =
+    | Nowarn of warnNumbers: int list * range
+    | Warnon of warnNumbers: int list * range
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type CommentTrivia =
     | LineComment of range: range
     | BlockComment of range: range
 
-/// Represents additional information for ParsedImplFileInput
+/// Represents additional information for ParsedInput
 [<NoEquality; NoComparison>]
-type ParsedImplFileInputTrivia =
+type ParsedInputTrivia =
     {
         /// Preprocessor directives of type #if, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
+
+        /// Warn directives (#nowarn / #warnon)
+        WarnDirectives: WarnDirectiveTrivia list
 
         /// Represent code comments found in the source file
         CodeComments: CommentTrivia list
     }
 
-/// Represents additional information for ParsedSigFileInputTrivia
-[<NoEquality; NoComparison>]
-type ParsedSigFileInputTrivia =
-    {
-        /// Preprocessor directives of type #if, #else or #endif
-        ConditionalDirectives: ConditionalDirectiveTrivia list
-
-        /// Represent code comments found in the source file
-        CodeComments: CommentTrivia list
-    }
+    static member internal Empty: ParsedInputTrivia
 
 /// Represents additional information for SynExpr.TryWith
 [<NoEquality; NoComparison>]

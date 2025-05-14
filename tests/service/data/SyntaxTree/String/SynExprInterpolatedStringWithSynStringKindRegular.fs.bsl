@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/String/SynExprInterpolatedStringWithSynStringKindRegular.fs", false,
       QualifiedNameOfFile SynExprInterpolatedStringWithSynStringKindRegular, [],
-      [],
       [SynModuleOrNamespace
          ([SynExprInterpolatedStringWithSynStringKindRegular], false, AnonModule,
           [Let
@@ -23,4 +22,5 @@ ImplFile
               (2,0--2,18))], PreXmlDocEmpty, [], None, (2,0--3,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

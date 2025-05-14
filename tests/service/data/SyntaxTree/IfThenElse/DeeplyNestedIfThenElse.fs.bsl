@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/IfThenElse/DeeplyNestedIfThenElse.fs", false,
-      QualifiedNameOfFile DeeplyNestedIfThenElse, [], [],
+      QualifiedNameOfFile DeeplyNestedIfThenElse, [],
       [SynModuleOrNamespace
          ([DeeplyNestedIfThenElse], false, AnonModule,
           [Expr
@@ -32,4 +32,5 @@ ImplFile
                    IfToThenRange = (2,0--2,9) }), (2,0--10,13))], PreXmlDocEmpty,
           [], None, (2,0--11,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
