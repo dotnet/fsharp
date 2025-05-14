@@ -52,8 +52,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <!-- These have to be in sync with latest release branch -->
-    <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>14</VSMinorVersion>
+    <VSMajorVersion>18</VSMajorVersion>
+    <VSMinorVersion>0</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
