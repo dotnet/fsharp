@@ -4476,6 +4476,7 @@ declExpr:
          | None -> $2
          | Some (_, SynReturnInfo((ty, _), _)) -> 
            SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang pat.Range
        let mEquals = rhs parseState 4
        let m = unionRanges (rhs parseState 1) $9.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
@@ -4492,6 +4493,7 @@ declExpr:
          | None -> $2
          | Some (_, SynReturnInfo((ty, _), _)) -> 
            SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang pat.Range
        let mEquals = rhs parseState 4
        let m = unionRanges (rhs parseState 1) $9.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
