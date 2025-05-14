@@ -33,6 +33,11 @@ type TestFs0670Error<'T> =
             // See: https://github.com/dotnet/fsharp/issues/7958
             Operators.string x
 
+type CultureWithDifferentNegativeSign () as this =
+    inherit CultureInfo ""
+    do this.NumberFormat.NegativeSign <- "🙃"
+    override _.DisplayName = nameof CultureWithDifferentNegativeSign
+
 type OperatorsModule2() =
 
     [<Fact>]
@@ -833,7 +838,6 @@ type OperatorsModule2() =
         
     [<Fact>]
     member _.string() =
-
         let result = Operators.string null
         Assert.AreEqual("", result)
 
@@ -884,32 +888,36 @@ type OperatorsModule2() =
         Assert.AreEqual("", result)
 
         // Following tests ensure that InvariantCulture is used if type implements IFormattable
-        
-        // safe current culture, then switch culture
-        let currentCI = Thread.CurrentThread.CurrentCulture
-        Thread.CurrentThread.CurrentCulture <- CultureInfo.GetCultureInfo("de-DE")
 
-        // make sure the culture switch happened, and verify
-        let wrongResult = 123.456M.ToString()
-        Assert.AreEqual("123,456", wrongResult)
+        let runWithCulture culture f =
+            let currentCulture = Thread.CurrentThread.CurrentCulture
+            Thread.CurrentThread.CurrentCulture <- culture
+            try f () finally Thread.CurrentThread.CurrentCulture <- currentCulture
 
-        // test that culture has no influence on decimals with `string`
-        let correctResult = Operators.string 123.456M
-        Assert.AreEqual("123.456", correctResult)
+        let numbersAndDates () =
+            // make sure the culture switch happened, and verify
+            let wrongResult = 123.456M.ToString()
+            Assert.AreEqual("123,456", wrongResult)
 
-        // make sure that the German culture is indeed selected for DateTime
-        let dttm = DateTime(2020, 6, 23)
-        let wrongResult = dttm.ToString()
-        Assert.AreEqual("23.06.2020 00:00:00", wrongResult)
+            // test that culture has no influence on decimals with `string`
+            let correctResult = Operators.string 123.456M
+            Assert.AreEqual("123.456", correctResult)
 
-        // test that culture has no influence on DateTime types when used with `string`
-        let correctResult = Operators.string dttm
-        Assert.AreEqual("06/23/2020 00:00:00", correctResult)
+            // make sure that the German culture is indeed selected for DateTime
+            let dttm = DateTime(2020, 6, 23)
+            let wrongResult = dttm.ToString()
+            Assert.AreEqual("23.06.2020 00:00:00", wrongResult)
 
-        // reset the culture
-        Thread.CurrentThread.CurrentCulture <- currentCI
+            // test that culture has no influence on DateTime types when used with `string`
+            let correctResult = Operators.string dttm
+            Assert.AreEqual("06/23/2020 00:00:00", correctResult)
 
+        let enums () =
+            Assert.AreEqual("Wednesday", Operators.string DayOfWeek.Wednesday)
+            Assert.AreEqual($"%s{Thread.CurrentThread.CurrentCulture.NumberFormat.NegativeSign}1", Operators.string (enum<DayOfWeek> -1))
 
+        numbersAndDates |> runWithCulture (CultureInfo.GetCultureInfo "de-DE")
+        enums |> runWithCulture (CultureWithDifferentNegativeSign ())
 
     [<Fact>]
     member _.``string: don't raise FS0670 anymore``() =
