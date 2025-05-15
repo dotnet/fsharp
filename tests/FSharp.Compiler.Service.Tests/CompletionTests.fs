@@ -101,16 +101,23 @@ let ``Underscore dot lambda - completion 03`` () =
 [<Fact>]
 let ``Underscore dot lambda - completion 04`` () =
     let info = getCompletionInfo """
-"" |> _.Length.ToString().Chars("".Len{caret})"""
+"" |> _.Len{caret}gth.ToString()"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 05`` () =
     let info = getCompletionInfo """
-"" |> _.Len{caret}.ToString()"""
+"" |> _.Length.ToString().Chars("".Len{caret})"""
 
     assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 06`` () =
+    let info = getCompletionInfo """
+"" |> _.Chars(System.DateTime.UtcNow.Tic{caret}).ToString()"""
+
+    assertHasItemWithNames ["Ticks"] info
 
 [<Fact>]
 let ``Underscore dot lambda - method completion`` () =
