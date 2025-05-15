@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/CustomOperatorDefinition.fs", false,
-      QualifiedNameOfFile CustomOperatorDefinition, [], [],
+      QualifiedNameOfFile CustomOperatorDefinition, [],
       [SynModuleOrNamespace
          ([CustomOperatorDefinition], false, AnonModule,
           [Let
@@ -40,4 +40,5 @@ ImplFile
                     EqualsRange = Some (2,12--2,13) })], (2,0--2,19))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

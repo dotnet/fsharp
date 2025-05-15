@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Member/GetSetMember 01.fs", false, QualifiedNameOfFile Foo, [], [],
+     ("/root/Member/GetSetMember 01.fs", false, QualifiedNameOfFile Foo, [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Types
@@ -203,6 +203,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,92), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (5,57)-(5,87) parse error When the visibility for a property is specified, setting the visibility of the set or get method is not allowed.

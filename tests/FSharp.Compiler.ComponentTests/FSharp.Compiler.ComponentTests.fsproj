@@ -30,6 +30,7 @@
     <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
     </Compile>
+    <Compile Include="CompilerDirectives\Nowarn.fs" />
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
@@ -130,10 +131,15 @@
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Bounds\Bounds.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Constants\Constants.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics\Diagnostics.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Operators\Operators.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parenthesis\Parenthesis.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />

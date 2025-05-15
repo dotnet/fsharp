@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/OperatorName/OperatorNameInValConstraint.fsi",
-      QualifiedNameOfFile Operators, [], [],
+      QualifiedNameOfFile Operators, [],
       [SynModuleOrNamespaceSig
          ([Operators], false, NamedModule,
           [Val
@@ -79,6 +79,7 @@ SigFile
              Range = (2,0--2,12) }], None, (2,0--12,94),
           { LeadingKeyword = Module (3,4--3,10) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (12,79)-(12,94) parse error This construct is deprecated: it is only for use in the F# library

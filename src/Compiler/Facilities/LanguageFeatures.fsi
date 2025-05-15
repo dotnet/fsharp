@@ -91,6 +91,7 @@ type LanguageFeature =
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
     | UseBangBindingValueDiscard
+    | ScopedNowarn
     | SupportCallerArgumentExpression
 
 /// LanguageVersion management

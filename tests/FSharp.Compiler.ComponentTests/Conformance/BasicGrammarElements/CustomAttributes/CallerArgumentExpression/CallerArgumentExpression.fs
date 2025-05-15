@@ -185,8 +185,8 @@ type A() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-          (Warning 3875,Line 5, Col 65, Line 5, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.")
-          (Warning 3875,Line 7, Col 65 , Line 7, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's self-referential.")
+          (Warning 3878,Line 5, Col 65, Line 5, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.")
+          (Warning 3878,Line 7, Col 65 , Line 7, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's self-referential.")
         ]
 
     [<FactForNETCOREAPP>]

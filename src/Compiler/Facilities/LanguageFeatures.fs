@@ -100,6 +100,7 @@ type LanguageFeature =
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
     | UseBangBindingValueDiscard
+    | ScopedNowarn
     | SupportCallerArgumentExpression
 
 /// LanguageVersion management
@@ -232,6 +233,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
                 LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
                 LanguageFeature.UseBangBindingValueDiscard, previewVersion
+                LanguageFeature.ScopedNowarn, previewVersion
                 LanguageFeature.SupportCallerArgumentExpression, previewVersion
             ]
 
@@ -396,6 +398,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
         | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
+        | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.SupportCallerArgumentExpression -> FSComp.SR.featureSupportCallerArgumentExpression ()
 
     /// Get a version string associated with the given feature.
