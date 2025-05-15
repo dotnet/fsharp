@@ -542,7 +542,7 @@ module ScriptPreprocessClosure =
 
         // Get all source files.
         let sourceFiles =
-            [ for ClosureFile(fileName, m, _, _, _) in closureFiles -> (fileName, m) ]
+            [ for ClosureFile(fileName, m, _, _, _, _) in closureFiles -> (fileName, m) ]
 
         let sourceInputs =
             [
