@@ -440,23 +440,25 @@ stages:
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
-            maxParallel: 4
             matrix:
               coreclr_release:
                 _configuration: Release
                 _testKind: testCoreclr
+                transparentCompiler: # Empty display name part.
               fsharpqa_release:
                 _configuration: Release
                 _testKind: testFSharpQA
+                transparentCompiler:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
                 setupVsHive: true
+                transparentCompiler:
               transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
-                TEST_TRANSPARENT_COMPILER: 1 # Pipeline variables map to env vars.
-                transparentCompilerSuffix: TransparentCompiler
+                TEST_TRANSPARENT_COMPILER: 1 # Pipeline variable will map to env var.
+                transparentCompiler: TransparentCompiler
               # inttests_release:
               #   _configuration: Release
               #   _testKind: testIntegration
@@ -467,7 +469,7 @@ stages:
 
           - powershell: eng\SetupVSHive.ps1
             displayName: Setup VS Hive
-            condition: eq(variables['setupVsHive'], 'true')
+            condition: eq(variables.setupVsHive, 'true')
 
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
@@ -475,13 +477,13 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
-            displayName: Build and Test $(_testKind) $[variables['transparentCompilerSuffix']]
+            displayName: Build and Test $(_testKind) $(transparentCompiler)
 
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: WindowsCompressedMetadata $(_testKind) $[variables['transparentCompilerSuffix']]
+              testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
@@ -493,7 +495,7 @@ stages:
             continueOnError: true
             inputs:
                 PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/$(_configuration)\Build.VisualFSharp.sln.binlog'
-                ArtifactName: Windows $(_configuration) $(_testKind) $[variables['transparentCompilerSuffix']] test binlogs
+                ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompiler) test binlogs
                 ArtifactType: Container
                 parallel: true
           - task: PublishBuildArtifacts@1
@@ -509,7 +511,7 @@ stages:
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
-              ArtifactName: Windows $(_configuration) $(_testKind) $[variables['transparentCompilerSuffix']] test logs
+              ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompilerSuffix) test logs
               publishLocation: Container
             continueOnError: true
             condition: always()
