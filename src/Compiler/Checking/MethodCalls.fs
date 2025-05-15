@@ -1443,20 +1443,30 @@ let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledA
 /// matter what order they are applied in as long as they are all composed together.
 let emptyPreBinder (e: Expr) = e
 
+[<NoComparison; NoEquality>]
+type CheckCallerAttributesEnv<'t> =
+    {
+        eCallerMemberName: string option
+        sourceText: ISourceText option
+        fGetOriginalRange: range -> range
+        assignedArgs: AssignedCalledArg<'t> list
+    }
+    
 /// Try to pick the code text of an argument with the given parameter name from a list of assigned arguments.
-let tryPickArgumentCodeText (sourceText: ISourceText option) assignedArgs paramName =
-    assignedArgs
+let tryPickArgumentCodeText checkCallerAttributesEnv paramName =
+    checkCallerAttributesEnv.assignedArgs
     |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
-    match called.NameOpt, sourceText with
+    match called.NameOpt, checkCallerAttributesEnv.sourceText with
     | Some x, Some sourceText when x.idText = paramName ->
-        let code = sourceText.GetSubTextFromRange caller.Range
+        let range = checkCallerAttributesEnv.fGetOriginalRange caller.Range
+        let code = sourceText.GetSubTextFromRange range
         if System.String.IsNullOrEmpty code then None
         else Some code
     | _ -> None)
 
 /// Get the expression that must be inserted on the caller side for a CallerSide optional arg,
 /// i.e. one where there is no corresponding caller arg.
-let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: CalledArg) currCalledArgTy currDfltVal eCallerMemberName sourceText mMethExpr assignedArgs =
+let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: CalledArg) currCalledArgTy currDfltVal mMethExpr checkCallerAttributesEnv =
     match currDfltVal with
     | MissingValue -> 
         // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
@@ -1473,9 +1483,9 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
             let ctorArgs = [Expr.Const (tcFieldInit mMethExpr fieldInit, mMethExpr, inst)]
             emptyPreBinder, Expr.Op (TOp.ILCall (false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
         | ByrefTy g inst ->
-            GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg inst (PassByRef(inst, currDfltVal)) eCallerMemberName sourceText mMethExpr assignedArgs
+            GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg inst (PassByRef(inst, currDfltVal)) mMethExpr checkCallerAttributesEnv
         | _ ->
-            match calledArg.CallerInfo, eCallerMemberName with
+            match calledArg.CallerInfo, checkCallerAttributesEnv.eCallerMemberName with
             | CallerLineNumber, _ when typeEquiv g currCalledArgTy g.int_ty ->
                 emptyPreBinder, Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
             | CallerFilePath, _ when typeEquiv g currCalledArgTy g.string_ty ->
@@ -1486,7 +1496,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
             
             | CallerArgumentExpression param, _ when g.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression && typeEquiv g currCalledArgTy g.string_ty ->
                 let stringConst =
-                    match tryPickArgumentCodeText sourceText assignedArgs param with
+                    match tryPickArgumentCodeText checkCallerAttributesEnv param with
                     | Some code -> Const.String code
                     | None -> tcFieldInit mMethExpr fieldInit
                 emptyPreBinder, Expr.Const (stringConst, mMethExpr, currCalledArgTy)
@@ -1514,17 +1524,17 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 
     | PassByRef (ty, dfltVal2) ->
         let v, _ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
-        let wrapper2, rhs = GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg currCalledArgTy dfltVal2 eCallerMemberName sourceText mMethExpr assignedArgs
+        let wrapper2, rhs = GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg currCalledArgTy dfltVal2 mMethExpr checkCallerAttributesEnv
         (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr false (mkLocalValRef v)
 
 /// Get the expression that must be inserted on the caller side for a CalleeSide optional arg where
 /// no caller argument has been provided. Normally this is 'None', however CallerMemberName and friends
 /// can be used with 'CalleeSide' optional arguments
-let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName sourceText (mMethExpr: range) assignedArgs =
+let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) (mMethExpr: range) checkCallerAttributesEnv =
     let calledArgTy = calledArg.CalledArgumentType
     let calledNonOptTy = tryDestOptionalTy g calledArgTy
 
-    match calledArg.CallerInfo, eCallerMemberName with
+    match calledArg.CallerInfo, checkCallerAttributesEnv.eCallerMemberName with
     | CallerLineNumber, _ when typeEquiv g calledNonOptTy g.int_ty ->
         let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
         mkOptionalSome g calledArgTy calledNonOptTy lineExpr mMethExpr
@@ -1537,7 +1547,7 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
         mkOptionalSome g calledArgTy calledNonOptTy memberNameExpr mMethExpr
 
     | CallerArgumentExpression param, _ when g.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression && typeEquiv g calledNonOptTy g.string_ty ->
-        match tryPickArgumentCodeText sourceText assignedArgs param with
+        match tryPickArgumentCodeText checkCallerAttributesEnv param with
         | Some code -> 
             let expr = Expr.Const(Const.String code, mMethExpr, calledNonOptTy)
             mkOptionalSome g calledArgTy calledNonOptTy expr mMethExpr
@@ -1549,7 +1559,7 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
 
 /// Get the expression that must be inserted on the caller side for an optional arg where
 /// no caller argument has been provided. 
-let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCallerMemberName sourceText mItem (mMethExpr: range) assignedArgs =
+let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) mItem (mMethExpr: range) checkCallerAttributesEnv =
     let calledArgTy = calledArg.CalledArgumentType
     let preBinder, expr = 
         match calledArg.OptArgInfo with 
@@ -1557,17 +1567,17 @@ let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCal
             error(InternalError("Unexpected NotOptional", mItem))
 
         | CallerSide dfltVal ->
-            GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal eCallerMemberName sourceText mMethExpr assignedArgs
+            GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal mMethExpr checkCallerAttributesEnv
 
         | CalleeSide ->
-            emptyPreBinder, GetDefaultExpressionForCalleeSideOptionalArg g calledArg eCallerMemberName sourceText mMethExpr assignedArgs
+            emptyPreBinder, GetDefaultExpressionForCalleeSideOptionalArg g calledArg mMethExpr checkCallerAttributesEnv
 
     // Combine the variable allocators (if any)
     let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)
     preBinder, { NamedArgIdOpt = None; CalledArg = calledArg; CallerArg = callerArg }
 
 // Adjust all the optional arguments, filling in values for defaults, 
-let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName sourceText (infoReader: InfoReader) ad (assignedArg: AssignedCalledArg<_>) =
+let AdjustCallerArgForOptional tcVal tcFieldInit checkCallerAttributesEnv (infoReader: InfoReader) ad (assignedArg: AssignedCalledArg<_>) =
     let g = infoReader.g
     let amap = infoReader.amap
     let callerArg = assignedArg.CallerArg
@@ -1614,7 +1624,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName sourceText (i
                             mkOptionToNullable g m (destOptionTy g callerArgTy) callerArgExpr
                         else 
                             // CSharpMethod(?x=b) when 'b' has optional type and 'x' has non-nullable type --> CSharpMethod(x=Option.defaultValue DEFAULT v)
-                            let _wrapper, defaultExpr = GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal eCallerMemberName sourceText m [assignedArg]
+                            let checkCallerAttributesEnv = { checkCallerAttributesEnv with assignedArgs = [assignedArg] }
+                            let _wrapper, defaultExpr = GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal m checkCallerAttributesEnv
                             let ty = destOptionTy g callerArgTy
                             mkOptionDefaultValue g m ty defaultExpr callerArgExpr
                     else
@@ -1664,7 +1675,7 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName sourceText (i
 //    - VB also allows you to pass intrinsic values as optional values to parameters 
 //        typed as Object. What we do in this case is we box the intrinsic value."
 //
-let AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr sourceText =
+let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr (eCallerMemberName, sourceText, fGetOriginalRange) =
     let g = infoReader.g
 
     let assignedNamedArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.AssignedNamedArgs)
@@ -1674,15 +1685,23 @@ let AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName (infoReader
         (unnamedCalledArgs, unnamedCallerArgs) ||> List.map2 (fun called caller -> 
             { NamedArgIdOpt = None; CalledArg=called; CallerArg=caller })
 
+    let checkCallerAttributesEnv =
+        {
+            sourceText = sourceText
+            eCallerMemberName = eCallerMemberName
+            fGetOriginalRange = fGetOriginalRange
+            assignedArgs = assignedNamedArgs @ unnamedArgs
+        }
+
     // Adjust all the optional arguments that require a default value to be inserted into the call,
     // i.e. there is no corresponding caller arg.
     let optArgs, optArgPreBinder = 
         (emptyPreBinder, calledMeth.UnnamedCalledOptArgs) ||> List.mapFold (fun preBinder calledArg -> 
-            let preBinder2, arg = GetDefaultExpressionForOptionalArg tcFieldInit g calledArg eCallerMemberName sourceText mItem mMethExpr (assignedNamedArgs @ unnamedArgs)
+            let preBinder2, arg = GetDefaultExpressionForOptionalArg tcFieldInit g calledArg mItem mMethExpr checkCallerAttributesEnv
             arg, (preBinder >> preBinder2))
 
-    let adjustedNormalUnnamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName sourceText infoReader ad) unnamedArgs
-    let adjustedAssignedNamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName sourceText infoReader ad) assignedNamedArgs
+    let adjustedNormalUnnamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit checkCallerAttributesEnv infoReader ad) unnamedArgs
+    let adjustedAssignedNamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit checkCallerAttributesEnv infoReader ad) assignedNamedArgs
 
     optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedAssignedNamedArgs
 
@@ -1730,7 +1749,7 @@ let AdjustParamArrayCallerArgs tcVal g amap infoReader ad (calledMeth: CalledMet
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
 /// contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
-let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName sourceText (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr =
+let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr (eCallerMemberName, sourceText, fGetOriginalRange) =
     let g = infoReader.g
     let amap = infoReader.amap
     let calledMethInfo = calledMeth.Method
@@ -1752,7 +1771,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName sourceText (infoReader:
         AdjustParamArrayCallerArgs tcVal g amap infoReader ad calledMeth mMethExpr
 
     let optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedFinalAssignedNamedArgs = 
-        AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName infoReader ad calledMeth mItem mMethExpr sourceText
+        AdjustCallerArgsForOptionals tcVal tcFieldInit infoReader ad calledMeth mItem mMethExpr (eCallerMemberName, sourceText, fGetOriginalRange)
 
     let outArgs, outArgExprs, outArgTmpBinds =
         AdjustOutCallerArgs g calledMeth mMethExpr
