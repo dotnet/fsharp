@@ -1458,7 +1458,8 @@ let tryPickArgumentCodeText checkCallerAttributesEnv paramName =
     |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
     match called.NameOpt, checkCallerAttributesEnv.sourceText with
     | Some x, Some sourceText when x.idText = paramName ->
-        let range = checkCallerAttributesEnv.fGetOriginalRange caller.Range
+        // let range = checkCallerAttributesEnv.fGetOriginalRange caller.Range
+        let range = caller.Range
         let code = sourceText.GetSubTextFromRange range
         if System.String.IsNullOrEmpty code then None
         else Some code

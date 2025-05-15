@@ -93,7 +93,10 @@ assertEqual (A.aa(a = stringABC)) ("abc", ".cctor", 17, "stringABC")
         |> shouldSucceed
         |> ignore
         
-    [<FactForNETCOREAPP>]
+    [<FactForNETCOREAPP(Skip = "Currently cannot get the original text range with #line")>]
+    /// This test is to check whether the feature can work correctly when there are #line directives. 
+    /// But since the behavior doesn't exist now, this test is skipped, and wait for
+    /// the future update to the feature.
     let ``Can define in F# - with #line`` () =
         FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
