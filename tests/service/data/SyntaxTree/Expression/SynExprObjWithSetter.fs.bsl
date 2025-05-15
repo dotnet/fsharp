@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprObjWithSetter.fs", false,
-      QualifiedNameOfFile SynExprObjWithSetter, [], [],
+      QualifiedNameOfFile SynExprObjWithSetter, [],
       [SynModuleOrNamespace
          ([SynExprObjWithSetter], false, AnonModule,
           [Types
@@ -100,4 +100,5 @@ ImplFile
                  (6,0--7,69)), (6,0--7,69))], PreXmlDocEmpty, [], None,
           (2,0--7,69), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
