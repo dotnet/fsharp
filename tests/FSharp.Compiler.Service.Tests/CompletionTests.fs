@@ -78,11 +78,31 @@ let record = { Field = 1 }
     assertHasItemWithNames ["Field"; "record"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion`` () =
+let ``Underscore dot lambda - completion 01`` () =
     let info = getCompletionInfo """
-let myFancyFunc (x:string) = 
-    x 
-    |> _.Len{caret}"""
+"" |> _.Len{caret}"""
+
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 02`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.ToStr{caret}"""
+
+    assertHasItemWithNames ["ToString"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 03`` () =
+    let info = getCompletionInfo """
+"" |> _.ToString().Len{caret}"""
+
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 04`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.ToString().Chars("".Len{caret})"""
+
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]

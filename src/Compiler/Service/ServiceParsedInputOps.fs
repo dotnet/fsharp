@@ -320,6 +320,18 @@ module ParsedInput =
                             let _, r = CheckLongIdent longIdent
                             Some r
 
+                    | SynExpr.DotLambda(SynExpr.LongIdent _, range, _) -> Some range
+                    | SynExpr.DotLambda(synExpr, range, _) ->
+                        let result = traverseSynExpr synExpr
+
+                        match result with
+                        | None -> None
+                        | Some r as result ->
+                            if posEq r.Start synExpr.Range.Start then
+                                Some range
+                            else
+                                result
+
                     | SynExpr.DotGet(synExpr, _dotm, lid, _) ->
                         let (SynLongIdent(longIdent, _, _)) = lid
 
