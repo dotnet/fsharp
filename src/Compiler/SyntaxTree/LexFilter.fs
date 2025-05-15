@@ -1202,6 +1202,7 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
                         | GREATER_BAR_RBRACE ->
+                            lexbuf.CheckLanguageFeatureAndRecover LanguageFeature.BetterAnonymousRecordParsing lexbuf.LexemeRange
                             delayToken (pool.UseShiftedLocation(tokenTup, BAR_RBRACE, 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -2))
                             pool.Return tokenTup

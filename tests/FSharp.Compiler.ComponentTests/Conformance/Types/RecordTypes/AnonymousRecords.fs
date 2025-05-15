@@ -35,6 +35,28 @@ module AnonRecd =
     let d = {| a=1<m>; b=2<m>; c=3<m> |}   
 """
         |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 8, Col 20, Line 8, Col 23, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 9, Col 28, Line 9, Col 31, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Fact>]
+    let ``Preview : Anonymous Record with unit of measures`` () =
+        FSharp """
+namespace FSharpTest
+
+[<Measure>]
+type m
+
+module AnonRecd =
+    let a = {|a=1<m>|}
+    let b = {|a=1<m>; b=2<m>|}
+    let c = {|a=1<m> |}
+    let d = {| a=1<m>; b=2<m>; c=3<m> |}   
+"""
+        |> withLangVersionPreview
+        |> compile
         |> shouldSucceed
     
     [<Fact>]
@@ -47,6 +69,24 @@ module AnonRecd =
     let c = {| a=typeof<int>|}
     let d = {| a=typeof<int> |}
 """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 27, Line 4, Col 30, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 6, Col 28, Line 6, Col 31, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ] 
+    
+    [<Fact>]
+    let ``Preview: Anonymous Record with typeof`` () =
+        FSharp """
+namespace FSharpTest
+module AnonRecd =
+    let a = {|a=typeof<int>|}
+    let b = {|a=typeof<int> |}
+    let c = {| a=typeof<int>|}
+    let d = {| a=typeof<int> |}
+"""
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed    
     
@@ -61,6 +101,24 @@ module AnonRecd =
     let d = {| a=typedefof<_ option> |}
 """
         |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 35, Line 4, Col 38, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 6, Col 36, Line 6, Col 39, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+    
+    [<Fact>]
+    let ``Preview: Anonymous Record with typedefof`` () =
+        FSharp """
+namespace FSharpTest
+module AnonRecd =
+    let a = {|a=typedefof<_ option>|}
+    let b = {|a=typedefof<_ option> |}
+    let c = {| a=typedefof<_ option>|}
+    let d = {| a=typedefof<_ option> |}
+"""
+        |> withLangVersionPreview
+        |> compile
         |> shouldSucceed    
     
     [<Fact>]
@@ -73,6 +131,24 @@ module AnonRecd =
     let c<'T> = {| a=nameof<'T>|}
     let d<'T> = {| a=nameof<'T> |}
 """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 30, Line 4, Col 33, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 6, Col 31, Line 6, Col 34, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+    
+    [<Fact>]
+    let ``Preview: Anonymous Record with nameof`` () =
+        FSharp """
+namespace FSharpTest
+module AnonRecd =
+    let a<'T> = {|a=nameof<'T>|}
+    let b<'T> = {|a=nameof<'T> |}
+    let c<'T> = {| a=nameof<'T>|}
+    let d<'T> = {| a=nameof<'T> |}
+"""
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
     
