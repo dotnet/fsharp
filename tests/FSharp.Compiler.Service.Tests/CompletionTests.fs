@@ -120,6 +120,21 @@ let ``Underscore dot lambda - completion 06`` () =
     assertHasItemWithNames ["Ticks"] info
 
 [<Fact>]
+let ``Underscore dot lambda - completion 07`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.ToString().Len{caret}"""
+
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 08`` () =
+    let info = getCompletionInfo """
+"" |> _.Length
+       .ToStr{caret}"""
+
+    assertHasItemWithNames ["ToString"] info
+
+[<Fact>]
 let ``Underscore dot lambda - method completion`` () =
     let info = getCompletionInfo """
 let myFancyFunc (x:string) = 
