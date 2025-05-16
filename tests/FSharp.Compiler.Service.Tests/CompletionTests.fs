@@ -184,6 +184,13 @@ let myFancyFunc (x:string) =
     assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
+let ``Underscore dot lambda - completion 15`` () =
+    let info = getCompletionInfo """
+let _a = 5
+"" |> _{caret}.Length.ToString() """
+    assertHasItemWithNames ["_a"] info
+
+[<Fact>]
 let ``Underscore dot lambda - No prefix 01`` () =
     let info = getCompletionInfo """
 let s = ""
