@@ -92,6 +92,7 @@ type LanguageFeature =
     | WarnWhenUnitPassedToObjArg
     | UseBangBindingValueDiscard
     | ScopedNowarn
+    | AllowTypedLetOrUseBang
 
 /// LanguageVersion management
 type LanguageVersion =
