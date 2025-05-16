@@ -106,6 +106,17 @@ let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
             ]
 
 [<Fact>]
+let ``Underscore Dot Lambda - Missing qualification after dot`` () =
+    Fsx """
+"" |> _.Length. """
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+            Error 599, Line 2, Col 15, Line 2, Col 16, "Missing qualification after '.'"
+            ]
+
+[<Fact>]
 let ``Underscore Dot Length on string`` () =         
     Fsx """ 
 let x = "a" |> _.Length
