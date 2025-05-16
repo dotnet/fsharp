@@ -1793,6 +1793,9 @@ let rec TryTranslateComputationExpression
                 let supportsUseBangBindingValueDiscard =
                     ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.UseBangBindingValueDiscard
 
+                let supportsTypedLetOrUseBang =
+                    ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowTypedLetOrUseBang
+
                 //   use! x = ...
                 //   use! (x) = ...
                 //   use! (__) = ...
@@ -1802,6 +1805,7 @@ let rec TryTranslateComputationExpression
                     match pat with
                     | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
                     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
+                    | SynPat.Typed(pat = pat) when supportsTypedLetOrUseBang -> extractIdentifierFromPattern pat
                     | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
                         // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
                         let tmpIdent = mkSynId m "_"
