@@ -1432,7 +1432,8 @@ type internal TransparentCompiler
                              TcResultsSink.WithSink sink,
                              prevTcInfo.tcState,
                              input,
-                             true)
+                             true,
+                             None)
                         |> Cancellable.toAsync
 
                     //fileChecked.Trigger fileName

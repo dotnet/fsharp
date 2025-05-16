@@ -1804,3 +1804,6 @@ featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #war
 3875,lexWarnDirectiveMustHaveArgs,"Warn directives must have warning number(s) as argument(s)"
 3876,lexWarnDirectivesMustMatch,"There is another %s for this warning already in line %d."
 3877,lexLineDirectiveMappingIsNotUnique,"The file '%s' was also pointed to in a line directive in '%s'. Proper warn directive application may not be possible."
+featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`"
+3878,tcCallerArgumentExpressionSelfReferential,"The CallerArgumentExpression on this parameter will have no effect because it's self-referential."
+3878,tcCallerArgumentExpressionHasInvalidParameterName,"The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name."
