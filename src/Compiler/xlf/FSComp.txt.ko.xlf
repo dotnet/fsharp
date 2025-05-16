@@ -287,6 +287,11 @@
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowLetOrUseBangTypeAnnotationWithoutParens">
+        <source>Allow let! and use! type annotations without requiring parentheses</source>
+        <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>

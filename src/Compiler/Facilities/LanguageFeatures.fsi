@@ -93,6 +93,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
+    | AllowTypedLetOrUseBang
 
 /// LanguageVersion management
 type LanguageVersion =
