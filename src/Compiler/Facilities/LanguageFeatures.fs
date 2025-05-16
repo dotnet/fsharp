@@ -399,7 +399,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
-        | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowTypedLetOrUseBang ()
+        | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
