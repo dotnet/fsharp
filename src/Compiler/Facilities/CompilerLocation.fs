@@ -123,6 +123,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net10.0"
                 "net9.0"
                 "net8.0"
                 "net7.0"
