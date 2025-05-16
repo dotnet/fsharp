@@ -141,6 +141,11 @@ type CollectionsBenchmark() =
         |> Array.updateAt (x.Length - 1) 1
         |> ignore
         
+    [<Benchmark>]
+    member x.ArraySum() =
+        array
+        |> Array.sum 
+        |> ignore
     /// Seq
     [<Benchmark>]
     member x.SeqBaseline() =
