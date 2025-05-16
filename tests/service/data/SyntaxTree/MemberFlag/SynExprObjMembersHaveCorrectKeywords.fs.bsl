@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MemberFlag/SynExprObjMembersHaveCorrectKeywords.fs", false,
-      QualifiedNameOfFile SynExprObjMembersHaveCorrectKeywords, [], [],
+      QualifiedNameOfFile SynExprObjMembersHaveCorrectKeywords, [],
       [SynModuleOrNamespace
          ([SynExprObjMembersHaveCorrectKeywords], false, AnonModule,
           [Let
@@ -107,4 +107,5 @@ ImplFile
                     EqualsRange = Some (2,8--2,9) })], (2,0--7,34))],
           PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

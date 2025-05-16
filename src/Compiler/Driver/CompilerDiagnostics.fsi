@@ -77,12 +77,8 @@ type PhasedDiagnostic with
             unit
 
 /// Get a diagnostics logger that filters the reporting of warnings based on scoped pragma information
-val GetDiagnosticsLoggerFilteringByScopedPragmas:
-    checkFile: bool *
-    scopedPragmas: ScopedPragma list *
-    diagnosticOptions: FSharpDiagnosticOptions *
-    diagnosticsLogger: DiagnosticsLogger ->
-        DiagnosticsLogger
+val GetDiagnosticsLoggerFilteringByScopedNowarn:
+    diagnosticOptions: FSharpDiagnosticOptions * diagnosticsLogger: DiagnosticsLogger -> DiagnosticsLogger
 
 /// Remove 'implicitIncludeDir' from a file name before output
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string

@@ -75,7 +75,7 @@ module EntryPoint =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 9, Col 3, Line 9, Col 13, """This attribute is not valid for use on this language element""")
+            (Warning 842, Line 9, Col 3, Line 9, Col 13, """This attribute is not valid for use on this language element""")
         ]
 
     //	SOURCE=E_twoattributesonsamefunction001.fs      SCFLAGS="--test:ErrorRanges"	# E_twoattributesonsamefunction001.fs

@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/TriviaIsPresentInSynTypeDefnSig.fsi",
-      QualifiedNameOfFile Meh, [], [],
+      QualifiedNameOfFile Meh, [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Types
@@ -87,4 +87,5 @@ SigFile
       { ConditionalDirectives =
          [If (Ident "CHECK_LINE0_TYPES", (8,0--8,21)); Else (10,0--10,5);
           EndIf (12,0--12,6)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

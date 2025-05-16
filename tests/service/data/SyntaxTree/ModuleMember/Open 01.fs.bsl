@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/ModuleMember/Open 01.fs", false, QualifiedNameOfFile Module, [], [],
+     ("/root/ModuleMember/Open 01.fs", false, QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Open
@@ -12,6 +12,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,8), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,5)-(4,0) parse error Incomplete structured construct at or before this point in open declaration. Expected identifier, 'global', 'type' or other token.

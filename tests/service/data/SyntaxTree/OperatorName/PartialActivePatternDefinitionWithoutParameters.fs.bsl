@@ -2,7 +2,7 @@ ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/PartialActivePatternDefinitionWithoutParameters.fs",
       false, QualifiedNameOfFile PartialActivePatternDefinitionWithoutParameters,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([PartialActivePatternDefinitionWithoutParameters], false, AnonModule,
           [Let
@@ -27,4 +27,5 @@ ImplFile
                     EqualsRange = Some (2,18--2,19) })], (2,0--2,33))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/LetKeyword.fs", false,
-      QualifiedNameOfFile LetKeyword, [], [],
+      QualifiedNameOfFile LetKeyword, [],
       [SynModuleOrNamespace
          ([LetKeyword], false, AnonModule,
           [Let
@@ -33,4 +33,5 @@ ImplFile
                                EqualsRange = Some (2,8--2,9) })], (2,0--2,15))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

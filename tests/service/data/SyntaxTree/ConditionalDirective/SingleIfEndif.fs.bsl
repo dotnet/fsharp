@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ConditionalDirective/SingleIfEndif.fs", false,
-      QualifiedNameOfFile SingleIfEndif, [], [],
+      QualifiedNameOfFile SingleIfEndif, [],
       [SynModuleOrNamespace
          ([SingleIfEndif], false, AnonModule,
           [Let
@@ -20,4 +20,5 @@ ImplFile
       (true, true),
       { ConditionalDirectives =
          [If (Ident "DEBUG", (3,4--3,13)); EndIf (5,4--5,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

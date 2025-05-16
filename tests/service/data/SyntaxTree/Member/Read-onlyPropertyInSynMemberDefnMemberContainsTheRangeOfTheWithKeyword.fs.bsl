@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         Read-onlyPropertyInSynMemberDefnMemberContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Foo], false, DeclaredNamespace,
           [Types
@@ -64,4 +64,5 @@ ImplFile
                     WithKeyword = None })], (3,0--5,60))], PreXmlDocEmpty, [],
           None, (1,0--5,60), { LeadingKeyword = Namespace (1,0--1,9) })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [LineComment (4,4--4,28)] }, set []))
