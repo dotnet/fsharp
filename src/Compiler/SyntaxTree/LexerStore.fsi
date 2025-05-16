@@ -4,8 +4,8 @@ module internal FSharp.Compiler.LexerStore
 
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.SyntaxTrivia
-open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Xml
 
 val getSynArgNameGenerator: Lexbuf -> SynArgNameGenerator

@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfLetKeywordShouldBePresentInSynModuleDeclLetBindingWithAttributes],
           false, AnonModule,
@@ -29,4 +29,5 @@ ImplFile
                     EqualsRange = Some (5,6--5,7) })], (2,0--5,10))],
           PreXmlDocEmpty, [], None, (3,0--6,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [LineComment (4,0--4,15)] }, set []))

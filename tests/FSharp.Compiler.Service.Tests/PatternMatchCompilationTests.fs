@@ -41,6 +41,7 @@ match () with
     dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,25): Attributes are not allowed within patterns"
         "(3,4--3,23): This attribute is not valid for use on this language element"
+        "(3,17--3,22): This is not a valid constant expression or custom attribute value"
     ]
 
 

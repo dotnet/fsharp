@@ -152,7 +152,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 /* These are artificial */
 %token <string> LEX_FAILURE
 %token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
-%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF
+%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF WARN_DIRECTIVE
 
 %start signatureFile implementationFile interaction typedSequentialExprEOF typEOF
 %type <SynExpr> typedSequentialExprEOF
@@ -474,7 +474,7 @@ interactiveSeparator:
   | OBLOCKSEP { }
 
 /*--------------------------------------------------------------------------*/
-/* #directives - used by both F# Interactive directives and #nowarn etc.    */
+/* #directives - used by F# Interactive directives                                    */
 
 
 /* A #directive in a module, namespace or an interaction */
@@ -4465,6 +4465,39 @@ declExpr:
        let m = unionRanges (rhs parseState 1) $8.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
+
+  | BINDER headBindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
+     { // Handle type annotations on patterns in let!/use! bindings
+       // Examples: let! x: int = async { return 1 }
+       //           use! _: IDisposable = async { return new MemoryStream() }
+       let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 7)
+       let pat = 
+         match $3 with 
+         | None -> $2
+         | Some (_, SynReturnInfo((ty, _), _)) -> 
+           SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang pat.Range
+       let mEquals = rhs parseState 4
+       let m = unionRanges (rhs parseState 1) $9.Range
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, pat, $5, $8, $9, m, trivia) }
+
+  | OBINDER headBindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
+     { // Handle type annotations on patterns in let!/use! bindings (offside-sensitive version)
+       // This rule maintains consistent handling of binding constructs across different syntactic contexts
+       let report, mIn, _ = $6
+       report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
+       let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $5.Range)
+       let pat = 
+         match $3 with 
+         | None -> $2
+         | Some (_, SynReturnInfo((ty, _), _)) -> 
+           SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang pat.Range
+       let mEquals = rhs parseState 4
+       let m = unionRanges (rhs parseState 1) $9.Range
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, pat, $5, $8, $9, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // error recovery that allows intellisense when writing incomplete computation expressions

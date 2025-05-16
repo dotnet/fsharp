@@ -100,6 +100,8 @@ type LanguageFeature =
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
     | UseBangBindingValueDiscard
+    | ScopedNowarn
+    | AllowTypedLetOrUseBang
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -231,6 +233,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
                 LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
                 LanguageFeature.UseBangBindingValueDiscard, previewVersion
+                LanguageFeature.ScopedNowarn, previewVersion
+                LanguageFeature.AllowTypedLetOrUseBang, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -394,6 +398,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
         | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
+        | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
+        | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

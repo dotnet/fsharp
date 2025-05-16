@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/OperatorInMatchPattern.fs", false,
-      QualifiedNameOfFile OperatorInMatchPattern, [], [],
+      QualifiedNameOfFile OperatorInMatchPattern, [],
       [SynModuleOrNamespace
          ([OperatorInMatchPattern], false, AnonModule,
           [Expr
@@ -25,4 +25,5 @@ ImplFile
                    WithKeyword = (2,8--2,12) }), (2,0--3,24))], PreXmlDocEmpty,
           [], None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

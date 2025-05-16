@@ -20,6 +20,7 @@ type FSharpDiagnosticOptions =
         WarnOn: int list
         WarnAsError: int list
         WarnAsWarn: int list
+        mutable WarnScopeData: obj option
     }
 
     static member Default =
@@ -30,6 +31,7 @@ type FSharpDiagnosticOptions =
             WarnOn = []
             WarnAsError = []
             WarnAsWarn = []
+            WarnScopeData = None
         }
 
     member x.CheckXmlDocs =
