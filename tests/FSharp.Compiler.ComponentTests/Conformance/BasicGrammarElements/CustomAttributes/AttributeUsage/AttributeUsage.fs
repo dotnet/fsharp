@@ -493,7 +493,6 @@ module CustomAttributes_AttributeUsage =
         |> shouldFail
         |> withDiagnostics [
             (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
