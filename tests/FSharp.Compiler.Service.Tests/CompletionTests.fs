@@ -87,66 +87,121 @@ let ``Underscore dot lambda - completion 01`` () =
 [<Fact>]
 let ``Underscore dot lambda - completion 02`` () =
     let info = getCompletionInfo """
-"" |> _.Length.ToStr{caret}"""
+"" |> _.Length.{caret}"""
 
-    assertHasItemWithNames ["ToString"] info
+    assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 03`` () =
     let info = getCompletionInfo """
-"" |> _.ToString().Len{caret}"""
+"" |> _.Length.ToString().{caret}"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 04`` () =
     let info = getCompletionInfo """
-"" |> _.Len{caret}gth.ToString()"""
+"" |> _.Length.TryF{caret}"""
 
-    assertHasItemWithNames ["Length"] info
+    assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 05`` () =
     let info = getCompletionInfo """
-"" |> _.Length.ToString().Chars("".Len{caret})"""
+"" |> _.ToString().Len{caret}"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 06`` () =
     let info = getCompletionInfo """
-"" |> _.Chars(System.DateTime.UtcNow.Tic{caret}).ToString()"""
+"" |> _.Len{caret}gth.ToString()"""
 
-    assertHasItemWithNames ["Ticks"] info
+    assertHasItemWithNames ["Length"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 07`` () =
     let info = getCompletionInfo """
-"" |> _.Length.ToString().Len{caret}"""
+"" |> _.Length.ToString().Chars("".Len{caret})"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 08`` () =
     let info = getCompletionInfo """
+"" |> _.Chars(System.DateTime.UtcNow.Tic{caret}).ToString()"""
+
+    assertHasItemWithNames ["Ticks"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 09`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.ToString().Len{caret}"""
+
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 10`` () =
+    let info = getCompletionInfo """
 "" |> _.Length
-       .ToStr{caret}"""
+       .TryF{caret}"""
+
+    assertHasItemWithNames ["TryFormat"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 11`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.ToSt{caret}.Length"""
 
     assertHasItemWithNames ["ToString"] info
 
 [<Fact>]
-let ``Underscore dot lambda - method completion`` () =
+let ``Underscore dot lambda - completion 12`` () =
     let info = getCompletionInfo """
-let myFancyFunc (x:string) = 
-    x 
+"" |> _.Chars(0).ToStr{caret}.Length"""
+
+    assertHasItemWithNames ["ToString"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 13`` () =
+    let info = getCompletionInfo """
+open System.Linq
+
+[[""]] |> _.Select(_.Head.ToL{caret})"""
+
+    assertHasItemWithNames ["ToLower"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 14`` () =
+    let info = getCompletionInfo """
+open System.Linq
+
+[[[""]]] |> _.Head.Select(_.Head.ToL{caret})"""
+
+    assertHasItemWithNames ["ToLower"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 15`` () =
+    let info = getCompletionInfo """
+let myFancyFunc (x:string) =
+    x
     |> _.ToL{caret}"""
     assertHasItemWithNames ["ToLower"] info
+
+[<Fact>]
+let ``Underscore dot lambda - completion 16`` () =
+    let info = getCompletionInfo """
+let myFancyFunc (x:string) =
+    x
+    |> _.Length.TryF{caret}
+    |> id"""
+    assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
 let ``Underscore dot lambda - No prefix`` () =
     let info = getCompletionInfo """
 let s = ""
-[s] |> List.map _.{caret} 
+[s] |> List.map _.{caret}
 """
     assertHasItemWithNames ["Length"] info
 
