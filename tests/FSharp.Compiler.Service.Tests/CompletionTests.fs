@@ -87,9 +87,9 @@ let ``Underscore dot lambda - completion 01`` () =
 [<Fact>]
 let ``Underscore dot lambda - completion 02`` () =
     let info = getCompletionInfo """
-"" |> _.Length.TryF{caret}"""
+System.DateTime.Now |> _.TimeOfDay.Mill{caret}"""
 
-    assertHasItemWithNames ["TryFormat"] info
+    assertHasItemWithNames ["Milliseconds"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 03`` () =
@@ -129,10 +129,10 @@ let ``Underscore dot lambda - completion 07`` () =
 [<Fact>]
 let ``Underscore dot lambda - completion 08`` () =
     let info = getCompletionInfo """
-"" |> _.Length
-       .TryF{caret}"""
+System.DateTime.Now |> _.TimeOfDay
+                        .Mill{caret}"""
 
-    assertHasItemWithNames ["TryFormat"] info
+    assertHasItemWithNames ["Milliseconds"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 09`` () =
@@ -177,11 +177,11 @@ let myFancyFunc (x:string) =
 [<Fact>]
 let ``Underscore dot lambda - completion 14`` () =
     let info = getCompletionInfo """
-let myFancyFunc (x:string) =
+let myFancyFunc (x:System.DateTime) =
     x
-    |> _.Length.TryF{caret}
+    |> _.TimeOfDay.Mill{caret}
     |> id"""
-    assertHasItemWithNames ["TryFormat"] info
+    assertHasItemWithNames ["Milliseconds"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 15`` () =
@@ -201,9 +201,9 @@ let s = ""
 [<Fact>]
 let ``Underscore dot lambda - No prefix 02`` () =
     let info = getCompletionInfo """
-"" |> _.Length.{caret}"""
+System.DateTime.Now |> _.TimeOfDay.{caret}"""
 
-    assertHasItemWithNames ["TryFormat"] info
+    assertHasItemWithNames ["Milliseconds"] info
 
 [<Fact>]
 let ``Underscore dot lambda - No prefix 03`` () =
