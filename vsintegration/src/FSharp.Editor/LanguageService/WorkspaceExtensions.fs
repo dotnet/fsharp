@@ -58,27 +58,31 @@ module internal SolutionConfigCache =
             Set.contains this.GetSemanticHighlightingFrom (set [ FSharpExtensionConfig.Old; FSharpExtensionConfig.Both ])
 
     let readFSharpExtensionConfig (solutionPath: string) =
-        let configFilePath =
-            Path.Combine(solutionPath, "extensibility.settings.VisualStudio.json")
-
-        if File.Exists configFilePath then
-            try
-                let json = File.ReadAllText configFilePath
-                let jObject = JObject.Parse json
-
-                {
-                    GetDiagnosticsFrom = jObject["fsharp.getDiagnosticsFrom"].ToString().ToLower()
-                    GetSemanticHighlightingFrom = jObject["fsharp.getSemanticHighlightingFrom"].ToString().ToLower()
-                }
-            with ex ->
-                System.Diagnostics.Trace.TraceError($"Error reading FSharpExtensionConfig from {configFilePath}", ex)
-                FSharpExtensionConfig.Default
-        else
-            System.Diagnostics.Trace.TraceInformation(
-                $"extensibility.settings.VisualStudio.json not found in {solutionPath}. Using default config."
-            )
-
+        if String.IsNullOrEmpty(solutionPath) then
+            System.Diagnostics.Trace.TraceWarning("Solution path is null or empty. Using default config.")
             FSharpExtensionConfig.Default
+        else
+            let configFilePath =
+                Path.Combine(solutionPath, "extensibility.settings.VisualStudio.json")
+
+            if File.Exists configFilePath then
+                try
+                    let json = File.ReadAllText configFilePath
+                    let jObject = JObject.Parse json
+
+                    {
+                        GetDiagnosticsFrom = jObject["fsharp.getDiagnosticsFrom"].ToString().ToLower()
+                        GetSemanticHighlightingFrom = jObject["fsharp.getSemanticHighlightingFrom"].ToString().ToLower()
+                    }
+                with ex ->
+                    System.Diagnostics.Trace.TraceError($"Error reading FSharpExtensionConfig from {configFilePath}", ex)
+                    FSharpExtensionConfig.Default
+            else
+                System.Diagnostics.Trace.TraceInformation(
+                    $"extensibility.settings.VisualStudio.json not found in {solutionPath}. Using default config."
+                )
+
+                FSharpExtensionConfig.Default
 
     let ExtensionConfig = ConditionalWeakTable<Solution, FSharpExtensionConfig>()
 
