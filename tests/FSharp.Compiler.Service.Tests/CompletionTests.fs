@@ -87,61 +87,47 @@ let ``Underscore dot lambda - completion 01`` () =
 [<Fact>]
 let ``Underscore dot lambda - completion 02`` () =
     let info = getCompletionInfo """
-"" |> _.Length.{caret}"""
+"" |> _.Length.TryF{caret}"""
 
     assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 03`` () =
     let info = getCompletionInfo """
-"" |> _.Length.ToString().{caret}"""
+"" |> _.ToString().Len{caret}"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
 let ``Underscore dot lambda - completion 04`` () =
     let info = getCompletionInfo """
-"" |> _.Length.TryF{caret}"""
-
-    assertHasItemWithNames ["TryFormat"] info
-
-[<Fact>]
-let ``Underscore dot lambda - completion 05`` () =
-    let info = getCompletionInfo """
-"" |> _.ToString().Len{caret}"""
-
-    assertHasItemWithNames ["Length"] info
-
-[<Fact>]
-let ``Underscore dot lambda - completion 06`` () =
-    let info = getCompletionInfo """
 "" |> _.Len{caret}gth.ToString()"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 07`` () =
+let ``Underscore dot lambda - completion 05`` () =
     let info = getCompletionInfo """
 "" |> _.Length.ToString().Chars("".Len{caret})"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 08`` () =
+let ``Underscore dot lambda - completion 06`` () =
     let info = getCompletionInfo """
 "" |> _.Chars(System.DateTime.UtcNow.Tic{caret}).ToString()"""
 
     assertHasItemWithNames ["Ticks"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 09`` () =
+let ``Underscore dot lambda - completion 07`` () =
     let info = getCompletionInfo """
 "" |> _.Length.ToString().Len{caret}"""
 
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 10`` () =
+let ``Underscore dot lambda - completion 08`` () =
     let info = getCompletionInfo """
 "" |> _.Length
        .TryF{caret}"""
@@ -149,21 +135,21 @@ let ``Underscore dot lambda - completion 10`` () =
     assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 11`` () =
+let ``Underscore dot lambda - completion 09`` () =
     let info = getCompletionInfo """
 "" |> _.Length.ToSt{caret}.Length"""
 
     assertHasItemWithNames ["ToString"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 12`` () =
+let ``Underscore dot lambda - completion 10`` () =
     let info = getCompletionInfo """
 "" |> _.Chars(0).ToStr{caret}.Length"""
 
     assertHasItemWithNames ["ToString"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 13`` () =
+let ``Underscore dot lambda - completion 11`` () =
     let info = getCompletionInfo """
 open System.Linq
 
@@ -172,7 +158,7 @@ open System.Linq
     assertHasItemWithNames ["ToLower"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 14`` () =
+let ``Underscore dot lambda - completion 12`` () =
     let info = getCompletionInfo """
 open System.Linq
 
@@ -181,7 +167,7 @@ open System.Linq
     assertHasItemWithNames ["ToLower"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 15`` () =
+let ``Underscore dot lambda - completion 13`` () =
     let info = getCompletionInfo """
 let myFancyFunc (x:string) =
     x
@@ -189,7 +175,7 @@ let myFancyFunc (x:string) =
     assertHasItemWithNames ["ToLower"] info
 
 [<Fact>]
-let ``Underscore dot lambda - completion 16`` () =
+let ``Underscore dot lambda - completion 14`` () =
     let info = getCompletionInfo """
 let myFancyFunc (x:string) =
     x
@@ -198,11 +184,25 @@ let myFancyFunc (x:string) =
     assertHasItemWithNames ["TryFormat"] info
 
 [<Fact>]
-let ``Underscore dot lambda - No prefix`` () =
+let ``Underscore dot lambda - No prefix 01`` () =
     let info = getCompletionInfo """
 let s = ""
 [s] |> List.map _.{caret}
 """
+    assertHasItemWithNames ["Length"] info
+
+[<Fact>]
+let ``Underscore dot lambda - No prefix 02`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.{caret}"""
+
+    assertHasItemWithNames ["TryFormat"] info
+
+[<Fact>]
+let ``Underscore dot lambda - No prefix 03`` () =
+    let info = getCompletionInfo """
+"" |> _.Length.ToString().{caret}"""
+
     assertHasItemWithNames ["Length"] info
 
 [<Fact>]
