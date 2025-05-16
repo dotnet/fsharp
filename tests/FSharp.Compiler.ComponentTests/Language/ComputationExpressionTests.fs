@@ -53,6 +53,43 @@ let f3 () =
         return (new MyType() : IDisposable)
     }
         """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+        
+    [<Fact>]
+    let ``Preview: Allow CE return and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+open System
+
+type MyType() =
+    interface IDisposable with
+        member this.Dispose () = ()
+
+let f () =
+    async {
+        return new MyType() : IDisposable
+    }
+
+let f1 () =
+    async {
+        return new MyType() :> IDisposable
+    }
+        
+let f2 () : Async<IDisposable> =
+    async {
+        return new MyType()
+    }
+        
+let f3 () =
+    async {
+        return (new MyType() : IDisposable)
+    }
+        """
+        |> withLangVersionPreview
         |> asExe
         |> withOptions ["--nowarn:988"]
         |> compileAndRun

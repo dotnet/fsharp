@@ -4433,6 +4433,7 @@ declExpr:
   | YIELD declExpr COLON typ
      { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang typedExpr.Range
        SynExpr.YieldOrReturn(($1, not $1), typedExpr, (unionRanges (rhs parseState 1) $4.Range), trivia) }
 
   | YIELD declExpr opt_topReturnTypeWithTypeConstraints
@@ -4442,6 +4443,7 @@ declExpr:
            | None -> $2
            | Some(_, SynReturnInfo((ty, _), m)) -> 
                SynExpr.Typed($2, ty, unionRanges $2.Range m)
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang expr.Range
        SynExpr.YieldOrReturn(($1, not $1), expr, (unionRanges (rhs parseState 1) expr.Range), trivia) }
 
   | YIELD_BANG declExpr COLON typ
