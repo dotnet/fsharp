@@ -289,7 +289,8 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:DotNetBuildRepo=$product_build /p:DotNetBuildSourceOnly=$source_build $properties"
+    # TODO: Remove DotNetBuildRepo property when fsharp is on Arcade 10
+    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:DotNetBuildRepo=$product_build /p:DotNetBuild=$product_build /p:DotNetBuildSourceOnly=$source_build $properties"
     echo $args
     "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
   fi
@@ -297,6 +298,8 @@ function BuildSolution {
   if [[ "$skip_build" != true ]]; then
     # do real build
     BuildMessage="Error building solution"
+
+    # TODO: Remove DotNetBuildRepo property when fsharp is on Arcade 10
     MSBuild $toolset_build_proj \
       $bl \
       /p:Configuration=$configuration \
@@ -314,6 +317,7 @@ function BuildSolution {
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:BuildNoRealsig=$buildnorealsig \
       /p:DotNetBuildRepo=$product_build \
+      /p:DotNetBuild=$product_build \
       /p:DotNetBuildSourceOnly=$source_build \
       $properties
   fi
