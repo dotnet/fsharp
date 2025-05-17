@@ -294,6 +294,7 @@ function BuildSolution([string] $solutionName, $packSolution) {
 
     $pack = if ($packSolution -eq $False) {""} else {$pack}
 
+    # TODO: Remove DotNetBuildRepo property when fsharp is on Arcade 10
     MSBuild $toolsetBuildProj `
         $bl `
         /p:Configuration=$configuration `
@@ -302,6 +303,7 @@ function BuildSolution([string] $solutionName, $packSolution) {
         /p:Restore=$restore `
         /p:Build=$build `
         /p:DotNetBuildRepo=$productBuild `
+        /p:DotNetBuild=$productBuild `
         /p:Rebuild=$rebuild `
         /p:Pack=$pack `
         /p:Sign=$sign `
