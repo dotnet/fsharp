@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   cleanup_old_runs:
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-latest
       if: github.event_name != 'pull_request_target'
       permissions:
         actions: write
