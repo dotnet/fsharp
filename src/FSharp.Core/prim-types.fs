@@ -5183,10 +5183,9 @@ namespace Microsoft.FSharp.Core
              when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
              when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
 
-             // Integral types can be enum:
-             // It is not possible to distinguish statically between Enum and (any type of) int. For signed types we have 
-             // to use IFormattable::ToString, as the minus sign can be overridden. Using boxing we'll print their symbolic
-             // value if it's an enum, e.g.: 'ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             // These rules for signed integer types will no longer be used when built with a compiler version that
+             // supports `when 'T : Enum`, but we must keep them to remain compatible with compiler versions that do not.
+             // Once all compiler versions that do not understand `when 'T : Enum` are out of support, these four rules can be removed.
              when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
@@ -5228,8 +5227,17 @@ namespace Microsoft.FSharp.Core
                     let inline string (value : 'T) =
                         defaultString value
 
-                        // Special handling for enums whose underlying type is a signed integral type.
-                        // The runtime value may be outside the defined members of the enum, and the negative sign may be overridden.
+                        // Special handling is required for enums, since:
+                        //
+                        // - The runtime value may be outside the defined members of the enum.
+                        // - Their underlying type may be a signed integral type.
+                        // - The negative sign may be overridden.
+                        //
+                        // For example:
+                        //
+                        //     string DayOfWeek.Wednesday   →  "Wednesday"
+                        //     string (enum<DayOfWeek> -3)  →  "-3" // The negative sign is culture-dependent.
+                        //     string (enum<DayOfWeek> -3)  →  "⁒3" // E.g., the negative sign for the current culture could be overridden to "⁒".
                         when 'T : Enum  = let x = (# "" value : 'T #) in x.ToString() // Use 'T to constrain the call to the specific enum type.
 
                         // For compilers that understand `when 'T : Enum`, we can safely make a constrained call on the integral type itself here.
