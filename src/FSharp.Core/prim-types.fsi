@@ -996,6 +996,7 @@ namespace Microsoft.FSharp.Core
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
+    open System.ComponentModel
     open Microsoft.FSharp.Core
 
     /// <summary>
@@ -1003,6 +1004,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// library-only static optimization constraint will recognize.
     /// </summary>
     [<Sealed; AbstractClass>]
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
     [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
     type SupportsWhenTEnum = class end
 
