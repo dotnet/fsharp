@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Member/Auto property 15.fs", false, QualifiedNameOfFile A, [], [],
+     ("/root/Member/Auto property 15.fs", false, QualifiedNameOfFile A, [],
       [SynModuleOrNamespace
          ([A], false, NamedModule,
           [Types
@@ -55,4 +55,5 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,63), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

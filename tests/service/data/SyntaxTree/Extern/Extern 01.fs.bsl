@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Extern/Extern 01.fs", false, QualifiedNameOfFile Extern 01, [], [],
+     ("/root/Extern/Extern 01.fs", false, QualifiedNameOfFile Extern 01, [],
       [SynModuleOrNamespace
          ([Extern 01], false, AnonModule,
           [Let
@@ -98,6 +98,7 @@ ImplFile
                     EqualsRange = None })], (1,0--2,70))], PreXmlDocEmpty, [],
           None, (1,0--2,70), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'Extern 01' based on the file name 'Extern 01.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
