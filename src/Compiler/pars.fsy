@@ -4441,9 +4441,9 @@ declExpr:
        let expr = 
            match $3 with
            | None -> $2
-           | Some(_, SynReturnInfo((ty, _), m)) -> 
+           | Some(_, SynReturnInfo((ty, _), m)) ->
+               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang m
                SynExpr.Typed($2, ty, unionRanges $2.Range m)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang expr.Range
        SynExpr.YieldOrReturn(($1, not $1), expr, (unionRanges (rhs parseState 1) expr.Range), trivia) }
 
   | YIELD_BANG declExpr COLON typ
@@ -4456,7 +4456,8 @@ declExpr:
        let expr = 
            match $3 with
            | None -> $2
-           | Some(_, SynReturnInfo((ty, _), m)) -> 
+           | Some(_, SynReturnInfo((ty, _), m)) ->
+               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang m 
                SynExpr.Typed($2, ty, unionRanges $2.Range m)
        SynExpr.YieldOrReturnFrom(($1, not $1), expr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
