@@ -360,7 +360,8 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
                               checkEntityIsResolved entity
-                              if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
+                              if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity]
+                              elif entity.IsFSharpException then Item.ExnCase entity
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
