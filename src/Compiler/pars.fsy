@@ -4446,6 +4446,16 @@ declExpr:
                SynExpr.Typed($2, ty, unionRanges $2.Range m)
        SynExpr.YieldOrReturn(($1, not $1), expr, (unionRanges (rhs parseState 1) expr.Range), trivia) }
 
+  | YIELD recover
+     { let mYieldAll = rhs parseState 1
+       let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturn(($1, not $1), arbExpr ("yield", mYieldAll), mYieldAll, trivia) }
+
+  | YIELD_BANG recover
+     { let mYieldAll = rhs parseState 1
+       let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
+       SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll, trivia) }
+
   | YIELD_BANG declExpr COLON typ
     {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
@@ -4460,20 +4470,6 @@ declExpr:
                parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang m 
                SynExpr.Typed($2, ty, unionRanges $2.Range m)
        SynExpr.YieldOrReturnFrom(($1, not $1), expr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
-
-  | YIELD_BANG declExpr
-     {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
-        SynExpr.YieldOrReturnFrom(($1, not $1), $2, (unionRanges (rhs parseState 1) $2.Range), trivia) }
-
-  | YIELD recover
-     { let mYieldAll = rhs parseState 1
-       let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
-       SynExpr.YieldOrReturn(($1, not $1), arbExpr ("yield", mYieldAll), mYieldAll, trivia) }
-
-  | YIELD_BANG recover
-     { let mYieldAll = rhs parseState 1
-       let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
-       SynExpr.YieldOrReturnFrom(($1, not $1), arbExpr ("yield!", mYieldAll), mYieldAll, trivia) }
 
   | BINDER headBindingPattern EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { (* This rule handles the 'use!' and 'let!' binding expressions in computation expressions *)
