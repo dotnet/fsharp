@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Language
 
@@ -24,7 +24,7 @@ let x = lb {1; 2;}
         |> ignore
 
     [<Fact>]
-    let ``Allow CE return and type annotations to play well together without needing parentheses``() =
+    let ``Version 9.0: Allow CE return and type annotations don't play well together needing parentheses``() =
         FSharp """
 module ComputationExpressionTests
 open System
@@ -53,10 +53,43 @@ let f3 () =
         return (new MyType() : IDisposable)
     }
         """
+        |> withLangVersion90
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+        
+    [<Fact>]
+    let ``Version 9.0: Allow CE return! and type annotations don't to play well together needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+
+type ResultBuilder() =
+    member _.Return(x) = Ok x
+    member _.ReturnFrom(x) = x
+    member _.Bind(m, f) = 
+        match m with
+        | Ok a -> f a
+        | Error e -> Error e
+
+let result = ResultBuilder()
+
+let f() =
+    result {
+        return! Ok 1 : Result<int, string>
+    }
+    
+let f1() =
+    result {
+        return! (Ok 1 : Result<int, string>)
+    }
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 16, Col 17, Line 16, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
         
     [<Fact>]
@@ -91,7 +124,38 @@ let f3 () =
         """
         |> withLangVersionPreview
         |> asExe
-        |> withOptions ["--nowarn:988"]
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: Allow CE return! and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+
+type ResultBuilder() =
+    member _.Return(x) = Ok x
+    member _.ReturnFrom(x) = x
+    member _.Bind(m, f) = 
+        match m with
+        | Ok a -> f a
+        | Error e -> Error e
+
+let result = ResultBuilder()
+
+let f() =
+    result {
+        return! Ok 1 : Result<int, string>
+    }
+    
+let f1() =
+    result {
+        return! (Ok 1 : Result<int, string>)
+    }
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
 
