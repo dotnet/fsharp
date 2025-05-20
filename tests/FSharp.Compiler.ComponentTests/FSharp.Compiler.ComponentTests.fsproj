@@ -312,6 +312,7 @@
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
     <Compile Include="CompilerService\DependencyGraph.fs" />
+    <Compile Include="Attributes\AttributePrivateSetterTests.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
