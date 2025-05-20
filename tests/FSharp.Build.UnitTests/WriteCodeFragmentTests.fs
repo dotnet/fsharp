@@ -64,37 +64,12 @@ type WriteCodeFragmentFSharpTests() =
 type WriteCodeFragmentCSharpTests() =
 
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
-
-    [<Fact>]
-    member _.``Named parameters with IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" [("Bool", "true"); ("BoolIsLiteral", "true")] "SomeAttribute(Bool = true)"
-        
-    [<Fact>]
-    member _.``Multiple named parameters with IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" 
-            [
-                ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
-                ("Bool", "false"); 
-                ("BoolIsLiteral", "true")
-            ] 
-            "SomeAttribute(Number = 42, Bool = false)"
-            
-    [<Fact>]
-    member _.``Mixed named parameters with and without IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" 
-            [
-                ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
-                ("Text", "hello")
-            ] 
-            "SomeAttribute(Number = 42, Text = \"hello\")"
         let taskItem = TaskItem(attributeName)
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
         let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "c#")
         let fullExpectedAttributeText = "[assembly: " + expectedAttributeText + "]"
         Assert.Equal(fullExpectedAttributeText, actualAttributeText)
-
+        
     [<Fact>]
     member _.``Named parameters with IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" [("Bool", "true"); ("BoolIsLiteral", "true")] "SomeAttribute(Bool = true)"
@@ -119,6 +94,7 @@ type WriteCodeFragmentCSharpTests() =
                 ("Text", "hello")
             ] 
             "SomeAttribute(Number = 42, Text = \"hello\")"
+
     [<Fact>]
     member _.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
@@ -170,4 +146,29 @@ type WriteCodeFragmentVisualBasicTests() =
     member _.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
         //                                     this should look like: SomeAttribute("\"uno\"")
+        
+    [<Fact>]
+    member _.``Named parameters with IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" [("Bool", "true"); ("BoolIsLiteral", "true")] "SomeAttribute(Bool = true)"
+        
+    [<Fact>]
+    member _.``Multiple named parameters with IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("Number", "42"); 
+                ("NumberIsLiteral", "true"); 
+                ("Bool", "false"); 
+                ("BoolIsLiteral", "true")
+            ] 
+            "SomeAttribute(Number = 42, Bool = false)"
+            
+    [<Fact>]
+    member _.``Mixed named parameters with and without IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("Number", "42"); 
+                ("NumberIsLiteral", "true"); 
+                ("Text", "hello")
+            ] 
+            "SomeAttribute(Number = 42, Text = \"hello\")"
 
