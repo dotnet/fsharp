@@ -90,7 +90,38 @@ type WriteCodeFragment() as this =
             let combinedOrderedParameters = String.Join(", ", orderedParametersArray)
 
             let combinedNamedParameters =
-                String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) namedParameters)
+                // Process named parameters to handle IsLiteral suffix
+                let processedNamedParameters = 
+                    namedParameters
+                    |> List.fold (fun (acc, processedKeys) (key, value) ->
+                        if key.EndsWith("IsLiteral") then
+                            // Skip IsLiteral metadata entries
+                            (acc, Set.add key processedKeys)
+                        else
+                            let baseKey = key
+                            let isLiteralKey = key + "IsLiteral"
+                            let isLiteral = 
+                                namedParameters
+                                |> List.exists (fun (k, v) -> 
+                                    k = isLiteralKey && 
+                                    (v = "true" || v = "True"))
+                            
+                            // If this is a parameter with IsLiteral=true, use the value without escaping
+                            if isLiteral then
+                                // Use the value as-is without quotes
+                                let unquotedValue = 
+                                    if value.StartsWith("\"") && value.EndsWith("\"") && value.Length >= 2 then
+                                        value.Substring(1, value.Length - 2)
+                                    else
+                                        value
+                                ((baseKey, unquotedValue) :: acc, Set.add isLiteralKey processedKeys)
+                            else
+                                ((baseKey, value) :: acc, processedKeys)
+                    ) ([], Set.empty)
+                    |> fst
+                    |> List.rev
+                
+                String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) processedNamedParameters)
             // construct the final argument string; positional arguments followed by named
             match (combinedOrderedParameters.Length, combinedNamedParameters.Length) with
             | (0, 0) -> "" // no arguments
