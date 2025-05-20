@@ -39,6 +39,7 @@ type TestClass() = class end
         |> withAdditionalSources [(code, "cs")]
         |> compile
         |> shouldFail
-        |> withErrorCode "tcPropertyCannotBeSet1"
-        |> withSingleDiagnostic "Property 'IsDefault' on attribute (the setter is private) cannot be set"
+        |> withDiagnostics [
+            (DiagnosticLevel.Error, 3248, "Property 'IsDefault' on attribute cannot be set because the setter is private", (4, 21, 4, 43))
+        ]
         |> ignore
