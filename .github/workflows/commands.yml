@@ -99,9 +99,6 @@ jobs:
       env:
         TEST_UPDATE_BSL: 1
       run: |
-        # Store the list of baseline files before running the script
-        BASELINE_FILES_BEFORE=$(ls -la tests/ILVerify/*.bsl)
-        
         # Run the ilverify script with TEST_UPDATE_BSL=1
         pwsh tests/ILVerify/ilverify.ps1
         
@@ -120,14 +117,20 @@ jobs:
           fi
         done
         
-        if [ $FILES_CHANGED -eq 0 ]; then
+        if [ "$FILES_CHANGED" -eq 0 ]; then
           echo "result=The ilverify command ran and did not modify any baseline." >> $GITHUB_OUTPUT
         else
-          echo "result=The ilverify command ran and triggered the following number of changes per file:\n${CHANGES_OUTPUT}" >> $GITHUB_OUTPUT
+          echo -e "result=The ilverify command ran and triggered the following number of changes per file:\n${CHANGES_OUTPUT}" >> $GITHUB_OUTPUT
         fi
     - name: Commit and push changes
       if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       run: |
+        # Only commit if there are actual changes
+        if git diff --quiet; then
+          echo "No changes to commit, skipping."
+          exit 0
+        fi
+        
         git config --local user.name "github-actions[bot]"
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git commit -a -m 'Automated command ran: ${{ steps.command-extractor.outputs.result }}
