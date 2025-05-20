@@ -249,6 +249,25 @@ module FileIndex =
     // WARNING: Global Mutable State, holding a mapping between integers and filenames
     let fileIndexTable = FileIndexTable()
 
+    // ++GLOBAL MUTABLE STATE
+    // WARNING: Global Mutable State, holding a mapping between file paths and their in-memory source texts
+    let inMemorySourceTexts = ConcurrentDictionary<string, string>()
+
+    /// Register an in-memory source text for a given file path
+    let registerInMemorySourceText filePath text =
+        inMemorySourceTexts[filePath] <- text
+        filePath
+
+    /// Try to get an in-memory source text for a given file path
+    let tryGetInMemorySourceText filePath =
+        match inMemorySourceTexts.TryGetValue filePath with
+        | true, text -> Some text
+        | _ -> None
+        
+    /// Clear all in-memory source texts
+    let clearInMemorySourceTexts() =
+        inMemorySourceTexts.Clear()
+
     // If we exceed the maximum number of files we'll start to report incorrect file names
     let fileIndexOfFileAux normalize f =
         fileIndexTable.FileToIndex normalize f % maxFileIndex
@@ -354,21 +373,48 @@ type Range(code1: int64, code2: int64) =
         then
             name
         else
-
             try
                 let endCol = m.EndColumn - 1
                 let startCol = m.StartColumn - 1
 
-                if FileSystem.IsInvalidPathShim m.FileName then
-                    "path invalid: " + m.FileName
-                elif not (FileSystem.FileExistsShim m.FileName) then
-                    "nonexistent file: " + m.FileName
-                else
-                    FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
-                    |> Seq.skip (m.StartLine - 1)
-                    |> Seq.take (m.EndLine - m.StartLine + 1)
-                    |> String.concat "\n"
-                    |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+                // Check if we have this source text in memory first
+                match tryGetInMemorySourceText m.FileName with
+                | Some sourceText ->
+                    let lines = sourceText.Split('\n')
+                    if m.StartLine > 0 && m.StartLine <= lines.Length then
+                        let startLineIdx = m.StartLine - 1
+                        let endLineIdx = min (m.EndLine - 1) (lines.Length - 1)
+                        let lineSlice = lines.[startLineIdx..endLineIdx]
+                        let joined = String.concat "\n" lineSlice
+                        
+                        if joined.Length > 0 then
+                            let effectiveStartCol = min startCol joined.Length
+                            let substrLen = 
+                                if startLineIdx = endLineIdx then
+                                    min (endCol - startCol) (joined.Length - effectiveStartCol)
+                                else
+                                    joined.Length - effectiveStartCol
+                            
+                            if substrLen > 0 then
+                                joined.Substring(effectiveStartCol, substrLen)
+                            else
+                                joined
+                        else
+                            "empty source"
+                    else
+                        "line out of range in source"
+                    
+                | None ->
+                    if FileSystem.IsInvalidPathShim m.FileName then
+                        "path invalid: " + m.FileName
+                    elif not (FileSystem.FileExistsShim m.FileName) then
+                        "nonexistent file: " + m.FileName
+                    else
+                        FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
+                        |> Seq.skip (m.StartLine - 1)
+                        |> Seq.take (m.EndLine - m.StartLine + 1)
+                        |> String.concat "\n"
+                        |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
             with e ->
                 e.ToString()
 

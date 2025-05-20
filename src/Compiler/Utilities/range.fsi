@@ -182,6 +182,15 @@ module internal FileIndex =
     val fileOfFileIndex: FileIndex -> string
 
     val startupFileName: string
+    
+    /// Register an in-memory source text for a given file path
+    val registerInMemorySourceText: filePath: string -> text: string -> string
+    
+    /// Try to get an in-memory source text for a given file path
+    val tryGetInMemorySourceText: filePath: string -> string option
+    
+    /// Clear all in-memory source texts
+    val clearInMemorySourceTexts: unit -> unit
 
 module Range =
 
