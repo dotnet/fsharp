@@ -37,29 +37,38 @@ type WriteCodeFragmentFSharpTests() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
 
     [<Fact>]
-    member _.``Named parameters with IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" [("Bool", "true"); ("BoolIsLiteral", "true")] "SomeAttribute(Bool = true)"
+    member _.``Named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" [("Bool", "true"); ("Bool_IsLiteral", "true")] "SomeAttribute(Bool = true)"
         
     [<Fact>]
-    member _.``Multiple named parameters with IsLiteral suffix``() =
+    member _.``Multiple named parameters with _IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" 
             [
                 ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
+                ("Number_IsLiteral", "true"); 
                 ("Bool", "false"); 
-                ("BoolIsLiteral", "true")
+                ("Bool_IsLiteral", "true")
             ] 
             "SomeAttribute(Number = 42, Bool = false)"
             
     [<Fact>]
-    member _.``Mixed named parameters with and without IsLiteral suffix``() =
+    member _.``Mixed named parameters with and without _IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" 
             [
                 ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
+                ("Number_IsLiteral", "true"); 
                 ("Text", "hello")
             ] 
             "SomeAttribute(Number = 42, Text = \"hello\")"
+    
+    [<Fact>]
+    member _.``Enum _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("EnumValue", "System.StringComparison.OrdinalIgnoreCase"); 
+                ("EnumValue_IsLiteral", "true")
+            ] 
+            "SomeAttribute(EnumValue = System.StringComparison.OrdinalIgnoreCase)"
 
 type WriteCodeFragmentCSharpTests() =
 
@@ -70,31 +79,6 @@ type WriteCodeFragmentCSharpTests() =
         let fullExpectedAttributeText = "[assembly: " + expectedAttributeText + "]"
         Assert.Equal(fullExpectedAttributeText, actualAttributeText)
         
-    [<Fact>]
-    member _.``Named parameters with IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" [("Bool", "true"); ("BoolIsLiteral", "true")] "SomeAttribute(Bool = true)"
-        
-    [<Fact>]
-    member _.``Multiple named parameters with IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" 
-            [
-                ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
-                ("Bool", "false"); 
-                ("BoolIsLiteral", "true")
-            ] 
-            "SomeAttribute(Number = 42, Bool = false)"
-            
-    [<Fact>]
-    member _.``Mixed named parameters with and without IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" 
-            [
-                ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
-                ("Text", "hello")
-            ] 
-            "SomeAttribute(Number = 42, Text = \"hello\")"
-
     [<Fact>]
     member _.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
@@ -115,6 +99,40 @@ type WriteCodeFragmentCSharpTests() =
     member _.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
         //                                     this should look like: SomeAttribute("\"uno\"")
+        
+    [<Fact>]
+    member _.``Named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" [("Bool", "true"); ("Bool_IsLiteral", "true")] "SomeAttribute(Bool = true)"
+        
+    [<Fact>]
+    member _.``Multiple named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("Number", "42"); 
+                ("Number_IsLiteral", "true"); 
+                ("Bool", "false"); 
+                ("Bool_IsLiteral", "true")
+            ] 
+            "SomeAttribute(Number = 42, Bool = false)"
+            
+    [<Fact>]
+    member _.``Mixed named parameters with and without _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("Number", "42"); 
+                ("Number_IsLiteral", "true"); 
+                ("Text", "hello")
+            ] 
+            "SomeAttribute(Number = 42, Text = \"hello\")"
+            
+    [<Fact>]
+    member _.``Enum _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("EnumValue", "System.StringComparison.OrdinalIgnoreCase"); 
+                ("EnumValue_IsLiteral", "true")
+            ] 
+            "SomeAttribute(EnumValue = System.StringComparison.OrdinalIgnoreCase)"
 
 
 type WriteCodeFragmentVisualBasicTests() =
@@ -148,27 +166,36 @@ type WriteCodeFragmentVisualBasicTests() =
         //                                     this should look like: SomeAttribute("\"uno\"")
         
     [<Fact>]
-    member _.``Named parameters with IsLiteral suffix``() =
-        verifyAttribute "SomeAttribute" [("Bool", "true"); ("BoolIsLiteral", "true")] "SomeAttribute(Bool = true)"
+    member _.``Named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" [("Bool", "true"); ("Bool_IsLiteral", "true")] "SomeAttribute(Bool = true)"
         
     [<Fact>]
-    member _.``Multiple named parameters with IsLiteral suffix``() =
+    member _.``Multiple named parameters with _IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" 
             [
                 ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
+                ("Number_IsLiteral", "true"); 
                 ("Bool", "false"); 
-                ("BoolIsLiteral", "true")
+                ("Bool_IsLiteral", "true")
             ] 
             "SomeAttribute(Number = 42, Bool = false)"
             
     [<Fact>]
-    member _.``Mixed named parameters with and without IsLiteral suffix``() =
+    member _.``Mixed named parameters with and without _IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" 
             [
                 ("Number", "42"); 
-                ("NumberIsLiteral", "true"); 
+                ("Number_IsLiteral", "true"); 
                 ("Text", "hello")
             ] 
             "SomeAttribute(Number = 42, Text = \"hello\")"
+            
+    [<Fact>]
+    member _.``Enum _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("EnumValue", "System.StringComparison.OrdinalIgnoreCase"); 
+                ("EnumValue_IsLiteral", "true")
+            ] 
+            "SomeAttribute(EnumValue = System.StringComparison.OrdinalIgnoreCase)"
 

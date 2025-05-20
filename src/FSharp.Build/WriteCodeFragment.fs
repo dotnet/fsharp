@@ -90,33 +90,43 @@ type WriteCodeFragment() as this =
             let combinedOrderedParameters = String.Join(", ", orderedParametersArray)
 
             let combinedNamedParameters =
+                // Define "_IsLiteral" suffix to match MSBuild behavior
+                let isLiteralSuffix = "_IsLiteral"
+                
                 // Process named parameters to handle IsLiteral suffix
-                let processedNamedParameters = 
+                let processedNamedParameters =
+                    // First identify all parameters with _IsLiteral suffix
+                    let isLiteralParams = 
+                        namedParameters
+                        |> List.filter (fun (key, _) -> key.EndsWith(isLiteralSuffix))
+                        |> List.map (fun (key, value) -> 
+                            // Extract the base parameter name by removing the suffix
+                            let baseKey = key.Substring(0, key.Length - isLiteralSuffix.Length)
+                            (baseKey, value))
+                        |> List.filter (fun (_, value) -> value = "true" || value = "True")
+                        |> Set.ofList
+                        |> Set.map fst
+                    
+                    // Process all parameters, handling literals appropriately
                     namedParameters
                     |> List.fold (fun (acc, processedKeys) (key, value) ->
-                        if key.EndsWith("IsLiteral") then
-                            // Skip IsLiteral metadata entries
+                        // Skip _IsLiteral metadata entries
+                        if key.EndsWith(isLiteralSuffix) then
                             (acc, Set.add key processedKeys)
                         else
-                            let baseKey = key
-                            let isLiteralKey = key + "IsLiteral"
-                            let isLiteral = 
-                                namedParameters
-                                |> List.exists (fun (k, v) -> 
-                                    k = isLiteralKey && 
-                                    (v = "true" || v = "True"))
+                            // Check if this parameter should be treated as a literal
+                            let isLiteral = Set.contains key isLiteralParams
                             
                             // If this is a parameter with IsLiteral=true, use the value without escaping
                             if isLiteral then
-                                // Use the value as-is without quotes
-                                let unquotedValue = 
-                                    if value.StartsWith("\"") && value.EndsWith("\"") && value.Length >= 2 then
-                                        value.Substring(1, value.Length - 2)
-                                    else
-                                        value
-                                ((baseKey, unquotedValue) :: acc, Set.add isLiteralKey processedKeys)
+                                let literalValue = 
+                                    // For literals, preserve the value as-is (without quotes)
+                                    // If it's already quoted, use as is (will be handled by CodeDOM)
+                                    value
+                                ((key, literalValue) :: acc, processedKeys)
                             else
-                                ((baseKey, value) :: acc, processedKeys)
+                                // Regular parameter, keep as is (with quotes)
+                                ((key, value) :: acc, processedKeys)
                     ) ([], Set.empty)
                     |> fst
                     |> List.rev
