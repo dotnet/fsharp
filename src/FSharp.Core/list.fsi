@@ -2820,7 +2820,7 @@ module List =
     ///
     /// <returns>A list of randomly selected elements from the input list.</returns>
     ///
-    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     ///
     /// <example id="randomChoices-1">
@@ -2843,7 +2843,7 @@ module List =
     /// <returns>A list of randomly selected elements from the input list.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     ///
     /// <example id="randomChoicesWith-1">
@@ -2866,6 +2866,7 @@ module List =
     /// <returns>A list of randomly selected elements from the input list.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
     ///
@@ -2887,7 +2888,7 @@ module List =
     ///
     /// <returns>A list of randomly selected elements from the input list.</returns>
     ///
-    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input list.</exception>
     ///
@@ -2911,7 +2912,7 @@ module List =
     /// <returns>A list of randomly selected elements from the input list.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input list.</exception>
     ///
@@ -2934,7 +2935,7 @@ module List =
     ///
     /// <returns>A list of randomly selected elements from the input list.</returns>
     ///
-    /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input list.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
