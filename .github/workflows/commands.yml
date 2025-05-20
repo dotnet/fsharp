@@ -76,12 +76,44 @@ jobs:
       if: steps.command-extractor.outputs.result == 'fantomas'
       id: fantomas
       run: dotnet fantomas . -r
-    - name: Process fantomas command
+    - name: Process xlf command
       if: steps.command-extractor.outputs.result == 'xlf'
       id: xlf
       run: dotnet build src/Compiler /t:UpdateXlf
+    - name: Process ilverify command
+      if: steps.command-extractor.outputs.result == 'ilverify'
+      id: ilverify
+      env:
+        TEST_UPDATE_BSL: 1
+      run: |
+        # Store the list of baseline files before running the script
+        BASELINE_FILES_BEFORE=$(ls -la tests/ILVerify/*.bsl)
+        
+        # Run the ilverify script with TEST_UPDATE_BSL=1
+        pwsh tests/ILVerify/ilverify.ps1
+        
+        # Calculate the changes per file
+        echo "Checking for changes in baseline files..."
+        FILES_CHANGED=0
+        CHANGES_OUTPUT=""
+        
+        for file in tests/ILVerify/*.bsl; do
+          if git diff --quiet "$file"; then
+            continue
+          else
+            FILES_CHANGED=$((FILES_CHANGED + 1))
+            LINES_CHANGED=$(git diff --numstat "$file" | awk '{print $1 + $2}')
+            CHANGES_OUTPUT="${CHANGES_OUTPUT}${file}: ${LINES_CHANGED} lines changed\n"
+          fi
+        done
+        
+        if [ $FILES_CHANGED -eq 0 ]; then
+          echo "result=The ilverify command ran and did not modify any baseline." >> $GITHUB_OUTPUT
+        else
+          echo "result=The ilverify command ran and triggered the following number of changes per file:\n${CHANGES_OUTPUT}" >> $GITHUB_OUTPUT
+        fi
     - name: Commit and push changes
-      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
+      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       run: |
         git config --local user.name "github-actions[bot]"
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -90,7 +122,7 @@ jobs:
           Co-authored-by: ${{ github.event.comment.user.login }} <${{ github.event.comment.user.id }}+${{ github.event.comment.user.login }}@users.noreply.github.com>'
         git push
     - name: Post command comment
-      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
+      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       uses: actions/github-script@v3
       with:
         script: |
@@ -98,8 +130,10 @@ jobs:
           var output = ""
           if ("${{steps.command-extractor.outputs.result}}" == 'fantomas') {
             output = "${{steps.fantomas.outputs.result}}"
-          } else if("${{steps.command-extractor.outputs.result}}" == 'xlf') {
+          } else if ("${{steps.command-extractor.outputs.result}}" == 'xlf') {
             output = "${{steps.xlf.outputs.result}}"
+          } else if ("${{steps.command-extractor.outputs.result}}" == 'ilverify') {
+            output = "${{steps.ilverify.outputs.result}}"
           }
           const body = `Ran ${{ steps.command-extractor.outputs.result }}: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}\n${output}`;
           await github.issues.createComment({
