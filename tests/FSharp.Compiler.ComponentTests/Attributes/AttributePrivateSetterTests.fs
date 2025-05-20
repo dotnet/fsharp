@@ -35,10 +35,10 @@ module AttributeTest
 type TestClass() = class end
 """
         // Act & Assert
-        CompilerAssert.TypeCheckWithErrors mainCode [(code, "cs")] [
-            FSharpDiagnostic.Create(
-                "tcPropertyCannotBeSet1",
-                "Property 'IsDefault' on attribute (the setter is private) cannot be set",
-                10, 50, 10, 51)
-        ]
+        FSharp mainCode
+        |> withAdditionalSources [(code, "cs")]
+        |> compile
+        |> shouldFail
+        |> withErrorCode "tcPropertyCannotBeSet1"
+        |> withSingleDiagnostic "Property 'IsDefault' on attribute (the setter is private) cannot be set"
         |> ignore

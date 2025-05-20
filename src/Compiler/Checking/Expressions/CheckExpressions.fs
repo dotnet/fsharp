@@ -11413,7 +11413,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
                           // Check if the setter is accessible
                           if not (IsPropInfoAccessible g cenv.amap m ad pinfo) then
-                            errorR(Error(FSComp.SR.tcPropertyCannotBeSet1("'" + id.idText + "' on attribute (the setter is private)"), m))
+                            errorR(Error(FSComp.SR.tcPropertyCannotBeSetPrivateSetter(id.idText), m))
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo ->
                           CheckILFieldInfoAccessible g cenv.amap m ad finfo
