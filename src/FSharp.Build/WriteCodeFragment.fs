@@ -98,14 +98,13 @@ type WriteCodeFragment() as this =
                     // First identify all parameters with _IsLiteral suffix
                     let isLiteralParams = 
                         namedParameters
-                        |> List.filter (fun (key, _) -> key.EndsWith(isLiteralSuffix))
-                        |> List.map (fun (key, value) -> 
-                            // Extract the base parameter name by removing the suffix
-                            let baseKey = key.Substring(0, key.Length - isLiteralSuffix.Length)
-                            (baseKey, value))
-                        |> List.filter (fun (_, value) -> value = "true" || value = "True")
+                        |> List.choose (fun (key, value) -> 
+                            if key.EndsWith(isLiteralSuffix) && (value = "true" || value = "True") then
+                                // Extract the base parameter name by removing the suffix
+                                Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
+                            else
+                                None)
                         |> Set.ofList
-                        |> Set.map fst
                     
                     // Process all parameters, handling literals appropriately
                     namedParameters
