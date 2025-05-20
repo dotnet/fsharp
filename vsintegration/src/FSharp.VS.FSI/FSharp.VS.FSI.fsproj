@@ -4,9 +4,10 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);47;75;1182</NoWarn><!-- 1182 - unused bindings, too many of them here -->
+    <NoWarn>$(NoWarn);47;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OtherFlags>$(OtherFlags) --subsystemversion:6.00 --warnaserror-:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
