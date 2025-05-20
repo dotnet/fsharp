@@ -1241,6 +1241,14 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomChoices negativeChoicesLength list |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesEmpty() =
+        let list = []
+
+        let choice = list |> List.randomChoices 0
+
+        Assert.AreEqual([], choice)
+
+    [<Fact>]
     member _.RandomChoicesWith() =
         let list = [ 1..50 ]
         let rand1 = Random(123)
@@ -1297,6 +1305,14 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomChoicesBy randomizer negativeChoicesLength list |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesByEmpty() =
+        let list = []
+
+        let choice = list |> List.randomSampleBy (fun () -> 1.0) 0
+
+        Assert.AreEqual([], choice)
+
+    [<Fact>]
     member _.RandomSample() =
         let arr = [ 1..50 ]
 
@@ -1321,7 +1337,15 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomSample sampleLength emptyList |> ignore)
         CheckThrowsArgumentException (fun () -> List.randomSample negativeSampleLength list |> ignore)
         CheckThrowsArgumentException (fun () -> List.randomSample tooBigSampleLength list |> ignore)
-    
+
+    [<Fact>]
+    member _.RandomSampleEmpty() =
+        let list = []
+
+        let choice = list |> List.randomSample 0
+
+        Assert.AreEqual([], choice)
+
     [<Fact>]
     member _.RandomSampleWith() =
         let list = [ 1..50 ]
@@ -1389,3 +1413,11 @@ type ListModule() =
         CheckThrowsArgumentException (fun () -> List.randomSampleBy randomizer sampleLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> List.randomSampleBy randomizer negativeSampleLength list |> ignore)
         CheckThrowsArgumentException (fun () -> List.randomSampleBy randomizer tooBigSampleLength list |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleByEmpty() =
+        let list = []
+
+        let choice = list |> List.randomSampleBy (fun () -> 1.0) 0
+
+        Assert.AreEqual([], choice)
