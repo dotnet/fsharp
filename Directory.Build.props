@@ -8,6 +8,8 @@
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <FSharpNetCoreProductDefaultTargetFramework>net9.0</FSharpNetCoreProductDefaultTargetFramework>
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
+    <!-- When building in the VMR, we never need to publish Windows PDBs. Any conversion to Windows PDBs will be done during staging if necessary. -->
+    <PublishWindowsPdb Condition="'$(DotNetBuildOrchestrator)' == 'true'">false</PublishWindowsPdb>
   </PropertyGroup>
 
   <!--

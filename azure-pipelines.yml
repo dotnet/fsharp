@@ -35,7 +35,7 @@ variables:
   # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   # i.e. 'rel/d17.9' *or* 'main' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10 (latest release branch)
   - name: VSInsertionTargetBranchName
-    value: feature/d18initial
+    value: main
   - name: _TeamName
     value: FSharp
   - name: TeamName
