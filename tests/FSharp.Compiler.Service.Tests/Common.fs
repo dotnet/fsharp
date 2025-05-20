@@ -157,6 +157,10 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
             let fname = Path.Combine(path, Path.GetFileName(file))
             let dllName = Path.ChangeExtension(fname, ".dll")
             let projName = Path.ChangeExtension(fname, ".fsproj")
+            
+            // Register the source text with the range system for debugger display
+            FileIndex.registerInMemorySourceText file input |> ignore
+            
             let args = mkProjectCommandLineArgsForScript (dllName, [])
             printfn "file = %A, args = %A" file args
             checker.GetProjectOptionsFromCommandLineArgs (projName, args)
@@ -167,6 +171,10 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
 
 #else
     let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediate
+    
+    // Register the source text with the range system for debugger display
+    FileIndex.registerInMemorySourceText file input |> ignore
+    
     //printfn "projectOptions = %A" projectOptions
 #endif
 
@@ -191,6 +199,10 @@ let parseSourceCode (name: string, code: string) =
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
     let filePath = Path.Combine(location, name)
     let dllPath = Path.Combine(location, name + ".dll")
+    
+    // Register the source text with the range system for debugger display
+    FileIndex.registerInMemorySourceText filePath code |> ignore
+    
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
