@@ -23,6 +23,9 @@ type WriteCodeFragment() as this =
                 raise TaskFailed)
             fmt
 
+    [<Struct>]
+    type EscapedValue = { Escaped: string; Raw: string }
+    
     static let escapeString (str: string) =
         let sb =
             str.ToCharArray()
@@ -41,7 +44,7 @@ type WriteCodeFragment() as this =
                     | _ -> sb.Append(c))
                 (StringBuilder().Append("\""))
 
-        sb.Append("\"").ToString()
+        { Escaped = sb.Append("\"").ToString(); Raw = str }
 
     member _.GenerateAttribute(item: ITaskItem, language: string) =
         let attributeName = item.ItemSpec
@@ -60,9 +63,11 @@ type WriteCodeFragment() as this =
 
                     let value =
                         match entry.Value with
-                        | null -> "null"
-                        | :? string as value -> escapeString value
-                        | value -> value.ToString()
+                        | null -> { Escaped = "null"; Raw = "null" }
+                        | :? string as strValue -> escapeString strValue
+                        | value -> 
+                            let strValue = value.ToString()
+                            { Escaped = escapeString(strValue).Escaped; Raw = strValue }
 
                     (key, value))
 
@@ -85,7 +90,7 @@ type WriteCodeFragment() as this =
                 else
                     Array.create (List.last orderedParametersWithIndex |> fst) "null"
 
-            List.iter (fun (index, value) -> orderedParametersArray.[index - 1] <- value) orderedParametersWithIndex
+            List.iter (fun (index, value) -> orderedParametersArray.[index - 1] <- value.Escaped) orderedParametersWithIndex
             // construct ordered parameter lists
             let combinedOrderedParameters = String.Join(", ", orderedParametersArray)
 
@@ -98,8 +103,8 @@ type WriteCodeFragment() as this =
                     // First identify all parameters with _IsLiteral suffix
                     let isLiteralParams = 
                         namedParameters
-                        |> List.choose (fun (key, value) -> 
-                            if key.EndsWith(isLiteralSuffix) && (value = "true" || value = "True") then
+                        |> List.choose (fun (key, _) -> 
+                            if key.EndsWith(isLiteralSuffix) && (namedParameters |> List.exists (fun (k, v) -> k = key && (v.Raw = "true" || v.Raw = "True"))) then
                                 // Extract the base parameter name by removing the suffix
                                 Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
                             else
@@ -116,15 +121,12 @@ type WriteCodeFragment() as this =
                             // Check if this parameter should be treated as a literal
                             let isLiteral = Set.contains key isLiteralParams
                             
-                            // If this is a parameter with IsLiteral=true, use the value without escaping
                             if isLiteral then
-                                let literalValue = 
-                                    // For literals, preserve the value as-is (without quotes)
-                                    value
-                                (key, literalValue) :: acc
+                                // For literals, use the raw value
+                                (key, value.Raw) :: acc
                             else
-                                // Regular parameter, keep as is (with quotes)
-                                (key, value) :: acc
+                                // Regular parameter, use the escaped value
+                                (key, value.Escaped) :: acc
                     ) []
                     |> List.rev
                 
