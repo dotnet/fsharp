@@ -5147,6 +5147,11 @@
         <target state="translated">Tato vlastnost se nedá nastavit.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
+        <source>Property '%s' on attribute cannot be set because the setter is private</source>
+        <target state="new">Property '%s' on attribute cannot be set because the setter is private</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">
         <source>This property or field was not found on this custom attribute type</source>
         <target state="translated">Tato vlastnost nebo pole se u tohoto typu vlastního atributu nenašla.</target>
