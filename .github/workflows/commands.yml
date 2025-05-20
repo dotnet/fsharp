@@ -14,7 +14,7 @@ permissions:
 jobs:
   cleanup_old_runs:
     if: github.event.schedule == '0 13 * * *'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     permissions:
       actions: write
     env:
@@ -33,7 +33,7 @@ jobs:
 
   run_command:
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/run')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Extract command to run
       uses: actions/github-script@v3
