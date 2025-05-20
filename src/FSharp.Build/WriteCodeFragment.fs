@@ -108,10 +108,10 @@ type WriteCodeFragment() as this =
                     
                     // Process all parameters, handling literals appropriately
                     namedParameters
-                    |> List.fold (fun (acc, processedKeys) (key, value) ->
+                    |> List.fold (fun acc (key, value) ->
                         // Skip _IsLiteral metadata entries
                         if key.EndsWith(isLiteralSuffix) then
-                            (acc, Set.add key processedKeys)
+                            acc
                         else
                             // Check if this parameter should be treated as a literal
                             let isLiteral = Set.contains key isLiteralParams
@@ -120,14 +120,12 @@ type WriteCodeFragment() as this =
                             if isLiteral then
                                 let literalValue = 
                                     // For literals, preserve the value as-is (without quotes)
-                                    // If it's already quoted, use as is (will be handled by CodeDOM)
                                     value
-                                ((key, literalValue) :: acc, processedKeys)
+                                (key, literalValue) :: acc
                             else
                                 // Regular parameter, keep as is (with quotes)
-                                ((key, value) :: acc, processedKeys)
-                    ) ([], Set.empty)
-                    |> fst
+                                (key, value) :: acc
+                    ) []
                     |> List.rev
                 
                 String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) processedNamedParameters)
