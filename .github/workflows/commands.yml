@@ -80,7 +80,7 @@ jobs:
       if: steps.command-extractor.outputs.result == 'xlf'
       id: xlf
       run: dotnet build src/Compiler /t:UpdateXlf
-    - name: Process ilverify command
+    - name: Process ilverify command (Update ILVerify baselines)
       if: steps.command-extractor.outputs.result == 'ilverify'
       id: ilverify
       env:
