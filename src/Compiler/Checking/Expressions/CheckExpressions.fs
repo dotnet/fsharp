@@ -11399,6 +11399,10 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
                 let mkAttribExpr e =
                     AttribExpr(e, EvalLiteralExprOrAttribArg g e)
+                    
+                let checkPropSetterAttribAccess m (pinfo: PropInfo) =
+                    let setterMeth = pinfo.SetterMethod
+                    not setterMeth.IsProtectedAccessibility && not(IsTypeAndMethInfoAccessible cenv.amap m ad ad setterMeth)
 
                 let namedAttribArgMap =
                   attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, m, isOpt, callerArgExpr))) ->
@@ -11411,9 +11415,8 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                       | Item.Property (info = [pinfo]) ->
                           if not pinfo.HasSetter then
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
-                          let setterMeth = pinfo.SetterMethod
-                          if not (setterMeth.IsProtectedAccessibility) && not(IsTypeAndMethInfoAccessible cenv.amap m ad ad setterMeth) then 
-                            error (Error (FSComp.SR.tcPropertyCannotBeSet1(pinfo.PropertyName), m))
+                          if checkPropSetterAttribAccess m pinfo then 
+                            errorR(Error (FSComp.SR.tcPropertyCannotBeSet1(pinfo.PropertyName), m))
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo ->
                           CheckILFieldInfoAccessible g cenv.amap m ad finfo
