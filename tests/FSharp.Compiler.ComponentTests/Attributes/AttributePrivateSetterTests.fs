@@ -19,6 +19,6 @@ type TestClass() = class end
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (DiagnosticLevel.Error, 3248, "Property 'ConditionString' on attribute cannot be set because the setter is private", (5, 13, 5, 41))
+        (Error, 3248, Line 5, Col 13, Line 5, Col 41, "Property 'ConditionString' on attribute cannot be set because the setter is private")
     ]
     |> ignore
