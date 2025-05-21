@@ -3,7 +3,7 @@
 open Xunit
 open FSharp.Test.Compiler
 
-module AttributeCtorSetPropInAd =
+module AttributeCtorSetPropAccess =
     let private csLib = """
     using System;
 
@@ -49,5 +49,6 @@ module AttributeCtorSetPropInAd =
         |> withReferences [(CSharp <| csLib.Replace("%s", modifier))] 
         |> compile 
         |> shouldFail
-        |> withDiagnostics [ (ErrorType.Error 810, Line 8, Col 28, Line 8, Col 31, "Property 'X' cannot be set") ] 
+        |> withDiagnostics [ (ErrorType.Error 3248, Line 8, Col 28, Line 8, Col 31, "Property 'X' cannot be set because the setter is private") ] 
         |> ignore
+
