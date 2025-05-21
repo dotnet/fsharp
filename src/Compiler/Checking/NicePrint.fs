@@ -2050,6 +2050,7 @@ module TastDefinitionPrinting =
             GetIntrinsicConstructorInfosOfType infoReader m ty
             |> List.filter (fun minfo -> IsMethInfoAccessible amap m ad minfo && not minfo.IsClassConstructor && shouldShow minfo.ArbitraryValRef)
 
+        // Get base interfaces (either direct or all, depending on settings)
         let iimpls =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
@@ -2058,6 +2059,7 @@ module TastDefinitionPrinting =
                 |> List.filter (fun (_, compgen, _) -> not compgen)
                 |> List.map p13
             else
+                // Always use the immediate (direct) interfaces
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
 
         let iimplsLs =
