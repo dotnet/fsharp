@@ -67,7 +67,7 @@ type WriteCodeFragment() as this =
                         | :? string as strValue -> escapeString strValue
                         | value -> 
                             let strValue = value.ToString()
-                            { Escaped = escapeString(strValue).Escaped; Raw = strValue }
+                            { Escaped = strValue; Raw = strValue }
 
                     (key, value))
 
@@ -103,8 +103,8 @@ type WriteCodeFragment() as this =
                     // First identify all parameters with _IsLiteral suffix
                     let isLiteralParams = 
                         namedParameters
-                        |> List.choose (fun (key, _) -> 
-                            if key.EndsWith(isLiteralSuffix) && (namedParameters |> List.exists (fun (k, v) -> k = key && (v.Raw = "true" || v.Raw = "True"))) then
+                        |> List.choose (fun (key, value) -> 
+                            if key.EndsWith(isLiteralSuffix) && (value.Raw = "true" || value.Raw = "True") then
                                 // Extract the base parameter name by removing the suffix
                                 Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
                             else
