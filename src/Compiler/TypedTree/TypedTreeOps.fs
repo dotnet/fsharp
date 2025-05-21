@@ -3269,7 +3269,8 @@ type DisplayEnv =
                showDocumentation = true
                shrinkOverloads = false
                escapeKeywordNames = true
-               includeStaticParametersInTypeNames = true }
+               includeStaticParametersInTypeNames = true
+               showOnlyDirectBaseTypes = false }
         denv.SetOpenPaths
             [ FSharpLib.RootPath
               FSharpLib.CorePath
