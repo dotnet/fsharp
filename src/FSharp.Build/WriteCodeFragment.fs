@@ -113,22 +113,21 @@ type WriteCodeFragment() as this =
                     
                     // Process all parameters, handling literals appropriately
                     namedParameters
-                    |> List.fold (fun acc (key, value) ->
+                    |> List.choose (fun (key, value) ->
                         // Skip _IsLiteral metadata entries
                         if key.EndsWith(isLiteralSuffix) then
-                            acc
+                            None
                         else
                             // Check if this parameter should be treated as a literal
                             let isLiteral = Set.contains key isLiteralParams
                             
                             if isLiteral then
                                 // For literals, use the raw value
-                                (key, value.Raw) :: acc
+                                Some(key, value.Raw)
                             else
                                 // Regular parameter, use the escaped value
-                                (key, value.Escaped) :: acc
-                    ) []
-                    |> List.rev
+                                Some(key, value.Escaped)
+                    )
                 
                 String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) processedNamedParameters)
             // construct the final argument string; positional arguments followed by named
