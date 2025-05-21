@@ -9,6 +9,9 @@ open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
+[<Struct>]
+type EscapedValue = { Escaped: string; Raw: string }
+
 type WriteCodeFragment() as this =
     inherit Task()
     let mutable _outputDirectory: ITaskItem MaybeNull = null
@@ -22,9 +25,6 @@ type WriteCodeFragment() as this =
                 this.Log.LogError msg
                 raise TaskFailed)
             fmt
-
-    [<Struct>]
-    type EscapedValue = { Escaped: string; Raw: string }
     
     static let escapeString (str: string) =
         let sb =
