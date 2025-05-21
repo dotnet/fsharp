@@ -149,12 +149,12 @@ type Event<'Delegate, 'Args
                   Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> 'Delegate) &multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> 'Delegate) &multicast
+                  Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> ('Delegate | null)) &multicast
           interface System.IObservable<'Args> with
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
 
-                  let h = Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> 'Delegate
+                  let h = Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> ('Delegate | null)
 
                   (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 
