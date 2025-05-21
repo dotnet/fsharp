@@ -4426,10 +4426,6 @@ declExpr:
         let mForLoopAll = rhs2 parseState 1 2
         exprFromParseError (SynExpr.ForEach(spFor, spIn, SeqExprOnly false, true, $2, arbExpr ("forLoopCollection", mFor), arbExpr ("forLoopBody3", mForLoopBodyArb), mForLoopAll)) }
 
-  | YIELD declExpr
-     { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
-       SynExpr.YieldOrReturn(($1, not $1), $2, (unionRanges (rhs parseState 1) $2.Range), trivia) }
-
   | YIELD declExpr COLON typ
      { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
