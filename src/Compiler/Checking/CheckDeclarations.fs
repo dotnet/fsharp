@@ -600,9 +600,11 @@ module TcRecdUnionAndEnumDeclarations =
             attrTargets
             |> List.iter (fun target ->
                 // If the union case has fields, and the target is not AttributeTargets.Method || AttributeTargets.All. Then we raise a separate opt-in warning
-                let targetEnum = enum<AttributeTargets> target
-                if targetEnum <> AttributeTargets.Method && targetEnum <> AttributeTargets.All then
-                    warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
+                let targetEnum = enum target
+                let hasMethodTarget = (targetEnum &&& AttributeTargets.Method) = AttributeTargets.Method
+                let hasAllTarget = (targetEnum &&& AttributeTargets.All) = AttributeTargets.All
+                if not (hasMethodTarget || hasAllTarget) then
+                        warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
         
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
