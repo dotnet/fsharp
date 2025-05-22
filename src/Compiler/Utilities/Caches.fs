@@ -29,29 +29,27 @@ type CacheOptions =
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{ToString()}")>]
 type CachedEntity<'Key, 'Value> =
-    val mutable Key: 'Key
-    val mutable Value: 'Value
-    val mutable AccessCount: int64
-    val mutable Node: LinkedListNode<CachedEntity<'Key, 'Value>> voption
+    val mutable private key: 'Key
+    val mutable private value: 'Value
 
-    new(key, value) =
-        {
-            Key = key
-            Value = value
-            AccessCount = 0L
-            Node = ValueNone
-        }
+    [<DefaultValue(false)>]
+    val mutable private node: LinkedListNode<CachedEntity<'Key, 'Value>>
 
-    // This is one time initialization, outside of the constructor because of circular reference.
-    // The contract is that each CachedEntity that the EntityPool produces, has Node assigned.
-    member this.WithNode() =
-        this.Node <- ValueSome(LinkedListNode this)
-        this
+    private new(key, value) = { key = key; value = value }
+
+    member this.Node = this.node
+    member this.Key = this.key
+    member this.Value = this.value
+
+    static member Create(key: 'Key, value: 'Value) =
+        let entity = CachedEntity(key, value)
+        // The contract is that each CachedEntity produced by the EntityPool always has Node referencing itself.
+        entity.node <- LinkedListNode(entity)
+        entity
 
     member this.ReUse(key, value) =
-        this.Key <- key
-        this.Value <- value
-        this.AccessCount <- 0L
+        this.key <- key
+        this.value <- value
         this
 
     override this.ToString() = $"{this.Key}"
@@ -142,21 +140,15 @@ type CacheMetrics(cacheId) =
 // More than totalCapacity can be created, but it will hold for reuse at most totalCapacity.
 type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
     let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
-    let mutable created = 0
 
-    let overCapacity =
-        CacheMetrics.Meter.CreateCounter<int64>("over-capacity", "count", cacheId)
+    let created = CacheMetrics.Meter.CreateCounter<int64>("created", "count", cacheId)
 
     member _.Acquire(key, value) =
         match pool.TryTake() with
         | true, entity -> entity.ReUse(key, value)
         | _ ->
-            if Interlocked.Increment &created > totalCapacity then
-                overCapacity.Add 1L
-
-            // Associate a LinkedListNode with freshly created entity.
-            // This is a one time initialization.
-            CachedEntity(key, value).WithNode()
+            created.Add 1L
+            CachedEntity.Create(key, value)
 
     member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
         if pool.Count < totalCapacity then
@@ -223,13 +215,10 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
                     async {
                         match! mb.Receive() with
                         | EvictionQueueMessage.Add entity ->
-
-                            assert entity.Node.IsSome
-
-                            evictionQueue.AddLast(entity.Node.Value)
+                            evictionQueue.AddLast(entity.Node)
 
                             // Evict one immediately if necessary.
-                            while evictionQueue.Count > capacity do
+                            if evictionQueue.Count > capacity then
                                 let first = nonNull evictionQueue.First
 
                                 match store.TryRemove(first.Value.Key) with
@@ -240,16 +229,13 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
                                     evicted.Trigger()
                                 | _ -> evictionFails.Add 1L
 
+                        // Store updates are not synchronized. It is possible the entity is no longer in the queue.
+                        | EvictionQueueMessage.Update entity when isNull entity.Node.List -> ()
+
                         | EvictionQueueMessage.Update entity ->
-                            entity.AccessCount <- entity.AccessCount + 1L
-
-                            assert entity.Node.IsSome
-
-                            let node = entity.Node.Value
-                            assert (node.List = evictionQueue)
                             // Just move this node to the end of the list.
-                            evictionQueue.Remove(node)
-                            evictionQueue.AddLast(node)
+                            evictionQueue.Remove(entity.Node)
+                            evictionQueue.AddLast(entity.Node)
 
                         return! processNext ()
                     }
@@ -264,10 +250,10 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
 
     member _.TryGetValue(key: 'Key, value: outref<'Value>) =
         match store.TryGetValue(key) with
-        | true, cachedEntity ->
+        | true, entity ->
             hits.Add 1L
-            evictionProcessor.Post(EvictionQueueMessage.Update cachedEntity)
-            value <- cachedEntity.Value
+            evictionProcessor.Post(EvictionQueueMessage.Update entity)
+            value <- entity.Value
             true
         | _ ->
             misses.Add 1L
@@ -275,14 +261,16 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
             false
 
     member _.TryAdd(key: 'Key, value: 'Value) =
-        let cachedEntity = pool.Acquire(key, value)
+        let entity = pool.Acquire(key, value)
 
-        if store.TryAdd(key, cachedEntity) then
-            evictionProcessor.Post(EvictionQueueMessage.Add cachedEntity)
-            true
+        let added = store.TryAdd(key, entity)
+
+        if added then
+            evictionProcessor.Post(EvictionQueueMessage.Add entity)
         else
-            pool.Reclaim(cachedEntity)
-            false
+            pool.Reclaim(entity)
+
+        added
 
     interface IDisposable with
         member this.Dispose() =

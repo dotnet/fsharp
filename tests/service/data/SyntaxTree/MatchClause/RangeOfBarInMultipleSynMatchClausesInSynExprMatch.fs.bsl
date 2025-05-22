@@ -3,7 +3,6 @@ ImplFile
      ("/root/MatchClause/RangeOfBarInMultipleSynMatchClausesInSynExprMatch.fs",
       false,
       QualifiedNameOfFile RangeOfBarInMultipleSynMatchClausesInSynExprMatch, [],
-      [],
       [SynModuleOrNamespace
          ([RangeOfBarInMultipleSynMatchClausesInSynExprMatch], false, AnonModule,
           [Expr
@@ -38,4 +37,5 @@ ImplFile
                    WithKeyword = (2,10--2,14) }), (2,0--4,20))], PreXmlDocEmpty,
           [], None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

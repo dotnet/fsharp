@@ -3,7 +3,7 @@ ImplFile
      ("/root/ComputationExpression/SynExprAndBangRangeStartsAtAndAndEndsAfterExpression.fs",
       false,
       QualifiedNameOfFile SynExprAndBangRangeStartsAtAndAndEndsAfterExpression,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynExprAndBangRangeStartsAtAndAndEndsAfterExpression], false,
           AnonModule,
@@ -36,4 +36,5 @@ ImplFile
                  (2,0--8,1)), (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--8,1),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

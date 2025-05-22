@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeTupleWithStruct.fs", false,
-      QualifiedNameOfFile SynTypeTupleWithStruct, [], [],
+      QualifiedNameOfFile SynTypeTupleWithStruct, [],
       [SynModuleOrNamespace
          ([SynTypeTupleWithStruct], false, AnonModule,
           [Let
@@ -34,4 +34,5 @@ ImplFile
                     EqualsRange = Some (2,26--2,27) })], (2,0--2,30))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

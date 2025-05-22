@@ -82,6 +82,11 @@
         <target state="translated">기호 '..^'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACE">
+        <source>symbol '&gt;|}'</source>
+        <target state="new">symbol '&gt;|}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
         <source>interpolated string</source>
         <target state="translated">보간 문자열</target>

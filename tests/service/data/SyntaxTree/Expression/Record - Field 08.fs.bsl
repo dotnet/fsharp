@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Record - Field 08.fs", false, QualifiedNameOfFile Foo,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Expr
@@ -16,6 +16,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (4,3)-(4,4) parse error Unexpected end of type. Expected a name after this point.
