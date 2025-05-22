@@ -15,7 +15,10 @@ jobs:
     # If you do not check out your code, Copilot will do this for you.
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
       - name: Restore solution
         env:
           CI: false
-        run: ./build.sh -c Release
+        run: dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet
