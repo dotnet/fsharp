@@ -312,6 +312,11 @@
         <target state="translated">'module' キーワードの右側の属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterAnonymousRecordParsing">
+        <source>Support for better anonymous record parsing</source>
+        <target state="new">Support for better anonymous record parsing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureBetterExceptionPrinting">
         <source>automatic generation of 'Message' property for 'exception' declarations</source>
         <target state="translated">`exception` 宣言の `Message` プロパティの自動生成</target>
