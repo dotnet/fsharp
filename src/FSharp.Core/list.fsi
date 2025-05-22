@@ -475,7 +475,11 @@ module List =
     val distinctBy: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
 
     /// <summary>Applies a key-generating function to each element of a list and returns a list yielding unique
-    /// keys and their number of occurrences in the original list.</summary>
+    /// keys and their number of occurrences in the original list.
+    /// 
+    /// Time complexity: O(n) - where n is the list length, with hash table overhead
+    /// Space complexity: O(k) - where k is the number of distinct keys
+    /// </summary>
     ///
     /// <param name="projection">A function transforming each item of the input list into a key to be
     /// compared against the others.</param>
@@ -710,6 +714,9 @@ module List =
     val find: predicate:('T -> bool) -> list:'T list -> 'T
 
     /// <summary>Returns the last element for which the given function returns True.
+    /// 
+    /// Time complexity: O(n) - requires traversing the entire list
+    /// Space complexity: O(1)
     /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
@@ -826,7 +833,11 @@ module List =
     /// and the first element of the list. Then feed this result into the function along
     /// with the second element and so on. Return the final result.
     /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> then 
-    /// computes <c>f (... (f s i0) i1 ...) iN</c>.</summary>
+    /// computes <c>f (... (f s i0) i1 ...) iN</c>.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(1) - assuming constant space usage per operation
+    /// </summary>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
     /// <param name="state">The initial state.</param>
@@ -870,7 +881,11 @@ module List =
     /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
     /// through the computation. The collections must have identical sizes.
     /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
-    /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</summary>
+    /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.
+    /// 
+    /// Time complexity: O(n) - where n is the length of the lists
+    /// Space complexity: O(1) - assuming constant space usage per operation
+    /// </summary>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
     /// <param name="state">The initial state.</param>
@@ -899,7 +914,11 @@ module List =
 
     /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then 
-    /// computes <c>f i0 (...(f iN s))</c>.</summary>
+    /// computes <c>f i0 (...(f iN s))</c>.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(n) - due to recursion stack
+    /// </summary>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -944,7 +963,11 @@ module List =
     /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
     /// through the computation. The collections must have identical sizes.
     /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
-    /// then computes <c>f i0 j0 (...(f iN jN s))</c>.</summary>
+    /// then computes <c>f i0 j0 (...(f iN jN s))</c>.
+    /// 
+    /// Time complexity: O(n) - where n is the length of the lists
+    /// Space complexity: O(n) - due to recursion stack
+    /// </summary>
     ///
     /// <param name="folder">The function to update the state given the input elements.</param>
     /// <param name="list1">The first input list.</param>
@@ -1115,7 +1138,11 @@ module List =
     val head: list:'T list -> 'T
 
     /// <summary>Returns a new list whose elements are the corresponding elements
-    /// of the input list paired with the index (from 0) of each element.</summary>
+    /// of the input list paired with the index (from 0) of each element.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(n)
+    /// </summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -1185,7 +1212,11 @@ module List =
     [<CompiledName("IsEmpty")>]
     val isEmpty: list:'T list -> bool
 
-    /// <summary>Indexes into the list. The first element has index 0.</summary>
+    /// <summary>Indexes into the list. The first element has index 0.
+    /// 
+    /// Time complexity: O(n) - where n is the index position (linear search through list)
+    /// Space complexity: O(1)
+    /// </summary>
     ///
     /// <param name="index">The index to retrieve.</param>
     /// <param name="list">The input list.</param>
@@ -1240,7 +1271,11 @@ module List =
     val inline iter: action:('T -> unit) -> list:'T list -> unit
 
     /// <summary>Applies the given function to two collections simultaneously. The
-    /// collections must have identical sizes.</summary>
+    /// collections must have identical sizes.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(1)
+    /// </summary>
     ///
     /// <param name="action">The function to apply to pairs of elements from the input lists.</param>
     /// <param name="list1">The first input list.</param>
@@ -1292,7 +1327,11 @@ module List =
 
     /// <summary>Applies the given function to two collections simultaneously. The
     /// collections must have identical sizes. The integer passed to the
-    /// function indicates the index of the element.</summary>
+    /// function indicates the index of the element.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(1)
+    /// </summary>
     ///
     /// <param name="action">The function to apply to a pair of elements from the input lists along with their index.</param>
     /// <param name="list1">The first input list.</param>
@@ -1462,7 +1501,11 @@ module List =
     val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> 'U list
 
     /// <summary>Combines map and fold. Builds a new list whose elements are the results of applying the given function
-    /// to each of the elements of the input list. The function is also used to accumulate a final value.</summary>
+    /// to each of the elements of the input list. The function is also used to accumulate a final value.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(n) - for the new list created
+    /// </summary>
     ///
     /// <param name="mapping">The function to transform elements from the input list and accumulate the final value.</param>
     /// <param name="state">The initial state.</param>
@@ -1491,7 +1534,11 @@ module List =
     val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> list:'T list -> 'Result list * 'State
 
     /// <summary>Combines map and foldBack. Builds a new list whose elements are the results of applying the given function
-    /// to each of the elements of the input list. The function is also used to accumulate a final value.</summary>
+    /// to each of the elements of the input list. The function is also used to accumulate a final value.
+    /// 
+    /// Time complexity: O(n) - where n is the list length
+    /// Space complexity: O(n) - due to recursion stack and new list created
+    /// </summary>
     ///
     /// <param name="mapping">The function to transform elements from the input list and accumulate the final value.</param>
     /// <param name="list">The input list.</param>
