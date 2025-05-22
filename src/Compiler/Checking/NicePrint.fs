@@ -2059,8 +2059,11 @@ module TastDefinitionPrinting =
                 |> List.filter (fun (_, compgen, _) -> not compgen)
                 |> List.map p13
             else
-                // Always use the immediate (direct) interfaces
-                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
+                // Use immediate interfaces when showOnlyDirectBaseTypes=true, otherwise show all interfaces
+                if denv.showOnlyDirectBaseTypes then
+                    GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
+                else
+                    AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes ty
 
         let iimplsLs =
             iimpls
