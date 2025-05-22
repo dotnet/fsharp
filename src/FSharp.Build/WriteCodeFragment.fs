@@ -25,7 +25,7 @@ type WriteCodeFragment() as this =
                 this.Log.LogError msg
                 raise TaskFailed)
             fmt
-    
+
     static let escapeString (str: string) =
         let sb =
             str.ToCharArray()
@@ -44,7 +44,10 @@ type WriteCodeFragment() as this =
                     | _ -> sb.Append(c))
                 (StringBuilder().Append("\""))
 
-        { Escaped = sb.Append("\"").ToString(); Raw = str }
+        {
+            Escaped = sb.Append("\"").ToString()
+            Raw = str
+        }
 
     member _.GenerateAttribute(item: ITaskItem, language: string) =
         let attributeName = item.ItemSpec
@@ -65,7 +68,7 @@ type WriteCodeFragment() as this =
                         match entry.Value with
                         | null -> { Escaped = "null"; Raw = "null" }
                         | :? string as strValue -> escapeString strValue
-                        | value -> 
+                        | value ->
                             let strValue = value.ToString()
                             { Escaped = strValue; Raw = strValue }
 
@@ -97,20 +100,20 @@ type WriteCodeFragment() as this =
             let combinedNamedParameters =
                 // Define "_IsLiteral" suffix to match MSBuild behavior
                 let isLiteralSuffix = "_IsLiteral"
-                
+
                 // Process named parameters to handle IsLiteral suffix
                 let processedNamedParameters =
                     // First identify all parameters with _IsLiteral suffix
-                    let isLiteralParams = 
+                    let isLiteralParams =
                         namedParameters
-                        |> List.choose (fun (key, value) -> 
+                        |> List.choose (fun (key, value) ->
                             if key.EndsWith(isLiteralSuffix) && (value.Raw = "true" || value.Raw = "True") then
                                 // Extract the base parameter name by removing the suffix
                                 Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
                             else
                                 None)
                         |> Set.ofList
-                    
+
                     // Process all parameters, handling literals appropriately
                     namedParameters
                     |> List.choose (fun (key, value) ->
@@ -120,17 +123,16 @@ type WriteCodeFragment() as this =
                         else
                             // Check if this parameter should be treated as a literal
                             let isLiteral = Set.contains key isLiteralParams
-                            
+
                             if isLiteral then
                                 // For literals, use the raw value
                                 Some(key, value.Raw)
                             else
                                 // Regular parameter, use the escaped value
-                                Some(key, value.Escaped)
-                    )
+                                Some(key, value.Escaped))
                     // Sort parameters alphabetically by key to match MSBuild behavior
                     |> List.sortBy fst
-                
+
                 String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) processedNamedParameters)
             // construct the final argument string; positional arguments followed by named
             match (combinedOrderedParameters.Length, combinedNamedParameters.Length) with
