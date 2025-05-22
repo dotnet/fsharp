@@ -100,6 +100,7 @@ type LanguageFeature =
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
     | UseBangBindingValueDiscard
+    | BetterAnonymousRecordParsing
     | ScopedNowarn
     | AllowTypedLetOrUseBang
 
@@ -233,6 +234,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
                 LanguageFeature.WarnWhenUnitPassedToObjArg, previewVersion
                 LanguageFeature.UseBangBindingValueDiscard, previewVersion
+                LanguageFeature.BetterAnonymousRecordParsing, previewVersion
                 LanguageFeature.ScopedNowarn, previewVersion
                 LanguageFeature.AllowTypedLetOrUseBang, previewVersion
             ]
@@ -398,6 +400,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
         | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
+        | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 

@@ -24,9 +24,9 @@ open Microsoft.FSharp.Core.CompilerServices
 [<AutoOpen>]
 module Utils = 
     let K x = (fun () -> x)
-    let isNull x = match x with null -> true | _ -> false
-    let isNil x = match x with [] -> true | _ -> false
-    let isEmpty x = match x with [| |] -> true | _ -> false
+    let inline isNull x = match x with null -> true | _ -> false
+    let inline isNil x = match x with [] -> true | _ -> false
+    let inline isEmpty x = match x with [| |] -> true | _ -> false
 
     module Option = 
         let toObj x = match x with None -> null | Some x -> x
@@ -6253,11 +6253,11 @@ module internal AssemblyReader =
 
 
             let ilModule = seekReadModule (ilMetadataVersion) 1
-            let ilAssemblyRefs = [ for i in 1 .. getNumRows ILTableNames.AssemblyRef do yield seekReadAssemblyRef i ]
+            let ilAssemblyRefs = lazy [ for i in 1 .. getNumRows ILTableNames.AssemblyRef do yield seekReadAssemblyRef i ]
 
             member __.ILGlobals = ilg
             member __.ILModuleDef = ilModule
-            member __.ILAssemblyRefs = ilAssemblyRefs
+            member __.ILAssemblyRefs = ilAssemblyRefs.Force()
 
         let sigptr_get_byte (bytes: byte[]) sigptr =
             int bytes[sigptr], sigptr + 1
@@ -8988,31 +8988,42 @@ namespace ProviderImplementation.ProvidedTypes
                 let asms = (if toTgt then getTargetAssemblies() else getSourceAssemblies())
                 let fullName = fixName t.FullName
 
-                // TODO: this linear search through all available source/target assemblies feels as if it must be too slow in some cases.
-                // However, we store type translations in various tables (typeTableFwd and typeTableBwd) so perhaps it is not a problem
-                let rec loop i = 
-                    if i < 0 then 
-                        let msg =
-                            if toTgt then sprintf "The design-time type '%O' utilized by a type provider was not found in the target reference assembly set '%A'. You may be referencing a profile which contains fewer types than those needed by the type provider you are using." t (getTargetAssemblies() |> Seq.toList)
-                            elif getSourceAssemblies() |> Seq.isEmpty then sprintf "A failure occurred while determining compilation references"
-                            else sprintf "The target type '%O' utilized by a type provider was not found in the design-time assembly set '%A'. Please report this problem to the project site for the type provider." t (getSourceAssemblies() |> Seq.toList)
-                        failwith msg
-                    else
-                        match tryGetTypeFromAssembly toTgt t.Assembly.FullName fullName asms[i] with
-                        | Some (newT, canSave) ->
-                            if canSave then table[t] <- newT
-                            newT
-                        | None -> loop (i - 1)
-                loop (asms.Count - 1)
+                let bestGuess = 
+                    asms |> Seq.tryFind(fun a -> a.FullName = t.Assembly.FullName)
+                    |> Option.bind(fun a -> tryGetTypeFromAssembly toTgt t.Assembly.FullName fullName a)
+
+                match bestGuess with
+                | Some (newT, canSave) ->
+                    if canSave then table.[t] <- newT
+                    newT
+                | None ->
+
+                    // TODO: this linear search through all available source/target assemblies feels as if it must be too slow in some cases.
+                    // However, we store type translations in various tables (typeTableFwd and typeTableBwd) so perhaps it is not a problem
+                    let rec loop i = 
+                        if i < 0 then 
+                            let msg =
+                                if toTgt then sprintf "The design-time type '%O' utilized by a type provider was not found in the target reference assembly set '%A'. You may be referencing a profile which contains fewer types than those needed by the type provider you are using." t (getTargetAssemblies() |> Seq.toList)
+                                elif getSourceAssemblies() |> Seq.isEmpty then sprintf "A failure occurred while determining compilation references"
+                                else sprintf "The target type '%O' utilized by a type provider was not found in the design-time assembly set '%A'. Please report this problem to the project site for the type provider." t (getSourceAssemblies() |> Seq.toList)
+                            failwith msg
+                        else
+                            match tryGetTypeFromAssembly toTgt t.Assembly.FullName fullName asms[i] with
+                            | Some (newT, canSave) ->
+                                if canSave then table[t] <- newT
+                                newT
+                            | None -> loop (i - 1)
+                    loop (asms.Count - 1)
 
         and convType toTgt (t:Type) =
             let table = (if toTgt then typeTableFwd else typeTableBwd)
             match table.TryGetValue(t) with
             | true, newT -> newT
             | false, _ ->
-                if t :? ProvidedTypeSymbol && (t :?> ProvidedTypeSymbol).IsFSharpTypeAbbreviation then t
+                let isSymbol = t :? ProvidedTypeSymbol
+                if isSymbol && (t :?> ProvidedTypeSymbol).IsFSharpTypeAbbreviation then t
                 // Types annotated with units-of-measure
-                elif t :? ProvidedTypeSymbol && (t :?> ProvidedTypeSymbol).IsFSharpUnitAnnotated then
+                elif isSymbol && (t :?> ProvidedTypeSymbol).IsFSharpUnitAnnotated then
                     let genericType = t.GetGenericTypeDefinition()
                     let newT = convTypeRef toTgt genericType
                     let typeArguments = t.GetGenericArguments() |> Array.map (convType toTgt) |> Array.toList

@@ -905,6 +905,8 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ">" { GREATER false }
 
+ | ">|}" { GREATER_BAR_RBRACE }
+
  | "[<" { LBRACK_LESS }
 
  | "]" { RBRACK }
