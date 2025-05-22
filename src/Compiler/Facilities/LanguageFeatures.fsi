@@ -90,6 +90,9 @@ type LanguageFeature =
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
+    | UseBangBindingValueDiscard
+    | ScopedNowarn
+    | AllowTypedLetOrUseBang
 
 /// LanguageVersion management
 type LanguageVersion =

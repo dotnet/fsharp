@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/DoStaticKeyword.fs", false,
-      QualifiedNameOfFile DoStaticKeyword, [], [],
+      QualifiedNameOfFile DoStaticKeyword, [],
       [SynModuleOrNamespace
          ([DoStaticKeyword], false, AnonModule,
           [Types
@@ -30,4 +30,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,16))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
