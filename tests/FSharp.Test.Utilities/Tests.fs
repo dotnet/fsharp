@@ -43,9 +43,3 @@ let ``TestConsole captures output`` () =
 
     let results = Seq.init 10 task |> Async.Parallel |> Async.RunSynchronously
     Assert.Equal(expected, results)
-
-
-// Dummy failing test
-[<Fact>]
-let ``Dummy test`` () =
-    Assert.True(false, "This test is a dummy and should fail")
