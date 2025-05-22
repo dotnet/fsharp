@@ -76,6 +76,7 @@ prepare_machine=false
 source_build=false
 product_build=false
 buildnorealsig=true
+testbatch=""
 properties=""
 
 docker=false
@@ -101,6 +102,11 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
+      args="$args $1"
+      shift
+      ;;
+    --testbatch)
+      testbatch=$2
       args="$args $1"
       shift
       ;;
@@ -224,8 +230,16 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
+  testbatchsuffix=""
+    if [[ "$testbatch" != "" ]]; then
+    testbatchsuffix="_batch$testbatch"
+  fi
+  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
+  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
+
+  if [[ "$testbatch" != "" ]]; then
+    args="$args --filter batch=$testbatch"
+  fi
 
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
