@@ -11411,7 +11411,12 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
                 let mkAttribExpr e =
                     AttribExpr(e, EvalLiteralExprOrAttribArg g e)
-
+                    
+                let checkPropSetterAttribAccess m (pinfo: PropInfo) =
+                    let setterMeth = pinfo.SetterMethod
+                    if not <| IsTypeAndMethInfoAccessible cenv.amap m ad ad setterMeth then
+                        errorR(Error (FSComp.SR.tcPropertyCannotBeSetPrivateSetter(pinfo.PropertyName), m))                       
+                        
                 let namedAttribArgMap =
                   attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, m, isOpt, callerArgExpr))) ->
                     if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), m))
@@ -11423,6 +11428,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                       | Item.Property (info = [pinfo]) ->
                           if not pinfo.HasSetter then
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
+                          checkPropSetterAttribAccess m pinfo
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo ->
                           CheckILFieldInfoAccessible g cenv.amap m ad finfo

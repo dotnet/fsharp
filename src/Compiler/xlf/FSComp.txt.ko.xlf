@@ -5157,6 +5157,11 @@
         <target state="translated">이 속성은 설정할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
+        <source>Property '{0}' cannot be set because the setter is private</source>
+        <target state="translated">'{0}' 속성은 setter가 private이기 때문에 설정할 수 없습니다.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">
         <source>This property or field was not found on this custom attribute type</source>
         <target state="translated">이 속성 또는 필드를 이 사용자 지정 특성 형식에서 찾을 수 없습니다.</target>

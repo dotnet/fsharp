@@ -5157,6 +5157,11 @@
         <target state="translated">Это свойство задать нельзя</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
+        <source>Property '{0}' cannot be set because the setter is private</source>
+        <target state="translated">Свойство '{0}' не может быть установлено, так как сеттер является приватным</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">
         <source>This property or field was not found on this custom attribute type</source>
         <target state="translated">Данное свойство или поле не было найдено в этом пользовательском типе атрибута</target>
