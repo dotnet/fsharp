@@ -4,7 +4,6 @@ ImplFile
       false,
       QualifiedNameOfFile
         CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField, [],
-      [],
       [SynModuleOrNamespace
          ([CopySynExprRecordContainsTheRangeOfTheEqualsSignInSynExprRecordField],
           false, AnonModule,
@@ -17,4 +16,5 @@ ImplFile
               (2,0--5,20))], PreXmlDocEmpty, [], None, (2,0--5,20),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

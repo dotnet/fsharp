@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/UnionCaseFieldsCanHaveComments.fs", false,
-      QualifiedNameOfFile UnionCaseFieldsCanHaveComments, [], [],
+      QualifiedNameOfFile UnionCaseFieldsCanHaveComments, [],
       [SynModuleOrNamespace
          ([UnionCaseFieldsCanHaveComments], false, AnonModule,
           [Types
@@ -38,4 +38,5 @@ ImplFile
                     WithKeyword = None })], (2,0--8,6))], PreXmlDocEmpty, [],
           None, (2,0--9,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

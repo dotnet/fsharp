@@ -265,6 +265,33 @@ val myFunc2: param: int -> int
                 ])
             }
 
+module Exceptions =
+    let project() = SyntheticProject.Create(
+        { sourceFile "First" [] with ExtraSource = "exception MyException of string" },
+        { sourceFile "Second" [] with ExtraSource = """
+open ModuleFirst
+let foo x = raise (MyException "foo")""" })
+
+    [<Fact>]
+    let ``We find exception from definition`` () =
+        project().Workflow {
+            placeCursor "First" 6 21 "exception MyException of string" ["MyException"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 10, 21
+                "FileSecond.fs", 8, 19, 30
+            ])
+        }
+
+    [<Fact>]
+    let ``We find exception from usage`` () =
+        project().Workflow {
+            placeCursor "Second" 8 30 "raise (MyException \"foo\")" ["MyException"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 10, 21
+                "FileSecond.fs", 8, 19, 30
+            ])
+        }
+
 module Attributes =
 
     let project() = SyntheticProject.Create(

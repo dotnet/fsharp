@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/EnumCase/SingleSynEnumCaseWithoutBar.fs", false,
-      QualifiedNameOfFile SingleSynEnumCaseWithoutBar, [], [],
+      QualifiedNameOfFile SingleSynEnumCaseWithoutBar, [],
       [SynModuleOrNamespace
          ([SingleSynEnumCaseWithoutBar], false, AnonModule,
           [Types
@@ -24,4 +24,5 @@ ImplFile
                     WithKeyword = None })], (2,0--2,18))], PreXmlDocEmpty, [],
           None, (2,0--3,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

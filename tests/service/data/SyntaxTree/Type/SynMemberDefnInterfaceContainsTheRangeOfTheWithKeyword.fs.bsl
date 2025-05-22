@@ -3,7 +3,7 @@ ImplFile
      ("/root/Type/SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword.fs",
       false,
       QualifiedNameOfFile SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([SynMemberDefnInterfaceContainsTheRangeOfTheWithKeyword], false,
           AnonModule,
@@ -65,4 +65,5 @@ ImplFile
                     WithKeyword = None })], (2,0--5,19))], PreXmlDocEmpty, [],
           None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

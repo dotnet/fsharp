@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Measure/SynMeasureParenHasCorrectRange.fs", false,
-      QualifiedNameOfFile SynMeasureParenHasCorrectRange, [], [],
+      QualifiedNameOfFile SynMeasureParenHasCorrectRange, [],
       [SynModuleOrNamespace
          ([SynMeasureParenHasCorrectRange], false, AnonModule,
           [Expr
@@ -21,4 +21,5 @@ ImplFile
                       GreaterRange = (2,22--2,23) }), (2,0--2,23)), (2,0--2,23))],
           PreXmlDocEmpty, [], None, (2,0--2,23), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

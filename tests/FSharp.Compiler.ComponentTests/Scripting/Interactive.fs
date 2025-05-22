@@ -7,6 +7,9 @@ open Xunit
 open System
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Diagnostics
+open FSharp.Test.CompilerAssertHelpers
 
 module ``Interactive tests`` =
 
@@ -35,33 +38,47 @@ module ``Interactive tests`` =
         ]
 
     [<Theory>]
-    [<InlineData(true)>]
-    [<InlineData(false)>]
-    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit) =
+    [<InlineData(true, true)>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    let ``Evaluation of multiple sessions should succeed`` (useMultiEmit1, useMultiEmit2) =
 
-        let args : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
-        use sessionOne = new FSharpScript(additionalArgs=args)
-        use sessionTwo = new FSharpScript(additionalArgs=args)
+    // This test is to check that we can have multiple sessions and that they can access each other
 
-        sessionOne.Eval("""
-module Test1 =
+        let AssertCanWeAccessTheOtherSession (session: FSharpScript) (script: string) (moduleName: string) (errorChoice: string) =
 
-    let test1 obj = sprintf "Execute - Test1.test1 - %A" obj""") |> ignore
+            let result: Result<FsiValue option, exn> * FSharpDiagnostic[] =  session.Eval(script)
+            let expected =
+                [ (Error 39, Line 1, Col 1, Line 1, Col 6, $"The value, namespace, type or module '{moduleName}' is not defined. Maybe you want one of the following:{errorChoice}") ]
 
-        let result1 = sessionOne.Eval("""Test1.test1 18""") |> getValue
+            match result with
+            | Result.Error _, diagnostics -> Assert.WithDiagnostics(0, diagnostics, expected)
+            | _ -> ()
+
+        // Initialize
+        let args useMultiEmit : string array = [| if useMultiEmit then "--multiemit+" else "--multiemit-"|]
+        use sessionOne = new FSharpScript(additionalArgs = args useMultiEmit1)
+        use sessionTwo = new FSharpScript(additionalArgs = args useMultiEmit2)
+        use sessionThree = new FSharpScript(additionalArgs = args useMultiEmit2)
+
+        // First session
+        sessionOne.Eval("""module Test1 = let test1 obj = sprintf "Execute - Test1.test1 - %A" obj""") |> ignore
+        let result1 = sessionOne.Eval("Test1.test1 18") |> getValue
         let value1 = result1.Value
         Assert.Equal(typeof<string>, value1.ReflectionType)
         Assert.Equal("Execute - Test1.test1 - 18", value1.ReflectionValue :?> string)
 
-        sessionTwo.Eval("""
-module Test2 =
-
-    let test2 obj = sprintf "Execute - Test2.test2 - %A" obj""") |> ignore
-
+        // Second session
+        sessionTwo.Eval("""module Test2 = let test2 obj = sprintf "Execute - Test2.test2 - %A" obj""") |> ignore
         let result2 = sessionTwo.Eval("""Test2.test2 27""") |> getValue
         let value2 = result2.Value
         Assert.Equal(typeof<string>, value2.ReflectionType)
         Assert.Equal("Execute - Test2.test2 - 27", value2.ReflectionValue :?> string)
+
+        // Can I access the other session
+        AssertCanWeAccessTheOtherSession sessionOne "Test2.test2 19" "Test2" "\nTest1\nText"            // Session 1 can't access values from session 2
+        AssertCanWeAccessTheOtherSession sessionTwo "Test1.test1 13" "Test1" "\nTest2\nText"            // Session 2 can't access values from session 1
 
 module ``External FSI tests`` =
     [<Fact>]

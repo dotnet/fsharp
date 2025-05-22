@@ -103,6 +103,8 @@ let rec pushUnaryArg expr arg =
         SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m)
     | SynExpr.ArbitraryAfterError(_, m) when m.Start = m.End ->
         SynExpr.DiscardAfterMissingQualificationAfterDot(SynExpr.Ident arg, m.StartRange, unionRanges arg.idRange m)
+    | SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, dotRange, m) ->
+        SynExpr.DiscardAfterMissingQualificationAfterDot(pushUnaryArg synExpr arg, dotRange, unionRanges arg.idRange m)
     | _ ->
         errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
         expr

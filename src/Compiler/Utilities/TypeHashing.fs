@@ -126,22 +126,6 @@ module HashAccessibility =
 module rec HashTypes =
     open Microsoft.FSharp.Core.LanguagePrimitives
 
-    let stampEquals g ty1 ty2 =
-        match (stripTyEqns g ty1), (stripTyEqns g ty2) with
-        | TType_app(tcref1, _, _), TType_app(tcref2, _, _) -> tcref1.Stamp.Equals(tcref2.Stamp)
-        | TType_var(r1, _), TType_var(r2, _) -> r1.Stamp.Equals(r2.Stamp)
-        | _ -> false
-
-    /// Get has for Stamp for TType_app tyconref and TType_var typar
-    let hashStamp g ty =
-        let v: Stamp =
-            match (stripTyEqns g ty) with
-            | TType_app(tcref, _, _) -> tcref.Stamp
-            | TType_var(r, _) -> r.Stamp
-            | _ -> GenericZero
-
-        hash v
-
     /// Hash a reference to a type
     let hashTyconRef tcref = hashTyconRefImpl tcref
 
@@ -344,3 +328,69 @@ module HashTastMemberOrVals =
 
             hashNonMemberVal (g, obs) (tps, vref.Deref, tau, cxs)
         | Some _ -> hashMember (g, obs) emptyTyparInst vref.Deref
+
+/// Practical TType comparer strictly for the use with cache keys.
+module HashStamps =
+    let rec typeInstStampsEqual (tys1: TypeInst) (tys2: TypeInst) =
+        tys1.Length = tys2.Length && (tys1, tys2) ||> Seq.forall2 stampEquals
+
+    and inline typarStampEquals (t1: Typar) (t2: Typar) = t1.Stamp = t2.Stamp
+
+    and typarsStampsEqual (tps1: Typars) (tps2: Typars) =
+        tps1.Length = tps2.Length && (tps1, tps2) ||> Seq.forall2 typarStampEquals
+
+    and measureStampEquals (m1: Measure) (m2: Measure) =
+        match m1, m2 with
+        | Measure.Var(mv1), Measure.Var(mv2) -> mv1.Stamp = mv2.Stamp
+        | Measure.Const(t1, _), Measure.Const(t2, _) -> t1.Stamp = t2.Stamp
+        | Measure.Prod(m1, m2, _), Measure.Prod(m3, m4, _) -> measureStampEquals m1 m3 && measureStampEquals m2 m4
+        | Measure.Inv m1, Measure.Inv m2 -> measureStampEquals m1 m2
+        | Measure.One _, Measure.One _ -> true
+        | Measure.RationalPower(m1, r1), Measure.RationalPower(m2, r2) -> r1 = r2 && measureStampEquals m1 m2
+        | _ -> false
+
+    and nullnessEquals (n1: Nullness) (n2: Nullness) =
+        match n1, n2 with
+        | Nullness.Known k1, Nullness.Known k2 -> k1 = k2
+        | Nullness.Variable _, Nullness.Variable _ -> true
+        | _ -> false
+
+    and stampEquals ty1 ty2 =
+        match ty1, ty2 with
+        | TType_ucase(u, tys1), TType_ucase(v, tys2) -> u.CaseName = v.CaseName && typeInstStampsEqual tys1 tys2
+        | TType_app(tcref1, tinst1, n1), TType_app(tcref2, tinst2, n2) ->
+            tcref1.Stamp = tcref2.Stamp
+            && nullnessEquals n1 n2
+            && typeInstStampsEqual tinst1 tinst2
+        | TType_anon(info1, tys1), TType_anon(info2, tys2) -> info1.Stamp = info2.Stamp && typeInstStampsEqual tys1 tys2
+        | TType_tuple(c1, tys1), TType_tuple(c2, tys2) -> c1 = c2 && typeInstStampsEqual tys1 tys2
+        | TType_forall(tps1, tau1), TType_forall(tps2, tau2) -> stampEquals tau1 tau2 && typarsStampsEqual tps1 tps2
+        | TType_var(r1, n1), TType_var(r2, n2) -> r1.Stamp = r2.Stamp && nullnessEquals n1 n2
+        | TType_measure m1, TType_measure m2 -> measureStampEquals m1 m2
+        | _ -> false
+
+    let inline hashStamp (x: Stamp) : Hash = uint x * 2654435761u |> int
+
+    // The idea is to keep the illusion of immutability of TType.
+    // This hash must be stable during compilation, otherwise we won't be able to find keys or evict from the cache.
+    let rec hashTType ty : Hash =
+        match ty with
+        | TType_ucase(u, tinst) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hash u.CaseName)
+        | TType_app(tcref, tinst, Nullness.Known n) ->
+            tinst
+            |> hashListOrderMatters (hashTType)
+            |> pipeToHash (hashStamp tcref.Stamp)
+            |> pipeToHash (hash n)
+        | TType_app(tcref, tinst, Nullness.Variable _) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp tcref.Stamp)
+        | TType_anon(info, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp info.Stamp)
+        | TType_tuple(c, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hash c)
+        | TType_forall(tps, tau) ->
+            tps
+            |> Seq.map _.Stamp
+            |> hashListOrderMatters (hashStamp)
+            |> pipeToHash (hashTType tau)
+        | TType_fun(d, r, Nullness.Known n) -> hashTType d |> pipeToHash (hashTType r) |> pipeToHash (hash n)
+        | TType_fun(d, r, Nullness.Variable _) -> hashTType d |> pipeToHash (hashTType r)
+        | TType_var(r, Nullness.Known n) -> hashStamp r.Stamp |> pipeToHash (hash n)
+        | TType_var(r, Nullness.Variable _) -> hashStamp r.Stamp
+        | TType_measure _ -> 0

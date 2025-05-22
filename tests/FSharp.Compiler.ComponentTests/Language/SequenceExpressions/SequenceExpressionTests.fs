@@ -645,3 +645,93 @@ let c = [ { 1;10 } ]
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Version 9.0: Allow SE yield and type annotations don't play well together needing parentheses``() =
+        FSharp """
+module SequenceExpressionTests
+open System
+
+let f() =
+    seq {
+        yield 1 : int
+    }
+        
+let f1() =
+    seq {
+        yield (1 : int)
+    }
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 7, Col 15, Line 7, Col 22, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+        
+    [<Fact>]
+    let ``Preview: Allow SE yield and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module SequenceExpressionTests
+open System
+
+let f() =
+    seq {
+        yield 1 : int
+    }
+        
+let f1() =
+    seq {
+        yield (1 : int)
+    }
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Version 9.0: Allow SE yield! and type annotations don't play well together needing parentheses``() =
+        FSharp """
+module SequenceExpressionTests
+open System
+
+let f() =
+    seq {
+        yield! [1;2] : int list
+    }
+        
+let f1() =
+    seq {
+        yield! ([1;2] : int list)
+    }
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 7, Col 16, Line 7, Col 32, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+                
+    [<Fact>]
+    let ``Preview: Allow SE yield! and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module SequenceExpressionTests
+open System
+
+let f() =
+    seq {
+        yield! [1;2] : int list
+    }
+        
+let f1() =
+    seq {
+        yield! ([1;2] : int list)
+    }
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed

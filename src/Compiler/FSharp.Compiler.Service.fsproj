@@ -146,6 +146,8 @@
     <Compile Include="Utilities\lib.fsi" />
     <Compile Include="Utilities\lib.fs" />
     <Compile Include="Utilities\DependencyGraph.fs" />
+    <Compile Include="Utilities\Caches.fsi" />
+    <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\LruCache.fsi" />
     <Compile Include="Utilities\LruCache.fs" />
     <Compile Include="Utilities\ImmutableArray.fsi" />
@@ -278,6 +280,8 @@
     <Compile Include="SyntaxTree\SyntaxTree.fs" />
     <Compile Include="SyntaxTree\SyntaxTreeOps.fsi" />
     <Compile Include="SyntaxTree\SyntaxTreeOps.fs" />
+    <Compile Include="SyntaxTree\WarnScopes.fsi" />
+    <Compile Include="SyntaxTree\WarnScopes.fs" />
     <Compile Include="SyntaxTree\LexerStore.fsi" />
     <Compile Include="SyntaxTree\LexerStore.fs" />
     <Compile Include="SyntaxTree\ParseHelpers.fsi" />

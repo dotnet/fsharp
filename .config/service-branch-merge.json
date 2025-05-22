@@ -1,12 +1,16 @@
 {
     "merge-flow-configurations": {
         // regular branch flow
+        "release/dev17.12": {
+            "MergeToBranch": "release/dev17.13",
+            "ExtraSwitches": "-QuietComments"
+        },
         "release/dev17.13": {
-            "MergeToBranch": "main",
+            "MergeToBranch": "release/dev17.14",
             "ExtraSwitches": "-QuietComments"
         },
         "release/dev17.14": {
-            "MergeToBranch": "release/dev18.0",
+            "MergeToBranch": "main",
             "ExtraSwitches": "-QuietComments"
         },
         "main": {

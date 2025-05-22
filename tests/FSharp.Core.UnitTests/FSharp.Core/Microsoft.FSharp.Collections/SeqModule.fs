@@ -1333,6 +1333,14 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomChoices negativeChoicesLength intSeq |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesEmpty() =
+        let seq = Seq.empty
+
+        let choice = seq |> Seq.randomChoices 0
+
+        Assert.AreEqual(0, choice |> Seq.length)
+
+    [<Fact>]
     member _.RandomChoicesWith() =
         let seq = seq { 1..50 }
         let rand1 = Random(123)
@@ -1393,6 +1401,14 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomChoicesBy randomizer negativeChoicesLength intSeq |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesByEmpty() =
+        let seq = Seq.empty
+
+        let choice = seq |> Seq.randomChoicesBy (fun () -> 1.0) 0
+
+        Assert.AreEqual(0, choice |> Seq.length)
+
+    [<Fact>]
     member _.RandomSample() =
         let intSeq = seq { 1..50 }
 
@@ -1420,6 +1436,14 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomSample sampleLength emptySeq |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.randomSample negativeSampleLength intSeq |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.randomSample tooBigSampleLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleEmpty() =
+        let seq = Seq.empty
+
+        let choice = seq |> Seq.randomSample 0
+
+        Assert.AreEqual(0, choice |> Seq.length)
 
     [<Fact>]
     member _.RandomSampleWith() =
@@ -1492,3 +1516,11 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.randomSampleBy randomizer sampleLength emptySeq |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.randomSampleBy randomizer negativeSampleLength intSeq |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.randomSampleBy randomizer tooBigSampleLength intSeq |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleByEmpty() =
+        let seq = Seq.empty
+
+        let choice = seq |> Seq.randomSampleBy (fun () -> 1.0) 0
+
+        Assert.AreEqual(0, choice |> Seq.length)

@@ -2020,15 +2020,18 @@ module Array =
         let inputLength = source.Length
 
         if inputLength = 0 then
-            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if count = 0 then
+                [||]
+            else
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+        else
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+            for i = 0 to count - 1 do
+                let j = random.Next(0, inputLength)
+                result[i] <- source[j]
 
-        for i = 0 to count - 1 do
-            let j = random.Next(0, inputLength)
-            result[i] <- source[j]
-
-        result
+            result
 
     [<CompiledName("RandomChoicesBy")>]
     let randomChoicesBy (randomizer: unit -> float) (count: int) (source: 'T array) : 'T array =
@@ -2040,15 +2043,18 @@ module Array =
         let inputLength = source.Length
 
         if inputLength = 0 then
-            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if count = 0 then
+                [||]
+            else
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+        else
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+            for i = 0 to count - 1 do
+                let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+                result[i] <- source[j]
 
-        for i = 0 to count - 1 do
-            let j = Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
-            result[i] <- source[j]
-
-        result
+            result
 
     [<CompiledName("RandomChoices")>]
     let randomChoices (count: int) (source: 'T array) : 'T array =
@@ -2065,35 +2071,38 @@ module Array =
         let inputLength = source.Length
 
         if inputLength = 0 then
-            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
-
-        if count > inputLength then
-            invalidArg "count" (SR.GetString(SR.notEnoughElements))
-
-        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
-
-        let setSize =
-            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
-
-        if inputLength <= setSize then
-            let pool = copy source
-
-            for i = 0 to count - 1 do
-                let j = random.Next(0, inputLength - i)
-                result[i] <- pool[j]
-                pool[j] <- pool[inputLength - i - 1]
+            if count = 0 then
+                [||]
+            else
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
         else
-            let selected = HashSet()
+            if count > inputLength then
+                invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
-            for i = 0 to count - 1 do
-                let mutable j = random.Next(0, inputLength)
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-                while not (selected.Add j) do
-                    j <- random.Next(0, inputLength)
+            let setSize =
+                Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 
-                result[i] <- source[j]
+            if inputLength <= setSize then
+                let pool = copy source
 
-        result
+                for i = 0 to count - 1 do
+                    let j = random.Next(0, inputLength - i)
+                    result[i] <- pool[j]
+                    pool[j] <- pool[inputLength - i - 1]
+            else
+                let selected = HashSet()
+
+                for i = 0 to count - 1 do
+                    let mutable j = random.Next(0, inputLength)
+
+                    while not (selected.Add j) do
+                        j <- random.Next(0, inputLength)
+
+                    result[i] <- source[j]
+
+            result
 
     [<CompiledName("RandomSampleBy")>]
     let randomSampleBy (randomizer: unit -> float) (count: int) (source: 'T array) : 'T array =
@@ -2105,39 +2114,42 @@ module Array =
         let inputLength = source.Length
 
         if inputLength = 0 then
-            invalidArg "source" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
-
-        if count > inputLength then
-            invalidArg "count" (SR.GetString(SR.notEnoughElements))
-
-        let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
-
-        // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
-        let setSize =
-            Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
-
-        if inputLength <= setSize then
-            let pool = copy source
-
-            for i = 0 to count - 1 do
-                let j =
-                    Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
-
-                result[i] <- pool[j]
-                pool[j] <- pool[inputLength - i - 1]
+            if count = 0 then
+                [||]
+            else
+                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
         else
-            let selected = HashSet()
+            if count > inputLength then
+                invalidArg "count" (SR.GetString(SR.notEnoughElements))
 
-            for i = 0 to count - 1 do
-                let mutable j =
-                    Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-                while not (selected.Add j) do
-                    j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+            // algorithm taken from https://github.com/python/cpython/blob/69b3e8ea569faabccd74036e3d0e5ec7c0c62a20/Lib/random.py#L363-L456
+            let setSize =
+                Microsoft.FSharp.Primitives.Basics.Random.getMaxSetSizeForSampling count
 
-                result[i] <- source[j]
+            if inputLength <= setSize then
+                let pool = copy source
 
-        result
+                for i = 0 to count - 1 do
+                    let j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 (inputLength - i)
+
+                    result[i] <- pool[j]
+                    pool[j] <- pool[inputLength - i - 1]
+            else
+                let selected = HashSet()
+
+                for i = 0 to count - 1 do
+                    let mutable j =
+                        Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                    while not (selected.Add j) do
+                        j <- Microsoft.FSharp.Primitives.Basics.Random.next randomizer 0 inputLength
+
+                    result[i] <- source[j]
+
+            result
 
     [<CompiledName("RandomSample")>]
     let randomSample (count: int) (source: 'T array) : 'T array =
