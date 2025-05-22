@@ -49,7 +49,7 @@ type WriteCodeFragmentFSharpTests() =
                 ("Bool", "false"); 
                 ("Bool_IsLiteral", "true")
             ] 
-            "SomeAttribute(Number = 42, Bool = false)"
+            "SomeAttribute(Bool = false, Number = 42)"
             
     [<Fact>]
     member _.``Mixed named parameters with and without _IsLiteral suffix``() =
@@ -60,6 +60,18 @@ type WriteCodeFragmentFSharpTests() =
                 ("Text", "hello")
             ] 
             "SomeAttribute(Number = 42, Text = \"hello\")"
+    
+    [<Fact>]
+    member _.``Mixed unnamed parameters and named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("_Parameter1", "1");
+                ("Number", "42"); 
+                ("Number_IsLiteral", "true"); 
+                ("Bool", "false"); 
+                ("Bool_IsLiteral", "true")
+            ] 
+            "SomeAttribute(\"1\", Bool = false, Number = 42)"
     
     [<Fact>]
     member _.``Enum _IsLiteral suffix``() =
@@ -126,6 +138,18 @@ type WriteCodeFragmentCSharpTests() =
             "SomeAttribute(Number = 42, Text = \"hello\")"
             
     [<Fact>]
+    member _.``Mixed unnamed parameters and named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("_Parameter1", "1");
+                ("Number", "42"); 
+                ("Number_IsLiteral", "true"); 
+                ("Bool", "false"); 
+                ("Bool_IsLiteral", "true")
+            ] 
+            "SomeAttribute(\"1\", Bool = false, Number = 42)"
+            
+    [<Fact>]
     member _.``Enum _IsLiteral suffix``() =
         verifyAttribute "SomeAttribute" 
             [
@@ -189,6 +213,18 @@ type WriteCodeFragmentVisualBasicTests() =
                 ("Text", "hello")
             ] 
             "SomeAttribute(Number = 42, Text = \"hello\")"
+            
+    [<Fact>]
+    member _.``Mixed unnamed parameters and named parameters with _IsLiteral suffix``() =
+        verifyAttribute "SomeAttribute" 
+            [
+                ("_Parameter1", "1");
+                ("Number", "42"); 
+                ("Number_IsLiteral", "true"); 
+                ("Bool", "false"); 
+                ("Bool_IsLiteral", "true")
+            ] 
+            "SomeAttribute(\"1\", Bool = false, Number = 42)"
             
     [<Fact>]
     member _.``Enum _IsLiteral suffix``() =
