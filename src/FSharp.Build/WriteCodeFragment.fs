@@ -128,6 +128,8 @@ type WriteCodeFragment() as this =
                                 // Regular parameter, use the escaped value
                                 Some(key, value.Escaped)
                     )
+                    // Sort parameters alphabetically by key to match MSBuild behavior
+                    |> List.sortBy fst
                 
                 String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) processedNamedParameters)
             // construct the final argument string; positional arguments followed by named

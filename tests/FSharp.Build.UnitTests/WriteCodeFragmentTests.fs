@@ -113,7 +113,7 @@ type WriteCodeFragmentCSharpTests() =
                 ("Bool", "false"); 
                 ("Bool_IsLiteral", "true")
             ] 
-            "SomeAttribute(Number = 42, Bool = false)"
+            "SomeAttribute(Bool = false, Number = 42)"
             
     [<Fact>]
     member _.``Mixed named parameters with and without _IsLiteral suffix``() =
@@ -178,7 +178,7 @@ type WriteCodeFragmentVisualBasicTests() =
                 ("Bool", "false"); 
                 ("Bool_IsLiteral", "true")
             ] 
-            "SomeAttribute(Number = 42, Bool = false)"
+            "SomeAttribute(Bool = false, Number = 42)"
             
     [<Fact>]
     member _.``Mixed named parameters with and without _IsLiteral suffix``() =
