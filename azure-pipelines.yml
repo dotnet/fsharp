@@ -88,7 +88,7 @@ extends:
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
       # Localization: we only run it for specific release branches
-      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.14') }}:
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev18.0') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp
