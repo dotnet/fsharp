@@ -17,20 +17,7 @@ module AttributeCtorSetPropAccess =
     }
     """
 
-    [<Literal>]
-    let private setPrivatePropFsCode = """
-    namespace TestAttribute
-    open System
-    open TestAttribute
-    
-    module TestAttributeModule =
-
-        [<FooAttribute(X = 100)>]
-        let myFunction() = ()
-    """
-    
-    [<Literal>]
-    let private setInternalPropFsCode = """
+    let private fsCode = """
     namespace Other
     open System
     open TestAttribute
@@ -42,9 +29,12 @@ module AttributeCtorSetPropAccess =
     """
 
     [<Theory>]
-    [<InlineData("private", setPrivatePropFsCode)>]
-    [<InlineData("internal", setInternalPropFsCode)>]
-    let ``Cannot set property outside its accessibility scope``(modifier: string, fsCode: string): unit =
+    [<InlineData("private")>]
+    [<InlineData("internal")>]
+    [<InlineData("protected")>]
+    [<InlineData("private protected")>]
+    [<InlineData("protected internal")>]
+    let ``Cannot set property outside its accessibility scope``(modifier: string): unit =
         FSharp fsCode 
         |> withReferences [(CSharp <| csLib.Replace("%s", modifier))] 
         |> compile 
@@ -52,3 +42,10 @@ module AttributeCtorSetPropAccess =
         |> withDiagnostics [ (ErrorType.Error 3248, Line 8, Col 28, Line 8, Col 31, "Property 'X' cannot be set because the setter is private") ] 
         |> ignore
 
+    [<Fact>]
+    let ``Can set property inside its accessibility scope``(): unit =
+        FSharp fsCode 
+        |> withReferences [(CSharp <| csLib.Replace("%s", ""))] 
+        |> compile 
+        |> shouldSucceed
+        |> ignore
