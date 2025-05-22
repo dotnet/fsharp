@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/String/SynConstStringWithSynStringKindRegular.fs", false,
-      QualifiedNameOfFile SynConstStringWithSynStringKindRegular, [], [],
+      QualifiedNameOfFile SynConstStringWithSynStringKindRegular, [],
       [SynModuleOrNamespace
          ([SynConstStringWithSynStringKindRegular], false, AnonModule,
           [Let
@@ -19,4 +19,5 @@ ImplFile
               (2,0--2,12))], PreXmlDocEmpty, [], None, (2,0--3,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

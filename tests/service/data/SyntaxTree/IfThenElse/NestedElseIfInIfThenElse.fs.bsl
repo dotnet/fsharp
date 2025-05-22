@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/IfThenElse/NestedElseIfInIfThenElse.fs", false,
-      QualifiedNameOfFile NestedElseIfInIfThenElse, [], [],
+      QualifiedNameOfFile NestedElseIfInIfThenElse, [],
       [SynModuleOrNamespace
          ([NestedElseIfInIfThenElse], false, AnonModule,
           [Expr
@@ -23,4 +23,5 @@ ImplFile
                    IfToThenRange = (2,0--2,9) }), (2,0--5,15))], PreXmlDocEmpty,
           [], None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

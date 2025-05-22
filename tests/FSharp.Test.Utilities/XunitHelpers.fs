@@ -10,11 +10,12 @@ open Xunit.Abstractions
 
 open TestFramework
 
+open FSharp.Compiler.Caches
 open FSharp.Compiler.Diagnostics
 
-open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
+open OpenTelemetry.Metrics
 
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.
@@ -90,6 +91,23 @@ module TestCaseCustomizations =
         else
             testCase.TestMethod
 
+    let sha = Security.Cryptography.SHA256.Create()
+
+    // We add extra trait to each test, of the form "batch=n" where n is between 1 and 4.
+    // It can be used to filter on in multi-agent testing in CI
+    // with dotnet test filter switch, for example "--filter batch=1"
+    // That way each agent can run test for a batch of tests. 
+    let NumberOfBatchesInMultiAgentTesting = 4u
+
+    let addBatchTrait (testCase: ITestCase) =
+        // Get a batch number stable between multiple test runs. 
+        // UniqueID is ideal here, it does not change across many compilations of the same code
+        // and it will split theories with member data into many batches.
+        let data = Text.Encoding.UTF8.GetBytes testCase.UniqueID
+        let hashCode = BitConverter.ToUInt32(sha.ComputeHash(data), 0)
+        let batch = hashCode % NumberOfBatchesInMultiAgentTesting + 1u
+        testCase.Traits.Add("batch", ResizeArray [ string batch ])
+
 type CustomTestCase =
     inherit XunitTestCase
     // xUinit demands this constructor for deserialization.
@@ -109,6 +127,7 @@ type CustomTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
+        TestCaseCustomizations.addBatchTrait testCase
 
 type CustomTheoryTestCase =
     inherit XunitTheoryTestCase
@@ -127,8 +146,49 @@ type CustomTheoryTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
+        TestCaseCustomizations.addBatchTrait testCase
 
 #endif
+
+
+type OpenTelemetryExport(testRunName, enable) =
+    // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
+    let otlpEndpoint = Uri("http://127.0.0.1:4317")
+    
+    // Configure OpenTelemetry export. 
+    let providers : IDisposable list =
+        if not enable then [] else
+            [
+            // Configure OpenTelemetry tracing export. Traces can be viewed in Jaeger or other compatible tools.
+            OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddOtlpExporter(fun o ->
+                    o.Endpoint <- otlpEndpoint
+                    o.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
+                    // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
+                    o.TimeoutMilliseconds <- 200
+                    o.BatchExportProcessorOptions.MaxQueueSize <- 16384
+                    o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
+                )
+                .Build()
+
+            // Configure OpenTelemetry metrics export. Metrics can be viewed in Prometheus or other compatible tools.
+            OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+                .AddMeter(CacheMetrics.Meter.Name)
+                .AddMeter("System.Runtime")
+                .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
+                .AddOtlpExporter(fun e m ->
+                    e.Endpoint <- otlpEndpoint
+                    e.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
+                    m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
+                )
+                .Build()
+            ]
+
+    interface IDisposable with
+        member this.Dispose() =
+            for p in providers do p.Dispose()
 
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
 type FSharpXunitFramework(sink: IMessageSink) =
@@ -145,32 +205,24 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
                 AssemblyResolver.addResolver ()
             #endif
-                
-                // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
-                use tracerProvider =
-                    OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-                        .AddSource(ActivityNames.FscSourceName)
-                        .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                        .AddOtlpExporter(fun o ->
-                            // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
-                            o.TimeoutMilliseconds <- 200
-                            o.BatchExportProcessorOptions.MaxQueueSize <- 16384
-                            o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
-                        )
-                        .Build()
 
+                // Override cache capacity to reduce memory usage in CI.
+                Cache.OverrideCapacityForTesting()
+
+                let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
+
+                use _ = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)   
+                
                 logConfig initialConfig
                 log "Installing TestConsole redirection"
                 TestConsole.install()
               
                 begin
-                    use _ = Activity.startNoTags $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
+                    use _ = Activity.startNoTags testRunName
                     // We can't just call base.RunTestCases here, because it's implementation is async void.
                     use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
                     runner.RunAsync().Wait()
                 end
-
-                tracerProvider.ForceFlush() |> ignore
 
                 cleanUpTemporaryDirectoryOfThisTestRun ()
         }

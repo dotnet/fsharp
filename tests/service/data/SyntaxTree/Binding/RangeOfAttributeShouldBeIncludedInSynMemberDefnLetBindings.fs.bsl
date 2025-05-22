@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings.fs",
       false,
       QualifiedNameOfFile
-        RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings, [], [],
+        RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSynMemberDefnLetBindings], false,
           AnonModule,
@@ -42,4 +42,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,13))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

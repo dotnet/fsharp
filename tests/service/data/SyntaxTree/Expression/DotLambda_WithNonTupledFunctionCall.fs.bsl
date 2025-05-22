@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_WithNonTupledFunctionCall.fs", false,
-      QualifiedNameOfFile DotLambda_WithNonTupledFunctionCall, [], [],
+      QualifiedNameOfFile DotLambda_WithNonTupledFunctionCall, [],
       [SynModuleOrNamespace
          ([DotLambda_WithNonTupledFunctionCall], false, AnonModule,
           [Let
@@ -30,4 +30,5 @@ ImplFile
                     EqualsRange = Some (1,11--1,12) })], (1,0--1,37))],
           PreXmlDocEmpty, [], None, (1,0--1,37), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

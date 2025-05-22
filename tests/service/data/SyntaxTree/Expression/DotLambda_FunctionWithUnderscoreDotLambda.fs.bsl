@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_FunctionWithUnderscoreDotLambda.fs", false,
-      QualifiedNameOfFile DotLambda_FunctionWithUnderscoreDotLambda, [], [],
+      QualifiedNameOfFile DotLambda_FunctionWithUnderscoreDotLambda, [],
       [SynModuleOrNamespace
          ([DotLambda_FunctionWithUnderscoreDotLambda], false, AnonModule,
           [Let
@@ -22,4 +22,5 @@ ImplFile
                     EqualsRange = Some (1,11--1,12) })], (1,0--1,25))],
           PreXmlDocEmpty, [], None, (1,0--1,25), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/ActivePatternAnd 04.fs", false,
-      QualifiedNameOfFile ActivePatternAnd 04, [], [],
+      QualifiedNameOfFile ActivePatternAnd 04, [],
       [SynModuleOrNamespace
          ([ActivePatternAnd 04], false, AnonModule,
           [Let
@@ -31,6 +31,7 @@ ImplFile
                     EqualsRange = Some (1,30--1,31) })], (1,0--1,38))],
           PreXmlDocEmpty, [], None, (1,0--1,38), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))
 
 (1,0)-(1,38) parse warning The declarations in this file will be placed in an implicit module 'ActivePatternAnd 04' based on the file name 'ActivePatternAnd 04.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.
