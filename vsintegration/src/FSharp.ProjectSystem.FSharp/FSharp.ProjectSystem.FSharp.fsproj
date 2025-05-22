@@ -7,7 +7,7 @@
     <AssemblyName>FSharp.ProjectSystem.FSharp</AssemblyName>
     <NoWarn>$(NoWarn);52;62;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
+    <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
