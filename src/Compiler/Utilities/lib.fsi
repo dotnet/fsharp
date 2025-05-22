@@ -52,7 +52,7 @@ module Int64 =
     val order: IComparer<int64>
 
 module Pair =
-    val order: compare1: IComparer<'T1> * compare2: IComparer<'T2> -> IComparer<'T1 * 'T2>
+    val order: compare1: IComparer<'T1> * compare2: IComparer<'T2> -> IComparer<struct ('T1 * 'T2)>
 
 type NameSet = Zset<string>
 
