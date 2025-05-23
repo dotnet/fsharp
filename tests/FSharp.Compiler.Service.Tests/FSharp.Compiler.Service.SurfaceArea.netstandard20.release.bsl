@@ -11386,6 +11386,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Public
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 QuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 QuestionMarkQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Quote
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 RQuoteBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Rec
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Reserved
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 RightArrow
@@ -11583,6 +11584,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsPublic
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsQuestionMarkQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsQuote
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsRQuoteBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsRec
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsReserved
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsRightArrow
@@ -11776,6 +11778,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsPublic()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsQuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsQuestionMarkQuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsQuote()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsRQuoteBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsRec()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsReserved()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsRightArrow()
@@ -11969,6 +11972,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind QuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind QuestionMarkQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Quote
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind RQuoteBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Rec
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Reserved
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind RightArrow
@@ -12162,6 +12166,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_QuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_QuestionMarkQuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Quote()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_RQuoteBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Rec()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Reserved()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_RightArrow()
