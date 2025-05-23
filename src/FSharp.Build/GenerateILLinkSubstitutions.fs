@@ -14,80 +14,70 @@ open Microsoft.Build.Utilities
 type GenerateILLinkSubstitutions() =
     inherit Task()
 
-    let mutable _assemblyName = ""
-    let mutable _intermediateOutputPath = ""
-    let mutable _generatedItems: ITaskItem[] = [||]
-
     /// <summary>
     /// Assembly name to use when generating resource names to be removed.
     /// </summary>
     [<Required>]
-    member _.AssemblyName
-        with get () = _assemblyName
-        and set value = _assemblyName <- value
+    member val AssemblyName = "" with get, set
 
     /// <summary>
     /// Intermediate output path for storing the generated file.
     /// </summary>
     [<Required>]
-    member _.IntermediateOutputPath
-        with get () = _intermediateOutputPath
-        and set value = _intermediateOutputPath <- value
+    member val IntermediateOutputPath = "" with get, set
 
     /// <summary>
     /// Generated embedded resource items.
     /// </summary>
-    [<Output>]
-    member _.GeneratedItems
-        with get () = _generatedItems
-        and set value = _generatedItems <- value
+    [<o>]
+    member val GeneratedItems = [| |] : ITaskItem[] with get, set
 
     override this.Execute() =
         try
             // Define the resource prefixes that need to be removed
-            let resourcePrefixes = [|
-                "FSharpSignatureData"
-                "FSharpSignatureDataB"
-                "FSharpSignatureCompressedData"
-                "FSharpSignatureCompressedDataB"
-                "FSharpOptimizationData"
-                "FSharpOptimizationDataB"
-                "FSharpOptimizationCompressedData"
-                "FSharpOptimizationCompressedDataB"
-                "FSharpOptimizationInfo"
-                "FSharpSignatureInfo"
-            |]
+            let resourcePrefixes = 
+                [| 
+                    // Signature variants
+                    yield! [| for dataType in [| "Data"; "DataB" |] do
+                               for compression in [| ""; "Compressed" |] do
+                               yield $"FSharpSignature{compression}{dataType}" |]
+                    
+                    // Optimization variants
+                    yield! [| for dataType in [| "Data"; "DataB" |] do
+                               for compression in [| ""; "Compressed" |] do
+                               yield $"FSharpOptimization{compression}{dataType}" |]
+                               
+                    // Info variants
+                    yield "FSharpOptimizationInfo"
+                    yield "FSharpSignatureInfo"
+                |]
 
             // Generate the XML content
-            let sb = StringBuilder()
+            let sb = StringBuilder(4096) // pre-allocate capacity
             sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>") |> ignore
             sb.AppendLine("<linker>") |> ignore
-            sb.AppendLine($"  <assembly fullname=\"{_assemblyName}\">") |> ignore
+            sb.AppendLine($"  <assembly fullname=\"{this.AssemblyName}\">") |> ignore
             
-            // Add each resource entry
+            // Add each resource entry with proper closing tag on the same line
             for prefix in resourcePrefixes do
-                sb.AppendLine($"    <resource name=\"{prefix}.{_assemblyName}\" action=\"remove\">") |> ignore
-            
-            // Close all resource tags
-            for _ in resourcePrefixes do
-                sb.Append("</resource>") |> ignore
+                sb.AppendLine($"    <resource name=\"{prefix}.{this.AssemblyName}\" action=\"remove\"></resource>") |> ignore
             
             // Close assembly and linker tags
-            sb.AppendLine("</assembly>") |> ignore
+            sb.AppendLine("  </assembly>") |> ignore
             sb.AppendLine("</linker>") |> ignore
             
             let xmlContent = sb.ToString()
             
             // Create a file in the intermediate output path
-            let outputFileName = Path.Combine(_intermediateOutputPath, "ILLink.Substitutions.xml")
-            Directory.CreateDirectory(_intermediateOutputPath) |> ignore
+            let outputFileName = Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
+            Directory.CreateDirectory(this.IntermediateOutputPath) |> ignore
             File.WriteAllText(outputFileName, xmlContent)
             
             // Create a TaskItem for the generated file
             let item = TaskItem(outputFileName) :> ITaskItem
             item.SetMetadata("LogicalName", "ILLink.Substitutions.xml")
             
-            _generatedItems <- [| item |]
+            this.GeneratedItems <- [| item |]
             true
         with ex ->
             this.Log.LogErrorFromException(ex, true)
