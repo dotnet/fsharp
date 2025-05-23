@@ -57,6 +57,13 @@ module UnusedOpens =
                                 for field in entity.FSharpFields do
                                     if field.IsStatic && field.IsLiteral then
                                         field
+
+                            if
+                                entity.IsFSharpUnion
+                                && not (entity.HasAttribute<RequireQualifiedAccessAttribute>())
+                            then
+                                for unionCase in entity.UnionCases do
+                                    unionCase
                     |]
 
                 HashSet<_>(symbols, symbolHash)
@@ -75,7 +82,7 @@ module UnusedOpens =
                 [|
                     yield OpenedModule(modul, isNestedAutoOpen)
                     for ent in modul.NestedEntities do
-                        if ent.IsFSharpModule && ent.HasAttribute<AutoOpenAttribute>() then
+                        if ent.HasAttribute<AutoOpenAttribute>() then
                             yield! getModuleAndItsAutoOpens true ent
                 |]
 
@@ -192,7 +199,7 @@ module UnusedOpens =
                         not (
                             usedModules.BagExistsValueForKey(
                                 openedEntity.Entity,
-                                fun scope -> rangeContainsRange scope openStatement.AppliedScope
+                                fun scope -> rangeContainsRange openStatement.AppliedScope scope
                             )
                         ))
 
@@ -271,7 +278,7 @@ module UnusedOpens =
 
     /// Filter out the open statements whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
-    let filterOpenStatements (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) openStatements =
+    let filterOpenStatements (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) (openStatements: OpenStatement[]) =
         async {
             // the key is a namespace or module, the value is a list of FSharpSymbolUse range of symbols defined in the
             // namespace or module. So, it's just symbol uses ranges grouped by namespace or module where they are _defined_.
@@ -284,18 +291,25 @@ module UnusedOpens =
                     match f.DeclaringEntity with
                     | Some entity when entity.IsNamespace || entity.IsFSharpModule ->
                         symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.Range)
+
+                        if f.ApparentEnclosingEntity <> entity then
+                            symbolUsesRangesByDeclaringEntity.BagAdd(f.ApparentEnclosingEntity, symbolUse.Range)
                     | _ -> ()
                 | _ -> ()
+
+            // Check the open statements in reverse order to account for shadowing.
+            let reversedOpenStatements = openStatements |> List.ofArray |> List.rev
 
             let! results =
                 filterOpenStatementsIncremental
                     symbolUses2
                     symbolUsesRangesByDeclaringEntity
-                    (List.ofArray openStatements)
+                    reversedOpenStatements
                     (Dictionary(entityHash))
                     []
 
-            return results |> List.map (fun os -> os.Range)
+            // Re-reverse the results.
+            return results |> List.map _.Range |> List.rev
         }
 
     /// Get the open statements whose contents are not referred to anywhere in the symbol uses.
