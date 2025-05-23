@@ -8,4 +8,4 @@ let f<'a,'b when 'a : struct>() = 1
  
 let x = f<float<m>,float>() 
 
-exit 0
+ignore 0
