@@ -2073,9 +2073,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P p ->
             let range = defaultArg sym.DeclarationLocationOpt range0
             match GetXmlDocSigOfProp cenv.infoReader range p with
-            | Some (_, docsig) when p.IsFSharpEventProperty && docsig.StartsWith("P:") -> 
-                // For CLIEvent properties, use E: prefix instead of P:
-                "E:" + docsig.Substring(2)
             | Some (_, docsig) -> docsig
             | _ -> ""
         | M m | C m -> 
