@@ -299,12 +299,12 @@ let attribsOfSymbol (symbol: FSharpSymbol) =
             if v.IsDispatchSlot then yield "slot"
             if v.IsModuleValueOrMember && not v.IsMember then yield "val"
             if v.IsMember then yield "member"
-            if v.IsProperty && not v.IsEvent then yield "prop"  // Only properties that are not events should have the prop tag
+            if v.IsProperty then yield "prop"  // Keep prop tag for all properties including CLIEvents
             if v.IsExtensionMember then yield "extmem"
             if v.IsPropertyGetterMethod then yield "getter"
             if v.IsPropertySetterMethod then yield "setter"
-            if v.IsEvent then yield "event"
-            if v.EventForFSharpProperty.IsSome then yield "clievent"
+            if v.IsEvent && not v.EventForFSharpProperty.IsSome then yield "event"  // Add event tag for true events only
+            if v.EventForFSharpProperty.IsSome then yield "clievent"  // Keep clievent tag for CLIEvents
             if v.IsEventAddMethod then yield "add"
             if v.IsEventRemoveMethod then yield "remove"
             if v.IsTypeFunction then yield "typefun"
