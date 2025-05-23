@@ -2328,6 +2328,11 @@ module Seq =
     [<CompiledName("SortByDescending")>]
     val inline sortByDescending: projection: ('T -> 'Key) -> source: seq<'T> -> seq<'T> when 'Key: comparison
 
+    /// Internal use of Seq.sum to detect if vectorization can be used.
+    /// Due to sum "inline" this can't be private.
+    [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+    val isNetFramework : bool
+
     /// <summary>Returns the sum of the elements in the sequence.</summary>
     ///
     /// <remarks>The elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type.</remarks>
