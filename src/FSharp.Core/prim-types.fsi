@@ -2663,28 +2663,55 @@ namespace Microsoft.FSharp.Collections
         | (::): Head: 'T * Tail: 'T list -> 'T list
 
         /// <summary>Returns an empty list of a particular type</summary>
+        /// 
+        /// Time complexity: O(1)
+        /// Space complexity: O(1)
         static member Empty: 'T list
         
-        /// <summary>Gets the number of items contained in the list</summary>
+        /// <summary>Gets the number of items contained in the list
+        /// 
+        /// Time complexity: O(n) - requires traversing the entire list
+        /// Space complexity: O(1)
+        /// </summary>
         member Length: int
 
-        /// <summary>Gets a value indicating if the list contains no entries</summary>
+        /// <summary>Gets a value indicating if the list contains no entries
+        /// 
+        /// Time complexity: O(1) - only checks if head exists
+        /// Space complexity: O(1)
+        /// </summary>
         member IsEmpty: bool
 
-        /// <summary>Gets the first element of the list</summary>
+        /// <summary>Gets the first element of the list
+        /// 
+        /// Time complexity: O(1) - direct access to head
+        /// Space complexity: O(1)
+        /// </summary>
         member Head: 'T
 
-        /// <summary>Gets the tail of the list, which is a list containing all the elements of the list, excluding the first element </summary>
+        /// <summary>Gets the tail of the list, which is a list containing all the elements of the list, excluding the first element
+        /// 
+        /// Time complexity: O(1) - direct access to tail
+        /// Space complexity: O(1)
+        /// </summary>
         member Tail: 'T list
 
-        /// <summary>Gets the element of the list at the given position.</summary>
+        /// <summary>Gets the element of the list at the given position.
+        /// 
+        /// Time complexity: O(n) - requires traversing to the nth element
+        /// Space complexity: O(1)
+        /// </summary>
         /// <remarks>Lists are represented as linked lists so this is an O(n) operation.</remarks>
         /// <param name="index">The index.</param>
         ///
         /// <returns>The value at the given index.</returns>
         member Item: index: int -> 'T with get 
         
-        /// <summary>Gets a slice of the list, the elements of the list from the given start index to the given end index.</summary>
+        /// <summary>Gets a slice of the list, the elements of the list from the given start index to the given end index.
+        /// 
+        /// Time complexity: O(n) - where n is the end index
+        /// Space complexity: O(k) - where k is the length of the slice
+        /// </summary>
         ///
         /// <param name="startIndex">The start index.</param>
         /// <param name="endIndex">The end index.</param>
