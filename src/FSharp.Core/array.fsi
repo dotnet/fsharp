@@ -1919,8 +1919,9 @@ module Array =
     [<CompiledName("OfSeq")>]
     val ofSeq: source: seq<'T> -> 'T array
 
-    /// <summary>Returns an array of each element in the input array and its predecessor, with the
-    /// exception of the first element which is only returned as the predecessor of the second element.</summary>
+    /// <summary>Returns an array of each element in the input array paired with its predecessor, with the
+    /// exception of the first element which is only returned as the predecessor of the second element.
+    /// The predecessor comes first in the returned pairs.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
