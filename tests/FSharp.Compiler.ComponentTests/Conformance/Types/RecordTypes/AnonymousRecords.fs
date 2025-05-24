@@ -507,3 +507,173 @@ let v = {| ``A`` = 0; B = 5; A = ""; B = 0 |}
             (Error 3522, Line 2, Col 12, Line 2, Col 17, "The field 'A' appears multiple times in this record expression.")
             (Error 3522, Line 2, Col 23, Line 2, Col 24, "The field 'B' appears multiple times in this record expression.")
         ]
+            
+    [<Fact>]
+    let ``Preview: Anonymous records with typed quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let expr1 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @> |}
+let expr2 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @>|}
+let expr3 : {| A: Expr<string>; B: Expr<int> |} = {| A = <@ "hello" @>; B = <@ 42 @>|}
+let expr4 : {| A: Expr<string>; B: Expr<int> |} = {| A = <@ "hello" @>; B = <@ 42 @>|}
+
+let expr5 : {| A: Expr<int> |} = {| A= <@ 1 + 1 @> |}
+let expr6 : {| A: Expr<int> |} = {| A= <@ 1 + 1 @>|}
+let expr7 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @> |}
+let expr8 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @>|}
+
+let (=<@) = (@)
+let (@>=) = (@)
+
+[1..2] =<@ [3..4] @>= [5..6]
+    """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: Anonymous records with untyped quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let expr1 : {| A: Expr |} = {| A = <@@ 1 + 1 @@> |}
+let expr2 : {| A: Expr |} = {| A = <@@ 1 + 1 @@>|}
+let expr3 : {| A: Expr; B: Expr |} = {| A = <@@ "hello" @@>; B = <@@ 42 @@>|}
+let expr4 : {| A: Expr; B: Expr |} = {| A = <@@ "hello" @@>; B = <@@ 42 @@>|}
+
+let expr5 : {| A: Expr |} = {| A= <@@ 1 + 1 @@> |}
+let expr6 : {| A: Expr |} = {| A= <@@ 1 + 1 @@>|}
+let expr7 : {| A: Expr |} = {| A = <@@ 1 + 1 @@> |}
+let expr8 : {| A: Expr |} = {| A = <@@ 1 + 1 @@>|}
+    """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: Anonymous records with mixed quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let expr : {| Typed: Expr<int>; Untyped: Expr |} = 
+    {| Typed = <@ 1 + 1 @>; Untyped = <@@ "test" @@>|}
+    
+let expr2 : {| A: Expr<int>; B: Expr; C: string |} = 
+    {| A = <@ 42 @>; B = <@@ true @@>; C = "normal string"|}
+    """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: Nested anonymous records with quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let nested = 
+    {| Outer = {| Inner = <@ 1 + 1 @>|}; Other = <@@ "test" @@>|}
+    
+let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} = 
+    {| A = {| B = <@ 42 @>|}; C = <@@ true @@>|}
+    """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Version 9: Anonymous records with typed quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let expr1 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @> |}
+let expr2 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @>|}
+let expr3 : {| A: Expr<string>; B: Expr<int> |} = {| A = <@ "hello" @>; B = <@ 42 @>|}
+let expr4 : {| A: Expr<string>; B: Expr<int> |} = {| A = <@ "hello" @>; B = <@ 42 @>|}
+
+let expr5 : {| A: Expr<int> |} = {| A= <@ 1 + 1 @> |}
+let expr6 : {| A: Expr<int> |} = {| A= <@ 1 + 1 @>|}
+let expr7 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @> |}
+let expr8 : {| A: Expr<int> |} = {| A = <@ 1 + 1 @>|}
+
+let (=<@) = (@)
+let (@>=) = (@)
+
+[1..2] =<@ [3..4] @>= [5..6]
+    """
+        |> withLangVersion90
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 5, Col 48, Line 5, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 6, Col 80, Line 6, Col 82, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 7, Col 80, Line 7, Col 82, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 10, Col 47, Line 10, Col 48, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 12, Col 48, Line 12, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        
+        ]
+
+    [<Fact>]
+    let ``Version 9: Anonymous records with untyped quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let expr1 : {| A: Expr |} = {| A = <@@ 1 + 1 @@> |}
+let expr2 : {| A: Expr |} = {| A = <@@ 1 + 1 @@>|}
+let expr3 : {| A: Expr; B: Expr |} = {| A = <@@ "hello" @@>; B = <@@ 42 @@>|}
+let expr4 : {| A: Expr; B: Expr |} = {| A = <@@ "hello" @@>; B = <@@ 42 @@>|}
+
+let expr5 : {| A: Expr |} = {| A= <@@ 1 + 1 @@> |}
+let expr6 : {| A: Expr |} = {| A= <@@ 1 + 1 @@>|}
+let expr7 : {| A: Expr |} = {| A = <@@ 1 + 1 @@> |}
+let expr8 : {| A: Expr |} = {| A = <@@ 1 + 1 @@>|}
+    """
+        |> withLangVersion90
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 5, Col 44, Line 5, Col 45, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 6, Col 70, Line 6, Col 72, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 7, Col 70, Line 7, Col 72, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 10, Col 43, Line 10, Col 44, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 12, Col 44, Line 12, Col 45, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Fact>]
+    let ``Version 9: Anonymous records with mixed quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let expr : {| Typed: Expr<int>; Untyped: Expr |} = 
+    {| Typed = <@ 1 + 1 @>; Untyped = <@@ "test" @@>|}
+    
+let expr2 : {| A: Expr<int>; B: Expr; C: string |} = 
+    {| A = <@ 42 @>; B = <@@ true @@>; C = "normal string"|}
+    """
+        |> withLangVersion90
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 5, Col 50, Line 5, Col 55, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Fact>]
+    let ``Version 9: Nested anonymous records with quotations should parse correctly``() =
+        Fsx """
+open Microsoft.FSharp.Quotations
+
+let nested = 
+    {| Outer = {| Inner = <@ 1 + 1 @>|}; Other = <@@ "test" @@>|}
+    
+let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} = 
+    {| A = {| B = <@ 42 @>|}; C = <@@ true @@>|}
+    """
+        |> withLangVersion90
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 5, Col 34, Line 5, Col 35, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 61, Line 5, Col 66, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 8, Col 22, Line 8, Col 24, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 8, Col 44, Line 8, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]

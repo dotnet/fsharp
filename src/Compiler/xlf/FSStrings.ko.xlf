@@ -107,6 +107,11 @@
         <target state="translated">보간 문자열(부분)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.RQUOTE.BAR.RBRACE">
+        <source>symbol '@&gt;|}' or '@@&gt;|}'</source>
+        <target state="new">symbol '@&gt;|}' or '@@&gt;|}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
         <target state="translated">'while!' 키워드</target>

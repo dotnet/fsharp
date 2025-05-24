@@ -839,6 +839,10 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "@@>" { checkExprOp lexbuf; RQUOTE ("<@@ @@>", true) }
 
+ | "@>|}" { RQUOTE_BAR_RBRACE ("<@ @>", false) }
+
+ | "@@>|}" { RQUOTE_BAR_RBRACE ("<@@ @@>", true) }
+
  | '#' { HASH }
 
  | '&' { AMP }

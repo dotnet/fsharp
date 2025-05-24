@@ -107,6 +107,11 @@
         <target state="translated">chaîne interpolée (partie)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.RQUOTE.BAR.RBRACE">
+        <source>symbol '@&gt;|}' or '@@&gt;|}'</source>
+        <target state="new">symbol '@&gt;|}' or '@@&gt;|}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
         <source>keyword 'while!'</source>
         <target state="translated">mot-clé « pendant ! »</target>
