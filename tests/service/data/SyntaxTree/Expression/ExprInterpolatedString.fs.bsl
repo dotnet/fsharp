@@ -96,5 +96,3 @@ ImplFile
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
-
-(4,14)-(4,16) parse error This construct is deprecated: '$' is not permitted as a character in operator names and is reserved for future use
