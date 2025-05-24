@@ -90,9 +90,37 @@ ImplFile
                   (5,4--5,5), Yes (5,0--5,23), { LeadingKeyword = Let (5,0--5,3)
                                                  InlineKeyword = None
                                                  EqualsRange = Some (5,6--5,7) })],
-              (5,0--5,23))],
+              (5,0--5,23));
+           Let
+             (false,
+              [SynBinding
+                 (None, Normal, false, false, [],
+                  PreXmlDoc ((6,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  SynValData
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (a, None), false, None, (6,4--6,5)), None,
+                  ArbitraryAfterError ("localBinding2", (6,5--6,5)), (6,4--6,5),
+                  Yes (6,0--6,5), { LeadingKeyword = Let (6,0--6,3)
+                                    InlineKeyword = None
+                                    EqualsRange = None })], (6,0--6,5));
+           Let
+             (false,
+              [SynBinding
+                 (None, Normal, false, false, [],
+                  PreXmlDoc ((7,0), FSharp.Compiler.Xml.XmlDocCollector),
+                  SynValData
+                    (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
+                  Named (SynIdent (b, None), false, None, (7,4--7,5)), None,
+                  InterpolatedString
+                    ([String ("123", (7,8--7,14))], Regular, (7,8--7,14)),
+                  (7,4--7,5), Yes (7,0--7,14), { LeadingKeyword = Let (7,0--7,3)
+                                                 InlineKeyword = None
+                                                 EqualsRange = Some (7,6--7,7) })],
+              (7,0--7,14))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--5,23), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--7,14), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
+
+(6,6)-(6,8) parse error Unexpected infix operator in binding. Expected '=' or other token.
