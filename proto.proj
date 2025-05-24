@@ -8,7 +8,7 @@
        The project does not import Arcade targets so we only have the properties that were passed in, rather than
        calculated properties like DotNetBuildPhase. -->
   <!-- TODO: Remove this condition when fsharp upgraded to Arcade 10 -->
-  <ItemGroup Condition="'$(DotNetBuildOrchestrator)' == 'true' or '$(DotNetBuildSourceOnly)' != 'true' or '$(DotNetBuildInnerRepo)' == 'true'">
+  <ItemGroup Condition="'$(DotNetBuildFromVMR)' == 'true' or '$(DotNetBuildSourceOnly)' != 'true' or '$(DotNetBuildInnerRepo)' == 'true'">
     <Projects Include="buildtools\fslex\fslex.fsproj" />
     <Projects Include="buildtools\fsyacc\fsyacc.fsproj" />
     <Projects Include="buildtools\AssemblyCheck\AssemblyCheck.fsproj" />

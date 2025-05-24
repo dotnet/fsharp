@@ -28,7 +28,7 @@
          -bl enables the binlogs for the tools and Proto builds, which make debugging failures here easier
     -->
     <Exec
-      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) $(SourceBuildBootstrapRestoreConfigFileArg) /p:DotNetBuildUseMonoRuntime=$(DotNetBuildUseMonoRuntime) /p:DotNetBuildSourceOnly=true /p:DotNetBuildInnerRepo=true /p:DotNetBuildRepo=true /p:DotNetBuildOrchestrator=$(DotNetBuildOrchestrator)"
+      Command="./build.sh --bootstrap --skipBuild -bl $(SourceBuildBootstrapTfmArg) $(SourceBuildBootstrapRestoreConfigFileArg) /p:DotNetBuildUseMonoRuntime=$(DotNetBuildUseMonoRuntime) /p:DotNetBuildSourceOnly=true /p:DotNetBuildInnerRepo=true /p:DotNetBuildRepo=true
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
       EnvironmentVariables="@(InnerBuildEnv)" />
   </Target>
