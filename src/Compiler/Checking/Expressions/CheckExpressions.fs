@@ -10953,15 +10953,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let envinner = { envinner with eCallerMemberName = callerName }
         let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
-        
-        let rec getArgExpr expr =
-            match expr with
-            | SynExpr.App(exprAtomicFlag, isInfix, SynExpr.App(funcExpr = SynExpr.LongIdent(isOptional= isOptional; longDotId = SynLongIdent(id = [id]; dotRanges = dotRanges; trivia = trivia); altNameRefCell= altNameRefCell; range = m1)), _, m) when id.idText = "op_EqualsDollar" ->
-                let argExpr = SynExpr.InterpolatedString([ SynInterpolatedStringPart.String("123", m) ], SynStringKind.Regular, m)
-                let funcExpr = SynExpr.LongIdent(isOptional, SynLongIdent([id], dotRanges, trivia), altNameRefCell, m1)
-                SynExpr.App(exprAtomicFlag, isInfix, funcExpr, argExpr, m)
-            | _ -> expr
-                            
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with
@@ -10974,11 +10965,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // { New Foo with ... } -> SynExpr.ObjExpr
             | SynExpr.ComputationExpr(false, SynExpr.New(_, targetType, expr, m), _) ->        
                 false, SynExpr.ObjExpr(targetType, Some(expr, None), None, [], [], [], m, rhsExpr.Range), overallTy, overallTy
-                
-            | SynExpr.App(exprAtomicFlag, isInfix, funcExpr, SynExpr.Paren(expr, leftParenRange, rightParenRange, range), m) ->
-                let innerArgExpr = (getArgExpr expr)
-                let argExpr = SynExpr.Paren(innerArgExpr, leftParenRange, rightParenRange, range)
-                false, SynExpr.App(exprAtomicFlag, isInfix, funcExpr, argExpr, m), NewInferenceType g, overallTy
             | e -> false, e, overallTy, overallTy
 
         // Check the attributes of the binding, parameters or return value

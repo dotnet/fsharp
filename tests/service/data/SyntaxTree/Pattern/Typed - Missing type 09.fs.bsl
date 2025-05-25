@@ -34,4 +34,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (4,11)-(4,12) parse error Unexpected symbol ')' in pattern
-(6,4)-(6,5) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.
+(6,4)-(6,5) parse error Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token.

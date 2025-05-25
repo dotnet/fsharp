@@ -25,5 +25,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(3,0)-(3,1) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.
+(3,0)-(3,1) parse error Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token.
 (1,0)-(2,0) parse warning The declarations in this file will be placed in an implicit module 'Let 05' based on the file name 'Let 05.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

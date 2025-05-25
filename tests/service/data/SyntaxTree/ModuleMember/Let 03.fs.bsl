@@ -22,4 +22,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(5,0)-(5,1) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.
+(5,0)-(5,1) parse error Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token.
