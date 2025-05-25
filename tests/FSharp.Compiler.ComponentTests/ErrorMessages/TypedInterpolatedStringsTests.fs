@@ -36,3 +36,17 @@ printf $"%s{hello}"
         |> withWarnOn 3579
         |> typecheck
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Typed interpolated strings over interpolated two``() =
+        FSharp """
+module Module
+type C() =
+    member val Name = "" with get, set
+
+let x = C(Name="123")
+let y = C(Name=$"123")
+let z = C(Name= $"123")
+        """
+        |> typecheck
+        |> shouldSucceed
