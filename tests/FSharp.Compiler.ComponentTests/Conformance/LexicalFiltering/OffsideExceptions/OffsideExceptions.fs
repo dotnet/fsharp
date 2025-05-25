@@ -517,7 +517,7 @@ raise (new Exception("exit 1"))
                     EndLine = 37
                     EndColumn = 6 }
           Message =
-           "Incomplete structured construct at or before this point in binding. Expected '=' or other token." }
+           "Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token." }
         { Error = Error 10
           Range = { StartLine = 46
                     StartColumn = 5
