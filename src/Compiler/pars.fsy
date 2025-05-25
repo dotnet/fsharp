@@ -3332,6 +3332,38 @@ localBinding:
             mkSynBinding (xmlDoc, bindingPat) (vis, Option.isSome $1, Option.isSome $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, opts, attrs, None, trivia))
         localBindingRange, localBindingBuilder }
 
+  | opt_inline opt_mutable bindingPattern opt_topReturnTypeWithTypeConstraints INFIX_COMPARE_OP string
+      { // Check if the operator is = followed by one or more $
+        let op = $5
+        let isEqualsDollar = op.Length > 1 && op.[0] = '=' && op.[1..] |> Seq.forall ((=) '$')
+        if not isEqualsDollar then 
+            reportParseErrorAt (rhs parseState 5) (FSComp.SR.parsUnexpectedInfixOperator())
+        
+        let s, synStringKind = $6
+        let mString = rhs parseState 6
+        let mInfixOp = rhs parseState 5
+        
+        // For =$"...", =$$"...", etc., create an interpolated string starting from the first $ position
+        let mDollarStart = mkRange mInfixOp.FileName (mkPos mInfixOp.StartLine (mInfixOp.StartColumn + 1)) mInfixOp.End
+        let mInterp = unionRanges mDollarStart mString
+        let parts = [ SynInterpolatedStringPart.String(s, mString) ]
+        let expr = SynExpr.InterpolatedString(parts, synStringKind, mInterp)
+        
+        // The equals sign is just the first character
+        let mEquals = mkRange mInfixOp.FileName mInfixOp.Start (mkPos mInfixOp.StartLine (mInfixOp.StartColumn + 1))
+        let mRhs = expr.Range
+        let optReturnType = $4
+        let bindingPat, mBindLhs = $3
+        let localBindingRange = unionRanges (rhs2 parseState 1 5) mRhs
+        let localBindingBuilder =
+          (fun xmlDoc attrs vis (leadingKeyword: SynLeadingKeyword) ->
+            let mWhole = (unionRanges leadingKeyword.Range mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+            let spBind = if IsDebugPointBinding bindingPat expr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
+            let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+            let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; InlineKeyword = $1; EqualsRange = Some mEquals }
+            mkSynBinding (xmlDoc, bindingPat) (vis, Option.isSome $1, Option.isSome $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, [], attrs, None, trivia))
+        localBindingRange, localBindingBuilder }
+
   | opt_inline opt_mutable bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS error
       { let mWhole = rhs2 parseState 1 5
         let mRhs = rhs parseState 5
