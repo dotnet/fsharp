@@ -99,10 +99,12 @@ ImplFile
                   SynValData
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named (SynIdent (a, None), false, None, (6,4--6,5)), None,
-                  ArbitraryAfterError ("localBinding2", (6,5--6,5)), (6,4--6,5),
-                  Yes (6,0--6,5), { LeadingKeyword = Let (6,0--6,3)
-                                    InlineKeyword = None
-                                    EqualsRange = None })], (6,0--6,5));
+                  InterpolatedString
+                    ([String ("123", (6,8--6,13))], Regular, (6,7--6,13)),
+                  (6,4--6,5), Yes (6,0--6,13), { LeadingKeyword = Let (6,0--6,3)
+                                                 InlineKeyword = None
+                                                 EqualsRange = Some (6,6--6,7) })],
+              (6,0--6,13));
            Let
              (false,
               [SynBinding
@@ -122,5 +124,3 @@ ImplFile
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
-
-(6,6)-(6,8) parse error Unexpected infix operator in binding. Expected '=' or other token.
