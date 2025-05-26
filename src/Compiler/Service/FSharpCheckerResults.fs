@@ -2801,17 +2801,13 @@ module internal ParseAndCheckFile =
             reportErrors,
             mainInputFileName,
             diagnosticsOptions: FSharpDiagnosticOptions,
-            sourceText: ISourceText,
             suggestNamesForErrors: bool,
             flatErrors: bool
         ) =
         let mutable options = diagnosticsOptions
         let diagnosticsCollector = ResizeArray<_>()
         let mutable errorCount = 0
-
-        // We'll need number of lines for adjusting error messages at EOF
-        let fileInfo = sourceText.GetLastCharacterPosition()
-
+        
         let collectOne severity diagnostic =
             // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
             // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
@@ -2881,7 +2877,6 @@ module internal ParseAndCheckFile =
                             options,
                             false,
                             mainInputFileName,
-                            fileInfo,
                             diagnostic,
                             severity,
                             suggestNamesForErrors,
@@ -2960,7 +2955,7 @@ module internal ParseAndCheckFile =
 
         usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
             let errHandler =
-                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
+                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
             let lexfun = createLexerFunction fileName options lexbuf errHandler ct
 
@@ -3064,7 +3059,7 @@ module internal ParseAndCheckFile =
             Activity.start "ParseAndCheckFile.parseFile" [| Activity.Tags.fileName, fileName |]
 
         let errHandler =
-            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, flatErrors)
+            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, suggestNamesForErrors, flatErrors)
 
         use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
@@ -3237,7 +3232,6 @@ module internal ParseAndCheckFile =
                     true,
                     mainInputFileName,
                     tcConfig.diagnosticsOptions,
-                    sourceText,
                     suggestNamesForErrors,
                     tcConfig.flatErrors
                 )

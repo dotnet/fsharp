@@ -1375,7 +1375,6 @@ type internal BackgroundCompiler
                     FSharpDiagnostic.CreateFromException(
                         exn,
                         isError,
-                        range.Zero,
                         false,
                         options.OtherOptions |> Array.contains "--flaterrors",
                         None
