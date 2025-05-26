@@ -5428,7 +5428,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           let envNS = LocateEnv kind.IsModule cenv.thisCcu env enclosingNamespacePath
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink g cenv.amap m enclosingNamespacePath envNS
-          CallEnvSink cenv.tcSink (scopem, envNS.NameEnv, env.eAccessRights)
+          CallEnvSink cenv.tcSink (m, envNS.NameEnv, env.eAccessRights)
 
           let modTyNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
           let modTyRoot, modulNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath modTyNS
