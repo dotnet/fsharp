@@ -2797,17 +2797,11 @@ module internal ParseAndCheckFile =
 
     /// Diagnostics handler for parsing & type checking while processing a single file
     type DiagnosticsHandler
-        (
-            reportErrors,
-            mainInputFileName,
-            diagnosticsOptions: FSharpDiagnosticOptions,
-            suggestNamesForErrors: bool,
-            flatErrors: bool
-        ) =
+        (reportErrors, mainInputFileName, diagnosticsOptions: FSharpDiagnosticOptions, suggestNamesForErrors: bool, flatErrors: bool) =
         let mutable options = diagnosticsOptions
         let diagnosticsCollector = ResizeArray<_>()
         let mutable errorCount = 0
-        
+
         let collectOne severity diagnostic =
             // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
             // 2. Diagnostic message should be created during the diagnostic sink, because after typechecking
@@ -3228,13 +3222,7 @@ module internal ParseAndCheckFile =
 
             // Initialize the error handler
             let errHandler =
-                DiagnosticsHandler(
-                    true,
-                    mainInputFileName,
-                    tcConfig.diagnosticsOptions,
-                    suggestNamesForErrors,
-                    tcConfig.flatErrors
-                )
+                DiagnosticsHandler(true, mainInputFileName, tcConfig.diagnosticsOptions, suggestNamesForErrors, tcConfig.flatErrors)
 
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 

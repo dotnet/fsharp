@@ -2466,13 +2466,7 @@ type internal TransparentCompiler
                 let diags =
                     loadClosure.LoadClosureRootFileDiagnostics
                     |> List.map (fun (exn, isError) ->
-                        FSharpDiagnostic.CreateFromException(
-                            exn,
-                            isError,
-                            false,
-                            otherFlags |> List.contains "--flaterrors",
-                            None
-                        ))
+                        FSharpDiagnostic.CreateFromException(exn, isError, false, otherFlags |> List.contains "--flaterrors", None))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }
