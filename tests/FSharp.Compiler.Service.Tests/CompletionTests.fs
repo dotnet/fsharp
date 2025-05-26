@@ -13,11 +13,17 @@ let getCompletionInfo source =
 let getCompletionItemNames (completionInfo: DeclarationListInfo) =
     completionInfo.Items |> Array.map (fun item -> item.NameInCode)
 
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
+let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
     let itemNames = getCompletionItemNames completionInfo |> set
 
     for name in names do
-        Assert.True(Set.contains name itemNames, $"{name} not found in {itemNames}")
+        Assert.True(Set.contains name itemNames = contains)
+
+let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
+    assertItemsWithNames true names completionInfo
+
+let assertHasNoItemsWithNames names (completionInfo: DeclarationListInfo) =
+    assertItemsWithNames false names completionInfo
 
 [<Fact>]
 let ``Expr - After record decl 01`` () =
@@ -354,3 +360,21 @@ module rec M =
     let _: R{caret} = ()
 """
     assertHasItemWithNames ["Rec1"; "Rec2"; "Rec3"] info
+
+[<Fact>]
+let ``Not in scope 01`` () =
+    let info =
+        getCompletionInfo """
+namespace Ns1
+
+type E =
+    | A = 1
+
+namespace Ns2
+
+module Module =
+    match Ns1.E.A with
+    | {caret}
+
+"""
+    assertHasNoItemsWithNames ["E"] info
