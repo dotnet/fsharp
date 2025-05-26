@@ -13,9 +13,7 @@ open FSharp.Test
 open Xunit
 
 let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedContent: string) =
-    let source, lineText, pos = getCursorPosAndPrepareSource implSource
-    let _, column, _ = QuickParse.GetCompleteIdentifierIsland false lineText pos.Column |> Option.get
-    let plid = QuickParse.GetPartialLongNameEx(lineText, column)
+    let implSource, lineText, pos, plid, names = getPartialIdentifierAndPrepareSource implSource
 
     let files =
         Map.ofArray
@@ -46,8 +44,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedCon
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
         // Get the tooltip for (line, colAtEndOfNames) in the implementation file
         let (ToolTipText tooltipElements) =
-            let names = plid.QualifyingIdents @ [plid.PartialIdent]
-            checkResults.GetToolTip(pos.Line, plid.EndColumn, lineText, names, FSharpTokenTag.Identifier)
+            checkResults.GetToolTip(pos.Line, pos.Column, lineText, names, FSharpTokenTag.Identifier)
 
         match tooltipElements with
         | ToolTipElement.Group [ element ] :: _ ->
@@ -86,7 +83,7 @@ let ``Display XML doc of signature file for partial AP if implementation doesn't
         """
 module Foo
 
-/// Some Sig Doc on IsThree
+/// Comment
 val (|IsThree|_|): x: int -> int option
 """
 
@@ -165,7 +162,7 @@ type Bar = {
         """
 module Foo
 
-type {caret}Bar = {
+type B{caret}ar = {
     SomeField: int
 }
 """
@@ -266,7 +263,8 @@ let a = 23
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
-let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
+let testToolTipSquashing source =
+    let source, lineText, pos, plid, names = getPartialIdentifierAndPrepareSource source
     let files =
         Map.ofArray
             [| "A.fs",
@@ -293,10 +291,10 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
 
         // Get the tooltip for `bar`
         let (ToolTipText tooltipElements) =
-            checkResults.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag)
+            checkResults.GetToolTip(pos.Line, pos.Column, lineText, names, FSharpTokenTag.Identifier)
 
         let (ToolTipText tooltipElementsSquashed) =
-            checkResults.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, 10)
+            checkResults.GetToolTip(pos.Line, pos.Column, lineText, names, FSharpTokenTag.Identifier, 10)
         match tooltipElements, tooltipElementsSquashed with
         | groups, groupsSquashed ->
             let breaks =
@@ -326,71 +324,57 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
 
 [<Fact>]
 let ``Squashed tooltip of long function signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-let bar (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0
+let bar{caret} (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0
 """
-
-    testToolTipSquashing source 3 6 "let bar (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0;" [ "bar" ] FSharpTokenTag.Identifier
 
 
 [<Fact>]
 let ``Squashed tooltip of record with long field signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-type Foo =
+type Fo{caret}o =
     { Field1: string
       Field2: (string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string) }
 """
 
-    testToolTipSquashing source 3 7 "type Foo =" [ "Foo" ] FSharpTokenTag.Identifier
-
 
 [<Fact>]
 let ``Squashed tooltip of DU with long case signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-type SomeDiscUnion =
+type SomeDis{caret}cUnion =
     | Case1 of string
     | Case2 of (string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string)
 """
 
-    testToolTipSquashing source 3 7 "type SomeDiscUnion =" [ "SomeDiscUnion" ] FSharpTokenTag.Identifier
-
 
 [<Fact>]
 let ``Squashed tooltip of constructor with long signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-type SomeClass(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =
+type Some{caret}Class(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =
     member _.A = a1
 """
-
-    testToolTipSquashing source 3 7 "type SomeClass(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =" [ "SomeClass" ] FSharpTokenTag.Identifier
 
 
 [<Fact>]
 let ``Squashed tooltip of property with long signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
 type SomeClass() =
     member _.Abc: (int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int) = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 
 let c = SomeClass()
-c.Abc
+c.Ab{caret}c
 """
 
-    testToolTipSquashing source 7 5 "c.Abc" [ "c"; "Abc" ] FSharpTokenTag.Identifier
 
 let getCheckResults source options =
     let fileName, options =
