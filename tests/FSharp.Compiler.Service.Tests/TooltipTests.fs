@@ -9,11 +9,14 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Xml
 open FSharp.Test
 open Xunit
 
-let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEndOfNames lineText names (expectedContent: string) =
+let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedContent: string) =
+    let source, lineText, pos = getCursorPosAndPrepareSource implSource
+    let _, column, _ = QuickParse.GetCompleteIdentifierIsland false lineText pos.Column |> Option.get
+    let plid = QuickParse.GetPartialLongNameEx(lineText, column)
+
     let files =
         Map.ofArray
             [| "A.fsi",
@@ -43,7 +46,8 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
         // Get the tooltip for (line, colAtEndOfNames) in the implementation file
         let (ToolTipText tooltipElements) =
-            checkResults.GetToolTip(line, colAtEndOfNames, lineText, names, FSharpTokenTag.Identifier)
+            let names = plid.QualifyingIdents @ [plid.PartialIdent]
+            checkResults.GetToolTip(pos.Line, plid.EndColumn, lineText, names, FSharpTokenTag.Identifier)
 
         match tooltipElements with
         | ToolTipElement.Group [ element ] :: _ ->
@@ -55,14 +59,14 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
         | elements -> failwith $"Expected at least one tooltip group element, got {elements}"
     | _ -> failwith "Expected checking to succeed."
 
-    
+
 [<Fact>]
 let ``Display XML doc of signature file for let if implementation doesn't have one`` () =
     let sigSource =
         """
 module Foo
 
-/// Great XML doc comment
+/// Comment
 val bar: a: int -> b: int -> int
 """
 
@@ -70,11 +74,10 @@ val bar: a: int -> b: int -> int
                    """
 module Foo
 
-// No XML doc here because the signature file has one right?
-let bar a b = a - b
+let bar{caret} a b = a - b
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 4 "let bar a b = a - b" [ "bar" ] "Great XML doc comment"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
     
 
 [<Fact>]
@@ -91,11 +94,10 @@ val (|IsThree|_|): x: int -> int option
         """
 module Foo
 
-// No XML doc here because the signature file has one right?
-let (|IsThree|_|) x = if x = 3 then Some x else None
+let (|IsThr{caret}ee|_|) x = if x = 3 then Some x else None
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 4 "let (|IsThree|_|) x = if x = 3 then Some x else None" [ "IsThree" ] "Some Sig Doc on IsThree"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
     
 
 [<Fact>]
@@ -104,7 +106,7 @@ let ``Display XML doc of signature file for DU if implementation doesn't have on
         """
 module Foo
 
-/// Some sig comment on the disc union type
+/// Comment
 type Bar =
     | Case1 of int * string
     | Case2 of string
@@ -114,13 +116,12 @@ type Bar =
         """
 module Foo
 
-// No XML doc here because the signature file has one right?
-type Bar =
+type Bar{caret} =
     | Case1 of int * string
     | Case2 of string
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 7 "type Bar =" [ "Bar" ] "Some sig comment on the disc union type"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 [<Fact>]
@@ -131,7 +132,7 @@ module Foo
 
 type Bar =
     | BarCase1 of int * string
-    /// Some sig comment on the disc union case
+    /// CommentSig
     | BarCase2 of string
 """
 
@@ -141,11 +142,11 @@ module Foo
 
 type Bar =
     | BarCase1 of int * string
-    // No XML doc here because the signature file has one right?
-    | BarCase2 of string
+    // CommentImpl
+    | BarCase2{caret} of string
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 7 14 "    | BarCase2 of string" [ "BarCase2" ] "Some sig comment on the disc union case"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "CommentSig"
 
 
 [<Fact>]
@@ -154,7 +155,7 @@ let ``Display XML doc of signature file for record type if implementation doesn'
         """
 module Foo
 
-/// Some sig comment on record type
+/// Comment
 type Bar = {
     SomeField: int
 }
@@ -164,12 +165,12 @@ type Bar = {
         """
 module Foo
 
-type Bar = {
+type {caret}Bar = {
     SomeField: int
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 3 9 "type Bar = {" [ "Bar" ] "Some sig comment on record type"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 [<Fact>]
@@ -179,7 +180,7 @@ let ``Display XML doc of signature file for record field if implementation doesn
 module Foo
 
 type Bar = {
-    /// Some sig comment on record field
+    /// Comment
     SomeField: int
 }
 """
@@ -189,11 +190,11 @@ type Bar = {
 module Foo
 
 type Bar = {
-    SomeField: int
+    SomeFiel{caret}d: int
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 [<Fact>]
@@ -212,11 +213,11 @@ type Bar =
         """
 module Foo
 
-type Bar() =
+type B{caret}ar() =
     member val Foo = "bla" with get, set
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 3 9 "type Bar() =" [ "Bar" ] "Some sig comment on class type"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Some sig comment on class type"
 
 
 [<Fact>]
@@ -227,9 +228,9 @@ module Foo
 
 type Bar =
     new: unit -> Bar
-    /// Some sig comment on auto property
+    /// Comment1
     member Foo: string
-    /// Some sig comment on class member
+    /// Comment2
     member Func: int -> int -> int
 """
 
@@ -239,17 +240,17 @@ module Foo
 
 type Bar() =
     member val Foo = "bla" with get, set
-    member _.Func x y = x * y
+    member _.Func{caret} x y = x * y
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 6 30 "    member _.Func x y = x * y" [ "_"; "Func" ] "Some sig comment on class member"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment2"
 
 
 [<Fact>]
 let ``Display XML doc of signature file for module if implementation doesn't have one`` () =
     let sigSource =
         """
-/// Some sig comment on module
+/// Comment
 module Foo
 
 val a: int
@@ -257,12 +258,12 @@ val a: int
                
     let implSource =
         """
-module Foo
+module Fo{caret}o
 
 let a = 23
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 2 10 "module Foo" [ "Foo" ] "Some sig comment on module"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =

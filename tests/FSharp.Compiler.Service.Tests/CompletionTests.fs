@@ -369,6 +369,8 @@ namespace Ns1
 
 type E =
     | A = 1
+    | B = 2
+    | C = 3
 
 namespace Ns2
 
