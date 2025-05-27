@@ -727,10 +727,8 @@ let rebindRanges first fields lastSep =
         let fieldRange = calculateFieldRange lidwd mEquals value
 
         match l with
-        | [] -> 
-            List.rev (SynExprRecordField(name, mEquals, value, fieldRange, lastSep) :: acc)
-        | (f, m) :: xs ->
-            run f xs (SynExprRecordField(name, mEquals, value, fieldRange, m) :: acc)
+        | [] -> List.rev (SynExprRecordField(name, mEquals, value, fieldRange, lastSep) :: acc)
+        | (f, m) :: xs -> run f xs (SynExprRecordField(name, mEquals, value, fieldRange, m) :: acc)
 
     run first fields []
 
