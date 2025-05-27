@@ -706,8 +706,30 @@ let patFromParseError (e: SynPat) = SynPat.FromParseError(e, e.Range)
 let rebindRanges first fields lastSep =
     let rec run (name, mEquals, value) l acc =
         match l with
-        | [] -> List.rev (SynExprRecordField(name, mEquals, value, lastSep) :: acc)
-        | (f, m) :: xs -> run f xs (SynExprRecordField(name, mEquals, value, m) :: acc)
+        | [] ->
+            let (lidwd: SynLongIdent, _) = name
+
+            let fieldRange =
+                match value with
+                | Some(expr: SynExpr) -> unionRanges lidwd.Range expr.Range
+                | None ->
+                    match mEquals with
+                    | Some mEq -> unionRanges lidwd.Range mEq
+                    | None -> lidwd.Range
+
+            List.rev (SynExprRecordField(name, mEquals, value, fieldRange, lastSep) :: acc)
+        | (f, m) :: xs ->
+            let (lidwd, _) = name
+
+            let fieldRange =
+                match value with
+                | Some expr -> unionRanges lidwd.Range expr.Range
+                | None ->
+                    match mEquals with
+                    | Some mEq -> unionRanges lidwd.Range mEq
+                    | None -> lidwd.Range
+
+            run f xs (SynExprRecordField(name, mEquals, value, fieldRange, m) :: acc)
 
     run first fields []
 
