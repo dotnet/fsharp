@@ -97,7 +97,7 @@
     <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
-    <RoslynVersion>4.15.0</RoslynVersion>
+    <RoslynVersion>4.14.0</RoslynVersion>
     <VisualStudioEditorPackagesVersion>17.14.15</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>17.14.15</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.14.15</VisualStudioProjectSystemPackagesVersion>
