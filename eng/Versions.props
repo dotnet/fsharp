@@ -128,7 +128,7 @@
     <MicrosoftInternalVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
     <MicrosoftVisualStudioManagedInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioManagedInterfacesVersion>
-    <MicrosoftVisualStudioProjectAggregatorVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioProjectAggregatorVersion>
+    <MicrosoftVisualStudioProjectAggregatorVersion>17.14.39383</MicrosoftVisualStudioProjectAggregatorVersion>
     <MicrosoftVisualStudioGraphModelVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioGraphModelVersion>
     <MicrosoftVisualStudioImagingVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
@@ -196,7 +196,7 @@
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StreamJsonRpcVersion>2.21.10</StreamJsonRpcVersion>
-    <NerdbankStreamsVersion>2.11.86</NerdbankStreamsVersion>
+    <NerdbankStreamsVersion>2.11.90</NerdbankStreamsVersion>
     <XUnitVersion>2.9.0</XUnitVersion>
     <XUnitRunnerVersion>2.8.2</XUnitRunnerVersion>
     <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
