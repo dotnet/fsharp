@@ -704,30 +704,52 @@ let patFromParseError (e: SynPat) = SynPat.FromParseError(e, e.Range)
 // to form
 // binding1*sep1, binding2*sep2
 let rebindRanges first fields lastSep =
-    let rec run (name, mEquals, value) l acc =
+    let rec run (name, mEquals, value: SynExpr option) l acc =
         match l with
         | [] ->
             let (lidwd: SynLongIdent, _) = name
 
             let fieldRange =
-                match value with
-                | Some(expr: SynExpr) -> unionRanges lidwd.Range expr.Range
-                | None ->
-                    match mEquals with
-                    | Some mEq -> unionRanges lidwd.Range mEq
-                    | None -> lidwd.Range
+                // Special case for dummy field used in inherit clause
+                match lidwd with
+                | SynLongIdent([], _, _) ->
+                    // For inherit dummy field, we don't have a real field name
+                    // Use the equals range if available, otherwise use a zero range
+                    match mEquals, value with
+                    | Some mEq, Some expr -> unionRanges mEq expr.Range
+                    | Some mEq, None -> mEq
+                    | None, Some expr -> expr.Range
+                    | None, None -> range0  // This is the inherit dummy case with no content
+                | _ ->
+                    match value with
+                    | Some(expr: SynExpr) -> unionRanges lidwd.Range expr.Range
+                    | None ->
+                        match mEquals with
+                        | Some mEq -> unionRanges lidwd.Range mEq
+                        | None -> lidwd.Range
 
             List.rev (SynExprRecordField(name, mEquals, value, fieldRange, lastSep) :: acc)
         | (f, m) :: xs ->
-            let (lidwd, _) = name
+            let lidwd, _ = name
 
             let fieldRange =
-                match value with
-                | Some expr -> unionRanges lidwd.Range expr.Range
-                | None ->
-                    match mEquals with
-                    | Some mEq -> unionRanges lidwd.Range mEq
-                    | None -> lidwd.Range
+                // Special case for dummy field used in inherit clause
+                match lidwd with
+                | SynLongIdent([], _, _) ->
+                    // For inherit dummy field, we don't have a real field name
+                    // Use the equals range if available, otherwise use a zero range
+                    match mEquals, value with
+                    | Some mEq, Some expr -> unionRanges mEq expr.Range
+                    | Some mEq, None -> mEq
+                    | None, Some expr -> expr.Range
+                    | None, None -> range0  // This is the inherit dummy case with no content
+                | _ ->
+                    match value with
+                    | Some expr -> unionRanges lidwd.Range expr.Range
+                    | None ->
+                        match mEquals with
+                        | Some mEq -> unionRanges lidwd.Range mEq
+                        | None -> lidwd.Range
 
             run f xs (SynExprRecordField(name, mEquals, value, fieldRange, m) :: acc)
 
