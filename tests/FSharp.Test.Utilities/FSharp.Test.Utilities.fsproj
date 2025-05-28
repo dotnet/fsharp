@@ -8,8 +8,6 @@
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
     <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
     <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
