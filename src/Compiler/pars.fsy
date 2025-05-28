@@ -78,7 +78,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 %token <bool> LET YIELD YIELD_BANG AND_BANG
 %token <bool> LESS GREATER /* here the bool indicates if the tokens are part of a type application or type parameter declaration, e.g. C<int>, detected by the lex filter */
 %token <string> PERCENT_OP BINDER
-%token <string * bool> LQUOTE RQUOTE RQUOTE_DOT
+%token <string * bool> LQUOTE RQUOTE RQUOTE_DOT RQUOTE_BAR_RBRACE
 %token BAR_BAR UPCAST DOWNCAST NULL RESERVED MODULE NAMESPACE DELEGATE CONSTRAINT BASE
 %token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT DOT_DOT_HAT
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG

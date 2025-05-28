@@ -1168,6 +1168,7 @@ type Exception with
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
                 | Parser.TOKEN_RQUOTE_DOT
                 | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
+                | Parser.TOKEN_RQUOTE_BAR_RBRACE -> SR.GetString("Parser.TOKEN.RQUOTE.BAR.RBRACE")
                 | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
                 | Parser.TOKEN_RBRACE_COMING_SOON
