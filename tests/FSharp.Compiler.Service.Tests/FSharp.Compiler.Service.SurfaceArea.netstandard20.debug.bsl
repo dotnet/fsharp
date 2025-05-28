@@ -7888,7 +7888,9 @@ FSharp.Compiler.Syntax.SynExprAndBang: Int32 Tag
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprAndBang: System.String ToString()
 FSharp.Compiler.Syntax.SynExprModule: Boolean shouldBeParenthesizedInContext(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynExpr)
-FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 Tag
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprRecordField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] expr
