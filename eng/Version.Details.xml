@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="b53264c74f71c3b8cde1d4956fa8c6d772c557dd" BarId="269628" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="57b0396ae0d21b9f0dfe0d208c57822fb88f9a8d" BarId="269724" />
   <ProductDependencies>
     <Dependency Name="Microsoft.SourceBuild.Intermediate.source-build-reference-packages" Version="9.0.0-alpha.1.25223.3">
       <Uri>https://github.com/dotnet/source-build-reference-packages</Uri>
