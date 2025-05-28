@@ -131,9 +131,9 @@
     <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioManagedInterfacesVersion>
     <MicrosoftVisualStudioProjectAggregatorVersion>$(VisualStudioShellProjectsPackages)</MicrosoftVisualStudioProjectAggregatorVersion>
     <MicrosoftVisualStudioGraphModelVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioGraphModelVersion>
-    <MicrosoftVisualStudioImagingVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingVersion>
+    <MicrosoftVisualStudioImagingVersion>17.14.40270</MicrosoftVisualStudioImagingVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
-    <MicrosoftVisualStudioUtilitiesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioUtilitiesVersion>
+    <MicrosoftVisualStudioUtilitiesVersion>17.14.40270</MicrosoftVisualStudioUtilitiesVersion>
     <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
@@ -169,7 +169,7 @@
     <!-- -->
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVSSDKBuildToolsVersion>17.10.2179</MicrosoftVSSDKBuildToolsVersion>
-    <MicrosoftVisualStudioRpcContractsVersion>17.14.18</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>17.14.20</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <MicrosoftVisualStudioValidationVersion>17.8.8</MicrosoftVisualStudioValidationVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
