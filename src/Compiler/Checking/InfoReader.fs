@@ -1256,13 +1256,7 @@ let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
     | FSProp _ as fspinfo -> 
         match fspinfo.ArbitraryValRef with 
         | None -> None
-        | Some vref -> 
-            // Get the XML doc signature first
-            match GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref with
-            | Some (ccuFileName, docsig) when pinfo.IsFSharpEventProperty && docsig.StartsWith("P:") ->
-                // For CLIEvent properties, use E: prefix instead of P:
-                Some (ccuFileName, "E:" + docsig.Substring(2))
-            | other -> other
+        | Some vref -> GetXmlDocSigOfScopedValRef g pinfo.DeclaringTyconRef vref
     | ILProp(ILPropInfo(_, pdef)) -> 
         match TryFindMetadataInfoOfExternalEntityRef infoReader m pinfo.DeclaringTyconRef with
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
