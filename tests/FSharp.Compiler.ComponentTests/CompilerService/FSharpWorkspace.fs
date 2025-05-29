@@ -49,7 +49,10 @@ type TestingWorkspace(testName) as _this =
 
     interface IDisposable with
         member _.Dispose() =
-            activity.Dispose()
+            if not (isNull activity) then
+                activity.Dispose()
+            else
+                ()
             //tracerProvider.ForceFlush() |> ignore
             //tracerProvider.Dispose()
 
