@@ -593,7 +593,6 @@ module internal ParseAndCheckFile =
             reportErrors: bool *
             mainInputFileName: string *
             diagnosticsOptions: FSharpDiagnosticOptions *
-            sourceText: ISourceText *
             suggestNamesForErrors: bool *
             flatErrors: bool ->
                 DiagnosticsHandler

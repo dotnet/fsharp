@@ -64,7 +64,7 @@ module Codepage =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 193, Line 1, Col 1, Line 1, Col 1, "No data is available for encoding 65535. For information on defining a custom encoding, see the documentation for the Encoding.RegisterProvider method.")
+            (Error 193, Line 0, Col 1, Line 0, Col 1, "No data is available for encoding 65535. For information on defining a custom encoding, see the documentation for the Encoding.RegisterProvider method.")
         ]
 
     //# Boundary case
