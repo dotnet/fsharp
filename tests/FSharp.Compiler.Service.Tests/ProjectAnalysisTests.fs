@@ -4362,7 +4362,7 @@ let ``Test Project32 should be able to find impl symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project32.fileName1, Project32.options)
         |> Async.RunImmediate
 
-    let implSymbolUseOpt = implBackgroundTypedParse1.GetSymbolUseAtLocation(3,5,"",["func"])
+    let implSymbolUseOpt = implBackgroundTypedParse1.GetSymbolUseAtLocation(3,5,"let func x = x + 1",["func"])
     let implSymbol = implSymbolUseOpt.Value.Symbol
 
     let usesOfImplSymbol =

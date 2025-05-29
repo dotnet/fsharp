@@ -103,7 +103,7 @@
     <VisualStudioProjectSystemPackagesVersion>17.14.79</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>17.14.40254</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.14.15</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildVersion>17.15.0-preview-25276-10</MicrosoftBuildVersion>
+    <MicrosoftBuildVersion>17.15.0-preview-25278-01</MicrosoftBuildVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
@@ -139,9 +139,9 @@
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- -->
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildFrameworkVersion>17.15.0-preview-25276-10</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.15.0-preview-25276-10</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.15.0-preview-25276-10</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildFrameworkVersion>17.15.0-preview-25278-01</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>17.15.0-preview-25278-01</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>17.15.0-preview-25278-01</MicrosoftBuildUtilitiesCoreVersion>
     <!-- -->
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
@@ -204,10 +204,10 @@
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->
     <!-- MIBC profile packages -->
-    <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.24462.2</optimizationwindows_ntx64MIBCRuntimeVersion>
-    <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.24462.2</optimizationwindows_ntx86MIBCRuntimeVersion>
-    <optimizationwindows_ntarm64MIBCRuntimeVersion>1.0.0-prerelease.24462.2</optimizationwindows_ntarm64MIBCRuntimeVersion>
-    <optimizationlinuxx64MIBCRuntimeVersion>1.0.0-prerelease.24462.2</optimizationlinuxx64MIBCRuntimeVersion>
-    <optimizationlinuxarm64MIBCRuntimeVersion>1.0.0-prerelease.24462.2</optimizationlinuxarm64MIBCRuntimeVersion>
+    <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.25256.1</optimizationwindows_ntx64MIBCRuntimeVersion>
+    <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.25256.1</optimizationwindows_ntx86MIBCRuntimeVersion>
+    <optimizationwindows_ntarm64MIBCRuntimeVersion>1.0.0-prerelease.25256.1</optimizationwindows_ntarm64MIBCRuntimeVersion>
+    <optimizationlinuxx64MIBCRuntimeVersion>1.0.0-prerelease.25256.1</optimizationlinuxx64MIBCRuntimeVersion>
+    <optimizationlinuxarm64MIBCRuntimeVersion>1.0.0-prerelease.25256.1</optimizationlinuxarm64MIBCRuntimeVersion>
   </PropertyGroup>
 </Project>
