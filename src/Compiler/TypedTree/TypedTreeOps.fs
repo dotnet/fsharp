@@ -5801,11 +5801,23 @@ type StaticOptimizationAnswer =
 //    ^T : ^T  --> used in (+), (-) etc. to guard witness-invoking implementations added in F# 5
 //    'T : 'T  --> used in FastGenericEqualityComparer, FastGenericComparer to guard struct/tuple implementations 
 //
+// For performance and compatibility reasons, 'T when 'T is an enum is handled with its own special hack.
+// Unlike for other 'T : tycon constraints, 'T can be any enum; it need not (and indeed must not) be identical to System.Enum itself.
+//    'T : Enum
+//
+// In order to add this hack in a backwards-compatible way, we must hide this capability behind a marker type
+// which we use solely as an indicator of whether the compiler understands `when 'T : Enum`.
+//    'T : SupportsWhenTEnum
+//
 // canDecideTyparEqn is set to true in IlxGen when the witness-invoking implementation can be used.
 let decideStaticOptimizationConstraint g c canDecideTyparEqn = 
     match c with 
     | TTyconEqualsTycon (a, b) when canDecideTyparEqn && typeEquiv g a b && isTyparTy g a ->
-         StaticOptimizationAnswer.Yes
+        StaticOptimizationAnswer.Yes
+    | TTyconEqualsTycon (_, b) when tryTcrefOfAppTy g b |> ValueOption.exists (tyconRefEq g g.SupportsWhenTEnum_tcr) ->
+        StaticOptimizationAnswer.Yes
+    | TTyconEqualsTycon (a, b) when isEnumTy g a && not (typeEquiv g a g.system_Enum_ty) && typeEquiv g b g.system_Enum_ty ->
+        StaticOptimizationAnswer.Yes
     | TTyconEqualsTycon (a, b) ->
         // Both types must be nominal for a definite result
        let rec checkTypes a b =
@@ -5815,7 +5827,7 @@ let decideStaticOptimizationConstraint g c canDecideTyparEqn =
                let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
                match b with 
                | AppTy g (tcref2, _) -> 
-                if tyconRefEq g tcref1 tcref2 then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
+                if tyconRefEq g tcref1 tcref2 && not (typeEquiv g a g.system_Enum_ty) then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
                | RefTupleTy g _ | FunTy g _ -> StaticOptimizationAnswer.No
                | _ -> StaticOptimizationAnswer.Unknown
 
@@ -6495,10 +6507,10 @@ and remapAndRenameModBind ctxt compgen tmenv x =
         ModuleOrNamespaceBinding.Module(mspec, def)
 
 and remapImplFile ctxt compgen tmenv implFile = 
-    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let (CheckedImplFile (fragName, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let contentsR = copyAndRemapModDef ctxt compgen tmenv contents
     let signatureR, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv signature
-    let implFileR = CheckedImplFile (fragName, pragmas, signatureR, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFileR = CheckedImplFile (fragName, signatureR, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
     implFileR, tmenv
 
 // Entry points
@@ -9868,9 +9880,9 @@ and rewriteModuleOrNamespaceBindings env mbinds =
     List.map (rewriteModuleOrNamespaceBinding env) mbinds
 
 and RewriteImplFile env implFile =
-    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let (CheckedImplFile (fragName, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let contentsR = rewriteModuleOrNamespaceContents env contents
-    let implFileR = CheckedImplFile (fragName, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFileR = CheckedImplFile (fragName, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
     implFileR
 
 //--------------------------------------------------------------------------

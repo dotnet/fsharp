@@ -30,6 +30,7 @@
     <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
       <Link>XunitSetup.fs</Link>
     </Compile>
+    <Compile Include="CompilerDirectives\Nowarn.fs" />
     <Compile Include="CompilerDirectives\Line.fs" />
     <Compile Include="CompilerDirectives\Ifdef.fs" />
     <Compile Include="CompilerDirectives\NonStringArgs.fs" />
@@ -75,6 +76,7 @@
     <Compile Include="Conformance\BasicGrammarElements\TypeAbbreviations\WarnForAttributeAlias.fs" />
     <Compile Include="Conformance\BasicGrammarElements\ValueRestriction\ValueRestriction.fs" />
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindings.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
@@ -128,10 +130,15 @@
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
-    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Bounds\Bounds.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Constants\Constants.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics\Diagnostics.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Operators\Operators.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parenthesis\Parenthesis.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parsing\Parsing.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker\TypeChecker.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\WithOOP\WithOOP.fs" />
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\VeryLargeClasses.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
@@ -178,6 +185,7 @@
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
     <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
+    <Compile Include="EmittedIL\StaticOptimizations\StaticOptimizations.fs" />
     <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
@@ -300,6 +308,7 @@
     <Compile Include="CompilerOptions\fsc\refonlyrefout.fs" />
     <Compile Include="CompilerOptions\fsc\sourceFiles.fs" />
     <Compile Include="CompilerService\RangeModule.fs" />
+    <Compile Include="CompilerService\Caches.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
@@ -337,6 +346,7 @@
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
+    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs"/>
   </ItemGroup>
 
   <ItemGroup>

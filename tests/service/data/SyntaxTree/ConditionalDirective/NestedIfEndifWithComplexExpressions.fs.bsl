@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ConditionalDirective/NestedIfEndifWithComplexExpressions.fs", false,
-      QualifiedNameOfFile NestedIfEndifWithComplexExpressions, [], [],
+      QualifiedNameOfFile NestedIfEndifWithComplexExpressions, [],
       [SynModuleOrNamespace
          ([NestedIfEndifWithComplexExpressions], false, AnonModule,
           [Let
@@ -23,4 +23,5 @@ ImplFile
           If (And (Ident "FOO", Ident "BAR"), (4,8--4,22));
           If (Or (Ident "MEH", Ident "HMM"), (5,12--5,26)); EndIf (7,12--7,18);
           EndIf (8,8--8,14); EndIf (9,4--9,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

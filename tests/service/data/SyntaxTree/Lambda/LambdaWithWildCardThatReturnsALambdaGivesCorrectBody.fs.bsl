@@ -3,7 +3,7 @@ ImplFile
      ("/root/Lambda/LambdaWithWildCardThatReturnsALambdaGivesCorrectBody.fs",
       false,
       QualifiedNameOfFile LambdaWithWildCardThatReturnsALambdaGivesCorrectBody,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([LambdaWithWildCardThatReturnsALambdaGivesCorrectBody], false,
           AnonModule,
@@ -32,4 +32,5 @@ ImplFile
                  { ArrowRange = Some (2,6--2,8) }), (2,0--2,19))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

@@ -5,9 +5,9 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -341,6 +341,24 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen entity.NestedEntities ]
 
+
+let getCursorPosAndPrepareSource (source: string) : string * string * pos =
+    let lines = source.Split([|"\r\n"; "\n"|], StringSplitOptions.None)
+    let line = lines |> Seq.findIndex _.Contains("{caret}")
+    let lineText = lines[line]
+    let column = lineText.IndexOf("{caret}")
+
+    let source = source.Replace("{caret}", "")
+    let lineText = lineText.Replace("{caret}", "")
+    source, lineText, Position.mkPos (line + 1) (column - 1)
+
+let getPartialIdentifierAndPrepareSource source =
+    let source, lineText, pos = getCursorPosAndPrepareSource source
+    let _, column, _ = QuickParse.GetCompleteIdentifierIsland false lineText pos.Column |> Option.get
+    let pos = Position.mkPos pos.Line column
+    let plid = QuickParse.GetPartialLongNameEx(lineText, column - 1)
+    let names = plid.QualifyingIdents @ [plid.PartialIdent]
+    source, lineText, pos, plid, names
 
 let getParseResults (source: string) =
     parseSourceCode("Test.fsx", source)

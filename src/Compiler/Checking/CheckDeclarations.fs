@@ -341,7 +341,7 @@ let AddNonLocalCcu g amap scopem env assemblyName (ccu: CcuThunk, internalsVisib
     env
 
 /// Adjust the TcEnv to account for a fully processed "namespace" declaration in this file
-let AddLocalRootModuleOrNamespace tcSink g amap scopem env (moduleTy: ModuleOrNamespaceType) = 
+let AddLocalRootModuleOrNamespace g amap scopem env (moduleTy: ModuleOrNamespaceType) = 
     // Compute the top-rooted module or namespace references
     let modrefs = moduleTy.ModuleAndNamespaceDefinitions |> List.map mkLocalModuleRef
     // Compute the top-rooted type definitions
@@ -350,7 +350,6 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (moduleTy: ModuleOrNa
     let env = { env with
                     eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap env.eAccessRights scopem true env.eNameResEnv tcrefs
                     eUngeneralizableItems = addFreeItemOfModuleTy moduleTy env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
 /// Inside "namespace X.Y.Z" there is an implicit open of "X.Y.Z"
@@ -577,22 +576,33 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs =
-            (*
-                The attributes of a union case decl get attached to the generated "static factory" method.
-                Enforce union-cases AttributeTargets:
-                - AttributeTargets.Method
-                    type SomeUnion =
-                    | Case1 of int // Compiles down to a static method
-                - AttributeTargets.Property
-                    type SomeUnion =
-                    | Case1 // Compiles down to a static property
-            *)
-            if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
-                let target = if rfields.IsEmpty then AttributeTargets.Property else AttributeTargets.Method
-                TcAttributes cenv env target synAttrs
-            else
-                TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+        let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs
+        (*
+            The attributes of a union case decl get attached to the generated "static factory" method.
+            Enforce union-cases AttributeTargets:
+            - AttributeTargets.Method
+                type SomeUnion =
+                | Case1 of int // Compiles down to a static method
+            - AttributeTargets.Property
+                type SomeUnion =
+                | Case1 // Compiles down to a static property
+        *)
+        if g.langVersion.SupportsFeature(LanguageFeature.EnforceAttributeTargets) then
+            let attrTargets =
+                attrs
+                |> List.collect (fun attr ->
+                    attr.TyconRef.Attribs
+                    |> List.choose (fun attr ->
+                        match attr with
+                        | Attrib(unnamedArgs = [ AttribInt32Arg validOn ]) -> Some validOn
+                        | _ -> None))
+                
+            attrTargets
+            |> List.iter (fun target ->
+                // If the union case has fields, and the target is not AttributeTargets.Method || AttributeTargets.All. Then we raise a separate opt-in warning
+                let hasNotMethodTarget = (enum target &&& AttributeTargets.Method) = enum 0
+                if  hasNotMethodTarget then
+                    warning(Error(FSComp.SR.tcAttributeIsNotValidForUnionCaseWithFields(), id.idRange)))
         
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
@@ -4978,7 +4988,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 CallNameResolutionSink cenv.tcSink (moduleEntity.Range, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights))
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
-            let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink g cenv.amap m envNS modTyRoot else envNS
+            let envNS = if isRec then AddLocalRootModuleOrNamespace g cenv.amap m envNS modTyRoot else envNS
             let nsInfo = Some (modulNSOpt, envNS.eModuleOrNamespaceTypeAccumulator) 
             let mutRecNSInfo = if isRec then nsInfo else None
 
@@ -4990,7 +5000,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 if isNil enclosingNamespacePath then 
                     envAtEnd
                 else
-                    let env = AddLocalRootModuleOrNamespace cenv.tcSink g cenv.amap m env modTyRoot
+                    let env = AddLocalRootModuleOrNamespace g cenv.amap m env modTyRoot
 
                     // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment.
                     let env, _openDecls = 
@@ -5429,6 +5439,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           let envNS = LocateEnv kind.IsModule cenv.thisCcu env enclosingNamespacePath
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink g cenv.amap m enclosingNamespacePath envNS
+          CallEnvSink cenv.tcSink (m, envNS.NameEnv, env.eAccessRights)
 
           let modTyNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
           let modTyRoot, modulNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath modTyNS
@@ -5440,7 +5451,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
             CallNameResolutionSink cenv.tcSink (moduleEntity.Range, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights))
 
           // For 'namespace rec' and 'module rec' we add the thing being defined 
-          let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink g cenv.amap m envNS modTyRoot else envNS
+          let envNS = if isRec then AddLocalRootModuleOrNamespace g cenv.amap m envNS modTyRoot else envNS
           let nsInfo = Some (modulNSOpt, envNS.eModuleOrNamespaceTypeAccumulator)
           let mutRecNSInfo = if isRec then nsInfo else None
 
@@ -5453,7 +5464,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               if isNil enclosingNamespacePath then 
                   envAtEnd, []
               else
-                  let env = AddLocalRootModuleOrNamespace cenv.tcSink g cenv.amap m env modTyRoot
+                  let env = AddLocalRootModuleOrNamespace g cenv.amap m env modTyRoot
 
                   // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment
                   let env, openDecls = 
@@ -5753,7 +5764,7 @@ let CheckOneImplFile
         synImplFile,
         diagnosticOptions) =
 
-    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
+    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
@@ -5892,7 +5903,7 @@ let CheckOneImplFile
            |> Array.map (fun (KeyValue(k,v)) -> (k,v))
            |> Map
 
-        let implFile = CheckedImplFile (qualNameOfFile, scopedPragmas, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+        let implFile = CheckedImplFile (qualNameOfFile, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
         return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
      } 
