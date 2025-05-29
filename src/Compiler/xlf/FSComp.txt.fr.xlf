@@ -1397,6 +1397,11 @@
         <target state="translated">Le champ '{0}' apparaît plusieurs fois dans ce type d'enregistrement anonyme.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
+        <source>This attribute is not valid for use on union cases with fields.</source>
+        <target state="new">This attribute is not valid for use on union cases with fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Impossible d'appliquer des attributs aux extensions de type.</target>

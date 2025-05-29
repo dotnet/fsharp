@@ -1210,6 +1210,11 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, BAR_RBRACK, 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -2))
                             pool.Return tokenTup
+                        | RQUOTE_BAR_RBRACE x ->
+                            lexbuf.CheckLanguageFeatureAndRecover LanguageFeature.BetterAnonymousRecordParsing lexbuf.LexemeRange
+                            delayToken (pool.UseShiftedLocation(tokenTup, BAR_RBRACE, 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, RQUOTE(x), 0, -2))
+                            pool.Return tokenTup
                         | GREATER_RBRACK ->
                             delayToken (pool.UseShiftedLocation(tokenTup, RBRACK, 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
@@ -2629,6 +2634,13 @@ type LexFilterImpl (
                   | _ -> noMerge()
               else
                   noMerge()
+              true
+
+          | RQUOTE_BAR_RBRACE x ->
+              lexbuf.CheckLanguageFeatureAndRecover LanguageFeature.BetterAnonymousRecordParsing lexbuf.LexemeRange
+              delayToken (pool.UseShiftedLocation(tokenTup, BAR_RBRACE, 1, 0))
+              delayToken (pool.UseShiftedLocation(tokenTup, RQUOTE(x), 0, -2))
+              pool.Return tokenTup
               true
 
           | _ ->
