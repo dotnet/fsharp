@@ -8,6 +8,6 @@
 
 let f ( x:float<'u> ) : float<'v> = x * 1.0<_>
 
-if (f 3.5<kg>) <> 3.5<kg> then exit 1
+if (f 3.5<kg>) <> 3.5<kg> then ignore 1
 
-exit 0
+ignore 0

@@ -444,7 +444,7 @@ module CompilerAssertHelpers =
         let errors, ex = checker.Compile args |> Async.RunImmediate
         errors, ex, outputFilePath
 
-    let compileDisposable (outputDirectory:DirectoryInfo) isExe options targetFramework nameOpt (sources:SourceCodeFileKind list) =
+    let compileDisposable (outputDirectory: DirectoryInfo) isExe options targetFramework nameOpt (sources: SourceCodeFileKind list) =
         let name =
             match nameOpt with
             | Some name -> name
@@ -1006,14 +1006,21 @@ Updated automatically, please check diffs in your pull request, changes must be 
         errors
         |> Seq.iter (fun error -> errorMessages.Add(error.Message))
 
-        match ch with
-        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
-        | _ -> ()
+        let errors =
+            match ch with
+            | Choice2Of2 ex ->
+                errorMessages.Add(ex.Message)
+                errors
+                |> Array.append [|
+                    FSharpDiagnostic.Create(FSharpDiagnosticSeverity.Error, ex.Message, 9999, Range.Zero, subcategory="ScriptException")
+                |]
+            | _ -> errors
 
-        errorMessages, string outStream, string errStream
+        // TODO: clean up errormessages and diagnostics.  No need for two returns of similar data.
+        errors, errorMessages, string outStream, string errStream
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
-        let errorMessages, _, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+        let _diagnostics, errorMessages, _, _ = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
         if expectedErrorMessages.Length <> errorMessages.Count then
             Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
         else
