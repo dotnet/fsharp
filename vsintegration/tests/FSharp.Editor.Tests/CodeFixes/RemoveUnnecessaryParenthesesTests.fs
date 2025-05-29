@@ -1390,6 +1390,27 @@ in x
             $"{3 + LanguagePrimitives.GenericZero<int> :N0}"
             """
 
+            """
+            $"{({ A = 3 })}"
+            """,
+            """
+            $"{({ A = 3 })}"
+            """
+
+            """
+            $"{({| A = 3 |})}"
+            """,
+            """
+            $"{({| A = 3 |})}"
+            """
+
+            """
+            $"{({ 1..10 })}"
+            """,
+            """
+            $"{({ 1..10 })}"
+            """
+
             // LibraryOnlyILAssembly
             """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
 

@@ -1014,6 +1014,8 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynBinding b :: origPath
 
                 match b with
+                | SynBinding(kind = SynBindingKind.Do; expr = expr) -> traverseSynExpr path expr
+
                 | SynBinding(headPat = synPat; expr = synExpr; attributes = attributes; range = m) ->
                     [
                         yield! attributeApplicationDives path attributes

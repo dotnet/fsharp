@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/PrivateKeywordHasRange.fs", false,
-      QualifiedNameOfFile PrivateKeywordHasRange, [], [],
+      QualifiedNameOfFile PrivateKeywordHasRange, [],
       [SynModuleOrNamespace
          ([PrivateKeywordHasRange], false, AnonModule,
           [Types
@@ -32,5 +32,6 @@ ImplFile
           None, (2,0--10,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives =
          [If (Not (Ident "FABLE_COMPILER"), (6,0--6,19)); EndIf (8,0--8,6)]
+        WarnDirectives = []
         CodeComments = [LineComment (3,4--3,67); LineComment (4,4--4,56)] },
       set []))

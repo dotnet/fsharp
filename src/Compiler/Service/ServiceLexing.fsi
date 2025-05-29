@@ -371,6 +371,7 @@ type public FSharpTokenKind =
     | HashIf
     | HashElse
     | HashEndIf
+    | WarnDirective
     | CommentTrivia
     | WhitespaceTrivia
     | HashLine
@@ -456,6 +457,8 @@ type public FSharpTokenKind =
     | Comma
     | RightArrow
     | GreaterBarRightBracket
+    | GreaterBarRightBrace
+    | RQuoteBarRightBrace
     | LeftParenthesisStarRightParenthesis
     | Open
     | Or

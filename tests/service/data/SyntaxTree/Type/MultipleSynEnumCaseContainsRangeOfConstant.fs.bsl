@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/MultipleSynEnumCaseContainsRangeOfConstant.fs", false,
-      QualifiedNameOfFile MultipleSynEnumCaseContainsRangeOfConstant, [], [],
+      QualifiedNameOfFile MultipleSynEnumCaseContainsRangeOfConstant, [],
       [SynModuleOrNamespace
          ([MultipleSynEnumCaseContainsRangeOfConstant], false, AnonModule,
           [Types
@@ -30,4 +30,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,13))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

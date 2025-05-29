@@ -245,7 +245,7 @@ namespace N
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for invalid tailcalls in type methods`` () =
-        """
+        FSharp """
 namespace N
 
     module M =
@@ -261,29 +261,12 @@ namespace N
                 printfn "M2 called"
                 this.M1() + 2    // should warn
         """
-        |> FSharp
         |> withLangVersion80
         |> compile
         |> shouldFail
-        |> withResults [
-            { Error = Warning 3569
-              Range = { StartLine = 10
-                        StartColumn = 17
-                        EndLine = 10
-                        EndColumn = 26 }
-              Message =
-               "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-            { Error = Warning 3569
-              Range = { StartLine = 15
-                        StartColumn = 17
-                        EndLine = 15
-                        EndColumn = 26 }
-              Message =
-#if Debug               
-               "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-#else
-               "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
-#endif
+        |> withDiagnostics [
+            (Warning 3569, Line 10, Col 17, Line 10, Col 26, "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.");
+            (Warning 3569, Line 15, Col 17, Line 15, Col 26, "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.")
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
@@ -1481,7 +1464,10 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
+        |> withDiagnostics [
+            (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
+            (Warning 3861, Line 7, Col 13, Line 7, Col 18, "The TailCall attribute should only be applied to recursive functions.")
+        ] 
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Error about attribute on recursive let-bound value`` () =
@@ -1497,7 +1483,7 @@ namespace N
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
+        |> withSingleDiagnostic (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn about self-defined attribute`` () = // is the analysis available for users of older FSharp.Core versions

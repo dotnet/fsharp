@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_NestedPropertiesAfterUnderscore.fs", false,
-      QualifiedNameOfFile DotLambda_NestedPropertiesAfterUnderscore, [], [],
+      QualifiedNameOfFile DotLambda_NestedPropertiesAfterUnderscore, [],
       [SynModuleOrNamespace
          ([DotLambda_NestedPropertiesAfterUnderscore], false, AnonModule,
           [Let
@@ -26,4 +26,5 @@ ImplFile
                     EqualsRange = Some (1,11--1,12) })], (1,0--1,41))],
           PreXmlDocEmpty, [], None, (1,0--1,41), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

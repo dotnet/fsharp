@@ -10391,7 +10391,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: CheckedImplFileAfterOptimization) =
-    let (CheckedImplFile(qname, _, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, _)) =
+    let (CheckedImplFile(qname, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, _)) =
         implFile.ImplFile
 
     let optimizeDuringCodeGen = implFile.OptimizeDuringCodeGen

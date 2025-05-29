@@ -3,7 +3,6 @@ ImplFile
      ("/root/Expression/NestedSynExprLetOrUseContainsTheRangeOfInKeyword.fs",
       false,
       QualifiedNameOfFile NestedSynExprLetOrUseContainsTheRangeOfInKeyword, [],
-      [],
       [SynModuleOrNamespace
          ([NestedSynExprLetOrUseContainsTheRangeOfInKeyword], false, AnonModule,
           [Let
@@ -64,4 +63,5 @@ ImplFile
                     EqualsRange = Some (2,9--2,10) })], (2,0--5,9))],
           PreXmlDocEmpty, [], None, (2,0--6,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [LineComment (3,17--3,55)] }, set []))

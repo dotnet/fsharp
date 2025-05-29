@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/SynExprDynamicDoesContainParentheses.fs", false,
-      QualifiedNameOfFile SynExprDynamicDoesContainParentheses, [], [],
+      QualifiedNameOfFile SynExprDynamicDoesContainParentheses, [],
       [SynModuleOrNamespace
          ([SynExprDynamicDoesContainParentheses], false, AnonModule,
           [Expr
@@ -11,4 +11,5 @@ ImplFile
                  (2,0--2,5)), (2,0--2,5))], PreXmlDocEmpty, [], None, (2,0--2,5),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

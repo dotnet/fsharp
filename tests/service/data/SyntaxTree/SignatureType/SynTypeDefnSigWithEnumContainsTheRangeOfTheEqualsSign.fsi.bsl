@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/SynTypeDefnSigWithEnumContainsTheRangeOfTheEqualsSign.fsi",
       QualifiedNameOfFile SynTypeDefnSigWithEnumContainsTheRangeOfTheEqualsSign,
-      [], [],
+      [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [Types
@@ -31,4 +31,5 @@ SigFile
                     WithKeyword = None })], (4,0--6,19))], PreXmlDocEmpty, [],
           None, (2,0--6,19), { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

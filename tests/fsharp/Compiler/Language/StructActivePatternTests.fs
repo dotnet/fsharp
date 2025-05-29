@@ -176,7 +176,7 @@ let (|Foo|_|) x = ValueNone
 [<Struct>]
 let (|Foo|_|) x = ValueNone
 """
-            [|(FSharpDiagnosticSeverity.Error, 842, (2, 3, 2, 9),
+            [|(FSharpDiagnosticSeverity.Warning, 842, (2, 3, 2, 9),
                "This attribute is not valid for use on this language element");
               (FSharpDiagnosticSeverity.Error, 3350, (3, 6, 3, 13),
                "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater.")|]
