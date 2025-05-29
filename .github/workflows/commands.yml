@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
   issues: write
-  pull-requests: write
+  pull-requests: read
 
 jobs:
   cleanup_old_runs:
@@ -95,7 +95,7 @@ jobs:
         git commit -a -m 'Automated command ran: ${{ steps.command-extractor.outputs.result }}
 
           Co-authored-by: ${{ github.event.comment.user.login }} <${{ github.event.comment.user.id }}+${{ github.event.comment.user.login }}@users.noreply.github.com>'
-        git push
+        git push origin HEAD:"refs/heads/$PR_HEAD_REF"\
     - name: Post command comment
       if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       uses: actions/github-script@v3
