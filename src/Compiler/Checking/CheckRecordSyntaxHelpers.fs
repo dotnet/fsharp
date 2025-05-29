@@ -129,7 +129,13 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             | _ ->
                 let fields =
                     [
-                        SynExprRecordField((LongIdentWithDots([ fieldId ], []), true), None, Some nestedField, None)
+                        SynExprRecordField(
+                            (LongIdentWithDots([ fieldId ], []), true),
+                            None,
+                            Some nestedField,
+                            unionRanges fieldId.idRange nestedField.Range,
+                            None
+                        )
                     ]
 
                 SynExpr.Record(None, copyInfo outerFieldId, fields, outerFieldId.idRange)
