@@ -391,6 +391,20 @@ namespace Microsoft.FSharp.Core
     type TailCallAttribute() =
         inherit System.Attribute()
 
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open System.ComponentModel
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// A marker type that only compilers that support the <c>when 'T : Enum</c>
+    /// library-only static optimization constraint will recognize.
+    /// </summary>
+    [<Sealed; AbstractClass>]
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    type SupportsWhenTEnum = class end
+
 #if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
 
@@ -5149,11 +5163,10 @@ namespace Microsoft.FSharp.Core
              when ^T : decimal    = (# "conv.i" (int64 (# "" value : decimal #)) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
-        [<CompiledName("ToString")>]
-        let inline string (value: 'T) = 
-             anyToString "" value
+        let inline defaultString (value : 'T) =
+            anyToString "" value
 
-             when 'T : string =
+            when 'T : string =
                 if value = unsafeDefault<'T> then ""
                 else (# "" value : string #)     // force no-op
 
@@ -5170,10 +5183,9 @@ namespace Microsoft.FSharp.Core
              when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
              when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
 
-             // Integral types can be enum:
-             // It is not possible to distinguish statically between Enum and (any type of) int. For signed types we have 
-             // to use IFormattable::ToString, as the minus sign can be overridden. Using boxing we'll print their symbolic
-             // value if it's an enum, e.g.: 'ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             // These rules for signed integer types will no longer be used when built with a compiler version that
+             // supports `when 'T : Enum`, but we must keep them to remain compatible with compiler versions that do not.
+             // Once all compiler versions that do not understand `when 'T : Enum` are out of support, these four rules can be removed.
              when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
@@ -5185,7 +5197,6 @@ namespace Microsoft.FSharp.Core
              when 'T : uint16     = let x = (# "" value : 'T #) in x.ToString()
              when 'T : uint32     = let x = (# "" value : 'T #) in x.ToString()
              when 'T : uint64     = let x = (# "" value : 'T #) in x.ToString()
-
 
              // other common mscorlib System struct types
              when 'T : DateTime       = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
@@ -5205,6 +5216,38 @@ namespace Microsoft.FSharp.Core
              when 'T : IFormattable =
                 if value = unsafeDefault<'T> then ""
                 else let x = (# "" value : IFormattable #) in defaultIfNull "" (x.ToString(null, CultureInfo.InvariantCulture))
+
+        [<CompiledName("ToString")>]
+        let inline string (value: 'T) = 
+             defaultString value
+
+             // Only compilers that understand `when 'T : SupportsWhenTEnum` will understand `when 'T : Enum`.
+             when 'T : CompilerServices.SupportsWhenTEnum =
+                (
+                    let inline string (value : 'T) =
+                        defaultString value
+
+                        // Special handling is required for enums, since:
+                        //
+                        // - The runtime value may be outside the defined members of the enum.
+                        // - Their underlying type may be a signed integral type.
+                        // - The negative sign may be overridden.
+                        //
+                        // For example:
+                        //
+                        //     string DayOfWeek.Wednesday   →  "Wednesday"
+                        //     string (enum<DayOfWeek> -3)  →  "-3" // The negative sign is culture-dependent.
+                        //     string (enum<DayOfWeek> -3)  →  "⁒3" // E.g., the negative sign for the current culture could be overridden to "⁒".
+                        when 'T : Enum  = let x = (# "" value : 'T #) in x.ToString() // Use 'T to constrain the call to the specific enum type.
+
+                        // For compilers that understand `when 'T : Enum`, we can safely make a constrained call on the integral type itself here.
+                        when 'T : sbyte = let x = (# "" value : sbyte #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int16 = let x = (# "" value : int16 #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int32 = let x = (# "" value : int32 #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int64 = let x = (# "" value : int64 #) in x.ToString(null, CultureInfo.InvariantCulture)
+
+                    string value
+                )
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
