@@ -1852,8 +1852,9 @@ module Seq =
     [<CompiledName("OfList")>]
     val ofList: source: 'T list -> seq<'T>
 
-    /// <summary>Returns a sequence of each element in the input sequence and its predecessor, with the
-    /// exception of the first element which is only returned as the predecessor of the second element.</summary>
+    /// <summary>Returns a sequence of each element in the input sequence paired with its predecessor, with the
+    /// exception of the first element which is only returned as the predecessor of the second element.
+    /// The predecessor comes first in the returned pairs.</summary>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -3077,7 +3078,7 @@ module Seq =
     /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     ///
     /// <example id="randomChoices-1">
@@ -3103,7 +3104,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     ///
     /// <example id="randomChoicesWith-1">
@@ -3128,7 +3129,7 @@ module Seq =
     /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>
     ///
@@ -3153,7 +3154,7 @@ module Seq =
     /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
     ///
@@ -3180,7 +3181,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
     ///
@@ -3206,7 +3207,7 @@ module Seq =
     /// <returns>A sequence of randomly selected elements from the input sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input list is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input sequence.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a number outside the range [0.0..1.0).</exception>

@@ -2,7 +2,6 @@ ImplFile
   (ParsedImplFileInput
      ("/root/Binding/ColonBeforeReturnTypeIsPartOfTriviaInProperties.fs", false,
       QualifiedNameOfFile ColonBeforeReturnTypeIsPartOfTriviaInProperties, [],
-      [],
       [SynModuleOrNamespace
          ([ColonBeforeReturnTypeIsPartOfTriviaInProperties], false, AnonModule,
           [Types
@@ -104,4 +103,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,62))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

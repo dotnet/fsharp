@@ -357,6 +357,12 @@
   <data name="Parser.TOKEN.EQUALS" xml:space="preserve">
     <value>symbol '='</value>
   </data>
+  <data name="Parser.TOKEN.GREATER.BAR.RBRACE" xml:space="preserve">
+    <value>symbol '&gt;|}'</value>
+  </data>  
+  <data name="Parser.TOKEN.RQUOTE.BAR.RBRACE" xml:space="preserve">
+    <value>symbol '@&gt;|}' or '@@&gt;|}'</value>
+  </data>  
   <data name="Parser.TOKEN.GREATER.BAR.RBRACK" xml:space="preserve">
     <value>symbol '&gt;|]'</value>
   </data>

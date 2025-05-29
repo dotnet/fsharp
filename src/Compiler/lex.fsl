@@ -817,7 +817,9 @@ rule token (args: LexArgs) (skip: bool) = parse
 
             // Construct the new position
             if args.applyLineDirectives then
-                lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), line)
+                let fileIndex = match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex
+                WarnScopes.RegisterLineDirective(lexbuf, fileIndex, line)
+                lexbuf.EndPos <- pos.ApplyLineDirective(fileIndex, line)
             else
                 // add a newline when we don't apply a directive since we consumed a newline getting here
                 incrLine lexbuf
@@ -836,6 +838,10 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "@>" { checkExprOp lexbuf; RQUOTE ("<@ @>", false) }
 
  | "@@>" { checkExprOp lexbuf; RQUOTE ("<@@ @@>", true) }
+
+ | "@>|}" { RQUOTE_BAR_RBRACE ("<@ @>", false) }
+
+ | "@@>|}" { RQUOTE_BAR_RBRACE ("<@@ @@>", true) }
 
  | '#' { HASH }
 
@@ -902,6 +908,8 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "<" { LESS false }
 
  | ">" { GREATER false }
+
+ | ">|}" { GREATER_BAR_RBRACE }
 
  | "[<" { LBRACK_LESS }
 
@@ -1079,6 +1087,13 @@ rule token (args: LexArgs) (skip: bool) = parse
    { let n = (lexeme lexbuf).IndexOf('#')
      lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
      HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
+
+ | anywhite* ("#nowarn" | "#warnon") anystring
+   { let m = lexbuf.LexemeRange
+     shouldStartLine args lexbuf m (FSComp.SR.lexWarnDirectiveMustBeFirst())
+     WarnScopes.ParseAndRegisterWarnDirective lexbuf
+     let tok = WARN_DIRECTIVE(m, lexeme lexbuf, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
+     if skip then endline LexerEndlineContinuation.Token args skip lexbuf else tok }
 
  | surrogateChar surrogateChar
 

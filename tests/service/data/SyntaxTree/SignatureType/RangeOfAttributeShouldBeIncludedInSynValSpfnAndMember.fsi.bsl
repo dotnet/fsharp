@@ -2,7 +2,7 @@ SigFile
   (ParsedSigFileInput
      ("/root/SignatureType/RangeOfAttributeShouldBeIncludedInSynValSpfnAndMember.fsi",
       QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynValSpfnAndMember,
-      [], [],
+      [],
       [SynModuleOrNamespaceSig
          ([SomeNamespace], false, DeclaredNamespace,
           [Types
@@ -45,4 +45,5 @@ SigFile
           PreXmlDocEmpty, [], None, (2,0--6,20),
           { LeadingKeyword = Namespace (2,0--2,9) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (5,13--5,23)] }, set []))

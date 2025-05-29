@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Measure/SynTypeTupleInMeasureTypeWithNoSlashes.fs", false,
-      QualifiedNameOfFile SynTypeTupleInMeasureTypeWithNoSlashes, [], [],
+      QualifiedNameOfFile SynTypeTupleInMeasureTypeWithNoSlashes, [],
       [SynModuleOrNamespace
          ([SynTypeTupleInMeasureTypeWithNoSlashes], false, AnonModule,
           [Types
@@ -30,4 +30,5 @@ ImplFile
                                  WithKeyword = None })], (2,0--2,26))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

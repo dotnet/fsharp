@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/Module - Attribute 01.fs", false,
-      QualifiedNameOfFile Bar, [], [],
+      QualifiedNameOfFile Bar, [],
       [SynModuleOrNamespace
          ([Bar], false, NamedModule,
           [Let
@@ -32,4 +32,5 @@ ImplFile
              Range = (2,0--2,11) }], None, (2,0--5,20),
           { LeadingKeyword = Module (3,0--3,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

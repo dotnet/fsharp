@@ -340,73 +340,80 @@ type internal FSharpPackage() as this =
 
     let mutable solutionEventsOpt = None
 
-#if DEBUG
-    let _traceProvider = Logging.Activity.export ()
-    let _logger = Logging.Activity.listenToAll ()
-    // Logging.Activity.listen "IncrementalBuild"
-#endif
-
     // FSI-LINKAGE-POINT: unsited init
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
-        // `base.` methods can't be called in the `async` builder, so we have to cache it
-        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+#if DEBUG
+    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
 
-        foregroundCancellableTask {
-            do! baseInitializeAsync
+    let flushTelemetry = Logging.FSharpServiceTelemetry.otelExport ()
 
-            let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
-            let commandService = commandService :?> OleMenuCommandService
+    override this.Dispose(disposing: bool) =
+        base.Dispose(disposing: bool)
 
-            // Switch to UI thread
-            do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
+        if disposing then
+            flushTelemetry ()
+#endif
 
-            // FSI-LINKAGE-POINT: sited init
-            FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
+    override this.RegisterInitializationWork(packageRegistrationTasks: PackageRegistrationTasks) : unit =
+        base.RegisterInitializationWork(packageRegistrationTasks: PackageRegistrationTasks)
 
-            // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-            let _fsiPropertyPage =
-                this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
+        packageRegistrationTasks.AddTask(
+            true,
+            (fun progress _tasks cancellationToken ->
+                foregroundCancellableTask {
+                    let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
+                    let commandService = commandService :?> OleMenuCommandService
 
-            let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    // Switch to UI thread
+                    do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
 
-            let _ =
-                this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
+                    // FSI-LINKAGE-POINT: sited init
+                    FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
 
-            let optionsManager =
-                workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage =
+                        this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
 
-            let metadataAsSource =
-                this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
+                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
 
-            let! solution = this.GetServiceAsync(typeof<SVsSolution>)
-            let solution = solution :?> IVsSolution
+                    let _ =
+                        this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
-            let solutionEvents = FSharpSolutionEvents(optionsManager, metadataAsSource)
+                    let optionsManager =
+                        workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
-            let! rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>)
-            let rdt = rdt :?> IVsRunningDocumentTable
+                    let metadataAsSource =
+                        this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
 
-            solutionEventsOpt <- Some(solutionEvents)
-            solution.AdviseSolutionEvents(solutionEvents) |> ignore
+                    let! solution = this.GetServiceAsync(typeof<SVsSolution>)
+                    let solution = solution :?> IVsSolution
 
-            let projectContextFactory =
-                this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
+                    let solutionEvents = FSharpSolutionEvents(optionsManager, metadataAsSource)
 
-            let miscFilesWorkspace =
-                this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+                    let! rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>)
+                    let rdt = rdt :?> IVsRunningDocumentTable
 
-            do
-                SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
-                |> ignore
+                    solutionEventsOpt <- Some(solutionEvents)
+                    solution.AdviseSolutionEvents(solutionEvents) |> ignore
 
-            do
-                LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
-                |> ignore
+                    let projectContextFactory =
+                        this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
 
-        }
-        |> CancellableTask.startAsTask cancellationToken
+                    let miscFilesWorkspace =
+                        this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+
+                    do
+                        SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
+                        |> ignore
+
+                    do
+                        LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
+                        |> ignore
+
+                }
+                |> CancellableTask.startAsTask cancellationToken)
+        )
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)

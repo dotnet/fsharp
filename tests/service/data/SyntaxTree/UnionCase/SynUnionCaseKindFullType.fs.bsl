@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/SynUnionCaseKindFullType.fs", false,
-      QualifiedNameOfFile SynUnionCaseKindFullType, [], [],
+      QualifiedNameOfFile SynUnionCaseKindFullType, [],
       [SynModuleOrNamespace
          ([SynUnionCaseKindFullType], false, AnonModule,
           [Types
@@ -37,6 +37,7 @@ ImplFile
                     WithKeyword = None })], (2,0--3,20))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (3,6)-(3,20) parse warning This construct is deprecated: it is only for use in the F# library

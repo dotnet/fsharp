@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/String/SynConstBytesWithSynByteStringKindVerbatim.fs", false,
-      QualifiedNameOfFile SynConstBytesWithSynByteStringKindVerbatim, [], [],
+      QualifiedNameOfFile SynConstBytesWithSynByteStringKindVerbatim, [],
       [SynModuleOrNamespace
          ([SynConstBytesWithSynByteStringKindVerbatim], false, AnonModule,
           [Let
@@ -20,4 +20,5 @@ ImplFile
                     EqualsRange = Some (2,10--2,11) })], (2,0--2,18))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

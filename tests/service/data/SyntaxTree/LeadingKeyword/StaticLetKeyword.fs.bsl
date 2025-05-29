@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/StaticLetKeyword.fs", false,
-      QualifiedNameOfFile StaticLetKeyword, [], [],
+      QualifiedNameOfFile StaticLetKeyword, [],
       [SynModuleOrNamespace
          ([StaticLetKeyword], false, AnonModule,
           [Types
@@ -35,4 +35,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,24))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
