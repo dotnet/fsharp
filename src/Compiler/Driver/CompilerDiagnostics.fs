@@ -379,7 +379,7 @@ type PhasedDiagnostic with
         // Level 2
         | _ -> 2
 
-    member x.IsEnabled(severity, options) =
+    member private x.IsEnabled(severity, options) =
         let level = options.WarnLevel
         let specificWarnOn = options.WarnOn
         let n = x.Number
@@ -402,6 +402,7 @@ type PhasedDiagnostic with
         | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | 3570 -> false // tcAmbiguousDiscardDotLambda - off by default
+        | 3878 -> false // tcAttributeIsNotValidForUnionCaseWithFields - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
@@ -412,19 +413,25 @@ type PhasedDiagnostic with
     member x.AdjustSeverity(options, severity) =
         let n = x.Number
 
-        let warnOff () = List.contains n options.WarnOff
+        let localWarnon () = WarnScopes.IsWarnon options n x.Range
+
+        let localNowarn () = WarnScopes.IsNowarn options n x.Range
+
+        let warnOff () =
+            List.contains n options.WarnOff && not (localWarnon ()) || localNowarn ()
 
         match severity with
         | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
             && ((options.GlobalWarnAsError && not (warnOff ()))
-                || List.contains n options.WarnAsError)
+                || List.contains n options.WarnAsError && not (localNowarn ()))
             && not (List.contains n options.WarnAsWarn)
             ->
             FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError && not (localNowarn ()) -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
-        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when localWarnon () -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
         | _ -> FSharpDiagnosticSeverity.Hidden
@@ -1135,6 +1142,7 @@ type Exception with
                 | Parser.TOKEN_COLON_EQUALS -> SR.GetString("Parser.TOKEN.COLON.EQUALS")
                 | Parser.TOKEN_LARROW -> SR.GetString("Parser.TOKEN.LARROW")
                 | Parser.TOKEN_EQUALS -> SR.GetString("Parser.TOKEN.EQUALS")
+                | Parser.TOKEN_GREATER_BAR_RBRACE -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACE")
                 | Parser.TOKEN_GREATER_BAR_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACK")
                 | Parser.TOKEN_MINUS -> SR.GetString("Parser.TOKEN.MINUS")
                 | Parser.TOKEN_ADJACENT_PREFIX_OP -> SR.GetString("Parser.TOKEN.ADJACENT.PREFIX.OP")
@@ -1161,6 +1169,7 @@ type Exception with
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
                 | Parser.TOKEN_RQUOTE_DOT
                 | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
+                | Parser.TOKEN_RQUOTE_BAR_RBRACE -> SR.GetString("Parser.TOKEN.RQUOTE.BAR.RBRACE")
                 | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
                 | Parser.TOKEN_RBRACE_COMING_SOON
@@ -2274,51 +2283,25 @@ type PhasedDiagnostic with
             diagnostic.OutputContext(buf, prefix, fileLineFunction)
             diagnostic.Output(buf, tcConfig, severity))
 
-//----------------------------------------------------------------------------
-// Scoped #nowarn pragmas
-
-/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
-//
-// NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
-// #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
-// because we install a filtering error handler on a file-by-file basis for parsing and type-checking.
-// However this is indicative of a more systematic problem where source-line
-// sensitive operations (lexfilter and warning filtering) do not always
-// interact well with #line directives.
-type DiagnosticsLoggerFilteringByScopedPragmas
-    (checkFile, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
-    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
+/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings
+type DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedNowarn")
 
     let mutable realErrorPresent = false
 
     override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
+
         if severity = FSharpDiagnosticSeverity.Error then
             realErrorPresent <- true
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
-            let report =
-                let warningNum = diagnostic.Number
-
-                match diagnostic.Range with
-                | Some m ->
-                    scopedPragmas
-                    |> List.exists (fun pragma ->
-                        let (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) = pragma
-
-                        warningNum = warningNumFromPragma
-                        && (not checkFile || m.FileIndex = pragmaRange.FileIndex)
-                        && posGeq m.Start pragmaRange.Start)
-                    |> not
-                | None -> true
-
-            if report then
-                match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
-                | FSharpDiagnosticSeverity.Hidden -> ()
-                | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
+            match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
+            | FSharpDiagnosticSeverity.Hidden -> ()
+            | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 
     override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
-let GetDiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
-    DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
+let GetDiagnosticsLoggerFilteringByScopedNowarn (diagnosticOptions, diagnosticsLogger) =
+    DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger

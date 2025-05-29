@@ -4,7 +4,7 @@ ImplFile
       false,
       QualifiedNameOfFile
         RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMemberOptAsSpec,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInConstructorSynMemberDefnMemberOptAsSpec],
           false, AnonModule,
@@ -52,4 +52,5 @@ ImplFile
                     WithKeyword = None })], (2,0--4,23))], PreXmlDocEmpty, [],
           None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/Record 01.fs", false, QualifiedNameOfFile Foo, [], [],
+     ("/root/Type/Record 01.fs", false, QualifiedNameOfFile Foo, [],
       [SynModuleOrNamespace
          ([Foo], false, NamedModule,
           [Types
@@ -42,6 +42,7 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--9,12), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (7,4)-(7,5) parse error Unexpected symbol '}' in field declaration. Expected ':' or other token.

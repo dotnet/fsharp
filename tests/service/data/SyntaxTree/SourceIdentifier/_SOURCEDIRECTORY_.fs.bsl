@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SourceIdentifier/_SOURCEDIRECTORY_.fs", false,
-      QualifiedNameOfFile _SOURCEDIRECTORY_, [], [],
+      QualifiedNameOfFile _SOURCEDIRECTORY_, [],
       [SynModuleOrNamespace
          ([_SOURCEDIRECTORY_], false, AnonModule,
           [Expr
@@ -11,4 +11,5 @@ ImplFile
                  (0,0--0,0)), (0,0--0,0))], PreXmlDocEmpty, [], None,
           (2,0--2,20), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

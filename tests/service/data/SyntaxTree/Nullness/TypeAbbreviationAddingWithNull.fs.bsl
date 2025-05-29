@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/TypeAbbreviationAddingWithNull.fs", false,
-      QualifiedNameOfFile TypeAbbreviationAddingWithNull, [], [],
+      QualifiedNameOfFile TypeAbbreviationAddingWithNull, [],
       [SynModuleOrNamespace
          ([TypeAbbreviationAddingWithNull], false, AnonModule,
           [Types
@@ -22,4 +22,5 @@ ImplFile
                     WithKeyword = None })], (1,0--1,33))], PreXmlDocEmpty, [],
           None, (1,0--1,33), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

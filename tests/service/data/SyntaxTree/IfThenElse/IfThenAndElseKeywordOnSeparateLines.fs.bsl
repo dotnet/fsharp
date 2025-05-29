@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/IfThenElse/IfThenAndElseKeywordOnSeparateLines.fs", false,
-      QualifiedNameOfFile IfThenAndElseKeywordOnSeparateLines, [], [],
+      QualifiedNameOfFile IfThenAndElseKeywordOnSeparateLines, [],
       [SynModuleOrNamespace
          ([IfThenAndElseKeywordOnSeparateLines], false, AnonModule,
           [Expr
@@ -14,4 +14,5 @@ ImplFile
                                IfToThenRange = (2,0--3,4) }), (2,0--4,6))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

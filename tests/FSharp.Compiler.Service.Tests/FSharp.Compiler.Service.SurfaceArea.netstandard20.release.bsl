@@ -2208,9 +2208,6 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions get_Default()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions DiagnosticOptions
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_DiagnosticOptions()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object)
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalDefines
@@ -2940,9 +2937,6 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_CheckXmlDocs()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_GlobalWarnAsError()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions Default
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_Default()
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 CompareTo(FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions)
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 CompareTo(System.Object)
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 GetHashCode()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Int32 WarnLevel
@@ -2955,8 +2949,12 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collection
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_WarnAsWarn()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_WarnOff()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_WarnOn()
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Object] WarnScopeData
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Object] WarnScopeData@
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Object] get_WarnScopeData()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: System.String ToString()
-FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Void .ctor(Int32, Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32])
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Void .ctor(Int32, Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Collections.FSharpList`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Object])
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Void set_WarnScopeData(Microsoft.FSharp.Core.FSharpOption`1[System.Object])
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Error
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Hidden
 FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity+Tags: Int32 Info
@@ -6274,25 +6272,21 @@ FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsLastCompiland()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_isScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean isScript
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile qualifiedNameOfFile
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia Trivia
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia get_Trivia()
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia get_trivia()
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia trivia
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia Trivia
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_Trivia()
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_trivia()
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia trivia
 FSharp.Compiler.Syntax.ParsedImplFileInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedImplFileInput: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_HashDirectives()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_hashDirectives()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] hashDirectives
-FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
-FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
-FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_scopedPragmas()
-FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] scopedPragmas
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] Contents
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] contents
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] get_Contents()
@@ -6327,8 +6321,6 @@ FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.ParsedInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedInput: Int32 get_Tag()
-FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
-FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
 FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] Identifiers
 FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] get_Identifiers()
 FSharp.Compiler.Syntax.ParsedInput: System.String FileName
@@ -6397,25 +6389,21 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFi
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: System.String ToString()
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile qualifiedNameOfFile
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia Trivia
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia get_Trivia()
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia get_trivia()
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia trivia
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia Trivia
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_Trivia()
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia get_trivia()
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia trivia
 FSharp.Compiler.Syntax.ParsedSigFileInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileInput: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_HashDirectives()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_hashDirectives()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] hashDirectives
-FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
-FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
-FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_scopedPragmas()
-FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] scopedPragmas
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] Contents
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] contents
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] get_Contents()
@@ -6483,20 +6471,6 @@ FSharp.Compiler.Syntax.QualifiedNameOfFile: Int32 get_Tag()
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String Text
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String ToString()
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String get_Text()
-FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(FSharp.Compiler.Syntax.ScopedPragma)
-FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(FSharp.Compiler.Syntax.ScopedPragma, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object)
-FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Syntax.ScopedPragma NewWarningOff(FSharp.Compiler.Text.Range, Int32)
-FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.ScopedPragma: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.ScopedPragma: Int32 GetHashCode()
-FSharp.Compiler.Syntax.ScopedPragma: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.ScopedPragma: Int32 Tag
-FSharp.Compiler.Syntax.ScopedPragma: Int32 get_Tag()
-FSharp.Compiler.Syntax.ScopedPragma: Int32 get_warningNumber()
-FSharp.Compiler.Syntax.ScopedPragma: Int32 warningNumber
-FSharp.Compiler.Syntax.ScopedPragma: System.String ToString()
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(FSharp.Compiler.Syntax.SeqExprOnly)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(FSharp.Compiler.Syntax.SeqExprOnly, System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SeqExprOnly: Boolean Equals(System.Object)
@@ -7914,7 +7888,9 @@ FSharp.Compiler.Syntax.SynExprAndBang: Int32 Tag
 FSharp.Compiler.Syntax.SynExprAndBang: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprAndBang: System.String ToString()
 FSharp.Compiler.Syntax.SynExprModule: Boolean shouldBeParenthesizedInContext(Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynExpr)
-FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Syntax.SynExprRecordField NewSynExprRecordField(System.Tuple`2[FSharp.Compiler.Syntax.SynLongIdent,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExprRecordField: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 Tag
 FSharp.Compiler.Syntax.SynExprRecordField: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynExprRecordField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] expr
@@ -10281,18 +10257,14 @@ FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] WarnDirectives
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia] get_WarnDirectives()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.ParsedInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: FSharp.Compiler.Text.Range ParenRange
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: FSharp.Compiler.Text.Range get_ParenRange()
 FSharp.Compiler.SyntaxTrivia.SynArgPatsNamePatPairsTrivia: System.String ToString()
@@ -10857,6 +10829,28 @@ FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: Microsoft.FSharp.Core.FSharpOption
 FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_WithKeyword()
 FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynValSigTrivia: Void .ctor(FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: FSharp.Compiler.Text.Range Item2
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: FSharp.Compiler.Text.Range get_Item2()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_warnNumbers()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] warnNumbers
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Tags: Int32 Nowarn
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Tags: Int32 Warnon
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: FSharp.Compiler.Text.Range Item2
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: FSharp.Compiler.Text.Range get_Item2()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] get_warnNumbers()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon: Microsoft.FSharp.Collections.FSharpList`1[System.Int32] warnNumbers
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean IsNowarn
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean IsWarnon
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean get_IsNowarn()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Boolean get_IsWarnon()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia NewNowarn(Microsoft.FSharp.Collections.FSharpList`1[System.Int32], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia NewWarnon(Microsoft.FSharp.Collections.FSharpList`1[System.Int32], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Nowarn
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Tags
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia+Warnon
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Int32 Tag
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: Int32 get_Tag()
+FSharp.Compiler.SyntaxTrivia.WarnDirectiveTrivia: System.String ToString()
 FSharp.Compiler.Text.ISourceText: Boolean ContentEquals(FSharp.Compiler.Text.ISourceText)
 FSharp.Compiler.Text.ISourceText: Boolean SubTextEquals(System.String, Int32)
 FSharp.Compiler.Text.ISourceText: Char Item [Int32]
@@ -11296,6 +11290,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Function
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 FunkyOperatorName
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Global
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Greater
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 GreaterBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 GreaterBarRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 GreaterRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Hash
@@ -11393,6 +11388,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Public
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 QuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 QuestionMarkQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Quote
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 RQuoteBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Rec
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Reserved
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 RightArrow
@@ -11423,6 +11419,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Underscore
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Upcast
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Val
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Void
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 WarnDirective
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 When
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 While
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 WhileBang
@@ -11491,6 +11488,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsFunction
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsFunkyOperatorName
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGlobal
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreater
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreaterBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreaterBarRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsGreaterRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsHash
@@ -11588,6 +11586,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsPublic
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsQuestionMarkQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsQuote
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsRQuoteBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsRec
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsReserved
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsRightArrow
@@ -11618,6 +11617,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsUnderscore
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsUpcast
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsVal
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsVoid
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWarnDirective
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhen
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhile
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhileBang
@@ -11682,6 +11682,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsFunction()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsFunkyOperatorName()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGlobal()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreater()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreaterBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreaterBarRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsGreaterRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsHash()
@@ -11779,6 +11780,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsPublic()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsQuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsQuestionMarkQuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsQuote()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsRQuoteBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsRec()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsReserved()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsRightArrow()
@@ -11809,6 +11811,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsUnderscore()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsUpcast()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsVal()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsVoid()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWarnDirective()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhen()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhile()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhileBang()
@@ -11873,6 +11876,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind FunkyOperatorName
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Global
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Greater
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind GreaterBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind GreaterBarRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind GreaterRightBracket
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Hash
@@ -11970,6 +11974,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind QuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind QuestionMarkQuestionMark
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Quote
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind RQuoteBarRightBrace
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Rec
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Reserved
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind RightArrow
@@ -12000,6 +12005,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Upcast
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Val
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Void
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind WarnDirective
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind When
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind While
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind WhileBang
@@ -12064,6 +12070,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_FunkyOperatorName()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Global()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Greater()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_GreaterBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_GreaterBarRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_GreaterRightBracket()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Hash()
@@ -12161,6 +12168,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_QuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_QuestionMarkQuestionMark()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Quote()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_RQuoteBarRightBrace()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Rec()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Reserved()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_RightArrow()
@@ -12191,6 +12199,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Upcast()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Val()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Void()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_WarnDirective()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_When()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_While()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_WhileBang()

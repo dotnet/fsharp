@@ -955,6 +955,8 @@ module AttributeTargets =
     val FieldDeclRestricted: AttributeTargets
 
     /// The allowed attribute targets for an F# union case declaration
+    /// - AttributeTargets.Method: union case with fields
+    /// - AttributeTargets.Property: union case with no fields
     val UnionCaseDecl: AttributeTargets
 
     /// The allowed attribute targets for an F# type declaration

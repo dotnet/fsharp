@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/NestedModule/RangeOfAttributeShouldBeIncludedInSynModuleDeclNestedModule.fs",
-      false, QualifiedNameOfFile TopLevel, [], [],
+      false, QualifiedNameOfFile TopLevel, [],
       [SynModuleOrNamespace
          ([TopLevel], false, NamedModule,
           [NestedModule
@@ -20,4 +20,5 @@ ImplFile
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--6,6), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

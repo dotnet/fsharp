@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/OperatorName/ActivePatternAsFunction.fs", false,
-      QualifiedNameOfFile ActivePatternAsFunction, [], [],
+      QualifiedNameOfFile ActivePatternAsFunction, [],
       [SynModuleOrNamespace
          ([ActivePatternAsFunction], false, AnonModule,
           [Expr
@@ -16,4 +16,5 @@ ImplFile
               (2,0--2,14))], PreXmlDocEmpty, [], None, (2,0--2,14),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

@@ -1278,6 +1278,8 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
+  member val SupportsWhenTEnum_tcr = mk_MFCompilerServices_tcref fslibCcu "SupportsWhenTEnum"
+
   member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
     if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
         embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore

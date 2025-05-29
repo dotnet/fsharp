@@ -3,7 +3,7 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType.fs",
       false,
       QualifiedNameOfFile
-        RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType, [], [],
+        RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType, [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInMemberBindingWithReturnType], false,
           AnonModule,
@@ -65,4 +65,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,33))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
