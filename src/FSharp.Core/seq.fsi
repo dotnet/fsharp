@@ -1852,8 +1852,9 @@ module Seq =
     [<CompiledName("OfList")>]
     val ofList: source: 'T list -> seq<'T>
 
-    /// <summary>Returns a sequence of each element in the input sequence and its predecessor, with the
-    /// exception of the first element which is only returned as the predecessor of the second element.</summary>
+    /// <summary>Returns a sequence of each element in the input sequence paired with its predecessor, with the
+    /// exception of the first element which is only returned as the predecessor of the second element.
+    /// The predecessor comes first in the returned pairs.</summary>
     ///
     /// <param name="source">The input sequence.</param>
     ///

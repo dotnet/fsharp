@@ -64,6 +64,7 @@ module CustomAttributes_AttributeUsage =
     let ``AttributeTargetsIsMethod01_fs 8.0`` compilation =
         compilation
         |> withLangVersion80
+        |> withWarnOn 3878
         |> verifyCompileAndRun
         |> shouldSucceed
 
@@ -74,6 +75,15 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompileAndRun
         |> shouldSucceed
         
+    // SOURCE=AttributeTargetsIsMethod01.fs				# AttributeTargetsIsMethod01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
+    let ``Preview: AttributeTargetsIsMethod01_fs opt-in warning`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> withWarnOn 3878
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
     let ``AttributeTargetsIsProperty_fs 8.0`` compilation =
@@ -483,6 +493,18 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
         ]
+        
+    // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    let ``E_AttributeTargetIsField03_fs opt-in warning`` compilation =
+        compilation
+        |> withLangVersion90
+        |> withWarnOn 3878
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+        ]
     
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
@@ -493,7 +515,20 @@ module CustomAttributes_AttributeUsage =
         |> shouldFail
         |> withDiagnostics [
             (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
+        ]
+        
+    // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    let ``Preview: E_AttributeTargetIsField03_fs opt-in warning`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> withWarnOn 3878
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element");
+            (Warning 3878, Line 14, Col 18, Line 14, Col 23, "This attribute is not valid for use on union cases with fields.");
+            (Warning 3878, Line 15, Col 28, Line 15, Col 33, "This attribute is not valid for use on union cases with fields.")
         ]
         
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
@@ -510,11 +545,7 @@ module CustomAttributes_AttributeUsage =
         compilation
         |> withLangVersionPreview
         |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Warning 842, Line 14, Col 5, Line 14, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
-        ]
+        |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]

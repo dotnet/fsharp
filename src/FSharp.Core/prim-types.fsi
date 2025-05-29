@@ -994,6 +994,20 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute
         new : unit -> TailCallAttribute
 
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open System.ComponentModel
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// A marker type that only compilers that support the <c>when 'T : Enum</c>
+    /// library-only static optimization constraint will recognize.
+    /// </summary>
+    [<Sealed; AbstractClass>]
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    type SupportsWhenTEnum = class end
+
 namespace System.Diagnostics.CodeAnalysis
 
     open System
@@ -4772,7 +4786,7 @@ namespace Microsoft.FSharp.Core
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
         ///
-        /// <remarks>For standard integer and floating point values and any type that implements <c>IFormattable</c>
+        /// <remarks>For standard integer and floating point values and any type that implements <c>IFormattable</c>,
         /// <c>ToString</c> conversion uses <c>CultureInfo.InvariantCulture</c>. </remarks>
         /// <param name="value">The input value.</param>
         ///

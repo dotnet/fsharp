@@ -171,7 +171,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
     let langServices =
-        TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
+        new TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
 
     override _.Workspace = workspace
 
@@ -199,7 +199,7 @@ type TestHostServices() =
     inherit HostServices()
 
     override this.CreateWorkspaceServices(workspace) =
-        TestHostWorkspaceServices(this, workspace)
+        new TestHostWorkspaceServices(this, workspace)
 
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =

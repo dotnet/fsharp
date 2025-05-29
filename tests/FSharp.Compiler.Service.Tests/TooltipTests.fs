@@ -9,11 +9,12 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Xml
 open FSharp.Test
 open Xunit
 
-let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEndOfNames lineText names (expectedContent: string) =
+let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedContent: string) =
+    let implSource, lineText, pos, plid, names = getPartialIdentifierAndPrepareSource implSource
+
     let files =
         Map.ofArray
             [| "A.fsi",
@@ -43,7 +44,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
         // Get the tooltip for (line, colAtEndOfNames) in the implementation file
         let (ToolTipText tooltipElements) =
-            checkResults.GetToolTip(line, colAtEndOfNames, lineText, names, FSharpTokenTag.Identifier)
+            checkResults.GetToolTip(pos.Line, pos.Column, lineText, names, FSharpTokenTag.Identifier)
 
         match tooltipElements with
         | ToolTipElement.Group [ element ] :: _ ->
@@ -55,14 +56,14 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource line colAtEn
         | elements -> failwith $"Expected at least one tooltip group element, got {elements}"
     | _ -> failwith "Expected checking to succeed."
 
-    
+
 [<Fact>]
 let ``Display XML doc of signature file for let if implementation doesn't have one`` () =
     let sigSource =
         """
 module Foo
 
-/// Great XML doc comment
+/// Comment
 val bar: a: int -> b: int -> int
 """
 
@@ -70,11 +71,10 @@ val bar: a: int -> b: int -> int
                    """
 module Foo
 
-// No XML doc here because the signature file has one right?
-let bar a b = a - b
+let bar{caret} a b = a - b
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 4 "let bar a b = a - b" [ "bar" ] "Great XML doc comment"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
     
 
 [<Fact>]
@@ -83,7 +83,7 @@ let ``Display XML doc of signature file for partial AP if implementation doesn't
         """
 module Foo
 
-/// Some Sig Doc on IsThree
+/// Comment
 val (|IsThree|_|): x: int -> int option
 """
 
@@ -91,11 +91,10 @@ val (|IsThree|_|): x: int -> int option
         """
 module Foo
 
-// No XML doc here because the signature file has one right?
-let (|IsThree|_|) x = if x = 3 then Some x else None
+let (|IsThr{caret}ee|_|) x = if x = 3 then Some x else None
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 4 "let (|IsThree|_|) x = if x = 3 then Some x else None" [ "IsThree" ] "Some Sig Doc on IsThree"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
     
 
 [<Fact>]
@@ -104,7 +103,7 @@ let ``Display XML doc of signature file for DU if implementation doesn't have on
         """
 module Foo
 
-/// Some sig comment on the disc union type
+/// Comment
 type Bar =
     | Case1 of int * string
     | Case2 of string
@@ -114,13 +113,12 @@ type Bar =
         """
 module Foo
 
-// No XML doc here because the signature file has one right?
-type Bar =
+type Bar{caret} =
     | Case1 of int * string
     | Case2 of string
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 4 7 "type Bar =" [ "Bar" ] "Some sig comment on the disc union type"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 [<Fact>]
@@ -131,7 +129,7 @@ module Foo
 
 type Bar =
     | BarCase1 of int * string
-    /// Some sig comment on the disc union case
+    /// CommentSig
     | BarCase2 of string
 """
 
@@ -141,11 +139,11 @@ module Foo
 
 type Bar =
     | BarCase1 of int * string
-    // No XML doc here because the signature file has one right?
-    | BarCase2 of string
+    // CommentImpl
+    | BarCase2{caret} of string
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 7 14 "    | BarCase2 of string" [ "BarCase2" ] "Some sig comment on the disc union case"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "CommentSig"
 
 
 [<Fact>]
@@ -154,7 +152,7 @@ let ``Display XML doc of signature file for record type if implementation doesn'
         """
 module Foo
 
-/// Some sig comment on record type
+/// Comment
 type Bar = {
     SomeField: int
 }
@@ -164,12 +162,12 @@ type Bar = {
         """
 module Foo
 
-type Bar = {
+type B{caret}ar = {
     SomeField: int
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 3 9 "type Bar = {" [ "Bar" ] "Some sig comment on record type"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 [<Fact>]
@@ -179,7 +177,7 @@ let ``Display XML doc of signature file for record field if implementation doesn
 module Foo
 
 type Bar = {
-    /// Some sig comment on record field
+    /// Comment
     SomeField: int
 }
 """
@@ -189,11 +187,11 @@ type Bar = {
 module Foo
 
 type Bar = {
-    SomeField: int
+    SomeFiel{caret}d: int
 }
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 5 13 "    SomeField: int" [ "SomeField" ] "Some sig comment on record field"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
 [<Fact>]
@@ -212,11 +210,11 @@ type Bar =
         """
 module Foo
 
-type Bar() =
+type B{caret}ar() =
     member val Foo = "bla" with get, set
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 3 9 "type Bar() =" [ "Bar" ] "Some sig comment on class type"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Some sig comment on class type"
 
 
 [<Fact>]
@@ -227,9 +225,9 @@ module Foo
 
 type Bar =
     new: unit -> Bar
-    /// Some sig comment on auto property
+    /// Comment1
     member Foo: string
-    /// Some sig comment on class member
+    /// Comment2
     member Func: int -> int -> int
 """
 
@@ -239,17 +237,17 @@ module Foo
 
 type Bar() =
     member val Foo = "bla" with get, set
-    member _.Func x y = x * y
+    member _.Func{caret} x y = x * y
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 6 30 "    member _.Func x y = x * y" [ "_"; "Func" ] "Some sig comment on class member"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment2"
 
 
 [<Fact>]
 let ``Display XML doc of signature file for module if implementation doesn't have one`` () =
     let sigSource =
         """
-/// Some sig comment on module
+/// Comment
 module Foo
 
 val a: int
@@ -257,15 +255,16 @@ val a: int
                
     let implSource =
         """
-module Foo
+module Fo{caret}o
 
 let a = 23
 """
 
-    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource 2 10 "module Foo" [ "Foo" ] "Some sig comment on module"
+    testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
 
 
-let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
+let testToolTipSquashing source =
+    let source, lineText, pos, plid, names = getPartialIdentifierAndPrepareSource source
     let files =
         Map.ofArray
             [| "A.fs",
@@ -292,10 +291,10 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
 
         // Get the tooltip for `bar`
         let (ToolTipText tooltipElements) =
-            checkResults.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag)
+            checkResults.GetToolTip(pos.Line, pos.Column, lineText, names, FSharpTokenTag.Identifier)
 
         let (ToolTipText tooltipElementsSquashed) =
-            checkResults.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag, 10)
+            checkResults.GetToolTip(pos.Line, pos.Column, lineText, names, FSharpTokenTag.Identifier, 10)
         match tooltipElements, tooltipElementsSquashed with
         | groups, groupsSquashed ->
             let breaks =
@@ -325,71 +324,57 @@ let testToolTipSquashing source line colAtEndOfNames lineText names tokenTag =
 
 [<Fact>]
 let ``Squashed tooltip of long function signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-let bar (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0
+let bar{caret} (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0
 """
-
-    testToolTipSquashing source 3 6 "let bar (fileName: string) (fileVersion: int) (sourceText: string)  (options: int) (userOpName: string) = 0;" [ "bar" ] FSharpTokenTag.Identifier
 
 
 [<Fact>]
 let ``Squashed tooltip of record with long field signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-type Foo =
+type Fo{caret}o =
     { Field1: string
       Field2: (string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string) }
 """
 
-    testToolTipSquashing source 3 7 "type Foo =" [ "Foo" ] FSharpTokenTag.Identifier
-
 
 [<Fact>]
 let ``Squashed tooltip of DU with long case signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-type SomeDiscUnion =
+type SomeDis{caret}cUnion =
     | Case1 of string
     | Case2 of (string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string * string)
 """
 
-    testToolTipSquashing source 3 7 "type SomeDiscUnion =" [ "SomeDiscUnion" ] FSharpTokenTag.Identifier
-
 
 [<Fact>]
 let ``Squashed tooltip of constructor with long signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
-type SomeClass(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =
+type Some{caret}Class(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =
     member _.A = a1
 """
-
-    testToolTipSquashing source 3 7 "type SomeClass(a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int, a8: int, a9: int, a10: int, a11: int, a12: int, a13: int, a14: int, a15: int, a16: int, a17: int, a18: int, a19: int, a20: int) =" [ "SomeClass" ] FSharpTokenTag.Identifier
 
 
 [<Fact>]
 let ``Squashed tooltip of property with long signature should have newlines added`` () =
-    let source =
-        """
+    testToolTipSquashing """
 module Foo
 
 type SomeClass() =
     member _.Abc: (int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int * int) = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 
 let c = SomeClass()
-c.Abc
+c.Ab{caret}c
 """
 
-    testToolTipSquashing source 7 5 "c.Abc" [ "c"; "Abc" ] FSharpTokenTag.Identifier
 
 let getCheckResults source options =
     let fileName, options =

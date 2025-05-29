@@ -999,6 +999,7 @@ type SynExprRecordField =
         fieldName: RecordFieldName *
         equalsRange: range option *
         expr: SynExpr option *
+        range: range *
         blockSeparator: BlockSeparator option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
