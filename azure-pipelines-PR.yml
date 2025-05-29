@@ -278,6 +278,16 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build
 
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'XUnit'
+              testRunTitle: WindowsNoRealsig_testCoreclr
+              mergeTestResults: true
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            condition: succeededOrFailed()
+
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
             condition: always()
@@ -328,6 +338,7 @@ stages:
               mergeTestResults: true
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            condition: succeededOrFailed()
             continueOnError: true
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
@@ -488,7 +499,7 @@ stages:
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
-            condition: ne(variables['_testKind'], 'testFSharpQA')
+            condition: succeededOrFailed() # ne(variables['_testKind'], 'testFSharpQA')
           - task: PublishBuildArtifacts@1
             displayName: Publish Tests BinLog
             condition: always()
@@ -566,6 +577,7 @@ stages:
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             continueOnError: true
+            condition: succeededOrFailed()
 
           - task: PublishBuildArtifacts@1
             displayName: Publish BinLog
@@ -638,7 +650,7 @@ stages:
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
-            condition: always()
+            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
@@ -683,7 +695,7 @@ stages:
               mergeTestResults: true
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
-            condition: always()
+            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:
