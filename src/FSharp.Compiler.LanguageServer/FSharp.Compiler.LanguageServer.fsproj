@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <AssemblyName>FSharp.Compiler.LanguageServer</AssemblyName>
+    <RootNamespace>FSharp.Compiler.LanguageServer</RootNamespace>
+    <OutputType>Library</OutputType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);57;44</NoWarn>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Common/FSharpRequestContext.fs" />
+    <Compile Include="Handlers/LanguageFeaturesHandler.fs" />
+    <Compile Include="FSharpLanguageServer.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" Version="9.0.0-1.24453.1" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.12.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Compiler/FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer.Tests" />
+  </ItemGroup>
+
+</Project>

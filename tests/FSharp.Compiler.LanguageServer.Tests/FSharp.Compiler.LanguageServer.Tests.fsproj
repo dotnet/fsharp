@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);57;44</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="IdentifierExtractionTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/FSharp.Compiler.LanguageServer/FSharp.Compiler.LanguageServer.fsproj" />
+  </ItemGroup>
+
+</Project>
