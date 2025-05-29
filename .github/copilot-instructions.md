@@ -4,7 +4,7 @@
 
 Always build and test the project before submitting your solution.
 
-1. As an initial smoke test for a quick build, run `dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet` from the repository root. 
+1. As an initial smoke test for a quick build, run `dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet --no-restore` from the repository root. 
 Only if this succeeds, move on.
 2. From the repository root, run `./build.sh -c Release --norestore`. This creates a prototype compiler, and then the proto compiler builds itself again.
 3. Only if two previous steps suceed, run automated tests with `./build.sh -c Release --testcoreclr --norestore`.
