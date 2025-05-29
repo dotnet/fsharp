@@ -276,6 +276,8 @@ type internal TcGlobals =
 
     member ListCollector_tcr: FSharp.Compiler.TypedTree.EntityRef
 
+    member SupportsWhenTEnum_tcr: FSharp.Compiler.TypedTree.EntityRef
+
     member MatchFailureException_tcr: FSharp.Compiler.TypedTree.EntityRef
 
     member ResumableCode_tcr: FSharp.Compiler.TypedTree.EntityRef
