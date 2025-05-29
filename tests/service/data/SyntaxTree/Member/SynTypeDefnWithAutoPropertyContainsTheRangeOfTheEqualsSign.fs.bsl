@@ -3,7 +3,7 @@ ImplFile
      ("/root/Member/SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign.fs",
       false,
       QualifiedNameOfFile
-        SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign, [], [],
+        SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign, [],
       [SynModuleOrNamespace
          ([SynTypeDefnWithAutoPropertyContainsTheRangeOfTheEqualsSign], false,
           AnonModule,
@@ -86,4 +86,5 @@ ImplFile
                     WithKeyword = None })], (2,0--5,40))], PreXmlDocEmpty, [],
           None, (3,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

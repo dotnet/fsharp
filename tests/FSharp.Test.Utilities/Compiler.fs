@@ -1154,7 +1154,17 @@ module rec Compiler =
             evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
-    let getSessionForEval args version = new FSharpScript(additionalArgs=args,quiet=true,langVersion=version)
+    let internal sessionCache = 
+        Collections.Concurrent.ConcurrentDictionary<Set<string> * LangVersion, FSharpScript>()
+    
+    let getSessionForEval args version =
+        let key = Set args, version
+        match sessionCache.TryGetValue(key) with
+        | true, script -> script
+        | _ -> 
+            let script = new FSharpScript(additionalArgs=args,quiet=true,langVersion=version)
+            sessionCache.TryAdd(key, script) |> ignore
+            script
 
     let evalInSharedSession (script:FSharpScript) (cUnit: CompilationUnit)  : CompilationResult =
         match cUnit with
@@ -1619,7 +1629,8 @@ Actual:
 
             (sourceErrors, expectedErrors)
             ||> List.iter2 (fun actual expected ->
-                Assert.Equal(expected, actual))
+                try Assert.Equal(expected, actual)
+                with | _ -> failwith $"%s{what}:\nactual:\n  %s{actual}\nexpected:\n  %s{expected}")
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1661,20 +1672,47 @@ Actual:
         let private withResultIgnoreNativeRange (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
             withResultsIgnoreNativeRange [expectedResult] result
 
-        let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
-            let expectedResults: ErrorInfo list =
-                [ for e in expected do
-                      let (error, Line startLine, Col startCol, Line endLine, Col endCol, message) = e
-                      { Error = error
-                        Range =
-                            { StartLine   = startLine
-                              StartColumn = startCol
-                              EndLine     = endLine
-                              EndColumn   = endCol }
-                        NativeRange = Unchecked.defaultof<_>
-                        SubCategory = ""
-                        Message     = message } ]
-            withResultsIgnoreNativeRange expectedResults result
+        let private convertExpectedsToErrorInfos(expected: (ErrorType * Line * Col * Line * Col * string) list): ErrorInfo list = [
+            for e in expected do
+                let (error, Line startLine, Col startCol, Line endLine, Col endCol, message) = e
+                {
+                    Error = error
+                    Range = {
+                        StartLine   = startLine
+                        StartColumn = startCol
+                        EndLine     = endLine
+                        EndColumn   = endCol
+                    }
+                    NativeRange = Unchecked.defaultof<_>
+                    SubCategory = ""
+                    Message     = message
+                }
+            ]
+
+        let private convertDiagnosticsToErrorInfos (diagnostics: FSharpDiagnostic[]) : ErrorInfo list =
+            diagnostics
+            |> Array.map (fun diagnostic ->
+                let errorType =
+                    match diagnostic.Severity with
+                    | FSharpDiagnosticSeverity.Error -> Error diagnostic.ErrorNumber
+                    | FSharpDiagnosticSeverity.Warning -> Warning diagnostic.ErrorNumber
+                    | FSharpDiagnosticSeverity.Info -> Information diagnostic.ErrorNumber
+                    | FSharpDiagnosticSeverity.Hidden -> Hidden diagnostic.ErrorNumber
+                {
+                    Error = errorType
+                    Range = {
+                        StartLine = diagnostic.StartLine
+                        StartColumn = diagnostic.StartColumn
+                        EndLine = diagnostic.EndLine
+                        EndColumn = diagnostic.EndColumn
+                    }
+                    NativeRange = diagnostic.Range
+                    Message = diagnostic.Message
+                    SubCategory = diagnostic.Subcategory
+                }) |> Array.toList
+
+        let withDiagnostics expected (result: CompilationResult) : CompilationResult =
+            withResultsIgnoreNativeRange (convertExpectedsToErrorInfos expected) result
 
         let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
             withDiagnostics [expected] result
@@ -1684,6 +1722,10 @@ Actual:
 
         let withError (expectedError: ErrorInfo) (result: CompilationResult) : CompilationResult =
             withErrors [expectedError] result
+
+        type Assert =
+            static member WithDiagnostics(libAdjust, result, expected) =
+                assertErrors "Results" libAdjust (convertDiagnosticsToErrorInfos result) (convertExpectedsToErrorInfos expected)
 
         module StructuredResultsAsserts =
             type SimpleErrorInfo =

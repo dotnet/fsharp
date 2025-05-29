@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Language
 
@@ -22,6 +22,142 @@ let x = lb {1; 2;}
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Fact>]
+    let ``Version 9.0: Allow CE return and type annotations don't play well together needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+open System
+
+type MyType() =
+    interface IDisposable with
+        member this.Dispose () = ()
+
+let f () =
+    async {
+        return new MyType() : IDisposable
+    }
+
+let f1 () =
+    async {
+        return new MyType() :> IDisposable
+    }
+        
+let f2 () : Async<IDisposable> =
+    async {
+        return new MyType()
+    }
+        
+let f3 () =
+    async {
+        return (new MyType() : IDisposable)
+    }
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+        
+    [<Fact>]
+    let ``Version 9.0: Allow CE return! and type annotations don't to play well together needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+
+type ResultBuilder() =
+    member _.Return(x) = Ok x
+    member _.ReturnFrom(x) = x
+    member _.Bind(m, f) = 
+        match m with
+        | Ok a -> f a
+        | Error e -> Error e
+
+let result = ResultBuilder()
+
+let f() =
+    result {
+        return! Ok 1 : Result<int, string>
+    }
+    
+let f1() =
+    result {
+        return! (Ok 1 : Result<int, string>)
+    }
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 16, Col 17, Line 16, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+        
+    [<Fact>]
+    let ``Preview: Allow CE return and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+open System
+
+type MyType() =
+    interface IDisposable with
+        member this.Dispose () = ()
+
+let f () =
+    async {
+        return new MyType() : IDisposable
+    }
+
+let f1 () =
+    async {
+        return new MyType() :> IDisposable
+    }
+        
+let f2 () : Async<IDisposable> =
+    async {
+        return new MyType()
+    }
+        
+let f3 () =
+    async {
+        return (new MyType() : IDisposable)
+    }
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: Allow CE return! and type annotations to play well together without needing parentheses``() =
+        FSharp """
+module ComputationExpressionTests
+
+type ResultBuilder() =
+    member _.Return(x) = Ok x
+    member _.ReturnFrom(x) = x
+    member _.Bind(m, f) = 
+        match m with
+        | Ok a -> f a
+        | Error e -> Error e
+
+let result = ResultBuilder()
+
+let f() =
+    result {
+        return! Ok 1 : Result<int, string>
+    }
+    
+let f1() =
+    result {
+        return! (Ok 1 : Result<int, string>)
+    }
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``A CE explicitly using Zero fails without a defined Zero``() =

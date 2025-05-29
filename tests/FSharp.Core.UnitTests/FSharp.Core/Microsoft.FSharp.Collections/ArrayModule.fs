@@ -2227,6 +2227,14 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomChoices negativeChoicesLength arr |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomChoices 0
+
+        Assert.AreEqual([||], choice)
+
+    [<Fact>]
     member _.RandomChoicesWith() =
         let arr = [| 1..50 |]
         let rand1 = Random(123)
@@ -2292,6 +2300,14 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomChoicesBy randomizer negativeChoicesLength arr |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesByEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomChoicesBy (fun () -> 1.0) 0
+
+        Assert.AreEqual([||], choice)
+
+    [<Fact>]
     member _.RandomSample() =
         let arr = [| 1..50 |]
 
@@ -2318,6 +2334,14 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomSample sampleLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSample negativeSampleLength arr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSample tooBigSampleLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomSample 0
+
+        Assert.AreEqual([||], choice)
 
     [<Fact>]
     member _.RandomSampleWith() =
@@ -2395,3 +2419,11 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer sampleLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer negativeSampleLength arr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer tooBigSampleLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleByEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomSampleBy (fun () -> 1.0) 0
+
+        Assert.AreEqual([||], choice)

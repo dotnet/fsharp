@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/RangeOfAttributeShouldBeIncludedInSynTypeDefn.fs", false,
-      QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynTypeDefn, [], [],
+      QualifiedNameOfFile RangeOfAttributeShouldBeIncludedInSynTypeDefn, [],
       [SynModuleOrNamespace
          ([RangeOfAttributeShouldBeIncludedInSynTypeDefn], false, AnonModule,
           [Types
@@ -22,4 +22,5 @@ ImplFile
                     WithKeyword = None })], (2,0--5,7))], PreXmlDocEmpty, [],
           None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

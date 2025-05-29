@@ -517,8 +517,9 @@ type UsingMSBuild() as this =
 
         let script1 = OpenFile(project,"Script1.fsx")   
         MoveCursorToEndOfMarker(script1,"let y = f") 
-        TakeCoffeeBreak(this.VS) 
-        AssertNoErrorsOrWarnings(project)   
+        TakeCoffeeBreak(this.VS)
+        AssertNoErrorsOrWarnings(project)
+        // AssertExactlyOneErrorSeenContaining(project, "This construct is deprecated. x")  // This is expected for langVersion >= 10.0
 
     /// FEATURE: #r in .fsx to a .dll name works.
     [<Fact>]

@@ -1,7 +1,7 @@
 SigFile
   (ParsedSigFileInput
      ("/root/ConditionalDirective/NestedIfElseEndifSignatureFile.fsi",
-      QualifiedNameOfFile NestedIfElseEndifSignatureFile, [], [],
+      QualifiedNameOfFile NestedIfElseEndifSignatureFile, [],
       [SynModuleOrNamespaceSig
          ([Foobar], false, DeclaredNamespace,
           [Val
@@ -21,4 +21,5 @@ SigFile
          [If (Ident "FOO", (5,4--5,11)); If (Ident "MEH", (6,8--6,15));
           Else (8,8--8,13); EndIf (10,8--10,14); Else (11,4--11,9);
           EndIf (13,4--13,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))
