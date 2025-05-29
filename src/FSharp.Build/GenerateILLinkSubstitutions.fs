@@ -29,7 +29,7 @@ type GenerateILLinkSubstitutions() =
     /// <summary>
     /// Generated embedded resource items.
     /// </summary>
-    [<o>]
+    [<Output>]
     member val GeneratedItems = [| |] : ITaskItem[] with get, set
 
     override this.Execute() =
