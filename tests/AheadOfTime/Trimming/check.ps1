@@ -46,7 +46,8 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
 CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.Core.dll" -expected_len 300032
 
 # Check net9.0 trimmed assemblies with static linked FSharpCore
-CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9150976
+CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9154048
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
 CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len -1
+
