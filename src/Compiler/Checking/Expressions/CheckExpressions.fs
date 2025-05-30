@@ -143,6 +143,8 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
+exception InvalidAttributeTargetForLanguageElement of string * string * range
+
 //----------------------------------------------------------------------------------------------
 // Helpers for determining if/what specifiers a string has.
 // Used to decide if interpolated string can be lowered to a concat call.
@@ -11353,7 +11355,29 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
         if (directedTargets = AttributeTargets.Assembly || directedTargets = AttributeTargets.Module) then
             errorR(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), mAttr))
         else
-            warning(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
+            let attributeTargetsToString (targets: int) =
+                [|
+                    if targets &&& int AttributeTargets.Assembly <> 0 then "assembly"
+                    if targets &&& int AttributeTargets.Module <> 0 then "module"
+                    if targets &&& int AttributeTargets.Class <> 0 then "class"
+                    if targets &&& int AttributeTargets.Struct <> 0 then "struct"
+                    if targets &&& int AttributeTargets.Enum <> 0 then "enum"
+                    if targets &&& int AttributeTargets.Constructor <> 0 then "constructor"
+                    if targets &&& int AttributeTargets.Method <> 0 then "method"
+                    if targets &&& int AttributeTargets.Property <> 0 then "property"
+                    if targets &&& int AttributeTargets.Field <> 0 then "field"
+                    if targets &&& int AttributeTargets.Event <> 0 then "event"
+                    if targets &&& int AttributeTargets.Interface <> 0 then "interface"
+                    if targets &&& int AttributeTargets.Parameter <> 0 then "parameter"
+                    if targets &&& int AttributeTargets.Delegate <> 0 then "delegate"
+                    if targets &&& int AttributeTargets.ReturnValue <> 0 then "return value"
+                    if targets &&& int AttributeTargets.GenericParameter <> 0 then "type parameter"
+                |] |> String.concat ", "
+
+            let currentTarget = attributeTargetsToString (int directedTargets)
+            let validTargets = attributeTargetsToString validOn
+            
+            warning(InvalidAttributeTargetForLanguageElement(currentTarget, validTargets, mAttr))
     
     constrainedTargets
 

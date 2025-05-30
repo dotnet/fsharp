@@ -5142,11 +5142,6 @@
         <target state="translated">이 특성은 이 언어 요소에 사용할 수 없습니다. 어셈블리 특성은 필요한 경우 F# 모듈 내에서 'do ()' 선언에 연결해야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">이 특성은 이 언어 요소에 사용할 수 없습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">선택적 인수는 사용자 지정 특성에 사용할 수 없습니다.</target>

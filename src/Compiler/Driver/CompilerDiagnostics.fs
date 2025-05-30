@@ -155,6 +155,7 @@ type Exception with
         | LibraryUseOnly m
         | FieldsFromDifferentTypes(_, _, _, m)
         | IndeterminateType m
+        | InvalidAttributeTargetForLanguageElement(_, _, m)
         | TyconBadArgs(_, _, _, m) -> Some m
 
         | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
@@ -353,6 +354,7 @@ type Exception with
         | ConstraintSolverNullnessWarningWithTypes _ -> 3261
         | ConstraintSolverNullnessWarningWithType _ -> 3261
         | ConstraintSolverNullnessWarning _ -> 3261
+        | InvalidAttributeTargetForLanguageElement _ -> 842
         | _ -> 193
 
 type PhasedDiagnostic with
@@ -610,6 +612,8 @@ module OldStyleMessages =
 
     let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
         Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
+
+    let InvalidAttributeTargetForLanguageElementE () = Message("InvalidAttributeTargetForLanguageElement", "%s%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1931,6 +1935,9 @@ type Exception with
                     s1
                     s2
             )
+
+        | InvalidAttributeTargetForLanguageElement(currentTargets, validTargets, _m) ->
+            os.AppendString(InvalidAttributeTargetForLanguageElementE().Format currentTargets validTargets)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)

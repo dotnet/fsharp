@@ -114,10 +114,11 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 18, Col 7, Line 18, Col 8, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute cannot be applied to property, field. Valid targets are: method")
+            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute cannot be applied to field. Valid targets are: method")
+            (Warning 842, Line 24, Col 21, Line 24, Col 29, "This attribute cannot be applied to field. Valid targets are: method")
+            (Warning 842, Line 27, Col 7, Line 27, Col 16, "This attribute cannot be applied to method. Valid targets are: method")
+            (Warning 842, Line 18, Col 7, Line 18, Col 8, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
         ]
 
     // SOURCE=E_AttributeTargets02.fs					# E_AttributeTargets02.fs
