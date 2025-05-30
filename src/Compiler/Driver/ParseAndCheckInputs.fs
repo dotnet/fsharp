@@ -221,7 +221,6 @@ let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) =
     [
         yield! CommentStore.GetComments(lexbuf)
         yield! (List.map CommentTrivia.LineComment tripleSlashComments)
-        yield! WarnScopes.getCommentTrivia lexbuf
     ]
     |> List.sortBy (function
         | CommentTrivia.LineComment r
