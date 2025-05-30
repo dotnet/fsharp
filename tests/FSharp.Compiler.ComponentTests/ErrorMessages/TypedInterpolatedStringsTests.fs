@@ -36,3 +36,4 @@ printf $"%s{hello}"
         |> withWarnOn 3579
         |> typecheck
         |> shouldSucceed
+
