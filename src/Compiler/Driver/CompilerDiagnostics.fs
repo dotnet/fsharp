@@ -613,7 +613,8 @@ module OldStyleMessages =
     let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
         Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
 
-    let InvalidAttributeTargetForLanguageElementE () = Message("InvalidAttributeTargetForLanguageElement", "%s%s")
+    let InvalidAttributeTargetForLanguageElement1E () = Message("InvalidAttributeTargetForLanguageElement1", "%s%s")
+    let InvalidAttributeTargetForLanguageElement2E () = Message("InvalidAttributeTargetForLanguageElement2", "")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1936,8 +1937,13 @@ type Exception with
                     s2
             )
 
-        | InvalidAttributeTargetForLanguageElement(actualTarget, validTargets, _m) ->
-            os.AppendString(InvalidAttributeTargetForLanguageElementE().Format actualTarget validTargets)
+        | InvalidAttributeTargetForLanguageElement(currentTargets, validTargets, _m) ->
+            if Array.isEmpty currentTargets then
+                os.AppendString(InvalidAttributeTargetForLanguageElement2E().Format)
+            else
+                let currentTarget = String.concat ", " currentTargets
+                let validTargets = validTargets |> Array.except currentTargets |> String.concat ", "
+                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format currentTarget validTargets)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)

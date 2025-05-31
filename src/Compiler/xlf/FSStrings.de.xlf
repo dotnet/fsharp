@@ -57,9 +57,14 @@
         <target state="translated">Mindestens eine Informationsmeldung in der geladenen Datei.\n</target>
         <note />
       </trans-unit>
-      <trans-unit id="InvalidAttributeTargetForLanguageElement">
+      <trans-unit id="InvalidAttributeTargetForLanguageElement1">
         <source>This attribute cannot be applied to {0}. Valid targets are: {1}</source>
         <target state="new">This attribute cannot be applied to {0}. Valid targets are: {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidAttributeTargetForLanguageElement2">
+        <source>This attribute is not valid for use on this language element</source>
+        <target state="new">This attribute is not valid for use on this language element</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
