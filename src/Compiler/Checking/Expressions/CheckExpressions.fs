@@ -143,7 +143,7 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
-exception InvalidAttributeTargetForLanguageElement of string * string * range
+exception InvalidAttributeTargetForLanguageElement of actualTarget: string * validTargets: string * range: range
 
 //----------------------------------------------------------------------------------------------
 // Helpers for determining if/what specifiers a string has.
