@@ -11374,7 +11374,7 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
                     if targets &&& int AttributeTargets.GenericParameter <> 0 then "type parameter"
                 |] |> String.concat ", "
 
-            let currentTarget = attributeTargetsToString (int directedTargets)
+            let currentTarget = attributeTargetsToString (int attrTgt)
             let validTargets = attributeTargetsToString validOn
             
             warning(InvalidAttributeTargetForLanguageElement(currentTarget, validTargets, mAttr))

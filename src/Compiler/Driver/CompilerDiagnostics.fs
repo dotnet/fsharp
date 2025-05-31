@@ -1936,8 +1936,8 @@ type Exception with
                     s2
             )
 
-        | InvalidAttributeTargetForLanguageElement(currentTargets, validTargets, _m) ->
-            os.AppendString(InvalidAttributeTargetForLanguageElementE().Format currentTargets validTargets)
+        | InvalidAttributeTargetForLanguageElement(actualTarget, validTargets, _m) ->
+            os.AppendString(InvalidAttributeTargetForLanguageElementE().Format actualTarget validTargets)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
