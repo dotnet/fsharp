@@ -121,6 +121,11 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
+exception InvalidAttributeTargetForLanguageElement of
+    actualTarget: string array *
+    validTargets: string array *
+    range: range
+
 val TcFieldInit: range -> ILFieldInit -> Const
 
 /// Indicates whether a syntactic type is allowed to include new type variables
