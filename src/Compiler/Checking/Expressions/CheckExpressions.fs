@@ -11372,11 +11372,16 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
                     if targets &&& int AttributeTargets.Delegate <> 0 then "delegate"
                     if targets &&& int AttributeTargets.ReturnValue <> 0 then "return value"
                     if targets &&& int AttributeTargets.GenericParameter <> 0 then "type parameter"
-                |] |> String.concat ", "
+                |]
 
-            let currentTarget = attributeTargetsToString (int attrTgt)
-            let validTargets = attributeTargetsToString validOn
-            
+            let currentTargets = attributeTargetsToString (int attrTgt)
+
+            let currentTarget = String.concat ", " currentTargets  
+            let validTargets =
+                attributeTargetsToString validOn
+                |> Array.except currentTargets
+                |> String.concat ", "
+
             warning(InvalidAttributeTargetForLanguageElement(currentTarget, validTargets, mAttr))
     
     constrainedTargets
