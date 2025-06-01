@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Dependencies>
-  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="1b5819797c01e0898087a34d8a2a7d9b9f55f1ac" BarId="270128" />
+  <Source Uri="https://github.com/dotnet/dotnet" Mapping="fsharp" Sha="804112038ca977a36dcee28a82c86eabc0573dc1" BarId="270181" />
   <ProductDependencies>
     <Dependency Name="Microsoft.Build" Version="17.15.0-preview-25278-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
@@ -30,9 +30,9 @@
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
-    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.0-preview.6.25280.102">
+    <Dependency Name="System.Diagnostics.DiagnosticSource" Version="10.0.0-preview.6.25281.101">
       <Uri>https://github.com/dotnet/dotnet</Uri>
-      <Sha>1b5819797c01e0898087a34d8a2a7d9b9f55f1ac</Sha>
+      <Sha>804112038ca977a36dcee28a82c86eabc0573dc1</Sha>
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
