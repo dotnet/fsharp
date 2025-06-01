@@ -566,7 +566,7 @@ module TcRecdUnionAndEnumDeclarations =
                         MakeRecdFieldSpec g env parent (false, None, argTy, [], [], id, argInfo.Name.IsNone, false, false, XmlDoc.Empty, None, m))
 
                 if not (typeEquiv g recordTy thisTy) then 
-                    error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
+                    errorR(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
                 rfields, recordTy
 
         let names = rfields
