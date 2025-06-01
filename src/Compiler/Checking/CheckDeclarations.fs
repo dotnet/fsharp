@@ -441,10 +441,10 @@ module TcRecdUnionAndEnumDeclarations =
         
         let isThreadStatic = isThreadOrContextStatic g attrsForField
         if isThreadStatic && (not zeroInit || not isStatic) then 
-            error(Error(FSComp.SR.tcThreadStaticAndContextStaticMustBeStatic(), m))
+            errorR(Error(FSComp.SR.tcThreadStaticAndContextStaticMustBeStatic(), m))
 
         if isVolatile then 
-            error(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(), m))
+            errorR(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(), m))
 
         if isIncrClass && (not zeroInit || not isMutable) then errorR(Error(FSComp.SR.tcUninitializedValFieldsMustBeMutable(), m))
         let isPrivate = match vis with | Some (SynAccess.Private _) -> true | _ -> false
