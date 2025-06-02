@@ -49,7 +49,7 @@ type TestingWorkspace(testName) as _this =
 
     interface IDisposable with
         member _.Dispose() =
-            activity.Dispose()
+            use _ = activity in ()
             //tracerProvider.ForceFlush() |> ignore
             //tracerProvider.Dispose()
 
