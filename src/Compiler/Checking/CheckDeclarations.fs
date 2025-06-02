@@ -1969,8 +1969,8 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
             | SynMemberDefn.Interface(interfaceType=intfTy; members=defnOpt) -> 
                   let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
                   let m = intfTy.Range
-                  if tcref.IsTypeAbbrev then error(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveInterfaceDeclaration(), m))
-                  if tcref.IsEnumTycon then error(Error(FSComp.SR.tcEnumerationsCannotHaveInterfaceDeclaration(), m))
+                  if tcref.IsTypeAbbrev then errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveInterfaceDeclaration(), m))
+                  if tcref.IsEnumTycon then errorR(Error(FSComp.SR.tcEnumerationsCannotHaveInterfaceDeclaration(), m))
 
                   let intfTyR = 
                       let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
