@@ -2407,7 +2407,12 @@ module TcExceptionDeclarations =
 
     let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
         let g = cenv.g 
-        let args = match args with SynUnionCaseKind.Fields args -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
+        let args =
+            match args with
+            | SynUnionCaseKind.Fields args -> args
+            | _ ->
+                errorR(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
+                []
         let ad = env.AccessRights
         let id = exnc.Id
         
@@ -2439,7 +2444,7 @@ module TcExceptionDeclarations =
                   // REVIEW: check this really is an exception type 
                   match args' with 
                   | [] -> ()
-                  | _ -> error (Error(FSComp.SR.tcAbbreviationsFordotNetExceptionsCannotTakeArguments(), m))
+                  | _ -> errorR (Error(FSComp.SR.tcAbbreviationsFordotNetExceptionsCannotTakeArguments(), m))
                   let candidates = 
                       meths |> List.filter (fun minfo -> 
                           minfo.NumArgs = [args'.Length] &&
