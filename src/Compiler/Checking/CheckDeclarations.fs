@@ -745,10 +745,10 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
     let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
     if not (isAppTy g ty) then
-        error(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
+        errorR(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
 
     if isByrefTy g ty then
-        error(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
+        errorR(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
 
     let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [ty], scopem, false)
     let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
