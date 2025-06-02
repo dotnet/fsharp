@@ -1054,11 +1054,11 @@ module MutRecBindingChecking =
 
                         if tcref.IsTypeAbbrev then
                             // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
-                            error(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(), (trimRangeToLine m)))
+                            errorR(Error(FSComp.SR.tcTypeAbbreviationsMayNotHaveMembers(), (trimRangeToLine m)))
 
                         if tcref.IsEnumTycon && (declKind <> ExtrinsicExtensionBinding) && classMemberDef.IsSome then 
                             // ideally we'd have the 'm' of the type declaration stored here, to avoid needing to trim to line to approx
-                            error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
+                            errorR(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
 
@@ -1075,7 +1075,7 @@ module MutRecBindingChecking =
                             let (MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _)) = memberContainerInfo
 
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
-                                error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
+                                errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
                             // Phase2A: make staticCtorInfo - ctorv, thisVal etc, type depends on argty(s) 
                             let staticCtorInfo = TcStaticImplicitCtorInfo_Phase2A(cenv, envForTycon, tcref, m, copyOfTyconTypars)
@@ -1091,7 +1091,7 @@ module MutRecBindingChecking =
                               
                         | Some (SynMemberDefn.ImplicitInherit (ty, arg, _baseIdOpt, m, _)), _ ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
-                                error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
+                                errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
                             // Phase2A: inherit ty(arg) as base - pass through 
                             // Phase2A: pick up baseValOpt! 
@@ -1101,7 +1101,7 @@ module MutRecBindingChecking =
 
                         | Some (SynMemberDefn.LetBindings (letBinds, isStatic, isRec, m)), _ ->
                             match tcref.TypeOrMeasureKind, isStatic with 
-                            | TyparKind.Measure, false -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
+                            | TyparKind.Measure, false -> errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m)) 
                             | _ -> ()
 
                             if not isStatic && tcref.IsStructOrEnumTycon then 
@@ -1138,9 +1138,9 @@ module MutRecBindingChecking =
                                 match memberFlagsOpt with 
                                 | None -> () 
                                 | Some memberFlags -> 
-                                    if memberFlags.IsInstance then error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
+                                    if memberFlags.IsInstance then errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
                                     match memberFlags.MemberKind with 
-                                    | SynMemberKind.Constructor -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembersNotConstructors(), m))
+                                    | SynMemberKind.Constructor -> errorR(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembersNotConstructors(), m))
                                     | _ -> ()
 
                             let envForMember = 
