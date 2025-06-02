@@ -5155,9 +5155,9 @@ let CheckLetOrDoInNamespace binds m =
     | [ SynBinding (accessibility=None; kind=(SynBindingKind.StandaloneExpression | SynBindingKind.Do); isInline=false; isMutable=false; attributes=[]; returnInfo=None; expr=(SynExpr.Do (expr=SynExpr.Const (constant=SynConst.Unit)) | SynExpr.Const (constant=SynConst.Unit))) ] ->
         ()
     | [] -> 
-        error(Error(FSComp.SR.tcNamespaceCannotContainValues(), m)) 
+        errorR(Error(FSComp.SR.tcNamespaceCannotContainValues(), m)) 
     | _ -> 
-        error(Error(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPattern)) 
+        errorR(Error(FSComp.SR.tcNamespaceCannotContainValues(), binds.Head.RangeOfHeadPattern)) 
 
 let rec TcMutRecDefsFinish cenv defs m =
     let opens =

@@ -37,8 +37,6 @@ neg10.fs(84,13,84,29): typecheck error FS0896: Enumerations cannot have members
 
 neg10.fs(90,23,90,41): typecheck error FS0907: Enumerations cannot have interface declarations
 
-neg10.fs(91,17,91,45): typecheck error FS0896: Enumerations cannot have members
-
 neg10.fs(99,23,99,29): typecheck error FS0907: Enumerations cannot have interface declarations
 
 neg10.fs(107,10,107,17): typecheck error FS0964: Type abbreviations cannot have augmentations
