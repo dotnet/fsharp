@@ -9,6 +9,9 @@ open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
+[<Struct>]
+type EscapedValue = { Escaped: string; Raw: string }
+
 type WriteCodeFragment() as this =
     inherit Task()
     let mutable _outputDirectory: ITaskItem MaybeNull = null
@@ -41,7 +44,10 @@ type WriteCodeFragment() as this =
                     | _ -> sb.Append(c))
                 (StringBuilder().Append("\""))
 
-        sb.Append("\"").ToString()
+        {
+            Escaped = sb.Append("\"").ToString()
+            Raw = str
+        }
 
     member _.GenerateAttribute(item: ITaskItem, language: string) =
         let attributeName = item.ItemSpec
@@ -60,9 +66,11 @@ type WriteCodeFragment() as this =
 
                     let value =
                         match entry.Value with
-                        | null -> "null"
-                        | :? string as value -> escapeString value
-                        | value -> value.ToString()
+                        | null -> { Escaped = "null"; Raw = "null" }
+                        | :? string as strValue -> escapeString strValue
+                        | value ->
+                            let strValue = value.ToString()
+                            { Escaped = strValue; Raw = strValue }
 
                     (key, value))
 
@@ -85,12 +93,47 @@ type WriteCodeFragment() as this =
                 else
                     Array.create (List.last orderedParametersWithIndex |> fst) "null"
 
-            List.iter (fun (index, value) -> orderedParametersArray.[index - 1] <- value) orderedParametersWithIndex
+            List.iter (fun (index, value) -> orderedParametersArray.[index - 1] <- value.Escaped) orderedParametersWithIndex
             // construct ordered parameter lists
             let combinedOrderedParameters = String.Join(", ", orderedParametersArray)
 
             let combinedNamedParameters =
-                String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) namedParameters)
+                // Define "_IsLiteral" suffix to match MSBuild behavior
+                let isLiteralSuffix = "_IsLiteral"
+
+                // Process named parameters to handle IsLiteral suffix
+                let processedNamedParameters =
+                    // First identify all parameters with _IsLiteral suffix
+                    let isLiteralParams =
+                        namedParameters
+                        |> List.choose (fun (key, value) ->
+                            if key.EndsWith(isLiteralSuffix) && (value.Raw = "true" || value.Raw = "True") then
+                                // Extract the base parameter name by removing the suffix
+                                Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
+                            else
+                                None)
+                        |> Set.ofList
+
+                    // Process all parameters, handling literals appropriately
+                    namedParameters
+                    |> List.choose (fun (key, value) ->
+                        // Skip _IsLiteral metadata entries
+                        if key.EndsWith(isLiteralSuffix) then
+                            None
+                        else
+                            // Check if this parameter should be treated as a literal
+                            let isLiteral = Set.contains key isLiteralParams
+
+                            if isLiteral then
+                                // For literals, use the raw value
+                                Some(key, value.Raw)
+                            else
+                                // Regular parameter, use the escaped value
+                                Some(key, value.Escaped))
+                    // Sort parameters alphabetically by key to match MSBuild behavior
+                    |> List.sortBy fst
+
+                String.Join(", ", List.map (fun (key, value) -> sprintf "%s = %s" key value) processedNamedParameters)
             // construct the final argument string; positional arguments followed by named
             match (combinedOrderedParameters.Length, combinedNamedParameters.Length) with
             | (0, 0) -> "" // no arguments
