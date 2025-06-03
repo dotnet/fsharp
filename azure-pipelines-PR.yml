@@ -118,7 +118,7 @@ stages:
             inputs:
               packageType: sdk
               useGlobalJson: true
-              includePreviewVersions: false
+              includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
@@ -230,7 +230,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:FSharpLangVersion=preview
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -270,7 +270,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testCoreclr -configuration Release
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -322,7 +322,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release -testBatch $(System.JobPositionInPhase)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -372,7 +372,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation+
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -408,7 +408,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release /p:AdditionalFscCmdFlags=--strict-indentation-
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -482,7 +482,7 @@ stages:
             displayName: Setup VS Hive
             condition: eq(variables.setupVsHive, 'true')
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
@@ -560,7 +560,7 @@ stages:
           - checkout: self
             clean: true
 
-          - script: eng\CIBuild.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
+          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktop -testBatch $(System.JobPositionInPhase)
             env:
               DOTNET_DbgEnableMiniDump: 1
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.

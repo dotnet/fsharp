@@ -761,6 +761,26 @@ match 1 with P expr2 pat -> ()
             |> typecheck
             |> shouldSucceed
 
+    module ``Recursive active pattern definition with and`` =
+        /// See https://github.com/dotnet/fsharp/issues/18638
+        [<Fact>]
+        let ``match expr1 with P expr2 pat -> …`` () =
+            FSharp """
+let rec parse p =
+    function
+    | IsSomething p v -> Some v
+    | _ -> None
+
+and (|IsSomething|_|) p =
+    function
+    | "nested" -> parse p "42"
+    | "42" -> Some 42
+    | _ -> None
+            """
+            |> withNoWarn IncompletePatternMatches
+            |> typecheck
+            |> shouldSucceed
+
     module ``int → int → int voption`` =
         // Normal usage; pat is int.
         [<Fact>]

@@ -17,6 +17,5 @@ ImplFile
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,2), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
-        WarnDirectives =
-         [Nowarn ([20; 25], (3,4--3,17)); Warnon ([20; 25], (5,4--5,17))]
-        CodeComments = [LineComment (5,18--5,30)] }, set []))
+        WarnDirectives = [Nowarn (3,0--3,17); Warnon (5,0--5,30)]
+        CodeComments = [] }, set []))

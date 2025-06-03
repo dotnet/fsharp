@@ -5259,6 +5259,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
             error(Error(msg, m))
 
+        let isUnsolvedTyparTy g ty = tryDestTyparTy g ty |> ValueOption.exists (fun typar -> not typar.IsSolved)
+
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
@@ -5281,7 +5283,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                  showErrMsg 1
 
         // active pattern in function param (e.g. let f (|P|_|) = ...)
-        elif tryDestTyparTy g vExprTy |> ValueOption.exists (fun typar -> not typar.IsSolved) then
+        // or in mutual recursion with a lambda: `and (|P|) x = fun y -> …`
+        elif isUnsolvedTyparTy g vExprTy || tryDestFunTy g vExprTy |> ValueOption.exists (fun (_, rangeTy) -> isUnsolvedTyparTy g rangeTy) then
             List.frontAndBack args
 
         // args count should equal to AP function params count

@@ -25,6 +25,7 @@
       <Link>XunitSetup.fs</Link>
     </Compile>
     <Compile Include="Common.fs" />
+    <Compile Include="Checker.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />
     <Compile Include="GeneratedCodeSymbolsTests.fs" />
     <Compile Include="AssemblyReaderShim.fs" />

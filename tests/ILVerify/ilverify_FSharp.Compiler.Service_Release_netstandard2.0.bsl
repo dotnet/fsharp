@@ -55,8 +55,8 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions::subSystemVersionSwitch$cont@656([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, string, [FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnderflow]: : FSharp.Compiler.CompilerOptions::DoWithColor([System.Console]System.ConsoleColor, [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<Microsoft.FSharp.Core.Unit,!!0>)][offset 0x0000005E] Stack underflow.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+ResponseFile+parseLine@239::Invoke(string)][offset 0x00000026][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1781::Invoke(int32)][offset 0x00000031][found Char] Unexpected type on the stack.
-[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1781::Invoke(int32)][offset 0x0000003A][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1780::Invoke(int32)][offset 0x00000031][found Char] Unexpected type on the stack.
+[IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckMultipleInputsUsingGraphMode@1780::Invoke(int32)][offset 0x0000003A][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+TcConfig-TryResolveLibWithDirectories@568-1::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x00000021][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerImports+TcConfig-TryResolveLibWithDirectories@568-1::Invoke([FSharp.Core]Microsoft.FSharp.Core.Unit)][offset 0x0000003B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000059C][found Char] Unexpected type on the stack.
