@@ -660,7 +660,7 @@ module List =
 
     /// <summary>Tests if any pair of corresponding elements of the lists satisfies the given predicate.
     /// 
-    /// Time complexity: O(n) - where n is the list length
+    /// Time complexity: O(min(n, m)) - where n and m are the lengths of the two lists
     /// Space complexity: O(1)
     /// </summary>
     ///
@@ -811,10 +811,11 @@ module List =
     val findIndexBack: predicate:('T -> bool) -> list:'T list -> int
 
     /// <summary>Returns a new collection containing only the elements of the collection
+    /// for which the given predicate returns "true"
     /// 
     /// Time complexity: O(n) - where n is the list length
     /// Space complexity: O(n) - in worst case
-    /// for which the given predicate returns "true"</summary>
+    /// </summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
