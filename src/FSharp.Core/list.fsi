@@ -433,10 +433,9 @@ module List =
 
     /// <summary>Returns a list that contains no duplicate entries according to generic hash and
     /// equality comparisons on the entries.
-    /// 
+    /// If an element occurs multiple times in the list then the later occurrences are discarded.
     /// Time complexity: O(n) - where n is the list length, with hash table overhead
-    /// Space complexity: O(n)
-    /// If an element occurs multiple times in the list then the later occurrences are discarded.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -455,10 +454,9 @@ module List =
 
     /// <summary>Returns a list that contains no duplicate entries according to the 
     /// generic hash and equality comparisons on the keys returned by the given key-generating function.
-    /// 
+    /// If an element occurs multiple times in the list then the later occurrences are discarded.
     /// Time complexity: O(n) - where n is the list length, with hash table overhead
-    /// Space complexity: O(n)
-    /// If an element occurs multiple times in the list then the later occurrences are discarded.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="projection">A function transforming the list items into comparable keys.</param>
     /// <param name="list">The input list.</param>
@@ -694,10 +692,9 @@ module List =
     val exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
     /// <summary>Returns the first element for which the given function returns True.
-    /// 
+    /// Raises <c>KeyNotFoundException</c> if no such element exists.
     /// Time complexity: O(n) - worst case when element is at the end or not found
-    /// Space complexity: O(1)
-    /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -723,10 +720,9 @@ module List =
     val find: predicate:('T -> bool) -> list:'T list -> 'T
 
     /// <summary>Returns the last element for which the given function returns True.
-    /// 
+    /// Raises <c>KeyNotFoundException</c> if no such element exists.
     /// Time complexity: O(n) - requires traversing the entire list
-    /// Space complexity: O(1)
-    /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -753,10 +749,9 @@ module List =
 
     /// <summary>Returns the index of the first element in the list
     /// that satisfies the given predicate.
-    /// 
+    /// Raises <c>KeyNotFoundException</c> if no such element exists.
     /// Time complexity: O(n) - worst case when element is at the end or not found
-    /// Space complexity: O(1)
-    /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -783,10 +778,9 @@ module List =
 
     /// <summary>Returns the index of the last element in the list
     /// that satisfies the given predicate.
-    /// 
+    /// Raises <c>KeyNotFoundException</c> if no such element exists.
     /// Time complexity: O(n) - requires full list traversal
-    /// Space complexity: O(1)
-    /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -1316,10 +1310,9 @@ module List =
     val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// <summary>Applies the given function to each element of the collection. The integer passed to the
-    /// 
+    /// function indicates the index of the element.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// function indicates the index of the element.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="action">The function to apply to the elements of the list along with their index.</param>
     /// <param name="list">The input list.</param>
@@ -1372,9 +1365,9 @@ module List =
     val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
     /// 
+    /// <summary>Returns the last element of the list.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// <summary>Returns the last element of the list.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -1398,10 +1391,9 @@ module List =
     [<CompiledName("Last")>]
     val last: list:'T list -> 'T
 
-    /// 
+    /// <summary>Returns the length of the list.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// <summary>Returns the length of the list.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -1444,10 +1436,9 @@ module List =
     val tryLast: list:'T list -> 'T option
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
-    /// 
+    /// to each of the elements of the collection.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(n) - for the new list
-    /// to each of the elements of the collection.</summary>
+    /// Space complexity: O(n) - for the new list</summary>
     ///
     /// <param name="mapping">The function to transform elements from the input list.</param>
     /// <param name="list">The input list.</param>
@@ -1466,10 +1457,9 @@ module List =
     val map: mapping:('T -> 'U) -> list:'T list -> 'U list
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
-    /// 
+    /// to the corresponding elements of the two collections pairwise.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(n)
-    /// to the corresponding elements of the two collections pairwise.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="mapping">The function to transform pairs of elements from the input lists.</param>
     /// <param name="list1">The first input list.</param>
@@ -1490,10 +1480,9 @@ module List =
     val map2: mapping:('T1 -> 'T2 -> 'U) -> list1:'T1 list -> list2:'T2 list -> 'U list
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
-    /// 
+    /// to the corresponding elements of the three collections simultaneously.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(n)
-    /// to the corresponding elements of the three collections simultaneously.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="mapping">The function to transform triples of elements from the input lists.</param>
     /// <param name="list1">The first input list.</param>
@@ -1584,10 +1573,9 @@ module List =
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to each of the elements of the collection. The integer index passed to the
-    /// 
+    /// function indicates the index (from 0) of the element being transformed.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(n)
-    /// function indicates the index (from 0) of the element being transformed.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="mapping">The function to transform elements and their indices.</param>
     /// <param name="list">The input list.</param>
@@ -1625,10 +1613,9 @@ module List =
     [<CompiledName("MapIndexed2")>]
     val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> list1:'T1 list -> list2:'T2 list -> 'U list
 
-    /// 
+    /// <summary>Return the greatest of all elements of the list, compared via Operators.max.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// <summary>Return the greatest of all elements of the list, compared via Operators.max.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty</remarks>
     /// <param name="list">The input list.</param>
@@ -1657,10 +1644,9 @@ module List =
     [<CompiledName("Max")>]
     val inline max: list:'T list -> 'T when 'T : comparison 
 
-    /// 
+    /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty.</remarks>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
@@ -1690,10 +1676,9 @@ module List =
     [<CompiledName("MaxBy")>]
     val inline maxBy: projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison 
 
-    /// 
+    /// <summary>Returns the lowest of all elements of the list, compared via Operators.min.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// <summary>Returns the lowest of all elements of the list, compared via Operators.min.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty</remarks>
     /// <param name="list">The input list.</param>
@@ -1781,10 +1766,9 @@ module List =
     [<CompiledName("OfArray")>]
     val ofArray : array:'T array -> 'T list
 
-    /// 
+    /// <summary>Builds a new list from the given enumerable object.
     /// Time complexity: O(n) - where n is the sequence length
-    /// Space complexity: O(n)
-    /// <summary>Builds a new list from the given enumerable object.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -1849,10 +1833,9 @@ module List =
 
     /// <summary>Applies the given function to successive elements, returning the first
     /// result where function returns <c>Some(x)</c> for some x. If no such
-    /// 
+    /// element exists then raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/>
     /// Time complexity: O(n) - worst case when element is at the end or not found
-    /// Space complexity: O(1)
-    /// element exists then raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/></summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <param name="chooser">The function to generate options from the elements.</param>
     /// <param name="list">The input list.</param>
@@ -1883,10 +1866,9 @@ module List =
     val pick: chooser:('T -> 'U option) -> list:'T list -> 'U
 
     /// <summary>Returns a list with all elements permuted according to the
-    /// 
+    /// specified permutation.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(n)
-    /// specified permutation.</summary>
+    /// Space complexity: O(n)</summary>
     ///
     /// <param name="indexMap">The function to map input indices to output indices.</param>
     /// <param name="list">The input list.</param>
@@ -1910,10 +1892,9 @@ module List =
     /// through the computation. Apply the function to the first two elements of the list.
     /// Then feed this result into the function along with the third element and so on. 
     /// Return the final result. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
-    /// 
+    /// <c>f (... (f i0 i1) i2 ...) iN</c>.
     /// Time complexity: O(n) - where n is the list length
-    /// Space complexity: O(1)
-    /// <c>f (... (f i0 i1) i2 ...) iN</c>.</summary>
+    /// Space complexity: O(1)</summary>
     ///
     /// <remarks>Raises <see cref="T:System.ArgumentException"/> if <c>list</c> is empty</remarks>
     ///
