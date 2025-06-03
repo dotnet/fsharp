@@ -2550,7 +2550,7 @@ module EstablishTypeDefinitionCores =
 
     /// Compute the mangled name of a type definition. 'doErase' is true for all type definitions except type abbreviations.
     let private ComputeTyconName (longPath: Ident list, doErase: bool, typars: Typars) = 
-        if longPath.Length <> 1 then error(Error(FSComp.SR.tcInvalidTypeExtension(), longPath.Head.idRange))
+        if longPath.Length <> 1 then errorR(Error(FSComp.SR.tcInvalidTypeExtension(), longPath.Head.idRange))
         let id = longPath.Head
         let erasedArity = 
             if doErase then typars |> Seq.sumBy (fun tp -> if tp.IsErased then 0 else 1) 
