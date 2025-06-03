@@ -33,7 +33,11 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
     # Checking that the trimmed outputfile binary is of expected size (needs adjustments if test is updated).
     $file = Get-Item (Join-Path $PSScriptRoot "${root}\bin\release\${tfm}\win-x64\publish\${outputfile}")
     $file_len = $file.Length
-    if (-not ($expected_len -eq -1 -or $file_len -eq $expected_len))
+    if ($expected_len -eq -1)
+    {
+        Write-Host "Actual ${tfm} - trimmed ${outputfile} length: ${file_len} Bytes (expected length is placeholder -1, update test with this actual value)"
+    }
+    elseif ($file_len -ne $expected_len)
     {
         Write-Error "Test failed with unexpected ${tfm}  -  trimmed ${outputfile} length:`nExpected:`n`t${expected_len} Bytes`nActual:`n`t${file_len} Bytes`nEither codegen or trimming logic have changed. Please investigate and update expected dll size or report an issue." -ErrorAction Stop
     }
