@@ -1918,10 +1918,11 @@ module List =
 
     /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
+    /// <c>f i0 (...(f iN-1 iN))</c>.
     /// 
     /// Time complexity: O(n) - where n is the list length
     /// Space complexity: O(n)
-    /// <c>f i0 (...(f iN-1 iN))</c>.</summary>
+    /// </summary>
     ///
     /// <param name="reduction">A function that takes in the next-to-last element of the list and the
     /// current accumulated result to produce the next accumulated result.</param>
@@ -1942,10 +1943,11 @@ module List =
     [<CompiledName("ReduceBack")>]
     val reduceBack: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
-/// 
+    /// <summary>Creates a list by replicating the given initial value.
+    /// 
     /// Time complexity: O(n) - where n is the specified count
     /// Space complexity: O(n)
-    /// <summary>Creates a list by replicating the given initial value.</summary>
+    /// </summary>
     ///
     /// <param name="count">The number of elements to replicate.</param>
     /// <param name="initial">The value to replicate</param>
@@ -1961,10 +1963,11 @@ module List =
     [<CompiledName("Replicate")>]
     val replicate: count:int -> initial:'T -> 'T list
 
+    /// <summary>Returns a new list with the elements in reverse order.
     /// 
     /// Time complexity: O(n) - where n is the list length
     /// Space complexity: O(n)
-    /// <summary>Returns a new list with the elements in reverse order.</summary>
+    /// </summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -2041,10 +2044,11 @@ module List =
     [<CompiledName("ScanBack")>]
     val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State list
 
+    /// <summary>Returns a list that contains one item only.
     /// 
     /// Time complexity: O(1)
     /// Space complexity: O(1)
-    /// <summary>Returns a list that contains one item only.</summary>
+    /// </summary>
     ///
     /// <param name="value">The input item.</param>
     ///
@@ -2059,10 +2063,11 @@ module List =
     [<CompiledName("Singleton")>]
     val inline singleton: value:'T -> 'T list
 
+    /// <summary>Returns the list after removing the first N elements.
     /// 
     /// Time complexity: O(n) - where n is the count to skip
     /// Space complexity: O(1)
-    /// <summary>Returns the list after removing the first N elements.</summary>
+    /// </summary>
     ///
     /// <param name="count">The number of elements to skip. If the number is 0 or negative the input list is returned.</param>
     /// <param name="list">The input list.</param>
@@ -2121,10 +2126,11 @@ module List =
     [<CompiledName("SkipWhile")>]
     val skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
+    /// <summary>Sorts the given list using the given comparison function.
     /// 
     /// Time complexity: O(n log n) - where n is the list length
     /// Space complexity: O(n)
-    /// <summary>Sorts the given list using the given comparison function.</summary>
+    /// </summary>
     ///
     /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
     /// <param name="comparer">The function to compare the list elements.</param>
@@ -2148,10 +2154,11 @@ module List =
     [<CompiledName("SortWith")>]
     val sortWith: comparer:('T -> 'T -> int) -> list:'T list -> 'T list 
 
+    /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.
     /// 
     /// Time complexity: O(n log n) - where n is the list length
     /// Space complexity: O(n)
-    /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
+    /// </summary>
     ///
     /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
     /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
