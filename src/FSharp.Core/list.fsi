@@ -2560,10 +2560,11 @@ module List =
     val tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
 
     /// <summary>Returns the first element for which the given function returns True.
+    /// Return None if no such element exists.
     /// 
     /// Time complexity: O(n) - worst case when element is at the end or not found
     /// Space complexity: O(1)
-    /// Return None if no such element exists.</summary>
+    /// </summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -2622,10 +2623,11 @@ module List =
 
     /// <summary>Returns the index of the first element in the list
     /// that satisfies the given predicate.
+    /// Return <c>None</c> if no such element exists.
     /// 
     /// Time complexity: O(n) - worst case when element is at the end or not found
     /// Space complexity: O(1)
-    /// Return <c>None</c> if no such element exists.</summary>
+    /// </summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -2683,10 +2685,11 @@ module List =
 
     /// <summary>Returns the index of the last element in the list
     /// that satisfies the given predicate.
+    /// Return <c>None</c> if no such element exists.
     /// 
     /// Time complexity: O(n) - requires full list traversal
     /// Space complexity: O(1)
-    /// Return <c>None</c> if no such element exists.</summary>
+    /// </summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -2733,10 +2736,11 @@ module List =
     [<CompiledName("Unfold")>]
     val unfold<'T,'State> : generator:('State -> ('T * 'State) option) -> state:'State -> 'T list
 
+    /// <summary>Splits a list of pairs into two lists.
     /// 
     /// Time complexity: O(n) - where n is the list length
     /// Space complexity: O(n)
-    /// <summary>Splits a list of pairs into two lists.</summary>
+    /// </summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -2753,10 +2757,11 @@ module List =
     [<CompiledName("Unzip")>]
     val unzip: list:('T1 * 'T2) list -> ('T1 list * 'T2 list)
 
+    /// <summary>Splits a list of triples into three lists.
     /// 
     /// Time complexity: O(n) - where n is the list length
     /// Space complexity: O(n)
-    /// <summary>Splits a list of triples into three lists.</summary>
+    /// </summary>
     ///
     /// <param name="list">The input list.</param>
     ///
@@ -2774,10 +2779,11 @@ module List =
     val unzip3: list:('T1 * 'T2 * 'T3) list -> ('T1 list * 'T2 list * 'T3 list)
     
     /// <summary>Returns a new list containing only the elements of the list
+    /// for which the given predicate returns "true".
     /// 
     /// Time complexity: O(n) - where n is the list length
     /// Space complexity: O(n)
-    /// for which the given predicate returns "true"</summary>
+    /// </summary>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
@@ -2798,10 +2804,11 @@ module List =
     val where: predicate:('T -> bool) -> list:'T list -> 'T list
 
     /// <summary>Returns a list of sliding windows containing elements drawn from the input
+    /// list. Each window is returned as a fresh list.
     /// 
     /// Time complexity: O(n * windowSize) - where n is the list length
     /// Space complexity: O(n * windowSize)
-    /// list. Each window is returned as a fresh list.</summary>
+    /// </summary>
     ///
     /// <param name="windowSize">The number of elements in each window.</param>
     /// <param name="list">The input list.</param>
@@ -2821,10 +2828,11 @@ module List =
     [<CompiledName("Windowed")>]
     val windowed: windowSize:int -> list:'T list -> 'T list list
 
-/// 
+    /// <summary>Combines the two lists into a list of pairs. The two lists must have equal lengths.
+    /// 
     /// Time complexity: O(n) - where n is the length of the shorter list
     /// Space complexity: O(n)
-    /// <summary>Combines the two lists into a list of pairs. The two lists must have equal lengths.</summary>
+    /// </summary>
     ///
     /// <param name="list1">The first input list.</param>
     /// <param name="list2">The second input list.</param>
@@ -2843,10 +2851,11 @@ module List =
     [<CompiledName("Zip")>]
     val zip: list1:'T1 list -> list2:'T2 list -> ('T1 * 'T2) list
 
+    /// <summary>Combines the three lists into a list of triples. The lists must have equal lengths.
     /// 
     /// Time complexity: O(n) - where n is the length of the shortest list
     /// Space complexity: O(n)
-    /// <summary>Combines the three lists into a list of triples. The lists must have equal lengths.</summary>
+    /// </summary>
     ///
     /// <param name="list1">The first input list.</param>
     /// <param name="list2">The second input list.</param>
@@ -2867,10 +2876,11 @@ module List =
     [<CompiledName("Zip3")>]
     val zip3: list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> ('T1 * 'T2 * 'T3) list
     
+    /// <summary>Return a new list with the item at a given index removed.
     /// 
     /// Time complexity: O(n) - where n is the position to remove from
     /// Space complexity: O(n)
-    /// <summary>Return a new list with the item at a given index removed.</summary>
+    /// </summary>
     ///
     /// <param name="index">The index of the item to be removed.</param>
     /// <param name="source">The input list.</param>
@@ -2890,10 +2900,11 @@ module List =
     [<CompiledName("RemoveAt")>]
     val removeAt: index: int -> source: 'T list -> 'T list
 
+    /// <summary>Return a new list with the number of items starting at a given index removed.
     /// 
     /// Time complexity: O(n) - where n is the position to remove from
     /// Space complexity: O(n)
-    /// <summary>Return a new list with the number of items starting at a given index removed.</summary>
+    /// </summary>
     ///
     /// <param name="index">The index of the item to be removed.</param>
     /// <param name="count">The number of items to remove.</param>
@@ -2914,10 +2925,11 @@ module List =
     [<CompiledName("RemoveManyAt")>]
     val removeManyAt: index: int -> count: int -> source: 'T list -> 'T list
 
+    /// <summary>Return a new list with the item at a given index set to the new value.
     /// 
     /// Time complexity: O(n) - where n is the position to update
     /// Space complexity: O(n)
-    /// <summary>Return a new list with the item at a given index set to the new value.</summary>
+    /// </summary>
     ///
     /// <param name="index">The index of the item to be replaced.</param>
     /// <param name="value">The new value.</param>
