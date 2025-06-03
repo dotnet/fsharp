@@ -1128,7 +1128,7 @@ type internal TransparentCompiler
                             |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
                             |> Option.defaultValue false // TODO: do we need to figure this out?
 
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
+                        FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -1382,7 +1382,6 @@ type internal TransparentCompiler
                 let tcImports = bootstrapInfo.TcImports
 
                 let mainInputFileName = file.FileName
-                let sourceText = file.SourceText
 
                 // Initialize the error handler
                 let errHandler =
@@ -1390,7 +1389,6 @@ type internal TransparentCompiler
                         true,
                         mainInputFileName,
                         tcConfig.diagnosticsOptions,
-                        sourceText,
                         suggestNamesForErrors,
                         tcConfig.flatErrors
                     )
@@ -2466,16 +2464,10 @@ type internal TransparentCompiler
                     )
 
                 let diags =
+                    let flaterrors = otherFlags |> List.contains "--flaterrors"
+
                     loadClosure.LoadClosureRootFileDiagnostics
-                    |> List.map (fun (exn, isError) ->
-                        FSharpDiagnostic.CreateFromException(
-                            exn,
-                            isError,
-                            range.Zero,
-                            false,
-                            otherFlags |> List.contains "--flaterrors",
-                            None
-                        ))
+                    |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flaterrors, None))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }
