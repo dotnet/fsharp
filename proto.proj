@@ -4,11 +4,7 @@
     <RootDir Condition="'$(RootDir)'==''">Bootstrap</RootDir>
   </PropertyGroup>
 
-  <!-- This needs to be built only in the inner VMR build proto invocation, but not the outer VMR build invocation.
-       The project does not import Arcade targets so we only have the properties that were passed in, rather than
-       calculated properties like DotNetBuildPhase. -->
-  <!-- TODO: Remove this condition when fsharp upgraded to Arcade 10 -->
-  <ItemGroup Condition="'$(DotNetBuildFromVMR)' == 'true' or '$(DotNetBuildSourceOnly)' != 'true' or '$(DotNetBuildInnerRepo)' == 'true'">
+  <ItemGroup>
     <Projects Include="buildtools\fslex\fslex.fsproj" />
     <Projects Include="buildtools\fsyacc\fsyacc.fsproj" />
     <Projects Include="buildtools\AssemblyCheck\AssemblyCheck.fsproj" />
