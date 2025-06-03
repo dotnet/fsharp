@@ -24,8 +24,8 @@ and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type WarnDirectiveTrivia =
-    | Nowarn of warnNumbers: int list * range
-    | Warnon of warnNumbers: int list * range
+    | Nowarn of range
+    | Warnon of range
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type CommentTrivia =
