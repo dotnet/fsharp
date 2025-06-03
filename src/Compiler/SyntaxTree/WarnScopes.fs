@@ -36,9 +36,8 @@ module internal WarnScopes =
 
     type private WarnDirective =
         {
-            DirectiveRange: range
-            CommentRange: range option
             WarnCmds: WarnCmd list
+            DirectiveRange: range
         }
 
     let private isWarnonDirective (w: WarnDirective) =
@@ -148,11 +147,9 @@ module internal WarnScopes =
         let startPos = lexbuf.StartPos
 
         let mGroups = (regex.Match text).Groups
-        let dIdentGroup = mGroups[2]
-        let dIdent = dIdentGroup.Value
-        let argsGroup = mGroups[3]
-        let argCaptures = [ for c in argsGroup.Captures -> c ]
-        let commentGroup = mGroups[5]
+        let totalLength = mGroups[0].Length
+        let dIdent = mGroups[2].Value
+        let argCaptures = [ for c in mGroups[3].Captures -> c ]
 
         let positions line offset length =
             mkPos line (startPos.Column + offset), mkPos line (startPos.Column + offset + length)
@@ -165,19 +162,7 @@ module internal WarnScopes =
             positions lexbuf.StartPos.OriginalLine offset length
             ||> mkFileIndexRange originalFileIndex
 
-        let directiveLength =
-            if argsGroup.Success then
-                argsGroup.Index - (dIdentGroup.Index - 1) + argsGroup.Length
-            else
-                dIdentGroup.Length + 1
-
-        let directiveRange = mkRange (dIdentGroup.Index - 1) directiveLength
-
-        let commentRange =
-            if commentGroup.Success then
-                Some(mkRange commentGroup.Index commentGroup.Length)
-            else
-                None
+        let directiveRange = mkRange 0 totalLength
 
         if argCaptures.IsEmpty then
             errorR (Error(FSComp.SR.lexWarnDirectiveMustHaveArgs (), directiveRange))
@@ -190,13 +175,12 @@ module internal WarnScopes =
             match dIdent with
             | "warnon" -> argCaptures |> List.choose (mkDirective WarnCmd.Warnon)
             | "nowarn" -> argCaptures |> List.choose (mkDirective WarnCmd.Nowarn)
-            | _ ->
+            | _ -> // like "warnonx"
                 errorR (Error(FSComp.SR.fsiInvalidDirective ($"#{dIdent}", ""), directiveRange))
                 []
 
         {
             DirectiveRange = directiveRange
-            CommentRange = commentRange
             WarnCmds = warnCmds
         }
 
@@ -365,17 +349,11 @@ module internal WarnScopes =
     let getDirectiveTrivia (lexbuf: Lexbuf) =
         let mkTrivia d =
             if isWarnonDirective d then
-                WarnDirectiveTrivia.Warnon(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
+                WarnDirectiveTrivia.Warnon d.DirectiveRange
             else
-                WarnDirectiveTrivia.Nowarn(d.WarnCmds |> List.map _.WarningNumber, d.DirectiveRange)
+                WarnDirectiveTrivia.Nowarn d.DirectiveRange
 
         (getLexbufData lexbuf).WarnDirectives |> List.rev |> List.map mkTrivia
-
-    let getCommentTrivia (lexbuf: Lexbuf) =
-        (getLexbufData lexbuf).WarnDirectives
-        |> List.rev
-        |> List.choose _.CommentRange
-        |> List.map CommentTrivia.LineComment
 
     // *************************************
     // Apply the warn scopes after lexing
