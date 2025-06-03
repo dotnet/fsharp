@@ -28,9 +28,6 @@
   </IgnorePatterns>
 
   <Usages>
-    <Usage Id="Microsoft.Build.Framework" Version="17.13.26" IsDirectDependency="true"/>
-    <Usage Id="Microsoft.Build.Tasks.Core" Version="17.13.26" IsDirectDependency="true"/>
-    <Usage Id="Microsoft.Build.Utilities.Core" Version="17.13.26" IsDirectDependency="true"/>
     <Usage Id="Microsoft.NET.StringTools" Version="17.13.26"/>
     <Usage Id="System.Formats.Asn1" Version="8.0.1"/>
   </Usages>
