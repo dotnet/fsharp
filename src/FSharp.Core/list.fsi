@@ -530,20 +530,21 @@ module List =
     [<CompiledName("SplitInto")>]
     val splitInto: count:int -> list:'T list -> 'T list list
 
-    /// <summary>Returns an empty list of the given type.</summary>
+    /// <summary>Returns an empty list of the given type.
     /// 
     /// Time complexity: O(1)
     /// Space complexity: O(1)
-///
+    /// </summary>
     [<GeneralizableValue>]
     [<CompiledName("Empty")>]
     val empty<'T> : 'T list
 
     /// <summary>Returns a new list with the distinct elements of the input list which do not appear in the itemsToExclude sequence,
+    /// using generic hash and equality comparisons to compare values.
     /// 
     /// Time complexity: O(n + m) - where n is the list length and m is the excluded items count
     /// Space complexity: O(m)
-    /// using generic hash and equality comparisons to compare values.</summary>
+    /// </summary>
     ///
     /// <param name="itemsToExclude">A sequence whose elements that also occur in the input list will cause those elements to be
     /// removed from the result.</param>
@@ -1097,11 +1098,11 @@ module List =
     val forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
     /// <summary>Applies a key-generating function to each element of a list and yields a list of 
-    /// unique keys. Each unique key contains a list of all elements that match 
+    /// unique keys. Each unique key contains a list of all elements that match to this key.
     /// 
     /// Time complexity: O(n) - where n is the list length, with hash table overhead
     /// Space complexity: O(n)
-    /// to this key.</summary>
+    /// </summary>
     ///
     /// <param name="projection">A function that transforms an element of the list into a comparable key.</param>
     /// <param name="list">The input list.</param>
@@ -2949,10 +2950,11 @@ module List =
     [<CompiledName("UpdateAt")>]
     val updateAt: index: int -> value: 'T -> source: 'T list -> 'T list
 
+    /// <summary>Return a new list with a new item inserted before the given index.
     /// 
     /// Time complexity: O(n) - where n is the position to insert at
     /// Space complexity: O(n)
-    /// <summary>Return a new list with a new item inserted before the given index.</summary>
+    /// </summary>
     ///
     /// <param name="index">The index where the item should be inserted.</param>
     /// <param name="value">The value to insert.</param>
@@ -2973,10 +2975,11 @@ module List =
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: 'T list -> 'T list
     
+    /// <summary>Return a new list with new items inserted before the given index.
     /// 
     /// Time complexity: O(n + m) - where n is the position to insert at and m is the number of items to insert
     /// Space complexity: O(n + m)
-    /// <summary>Return a new list with new items inserted before the given index.</summary>
+    /// </summary>
     ///
     /// <param name="index">The index where the items should be inserted.</param>
     /// <param name="values">The values to insert.</param>

@@ -2676,10 +2676,11 @@ namespace Microsoft.FSharp.Collections
         | ([]): 'T list
         | (::): Head: 'T * Tail: 'T list -> 'T list
 
-        /// <summary>Returns an empty list of a particular type</summary>
+        /// <summary>Returns an empty list of a particular type
         /// 
         /// Time complexity: O(1)
         /// Space complexity: O(1)
+        /// </summary>
         static member Empty: 'T list
         
         /// <summary>Gets the number of items contained in the list
