@@ -1397,6 +1397,11 @@
         <target state="translated">O campo '{0}' aparece várias vezes nesse tipo de registro anônimo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
+        <source>This attribute is not valid for use on union cases with fields.</source>
+        <target state="new">This attribute is not valid for use on union cases with fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
@@ -5150,6 +5155,11 @@
       <trans-unit id="tcPropertyCannotBeSet0">
         <source>This property cannot be set</source>
         <target state="translated">Esta propriedade não pode ser definida</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
+        <source>Property '{0}' cannot be set because the setter is private</source>
+        <target state="translated">A propriedade '{0}' não pode ser definida porque o setter é privado.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">

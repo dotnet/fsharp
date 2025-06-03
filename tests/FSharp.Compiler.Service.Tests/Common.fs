@@ -5,9 +5,9 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -342,16 +342,6 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
           yield! allSymbolsInEntities compGen entity.NestedEntities ]
 
 
-let getCursorPosAndPrepareSource (source: string) : string * string * pos =
-    let lines = source.Split([|"\r\n"; "\n"|], StringSplitOptions.None)
-    let line = lines |> Seq.findIndex _.Contains("{caret}")
-    let lineText = lines[line]
-    let column = lineText.IndexOf("{caret}")
-
-    let source = source.Replace("{caret}", "")
-    let lineText = lineText.Replace("{caret}", "")
-    source, lineText, Position.mkPos (line + 1) (column - 1)
-
 let getParseResults (source: string) =
     parseSourceCode("Test.fsx", source)
 
@@ -360,6 +350,9 @@ let getParseResultsOfSignatureFile (source: string) =
 
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("Test.fsx", source)
+
+let getParseAndCheckResultsWithOptions options source =
+    parseAndCheckScriptWithOptions ("Test.fsx", source, options)
 
 let getParseAndCheckResultsOfSignatureFile (source: string) =
     parseAndCheckScript("Test.fsi", source)
