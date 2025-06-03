@@ -662,8 +662,9 @@
              class MyTestModule/MyDu/JustInt V_2,
              int32 V_3,
              int32 V_4,
-             class MyTestModule/MyDu/MaybeString V_5,
-             string V_6)
+             int32 V_5,
+             class MyTestModule/MyDu/MaybeString V_6,
+             string V_7)
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
@@ -677,7 +678,7 @@
 
     IL_000f:  ldloc.1
     IL_0010:  isinst     MyTestModule/MyDu/MaybeString
-    IL_0015:  brtrue.s   IL_0048
+    IL_0015:  brtrue.s   IL_0040
 
     IL_0017:  br.s       IL_001b
 
@@ -696,23 +697,22 @@
     IL_002b:  ldloc.3
     IL_002c:  stloc.s    V_4
     IL_002e:  ldloc.s    V_4
-    IL_0030:  box        [runtime]System.Int32
-    IL_0035:  unbox.any  [runtime]System.IFormattable
-    IL_003a:  ldnull
-    IL_003b:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
-    IL_0040:  tail.
-    IL_0042:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
-                                                                                    class [netstandard]System.IFormatProvider)
-    IL_0047:  ret
+    IL_0030:  stloc.s    V_5
+    IL_0032:  ldloca.s   V_5
+    IL_0034:  ldnull
+    IL_0035:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+    IL_003a:  call       instance string [netstandard]System.Int32::ToString(string,
+                                                                             class [netstandard]System.IFormatProvider)
+    IL_003f:  ret
 
-    IL_0048:  ldloc.0
-    IL_0049:  castclass  MyTestModule/MyDu/MaybeString
-    IL_004e:  stloc.s    V_5
-    IL_0050:  ldloc.s    V_5
-    IL_0052:  ldfld      string MyTestModule/MyDu/MaybeString::_nullableString
-    IL_0057:  stloc.s    V_6
-    IL_0059:  ldloc.s    V_6
-    IL_005b:  ret
+    IL_0040:  ldloc.0
+    IL_0041:  castclass  MyTestModule/MyDu/MaybeString
+    IL_0046:  stloc.s    V_6
+    IL_0048:  ldloc.s    V_6
+    IL_004a:  ldfld      string MyTestModule/MyDu/MaybeString::_nullableString
+    IL_004f:  stloc.s    V_7
+    IL_0051:  ldloc.s    V_7
+    IL_0053:  ret
   } 
 
 } 

@@ -64,6 +64,7 @@ module CustomAttributes_AttributeUsage =
     let ``AttributeTargetsIsMethod01_fs 8.0`` compilation =
         compilation
         |> withLangVersion80
+        |> withWarnOn 3878
         |> verifyCompileAndRun
         |> shouldSucceed
 
@@ -74,6 +75,15 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompileAndRun
         |> shouldSucceed
         
+    // SOURCE=AttributeTargetsIsMethod01.fs				# AttributeTargetsIsMethod01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
+    let ``Preview: AttributeTargetsIsMethod01_fs opt-in warning`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> withWarnOn 3878
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
     let ``AttributeTargetsIsProperty_fs 8.0`` compilation =
@@ -104,10 +114,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
-            (Error 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 18, Col 7, Line 18, Col 8, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 18, Col 7, Line 18, Col 8, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_AttributeTargets02.fs					# E_AttributeTargets02.fs
@@ -117,9 +127,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 14, Col 7, Line 14, Col 34, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 7, Line 24, Col 36, "This attribute is not valid for use on this language element")
-            (Error 842, Line 29, Col 15, Line 29, Col 47, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 7, Line 14, Col 34, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 24, Col 7, Line 24, Col 36, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 29, Col 15, Line 29, Col 47, "This attribute is not valid for use on this language element")
+            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.")
         ]
         
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
@@ -140,23 +151,23 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 9, Col 3, Line 9, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 12, Col 3, Line 12, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 3, Line 15, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 18, Col 3, Line 18, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 21, Col 3, Line 21, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 3, Line 24, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 27, Col 3, Line 27, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 30, Col 3, Line 30, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 33, Col 3, Line 33, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 36, Col 3, Line 36, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 39, Col 3, Line 39, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 42, Col 3, Line 42, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 45, Col 3, Line 45, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 49, Col 3, Line 49, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 56, Col 3, Line 56, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 64, Col 3, Line 64, Col 12, "This attribute is not valid for use on this language element")
-            (Error 842, Line 66, Col 7, Line 66, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 9, Col 3, Line 9, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 12, Col 3, Line 12, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 15, Col 3, Line 15, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 18, Col 3, Line 18, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 3, Line 21, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 24, Col 3, Line 24, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 27, Col 3, Line 27, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 30, Col 3, Line 30, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 33, Col 3, Line 33, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 36, Col 3, Line 36, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 39, Col 3, Line 39, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 42, Col 3, Line 42, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 45, Col 3, Line 45, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 49, Col 3, Line 49, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 56, Col 3, Line 56, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 64, Col 3, Line 64, Col 12, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 66, Col 7, Line 66, Col 16, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargetIsField02.fs					# E_AttributeTargetIsField02.fs
@@ -194,17 +205,17 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 9, Col 3, Line 9, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 12, Col 3, Line 12, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 3, Line 15, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 18, Col 3, Line 18, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 21, Col 3, Line 21, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 3, Line 24, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 26, Col 7, Line 26, Col 17, "This attribute is not valid for use on this language element")
-            (Error 842, Line 28, Col 3, Line 28, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 31, Col 3, Line 31, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 34, Col 3, Line 34, Col 13, "This attribute is not valid for use on this language element")
-            (Error 842, Line 39, Col 3, Line 39, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 9, Col 3, Line 9, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 12, Col 3, Line 12, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 15, Col 3, Line 15, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 18, Col 3, Line 18, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 3, Line 21, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 24, Col 3, Line 24, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 26, Col 7, Line 26, Col 17, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 28, Col 3, Line 28, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 31, Col 3, Line 31, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 34, Col 3, Line 34, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 39, Col 3, Line 39, Col 13, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargetIsMethod03.fs					# E_AttributeTargetIsMethod03.fs
@@ -225,21 +236,21 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 12, Col 6, Line 12, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 6, Line 15, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 18, Col 6, Line 18, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 20, Col 10, Line 20, Col 20, "This attribute is not valid for use on this language element")
-            (Error 842, Line 22, Col 6, Line 22, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 25, Col 6, Line 25, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 28, Col 6, Line 28, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 31, Col 6, Line 31, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 34, Col 6, Line 34, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 37, Col 6, Line 37, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 39, Col 10, Line 39, Col 20, "This attribute is not valid for use on this language element")
-            (Error 842, Line 41, Col 6, Line 41, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 44, Col 6, Line 44, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 47, Col 6, Line 47, Col 16, "This attribute is not valid for use on this language element")
-            (Error 842, Line 52, Col 6, Line 52, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 12, Col 6, Line 12, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 15, Col 6, Line 15, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 18, Col 6, Line 18, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 20, Col 10, Line 20, Col 20, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 22, Col 6, Line 22, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 25, Col 6, Line 25, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 28, Col 6, Line 28, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 31, Col 6, Line 31, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 34, Col 6, Line 34, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 37, Col 6, Line 37, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 39, Col 10, Line 39, Col 20, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 41, Col 6, Line 41, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 44, Col 6, Line 44, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 47, Col 6, Line 47, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 52, Col 6, Line 52, Col 16, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_AttributeTargetIsMethod04.fs					# E_AttributeTargetIsMethod04.fs
@@ -250,8 +261,8 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 10, Col 3, Line 10, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
@@ -293,7 +304,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 12, Col 3, Line 12, Col 6, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
@@ -342,18 +353,18 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 13, Col 3, Line 13, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 22, Col 11, Line 22, Col 22, "This attribute is not valid for use on this language element")
-            (Error 842, Line 25, Col 3, Line 25, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 34, Col 3, Line 34, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 35, Col 3, Line 35, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 40, Col 3, Line 40, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 41, Col 3, Line 41, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 49, Col 3, Line 49, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 50, Col 3, Line 50, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 53, Col 3, Line 53, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 54, Col 3, Line 54, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 13, Col 3, Line 13, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 22, Col 11, Line 22, Col 22, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 25, Col 3, Line 25, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 34, Col 3, Line 34, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 35, Col 3, Line 35, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 40, Col 3, Line 40, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 41, Col 3, Line 41, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 49, Col 3, Line 49, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 50, Col 3, Line 50, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 53, Col 3, Line 53, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 54, Col 3, Line 54, Col 18, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
@@ -372,9 +383,9 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 22, Col 10, Line 22, Col 22, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 22, Col 10, Line 22, Col 22, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=E_AttributeTargetIsClass01.fs 	# E_AttributeTargetIsClass01.fs
@@ -393,8 +404,8 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 7, Col 3, Line 7, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 10, Col 10, Line 10, Col 25, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 7, Col 3, Line 7, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 10, Col 10, Line 10, Col 25, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=MarshalAsAttribute.fs					# MarshalAsAttribute.fs
@@ -480,7 +491,19 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+        ]
+        
+    // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    let ``E_AttributeTargetIsField03_fs opt-in warning`` compilation =
+        compilation
+        |> withLangVersion90
+        |> withWarnOn 3878
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
         ]
     
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
@@ -491,8 +514,21 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+        ]
+        
+    // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
+    let ``Preview: E_AttributeTargetIsField03_fs opt-in warning`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> withWarnOn 3878
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element");
+            (Warning 3878, Line 14, Col 18, Line 14, Col 23, "This attribute is not valid for use on union cases with fields.");
+            (Warning 3878, Line 15, Col 28, Line 15, Col 33, "This attribute is not valid for use on union cases with fields.")
         ]
         
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
@@ -509,11 +545,7 @@ module CustomAttributes_AttributeUsage =
         compilation
         |> withLangVersionPreview
         |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 842, Line 14, Col 5, Line 14, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 15, Col 5, Line 15, Col 25, "This attribute is not valid for use on this language element")
-        ]
+        |> shouldSucceed
         
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
@@ -531,10 +563,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 9, Col 15, Line 9, Col 27, "This attribute is not valid for use on this language element")
-            (Error 842, Line 11, Col 16, Line 11, Col 28, "This attribute is not valid for use on this language element")
-            (Error 842, Line 14, Col 15, Line 14, Col 27, "This attribute is not valid for use on this language element")
-            (Error 842, Line 17, Col 16, Line 17, Col 28, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 9, Col 15, Line 9, Col 27, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 11, Col 16, Line 11, Col 28, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 15, Line 14, Col 27, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 17, Col 16, Line 17, Col 28, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE=AttributeTargetsIsEnum01.fs	# AttributeTargetsIsEnum01.fs
@@ -568,10 +600,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 22, Col 3, Line 22, Col 17, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 22, Col 3, Line 22, Col 17, "This attribute is not valid for use on this language element")
         ]        
 
      // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
@@ -605,10 +637,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 20, Col 3, Line 20, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 22, Col 3, Line 22, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 20, Col 3, Line 20, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 22, Col 3, Line 22, Col 13, "This attribute is not valid for use on this language element")
         ]
 
     [<Fact>]
@@ -654,10 +686,10 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 11, Col 3, Line 11, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 14, Col 3, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 18, Col 3, Line 18, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 11, Col 3, Line 11, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 3, Line 14, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 18, Col 3, Line 18, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE= E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
@@ -676,18 +708,18 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 15, Col 3, Line 15, Col 18, "This attribute is not valid for use on this language element");
-            (Error 842, Line 16, Col 3, Line 16, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 26, Col 3, Line 26, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 27, Col 3, Line 27, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 34, Col 3, Line 34, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 35, Col 3, Line 35, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 43, Col 3, Line 43, Col 18, "This attribute is not valid for use on this language element")
-            (Error 842, Line 44, Col 3, Line 44, Col 15, "This attribute is not valid for use on this language element")
-            (Error 842, Line 47, Col 3, Line 47, Col 14, "This attribute is not valid for use on this language element")
-            (Error 842, Line 48, Col 3, Line 48, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 15, Col 3, Line 15, Col 18, "This attribute is not valid for use on this language element");
+            (Warning 842, Line 16, Col 3, Line 16, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 26, Col 3, Line 26, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 27, Col 3, Line 27, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 34, Col 3, Line 34, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 35, Col 3, Line 35, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 43, Col 3, Line 43, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 44, Col 3, Line 44, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 47, Col 3, Line 47, Col 14, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 48, Col 3, Line 48, Col 18, "This attribute is not valid for use on this language element")
         ]
         
     // SOURCE= CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
@@ -756,8 +788,8 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
-            (Error 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
             (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
         ]
     
@@ -775,8 +807,8 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
-            (Error 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
             (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
         ]
         

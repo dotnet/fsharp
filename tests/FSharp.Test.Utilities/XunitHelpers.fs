@@ -10,6 +10,7 @@ open Xunit.Abstractions
 
 open TestFramework
 
+open FSharp.Compiler.Caches
 open FSharp.Compiler.Diagnostics
 
 open OpenTelemetry.Resources
@@ -90,6 +91,23 @@ module TestCaseCustomizations =
         else
             testCase.TestMethod
 
+    let sha = Security.Cryptography.SHA256.Create()
+
+    // We add extra trait to each test, of the form "batch=n" where n is between 1 and 4.
+    // It can be used to filter on in multi-agent testing in CI
+    // with dotnet test filter switch, for example "--filter batch=1"
+    // That way each agent can run test for a batch of tests. 
+    let NumberOfBatchesInMultiAgentTesting = 4u
+
+    let addBatchTrait (testCase: ITestCase) =
+        // Get a batch number stable between multiple test runs. 
+        // UniqueID is ideal here, it does not change across many compilations of the same code
+        // and it will split theories with member data into many batches.
+        let data = Text.Encoding.UTF8.GetBytes testCase.UniqueID
+        let hashCode = BitConverter.ToUInt32(sha.ComputeHash(data), 0)
+        let batch = hashCode % NumberOfBatchesInMultiAgentTesting + 1u
+        testCase.Traits.Add("batch", ResizeArray [ string batch ])
+
 type CustomTestCase =
     inherit XunitTestCase
     // xUinit demands this constructor for deserialization.
@@ -109,6 +127,7 @@ type CustomTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
+        TestCaseCustomizations.addBatchTrait testCase
 
 type CustomTheoryTestCase =
     inherit XunitTheoryTestCase
@@ -127,6 +146,7 @@ type CustomTheoryTestCase =
     override testCase.Initialize () =
         base.Initialize()
         testCase.TestMethod <- TestCaseCustomizations.rewriteTestMethod testCase
+        TestCaseCustomizations.addBatchTrait testCase
 
 #endif
 
@@ -155,6 +175,7 @@ type OpenTelemetryExport(testRunName, enable) =
 
             // Configure OpenTelemetry metrics export. Metrics can be viewed in Prometheus or other compatible tools.
             OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+                .AddMeter(CacheMetrics.Meter.Name)
                 .AddMeter("System.Runtime")
                 .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
                 .AddOtlpExporter(fun e m ->
@@ -184,6 +205,9 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
                 AssemblyResolver.addResolver ()
             #endif
+
+                // Override cache capacity to reduce memory usage in CI.
+                Cache.OverrideCapacityForTesting()
 
                 let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 

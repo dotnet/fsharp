@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ModuleOrNamespace/GlobalInOpenPathShouldContainTrivia.fs", false,
-      QualifiedNameOfFile GlobalInOpenPathShouldContainTrivia, [], [],
+      QualifiedNameOfFile GlobalInOpenPathShouldContainTrivia, [],
       [SynModuleOrNamespace
          ([Ionide; VSCode; FSharp], false, DeclaredNamespace,
           [Open
@@ -12,4 +12,5 @@ ImplFile
               (4,0--4,16))], PreXmlDocEmpty, [], None, (2,0--4,16),
           { LeadingKeyword = Namespace (2,0--2,9) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

@@ -41,11 +41,8 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
@@ -70,7 +67,6 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.CheckExpressionsOps
 
 //----------------------------------------------------------------------------
@@ -1671,9 +1667,10 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
 
     let contents = TMDefs([ TMDefs[TMDefRec(false, [], [], [ mbinding ], m)] ])
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
-    entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
+    entity, v, CheckedImplFile.CheckedImplFile(qname, mty, contents, false, false, StampMap.Empty, Map.empty)
 
-let dynamicCcuName = "FSI-ASSEMBLY"
+let dynamicCcuName (isEmitMulti) =
+    $"""FSI-ASSEMBLY{if isEmitMulti then "-MULTI" else ""}"""
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
@@ -1723,7 +1720,11 @@ type internal FsiDynamicCompiler
             None
         else
             let assemBuilder, moduleBuilder =
-                mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, fsiCollectible)
+                mkDynamicAssemblyAndModule (
+                    dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit),
+                    tcConfigB.optSettings.LocalOptimizationsEnabled,
+                    fsiCollectible
+                )
 
             dynamicAssemblies.Add(assemBuilder)
             Some(assemBuilder, moduleBuilder)
@@ -1813,7 +1814,7 @@ type internal FsiDynamicCompiler
 
             let attrs =
                 [
-                    tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName)
+                    tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit))
                     yield! manifest.CustomAttrs.AsList()
                 ]
 
@@ -1960,7 +1961,9 @@ type internal FsiDynamicCompiler
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         ReportTime tcConfig "Linking"
-        let ilxMainModule = CreateModuleFragment(tcConfigB, dynamicCcuName, codegenResults)
+
+        let ilxMainModule =
+            CreateModuleFragment(tcConfigB, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit), codegenResults)
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
@@ -2475,13 +2478,9 @@ type internal FsiDynamicCompiler
                     true,
                     ComputeQualifiedNameOfFileFromUniquePath(m, prefixPath),
                     [],
-                    [],
                     [ impl ],
                     (isLastCompiland, isExe),
-                    {
-                        ConditionalDirectives = []
-                        CodeComments = []
-                    },
+                    ParsedInputTrivia.Empty,
                     Set.empty
                 )
             )
@@ -2652,7 +2651,7 @@ type internal FsiDynamicCompiler
 
         let tcEnv, asms =
             try
-                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName, resolutions)
+                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit), resolutions)
             with _ ->
                 for (path, _, _, m) in refs do
                     tcConfigB.RemoveReferencedAssemblyByPath(m, path)
@@ -2822,14 +2821,11 @@ type internal FsiDynamicCompiler
         =
         WithImplicitHome (tcConfigB, directoryName sourceFile) (fun () ->
             ProcessMetaCommandsFromInput
-                ((fun st (m, nm) ->
-                    tcConfigB.TurnWarningOff(m, nm)
-                    st),
-                 (fun st (m, path, directive) ->
-                     let st, _ =
-                         fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
+                ((fun st (m, path, directive) ->
+                    let st, _ =
+                        fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncludePathDirective(ctok, st, directive, path, false, m)
 
-                     st),
+                    st),
                  (fun _ _ -> ()))
                 (tcConfigB, input, !!Path.GetDirectoryName(sourceFile), istate))
 
@@ -2867,10 +2863,6 @@ type internal FsiDynamicCompiler
                     fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText ()) input.FileName)
 
             fsiConsoleOutput.uprintfn "]"
-
-            for (warnNum, ranges) in closure.NoWarns do
-                for m in ranges do
-                    tcConfigB.TurnWarningOff(m, warnNum)
 
             // Play errors and warnings from resolution
             closure.ResolutionDiagnostics |> List.iter diagnosticSink
@@ -3025,7 +3017,7 @@ type internal FsiDynamicCompiler
         let emEnv0 =
             if tcConfigB.fsiMultiAssemblyEmit then
                 let emEnv =
-                    ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName)
+                    ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit))
 
                 MultipleInMemoryAssemblies emEnv
             else
@@ -3041,10 +3033,10 @@ type internal FsiDynamicCompiler
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
                 SingleRefEmitAssembly(cenv, emEnv)
 
-        let tcEnv, openDecls0 =
-            GetInitialTcEnv(dynamicCcuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
+        let ccuName = dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit)
 
-        let ccuName = dynamicCcuName
+        let tcEnv, openDecls0 =
+            GetInitialTcEnv(ccuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
 
         let tcState =
             GetInitialTcState(rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
@@ -3679,7 +3671,7 @@ type FsiInteractionProcessor
             error (Error(FSIstrings.SR.fsiDirectoryDoesNotExist (path), m))
 
     /// Parse one interaction. Called on the parser thread.
-    let ParseInteraction (tokenizer: LexFilter.LexFilter) =
+    let ParseInteraction diagnosticOptions (tokenizer: LexFilter.LexFilter) =
         let mutable lastToken = Parser.ELSE // Any token besides SEMICOLON_SEMICOLON will do for initial value
 
         try
@@ -3694,6 +3686,8 @@ type FsiInteractionProcessor
                         tok
 
                     Parser.interaction lexerWhichSavesLastToken tokenizer.LexBuffer)
+
+            WarnScopes.MergeInto diagnosticOptions false [] tokenizer.LexBuffer
 
             Some input
         with e ->
@@ -3723,7 +3717,7 @@ type FsiInteractionProcessor
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer("hdummy.fsx", lexbuf, diagnosticsLogger)
 
-        let parsedInteraction = ParseInteraction tokenizer
+        let parsedInteraction = ParseInteraction tcConfigB.diagnosticsOptions tokenizer
 
         match parsedInteraction with
         | Some(ParsedScriptInteraction.Definitions([ SynModuleDecl.Expr(e, _) ], _)) ->
@@ -3830,12 +3824,6 @@ type FsiInteractionProcessor
                     errorR (Error(FSComp.SR.buildInvalidHashtimeDirective (), m))
                     istate
 
-            istate, Completed None
-
-        | ParsedHashDirective("nowarn", nowarnArguments, m) ->
-            let numbers = (parsedHashDirectiveArgumentsNoCheck nowarnArguments)
-
-            List.iter (fun (d: string) -> tcConfigB.TurnWarningOff(m, d)) numbers
             istate, Completed None
 
         | ParsedHashDirective("terms", [], _) ->
@@ -4140,6 +4128,7 @@ type FsiInteractionProcessor
             runCodeOnMainThread,
             istate: FsiDynamicCompilerState,
             tokenizer: LexFilter.LexFilter,
+            diagnosticOptions,
             diagnosticsLogger,
             ?cancellationToken: CancellationToken
         ) =
@@ -4166,7 +4155,7 @@ type FsiInteractionProcessor
 
                 // Parse the interaction. When FSI.EXE is waiting for input from the console the
                 // parser thread is blocked somewhere deep this call.
-                let action = ParseInteraction tokenizer
+                let action = ParseInteraction diagnosticOptions tokenizer
 
                 if progress then
                     fprintfn fsiConsoleOutput.Out "returned from ParseInteraction...calling runCodeOnMainThread..."
@@ -4204,7 +4193,13 @@ type FsiInteractionProcessor
 
             let rec run istate =
                 let status =
-                    processor.ParseAndExecuteInteractionFromLexbuf((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
+                    processor.ParseAndExecuteInteractionFromLexbuf(
+                        (fun f istate -> f ctok istate),
+                        istate,
+                        tokenizer,
+                        tcConfigB.diagnosticsOptions,
+                        diagnosticsLogger
+                    )
 
                 ProcessStepStatus status None (fun _ istate -> run istate)
 
@@ -4284,7 +4279,7 @@ type FsiInteractionProcessor
 
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
-            let expr = ParseInteraction tokenizer
+            let expr = ParseInteraction tcConfigB.diagnosticsOptions tokenizer
             ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
 
@@ -4337,7 +4332,7 @@ type FsiInteractionProcessor
     // mainForm.Invoke to pipe a message back through the form's main event loop. (The message
     // is a delegate to execute on the main Thread)
     //
-    member processor.StartStdinReadAndProcessThread diagnosticsLogger =
+    member processor.StartStdinReadAndProcessThread(diagnosticOptions, diagnosticsLogger) =
 
         if progress then
             fprintfn fsiConsoleOutput.Out "creating stdinReaderThread"
@@ -4371,6 +4366,7 @@ type FsiInteractionProcessor
                                         runCodeOnMainThread,
                                         currState,
                                         currTokenizer,
+                                        diagnosticOptions,
                                         diagnosticsLogger
                                     )
 
@@ -4978,7 +4974,7 @@ type FsiEvaluationSession
                 | _ -> ())
 
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
-            fsiInteractionProcessor.StartStdinReadAndProcessThread(diagnosticsLogger)
+            fsiInteractionProcessor.StartStdinReadAndProcessThread(tcConfigB.diagnosticsOptions, diagnosticsLogger)
 
             DriveFsiEventLoop(fsi, fsiInterruptController, fsiConsoleOutput)
 

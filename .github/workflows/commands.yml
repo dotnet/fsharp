@@ -9,12 +9,12 @@ on:
 permissions:
   contents: write
   issues: write
-  pull-requests: write
+  pull-requests: read
 
 jobs:
   cleanup_old_runs:
     if: github.event.schedule == '0 13 * * *'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     permissions:
       actions: write
     env:
@@ -33,7 +33,7 @@ jobs:
 
   run_command:
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/run')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Extract command to run
       uses: actions/github-script@v3
@@ -75,22 +75,29 @@ jobs:
     - name: Process fantomas command
       if: steps.command-extractor.outputs.result == 'fantomas'
       id: fantomas
-      run: dotnet fantomas . -r
-    - name: Process fantomas command
+      run: dotnet fantomas .
+    - name: Process xlf command
       if: steps.command-extractor.outputs.result == 'xlf'
       id: xlf
       run: dotnet build src/Compiler /t:UpdateXlf
+
     - name: Commit and push changes
-      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
+      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       run: |
+        # Only commit if there are actual changes
+        if git diff --quiet; then
+          echo "No changes to commit, skipping."
+          exit 0
+        fi
+        
         git config --local user.name "github-actions[bot]"
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git commit -a -m 'Automated command ran: ${{ steps.command-extractor.outputs.result }}
 
           Co-authored-by: ${{ github.event.comment.user.login }} <${{ github.event.comment.user.id }}+${{ github.event.comment.user.login }}@users.noreply.github.com>'
-        git push
+        git push origin HEAD:"refs/heads/$PR_HEAD_REF"\
     - name: Post command comment
-      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success'
+      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       uses: actions/github-script@v3
       with:
         script: |
@@ -98,8 +105,10 @@ jobs:
           var output = ""
           if ("${{steps.command-extractor.outputs.result}}" == 'fantomas') {
             output = "${{steps.fantomas.outputs.result}}"
-          } else if("${{steps.command-extractor.outputs.result}}" == 'xlf') {
+          } else if ("${{steps.command-extractor.outputs.result}}" == 'xlf') {
             output = "${{steps.xlf.outputs.result}}"
+          } else if ("${{steps.command-extractor.outputs.result}}" == 'ilverify') {
+            output = "${{steps.ilverify.outputs.result}}"
           }
           const body = `Ran ${{ steps.command-extractor.outputs.result }}: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}\n${output}`;
           await github.issues.createComment({

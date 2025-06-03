@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/ConditionalDirective/NestedIfElseEndif.fs", false,
-      QualifiedNameOfFile NestedIfElseEndif, [], [],
+      QualifiedNameOfFile NestedIfElseEndif, [],
       [SynModuleOrNamespace
          ([NestedIfElseEndif], false, AnonModule,
           [Let
@@ -22,4 +22,5 @@ ImplFile
          [If (Ident "FOO", (3,4--3,11)); If (Ident "MEH", (4,8--4,15));
           Else (6,8--6,13); EndIf (8,8--8,14); Else (9,4--9,9);
           EndIf (11,4--11,10)]
+        WarnDirectives = []
         CodeComments = [] }, set []))

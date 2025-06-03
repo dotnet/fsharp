@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/SynType/SynTypeOrWithAppTypeOnTheRightHandSide.fs", false,
-      QualifiedNameOfFile SynTypeOrWithAppTypeOnTheRightHandSide, [], [],
+      QualifiedNameOfFile SynTypeOrWithAppTypeOnTheRightHandSide, [],
       [SynModuleOrNamespace
          ([SynTypeOrWithAppTypeOnTheRightHandSide], false, AnonModule,
           [Let
@@ -60,4 +60,5 @@ ImplFile
                     EqualsRange = Some (2,21--2,22) })], (2,0--2,64))],
           PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

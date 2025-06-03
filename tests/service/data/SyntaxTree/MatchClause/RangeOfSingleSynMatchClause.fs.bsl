@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfSingleSynMatchClause.fs", false,
-      QualifiedNameOfFile RangeOfSingleSynMatchClause, [], [],
+      QualifiedNameOfFile RangeOfSingleSynMatchClause, [],
       [SynModuleOrNamespace
          ([RangeOfSingleSynMatchClause], false, AnonModule,
           [Expr
@@ -48,4 +48,5 @@ ImplFile
                                    WithToEndRange = (5,0--7,8) }), (2,0--7,8))],
           PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Nullness/SignatureInAbstractMember.fs", false,
-      QualifiedNameOfFile SignatureInAbstractMember, [], [],
+      QualifiedNameOfFile SignatureInAbstractMember, [],
       [SynModuleOrNamespace
          ([SignatureInAbstractMember], false, AnonModule,
           [Types
@@ -57,4 +57,5 @@ ImplFile
                     WithKeyword = None })], (1,0--2,61))], PreXmlDocEmpty, [],
           None, (1,0--3,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

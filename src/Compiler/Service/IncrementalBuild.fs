@@ -30,6 +30,7 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -128,9 +129,8 @@ module IncrementalBuildSyntaxTree =
                     sigName,
                     [],
                     [],
-                    [],
                     isLastCompiland,
-                    { ConditionalDirectives = []; CodeComments = [] },
+                    ParsedInputTrivia.Empty,
                     Set.empty
                 )
             ), sourceRange, fileName, [||]
@@ -254,7 +254,7 @@ type BoundModel private (
 
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
             let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+            let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
             beforeFileChecked.Trigger fileName
@@ -1666,7 +1666,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     Array.ofList delayedLogger.Diagnostics, false
             diagnostics
             |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
+                FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }

@@ -82,6 +82,16 @@
         <target state="translated">symbol ..^</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACE">
+        <source>symbol '&gt;|}'</source>
+        <target state="new">symbol '&gt;|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RQUOTE.BAR.RBRACE">
+        <source>symbol '@&gt;|}' or '@@&gt;|}'</source>
+        <target state="new">symbol '@&gt;|}' or '@@&gt;|}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
         <source>interpolated string</source>
         <target state="translated">interpolovaný řetězec</target>
