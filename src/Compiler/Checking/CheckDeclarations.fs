@@ -2574,7 +2574,7 @@ module EstablishTypeDefinitionCores =
         let bi b = (if b then 1 else 0)
         if (bi hasClassAttr + bi hasInterfaceAttr + bi hasStructAttr + bi hasMeasureAttr) > 1 ||
            (bi hasAbstractClassAttr + bi hasInterfaceAttr + bi hasStructAttr + bi hasMeasureAttr) > 1 then
-           error(Error(FSComp.SR.tcAttributesOfTypeSpecifyMultipleKindsForType(), m))
+           errorR(Error(FSComp.SR.tcAttributesOfTypeSpecifyMultipleKindsForType(), m))
         
         match kind with 
         | SynTypeDefnKind.Unspecified ->
@@ -2589,7 +2589,7 @@ module EstablishTypeDefinitionCores =
                hasMeasureAttr && not (match k with SynTypeDefnKind.Class | SynTypeDefnKind.Abbrev | SynTypeDefnKind.Opaque -> true | _ -> false) || 
                hasInterfaceAttr && not (match k with SynTypeDefnKind.Interface -> true | _ -> false) || 
                hasStructAttr && not (match k with SynTypeDefnKind.Struct | SynTypeDefnKind.Record | SynTypeDefnKind.Union -> true | _ -> false) then 
-                error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(), m))
+                errorR(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(), m))
             k
 
     [<return: Struct>]
