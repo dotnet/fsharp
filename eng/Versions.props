@@ -91,7 +91,7 @@
     <SystemCollectionsImmutableVersion>$(SystemPackageVersionVersion)</SystemCollectionsImmutableVersion>
     <SystemComponentModelCompositionVersion>$(SystemPackageVersionVersion)</SystemComponentModelCompositionVersion>
     <SystemCompositionVersion>$(SystemPackageVersionVersion)</SystemCompositionVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>10.0.0-preview.6.25302.103</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>10.0.0-preview.6.25303.102</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <SystemReflectionMetadataVersion>$(SystemPackageVersionVersion)</SystemReflectionMetadataVersion>
     <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
