@@ -88,7 +88,7 @@ extends:
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
       # Localization: we only run it for specific release branches
-      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev18.0') }}:
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp
@@ -133,7 +133,7 @@ extends:
             - checkout: self
               clean: true
             - template: /eng/restore-internal-tools.yml
-            - script: eng\CIBuild.cmd
+            - script: eng\CIBuildNoPublish.cmd
                       -configuration $(_BuildConfig)
                       -prepareMachine
                       -testAllButIntegrationAndAot
