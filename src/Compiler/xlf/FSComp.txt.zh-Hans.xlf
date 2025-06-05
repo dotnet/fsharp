@@ -5159,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
         <source>Property '{0}' cannot be set because the setter is private</source>
-        <target state="translated">属性“{0}”无法设置，因为 setter 是私有的。</target>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">
