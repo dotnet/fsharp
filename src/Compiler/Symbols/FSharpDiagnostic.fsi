@@ -191,20 +191,9 @@ type public FSharpDiagnostic =
         ?subcategory: string ->
             FSharpDiagnostic
 
-    static member internal CreateFromExceptionAndAdjustEof:
-        diagnostic: PhasedDiagnostic *
-        severity: FSharpDiagnosticSeverity *
-        range *
-        lastPosInFile: (int * int) *
-        suggestNames: bool *
-        flatErrors: bool *
-        symbolEnv: SymbolEnv option ->
-            FSharpDiagnostic
-
     static member internal CreateFromException:
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
-        range *
         suggestNames: bool *
         flatErrors: bool *
         symbolEnv: SymbolEnv option ->
@@ -251,7 +240,6 @@ module internal DiagnosticHelpers =
         FSharpDiagnosticOptions *
         allErrors: bool *
         mainInputFileName: string *
-        fileInfo: (int * int) *
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
         suggestNames: bool *
