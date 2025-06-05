@@ -143,10 +143,7 @@ type SynExprYieldOrReturnFromTrivia =
         YieldOrReturnFromKeyword: range
     }
 
-    static member Zero: SynExprYieldOrReturnFromTrivia =
-        {
-            YieldOrReturnFromKeyword = range0
-        }
+    static member Zero: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = range0 }
 
 [<NoEquality; NoComparison>]
 type SynExprDoBangTrivia = { DoBangKeyword: range }
