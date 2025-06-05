@@ -1880,11 +1880,11 @@ type internal TransparentCompiler
 
                 try
 
-                    //let availableOnDiskModifiedTime =
-                    //    if FileSystem.FileExistsShim fileName then
-                    //        Some <| FileSystem.GetLastWriteTimeShim fileName
-                    //    else
-                    //        None
+                    let availableOnDiskModifiedTime =
+                        if FileSystem.FileExistsShim fileName then
+                            Some <| FileSystem.GetLastWriteTimeShim fileName
+                        else
+                            None
 
                     // TODO: This kinda works, but the problem is that in order to switch a project to "in-memory" mode
                     //  - some file needs to be edited (this triggers a re-check, but LastModifiedTimeOnDisk won't change)
@@ -1893,8 +1893,8 @@ type internal TransparentCompiler
                     // Until that sequence happens the project will be used from disk (if available).
                     // To get around it we probably need to detect changes made in the editor and record a timestamp for them.
                     let shouldUseOnDisk = false
-                    //availableOnDiskModifiedTime
-                    //|> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
+                        availableOnDiskModifiedTime
+                        |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
 
                     let name = projectSnapshot.ProjectFileName |> Path.GetFileNameWithoutExtension
 
