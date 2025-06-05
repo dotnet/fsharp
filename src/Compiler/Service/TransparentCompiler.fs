@@ -1892,7 +1892,7 @@ type internal TransparentCompiler
                     //  - and then another change has to be made (to any file buffer) - so that recheck is triggered and we get here again
                     // Until that sequence happens the project will be used from disk (if available).
                     // To get around it we probably need to detect changes made in the editor and record a timestamp for them.
-                    let shouldUseOnDisk = false
+                    let shouldUseOnDisk =
                         availableOnDiskModifiedTime
                         |> Option.exists (fun t -> t >= projectSnapshot.GetLastModifiedTimeOnDisk())
 
