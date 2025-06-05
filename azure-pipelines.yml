@@ -133,7 +133,7 @@ extends:
             - checkout: self
               clean: true
             - template: /eng/restore-internal-tools.yml
-            - script: eng\CIBuildNoPublish.cmd
+            - script: eng\CIBuild.cmd
                       -configuration $(_BuildConfig)
                       -prepareMachine
                       -testAllButIntegrationAndAot
