@@ -10,7 +10,7 @@ module AssemblyResolver =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
+            let var = Environment.GetEnvironmentVariable("VS180COMNTOOLS")
             if String.IsNullOrEmpty var then
                 Environment.GetEnvironmentVariable("VSAPPIDDIR")
             else
