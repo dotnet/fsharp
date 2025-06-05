@@ -2053,7 +2053,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
             | SynMemberDefn.AbstractSlot _
             | SynMemberDefn.ValField _             
             | SynMemberDefn.Inherit _ -> error(InternalError("Unexpected declaration element", memb.Range))
-            | SynMemberDefn.NestedType _ -> error(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), memb.Range)) ]
+            | SynMemberDefn.NestedType _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), memb.Range)) ]
           
     let tpenv = emptyUnscopedTyparEnv
 
