@@ -20,7 +20,15 @@ type ProjectItems() =
     member public this.``RemoveAssemblyReference.NoIVsTrackProjectDocuments2Events``() =
         this.MakeProjectAndDo(["file.fs"], ["System.Numerics"],"", (fun project ->
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener
+            let testFilesPath = Environment.GetEnvironmentVariable("XUNIT_LOGS")
+            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGENGINE","1")
+            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGCOMM","1")
+            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGPATH",IO.Path.Combine(testFilesPath,"ReproLogs"))
             project.ComputeSourcesAndFlags()
+
+            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGENGINE",null)
+            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGCOMM",null)
+            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGPATH",null)
 
             let containsSystemNumerics () = 
                 project.CompilationOptions
