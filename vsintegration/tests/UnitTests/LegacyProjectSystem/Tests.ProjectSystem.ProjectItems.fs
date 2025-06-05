@@ -18,12 +18,15 @@ type ProjectItems() =
 
     [<Fact>]
     member public this.``RemoveAssemblyReference.NoIVsTrackProjectDocuments2Events``() =
+        let testFilesPath = Environment.GetEnvironmentVariable("XUNIT_LOGS")
+        //let testFilesPath = @"D:\flushingpoint"
+        System.Environment.SetEnvironmentVariable("MSBUILDDEBUGENGINE","1")
+        System.Environment.SetEnvironmentVariable("MSBUILDDEBUGCOMM","1")
+        System.Environment.SetEnvironmentVariable("MSBUILDDEBUGPATH",IO.Path.Combine(testFilesPath,"ReproLogs"))
+
         this.MakeProjectAndDo(["file.fs"], ["System.Numerics"],"", (fun project ->
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener
-            let testFilesPath = Environment.GetEnvironmentVariable("XUNIT_LOGS")
-            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGENGINE","1")
-            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGCOMM","1")
-            System.Environment.SetEnvironmentVariable("MSBUILDDEBUGPATH",IO.Path.Combine(testFilesPath,"ReproLogs"))
+
             project.ComputeSourcesAndFlags()
 
             System.Environment.SetEnvironmentVariable("MSBUILDDEBUGENGINE",null)
