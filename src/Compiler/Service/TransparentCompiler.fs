@@ -1865,7 +1865,7 @@ type internal TransparentCompiler
             }
         )
 
-    let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) _fileName =
+    let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) fileName =
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             async {
