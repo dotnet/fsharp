@@ -7,6 +7,7 @@ open System.Reflection
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTree
 
@@ -404,10 +405,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
                 else if isValueType then
                     // Generic value type: 0, followed by the representation of the type arguments in order including containing types
                     yield NullnessInfo.AmbivalentToNull
-                else if
-                    IsUnionTypeWithNullAsTrueValue g tcref.Deref
-                    || TypeHasAllowNull tcref g FSharp.Compiler.Text.Range.Zero
-                then
+                else if IsUnionTypeWithNullAsTrueValue g tcref.Deref || TypeHasAllowNull tcref g range0 then
                     yield NullnessInfo.WithNull
                 else
                     // Reference type: the nullability (0, 1, or 2), followed by the representation of the type arguments in order including containing types

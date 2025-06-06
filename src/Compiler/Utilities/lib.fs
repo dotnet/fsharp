@@ -24,7 +24,7 @@ let isEnvVarSet s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x: IDisposable MaybeNull) = 
+let dispose (x: IDisposable MaybeNull) =
     match x with
     | Null -> ()
     | NonNull x -> x.Dispose()
@@ -451,4 +451,10 @@ module ListParallel =
         |> ArrayParallel.map f
         |> Array.toList
 
-   
+[<RequireQualifiedAccess>]
+module Async =
+    let map f a =
+        async {
+            let! a = a
+            return f a
+        }

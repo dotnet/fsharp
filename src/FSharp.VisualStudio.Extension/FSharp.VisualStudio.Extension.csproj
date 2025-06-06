@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<LangVersion>12</LangVersion>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<!-- The VisualStudio.Extensibility preview packages are available from the azure-public/vside/msft_consumption feed -->
+
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.13.39620" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Internal" Version="17.13.9" />
+		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.13.2" />
+		<!--<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.ClientExtensions" Version="0.1.718-beta" />
+		<PackageReference Include="Microsoft.VisualStudio.OpenTelemetry.Collector" Version="0.1.718-beta" />
+		<PackageReference Include="OpenTelemetry" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Api" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.10.0" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0" />
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />-->
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\FSharp.Compiler.LanguageServer\FSharp.Compiler.LanguageServer.fsproj" />
+		<ProjectReference Include="..\Microsoft.CommonLanguageServerProtocol.Framework.Proxy\Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj" />
+	</ItemGroup>
+
+	<Target Name="NoLocalizeEmptyResx" AfterTargets="EnsureResourceToMergeWithCTO">
+		<ItemGroup>
+			<EmbeddedResource Update="@(EmbeddedResource)" Condition="'%(ManifestResourceName)' == '_EmptyResource'">
+				<XlfInput>false</XlfInput>
+			</EmbeddedResource>
+		</ItemGroup>
+	</Target>
+
+</Project>

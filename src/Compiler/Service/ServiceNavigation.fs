@@ -100,14 +100,14 @@ type NavigationItems(declarations: NavigationTopLevelDeclaration[]) =
 
 module NavigationImpl =
     let unionRangesChecked r1 r2 =
-        if equals r1 range.Zero then r2
-        elif equals r2 range.Zero then r1
+        if equals r1 range0 then r2
+        elif equals r2 range0 then r1
         else unionRanges r1 r2
 
     let rangeOfDecls2 f decls =
         match decls |> List.map (f >> (fun (d: NavigationItem) -> d.bodyRange)) with
         | hd :: tl -> tl |> List.fold unionRangesChecked hd
-        | [] -> range.Zero
+        | [] -> range0
 
     let rangeOfDecls = rangeOfDecls2 fst
 
@@ -118,7 +118,7 @@ module NavigationImpl =
         match fldspec with
         | SynUnionCaseKind.Fields(flds) ->
             flds
-            |> List.fold (fun st (SynField(range = m)) -> unionRangesChecked m st) range.Zero
+            |> List.fold (fun st (SynField(range = m)) -> unionRangesChecked m st) range0
         | SynUnionCaseKind.FullType(ty, _) -> ty.Range
 
     let bodyRange mBody decls =
@@ -357,7 +357,7 @@ module NavigationImpl =
                          ]
                      | _ -> []))
 
-            let m2 = members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero
+            let m2 = members |> Seq.map fst |> Seq.fold unionRangesChecked range0
             let items = members |> List.collect snd
             m2, items
 

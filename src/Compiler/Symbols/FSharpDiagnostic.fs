@@ -235,7 +235,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
              | _ -> diagnostic.FormatCore(flatErrors, suggestNames)
 
         let errorNum = diagnostic.Number
-        let m = match diagnostic.Range with Some m -> m | None -> range.Zero
+        let m = match diagnostic.Range with Some m -> m | None -> range0
         FSharpDiagnostic(m, severity, msg, diagnostic.Subcategory(), errorNum, "FS", extendedData)
 
     static member NewlineifyErrorString(message) = NewlineifyErrorString(message)
