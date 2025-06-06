@@ -2381,7 +2381,7 @@ module TyconConstraintInference =
 //------------------------------------------------------------------------- 
 
 let ComputeModuleName (longPath: Ident list) = 
-    if longPath.Length <> 1 then error(Error(FSComp.SR.tcInvalidModuleName(), (List.head longPath).idRange))
+    if longPath.Length <> 1 then errorR(Error(FSComp.SR.tcInvalidModuleName(), (List.head longPath).idRange))
     longPath.Head 
 
 let CheckForDuplicateConcreteType env nm m = 
