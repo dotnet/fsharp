@@ -470,7 +470,10 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
                     | SynExpr.IndexRange _ -> true
                     | _ -> false)
 
-            if containsRanges then
+            if
+                containsRanges
+                && cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+            then
                 // Transform to proper sequence expression body: yield v1; yield! r1..r2; yield v2; ...
                 let rec buildSeqBody elems =
                     match elems with
@@ -521,6 +524,11 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
                 let transformedBody = buildSeqBody elems
                 TcSequenceExpression cenv env tpenv transformedBody overallTy m
             else
+                // Check if ranges are present but feature is disabled
+                if containsRanges then
+                    // Report error for mixed ranges when feature is disabled
+                    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+
                 // No ranges, use regular handling
                 TcSequenceExpression cenv env tpenv comp overallTy m
         | _ ->

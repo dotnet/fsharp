@@ -75,7 +75,10 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                     | SynExpr.IndexRange _ -> true
                     | _ -> false)
 
-            if containsRanges then
+            if
+                containsRanges
+                && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+            then
                 let rec buildBody elems =
                     match elems with
                     | [] -> SynExpr.Const(SynConst.Unit, m)
@@ -151,6 +154,11 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
 
                     expr, tpenv')
             else
+                // Check if ranges are present but feature is disabled
+                if containsRanges then
+                    // Report error for mixed ranges when feature is disabled
+                    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+
                 let replacementExpr =
                     if isArray then
                         let nelems = elems.Length
