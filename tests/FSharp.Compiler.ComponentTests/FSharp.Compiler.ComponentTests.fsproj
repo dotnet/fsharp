@@ -233,6 +233,7 @@
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
     <Compile Include="Language\ExperimentalAttributeCheckingTests.fs" />
     <Compile Include="Language\SequenceExpressions\SequenceExpressionTests.fs" />
+    <Compile Include="Language\SequenceExpressions\MixedRangesAndValuesSequenceExpressionTests.fs" />
     <Compile Include="Language\XmlComments.fs" />
     <Compile Include="Language\CompilerDirectiveTests.fs" />
     <Compile Include="Language\CodeQuotationTests.fs" />

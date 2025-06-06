@@ -12,6 +12,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -460,10 +461,70 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
 
         match comp with
         | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
-            errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
-        | _ -> ()
+            error (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
+        | SimpleSemicolonSequence cenv false elems when hasBuilder ->
+            // Check if we have any range expressions mixed with regular values in seq { ... }
+            let containsRanges =
+                elems
+                |> List.exists (function
+                    | SynExpr.IndexRange _ -> true
+                    | _ -> false)
 
-        if not hasBuilder && not cenv.g.compilingFSharpCore then
-            error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+            if containsRanges then
+                // Transform to proper sequence expression body: yield v1; yield! r1..r2; yield v2; ...
+                let rec buildSeqBody elems =
+                    match elems with
+                    | [] -> SynExpr.Const(SynConst.Unit, m)
+                    | [ elem ] ->
+                        match elem with
+                        | SynExpr.IndexRange _ ->
+                            match RewriteRangeExpr elem with
+                            | Some rewrittenRange ->
+                                SynExpr.YieldOrReturnFrom(
+                                    (true, false),
+                                    rewrittenRange,
+                                    elem.Range,
+                                    {
+                                        YieldOrReturnFromKeyword = elem.Range
+                                    }
+                                )
+                            | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                        | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                    | elem :: rest ->
+                        let headExpr =
+                            match elem with
+                            | SynExpr.IndexRange _ ->
+                                match RewriteRangeExpr elem with
+                                | Some rewrittenRange ->
+                                    SynExpr.YieldOrReturnFrom(
+                                        (true, false),
+                                        rewrittenRange,
+                                        elem.Range,
+                                        {
+                                            YieldOrReturnFromKeyword = elem.Range
+                                        }
+                                    )
+                                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
 
-        TcSequenceExpression cenv env tpenv comp overallTy m
+                        let tailExpr = buildSeqBody rest
+
+                        SynExpr.Sequential(
+                            DebugPointAtSequential.SuppressNeither,
+                            true,
+                            headExpr,
+                            tailExpr,
+                            m,
+                            SynExprSequentialTrivia.Zero
+                        )
+
+                let transformedBody = buildSeqBody elems
+                TcSequenceExpression cenv env tpenv transformedBody overallTy m
+            else
+                // No ranges, use regular handling
+                TcSequenceExpression cenv env tpenv comp overallTy m
+        | _ ->
+            if not hasBuilder && not cenv.g.compilingFSharpCore then
+                error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+
+            TcSequenceExpression cenv env tpenv comp overallTy m

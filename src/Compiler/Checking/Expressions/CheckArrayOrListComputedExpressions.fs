@@ -7,12 +7,13 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckSequenceExpressions
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Features
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.CheckSequenceExpressions
+open FSharp.Compiler.SyntaxTrivia
 
 let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv (isArray, comp) m =
     let g = cenv.g
@@ -68,66 +69,146 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
             | _ -> ()
 
-            let replacementExpr =
-                if isArray then
-                    // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
-                    let nelems = elems.Length
+            let containsRanges =
+                elems
+                |> List.exists (function
+                    | SynExpr.IndexRange _ -> true
+                    | _ -> false)
 
-                    if
-                        nelems > 0
-                        && List.forall
-                            (function
-                            | SynExpr.Const(SynConst.UInt16 _, _) -> true
-                            | _ -> false)
-                            elems
-                    then
-                        SynExpr.Const(
-                            SynConst.UInt16s(
-                                Array.ofList (
-                                    List.map
-                                        (function
-                                        | SynExpr.Const(SynConst.UInt16 x, _) -> x
-                                        | _ -> failwith "unreachable")
-                                        elems
+            if containsRanges then
+                let rec buildBody elems =
+                    match elems with
+                    | [] -> SynExpr.Const(SynConst.Unit, m)
+                    | [ elem ] ->
+                        match elem with
+                        | SynExpr.IndexRange _ ->
+                            match RewriteRangeExpr elem with
+                            | Some rewritten ->
+                                SynExpr.YieldOrReturnFrom(
+                                    (true, false),
+                                    rewritten,
+                                    elem.Range,
+                                    {
+                                        YieldOrReturnFromKeyword = elem.Range
+                                    }
                                 )
-                            ),
-                            m
+                            | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                        | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                    | elem :: rest ->
+                        let headExpr =
+                            match elem with
+                            | SynExpr.IndexRange _ ->
+                                match RewriteRangeExpr elem with
+                                | Some rewritten ->
+                                    SynExpr.YieldOrReturnFrom(
+                                        (true, false),
+                                        rewritten,
+                                        elem.Range,
+                                        {
+                                            YieldOrReturnFromKeyword = elem.Range
+                                        }
+                                    )
+                                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+
+                        let tailExpr = buildBody rest
+
+                        SynExpr.Sequential(
+                            DebugPointAtSequential.SuppressNeither,
+                            true,
+                            headExpr,
+                            tailExpr,
+                            m,
+                            SynExprSequentialTrivia.Zero
                         )
-                    elif
-                        nelems > 0
-                        && List.forall
-                            (function
-                            | SynExpr.Const(SynConst.Byte _, _) -> true
-                            | _ -> false)
-                            elems
-                    then
-                        SynExpr.Const(
-                            SynConst.Bytes(
-                                Array.ofList (
-                                    List.map
-                                        (function
-                                        | SynExpr.Const(SynConst.Byte x, _) -> x
-                                        | _ -> failwith "unreachable")
-                                        elems
+
+                let transformedBody = buildBody elems
+
+                let genCollElemTy = NewInferenceType g
+                let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+
+                TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env m (fun () ->
+                    let exprTy = mkSeqTy cenv.g genCollElemTy
+
+                    let expr, tpenv' =
+                        TcSequenceExpression cenv env tpenv transformedBody (MustEqual exprTy) m
+
+                    let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
+
+                    let expr =
+                        if cenv.g.compilingFSharpCore then
+                            expr
+                        else
+                            mkCallSeq cenv.g m genCollElemTy expr
+
+                    let expr = mkCoerceExpr (expr, exprTy, expr.Range, overallTy.Commit)
+
+                    let expr =
+                        if isArray then
+                            mkCallSeqToArray cenv.g m genCollElemTy expr
+                        else
+                            mkCallSeqToList cenv.g m genCollElemTy expr
+
+                    expr, tpenv')
+            else
+                let replacementExpr =
+                    if isArray then
+                        let nelems = elems.Length
+
+                        if
+                            nelems > 0
+                            && List.forall
+                                (function
+                                | SynExpr.Const(SynConst.UInt16 _, _) -> true
+                                | _ -> false)
+                                elems
+                        then
+                            SynExpr.Const(
+                                SynConst.UInt16s(
+                                    Array.ofList (
+                                        List.map
+                                            (function
+                                            | SynExpr.Const(SynConst.UInt16 x, _) -> x
+                                            | _ -> failwith "unreachable")
+                                            elems
+                                    )
                                 ),
-                                SynByteStringKind.Regular,
                                 m
-                            ),
-                            m
-                        )
-                    else
+                            )
+                        elif
+                            nelems > 0
+                            && List.forall
+                                (function
+                                | SynExpr.Const(SynConst.Byte _, _) -> true
+                                | _ -> false)
+                                elems
+                        then
+                            SynExpr.Const(
+                                SynConst.Bytes(
+                                    Array.ofList (
+                                        List.map
+                                            (function
+                                            | SynExpr.Const(SynConst.Byte x, _) -> x
+                                            | _ -> failwith "unreachable")
+                                            elems
+                                    ),
+                                    SynByteStringKind.Regular,
+                                    m
+                                ),
+                                m
+                            )
+                        else
+                            SynExpr.ArrayOrList(isArray, elems, m)
+                    else if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
                         SynExpr.ArrayOrList(isArray, elems, m)
-                else if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
-                    SynExpr.ArrayOrList(isArray, elems, m)
-                else
-                    if elems.Length > 500 then
-                        error (Error(FSComp.SR.tcListLiteralMaxSize (), m))
+                    else
+                        if elems.Length > 500 then
+                            error (Error(FSComp.SR.tcListLiteralMaxSize (), m))
 
-                    SynExpr.ArrayOrList(isArray, elems, m)
+                        SynExpr.ArrayOrList(isArray, elems, m)
 
-            TcExprUndelayed cenv overallTy env tpenv replacementExpr
+                TcExprUndelayed cenv overallTy env tpenv replacementExpr
         | _ ->
-
             let genCollElemTy = NewInferenceType g
 
             let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
@@ -138,8 +219,7 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
 
                 let exprTy = mkSeqTy cenv.g genCollElemTy
 
-                // Check the comprehension
-                let expr, tpenv = TcSequenceExpression cenv env tpenv comp (MustEqual exprTy) m
+                let expr, tpenv' = TcSequenceExpression cenv env tpenv comp (MustEqual exprTy) m
 
                 let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
 
@@ -160,4 +240,4 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                     else
                         mkCallSeqToList cenv.g m genCollElemTy expr
 
-                expr, tpenv)
+                expr, tpenv')
