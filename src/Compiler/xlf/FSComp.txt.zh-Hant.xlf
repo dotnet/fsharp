@@ -292,6 +292,11 @@
         <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowMixedRangesAndValuesInSeqExpressions">
+        <source>Allow mixed ranges and values in sequence expressions, e.g. seq {{ 1..10; 20 }}</source>
+        <target state="new">Allow mixed ranges and values in sequence expressions, e.g. seq {{ 1..10; 20 }}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>

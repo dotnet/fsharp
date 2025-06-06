@@ -1802,6 +1802,7 @@ featureSupportWarnWhenUnitPassedToObjArg,"Warn when unit is passed to a member a
 featureUseBangBindingValueDiscard,"Allows use! _ = ... in computation expressions"
 featureBetterAnonymousRecordParsing,"Support for better anonymous record parsing"
 featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules"
+featureAllowMixedRangesAndValuesInSeqExpressions,"Allow mixed ranges and values in sequence expressions, e.g. seq {{ 1..10; 20 }}"
 featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type annotations without requiring parentheses"
 3874,lexWarnDirectiveMustBeFirst,"#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
 3875,lexWarnDirectiveMustHaveArgs,"Warn directives must have warning number(s) as argument(s)"
