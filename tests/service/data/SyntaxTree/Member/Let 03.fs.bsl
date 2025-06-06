@@ -45,4 +45,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(7,4)-(7,6) parse error Incomplete structured construct at or before this point in binding. Expected '=' or other token.
+(7,4)-(7,6) parse error Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token.
