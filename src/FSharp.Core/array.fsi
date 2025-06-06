@@ -1919,8 +1919,9 @@ module Array =
     [<CompiledName("OfSeq")>]
     val ofSeq: source: seq<'T> -> 'T array
 
-    /// <summary>Returns an array of each element in the input array and its predecessor, with the
-    /// exception of the first element which is only returned as the predecessor of the second element.</summary>
+    /// <summary>Returns an array of each element in the input array paired with its predecessor, with the
+    /// exception of the first element which is only returned as the predecessor of the second element.
+    /// The predecessor comes first in the returned pairs.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
@@ -3287,7 +3288,7 @@ module Array =
     /// <returns>An array of randomly selected elements from the input array.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     ///
     /// <example id="randomChoices-1">
@@ -3311,7 +3312,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     ///
     /// <example id="randomChoicesWith-1">
@@ -3334,7 +3335,7 @@ module Array =
     /// <returns>An array of randomly selected elements from the input array.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>
     ///
@@ -3357,7 +3358,7 @@ module Array =
     /// <returns>An array of randomly selected elements from the input array.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
     ///
@@ -3382,7 +3383,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentNullException">Thrown when the random argument is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input array is empty..</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
     ///
@@ -3406,7 +3407,7 @@ module Array =
     /// <returns>An array of randomly selected elements from the input array.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when count is more than 0 and the input array is empty.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is less than 0.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when count is greater than the length of the input array.</exception>
     /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the randomizer function returns a value outside the range [0, 1).</exception>

@@ -299,7 +299,9 @@ type CacheSizes =
 
         {
             ParseFileKeepStrongly = 50 * sizeFactor
-            ParseFileKeepWeakly = 20 * sizeFactor
+            // Since ParseFile version is just a content hash, we keep only one version
+            // in order to ensure that we re-parse after undo for the sake of WarnScopes
+            ParseFileKeepWeakly = 0 // 20 * sizeFactor
             ParseFileWithoutProjectKeepStrongly = 5 * sizeFactor
             ParseFileWithoutProjectKeepWeakly = 2 * sizeFactor
             ParseAndCheckFileInProjectKeepStrongly = sizeFactor
@@ -341,7 +343,9 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member _.CacheSizes = cs
 
-    member val ParseFile = AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
+    member val ParseFile =
+        AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
+        : AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
 
     member val ParseFileWithoutProject =
         AsyncMemoize<string, string, FSharpParseFileResults>(
@@ -1124,7 +1128,7 @@ type internal TransparentCompiler
                             |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
                             |> Option.defaultValue false // TODO: do we need to figure this out?
 
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
+                        FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -1378,8 +1382,6 @@ type internal TransparentCompiler
                 let tcImports = bootstrapInfo.TcImports
 
                 let mainInputFileName = file.FileName
-                let sourceText = file.SourceText
-                let parsedMainInput = file.ParsedInput
 
                 // Initialize the error handler
                 let errHandler =
@@ -1387,19 +1389,14 @@ type internal TransparentCompiler
                         true,
                         mainInputFileName,
                         tcConfig.diagnosticsOptions,
-                        sourceText,
                         suggestNamesForErrors,
                         tcConfig.flatErrors
                     )
 
-                // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                let tcConfig =
-                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !!Path.GetDirectoryName(mainInputFileName))
-
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
                 let diagnosticsLogger =
-                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, diagnosticsLogger)
+                    GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfig.diagnosticsOptions, diagnosticsLogger)
 
                 use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
@@ -1644,9 +1641,7 @@ type internal TransparentCompiler
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
                     use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
 
-                    // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                    let tcConfig =
-                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName |> (!!))
+                    let tcConfig = bootstrapInfo.TcConfig
 
                     let diagnosticsOptions = tcConfig.diagnosticsOptions
 
@@ -2077,22 +2072,20 @@ type internal TransparentCompiler
 
             // TODO: might need to deal with exceptions here:
             use _ = new CompilationGlobalsScope(DiscardErrorsLogger, BuildPhase.Parse)
-            let! tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
 
-            let tcConfig = TcConfig.Create(tcConfigB, validate = true)
+            match! ComputeBootstrapInfo projectSnapshot with
+            | None, creationDiags -> return emptyParseResult fileName creationDiags
+            | Some bootstrapInfo, _ ->
+                let tcConfig = bootstrapInfo.TcConfig
 
-            let _index, fileSnapshot =
-                projectSnapshot.SourceFiles
-                |> Seq.mapi pair
-                |> Seq.tryFind (fun (_, f) -> f.FileName = fileName)
-                |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
+                let fileSnapshot =
+                    projectSnapshot.SourceFiles |> List.find (fun f -> f.FileName = fileName)
 
-            let isExe = tcConfig.target.IsExe
-            let isLastCompiland = fileName = (sourceFileNames |> List.last)
-
-            let! file = LoadSource fileSnapshot isExe isLastCompiland
-            let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
-            return parseResult
+                let isExe = tcConfig.target.IsExe
+                let isLastCompiland = fileName = List.last projectSnapshot.SourceFileNames
+                let! file = LoadSource fileSnapshot isExe isLastCompiland
+                let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
+                return parseResult
         }
 
     member _.ParseFileWithoutProject
@@ -2417,14 +2410,7 @@ type internal TransparentCompiler
                         assumeDotNetFramework
                         otherFlags
 
-                let otherFlags =
-                    [
-                        yield "--noframework"
-                        yield "--warn:3"
-                        yield! otherFlags
-                        for code, _ in loadClosure.NoWarns do
-                            yield "--nowarn:" + code
-                    ]
+                let otherFlags = [ yield "--noframework"; yield "--warn:3"; yield! otherFlags ]
 
                 // Once we do have the script closure, we can populate the cache to re-use can later.
                 let loadClosureKey =
@@ -2478,16 +2464,10 @@ type internal TransparentCompiler
                     )
 
                 let diags =
+                    let flaterrors = otherFlags |> List.contains "--flaterrors"
+
                     loadClosure.LoadClosureRootFileDiagnostics
-                    |> List.map (fun (exn, isError) ->
-                        FSharpDiagnostic.CreateFromException(
-                            exn,
-                            isError,
-                            range.Zero,
-                            false,
-                            otherFlags |> List.contains "--flaterrors",
-                            None
-                        ))
+                    |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flaterrors, None))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }

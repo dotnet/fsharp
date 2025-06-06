@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/Type 10.fs", false, QualifiedNameOfFile Type 10, [], [],
+     ("/root/Type/Type 10.fs", false, QualifiedNameOfFile Type 10, [],
       [SynModuleOrNamespace
          ([N], false, DeclaredNamespace,
           [NestedModule
@@ -51,6 +51,7 @@ ImplFile
           PreXmlDocEmpty, [], None, (4,0--9,16),
           { LeadingKeyword = Namespace (4,0--4,9) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (1,0--1,25)] }, set []))
 
 (7,9)-(7,10) parse error Unexpected character '�' in type name

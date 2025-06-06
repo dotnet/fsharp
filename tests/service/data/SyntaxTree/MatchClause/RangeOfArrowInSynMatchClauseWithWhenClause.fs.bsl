@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfArrowInSynMatchClauseWithWhenClause.fs", false,
-      QualifiedNameOfFile RangeOfArrowInSynMatchClauseWithWhenClause, [], [],
+      QualifiedNameOfFile RangeOfArrowInSynMatchClauseWithWhenClause, [],
       [SynModuleOrNamespace
          ([RangeOfArrowInSynMatchClauseWithWhenClause], false, AnonModule,
           [Expr
@@ -25,4 +25,5 @@ ImplFile
                                 WithKeyword = (2,10--2,14) }), (2,0--3,36))],
           PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

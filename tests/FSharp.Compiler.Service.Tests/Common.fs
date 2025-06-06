@@ -5,9 +5,9 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -350,6 +350,9 @@ let getParseResultsOfSignatureFile (source: string) =
 
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("Test.fsx", source)
+
+let getParseAndCheckResultsWithOptions options source =
+    parseAndCheckScriptWithOptions ("Test.fsx", source, options)
 
 let getParseAndCheckResultsOfSignatureFile (source: string) =
     parseAndCheckScript("Test.fsi", source)

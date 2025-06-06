@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/UnionCase/SingleSynUnionCaseWithoutBar.fs", false,
-      QualifiedNameOfFile SingleSynUnionCaseWithoutBar, [], [],
+      QualifiedNameOfFile SingleSynUnionCaseWithoutBar, [],
       [SynModuleOrNamespace
          ([SingleSynUnionCaseWithoutBar], false, AnonModule,
           [Types
@@ -31,4 +31,5 @@ ImplFile
                     WithKeyword = None })], (2,0--2,24))], PreXmlDocEmpty, [],
           None, (2,0--3,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

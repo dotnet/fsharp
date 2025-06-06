@@ -1,7 +1,6 @@
 SigFile
   (ParsedSigFileInput
      ("/root/Member/SignatureMemberWithSetget.fsi", QualifiedNameOfFile Meh, [],
-      [],
       [SynModuleOrNamespaceSig
          ([Meh], false, NamedModule,
           [Types
@@ -40,4 +39,5 @@ SigFile
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--8,39), { LeadingKeyword = Module (2,0--2,6) })],
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (5,4--5,23)] }, set []))
