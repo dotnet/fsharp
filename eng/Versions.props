@@ -79,9 +79,9 @@
   </PropertyGroup>
   <!-- Dependencies from maintenance-packages, everything else -->
   <PropertyGroup Condition="'$(DotNetBuildSourceOnly)' != 'true'">
-    <SystemBuffersVersion>4.6.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
-    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
+    <SystemBuffersVersion>4.6.1</SystemBuffersVersion>
+    <SystemMemoryVersion>4.6.3</SystemMemoryVersion>
+    <SystemRuntimeCompilerServicesUnsafeVersion>6.1.2</SystemRuntimeCompilerServicesUnsafeVersion>
   </PropertyGroup>
   <PropertyGroup>
     <!-- System.* packages -->
@@ -91,7 +91,7 @@
     <SystemCollectionsImmutableVersion>$(SystemPackageVersionVersion)</SystemCollectionsImmutableVersion>
     <SystemComponentModelCompositionVersion>$(SystemPackageVersionVersion)</SystemComponentModelCompositionVersion>
     <SystemCompositionVersion>$(SystemPackageVersionVersion)</SystemCompositionVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackageVersionVersion)</SystemDiagnosticsDiagnosticSourceVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>10.0.0-preview.6.25304.106</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <SystemReflectionMetadataVersion>$(SystemPackageVersionVersion)</SystemReflectionMetadataVersion>
     <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
