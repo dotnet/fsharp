@@ -1770,6 +1770,12 @@ type internal TransparentCompiler
         caches.ProjectExtras.Get(
             projectSnapshot.SignatureKey,
             async {
+                use _ =
+                    Activity.start
+                        "ComputeProjectExtras"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
                 let! results, finalInfo, parseDiagnostics = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
@@ -1863,6 +1869,13 @@ type internal TransparentCompiler
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             async {
+                use _ =
+                    Activity.start
+                        "ComputeAssemblyData"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
+
                 use! _holder = Cancellable.UseToken()
 
                 try

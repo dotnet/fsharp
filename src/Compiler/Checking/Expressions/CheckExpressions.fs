@@ -811,10 +811,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
-            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One range0)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Divide(measure1 = ms1; measure2 = ms2) ->
-            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One range0)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
@@ -2037,7 +2037,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
 
     if fieldNum >= argTys.Length then
-        error (UnionCaseWrongNumberOfArgs(env.DisplayEnv, argTys.Length, fieldNum, m))
+        errorR (UnionCaseWrongNumberOfArgs(env.DisplayEnv, argTys.Length, fieldNum, m))
 
     let ty2 = List.item fieldNum argTys
     mkf, ty2
@@ -2307,7 +2307,7 @@ module GeneralizationHelpers =
                         declaredTypars 
                         |> List.map(fun typar ->  typar.Range)
                             
-                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range.Zero
+                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range0
                         
                     errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
