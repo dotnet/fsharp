@@ -450,6 +450,49 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     let delayedExpr = mkSeqDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
+let private TcMixedSequencesWithRanges cenv env tpenv overallTy elems m =
+    let rec buildSeqBody elems =
+        match elems with
+        | [] -> SynExpr.Const(SynConst.Unit, m)
+        | [ elem ] ->
+            match elem with
+            | SynExpr.IndexRange _ ->
+                match RewriteRangeExpr elem with
+                | Some rewrittenRange ->
+                    SynExpr.YieldOrReturnFrom(
+                        (true, false),
+                        rewrittenRange,
+                        elem.Range,
+                        {
+                            YieldOrReturnFromKeyword = elem.Range
+                        }
+                    )
+                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+        | elem :: rest ->
+            let headExpr =
+                match elem with
+                | SynExpr.IndexRange _ ->
+                    match RewriteRangeExpr elem with
+                    | Some rewrittenRange ->
+                        SynExpr.YieldOrReturnFrom(
+                            (true, false),
+                            rewrittenRange,
+                            elem.Range,
+                            {
+                                YieldOrReturnFromKeyword = elem.Range
+                            }
+                        )
+                    | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+
+            let tailExpr = buildSeqBody rest
+
+            SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, headExpr, tailExpr, m, SynExprSequentialTrivia.Zero)
+
+    let transformedBody = buildSeqBody elems
+    TcSequenceExpression cenv env tpenv transformedBody overallTy m
+
 let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
     match RewriteRangeExpr comp with
     | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
@@ -463,7 +506,6 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
         | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
             error (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
         | SimpleSemicolonSequence cenv false elems when hasBuilder ->
-            // Check if we have any range expressions mixed with regular values in seq { ... }
             let containsRanges =
                 elems
                 |> List.exists (function
@@ -474,55 +516,7 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
                 containsRanges
                 && cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
             then
-                // Transform to proper sequence expression body: yield v1; yield! r1..r2; yield v2; ...
-                let rec buildSeqBody elems =
-                    match elems with
-                    | [] -> SynExpr.Const(SynConst.Unit, m)
-                    | [ elem ] ->
-                        match elem with
-                        | SynExpr.IndexRange _ ->
-                            match RewriteRangeExpr elem with
-                            | Some rewrittenRange ->
-                                SynExpr.YieldOrReturnFrom(
-                                    (true, false),
-                                    rewrittenRange,
-                                    elem.Range,
-                                    {
-                                        YieldOrReturnFromKeyword = elem.Range
-                                    }
-                                )
-                            | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                        | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                    | elem :: rest ->
-                        let headExpr =
-                            match elem with
-                            | SynExpr.IndexRange _ ->
-                                match RewriteRangeExpr elem with
-                                | Some rewrittenRange ->
-                                    SynExpr.YieldOrReturnFrom(
-                                        (true, false),
-                                        rewrittenRange,
-                                        elem.Range,
-                                        {
-                                            YieldOrReturnFromKeyword = elem.Range
-                                        }
-                                    )
-                                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-
-                        let tailExpr = buildSeqBody rest
-
-                        SynExpr.Sequential(
-                            DebugPointAtSequential.SuppressNeither,
-                            true,
-                            headExpr,
-                            tailExpr,
-                            m,
-                            SynExprSequentialTrivia.Zero
-                        )
-
-                let transformedBody = buildSeqBody elems
-                TcSequenceExpression cenv env tpenv transformedBody overallTy m
+                TcMixedSequencesWithRanges cenv env tpenv overallTy elems m
             else
                 // Check if ranges are present but feature is disabled
                 if containsRanges then

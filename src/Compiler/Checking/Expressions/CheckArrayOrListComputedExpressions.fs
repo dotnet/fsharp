@@ -15,6 +15,87 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 
+/// Check if a list/array expression contains range expressions
+let private containsRangeExpressions elems =
+    elems
+    |> List.exists (function
+        | SynExpr.IndexRange _ -> true
+        | _ -> false)
+
+/// Transform a mixed list/array with ranges into a sequence computation expression
+/// E.g., [-3; 1..10; 19] becomes seq { yield -3; yield! 1..10; yield 19 }
+let private transformMixedListWithRangesToSeqExpr elems m =
+    let rec buildBody elems =
+        match elems with
+        | [] -> SynExpr.Const(SynConst.Unit, m)
+        | [ elem ] ->
+            match elem with
+            | SynExpr.IndexRange _ ->
+                match RewriteRangeExpr elem with
+                | Some rewritten ->
+                    SynExpr.YieldOrReturnFrom(
+                        (true, false),
+                        rewritten,
+                        elem.Range,
+                        {
+                            YieldOrReturnFromKeyword = elem.Range
+                        }
+                    )
+                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+        | elem :: rest ->
+            let headExpr =
+                match elem with
+                | SynExpr.IndexRange _ ->
+                    match RewriteRangeExpr elem with
+                    | Some rewritten ->
+                        SynExpr.YieldOrReturnFrom(
+                            (true, false),
+                            rewritten,
+                            elem.Range,
+                            {
+                                YieldOrReturnFromKeyword = elem.Range
+                            }
+                        )
+                    | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+
+            let tailExpr = buildBody rest
+            SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, headExpr, tailExpr, m, SynExprSequentialTrivia.Zero)
+
+    buildBody elems
+
+let private TcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
+    let g = cenv.g
+    let transformedBody = transformMixedListWithRangesToSeqExpr elems m
+
+    let genCollElemTy = NewInferenceType g
+    let genCollTy = (if isArray then mkArrayType else mkListTy) g genCollElemTy
+
+    TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env m (fun () ->
+        let exprTy = mkSeqTy g genCollElemTy
+
+        let expr, tpenv' =
+            TcSequenceExpression cenv env tpenv transformedBody (MustEqual exprTy) m
+
+        let expr = mkCoerceIfNeeded g exprTy (tyOfExpr g expr) expr
+
+        let expr =
+            if g.compilingFSharpCore then
+                expr
+            else
+                mkCallSeq g m genCollElemTy expr
+
+        let expr = mkCoerceExpr (expr, exprTy, expr.Range, overallTy.Commit)
+
+        let expr =
+            if isArray then
+                mkCallSeqToArray g m genCollElemTy expr
+            else
+                mkCallSeqToList g m genCollElemTy expr
+
+        expr, tpenv')
+
 let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv (isArray, comp) m =
     let g = cenv.g
 
@@ -69,97 +150,17 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
             | _ -> ()
 
-            let containsRanges =
-                elems
-                |> List.exists (function
-                    | SynExpr.IndexRange _ -> true
-                    | _ -> false)
-
             if
-                containsRanges
+                containsRangeExpressions elems
                 && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
             then
-                let rec buildBody elems =
-                    match elems with
-                    | [] -> SynExpr.Const(SynConst.Unit, m)
-                    | [ elem ] ->
-                        match elem with
-                        | SynExpr.IndexRange _ ->
-                            match RewriteRangeExpr elem with
-                            | Some rewritten ->
-                                SynExpr.YieldOrReturnFrom(
-                                    (true, false),
-                                    rewritten,
-                                    elem.Range,
-                                    {
-                                        YieldOrReturnFromKeyword = elem.Range
-                                    }
-                                )
-                            | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                        | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                    | elem :: rest ->
-                        let headExpr =
-                            match elem with
-                            | SynExpr.IndexRange _ ->
-                                match RewriteRangeExpr elem with
-                                | Some rewritten ->
-                                    SynExpr.YieldOrReturnFrom(
-                                        (true, false),
-                                        rewritten,
-                                        elem.Range,
-                                        {
-                                            YieldOrReturnFromKeyword = elem.Range
-                                        }
-                                    )
-                                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-
-                        let tailExpr = buildBody rest
-
-                        SynExpr.Sequential(
-                            DebugPointAtSequential.SuppressNeither,
-                            true,
-                            headExpr,
-                            tailExpr,
-                            m,
-                            SynExprSequentialTrivia.Zero
-                        )
-
-                let transformedBody = buildBody elems
-
-                let genCollElemTy = NewInferenceType g
-                let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
-
-                TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env m (fun () ->
-                    let exprTy = mkSeqTy cenv.g genCollElemTy
-
-                    let expr, tpenv' =
-                        TcSequenceExpression cenv env tpenv transformedBody (MustEqual exprTy) m
-
-                    let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
-
-                    let expr =
-                        if cenv.g.compilingFSharpCore then
-                            expr
-                        else
-                            mkCallSeq cenv.g m genCollElemTy expr
-
-                    let expr = mkCoerceExpr (expr, exprTy, expr.Range, overallTy.Commit)
-
-                    let expr =
-                        if isArray then
-                            mkCallSeqToArray cenv.g m genCollElemTy expr
-                        else
-                            mkCallSeqToList cenv.g m genCollElemTy expr
-
-                    expr, tpenv')
+                TcMixedSequencesWithRanges cenv env overallTy tpenv isArray elems m
             else
-                // Check if ranges are present but feature is disabled
-                if containsRanges then
-                    // Report error for mixed ranges when feature is disabled
+                if containsRangeExpressions elems then
                     checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
 
                 let replacementExpr =
+                    // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
                     if isArray then
                         let nelems = elems.Length
 
@@ -227,7 +228,8 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
 
                 let exprTy = mkSeqTy cenv.g genCollElemTy
 
-                let expr, tpenv' = TcSequenceExpression cenv env tpenv comp (MustEqual exprTy) m
+                // Check the comprehension
+                let expr, tpenv = TcSequenceExpression cenv env tpenv comp (MustEqual exprTy) m
 
                 let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
 
@@ -248,4 +250,4 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                     else
                         mkCallSeqToList cenv.g m genCollElemTy expr
 
-                expr, tpenv')
+                expr, tpenv)
