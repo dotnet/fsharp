@@ -2466,6 +2466,11 @@ module Array =
     [<CompiledName("SortByDescending")>]
     val inline sortByDescending: projection: ('T -> 'Key) -> array: 'T array -> 'T array when 'Key: comparison
 
+    /// Internal use of Array.sum to detect if vectorization can be used.
+    /// Due to sum "inline" this can't be private.
+    [<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+    val isNetFramework : bool
+
     /// <summary>Returns the sum of the elements in the array.</summary>
     ///
     /// <param name="array">The input array.</param>
