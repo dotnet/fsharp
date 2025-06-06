@@ -24,6 +24,7 @@ open FSharp.Compiler.Symbols.SymbolHelpers
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText
@@ -100,7 +101,7 @@ module DeclarationListHelpers =
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos symbol (width: int option) : ToolTipElement =
         ToolTipFault |> Option.iter (fun msg -> 
-           let exn = Error((0, msg), range.Zero)
+           let exn = Error((0, msg), range0)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
            simulateError ph)
         

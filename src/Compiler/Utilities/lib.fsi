@@ -291,3 +291,7 @@ module ListParallel =
     val map: ('T -> 'U) -> 'T list -> 'U list
 
 //val inline mapi: (int -> 'T -> 'U) -> 'T list -> 'U list
+
+[<RequireQualifiedAccess>]
+module Async =
+    val map: ('T -> 'U) -> Async<'T> -> Async<'U>

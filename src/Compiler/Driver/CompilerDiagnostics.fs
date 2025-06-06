@@ -894,7 +894,7 @@ type Exception with
                     |> List.map (fun (name, tTy) ->
                         tTy,
                         {
-                            ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero))
+                            ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range0))
                             ArgReprInfo.Attribs = []
                             ArgReprInfo.OtherRange = None
                         })

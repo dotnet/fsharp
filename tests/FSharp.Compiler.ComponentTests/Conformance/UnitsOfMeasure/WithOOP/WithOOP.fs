@@ -57,6 +57,7 @@ module WithOOP =
         |> getCompilation
         |> shouldFailWithDiagnostics [
             (Error 904, Line 8, Col 5, Line 8, Col 18, "Measure declarations may have only static members: constructors are not available")
+            (Error 904, Line 9, Col 5, Line 9, Col 25, "Measure declarations may have only static members: constructors are not available")
         ]
 
     [<Theory; FileInlineData("E_NoInstanceOnMeasure01.fsx")>]
