@@ -2894,7 +2894,7 @@ module EstablishTypeDefinitionCores =
 
         if hasMeasureAttr then 
             tycon.SetTypeOrMeasureKind TyparKind.Measure
-            if not (isNil typars) then error(Error(FSComp.SR.tcMeasureDefinitionsCannotHaveTypeParameters(), m))
+            if not (isNil typars) then errorR(Error(FSComp.SR.tcMeasureDefinitionsCannotHaveTypeParameters(), m))
 
         let repr = 
             match synTyconRepr with 
