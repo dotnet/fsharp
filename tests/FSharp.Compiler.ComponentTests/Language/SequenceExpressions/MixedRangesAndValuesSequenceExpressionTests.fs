@@ -7,6 +7,72 @@ open Xunit
 open FSharp.Test.Compiler
 
 module  MixedRangesAndValuesSequenceExpressionTests =
+    
+    let verifyCompile compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compile
+
+    let verifyCompileAndRun compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--nowarn:988"]
+        |> compileAndRun
+
+    [<Fact>]
+    let ``Version 90: Mixed ranges and values require preview language version``() =
+        FSharp """
+module MixedRangeVersionTest
+
+let test = [1; 2..5; 10]
+        """
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 12, Line 4, Col 25, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 4, Col 16, Line 4, Col 20, "Incomplete expression or invalid use of indexer syntax")
+        ]
+        
+    [<Fact>]
+    let ``Preview: Mixed ranges and values require preview language version``() =
+        FSharp """
+module MixedRangeVersionTest
+
+let test = [1; 2..5; 10]
+        """
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Version 90: Mixed ranges require preview language version``() =
+        FSharp """
+module MixedRangeVersionTest
+
+let test = [ 2..5; 10..20 ]
+        """
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 12, Line 4, Col 28, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 4, Col 14, Line 4, Col 18, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 4, Col 20, Line 4, Col 26, "Incomplete expression or invalid use of indexer syntax")
+        ]
+        
+    [<Fact>]
+    let ``Preview: Mixed ranges require preview language version``() =
+        FSharp """
+module MixedRangeVersionTest
+
+let test = [ 2..5; 10..20 ]
+        """
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
+    
     [<Fact>]
     let ``Mixed ranges and values in lists``() =
         FSharp """
@@ -30,9 +96,8 @@ if test4 <> expected4 then failwith $"test4 failed: got {test4}"
 
 printfn "All list tests passed!"
         """
-        |> withLangVersion90
-        |> asExe
-        |> compileAndRun
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     [<Fact>]
@@ -66,9 +131,8 @@ if test6 <> expected6 then failwith $"test6 failed: got {test6}"
 
 printfn "All array tests passed!"
         """
-        |> withLangVersion90
-        |> asExe
-        |> compileAndRun
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     [<Fact>]
@@ -99,9 +163,8 @@ if List.ofSeq test4 <> expected4 then failwith $"test4 failed"
 
 printfn "All sequence tests passed!"
         """
-        |> withLangVersion90
-        |> asExe
-        |> compileAndRun
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     [<Fact>]
@@ -126,9 +189,8 @@ if test6 <> ['a'; 'b'; 'c'; 'd'; 'e'; 'z'] then failwith "char range failed"
 
 printfn "Type inference tests passed!"
         """
-        |> withLangVersion90
-        |> asExe
-        |> compileAndRun
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     [<Fact>]
@@ -164,9 +226,8 @@ if test4 <> expected4 then failwith $"test4 failed: got {test4}"
 
 printfn "Complex expression tests passed!"
         """
-        |> withLangVersion90
-        |> asExe
-        |> compileAndRun
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     [<Fact>]
@@ -197,7 +258,6 @@ if test4.[1001] <> 2000 then failwith "test4: last element should be 2000"
 
 printfn "Edge case tests passed!"
         """
-        |> withLangVersion90
-        |> asExe
-        |> compileAndRun
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
         |> shouldSucceed
