@@ -7,12 +7,94 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckSequenceExpressions
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Features
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.CheckSequenceExpressions
+open FSharp.Compiler.SyntaxTrivia
+
+/// Check if a list/array expression contains range expressions
+let private containsRangeExpressions elems =
+    elems
+    |> List.exists (function
+        | SynExpr.IndexRange _ -> true
+        | _ -> false)
+
+/// Transform a mixed list/array with ranges into a sequence computation expression
+/// E.g., [-3; 1..10; 19] becomes seq { yield -3; yield! 1..10; yield 19 }
+let private transformMixedListWithRangesToSeqExpr elems m =
+    let rec buildBody elems =
+        match elems with
+        | [] -> SynExpr.Const(SynConst.Unit, m)
+        | [ elem ] ->
+            match elem with
+            | SynExpr.IndexRange _ ->
+                match RewriteRangeExpr elem with
+                | Some rewritten ->
+                    SynExpr.YieldOrReturnFrom(
+                        (true, false),
+                        rewritten,
+                        elem.Range,
+                        {
+                            YieldOrReturnFromKeyword = elem.Range
+                        }
+                    )
+                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+        | elem :: rest ->
+            let headExpr =
+                match elem with
+                | SynExpr.IndexRange _ ->
+                    match RewriteRangeExpr elem with
+                    | Some rewritten ->
+                        SynExpr.YieldOrReturnFrom(
+                            (true, false),
+                            rewritten,
+                            elem.Range,
+                            {
+                                YieldOrReturnFromKeyword = elem.Range
+                            }
+                        )
+                    | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+
+            let tailExpr = buildBody rest
+            SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, headExpr, tailExpr, m, SynExprSequentialTrivia.Zero)
+
+    buildBody elems
+
+let private TcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
+    let g = cenv.g
+    let transformedBody = transformMixedListWithRangesToSeqExpr elems m
+
+    let genCollElemTy = NewInferenceType g
+    let genCollTy = (if isArray then mkArrayType else mkListTy) g genCollElemTy
+
+    TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env m (fun () ->
+        let exprTy = mkSeqTy g genCollElemTy
+
+        let expr, tpenv' =
+            TcSequenceExpression cenv env tpenv transformedBody (MustEqual exprTy) m
+
+        let expr = mkCoerceIfNeeded g exprTy (tyOfExpr g expr) expr
+
+        let expr =
+            if g.compilingFSharpCore then
+                expr
+            else
+                mkCallSeq g m genCollElemTy expr
+
+        let expr = mkCoerceExpr (expr, exprTy, expr.Range, overallTy.Commit)
+
+        let expr =
+            if isArray then
+                mkCallSeqToArray g m genCollElemTy expr
+            else
+                mkCallSeqToList g m genCollElemTy expr
+
+        expr, tpenv')
 
 let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv (isArray, comp) m =
     let g = cenv.g
@@ -68,66 +150,74 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
             | _ -> ()
 
-            let replacementExpr =
-                if isArray then
+            if
+                containsRangeExpressions elems
+                && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+            then
+                TcMixedSequencesWithRanges cenv env overallTy tpenv isArray elems m
+            else
+                if containsRangeExpressions elems then
+                    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+
+                let replacementExpr =
                     // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
-                    let nelems = elems.Length
+                    if isArray then
+                        let nelems = elems.Length
 
-                    if
-                        nelems > 0
-                        && List.forall
-                            (function
-                            | SynExpr.Const(SynConst.UInt16 _, _) -> true
-                            | _ -> false)
-                            elems
-                    then
-                        SynExpr.Const(
-                            SynConst.UInt16s(
-                                Array.ofList (
-                                    List.map
-                                        (function
-                                        | SynExpr.Const(SynConst.UInt16 x, _) -> x
-                                        | _ -> failwith "unreachable")
-                                        elems
-                                )
-                            ),
-                            m
-                        )
-                    elif
-                        nelems > 0
-                        && List.forall
-                            (function
-                            | SynExpr.Const(SynConst.Byte _, _) -> true
-                            | _ -> false)
-                            elems
-                    then
-                        SynExpr.Const(
-                            SynConst.Bytes(
-                                Array.ofList (
-                                    List.map
-                                        (function
-                                        | SynExpr.Const(SynConst.Byte x, _) -> x
-                                        | _ -> failwith "unreachable")
-                                        elems
+                        if
+                            nelems > 0
+                            && List.forall
+                                (function
+                                | SynExpr.Const(SynConst.UInt16 _, _) -> true
+                                | _ -> false)
+                                elems
+                        then
+                            SynExpr.Const(
+                                SynConst.UInt16s(
+                                    Array.ofList (
+                                        List.map
+                                            (function
+                                            | SynExpr.Const(SynConst.UInt16 x, _) -> x
+                                            | _ -> failwith "unreachable")
+                                            elems
+                                    )
                                 ),
-                                SynByteStringKind.Regular,
                                 m
-                            ),
-                            m
-                        )
-                    else
+                            )
+                        elif
+                            nelems > 0
+                            && List.forall
+                                (function
+                                | SynExpr.Const(SynConst.Byte _, _) -> true
+                                | _ -> false)
+                                elems
+                        then
+                            SynExpr.Const(
+                                SynConst.Bytes(
+                                    Array.ofList (
+                                        List.map
+                                            (function
+                                            | SynExpr.Const(SynConst.Byte x, _) -> x
+                                            | _ -> failwith "unreachable")
+                                            elems
+                                    ),
+                                    SynByteStringKind.Regular,
+                                    m
+                                ),
+                                m
+                            )
+                        else
+                            SynExpr.ArrayOrList(isArray, elems, m)
+                    else if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
                         SynExpr.ArrayOrList(isArray, elems, m)
-                else if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
-                    SynExpr.ArrayOrList(isArray, elems, m)
-                else
-                    if elems.Length > 500 then
-                        error (Error(FSComp.SR.tcListLiteralMaxSize (), m))
+                    else
+                        if elems.Length > 500 then
+                            error (Error(FSComp.SR.tcListLiteralMaxSize (), m))
 
-                    SynExpr.ArrayOrList(isArray, elems, m)
+                        SynExpr.ArrayOrList(isArray, elems, m)
 
-            TcExprUndelayed cenv overallTy env tpenv replacementExpr
+                TcExprUndelayed cenv overallTy env tpenv replacementExpr
         | _ ->
-
             let genCollElemTy = NewInferenceType g
 
             let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy

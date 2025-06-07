@@ -12,6 +12,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -449,6 +450,49 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     let delayedExpr = mkSeqDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
+let private TcMixedSequencesWithRanges cenv env tpenv overallTy elems m =
+    let rec buildSeqBody elems =
+        match elems with
+        | [] -> SynExpr.Const(SynConst.Unit, m)
+        | [ elem ] ->
+            match elem with
+            | SynExpr.IndexRange _ ->
+                match RewriteRangeExpr elem with
+                | Some rewrittenRange ->
+                    SynExpr.YieldOrReturnFrom(
+                        (true, false),
+                        rewrittenRange,
+                        elem.Range,
+                        {
+                            YieldOrReturnFromKeyword = elem.Range
+                        }
+                    )
+                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+        | elem :: rest ->
+            let headExpr =
+                match elem with
+                | SynExpr.IndexRange _ ->
+                    match RewriteRangeExpr elem with
+                    | Some rewrittenRange ->
+                        SynExpr.YieldOrReturnFrom(
+                            (true, false),
+                            rewrittenRange,
+                            elem.Range,
+                            {
+                                YieldOrReturnFromKeyword = elem.Range
+                            }
+                        )
+                    | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+                | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
+
+            let tailExpr = buildSeqBody rest
+
+            SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, headExpr, tailExpr, m, SynExprSequentialTrivia.Zero)
+
+    let transformedBody = buildSeqBody elems
+    TcSequenceExpression cenv env tpenv transformedBody overallTy m
+
 let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
     match RewriteRangeExpr comp with
     | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
@@ -460,10 +504,29 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
 
         match comp with
         | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
-            errorR (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
-        | _ -> ()
+            error (Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression (), m))
+        | SimpleSemicolonSequence cenv false elems when hasBuilder ->
+            let containsRanges =
+                elems
+                |> List.exists (function
+                    | SynExpr.IndexRange _ -> true
+                    | _ -> false)
 
-        if not hasBuilder && not cenv.g.compilingFSharpCore then
-            error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+            if
+                containsRanges
+                && cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+            then
+                TcMixedSequencesWithRanges cenv env tpenv overallTy elems m
+            else
+                // Check if ranges are present but feature is disabled
+                if containsRanges then
+                    // Report error for mixed ranges when feature is disabled
+                    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
 
-        TcSequenceExpression cenv env tpenv comp overallTy m
+                // No ranges, use regular handling
+                TcSequenceExpression cenv env tpenv comp overallTy m
+        | _ ->
+            if not hasBuilder && not cenv.g.compilingFSharpCore then
+                error (Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm (), m))
+
+            TcSequenceExpression cenv env tpenv comp overallTy m
