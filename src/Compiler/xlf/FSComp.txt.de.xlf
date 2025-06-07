@@ -5142,11 +5142,6 @@
         <target state="translated">Dieses Attribut ist für dieses Sprachelement nicht gültig. Assemblyattribute sollten an eine "do ()"-Deklaration angefügt werden, falls notwendig innerhalb eines F#-Moduls.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Dieses Attribut ist für dieses Sprachelement nicht gültig.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">Optionale Argumente dürfen nicht für benutzerdefinierte Attribute verwendet werden.</target>

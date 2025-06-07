@@ -57,6 +57,16 @@
         <target state="translated">Uma ou mais mensagens informativas no arquivo carregado.\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="InvalidAttributeTargetForLanguageElement1">
+        <source>This attribute cannot be applied to {0}. Valid targets are: {1}</source>
+        <target state="new">This attribute cannot be applied to {0}. Valid targets are: {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidAttributeTargetForLanguageElement2">
+        <source>This attribute is not valid for use on this language element</source>
+        <target state="new">This attribute is not valid for use on this language element</target>
+        <note />
+      </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">Os casos de união discriminados em letras minúsculas só são permitidos ao usar o atributo RequireQualifiedAccess</target>
