@@ -59,9 +59,9 @@ type LanguageFeaturesHandler() =
             }
             |> CancellableTask.start cancellationToken
 
-    interface IRequestHandler<DefinitionParams, SumType<Definition, Definition[], DefinitionLink[]>, FSharpRequestContext> with
+    interface IRequestHandler<TextDocumentPositionParams, Location[], FSharpRequestContext> with
         [<LanguageServerEndpoint("textDocument/definition", LanguageServerConstants.DefaultLanguageName)>]
-        member _.HandleRequestAsync(request: DefinitionParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
+        member _.HandleRequestAsync(request: TextDocumentPositionParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
             cancellableTask {
                 try
                     let uri = request.TextDocument.Uri
@@ -123,8 +123,7 @@ type LanguageFeaturesHandler() =
                                             Range = range.ToLspRange()
                                         )
                                         
-                                        let definition = Definition([| location |])
-                                        return SumType<Definition, Definition[], DefinitionLink[]>(definition)
+                                        return [| location |]
                                     | None ->
                                         // Fallback to GetDeclarationLocation
                                         let declarations = 
@@ -143,10 +142,9 @@ type LanguageFeaturesHandler() =
                                                 Range = range.ToLspRange()
                                             )
                                             
-                                            let definition = Definition([| location |])
-                                            return SumType<Definition, Definition[], DefinitionLink[]>(definition)
+                                            return [| location |]
                                         | _ ->
-                                            return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                                            return [||]
                                 | None ->
                                     // Fallback to the original approach
                                     let declarations = 
@@ -165,23 +163,22 @@ type LanguageFeaturesHandler() =
                                             Range = range.ToLspRange()
                                         )
                                         
-                                        let definition = Definition([| location |])
-                                        return SumType<Definition, Definition[], DefinitionLink[]>(definition)
+                                        return [| location |]
                                     | _ ->
-                                        return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                                        return [||]
                             else
                                 // Line out of bounds
-                                return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                                return [||]
                         | None ->
                             // No source available
-                            return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                            return [||]
                     | _ ->
                         // No check results available
-                        return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                        return [||]
                         
                 with ex ->
                     // Log error and return empty result
                     context.Logger.LogError("Error in textDocument/definition: {0}", [| ex.Message |])
-                    return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                    return [||]
             }
             |> CancellableTask.start cancellationToken

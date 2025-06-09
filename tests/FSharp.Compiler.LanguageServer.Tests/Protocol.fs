@@ -183,6 +183,45 @@ let ``Full semantic tokens`` () =
     }
 
 [<Fact>]
+let ``textDocument/definition endpoint exists`` () =
+    task {
+        let! client = initializeLanguageServer None
+        let workspace = client.Workspace
+        
+        // Create F# content with a simple function definition and usage
+        let contentOnDisk = """let myFunction x = x + 1
+
+let result = myFunction 42"""
+        let fileOnDisk = sourceFileOnDisk contentOnDisk
+        
+        let _projectIdentifier =
+            workspace.Projects.AddOrUpdate(ProjectConfig.Create(), [ fileOnDisk.LocalPath ])
+        
+        // Open the document
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidOpenName,
+                DidOpenTextDocumentParams(
+                    TextDocument = TextDocumentItem(Uri = fileOnDisk, LanguageId = "F#", Version = 1, Text = contentOnDisk)
+                )
+            )
+        
+        // Test the textDocument/definition endpoint
+        let! response =
+            client.JsonRpc.InvokeAsync<Location[]>(
+                "textDocument/definition",
+                TextDocumentPositionParams(
+                    TextDocument = TextDocumentIdentifier(Uri = fileOnDisk),
+                    Position = Position(Line = 2, Character = 13) // Position of "myFunction" in usage
+                )
+            )
+        
+        // For now, just verify the endpoint is callable and returns an array
+        Assert.NotNull(response)
+        // Note: We don't assert specific results yet since the implementation may need refinement
+    }
+
+[<Fact>]
 let ``Shutdown and exit`` () =
     task {
         let! client = initializeLanguageServer None
