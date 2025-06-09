@@ -219,3 +219,27 @@ let f = [|-3; 1..10; 19|]
             (Error 3350, Line 21, Col 24, Line 21, Col 32, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
             (Error 751, Line 21, Col 24, Line 21, Col 32, "Incomplete expression or invalid use of indexer syntax")
         ]
+        
+    // SOURCE=SequenceExpressions08.fs 	# SequenceExpressions08.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions08.fs"|])>]
+    let ``Preview: SequenceExpressions08 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    // SOURCE=SequenceExpressions09.fs 	# SequenceExpressions09.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions09.fs"|])>]
+    let ``Preview: SequenceExpressions09 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions09.fs 	# SequenceExpressions09.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions09.fs"|])>]
+    let ``Version 9: SequenceExpressions09 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompileAndRun
+        |> shouldSucceed
