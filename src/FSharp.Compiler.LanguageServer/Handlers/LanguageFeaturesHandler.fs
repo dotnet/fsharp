@@ -75,18 +75,21 @@ type LanguageFeaturesHandler() =
                 
                 match parseAndCheckResults with
                 | _, Some checkFileResults ->
-                    let! sourceOpt = context.Workspace.Query.GetSource uri |> Async.StartAsTask
+                    let! sourceOpt = context.Workspace.Query.GetSource uri
                     
                     match sourceOpt with
                     | Some source ->
-                        // Get the line text
-                        let lines = source.ToString().Split('\n')
-                        let lineText = if position.Line < lines.Length then lines.[position.Line] else ""
+                        // Get the line text using ISourceText API
+                        let lineText = 
+                            if position.Line < source.GetLineCount() then 
+                                source.GetLineString(position.Line) 
+                            else 
+                                ""
                         
                         // Use QuickParse to get identifiers at the position
                         let names, _activeName = FSharp.Compiler.EditorServices.QuickParse.GetPartialLongName(lineText, fcsColumn)
                         
-                        let declResult = checkFileResults.GetDeclarationLocation(fcsLine, fcsColumn, lineText, names, false)
+                        let declResult = checkFileResults.GetDeclarationLocation(fcsLine, lineText, fcsColumn, names, false)
                         
                         match declResult with
                         | FindDeclResult.DeclFound range ->
