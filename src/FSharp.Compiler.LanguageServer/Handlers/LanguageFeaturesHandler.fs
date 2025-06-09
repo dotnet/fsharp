@@ -9,6 +9,7 @@ open System.Threading.Tasks
 open System.Threading
 open System.Collections.Generic
 open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Compiler.EditorServices
 
 #nowarn "57"
 
@@ -55,5 +56,132 @@ type LanguageFeaturesHandler() =
             cancellableTask {
                 let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
                 return SemanticTokens(Data = tokens)
+            }
+            |> CancellableTask.start cancellationToken
+
+    interface IRequestHandler<DefinitionParams, SumType<Definition, Definition[], DefinitionLink[]>, FSharpRequestContext> with
+        [<LanguageServerEndpoint("textDocument/definition", LanguageServerConstants.DefaultLanguageName)>]
+        member _.HandleRequestAsync(request: DefinitionParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
+            cancellableTask {
+                try
+                    let uri = request.TextDocument.Uri
+                    let position = request.Position
+                    
+                    // Get the parse and check results for the file
+                    let! parseAndCheckResults = context.Workspace.Query.GetParseAndCheckResultsForFile(uri) |> Async.StartAsTask
+                    
+                    match parseAndCheckResults with
+                    | _, Some checkResults ->
+                        // Convert LSP position to F# position
+                        let line = position.Line + 1 // LSP is 0-based, F# is 1-based
+                        let column = position.Character
+                        
+                        // Get the source text to extract the line
+                        let! sourceOpt = context.Workspace.Query.GetSource(uri) |> Async.StartAsTask
+                        
+                        match sourceOpt with
+                        | Some source ->
+                            let lines = source.GetLines()
+                            if line <= lines.Length then
+                                let lineText = lines.[line - 1].ToString()
+                                
+                                // Better approach: try to extract symbol at exact position
+                                // Find the word boundaries around the position
+                                let rec findWordStart pos =
+                                    if pos <= 0 || not (System.Char.IsLetterOrDigit(lineText.[pos - 1])) then pos
+                                    else findWordStart (pos - 1)
+                                
+                                let rec findWordEnd pos =
+                                    if pos >= lineText.Length || not (System.Char.IsLetterOrDigit(lineText.[pos])) then pos
+                                    else findWordEnd (pos + 1)
+                                
+                                let adjustedColumn = min column lineText.Length
+                                let wordStart = findWordStart adjustedColumn
+                                let wordEnd = findWordEnd adjustedColumn
+                                let symbolAtPos = if wordEnd > wordStart then lineText.Substring(wordStart, wordEnd - wordStart) else ""
+                                
+                                // Create the names list for the symbol
+                                let symbolNames = if System.String.IsNullOrEmpty(symbolAtPos) then [] else [symbolAtPos]
+                                
+                                // Use GetSymbolUseAtLocation to get more accurate information
+                                let symbolUseOpt = 
+                                    checkResults.GetSymbolUseAtLocation(
+                                        line,
+                                        adjustedColumn,
+                                        lineText,
+                                        symbolNames
+                                    )
+                                
+                                match symbolUseOpt with
+                                | Some symbolUse ->
+                                    // If we have a symbol use, we can also get the declaration location
+                                    match symbolUse.Symbol.DeclarationLocation with
+                                    | Some range ->
+                                        // Convert F# range to LSP Location
+                                        let location = Location(
+                                            Uri = System.Uri(range.FileName),
+                                            Range = range.ToLspRange()
+                                        )
+                                        
+                                        let definition = Definition([| location |])
+                                        return SumType<Definition, Definition[], DefinitionLink[]>(definition)
+                                    | None ->
+                                        // Fallback to GetDeclarationLocation
+                                        let declarations = 
+                                            checkResults.GetDeclarationLocation(
+                                                line,
+                                                adjustedColumn,
+                                                lineText,
+                                                symbolNames,
+                                                false // preferSignature
+                                            )
+                                        
+                                        match declarations with
+                                        | FindDeclResult.DeclFound range ->
+                                            let location = Location(
+                                                Uri = System.Uri(range.FileName),
+                                                Range = range.ToLspRange()
+                                            )
+                                            
+                                            let definition = Definition([| location |])
+                                            return SumType<Definition, Definition[], DefinitionLink[]>(definition)
+                                        | _ ->
+                                            return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                                | None ->
+                                    // Fallback to the original approach
+                                    let declarations = 
+                                        checkResults.GetDeclarationLocation(
+                                            line,
+                                            adjustedColumn,
+                                            lineText,
+                                            symbolNames,
+                                            false // preferSignature
+                                        )
+                                    
+                                    match declarations with
+                                    | FindDeclResult.DeclFound range ->
+                                        let location = Location(
+                                            Uri = System.Uri(range.FileName),
+                                            Range = range.ToLspRange()
+                                        )
+                                        
+                                        let definition = Definition([| location |])
+                                        return SumType<Definition, Definition[], DefinitionLink[]>(definition)
+                                    | _ ->
+                                        return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                            else
+                                // Line out of bounds
+                                return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                        | None ->
+                            // No source available
+                            return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                    | _ ->
+                        // No check results available
+                        return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
+                        
+                with ex ->
+                    // Log error and return empty result
+                    context.Logger.LogError("Error in textDocument/definition: {0}", [| ex.Message |])
+                    return SumType<Definition, Definition[], DefinitionLink[]>(Definition([||]))
             }
             |> CancellableTask.start cancellationToken
