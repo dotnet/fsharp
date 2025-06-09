@@ -567,6 +567,7 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $productBuild) {
         $originalSignValue = $sign
+        $originalPublishValue = $publish
         if ($msbuildEngine -eq "dotnet") {
             # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
             # don't produce any artifacts to sign. Skip signing in this case.
@@ -576,9 +577,12 @@ try {
             BuildSolution "FSharp.sln" $False
         }
         else {
+            # vsixes do not count as publishing artifacts from Arcade perspective, and arcade publish.proj is failing when it encounters 0 items to publish.
+            $publish = $False
             BuildSolution "VisualFSharp.sln" $False
         }
         $sign = $originalSignValue
+        $publish = $originalPublishValue
     }
 
     if ($testBenchmarks) {
