@@ -6,41 +6,48 @@ open Xunit
 open FSharp.Test.Compiler
 
 [<Fact>]
-let ``Namespace cannot contain value bindings - multiple let bindings`` () =
+let ``Value bindings 01`` () =
+    Fsx """
+namespace TestNamespace
+
+let x = 1 
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 201, Line 4, Col 5, Line 4, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
+        ]
+
+[<Fact>]
+let ``Value bindings 02 - Multiple`` () =
     Fsx """
 namespace TestNamespace
 
 let x = 1 
 let y = 2
-let z = 3
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 201, Line 4, Col 5, Line 4, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
             (Error 201, Line 5, Col 5, Line 5, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
-            (Error 201, Line 6, Col 5, Line 6, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
         ]
 
 [<Fact>]
-let ``Namespace cannot contain function bindings`` () =
+let ``Function bindings`` () =
     Fsx """
 namespace TestNamespace
 
 let add x y = x + y 
-let multiply x y = x * y
-let divide x y = x / y
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 201, Line 4, Col 5, Line 4, Col 12, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
-            (Error 201, Line 5, Col 5, Line 5, Col 17, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
-            (Error 201, Line 6, Col 5, Line 6, Col 15, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
         ]
 
 [<Fact>]
-let ``Multiple namespaces with value bindings should all report errors`` () =
+let ``Multiple namespaces`` () =
     Fsx """
 namespace Namespace1
 
@@ -49,19 +56,28 @@ let x = 1
 namespace Namespace2
 
 let y = 2
-do printfn "test"
 
 namespace Namespace3
 
 let z = 3 
-let w = 4
         """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
             (Error 201, Line 4, Col 5, Line 4, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
             (Error 201, Line 8, Col 5, Line 8, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
-            (Error 201, Line 9, Col 1, Line 9, Col 18, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
-            (Error 201, Line 13, Col 5, Line 13, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
-            (Error 201, Line 14, Col 5, Line 14, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
+            (Error 201, Line 12, Col 5, Line 12, Col 6, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
+        ]
+
+[<Fact>]
+let ``Do expressions`` () =
+    Fsx """
+namespace TestNamespace
+
+do printfn "test"
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 201, Line 4, Col 1, Line 4, Col 18, "Namespaces cannot contain values. Consider using a module to hold your value declarations.")
         ]
