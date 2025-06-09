@@ -183,6 +183,50 @@ let ``Full semantic tokens`` () =
     }
 
 [<Fact>]
+let ``Go to definition`` () =
+    task {
+        let! client = initializeLanguageServer None
+        let workspace = client.Workspace
+        let contentOnDisk = """let myFunction x = x + 1
+let result = myFunction 5"""
+        let fileOnDisk = sourceFileOnDisk contentOnDisk
+        let _projectIdentifier =
+            workspace.Projects.AddOrUpdate(ProjectConfig.Create(), [ fileOnDisk.LocalPath ])
+        
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidOpenName,
+                DidOpenTextDocumentParams(
+                    TextDocument = TextDocumentItem(Uri = fileOnDisk, LanguageId = "F#", Version = 1, Text = contentOnDisk)
+                )
+            )
+        
+        // Request definition for "myFunction" on line 2 (the usage)
+        let! definitionResponse =
+            client.JsonRpc.InvokeAsync<SumType<Location[], Location>>(
+                Methods.TextDocumentDefinitionName,
+                TextDocumentPositionParams(
+                    TextDocument = TextDocumentIdentifier(Uri = fileOnDisk),
+                    Position = Position(Line = 1, Character = 16) // Position at "myFunction" in "result = myFunction 5"
+                )
+            )
+        
+        // Should find the definition on line 1
+        match definitionResponse with
+        | :? Location as location ->
+            Assert.Equal(fileOnDisk, location.Uri)
+            Assert.Equal(0, location.Range.Start.Line) // Line 1 is 0-based
+            Assert.Equal(4, location.Range.Start.Character) // "myFunction" starts at column 4
+        | :? Location[] as locations when locations.Length > 0 ->
+            let location = locations[0]
+            Assert.Equal(fileOnDisk, location.Uri)
+            Assert.Equal(0, location.Range.Start.Line)
+            Assert.Equal(4, location.Range.Start.Character)
+        | _ ->
+            Assert.True(false, "Expected to find definition location")
+    }
+
+[<Fact>]
 let ``Shutdown and exit`` () =
     task {
         let! client = initializeLanguageServer None

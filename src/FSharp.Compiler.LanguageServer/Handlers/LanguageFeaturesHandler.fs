@@ -9,6 +9,8 @@ open System.Threading.Tasks
 open System.Threading
 open System.Collections.Generic
 open Microsoft.VisualStudio.FSharp.Editor
+open FSharp.Compiler.EditorServices
+open System
 
 #nowarn "57"
 
@@ -55,5 +57,53 @@ type LanguageFeaturesHandler() =
             cancellableTask {
                 let! tokens = context.GetSemanticTokensForFile(request.TextDocument.Uri)
                 return SemanticTokens(Data = tokens)
+            }
+            |> CancellableTask.start cancellationToken
+
+    interface IRequestHandler<TextDocumentPositionParams, SumType<Location[], Location>, FSharpRequestContext> with
+        [<LanguageServerEndpoint(Methods.TextDocumentDefinitionName, LanguageServerConstants.DefaultLanguageName)>]
+        member _.HandleRequestAsync(request: TextDocumentPositionParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
+            cancellableTask {
+                let uri = request.TextDocument.Uri
+                let position = request.Position
+                
+                // Convert LSP position to F# line/column (LSP is 0-based, F# is 1-based for lines)
+                let fcsLine = position.Line + 1
+                let fcsColumn = position.Character
+                
+                let! parseAndCheckResults = context.Workspace.Query.GetParseAndCheckResultsForFile uri
+                
+                match parseAndCheckResults with
+                | _, Some checkFileResults ->
+                    let! sourceOpt = context.Workspace.Query.GetSource uri |> Async.StartAsTask
+                    
+                    match sourceOpt with
+                    | Some source ->
+                        // Get the line text
+                        let lines = source.ToString().Split('\n')
+                        let lineText = if position.Line < lines.Length then lines.[position.Line] else ""
+                        
+                        // Use QuickParse to get identifiers at the position
+                        let names, _activeName = FSharp.Compiler.EditorServices.QuickParse.GetPartialLongName(lineText, fcsColumn)
+                        
+                        let declResult = checkFileResults.GetDeclarationLocation(fcsLine, fcsColumn, lineText, names, false)
+                        
+                        match declResult with
+                        | FindDeclResult.DeclFound range ->
+                            let location = Location(
+                                Uri = uri,
+                                Range = range.ToLspRange()
+                            )
+                            return SumType<Location[], Location>(location)
+                        | FindDeclResult.ExternalDecl(assembly, externalSym) ->
+                            // For external declarations, we might not be able to navigate to source
+                            // Return empty for now - could be enhanced to support metadata as source
+                            return SumType<Location[], Location>([||])
+                        | FindDeclResult.DeclNotFound _ ->
+                            return SumType<Location[], Location>([||])
+                    | None ->
+                        return SumType<Location[], Location>([||])
+                | _ ->
+                    return SumType<Location[], Location>([||])
             }
             |> CancellableTask.start cancellationToken
