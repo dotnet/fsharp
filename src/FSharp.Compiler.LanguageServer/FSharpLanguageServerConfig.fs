@@ -4,12 +4,14 @@ type FSharpLanguageServerFeatures =
     {
         Diagnostics: bool
         SemanticHighlighting: bool
+        Definition: bool
     }
 
     static member Default =
         {
             Diagnostics = true
             SemanticHighlighting = true
+            Definition = true
         }
 
 type FSharpLanguageServerConfig =
