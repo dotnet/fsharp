@@ -203,7 +203,7 @@ let result = myFunction 5"""
         
         // Request definition for "myFunction" on line 2 (the usage)
         let! definitionResponse =
-            client.JsonRpc.InvokeAsync<SumType<Location[], Location>>(
+            client.JsonRpc.InvokeAsync<Location[]>(
                 Methods.TextDocumentDefinitionName,
                 TextDocumentPositionParams(
                     TextDocument = TextDocumentIdentifier(Uri = fileOnDisk),
@@ -212,18 +212,11 @@ let result = myFunction 5"""
             )
         
         // Should find the definition on line 1
-        match definitionResponse with
-        | :? Location as location ->
-            Assert.Equal(fileOnDisk, location.Uri)
-            Assert.Equal(0, location.Range.Start.Line) // Line 1 is 0-based
-            Assert.Equal(4, location.Range.Start.Character) // "myFunction" starts at column 4
-        | :? Location[] as locations when locations.Length > 0 ->
-            let location = locations[0]
-            Assert.Equal(fileOnDisk, location.Uri)
-            Assert.Equal(0, location.Range.Start.Line)
-            Assert.Equal(4, location.Range.Start.Character)
-        | _ ->
-            Assert.True(false, "Expected to find definition location")
+        Assert.True(definitionResponse.Length > 0, "Expected to find at least one definition location")
+        let location = definitionResponse[0]
+        Assert.Equal(fileOnDisk, location.Uri)
+        Assert.Equal(0, location.Range.Start.Line) // Line 1 is 0-based
+        Assert.Equal(4, location.Range.Start.Character) // "myFunction" starts at column 4
     }
 
 [<Fact>]

@@ -60,7 +60,7 @@ type LanguageFeaturesHandler() =
             }
             |> CancellableTask.start cancellationToken
 
-    interface IRequestHandler<TextDocumentPositionParams, SumType<Location[], Location>, FSharpRequestContext> with
+    interface IRequestHandler<TextDocumentPositionParams, Location[], FSharpRequestContext> with
         [<LanguageServerEndpoint(Methods.TextDocumentDefinitionName, LanguageServerConstants.DefaultLanguageName)>]
         member _.HandleRequestAsync(request: TextDocumentPositionParams, context: FSharpRequestContext, cancellationToken: CancellationToken) =
             cancellableTask {
@@ -91,19 +91,19 @@ type LanguageFeaturesHandler() =
                         match declResult with
                         | FindDeclResult.DeclFound range ->
                             let location = Location(
-                                Uri = uri,
+                                Uri = System.Uri(range.FileName),
                                 Range = range.ToLspRange()
                             )
-                            return SumType<Location[], Location>(location)
+                            return [| location |]
                         | FindDeclResult.ExternalDecl(assembly, externalSym) ->
                             // For external declarations, we might not be able to navigate to source
                             // Return empty for now - could be enhanced to support metadata as source
-                            return SumType<Location[], Location>([||])
+                            return [||]
                         | FindDeclResult.DeclNotFound _ ->
-                            return SumType<Location[], Location>([||])
+                            return [||]
                     | None ->
-                        return SumType<Location[], Location>([||])
+                        return [||]
                 | _ ->
-                    return SumType<Location[], Location>([||])
+                    return [||]
             }
             |> CancellableTask.start cancellationToken
