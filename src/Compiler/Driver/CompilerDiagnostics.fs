@@ -1937,13 +1937,13 @@ type Exception with
                     s2
             )
 
-        | InvalidAttributeTargetForLanguageElement(currentTargets, validTargets, _m) ->
-            if Array.isEmpty currentTargets then
+        | InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, _m) ->
+            if Array.isEmpty elementTargets then
                 os.AppendString(InvalidAttributeTargetForLanguageElement2E().Format)
             else
-                let currentTarget = String.concat ", " currentTargets
-                let validTargets = validTargets |> Array.except currentTargets |> String.concat ", "
-                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format currentTarget validTargets)
+                let elementTargets = String.concat ", " elementTargets
+                let allowedTargets = allowedTargets |> String.concat ", "
+                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)

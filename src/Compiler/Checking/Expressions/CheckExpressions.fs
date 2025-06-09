@@ -143,7 +143,7 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
-exception InvalidAttributeTargetForLanguageElement of actualTarget: string array * validTargets: string array * range: range
+exception InvalidAttributeTargetForLanguageElement of elementTargets: string array * allowedTargets: string array * range: range
 
 //----------------------------------------------------------------------------------------------
 // Helpers for determining if/what specifiers a string has.
@@ -11377,10 +11377,10 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
                     if targets &&& int AttributeTargets.GenericParameter <> 0 then "type parameter"
                 |]
 
-            let currentTargets = attributeTargetsToString (int attrTgt)
-            let validTargets = attributeTargetsToString validOn
+            let elementTargets = attributeTargetsToString (int attrTgt)
+            let allowedTargets = attributeTargetsToString validOn
 
-            warning(InvalidAttributeTargetForLanguageElement(currentTargets, validTargets, mAttr))
+            warning(InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, mAttr))
     
     constrainedTargets
 

@@ -122,8 +122,8 @@ exception StandardOperatorRedefinitionWarning of string * range
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
 exception InvalidAttributeTargetForLanguageElement of
-    actualTarget: string array *
-    validTargets: string array *
+    elementTargets: string array *
+    allowedTargets: string array *
     range: range
 
 val TcFieldInit: range -> ILFieldInit -> Const

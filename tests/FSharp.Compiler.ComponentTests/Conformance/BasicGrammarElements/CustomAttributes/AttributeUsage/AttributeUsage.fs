@@ -130,10 +130,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 7, Line 14, Col 34, "This attribute cannot be applied to field. Valid targets are: class, struct, enum, constructor, method, property, event, interface, delegate");
-            (Warning 842, Line 24, Col 7, Line 24, Col 36, "This attribute cannot be applied to property, event, return value. Valid targets are: class, struct, enum, constructor, method, field, interface, delegate");
-            (Warning 842, Line 29, Col 15, Line 29, Col 47, "This attribute cannot be applied to method, event, return value. Valid targets are: class, struct, enum, constructor, property, field, interface, delegate");
-            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.")
+            (Warning 842, Line 14, Col 7, Line 14, Col 34, "This attribute cannot be applied to field. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
+            (Warning 842, Line 24, Col 7, Line 24, Col 36, "This attribute cannot be applied to property, event, return value. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
+            (Warning 842, Line 29, Col 15, Line 29, Col 47, "This attribute cannot be applied to method, event, return value. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
+            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.") 
         ]
         
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
