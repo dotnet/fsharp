@@ -28,7 +28,6 @@
   </IgnorePatterns>
 
   <Usages>
-    <Usage Id="Microsoft.NET.StringTools" Version="17.13.26"/>
     <Usage Id="System.Formats.Asn1" Version="8.0.1"/>
   </Usages>
 </UsageData>
