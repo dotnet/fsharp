@@ -135,7 +135,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.cmd -skipbuild
+          - script: ./Build.sh --skipbuild
           - script: dotnet tool restore
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -167,7 +167,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -skipbuild
+          - script: ./Build.sh --skipbuild
           - pwsh: ./check.ps1 -project $(_project)
             workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
             env:
@@ -767,7 +767,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.sh --skipbuild
+          - script: ./Build.sh --skipbuild
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -786,7 +786,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.sh --skipbuild
+          - script: ./Build.sh --skipbuild
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
