@@ -6,6 +6,7 @@
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);75</NoWarn>
     <NoWarn>$(NoWarn);44</NoWarn><!-- warning about Roslyn API only for F# and TypeScript -->
+    <NoWarn>$(NoWarn);NU1608</NoWarn> <!-- warning about package downgrade -->
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
