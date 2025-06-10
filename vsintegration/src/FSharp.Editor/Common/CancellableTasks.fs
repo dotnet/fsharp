@@ -336,7 +336,7 @@ module CancellableTasks =
                             else
                                 let mutable awaiter =
                                     sm.ResumptionDynamicInfo.ResumptionData
-                                    :?> ICriticalNotifyCompletion
+                                    :?> ICriticalNotifyCompletion | null
 
                                 assert not (isNull awaiter)
                                 sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
@@ -386,7 +386,7 @@ module CancellableTasks =
                     (MoveNextMethodImpl<_>(fun sm ->
                         //-- RESUMABLE CODE START
                         __resumeAt sm.ResumptionPoint
-                        let mutable __stack_exn: Exception = null
+                        let mutable __stack_exn: Exception | null = null
 
                         try
                             let __stack_code_fin = code.Invoke(&sm)

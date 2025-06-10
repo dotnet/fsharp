@@ -46,14 +46,7 @@ type FSharpWorkspace(checker: FSharpChecker) =
             )
         )
 
-    member internal this.Debug_DumpMermaid(path) =
-        let content =
-            depGraph.Debug_RenderMermaid (function
-                // Collapse all reference on disk nodes into one. Otherwise the graph is too big to render.
-                | WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk _ -> WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk "..."
-                | x -> x)
-
-        File.WriteAllText(__SOURCE_DIRECTORY__ + path, content)
+    member internal _.DepGraph = depGraph
 
     /// The `FSharpChecker` instance used by this workspace.
     member _.Checker = checker
