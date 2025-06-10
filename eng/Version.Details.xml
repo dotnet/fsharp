@@ -7,26 +7,26 @@
       <SourceBuild RepoName="source-build-reference-packages" ManagedOnly="true" />
     </Dependency>
     <!-- Intermediate is necessary for source build. -->
-    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.13.22-preview-25174-08">
+    <Dependency Name="Microsoft.SourceBuild.Intermediate.msbuild" Version="17.12.36-preview-25273-01">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>322e41fd23063a8c53d8b16a3df6db52638e912c</Sha>
       <SourceBuild RepoName="msbuild" ManagedOnly="true" />
     </Dependency>
-    <Dependency Name="Microsoft.Build" Version="17.13.22">
+    <Dependency Name="Microsoft.Build" Version="17.12.36">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>322e41fd23063a8c53d8b16a3df6db52638e912c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Framework" Version="17.13.22">
+    <Dependency Name="Microsoft.Build.Framework" Version="17.12.36">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>322e41fd23063a8c53d8b16a3df6db52638e912c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.13.22">
+    <Dependency Name="Microsoft.Build.Tasks.Core" Version="17.12.36">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>322e41fd23063a8c53d8b16a3df6db52638e912c</Sha>
     </Dependency>
-    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.13.22">
+    <Dependency Name="Microsoft.Build.Utilities.Core" Version="17.12.36">
       <Uri>https://github.com/dotnet/msbuild</Uri>
-      <Sha>0ca03f84b7848ce9d7d3e5d1f68c5e090efa4f30</Sha>
+      <Sha>322e41fd23063a8c53d8b16a3df6db52638e912c</Sha>
     </Dependency>
     <Dependency Name="System.Reflection.Metadata" Version="8.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
