@@ -767,7 +767,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.cmd -skipbuild
+          - script: .\Build.sh --skipbuild
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -786,7 +786,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.cmd -skipbuild
+          - script: .\Build.sh --skipbuild
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
