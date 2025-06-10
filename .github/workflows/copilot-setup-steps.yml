@@ -22,3 +22,7 @@ jobs:
         env:
           CI: false
         run: dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet
+      - name: Restore dotnet tools
+        env:
+          CI: false
+        run: dotnet tool restore
