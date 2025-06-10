@@ -2,6 +2,7 @@
 
 open System
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open Xunit
 
 [<Fact>]
@@ -36,7 +37,7 @@ let ``Inconsistent return carriage return correct text`` () =
 [<Fact>]
 let ``Zero range should return empty string`` () =
     let sourceText = SourceText.ofString "a"
-    let v = sourceText.GetSubTextFromRange Range.Zero
+    let v = sourceText.GetSubTextFromRange range0
     Assert.Equal(String.Empty, v)
     
 [<Fact>]

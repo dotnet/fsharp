@@ -1,44 +1,61 @@
 module CompilerService.FSharpWorkspace
 
 open System
+
 open Xunit
 
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
-open TestFramework
-open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis.Workspace
+open FSharp.Compiler.Diagnostics
+open FSharp.Test.ProjectGeneration.WorkspaceHelpers
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
+open OpenTelemetry.Exporter
+open System.IO
 
 #nowarn "57"
 
-type ProjectConfig with
+// System.Diagnostics.DiagnosticSource seems to be missing in NET FW. Might investigate this later
+#if !NETFRAMEWORK
 
-    static member Minimal(?name, ?outputPath, ?referencesOnDisk) =
-        let name = defaultArg name "test"
-        let projectFileName = $"{name}.fsproj"
-        let outputPath = defaultArg outputPath $"{name}.dll"
-        let referencesOnDisk = defaultArg referencesOnDisk []
-        ProjectConfig(projectFileName, Some outputPath, referencesOnDisk, [])
+//type FilteredJaegerExporter(predicate) =
 
-let getReferencedSnapshot (projectIdentifier: FSharpProjectIdentifier) (projectSnapshot: FSharpProjectSnapshot) =
-    projectSnapshot.ReferencedProjects
-        |> Seq.pick (function
-            | FSharpReference(x, snapshot) when x = projectIdentifier.OutputFileName -> Some snapshot
-            | _ -> None)
+//    inherit SimpleActivityExportProcessor(new JaegerExporter(new JaegerExporterOptions()))
 
-let sourceFileOnDisk (content: string) =
-    let path = getTemporaryFileName () + ".fs"
-    FileSystem.OpenFileForWriteShim(path).Write(content)
-    Uri(path)
+//    override _.OnEnd(activity: System.Diagnostics.Activity) =
+//        if predicate activity then
+//            base.OnEnd activity
 
-let assertFileHasContent filePath expectedContent (projectSnapshot: FSharpProjectSnapshot) =
-    let fileSnapshot =
-        projectSnapshot.SourceFiles |> Seq.find (_.FileName >> (=) filePath)
+/// Wrapper for FSharpWorkspace to use in tests. Provides OpenTelemetry tracing.
+type TestingWorkspace(testName) as _this =
+    inherit FSharpWorkspace()
 
-    Assert.Equal(expectedContent, fileSnapshot.GetSource().Result.ToString())
+    let debugGraphPath = __SOURCE_DIRECTORY__ ++ $"{testName}.md"
+
+    //let tracerProvider =
+    //    Sdk
+    //        .CreateTracerProviderBuilder()
+    //        .AddSource("fsc")
+    //        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName="F#", serviceVersion = "1"))
+    //        .AddProcessor(new FilteredJaegerExporter(_.DisplayName >> (<>) "DiagnosticsLogger.StackGuard.Guard"))
+    //        .Build()
+
+    let activity = Activity.start $"Test FSharpWorkspace {testName}" []
+
+    do _this.Projects.Debug_DumpGraphOnEveryChange <- Some debugGraphPath
+
+    member _.DebugGraphPath = debugGraphPath
+
+    interface IDisposable with
+        member _.Dispose() =
+            use _ = activity in ()
+            //tracerProvider.ForceFlush() |> ignore
+            //tracerProvider.Dispose()
 
 [<Fact>]
 let ``Add project to workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Add project to workspace")
     let projectPath = "test.fsproj"
     let outputPath = "test.dll"
     let compilerArgs = [| "test.fs" |]
@@ -51,7 +68,7 @@ let ``Add project to workspace`` () =
 
 [<Fact>]
 let ``Open file in workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Open file in workspace")
     let fileUri = Uri("file:///test.fs")
     let content = "let x = 1"
 
@@ -83,13 +100,13 @@ let ``Open file in workspace`` () =
 
 [<Fact>]
 let ``Close file in workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Close file in workspace")
 
     let contentOnDisk = "let x = 1"
     let fileOnDisk = sourceFileOnDisk contentOnDisk
 
     let _projectIdentifier =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal(), [ fileOnDisk.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty(), [ fileOnDisk.LocalPath ])
 
     workspace.Files.Open(fileOnDisk, contentOnDisk)
 
@@ -118,12 +135,12 @@ let ``Close file in workspace`` () =
 
 [<Fact>]
 let ``Change file in workspace`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Change file in workspace")
 
     let fileUri = Uri("file:///test.fs")
 
     let _projectIdentifier =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal(), [ fileUri.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty(), [ fileUri.LocalPath ])
 
     let initialContent = "let x = 2"
 
@@ -144,7 +161,7 @@ let ``Change file in workspace`` () =
 
 [<Fact>]
 let ``Add multiple projects with references`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Add multiple projects with references")
     let projectPath1 = "test1.fsproj"
     let outputPath1 = "test1.dll"
     let compilerArgs1 = [| "test1.fs" |]
@@ -174,20 +191,20 @@ let ``Add multiple projects with references`` () =
 
 [<Fact>]
 let ``Propagate changes to snapshots`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Propagate changes to snapshots")
 
     let file1 = sourceFileOnDisk "let x = 1"
-    let pid1 = workspace.Projects.AddOrUpdate(ProjectConfig.Minimal("p1"), [ file1.LocalPath ])
+    let pid1 = workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p1"), [ file1.LocalPath ])
 
     let file2 = sourceFileOnDisk "let y = 2"
 
     let pid2 =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal("p2", referencesOnDisk = [ pid1.OutputFileName ]), [ file2.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p2", referencesOnDisk = [ pid1.OutputFileName ]), [ file2.LocalPath ])
 
     let file3 = sourceFileOnDisk "let z = 3"
 
     let pid3 =
-        workspace.Projects.AddOrUpdate(ProjectConfig.Minimal("p3", referencesOnDisk = [ pid2.OutputFileName ]), [ file3.LocalPath ])
+        workspace.Projects.AddOrUpdate(ProjectConfig.Empty("p3", referencesOnDisk = [ pid2.OutputFileName ]), [ file3.LocalPath ])
 
     let s3 = workspace.Query.GetProjectSnapshot(pid3).Value
 
@@ -208,8 +225,8 @@ let ``Propagate changes to snapshots`` () =
     |> assertFileHasContent file1.LocalPath updatedContent
 
 [<Fact>]
-let ``Update project by adding a source file`` () =
-    let workspace = FSharpWorkspace()
+let ``AddOrUpdate project by adding a source file`` () =
+    use workspace = new TestingWorkspace("Update project by adding a source file")
     let projectPath = "test.fsproj"
     let outputPath = "test.dll"
     let compilerArgs = [| "test.fs" |]
@@ -223,8 +240,35 @@ let ``Update project by adding a source file`` () =
     Assert.Contains(newSourceFile, projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
 
 [<Fact>]
+let ``Update project by adding a source file`` () =
+    use workspace = new TestingWorkspace("Update project by adding a source file")
+    let projectPath = "test.fsproj"
+    let outputPath = "test.dll"
+    let compilerArgs = [| "test.fs" |]
+    let projectIdentifier = workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs)
+    let newSourceFile = "newTest.fs"
+    let newSourceFiles = [| "test.fs"; newSourceFile |]
+    workspace.Projects.Update(projectIdentifier, newSourceFiles) |> ignore
+    let projectSnapshot = workspace.Query.GetProjectSnapshot(projectIdentifier).Value
+    Assert.NotNull(projectSnapshot)
+    Assert.Contains("test.fs", projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
+    Assert.Contains(newSourceFile, projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
+
+[<Fact>]
+let ``Update project by removing a source file`` () =
+    use workspace = new TestingWorkspace("Update project by removing a source file")
+    let projectPath = "test.fsproj"
+    let outputPath = "test.dll"
+    let compilerArgs = [| "test.fs"; "newTest.fs" |]
+    let projectIdentifier = workspace.Projects.AddOrUpdate(projectPath, outputPath, compilerArgs)
+    let newCompilerArgs = [| "test.fs" |]
+    workspace.Projects.AddOrUpdate(projectPath, outputPath, newCompilerArgs) |> ignore
+    let files = workspace.Files.OfProject(projectIdentifier) |> Seq.toArray
+    Assert.Equal<string array>([| "test.fs" |], files)
+
+[<Fact>]
 let ``Update project by adding a reference`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Update project by adding a reference")
     let projectPath1 = "test1.fsproj"
     let outputPath1 = "test1.dll"
     let compilerArgs1 = [| "test1.fs" |]
@@ -254,7 +298,7 @@ let ``Update project by adding a reference`` () =
 
 [<Fact>]
 let ``Create references in existing projects`` () =
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Create references in existing projects")
     let projectPath1 = "test1.fsproj"
     let outputPath1 = "test1.dll"
     let compilerArgs1 = [| "test1.fs" |]
@@ -296,6 +340,105 @@ let ``Create references in existing projects`` () =
 [<Fact>]
 let ``Asking for an unknown project snapshot returns None`` () =
 
-    let workspace = FSharpWorkspace()
+    use workspace = new TestingWorkspace("Asking for an unknown project snapshot returns None")
 
     Assert.Equal(None, workspace.Query.GetProjectSnapshot(FSharpProjectIdentifier("hello", "world")))
+
+
+[<Fact>]
+let ``Works with signature files`` () =
+    task {
+
+        use workspace = new TestingWorkspace("Works with signature files")
+
+        let projectConfig = ProjectConfig.Create()
+
+        let sourceFileUri = projectConfig.FileUri "test.fs"
+
+        let source = "let x = 1"
+
+        let projectIdentifier = workspace.Projects.AddOrUpdate(projectConfig, [ sourceFileUri ])
+
+        workspace.Files.Open(sourceFileUri, source)
+
+        let! signatureUri, _signatureSource = workspace.AddSignatureFile(projectIdentifier, sourceFileUri, writeToDisk=false)
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(signatureUri)
+
+        Assert.Equal(0, diag.Diagnostics.Length)
+
+        workspace.Files.Edit(signatureUri, "module Test\n\nval x: potato")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(signatureUri)
+
+        Assert.Equal(1, diag.Diagnostics.Length)
+        Assert.Equal("The type 'potato' is not defined.", diag.Diagnostics[0].Message)
+
+        workspace.Files.Edit(signatureUri, "module Test\n\nval y: int")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(sourceFileUri)
+
+        Assert.Equal(1, diag.Diagnostics.Length)
+        Assert.Equal("Module 'Test' requires a value 'y'", diag.Diagnostics[0].Message)
+    }
+
+
+let reposDir = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ ".."
+let giraffeDir = reposDir ++ "Giraffe" ++ "src" ++ "Giraffe" |> Path.GetFullPath
+let giraffeTestsDir = reposDir ++ "Giraffe" ++ "tests" ++ "Giraffe.Tests" |> Path.GetFullPath
+let giraffeSampleDir = reposDir ++ "Giraffe" ++ "samples" ++ "EndpointRoutingApp" ++ "EndpointRoutingApp" |> Path.GetFullPath
+let giraffeSignaturesDir = reposDir ++ "giraffe-signatures" ++ "src" ++ "Giraffe" |> Path.GetFullPath
+let giraffeSignaturesTestsDir = reposDir ++ "giraffe-signatures" ++ "tests" ++ "Giraffe.Tests" |> Path.GetFullPath
+let giraffeSignaturesSampleDir = reposDir ++ "giraffe-signatures" ++ "samples" ++ "EndpointRoutingApp" ++ "EndpointRoutingApp" |> Path.GetFullPath
+
+type GiraffeFactAttribute() =
+    inherit Xunit.FactAttribute()
+        do
+            if not (Directory.Exists giraffeDir) then
+                do base.Skip <- $"Giraffe not found ({giraffeDir}). You can get it here: https://github.com/giraffe-fsharp/Giraffe"
+            if not (Directory.Exists giraffeSignaturesDir) then
+                do base.Skip <- $"Giraffe (with signatures) not found ({giraffeSignaturesDir}). You can get it here: https://github.com/nojaf/Giraffe/tree/signatures"
+
+
+[<GiraffeFact>]
+let ``Giraffe signature test`` () =
+    task {
+        use workspace = new TestingWorkspace("Giraffe signature test")
+
+        let responseFileName = "compilerArgs.rsp"
+
+        let _identifiers =
+            [
+                giraffeSignaturesDir
+                giraffeSignaturesTestsDir
+                giraffeSignaturesSampleDir ]
+            |> Seq.map (fun dir ->
+                let projectName = Path.GetFileName dir
+                let dllName = $"{projectName}.dll"
+                let responseFile = dir ++ responseFileName
+                let outputFile = dir ++ "bin" ++ "Debug" ++ "net6.0" ++ dllName
+                let projectFile = dir ++ projectName + ".fsproj"
+                let compilerArgs = File.ReadAllLines responseFile
+                workspace.Projects.AddOrUpdate(projectFile, outputFile, compilerArgs)
+            )
+            |> Seq.toList
+
+        let _ = workspace.Files.OpenFromDisk(giraffeSignaturesSampleDir ++ "Program.fs")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesSampleDir ++ "Program.fs"))
+        Assert.Equal(0, diag.Diagnostics.Length)
+
+        let middlewareFsiSource = workspace.Files.OpenFromDisk(giraffeSignaturesDir ++ "Middleware.fsi")
+        let middlewareFsiNewSource = middlewareFsiSource.Replace("static member AddGiraffe:", "static member AddGiraffe2:")
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesDir ++ "Middleware.fsi"))
+        Assert.Equal(0, diag.Diagnostics.Length)
+
+        workspace.Files.Edit(Uri(giraffeSignaturesDir ++ "Middleware.fsi"), middlewareFsiNewSource)
+
+        let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesSampleDir ++ "Program.fs"))
+        Assert.Equal(1, diag.Diagnostics.Length)
+        Assert.Equal("The type 'IServiceCollection' does not define the field, constructor or member 'AddGiraffe'.", diag.Diagnostics[0].Message)
+    }
+
+#endif
