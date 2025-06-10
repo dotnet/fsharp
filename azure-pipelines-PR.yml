@@ -113,14 +113,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: false
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: .\Build.cmd -skipbuild
           - script: .\eng\test-determinism.cmd -configuration Debug
             env:
               FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
@@ -142,14 +135,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - script: dotnet tool restore
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -181,14 +167,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - pwsh: ./check.ps1 -project $(_project)
             workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
             env:
@@ -769,14 +748,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -795,14 +767,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -821,14 +786,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -869,14 +827,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
@@ -900,14 +851,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: .\Build.cmd -skipbuild
           - script: dotnet tool restore
             displayName: Restore dotnet tools
           - pwsh: .\tests\ILVerify\ilverify.ps1
