@@ -102,7 +102,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | AllowTypedLetOrUseBang
+    | AllowTypedLetUseAndBang
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -236,7 +236,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.UseBangBindingValueDiscard, previewVersion
                 LanguageFeature.BetterAnonymousRecordParsing, previewVersion
                 LanguageFeature.ScopedNowarn, previewVersion
-                LanguageFeature.AllowTypedLetOrUseBang, previewVersion
+                LanguageFeature.AllowTypedLetUseAndBang, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -402,7 +402,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
-        | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
+        | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
