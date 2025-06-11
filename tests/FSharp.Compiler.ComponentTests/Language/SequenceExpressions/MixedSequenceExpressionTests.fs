@@ -222,6 +222,22 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions08.fs 	# SequenceExpressions08.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions08.fs"|])>]
+    let ``Version 9: SequenceExpressions08 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 7, Col 13, Line 7, Col 26, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 7, Col 15, Line 7, Col 20, "Incomplete expression or invalid use of indexer syntax");
+            (Error 3350, Line 8, Col 9, Line 8, Col 20, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 8, Col 14, Line 8, Col 19, "Incomplete expression or invalid use of indexer syntax");
+            (Error 3350, Line 9, Col 9, Line 9, Col 26, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 9, Col 15, Line 9, Col 20, "Incomplete expression or invalid use of indexer syntax")
+        ]
+        
+    // SOURCE=SequenceExpressions08.fs 	# SequenceExpressions08.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions08.fs"|])>]
     let ``Preview: SequenceExpressions08 fs`` compilation =
         compilation
         |> withLangVersionPreview
@@ -241,5 +257,65 @@ let f = [|-3; 1..10; 19|]
     let ``Version 9: SequenceExpressions09 fs`` compilation =
         compilation
         |> withLangVersion90
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    // SOURCE=SequenceExpressions10.fs 	# SequenceExpressions10.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions10.fs"|])>]
+    let ``Version 9: SequenceExpressions10 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 13, Line 10, Col 2, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 5, Col 5, Line 5, Col 9, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 7, Col 5, Line 7, Col 11, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 9, Col 5, Line 9, Col 11, "Incomplete expression or invalid use of indexer syntax")
+            (Error 3350, Line 12, Col 9, Line 19, Col 2, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 14, Col 5, Line 14, Col 9, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 16, Col 5, Line 16, Col 11, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 18, Col 5, Line 18, Col 11, "Incomplete expression or invalid use of indexer syntax")
+            (Error 3350, Line 20, Col 9, Line 27, Col 3, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 22, Col 5, Line 22, Col 9, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 24, Col 5, Line 24, Col 11, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 26, Col 5, Line 26, Col 11, "Incomplete expression or invalid use of indexer syntax")
+        ]
+        
+    // SOURCE=SequenceExpressions10.fs 	# SequenceExpressions10.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions10.fs"|])>]
+    let ``Preview: SequenceExpressions10 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    // SOURCE=SequenceExpressions11.fs 	# SequenceExpressions11.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions11.fs"|])>]
+    let ``Version 9: SequenceExpressions11 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 13, Line 10, Col 2, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 5, Col 5, Line 5, Col 13, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 7, Col 5, Line 7, Col 11, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 9, Col 5, Line 9, Col 14, "Incomplete expression or invalid use of indexer syntax");
+            (Error 3350, Line 12, Col 9, Line 19, Col 2, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 14, Col 5, Line 14, Col 13, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 16, Col 5, Line 16, Col 11, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 18, Col 5, Line 18, Col 14, "Incomplete expression or invalid use of indexer syntax");
+            (Error 3350, Line 20, Col 9, Line 27, Col 3, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 22, Col 5, Line 22, Col 13, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 24, Col 5, Line 24, Col 11, "Incomplete expression or invalid use of indexer syntax");
+            (Error 751, Line 26, Col 5, Line 26, Col 14, "Incomplete expression or invalid use of indexer syntax") 
+        ]
+        
+    // SOURCE=SequenceExpressions11.fs 	# SequenceExpressions11.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions11.fs"|])>]
+    let ``Preview: SequenceExpressions11 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
