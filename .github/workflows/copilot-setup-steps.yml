@@ -18,7 +18,15 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - name: Restore solution
+      - name: Restore the compiler service solution
         env:
           CI: false
         run: dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet
+      - name: Restore the language server solution
+        env:
+          CI: false
+        run: dotnet build ./VSFSharpExtension.sln --verbosity quiet
+      - name: Restore dotnet tools
+        env:
+          CI: false
+        run: dotnet tool restore
