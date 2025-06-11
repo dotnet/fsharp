@@ -4115,7 +4115,7 @@ moreBinders:
          match $3 with 
          | None -> $2
          | Some (_, SynReturnInfo((ty, _), _)) -> 
-           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang ty.Range
+           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
            SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
        let mEquals = rhs parseState 4
        let m = unionRanges (rhs parseState 1) $5.Range
@@ -4141,7 +4141,7 @@ moreBinders:
          match $3 with 
          | None -> $2
          | Some (_, SynReturnInfo((ty, _), _)) -> 
-           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang ty.Range
+           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
            SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
        let mEquals = rhs parseState 4
        let m = unionRanges (rhs parseState 1) $5.Range
@@ -4461,7 +4461,7 @@ declExpr:
   | YIELD declExpr COLON typ
      { let trivia: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = rhs parseState 1 }
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang typedExpr.Range
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang typedExpr.Range
        SynExpr.YieldOrReturn(($1, not $1), typedExpr, (unionRanges (rhs parseState 1) $4.Range), trivia) }
 
   | YIELD declExpr opt_topReturnTypeWithTypeConstraints
@@ -4471,7 +4471,7 @@ declExpr:
            | None -> $2
            | Some(_, SynReturnInfo((ty, _), m)) ->
                let m = unionRanges $2.Range m
-               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang m
+               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang m
                SynExpr.Typed($2, ty, m)
        SynExpr.YieldOrReturn(($1, not $1), expr, (unionRanges (rhs parseState 1) expr.Range), trivia) }
 
@@ -4488,7 +4488,7 @@ declExpr:
   | YIELD_BANG declExpr COLON typ
     {  let trivia: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = rhs parseState 1 }
        let typedExpr = SynExpr.Typed($2, $4, unionRanges $2.Range $4.Range)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang typedExpr.Range
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang typedExpr.Range
        SynExpr.YieldOrReturnFrom(($1, not $1), typedExpr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
   | YIELD_BANG declExpr opt_topReturnTypeWithTypeConstraints
@@ -4498,7 +4498,7 @@ declExpr:
            | None -> $2
            | Some(_, SynReturnInfo((ty, _), m)) ->
                let m = unionRanges $2.Range m
-               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang m
+               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang m
                SynExpr.Typed($2, ty, m)
        SynExpr.YieldOrReturnFrom(($1, not $1), expr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
@@ -4534,7 +4534,7 @@ declExpr:
          | None -> $2
          | Some (_, SynReturnInfo((ty, _), _)) -> 
            SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang pat.Range
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang pat.Range
        let mEquals = rhs parseState 4
        let m = unionRanges (rhs parseState 1) $9.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
@@ -4551,7 +4551,7 @@ declExpr:
          | None -> $2
          | Some (_, SynReturnInfo((ty, _), _)) -> 
            SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetOrUseBang pat.Range
+       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang pat.Range
        let mEquals = rhs parseState 4
        let m = unionRanges (rhs parseState 1) $9.Range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
