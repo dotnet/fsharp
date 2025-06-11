@@ -1,109 +1,95 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 namespace Conformance.Printing
 
-module Basic =
+module printing =
 
     open Xunit
     open FSharp.Test
     open FSharp.Test.Compiler
     open System.IO
 
-    let CompileAndRunAsFsx compilation =
+    let compileAndRunAsFsxShouldSucceed compilation =
         compilation
         |> asFsx
         |> withNoWarn 988
         |> runFsi
         |> shouldSucceed
 
-    let CompileAndRunAsFs compilation =
+    let compileAndRunAsExeShouldSucceed compilation =
         compilation
         |> asFs
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"array2D_01.fsx"|])>]
-    let ``array2D_01_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
+    [<FileInlineData("array2D.blit_01.fsx")>]
+    [<FileInlineData("array2D_01.fsx")>]
+    [<FileInlineData("array2D_01b.fsx")>]
+    [<FileInlineData("BindingsWithValues01.fsx")>]
+    [<FileInlineData("Choice01.fsx")>]
+    [<FileInlineData("CustomExceptions01.fsx")>]
+    [<FileInlineData("CustomExceptions02.fsx")>]
+    [<FileInlineData("DisposeOnSprintfA.fsx")>]
+    [<FileInlineData("LazyValues01.fsx")>]
+    [<FileInlineData("LazyValues01NetFx4.fsx")>]
+    [<FileInlineData("LazyValues02.fsx")>]
+    [<FileInlineData("LazyValues02NetFx4.fsx")>]
+    [<FileInlineData("LazyValues03.fsx")>]
+    [<FileInlineData("LazyValues03NetFx4.fsx")>]
+    [<FileInlineData("ParamArrayInSignatures.fsx")>]
+    [<FileInlineData("Quotation01.fsx")>]
+    [<FileInlineData("SignatureWithOptionalArgs01.fsx")>]
+    [<FileInlineData("ToStringOnCollections.fsx")>]
+    [<FileInlineData("UnitsOfMeasureIdentifiersRoundTrip01.fsx ")>]
+    [<FileInlineData("UnitsOfMeasuresGenericSignature01.fsx")>]
+    [<FileInlineData("UnitsOfMeasuresGenericSignature02.fsx")>]
+    [<FileInlineData("VariantTypes01.fsx")>]
+    [<FileInlineData("WidthForAFormatter.fsx")>]
+    [<Theory>]
+    let ``AsFsx`` compilation =
+        compilation
+        |> getCompilation
+        |> compileAndRunAsFsxShouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"array2D_01b.fsx"|])>]
-    let ``array2D_01b_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
+    [<FileInlineData("array2D.blit_01.fsx")>]
+    [<FileInlineData("array2D_01.fsx")>]
+    [<FileInlineData("array2D_01b.fsx")>]
+    [<FileInlineData("BindingsWithValues01.fsx")>]
+    [<FileInlineData("Choice01.fsx")>]
+    [<FileInlineData("CustomExceptions01.fsx")>]
+    [<FileInlineData("CustomExceptions02.fsx")>]
+    [<FileInlineData("DisposeOnSprintfA.fsx")>]
+    [<FileInlineData("LazyValues01.fsx")>]
+    [<FileInlineData("LazyValues01NetFx4.fsx")>]
+    [<FileInlineData("LazyValues02.fsx")>]
+    [<FileInlineData("LazyValues02NetFx4.fsx")>]
+    [<FileInlineData("LazyValues03.fsx")>]
+    [<FileInlineData("LazyValues03NetFx4.fsx")>]
+    [<FileInlineData("ParamArrayInSignatures.fsx")>]
+    [<FileInlineData("Quotation01.fsx")>]
+    [<FileInlineData("SignatureWithOptionalArgs01.fsx")>]
+    [<FileInlineData("ToStringOnCollections.fsx")>]
+    [<FileInlineData("UnitsOfMeasureIdentifiersRoundTrip01.fsx")>]
+    [<FileInlineData("UnitsOfMeasuresGenericSignature01.fsx")>]
+    [<FileInlineData("UnitsOfMeasuresGenericSignature02.fsx")>]
+    [<FileInlineData("VariantTypes01.fsx")>]
+    [<FileInlineData("WidthForAFormatter.fsx")>]
+    [<Theory>]
+    let ``AsExe`` compilation =
+        compilation
+        |> getCompilation
+        |> compileAndRunAsFsxShouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"array2D.blit_01.fsx"|])>]
-    let ``array2D_blit_01_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"Choice01.fsx"|])>]
-    let ``Choice01_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"DisposeOnSprintfA.fs"|])>]
-    let ``DisposeOnSprintfA_fs`` compilation =
-        compilation |> CompileAndRunAsFs
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"UnitsOfMeasureIdentifiersRoundTrip02.fsx"|])>]
+    [<Theory; FileInlineData("UnitsOfMeasureIdentifiersRoundTrip02.fsx")>]
     let ``UnitsOfMeasureIdentifiersRoundTrip02_fsx`` compilation =
 
         let library =
-            Fsx ( loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "../../resources/tests/Conformance/Printing/UnitsOfMeasureIdentifiersRoundTrip02.fs")))
+            Fsx ( loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "UnitsOfMeasureIdentifiersRoundTrip02.fs")))
             |> asLibrary
             |> withName "UnitsOfMeasureIdentifiersRoundTrip02"
             |> ignoreWarnings
 
         compilation
+        |> getCompilation
         |> withReferences [ library ]
-        |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"UnitsOfMeasuresGenericSignature01.fsx"|])>]
-    let ``UnitsOfMeasuresGenericSignature01_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"UnitsOfMeasuresGenericSignature02.fsx"|])>]
-    let ``UnitsOfMeasuresGenericSignature02_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"Quotation01.fs"|])>]
-    let ``Quotation01_fs`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"SignatureWithOptionalArgs01.fsx"|])>]
-    let ``SignatureWithOptionalArgs01_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"VariantTypes01.fs"|])>]
-    let ``VariantTypes01_fs`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"CustomExceptions01.fs"|])>]
-    let ``CustomExceptions01_fs`` compilation =
-        compilation |> CompileAndRunAsFs
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"CustomExceptions02.fsx"|])>]
-    let ``CustomExceptions02_fsx`` compilation =
-        compilation |>
-        CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"LazyValues01NetFx4.fsx"|])>]
-    let ``LazyValues01NetFx4_fsx`` compilation =
-        compilation |> CompileAndRunAsFs
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"LazyValues02NetFx4.fsx"|])>]
-    let ``LazyValues02NetFx4_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"LazyValues03NetFx4.fsx"|])>]
-    let ``LazyValues03NetFx4_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"WidthForAFormatter.fs"|])>]
-    let ``WidthForAFormatter_fs`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"ToStringOnCollections.fs"|])>]
-    let ``ToStringOnCollections_fs`` compilation =
-        compilation |> CompileAndRunAsFsx
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"ParamArrayInSignatures.fsx"|])>]
-    let ``ParamArrayInSignatures_fsx`` compilation =
-        compilation |> CompileAndRunAsFsx
-
+        |> compileAndRunAsFsxShouldSucceed
