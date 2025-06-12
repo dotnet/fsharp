@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj" />
+  <Project Path="src/FSharp.Compiler.LanguageServer/FSharp.Compiler.LanguageServer.fsproj" />
+  <Project Path="src/FSharp.Core/FSharp.Core.fsproj" />
+  <Project Path="src/FSharp.VisualStudio.Extension/FSharp.VisualStudio.Extension.csproj">
+    <Deploy />
+  </Project>
+</Solution>
