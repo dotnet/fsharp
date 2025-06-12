@@ -15,29 +15,35 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 
-/// Check if a list/array expression contains range expressions
-let private containsRangeExpressions elems =
-    elems
-    |> List.exists (function
-        | SynExpr.IndexRange _ -> true
-        | _ -> false)
-
 /// Adds implicit `yield!` before ranges in a mixed list/array comprehension.
 /// E.g., [-3; 1..10; 19] becomes [yield -3; yield! seq { 1..10 }; yield 19]
 let private transformMixedListWithRangesToSeqExpr elems m =
     let (|RangeExpr|_|) = RewriteRangeExpr
-    let ``yield!`` rewritten (orig: SynExpr) = SynExpr.YieldOrReturnFrom((true, false), rewritten, orig.Range, { YieldOrReturnFromKeyword = orig.Range })
-    let ``yield`` (orig: SynExpr) = SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
-    let ``;`` expr1 expr2 = SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
-    
+
+    let ``yield!`` rewritten (orig: SynExpr) =
+        SynExpr.YieldOrReturnFrom(
+            (true, false),
+            rewritten,
+            orig.Range,
+            {
+                YieldOrReturnFromKeyword = orig.Range
+            }
+        )
+
+    let ``yield`` (orig: SynExpr) =
+        SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
+
+    let ``;`` expr1 expr2 =
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
+
     let rec loop elems cont =
         match elems with
         | [] -> cont (SynExpr.Const(SynConst.Unit, m))
-        | [elem & RangeExpr rangeExpr] -> cont (``yield!`` rangeExpr elem)
-        | [elem] -> cont (``yield`` elem)
+        | [ elem & RangeExpr rangeExpr ] -> cont (``yield!`` rangeExpr elem)
+        | [ elem ] -> cont (``yield`` elem)
         | (elem & RangeExpr rangeExpr) :: elems -> loop elems (cont << ``;`` (``yield!`` rangeExpr elem))
         | elem :: elems -> loop elems (cont << ``;`` (``yield`` elem))
-    
+
     loop elems id
 
 let private TcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
@@ -125,17 +131,23 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
             | _ -> ()
 
+            let containsRangeExpressions =
+                elems
+                |> List.exists (function
+                    | SynExpr.IndexRange _ -> true
+                    | _ -> false)
+
             if
-                containsRangeExpressions elems
+                containsRangeExpressions
                 && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
             then
                 TcMixedSequencesWithRanges cenv env overallTy tpenv isArray elems m
             else
-                if containsRangeExpressions elems then
+                if containsRangeExpressions then
                     checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
 
                 let replacementExpr =
-                    // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
+                    // These are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
                     if isArray then
                         let nelems = elems.Length
 
