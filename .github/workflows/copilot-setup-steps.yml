@@ -22,10 +22,6 @@ jobs:
         env:
           CI: false
         run: dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet
-      - name: Restore the language server solution
-        env:
-          CI: false
-        run: dotnet build ./VSFSharpExtension.sln --verbosity quiet
       - name: Restore dotnet tools
         env:
           CI: false
