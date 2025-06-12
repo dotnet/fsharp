@@ -7,8 +7,8 @@ on:
     - cron: '0 13 * * *'
 
 permissions:
-  contents: write
-  issues: write
+  contents: read
+  issues: read
   pull-requests: read
 
 jobs:
@@ -80,7 +80,75 @@ jobs:
       if: steps.command-extractor.outputs.result == 'xlf'
       id: xlf
       run: dotnet build src/Compiler /t:UpdateXlf
-
+    - name: Process ilverify command (Update ILVerify baselines)
+      if: steps.command-extractor.outputs.result == 'ilverify'
+      id: ilverify
+      env:
+        TEST_UPDATE_BSL: 1
+      run: |
+        # Run the ilverify script with TEST_UPDATE_BSL=1
+        pwsh tests/ILVerify/ilverify.ps1
+        
+        # Calculate the changes per file
+        echo "Checking for changes in baseline files..."
+        FILES_CHANGED=0
+        CHANGES_OUTPUT=""
+        
+        for file in tests/ILVerify/*.bsl; do
+          if git diff --quiet "$file"; then
+            continue
+          else
+            FILES_CHANGED=$((FILES_CHANGED + 1))
+            LINES_CHANGED=$(git diff --numstat "$file" | awk '{print $1 + $2}')
+            CHANGES_OUTPUT="${CHANGES_OUTPUT}${file}: ${LINES_CHANGED} lines changed\n"
+          fi
+        done
+        
+        if [ "$FILES_CHANGED" -eq 0 ]; then
+          echo "result=The ilverify command ran and did not modify any baseline." >> $GITHUB_OUTPUT
+        else
+          echo -e "result=The ilverify command ran and triggered the following number of changes per file:\n${CHANGES_OUTPUT}" >> $GITHUB_OUTPUT
+        fi          
+    - name: Generate patch
+      id: generate_patch
+      run: git diff > workflow.patch
+    - name: Upload patch
+      uses: actions/upload-artifact@v4
+      with:
+        name: workflowpatch
+        path: workflow.patch
+  save_command:
+    needs: run_command
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get github ref
+      uses: actions/github-script@v3
+      id: get-pr
+      with:
+        script: |
+          const result = await github.pulls.get({
+            pull_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          return { "ref": result.data.head.ref, "repository": result.data.head.repo.full_name};
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ fromJson(steps.get-pr.outputs.result).repository }}
+        ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
+        fetch-depth: 0
+    - name: Download patch from run step
+      uses: actions/download-artifact@v4
+      with:
+        name: workflowpatch
+    - name: Apply patch
+      id: apply_patch
+      run: git apply workflow.patch
     - name: Commit and push changes
       if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
       run: |
