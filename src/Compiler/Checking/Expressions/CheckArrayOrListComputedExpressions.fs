@@ -25,45 +25,20 @@ let private containsRangeExpressions elems =
 /// Adds implicit `yield!` before ranges in a mixed list/array comprehension.
 /// E.g., [-3; 1..10; 19] becomes [yield -3; yield! seq { 1..10 }; yield 19]
 let private transformMixedListWithRangesToSeqExpr elems m =
-    let rec buildBody elems =
+    let (|RangeExpr|_|) = RewriteRangeExpr
+    let ``yield!`` rewritten (orig: SynExpr) = SynExpr.YieldOrReturnFrom((true, false), rewritten, orig.Range, { YieldOrReturnFromKeyword = orig.Range })
+    let ``yield`` (orig: SynExpr) = SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
+    let ``;`` expr1 expr2 = SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
+    
+    let rec loop elems cont =
         match elems with
-        | [] -> SynExpr.Const(SynConst.Unit, m)
-        | [ elem ] ->
-            match elem with
-            | SynExpr.IndexRange _ ->
-                match RewriteRangeExpr elem with
-                | Some rewritten ->
-                    SynExpr.YieldOrReturnFrom(
-                        (true, false),
-                        rewritten,
-                        elem.Range,
-                        {
-                            YieldOrReturnFromKeyword = elem.Range
-                        }
-                    )
-                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-        | elem :: rest ->
-            let headExpr =
-                match elem with
-                | SynExpr.IndexRange _ ->
-                    match RewriteRangeExpr elem with
-                    | Some rewritten ->
-                        SynExpr.YieldOrReturnFrom(
-                            (true, false),
-                            rewritten,
-                            elem.Range,
-                            {
-                                YieldOrReturnFromKeyword = elem.Range
-                            }
-                        )
-                    | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-
-            let tailExpr = buildBody rest
-            SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, headExpr, tailExpr, m, SynExprSequentialTrivia.Zero)
-
-    buildBody elems
+        | [] -> cont (SynExpr.Const(SynConst.Unit, m))
+        | [elem & RangeExpr rangeExpr] -> cont (``yield!`` rangeExpr elem)
+        | [elem] -> cont (``yield`` elem)
+        | (elem & RangeExpr rangeExpr) :: elems -> loop elems (cont << ``;`` (``yield!`` rangeExpr elem))
+        | elem :: elems -> loop elems (cont << ``;`` (``yield`` elem))
+    
+    loop elems id
 
 let private TcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
     let g = cenv.g
