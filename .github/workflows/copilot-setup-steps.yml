@@ -21,11 +21,11 @@ jobs:
       - name: Restore the compiler service solution
         env:
           CI: false
-        run: dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet
+        run: ./build.sh -c Release --verbosity quiet
       - name: Restore the language server solution
         env:
           CI: false
-        run: dotnet build ./VSFSharpExtension.sln --verbosity quiet
+        run: dotnet build ./LSPSolutionSlim.sln -c Release --verbosity quiet
       - name: Restore dotnet tools
         env:
           CI: false
