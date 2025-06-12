@@ -2217,6 +2217,10 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
+        // Add this check after CheckClosedInputSet
+        if tcConfig.typeCheckOnly then
+            raise StopProcessing
+
         let codegenResults, optEnv, fragName =
             ProcessTypedImpl(
                 diagnosticsLogger,
