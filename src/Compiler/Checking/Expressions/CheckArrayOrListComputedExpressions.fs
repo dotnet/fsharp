@@ -22,8 +22,8 @@ let private containsRangeExpressions elems =
         | SynExpr.IndexRange _ -> true
         | _ -> false)
 
-/// Transform a mixed list/array with ranges into a sequence computation expression
-/// E.g., [-3; 1..10; 19] becomes seq { yield -3; yield! 1..10; yield 19 }
+/// Adds implicit `yield!` before ranges in a mixed list/array comprehension.
+/// E.g., [-3; 1..10; 19] becomes [yield -3; yield! seq { 1..10 }; yield 19]
 let private transformMixedListWithRangesToSeqExpr elems m =
     let rec buildBody elems =
         match elems with
