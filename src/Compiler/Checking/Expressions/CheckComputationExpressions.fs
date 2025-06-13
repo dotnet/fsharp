@@ -1581,15 +1581,17 @@ let rec TryTranslateComputationExpression
                     && hasBuilderMethod "Delay" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m
 
                 if builderSupportsMixedRanges ceenv m then
-                    let rec transformSequenceWithRanges ceenv expr =
-                        match expr with
-                        | SynExpr.Sequential(sp, true, e1, e2, m, trivia) ->
-                            // Transform each part to yield/yieldFrom
-                            let e1Transformed = TransformExprToYieldOrYieldFrom ceenv e1
-                            let e2Transformed = transformSequenceWithRanges ceenv e2
-                            // Create a new sequential expression with the transformed parts
-                            SynExpr.Sequential(sp, true, e1Transformed, e2Transformed, m, trivia)
-                        | e -> TransformExprToYieldOrYieldFrom ceenv e
+                    let transformSequenceWithRanges ceenv expr =
+                        let rec loop expr cont =
+                            match expr with
+                            | SynExpr.Sequential(sp, true, e1, e2, m, trivia) ->
+                                // Transform each part to yield/yieldFrom
+                                let e1Transformed = TransformExprToYieldOrYieldFrom ceenv e1
+                                // Create a new sequential expression with the transformed parts
+                                loop e2 (cont << fun e2Transformed -> SynExpr.Sequential(sp, true, e1Transformed, e2Transformed, m, trivia))
+                            | e -> cont (TransformExprToYieldOrYieldFrom ceenv e)
+                    
+                        loop expr id
 
                     let transformed = transformSequenceWithRanges ceenv comp
                     Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace transformed translatedCtxt)
