@@ -1563,11 +1563,14 @@ let rec TryTranslateComputationExpression
                 Some(ConsumeCustomOpClauses ceenv comp q varSpace dataCompPriorToOp comp false mClause)
 
         | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, _) ->
-            let rec containsRangeExpressions expr =
-                match expr with
-                | SynExpr.IndexRange _ -> true
-                | SynExpr.Sequential(_, true, e1, e2, _, _) -> containsRangeExpressions e1 || containsRangeExpressions e2
-                | _ -> false
+            let containsRangeExpressions expr =
+                let rec loop exprs =
+                    match exprs with
+                    | SynExpr.IndexRange _ :: _ -> true
+                    | SynExpr.Sequential(_, true, e1, e2, _, _) :: exprs -> loop (e1 :: e2 :: exprs)
+                    | _ -> false
+
+                loop [ expr ]
 
             let containsRangeExpressions = containsRangeExpressions comp
 
