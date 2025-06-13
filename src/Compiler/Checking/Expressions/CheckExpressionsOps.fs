@@ -397,7 +397,7 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 
 /// Adds implicit `yield!` before ranges in a mixed list/array comprehension.
 /// E.g., [-3; 1..10; 19] becomes [yield -3; yield! seq { 1..10 }; yield 19]
-let transformMixedListWithRangesToSeqExpr elems m =
+let insertImplicitYieldsAndYieldBangs elems m =
     let (|RangeExpr|_|) = RewriteRangeExpr
 
     let ``yield!`` rewritten (orig: SynExpr) =
