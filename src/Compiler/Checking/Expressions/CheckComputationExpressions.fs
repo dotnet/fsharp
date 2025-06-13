@@ -1581,14 +1581,25 @@ let rec TryTranslateComputationExpression
                     && hasBuilderMethod "Delay" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m
 
                 if builderSupportsMixedRanges ceenv m then
-                    let transformed = TransformSequenceWithRanges ceenv comp
+                    let rec transformSequenceWithRanges ceenv expr =
+                        match expr with
+                        | SynExpr.Sequential(sp, true, e1, e2, m, trivia) ->
+                            // Transform each part to yield/yieldFrom
+                            let e1Transformed = TransformExprToYieldOrYieldFrom ceenv e1
+                            let e2Transformed = transformSequenceWithRanges ceenv e2
+                            // Create a new sequential expression with the transformed parts
+                            SynExpr.Sequential(sp, true, e1Transformed, e2Transformed, m, trivia)
+                        | e -> TransformExprToYieldOrYieldFrom ceenv e
+
+                    let transformed = transformSequenceWithRanges ceenv comp
                     Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace transformed translatedCtxt)
                 else
                     None
             // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore innerComp1
             elif ceenv.isQuery && checkForBinaryApp ceenv innerComp1 then
-                // if containsRangeExpressions then
-                //     reportRangeExpressionsNotSupported ceenv comp
+                if containsRangeExpressions then
+                    reportRangeExpressionsNotSupported ceenv comp
+
                 Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
             else
@@ -2721,18 +2732,6 @@ and TransformExprToYieldOrYieldFrom ceenv expr =
             // If we can't rewrite range, yield the expression
             SynExpr.YieldOrReturn((true, false), expr, expr.Range, { YieldOrReturnKeyword = expr.Range })
     | e -> SynExpr.YieldOrReturn((true, false), e, e.Range, { YieldOrReturnKeyword = e.Range })
-
-/// Transform a sequential expression with ranges into yields and yieldFroms
-and TransformSequenceWithRanges ceenv expr =
-    match expr with
-    | SynExpr.Sequential(sp, true, e1, e2, m, trivia) ->
-        // Transform each part to yield/yieldFrom
-        let e1Transformed = TransformExprToYieldOrYieldFrom ceenv e1
-        let e2Transformed = TransformSequenceWithRanges ceenv e2
-
-        // Create a new sequential expression with the transformed parts
-        SynExpr.Sequential(sp, true, e1Transformed, e2Transformed, m, trivia)
-    | e -> TransformExprToYieldOrYieldFrom ceenv e
 
 and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) firstTry q varSpace comp translatedCtxt =
 

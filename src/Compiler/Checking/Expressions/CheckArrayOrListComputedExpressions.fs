@@ -13,40 +13,8 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Features
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTrivia
 
-/// Adds implicit `yield!` before ranges in a mixed list/array comprehension.
-/// E.g., [-3; 1..10; 19] becomes [yield -3; yield! seq { 1..10 }; yield 19]
-let private transformMixedListWithRangesToSeqExpr elems m =
-    let (|RangeExpr|_|) = RewriteRangeExpr
-
-    let ``yield!`` rewritten (orig: SynExpr) =
-        SynExpr.YieldOrReturnFrom(
-            (true, false),
-            rewritten,
-            orig.Range,
-            {
-                YieldOrReturnFromKeyword = orig.Range
-            }
-        )
-
-    let ``yield`` (orig: SynExpr) =
-        SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
-
-    let ``;`` expr1 expr2 =
-        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
-
-    let rec loop elems cont =
-        match elems with
-        | [] -> cont (SynExpr.Const(SynConst.Unit, m))
-        | [ elem & RangeExpr rangeExpr ] -> cont (``yield!`` rangeExpr elem)
-        | [ elem ] -> cont (``yield`` elem)
-        | (elem & RangeExpr rangeExpr) :: elems -> loop elems (cont << ``;`` (``yield!`` rangeExpr elem))
-        | elem :: elems -> loop elems (cont << ``;`` (``yield`` elem))
-
-    loop elems id
-
-let private TcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
+let private tcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
     let g = cenv.g
     let transformedBody = transformMixedListWithRangesToSeqExpr elems m
 
@@ -141,7 +109,7 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 containsRangeExpressions
                 && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
             then
-                TcMixedSequencesWithRanges cenv env overallTy tpenv isArray elems m
+                tcMixedSequencesWithRanges cenv env overallTy tpenv isArray elems m
             else
                 if containsRangeExpressions then
                     checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m

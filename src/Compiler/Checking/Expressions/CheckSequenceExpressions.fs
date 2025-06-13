@@ -451,46 +451,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     delayedExpr, tpenv
 
 let private TcMixedSequencesWithRanges cenv env tpenv overallTy elems m =
-    let rec buildSeqBody elems =
-        match elems with
-        | [] -> SynExpr.Const(SynConst.Unit, m)
-        | [ elem ] ->
-            match elem with
-            | SynExpr.IndexRange _ ->
-                match RewriteRangeExpr elem with
-                | Some rewrittenRange ->
-                    SynExpr.YieldOrReturnFrom(
-                        (true, false),
-                        rewrittenRange,
-                        elem.Range,
-                        {
-                            YieldOrReturnFromKeyword = elem.Range
-                        }
-                    )
-                | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-            | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-        | elem :: rest ->
-            let headExpr =
-                match elem with
-                | SynExpr.IndexRange _ ->
-                    match RewriteRangeExpr elem with
-                    | Some rewrittenRange ->
-                        SynExpr.YieldOrReturnFrom(
-                            (true, false),
-                            rewrittenRange,
-                            elem.Range,
-                            {
-                                YieldOrReturnFromKeyword = elem.Range
-                            }
-                        )
-                    | None -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-                | _ -> SynExpr.YieldOrReturn((true, false), elem, elem.Range, { YieldOrReturnKeyword = elem.Range })
-
-            let tailExpr = buildSeqBody rest
-
-            SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, headExpr, tailExpr, m, SynExprSequentialTrivia.Zero)
-
-    let transformedBody = buildSeqBody elems
+    let transformedBody = transformMixedListWithRangesToSeqExpr elems m
     TcSequenceExpression cenv env tpenv transformedBody overallTy m
 
 let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
