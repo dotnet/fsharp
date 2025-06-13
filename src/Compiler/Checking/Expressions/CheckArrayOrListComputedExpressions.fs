@@ -173,6 +173,49 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
 
                 TcExprUndelayed cenv overallTy env tpenv replacementExpr
         | _ ->
+            let containsExplicitYields =
+                let rec hasYieldBang expr cont =
+                    match expr with
+                    | SynExpr.YieldOrReturnFrom _ -> cont true
+                    | SynExpr.Sequential(_, _, e1, e2, _, _) ->
+                        hasYieldBang e1 (fun e1Has -> if e1Has then cont true else hasYieldBang e2 cont)
+                    | _ -> cont false
+
+                hasYieldBang comp id
+
+            // Transform mixed expressions with explicit yields to ensure all elements are properly yielded
+            let comp =
+                if
+                    containsExplicitYields
+                    && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                then
+                    match comp with
+                    | SynExpr.Sequential _ ->
+                        // Extract the elements from the sequential expression
+                        let rec getElems expr acc =
+                            match expr with
+                            | SynExpr.Sequential(_, true, e1, e2, _, _) -> getElems e2 (e1 :: acc)
+                            | e -> List.rev (e :: acc)
+
+                        let elems = getElems comp []
+                        transformMixedListWithExplicitYields elems m
+                    | _ -> comp
+                else if containsExplicitYields then
+                    // Check if any element is a range expression (tail recursive)
+                    let rec hasRangeInMixedYield expr cont =
+                        match expr with
+                        | SynExpr.IndexRange _ -> cont true
+                        | SynExpr.Sequential(_, _, e1, e2, _, _) ->
+                            hasRangeInMixedYield e1 (fun e1Has -> if e1Has then cont true else hasRangeInMixedYield e2 cont)
+                        | _ -> cont false
+
+                    if hasRangeInMixedYield comp id then
+                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+
+                    comp
+                else
+                    comp
+
             let genCollElemTy = NewInferenceType g
 
             let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy

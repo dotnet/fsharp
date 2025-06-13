@@ -425,3 +425,39 @@ let transformMixedListWithRangesToSeqExpr elems m =
         | elem :: elems -> loop elems (cont << ``;`` (``yield`` elem))
 
     loop elems id
+
+/// Transforms mixed lists/arrays that contain explicit yield! expressions.
+/// E.g., [1..10; 19; yield! 20..30] becomes [yield! 1..10; yield 19; yield! 20..30]
+let transformMixedListWithExplicitYields elems m =
+    let (|RangeExpr|_|) = RewriteRangeExpr
+
+    let ``yield!`` rewritten (orig: SynExpr) =
+        SynExpr.YieldOrReturnFrom(
+            (true, false),
+            rewritten,
+            orig.Range,
+            {
+                YieldOrReturnFromKeyword = orig.Range
+            }
+        )
+
+    let ``yield`` (orig: SynExpr) =
+        SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
+
+    let ``;`` expr1 expr2 =
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
+
+    let rec transformExpr expr cont =
+        match expr with
+        | RangeExpr rangeExpr -> cont (``yield!`` rangeExpr expr)
+        | SynExpr.YieldOrReturnFrom _ -> cont expr
+        | SynExpr.YieldOrReturn _ -> cont expr
+        | _ -> cont (``yield`` expr)
+
+    let rec loop elems cont =
+        match elems with
+        | [] -> cont (SynExpr.Const(SynConst.Unit, m))
+        | [ elem ] -> transformExpr elem cont
+        | elem :: elems -> transformExpr elem (fun transformedElem -> loop elems (fun restExpr -> cont (``;`` transformedElem restExpr)))
+
+    loop elems id

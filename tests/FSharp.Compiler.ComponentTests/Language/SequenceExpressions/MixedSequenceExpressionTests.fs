@@ -319,3 +319,49 @@ let f = [|-3; 1..10; 19|]
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // SOURCE=SequenceExpressions12.fs 	# SequenceExpressions12.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions12.fs"|])>]
+    let ``Version 9: SequenceExpressions12 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 18, Line 3, Col 23, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")              
+        ]
+        
+    // SOURCE=SequenceExpressions12.fs 	# SequenceExpressions12.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions12.fs"|])>]
+    let ``Preview: SequenceExpressions12 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions13.fs 	# SequenceExpressions13.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions13.fs"|])>]
+    let ``Version 9: SequenceExpressions13 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 18, Line 3, Col 23, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 5, Col 38, Line 5, Col 44, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 9, Col 9, Line 9, Col 37, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 9, Col 11, Line 9, Col 16, "Incomplete expression or invalid use of indexer syntax");
+            (Error 3350, Line 9, Col 29, Line 9, Col 35, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 10, Col 22, Line 10, Col 27, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 10, Col 40, Line 10, Col 46, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 11, Col 19, Line 11, Col 24, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 11, Col 37, Line 11, Col 43, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+        
+    // SOURCE=SequenceExpressions13.fs 	# SequenceExpressions13.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions13.fs"|])>]
+    let ``Preview: SequenceExpressions13 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed

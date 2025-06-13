@@ -2247,6 +2247,26 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt callExpr)
 
         | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
+            let isRangeExpr =
+                match synYieldExpr with
+                | SynExpr.IndexRange _ -> true
+                | _ -> false
+
+            if
+                isRangeExpr
+                && not (ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions)
+            then
+                checkLanguageFeatureAndRecover
+                    ceenv.cenv.g.langVersion
+                    LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                    synYieldExpr.Range
+
+            // Rewrite range expressions in yield! to their sequence form
+            let synYieldExpr =
+                match RewriteRangeExpr synYieldExpr with
+                | Some rewrittenExpr -> rewrittenExpr
+                | None -> synYieldExpr
+
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 

@@ -364,6 +364,27 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
         | SynExpr.YieldOrReturnFrom(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnFromKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
+
+            let isRangeExpr =
+                match synYieldExpr with
+                | SynExpr.IndexRange _ -> true
+                | _ -> false
+
+            if
+                isRangeExpr
+                && not (cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions)
+            then
+                checkLanguageFeatureAndRecover
+                    cenv.g.langVersion
+                    LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                    synYieldExpr.Range
+
+            // Rewrite range expressions in yield! to their sequence form
+            let synYieldExpr =
+                match RewriteRangeExpr synYieldExpr with
+                | Some rewrittenExpr -> rewrittenExpr
+                | None -> synYieldExpr
+
             let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 
             if not isYield then
