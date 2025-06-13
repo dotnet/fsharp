@@ -451,7 +451,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     delayedExpr, tpenv
 
 let private TcMixedSequencesWithRanges cenv env tpenv overallTy elems m =
-    let transformedBody = transformMixedListWithRangesToSeqExpr elems m
+    let transformedBody = insertImplicitYieldsAndYieldBangs elems m
     TcSequenceExpression cenv env tpenv transformedBody overallTy m
 
 let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
