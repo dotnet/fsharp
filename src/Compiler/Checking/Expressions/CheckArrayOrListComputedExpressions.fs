@@ -16,7 +16,7 @@ open FSharp.Compiler.Syntax
 
 let private tcMixedSequencesWithRanges (cenv: TcFileState) env overallTy tpenv isArray elems m =
     let g = cenv.g
-    let transformedBody = transformMixedListWithRangesToSeqExpr elems m
+    let transformedBody = insertImplicitYieldsAndYieldBangs elems m
 
     let genCollElemTy = NewInferenceType g
     let genCollTy = (if isArray then mkArrayType else mkListTy) g genCollElemTy

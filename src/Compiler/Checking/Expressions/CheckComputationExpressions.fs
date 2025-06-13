@@ -1563,13 +1563,29 @@ let rec TryTranslateComputationExpression
                 Some(ConsumeCustomOpClauses ceenv comp q varSpace dataCompPriorToOp comp false mClause)
 
         | SynExpr.Sequential(sp, true, innerComp1, innerComp2, m, _) ->
-            let rec containsRangeExpressions expr =
-                match expr with
-                | SynExpr.IndexRange _ -> true
-                | SynExpr.Sequential(_, true, e1, e2, _, _) -> containsRangeExpressions e1 || containsRangeExpressions e2
-                | _ -> false
+            let containsRangeExpressions expr =
+                let rec loop exprs =
+                    match exprs with
+                    | SynExpr.IndexRange _ :: _ -> true
+                    | SynExpr.Sequential(_, true, e1, e2, _, _) :: exprs -> loop (e1 :: e2 :: exprs)
+                    | _ -> false
+
+                loop [ expr ]
 
             let containsRangeExpressions = containsRangeExpressions comp
+
+            /// Report language feature error for each range expression in a sequence
+            let reportRangeExpressionsNotSupported ceenv expr =
+                let rec loop exprs =
+                    match exprs with
+                    | [] -> ()
+                    | SynExpr.IndexRange(_, _, _, _, _, m) :: exprs ->
+                        checkLanguageFeatureAndRecover ceenv.cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+                        loop exprs
+                    | SynExpr.Sequential(_, true, e1, e2, _, _) :: exprs -> loop (e1 :: e2 :: exprs)
+                    | _ :: exprs -> loop exprs
+
+                loop [ expr ]
 
             if
                 ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
@@ -1581,15 +1597,20 @@ let rec TryTranslateComputationExpression
                     && hasBuilderMethod "Delay" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m
 
                 if builderSupportsMixedRanges ceenv m then
-                    let rec transformSequenceWithRanges ceenv expr =
-                        match expr with
-                        | SynExpr.Sequential(sp, true, e1, e2, m, trivia) ->
-                            // Transform each part to yield/yieldFrom
-                            let e1Transformed = TransformExprToYieldOrYieldFrom ceenv e1
-                            let e2Transformed = transformSequenceWithRanges ceenv e2
-                            // Create a new sequential expression with the transformed parts
-                            SynExpr.Sequential(sp, true, e1Transformed, e2Transformed, m, trivia)
-                        | e -> TransformExprToYieldOrYieldFrom ceenv e
+                    let transformSequenceWithRanges ceenv expr =
+                        let rec loop expr cont =
+                            match expr with
+                            | SynExpr.Sequential(sp, true, e1, e2, m, trivia) ->
+                                // Transform each part to yield/yieldFrom
+                                let e1Transformed = TransformExprToYieldOrYieldFrom ceenv e1
+                                // Create a new sequential expression with the transformed parts
+                                loop
+                                    e2
+                                    (cont
+                                     << fun e2Transformed -> SynExpr.Sequential(sp, true, e1Transformed, e2Transformed, m, trivia))
+                            | e -> cont (TransformExprToYieldOrYieldFrom ceenv e)
+
+                        loop expr id
 
                     let transformed = transformSequenceWithRanges ceenv comp
                     Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace transformed translatedCtxt)
@@ -2702,56 +2723,25 @@ and isSimpleExpr ceenv comp =
     | SynExpr.DoBang _ -> false
     | _ -> true
 
-/// Report language feature error for each range expression in a sequence
-and reportRangeExpressionsNotSupported ceenv expr =
-    match expr with
-    | SynExpr.IndexRange(_, _, _, _, _, m) ->
-        checkLanguageFeatureAndRecover ceenv.cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
-    | SynExpr.Sequential(_, true, e1, e2, _, _) ->
-        reportRangeExpressionsNotSupported ceenv e1
-        reportRangeExpressionsNotSupported ceenv e2
-    | _ -> ()
-
-/// Check if this is a simple semicolon sequence (potentially with ranges)
-and isSimpleSemicolonSequence ceenv expr =
-    match expr with
-    | SynExpr.Sequential(_, true, e1, e2, _, _) -> isSimpleExpr ceenv e1 && isSimpleSemicolonSequence ceenv e2
-    | e -> isSimpleExpr ceenv e
-
 /// Transform a single expression to Yield or YieldFrom based on whether it's a range
 and TransformExprToYieldOrYieldFrom ceenv expr =
-    match expr with
-    | SynExpr.IndexRange _ ->
-        match RewriteRangeExpr expr with
-        | Some rewrittenRange ->
-            // Check if YieldFrom is available
-            match
-                TryFindIntrinsicOrExtensionMethInfo
-                    ResultCollectionSettings.AllResults
-                    ceenv.cenv
-                    ceenv.env
-                    expr.Range
-                    ceenv.ad
-                    "YieldFrom"
-                    ceenv.builderTy
-            with
-            | [] ->
-                // No YieldFrom, use Yield
-                // Create a YieldOrReturn expression and let the CE machinery handle it
-                SynExpr.YieldOrReturn((true, false), rewrittenRange, expr.Range, { YieldOrReturnKeyword = expr.Range })
-            | _ ->
-                SynExpr.YieldOrReturnFrom(
-                    (true, false),
-                    rewrittenRange,
-                    expr.Range,
-                    {
-                        YieldOrReturnFromKeyword = expr.Range
-                    }
-                )
-        | None ->
-            // If we can't rewrite range, yield the expression
-            SynExpr.YieldOrReturn((true, false), expr, expr.Range, { YieldOrReturnKeyword = expr.Range })
-    | e -> SynExpr.YieldOrReturn((true, false), e, e.Range, { YieldOrReturnKeyword = e.Range })
+    let m = expr.Range
+
+    let ``yield!`` rewrittenRange =
+        SynExpr.YieldOrReturnFrom((true, false), rewrittenRange, m, { YieldOrReturnFromKeyword = m })
+
+    let ``yield`` rewrittenRange =
+        SynExpr.YieldOrReturn((true, false), rewrittenRange, m, { YieldOrReturnKeyword = m })
+
+    // If there is no YieldFrom defined on the builder, use Yield;
+    // create a YieldOrReturn expression and let the CE machinery handle it.
+    match RewriteRangeExpr expr with
+    | Some rewrittenRange ->
+        if hasBuilderMethod "YieldFrom" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m then
+            ``yield!`` rewrittenRange
+        else
+            ``yield`` rewrittenRange
+    | None -> ``yield`` expr
 
 and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) firstTry q varSpace comp translatedCtxt =
 
