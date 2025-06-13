@@ -2700,38 +2700,23 @@ and isSimpleSemicolonSequence ceenv expr =
 
 /// Transform a single expression to Yield or YieldFrom based on whether it's a range
 and TransformExprToYieldOrYieldFrom ceenv expr =
-    match expr with
-    | SynExpr.IndexRange _ ->
-        match RewriteRangeExpr expr with
-        | Some rewrittenRange ->
-            // Check if YieldFrom is available
-            match
-                TryFindIntrinsicOrExtensionMethInfo
-                    ResultCollectionSettings.AllResults
-                    ceenv.cenv
-                    ceenv.env
-                    expr.Range
-                    ceenv.ad
-                    "YieldFrom"
-                    ceenv.builderTy
-            with
-            | [] ->
-                // No YieldFrom, use Yield
-                // Create a YieldOrReturn expression and let the CE machinery handle it
-                SynExpr.YieldOrReturn((true, false), rewrittenRange, expr.Range, { YieldOrReturnKeyword = expr.Range })
-            | _ ->
-                SynExpr.YieldOrReturnFrom(
-                    (true, false),
-                    rewrittenRange,
-                    expr.Range,
-                    {
-                        YieldOrReturnFromKeyword = expr.Range
-                    }
-                )
-        | None ->
-            // If we can't rewrite range, yield the expression
-            SynExpr.YieldOrReturn((true, false), expr, expr.Range, { YieldOrReturnKeyword = expr.Range })
-    | e -> SynExpr.YieldOrReturn((true, false), e, e.Range, { YieldOrReturnKeyword = e.Range })
+    let m = expr.Range
+    
+    let ``yield!`` rewrittenRange =
+        SynExpr.YieldOrReturnFrom((true, false), rewrittenRange, m, { YieldOrReturnFromKeyword = m })
+    
+    let ``yield`` rewrittenRange =
+        SynExpr.YieldOrReturn((true, false), rewrittenRange, m, { YieldOrReturnKeyword = m })
+    
+    // If there is no YieldFrom defined on the builder, use Yield;
+    // create a YieldOrReturn expression and let the CE machinery handle it.
+    match RewriteRangeExpr expr with
+    | Some rewrittenRange ->
+        if hasBuilderMethod "YieldFrom" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m then
+            ``yield!`` rewrittenRange
+        else
+            ``yield`` rewrittenRange
+    | None -> ``yield`` expr
 
 and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) firstTry q varSpace comp translatedCtxt =
 
