@@ -381,9 +381,12 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
             // Rewrite range expressions in yield! to their sequence form
             let synYieldExpr =
-                match RewriteRangeExpr synYieldExpr with
-                | Some rewrittenExpr -> rewrittenExpr
-                | None -> synYieldExpr
+                if isRangeExpr then
+                    match RewriteRangeExpr synYieldExpr with
+                    | Some rewrittenExpr -> rewrittenExpr
+                    | None -> synYieldExpr
+                else
+                    synYieldExpr
 
             let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 

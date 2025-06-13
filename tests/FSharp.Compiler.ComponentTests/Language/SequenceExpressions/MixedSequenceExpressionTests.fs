@@ -365,3 +365,19 @@ let f = [|-3; 1..10; 19|]
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // SOURCE=SequenceExpressions14.fs 	# SequenceExpressions14.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions14.fs"|])>]
+    let ``Version 9: SequenceExpressions14 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions13.fs 	# SequenceExpressions13.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions14.fs"|])>]
+    let ``Preview: SequenceExpressions14 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed

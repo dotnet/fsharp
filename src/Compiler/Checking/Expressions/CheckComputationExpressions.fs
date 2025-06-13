@@ -2284,9 +2284,12 @@ let rec TryTranslateComputationExpression
 
             // Rewrite range expressions in yield! to their sequence form
             let synYieldExpr =
-                match RewriteRangeExpr synYieldExpr with
-                | Some rewrittenExpr -> rewrittenExpr
-                | None -> synYieldExpr
+                if isRangeExpr then
+                    match RewriteRangeExpr synYieldExpr with
+                    | Some rewrittenExpr -> rewrittenExpr
+                    | None -> synYieldExpr
+                else
+                    synYieldExpr
 
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName

@@ -452,6 +452,23 @@ let transformMixedListWithExplicitYields elems m =
         | RangeExpr rangeExpr -> cont (``yield!`` rangeExpr expr)
         | SynExpr.YieldOrReturnFrom _ -> cont expr
         | SynExpr.YieldOrReturn _ -> cont expr
+        | SynExpr.IfThenElse(ifExpr, thenExpr, elseExprOpt, spIfToThen, isFromErrorRecovery, range, trivia) ->
+            transformExpr thenExpr (fun transformedThen ->
+                match elseExprOpt with
+                | Some elseExpr ->
+                    transformExpr elseExpr (fun transformedElse ->
+                        cont (
+                            SynExpr.IfThenElse(
+                                ifExpr,
+                                transformedThen,
+                                Some transformedElse,
+                                spIfToThen,
+                                isFromErrorRecovery,
+                                range,
+                                trivia
+                            )
+                        ))
+                | None -> cont (SynExpr.IfThenElse(ifExpr, transformedThen, None, spIfToThen, isFromErrorRecovery, range, trivia)))
         | _ -> cont (``yield`` expr)
 
     let rec loop elems cont =
