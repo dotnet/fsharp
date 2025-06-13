@@ -2697,12 +2697,6 @@ and reportRangeExpressionsNotSupported ceenv expr =
         reportRangeExpressionsNotSupported ceenv e2
     | _ -> ()
 
-/// Check if this is a simple semicolon sequence (potentially with ranges)
-and isSimpleSemicolonSequence ceenv expr =
-    match expr with
-    | SynExpr.Sequential(_, true, e1, e2, _, _) -> isSimpleExpr ceenv e1 && isSimpleSemicolonSequence ceenv e2
-    | e -> isSimpleExpr ceenv e
-
 /// Transform a single expression to Yield or YieldFrom based on whether it's a range
 and TransformExprToYieldOrYieldFrom ceenv expr =
     let m = expr.Range
