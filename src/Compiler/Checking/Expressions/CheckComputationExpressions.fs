@@ -2333,6 +2333,20 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery && not isYield then
                 error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
+            let synYieldOrReturnExpr =
+                match synYieldOrReturnExpr with
+                | SynExpr.IndexRange _ when isYield ->
+                    if not (ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions) then
+                        checkLanguageFeatureAndRecover
+                            ceenv.cenv.g.langVersion
+                            LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                            synYieldOrReturnExpr.Range
+
+                    match RewriteRangeExpr synYieldOrReturnExpr with
+                    | Some rewrittenExpr -> rewrittenExpr
+                    | None -> synYieldOrReturnExpr
+                | _ -> synYieldOrReturnExpr
+
             requireBuilderMethod methName m cenv ceenv.env ceenv.ad ceenv.builderTy m
 
             let yieldOrReturnCall =

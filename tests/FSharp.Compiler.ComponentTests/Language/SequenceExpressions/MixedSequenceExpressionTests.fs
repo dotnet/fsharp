@@ -381,3 +381,237 @@ let f = [|-3; 1..10; 19|]
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    // SOURCE=E_SequenceExpressions02.fs 	# E_SequenceExpressions02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions02.fs"|])>]
+    let ``Version 9: E_SequenceExpressions01 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 27, Line 3, Col 32, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 3, Col 27, Line 3, Col 32, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 3, Col 27, Line 3, Col 32, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 3350, Line 4, Col 29, Line 4, Col 34, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 6, Col 27, Line 6, Col 34, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 9, Col 30, Line 9, Col 43, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 9, Col 30, Line 9, Col 43, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 3350, Line 12, Col 53, Line 12, Col 58, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 12, Col 53, Line 12, Col 58, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 12, Col 53, Line 12, Col 58, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 3350, Line 13, Col 55, Line 13, Col 60, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 14, Col 41, Line 14, Col 46, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 14, Col 41, Line 14, Col 46, "This expression was expected to have type
+'int' 
+but here has type
+''a seq' ");
+            (Error 1, Line 14, Col 41, Line 14, Col 46, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 3350, Line 15, Col 42, Line 15, Col 47, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 17, Col 53, Line 17, Col 60, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 19, Col 42, Line 19, Col 49, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 22, Col 56, Line 22, Col 69, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 22, Col 56, Line 22, Col 69, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 24, Col 44, Line 24, Col 57, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 24, Col 44, Line 24, Col 57, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 3350, Line 27, Col 72, Line 27, Col 77, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 27, Col 72, Line 27, Col 77, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 27, Col 72, Line 27, Col 77, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 3350, Line 28, Col 74, Line 28, Col 79, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 1, Line 30, Col 72, Line 30, Col 79, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 33, Col 75, Line 33, Col 88, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 33, Col 75, Line 33, Col 88, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ")
+        ]
+
+    // SOURCE=E_SequenceExpressions02.fs 	# E_SequenceExpressions02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions02.fs"|])>]
+    let ``Preview: E_SequenceExpressions02 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 3, Col 27, Line 3, Col 32, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 3, Col 27, Line 3, Col 32, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 6, Col 27, Line 6, Col 34, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 9, Col 30, Line 9, Col 43, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 9, Col 30, Line 9, Col 43, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 12, Col 53, Line 12, Col 58, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 12, Col 53, Line 12, Col 58, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 14, Col 41, Line 14, Col 46, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 14, Col 41, Line 14, Col 46, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 17, Col 53, Line 17, Col 60, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ")
+            (Error 1, Line 19, Col 42, Line 19, Col 49, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 22, Col 56, Line 22, Col 69, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 22, Col 56, Line 22, Col 69, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 24, Col 44, Line 24, Col 57, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 24, Col 44, Line 24, Col 57, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 27, Col 72, Line 27, Col 77, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 27, Col 72, Line 27, Col 77, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ");
+            (Error 1, Line 30, Col 72, Line 30, Col 79, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a list' ");
+            (Error 1, Line 33, Col 75, Line 33, Col 88, "This expression was expected to have type
+    'int' 
+but here has type
+    ''a seq' ");
+            (Error 1, Line 33, Col 75, Line 33, Col 88, "This expression was expected to have type
+    'int' 
+but here has type
+    'int seq' ")
+        ]
+
+    // SOURCE=SequenceExpressions15.fs 	# SequenceExpressions15.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions15.fs"|])>]
+    let ``Preview: SequenceExpressions15 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+    
+    // SOURCE=SequenceExpressions15.fs 	# SequenceExpressions15.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions15.fs"|])>]
+    let ``Version 9: SequenceExpressions15 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 19, Line 3, Col 23, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 4, Col 23, Line 4, Col 27, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 20, Line 5, Col 24, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 9, Col 29, Line 9, Col 33, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 10, Col 32, Line 10, Col 36, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 11, Col 31, Line 11, Col 35, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+    
+    // SOURCE=SequenceExpressions16.fs 	# SequenceExpressions16.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions16.fs"|])>]
+    let ``Preview: SequenceExpressions16 fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+    
+    // SOURCE=SequenceExpressions16.fs 	# SequenceExpressions16.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions16.fs"|])>]
+    let ``Version 9: SequenceExpressions16 fs`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 28, Line 3, Col 33, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 8, Col 54, Line 8, Col 59, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 9, Col 42, Line 9, Col 47, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 17, Col 73, Line 17, Col 78, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]

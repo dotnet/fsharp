@@ -413,6 +413,20 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             if not isYield then
                 errorR (Error(FSComp.SR.tcSeqResultsUseYield (), m))
 
+            let synYieldExpr =
+                match synYieldExpr with
+                | SynExpr.IndexRange _ ->
+                    if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions) then
+                        checkLanguageFeatureAndRecover
+                            cenv.g.langVersion
+                            LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                            synYieldExpr.Range
+
+                    match RewriteRangeExpr synYieldExpr with
+                    | Some rewrittenExpr -> rewrittenExpr
+                    | None -> synYieldExpr
+                | _ -> synYieldExpr
+
             UnifyTypes cenv env synYieldExpr.Range genOuterTy (mkSeqTy cenv.g genResultTy)
 
             let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv synYieldExpr
