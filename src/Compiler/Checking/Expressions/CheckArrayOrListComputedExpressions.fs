@@ -199,7 +199,7 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                             | e -> List.rev (e :: acc)
 
                         let elems = getElems comp []
-                        transformMixedListWithExplicitYields elems m
+                        insertImplicitYieldsAndYieldBangs elems m
                     | _ -> comp
                 else if containsRangeMixedWithYields then
                     checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m

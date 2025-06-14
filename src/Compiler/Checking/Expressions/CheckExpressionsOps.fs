@@ -395,86 +395,86 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
     else
         mkOptionTy g tyarg
 
-/// Adds implicit `yield!` before ranges in a mixed list/array comprehension.
-/// E.g., [-3; 1..10; 19] becomes [yield -3; yield! seq { 1..10 }; yield 19]
+/// Adds implicit `yield!` before ranges in a mixed list/array/seq comprehension if necessary.
+/// E.g., [-3; 1..10; 19] becomes [yield -3; yield! (..) 1 10; yield 19]
 let insertImplicitYieldsAndYieldBangs elems m =
     let (|RangeExpr|_|) = RewriteRangeExpr
 
-    let ``yield!`` rewritten (orig: SynExpr) =
-        SynExpr.YieldOrReturnFrom(
-            (true, false),
-            rewritten,
-            orig.Range,
-            {
-                YieldOrReturnFromKeyword = orig.Range
-            }
-        )
-
-    let ``yield`` (orig: SynExpr) =
-        SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
-
-    let ``;`` expr1 expr2 =
-        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
-
-    let rec loop elems cont =
-        match elems with
-        | [] -> cont (SynExpr.Const(SynConst.Unit, m))
-        | [ elem & RangeExpr rangeExpr ] -> cont (``yield!`` rangeExpr elem)
-        | [ elem ] -> cont (``yield`` elem)
-        | (elem & RangeExpr rangeExpr) :: elems -> loop elems (cont << ``;`` (``yield!`` rangeExpr elem))
-        | elem :: elems -> loop elems (cont << ``;`` (``yield`` elem))
-
-    loop elems id
-
-/// Transforms mixed lists/arrays that contain explicit yield! expressions.
-/// E.g., [1..10; 19; yield! 20..30] becomes [yield! 1..10; yield 19; yield! 20..30]
-let transformMixedListWithExplicitYields elems m =
-    let (|RangeExpr|_|) = RewriteRangeExpr
-
-    let ``yield!`` rewritten (orig: SynExpr) =
-        SynExpr.YieldOrReturnFrom(
-            (true, false),
-            rewritten,
-            orig.Range,
-            {
-                YieldOrReturnFromKeyword = orig.Range
-            }
-        )
-
-    let ``yield`` (orig: SynExpr) =
-        SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
-
-    let ``;`` expr1 expr2 =
-        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
-
-    let rec transformExpr expr cont =
+    let (|IfThenElseExpr|_|) expr =
         match expr with
-        | RangeExpr rangeExpr -> cont (``yield!`` rangeExpr expr)
-        | SynExpr.YieldOrReturnFrom _ -> cont expr
-        | SynExpr.YieldOrReturn _ -> cont expr
-        | SynExpr.IfThenElse(ifExpr, thenExpr, elseExprOpt, spIfToThen, isFromErrorRecovery, range, trivia) ->
-            transformExpr thenExpr (fun transformedThen ->
-                match elseExprOpt with
-                | Some elseExpr ->
-                    transformExpr elseExpr (fun transformedElse ->
-                        cont (
-                            SynExpr.IfThenElse(
-                                ifExpr,
-                                transformedThen,
-                                Some transformedElse,
-                                spIfToThen,
-                                isFromErrorRecovery,
-                                range,
-                                trivia
-                            )
-                        ))
-                | None -> cont (SynExpr.IfThenElse(ifExpr, transformedThen, None, spIfToThen, isFromErrorRecovery, range, trivia)))
-        | _ -> cont (``yield`` expr)
+        | SynExpr.IfThenElse(ifExpr, thenExpr, elseExpr, spIfToThen, isFromErrorRecovery, range, trivia) ->
+            ValueSome(thenExpr, elseExpr, (ifExpr, spIfToThen, isFromErrorRecovery, range, trivia))
+        | _ -> ValueNone
 
-    let rec loop elems cont =
+    let ``yield!`` rewritten (orig: SynExpr) =
+        SynExpr.YieldOrReturnFrom(
+            (true, false),
+            rewritten,
+            orig.Range,
+            {
+                YieldOrReturnFromKeyword = orig.Range
+            }
+        )
+
+    let ``yield`` (orig: SynExpr) =
+        SynExpr.YieldOrReturn((true, false), orig, orig.Range, { YieldOrReturnKeyword = orig.Range })
+
+    let ``if then`` (ifExpr, spIfToThen, isFromErrorRecovery, m, trivia) thenExpr =
+        SynExpr.IfThenElse(ifExpr, thenExpr, None, spIfToThen, isFromErrorRecovery, m, trivia)
+
+    let ``if then else`` (ifExpr, spIfToThen, isFromErrorRecovery, m, trivia) thenExpr elseExpr =
+        SynExpr.IfThenElse(ifExpr, thenExpr, Some elseExpr, spIfToThen, isFromErrorRecovery, m, trivia)
+
+    let ``match`` (dbg, expr, m, trivia) clauses =
+        SynExpr.Match(dbg, expr, clauses, m, trivia)
+
+    let ``match!`` (dbg, expr, m, trivia) clauses =
+        SynExpr.MatchBang(dbg, expr, clauses, m, trivia)
+
+    let ``;`` expr1 expr2 =
+        SynExpr.Sequential(DebugPointAtSequential.SuppressNeither, true, expr1, expr2, m, SynExprSequentialTrivia.Zero)
+
+    let rec loopElems elems cont =
         match elems with
         | [] -> cont (SynExpr.Const(SynConst.Unit, m))
-        | [ elem ] -> transformExpr elem cont
-        | elem :: elems -> transformExpr elem (fun transformedElem -> loop elems (fun restExpr -> cont (``;`` transformedElem restExpr)))
 
-    loop elems id
+        | [ elem & RangeExpr rangeExpr ] -> cont (``yield!`` rangeExpr elem)
+
+        | [ elem & SynExpr.YieldOrReturn _ ]
+        | [ elem & SynExpr.YieldOrReturnFrom _ ] -> cont elem
+
+        | [ IfThenElseExpr(thenExpr, None, info) ] -> loopElems [ thenExpr ] (cont << ``if then`` info)
+        | [ IfThenElseExpr(thenExpr, Some elseExpr, info) ] ->
+            loopElems [ thenExpr ] (fun thenExpr -> loopElems [ elseExpr ] (cont << ``if then else`` info thenExpr))
+
+        | [ SynExpr.Match(dbg, expr, clauses, m, trivia) ] -> loopMatchClauses [] clauses (cont << ``match`` (dbg, expr, m, trivia))
+        | [ SynExpr.MatchBang(dbg, expr, clauses, m, trivia) ] -> loopMatchClauses [] clauses (cont << ``match!`` (dbg, expr, m, trivia))
+
+        | [ elem ] -> cont (``yield`` elem)
+
+        | (elem & RangeExpr rangeExpr) :: elems -> loopElems elems (cont << ``;`` (``yield!`` rangeExpr elem))
+
+        | (elem & SynExpr.YieldOrReturn _) :: elems
+        | (elem & SynExpr.YieldOrReturnFrom _) :: elems -> loopElems elems (cont << ``;`` elem)
+
+        | IfThenElseExpr(thenExpr, None, info) :: elems ->
+            loopElems [ thenExpr ] (fun thenExpr -> loopElems elems (cont << ``;`` (``if then`` info thenExpr)))
+        | IfThenElseExpr(thenExpr, Some elseExpr, info) :: elems ->
+            loopElems [ thenExpr ] (fun thenExpr ->
+                loopElems [ elseExpr ] (fun elseExpr -> loopElems elems (cont << ``;`` (``if then else`` info thenExpr elseExpr))))
+
+        | SynExpr.Match(dbg, expr, clauses, m, trivia) :: elems ->
+            loopMatchClauses [] clauses (fun clauses -> loopElems elems (cont << ``;`` (``match`` (dbg, expr, m, trivia) clauses)))
+        | SynExpr.MatchBang(dbg, expr, clauses, m, trivia) :: elems ->
+            loopMatchClauses [] clauses (fun clauses -> loopElems elems (cont << ``;`` (``match!`` (dbg, expr, m, trivia) clauses)))
+
+        | elem :: elems -> loopElems elems (cont << ``;`` (``yield`` elem))
+
+    and loopMatchClauses acc clauses cont =
+        match clauses with
+        | [] -> cont (List.rev acc)
+        | SynMatchClause(pat, whenExpr, resultExpr, m, dbg, trivia) :: clauses ->
+            loopElems [ resultExpr ] (fun resultExpr ->
+                loopMatchClauses (SynMatchClause(pat, whenExpr, resultExpr, m, dbg, trivia) :: acc) clauses cont)
+
+    loopElems elems id
