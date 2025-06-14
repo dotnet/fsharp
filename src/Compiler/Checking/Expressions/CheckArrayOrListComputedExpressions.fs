@@ -179,12 +179,11 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                     | SynExpr.IndexRange _ -> cont true hasYield
                     | SynExpr.YieldOrReturnFrom _ -> cont hasRange true
                     | SynExpr.Sequential(_, _, e1, e2, _, _) ->
-                        hasRangeAndYield e1 hasRange hasYield (fun r1 y1 ->
-                            hasRangeAndYield e2 r1 y1 cont)
+                        hasRangeAndYield e1 hasRange hasYield (fun r1 y1 -> hasRangeAndYield e2 r1 y1 cont)
                     | _ -> cont hasRange hasYield
-                
+
                 hasRangeAndYield comp false false (fun r y -> r && y)
-            
+
             // Transform mixed expressions with explicit yields to ensure all elements are properly yielded
             let comp =
                 if
