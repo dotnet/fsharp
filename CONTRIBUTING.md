@@ -105,7 +105,7 @@ For example, the following errors can appear during CI runs:
 
 After identifying a failing test which relies on a baseline, the command can then for example be:
 - `/run test-baseline ParseFile` to update parsing tests related to syntactical tree
-- - `/run test-baseline SurfaceAreaTest` to update the API surface area of FSharp.Compiler.Service
+- `/run test-baseline SurfaceAreaTest` to update the API surface area of FSharp.Compiler.Service
 - `/run test-baseline FullyQualifiedName~EmittedIL&FullyQualifiedName~Nullness` to update IL baseline (namespace `EmittedIL`) for tests that touch the `Nullness` feature
 
 
