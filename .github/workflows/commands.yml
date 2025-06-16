@@ -44,6 +44,12 @@ jobs:
 
       - name: Install dotnet tools
         run: dotnet tool restore
+        
+      - name: Setup .NET 9.0.0 Runtime for test execution
+        if: ${{ steps.parse.outputs.command == '/run test-baseline' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
       - name: Run command
         id: run-cmd
@@ -55,7 +61,7 @@ jobs:
             "/run fantomas") dotnet fantomas . ;;
             "/run xlf") dotnet build src/Compiler /t:UpdateXlf ;;
             "/run ilverify") pwsh tests/ILVerify/ilverify.ps1 ;;
-            "/run test-baseline") dotnet test ./FSharp.Compiler.Service.sln --filter "${{ steps.parse.outputs.arguments }}" -c Release ;;
+            "/run test-baseline") dotnet test ./FSharp.Compiler.Service.sln --filter "${{ steps.parse.outputs.arguments }}" -c Release || true ;;
             *) echo "Unknown command" && exit 1 ;;
           esac
 
