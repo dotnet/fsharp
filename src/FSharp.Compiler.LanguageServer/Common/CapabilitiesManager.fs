@@ -34,6 +34,7 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                     )),
             //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
             //HoverProvider = SumType<bool, HoverOptions>(HoverOptions(WorkDoneProgress = true))
+            DefinitionProvider = SumType<bool, DefinitionOptions>(true),
             SemanticTokensOptions =
                 addIf
                     config.EnabledFeatures.SemanticHighlighting
