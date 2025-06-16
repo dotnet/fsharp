@@ -28,35 +28,21 @@ let x: int = "string"  // Type error
 
 [<Fact>]
 let ``typecheck-only flag prevents execution side effects``() =
-    let testFilePath = System.IO.Path.GetTempFileName()
-    System.IO.File.Delete(testFilePath) // Make sure file doesn't exist initially
-    
-    Fsx $"""
-System.IO.File.WriteAllText("{testFilePath}", "should not be created")
+    Fsx """
+printfn "MyCrazyString"
 let x = 42
 """
     |> withOptions ["--typecheck-only"]
-    |> eval
+    |> runFsi
     |> shouldSucceed
-    
-    // Verify file was not created
-    Assert.False(System.IO.File.Exists(testFilePath), "File should not have been created when using --typecheck-only")
+    |> VerifyNotInOutput "MyCrazyString"
 
 [<Fact>]
 let ``script executes without typecheck-only flag``() =
-    let testFilePath = System.IO.Path.GetTempFileName()
-    System.IO.File.Delete(testFilePath) // Make sure file doesn't exist initially
-    
-    Fsx $"""
-System.IO.File.WriteAllText("{testFilePath}", "file was created")
+    Fsx """
+printfn "MyCrazyString"
 let x = 42
 """
-    |> eval
+    |> runFsi
     |> shouldSucceed
-    
-    // Verify file was created when not using --typecheck-only
-    Assert.True(System.IO.File.Exists(testFilePath), "File should have been created when not using --typecheck-only")
-    
-    // Clean up
-    if System.IO.File.Exists(testFilePath) then
-        System.IO.File.Delete(testFilePath)
+    |> verifyOutput "MyCrazyString"
