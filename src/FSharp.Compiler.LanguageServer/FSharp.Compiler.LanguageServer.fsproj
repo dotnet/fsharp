@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<CheckNulls>true</CheckNulls>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup Label="Package References">
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.6-preview" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
+		<PackageReference Include="StreamJsonRpc" Version="2.21.3-preview" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="FSharp.VisualStudio.Extension" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
+		<NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+		<PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="..\..\vsintegration\src\FSharp.Editor\Common\CancellableTasks.fs" />
+		<Compile Include="Utils.fs" />
+		<Compile Include="FSharpLanguageServerConfig.fs" />
+		<Compile Include="Common\LifecycleManager.fs" />
+		<Compile Include="Common\CapabilitiesManager.fs" />
+		<Compile Include="Common\FSharpRequestContext.fs" />
+		<Compile Include="Handlers\LanguageFeaturesHandler.fs" />
+		<Compile Include="Handlers\DocumentStateHandler.fs" />
+		<Compile Include="FSharpLanguageServer.fs" />
+		<Compile Include="Executable.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Compiler\FSharp.Compiler.Service.fsproj" />
+		<ProjectReference Include="..\Microsoft.CommonLanguageServerProtocol.Framework.Proxy\Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj" />
+	</ItemGroup>
+
+</Project>
