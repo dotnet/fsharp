@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Extensibility;
 using System.Threading;
 using System;
 using Extension = Microsoft.VisualStudio.Extensibility.Extension;
+using System.Diagnostics;
 
 /// <summary>
 /// Extension entrypoint for the VisualStudio.Extensibility extension.
@@ -21,7 +22,10 @@ internal class ExtensionEntrypoint : Extension
                 version: this.ExtensionAssemblyVersion,
                 publisherName: "Publisher name",
                 displayName: "FSharp.VisualStudio.Extension",
-                description: "Extension description"),
+                description: "Extension description")
+        {
+            InstallationTargetVersion = "18.0",
+        },
     };
 
     /// <inheritdoc />
@@ -30,5 +34,6 @@ internal class ExtensionEntrypoint : Extension
         base.InitializeServices(serviceCollection);
 
         // You can configure dependency injection here by adding services to the serviceCollection.
+        Debug.WriteLine("Initializing services for FSharp.VisualStudio.Extension");
     }
 }
