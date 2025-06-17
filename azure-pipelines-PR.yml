@@ -524,6 +524,12 @@ stages:
               PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
               ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompilerSuffix) test logs
               publishLocation: Container
+          - task: PublishBuildArtifacts@1
+            displayName: Publish TestToRepro Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)\ReproLogs'
+              ArtifactName: Windows $(_configuration) $(_testKind) $(transparentCompilerSuffix) repro logs
+              publishLocation: Container
             continueOnError: true
             condition: always()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
