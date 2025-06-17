@@ -1541,3 +1541,20 @@ let main _ =
     //|> verifyIL ["abc"]
     |> run
     |> verifyOutputContains [|"Test true;,1 true,2 true,3 true,4 true,5 true,6 false,7 true,8 false,9 false,10 false,11 false,12 true"|]
+
+[<Fact>]
+let ``INotifyPropertyChanged with Event using PropertyChangedEventHandler`` () =
+    FSharp """namespace Nullness
+
+open System.ComponentModel
+
+type XViewModel() =
+    let propertyChanged = Event<PropertyChangedEventHandler, PropertyChangedEventArgs>()
+
+    interface INotifyPropertyChanged with
+        [<CLIEvent>]
+        member this.PropertyChanged = propertyChanged.Publish
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
