@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net8.0-windows</TargetFramework>
+		<!-- Main reason for this is to be able to build on ubuntu - for testing purposes -->
+		<!-- Not sure if VS Extensibility actually works on non-Windows platforms, but we mostly care about building it here -->
+		<TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<LangVersion>12</LangVersion>
 		<NeutralLanguage>en-US</NeutralLanguage>
