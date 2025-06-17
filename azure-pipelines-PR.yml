@@ -135,16 +135,16 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./Build.sh --skipbuild
-          - script: dotnet tool restore
+
+          - script: ./eng/common/dotnet.sh tool restore
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Install tools
-          - script: dotnet fsi src/Compiler/FSCompCheck.fsx
+          - script: ./eng/common/dotnet.sh fsi src/Compiler/FSCompCheck.fsx
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check error code sorting in src/Compiler/FSComp.txt
-          - script: dotnet fantomas . --check
+          - script: ./eng/common/dotnet.sh fantomas . --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Check code formatting (run 'dotnet fantomas .' to fix)
@@ -748,8 +748,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.cmd -skipbuild
-          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
             continueOnError: false
@@ -767,8 +766,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./Build.sh --skipbuild
-          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
             continueOnError: false
@@ -786,8 +784,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./Build.sh --skipbuild
-          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
             continueOnError: false
@@ -827,7 +824,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -skipbuild
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
           - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
@@ -851,8 +847,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -skipbuild
-          - script: dotnet tool restore
+          - script: .\eng\common\dotnet.cmd tool restore
             displayName: Restore dotnet tools
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
