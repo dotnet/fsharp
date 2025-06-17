@@ -1731,7 +1731,13 @@ type SynModuleDecl =
     /// An 'expr' within a module.
     | Expr of expr: SynExpr * range: range
 
-    /// One or more 'type' definitions within a module
+    /// One or more 'type' definitions within a module.
+    ///
+    /// If there is more than one SynTypeDefn in the list, this indicates a "recursive knot" of types:
+    /// 'type Foo ... and Bar ...', for example.
+    /// (By contrast, consecutively defined types which are each defined with the 'type' keyword, such as
+    /// 'type Foo ... type Bar ...', will appear in the syntax tree as multiple distinct Types nodes,
+    /// not as a single Types node with multiple definitions within.)
     | Types of typeDefns: SynTypeDefn list * range: range
 
     /// An 'exception' definition within a module
