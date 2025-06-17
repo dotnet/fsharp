@@ -33,7 +33,7 @@ type CapabilitiesManager(config: FSharpLanguageServerConfig, scOverrides: IServe
                         WorkspaceDiagnostics = true
                     )),
             //CompletionProvider = CompletionOptions(TriggerCharacters = [| "."; " " |], ResolveProvider = true, WorkDoneProgress = true),
-            CompletionProvider = 
+            CompletionProvider =
                 addIf
                     config.EnabledFeatures.Completion
                     (CompletionOptions(TriggerCharacters = [| "." |], ResolveProvider = false, WorkDoneProgress = false)),

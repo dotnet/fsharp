@@ -14,6 +14,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open System
+open FSharp.Compiler.Tokenization
 
 #nowarn "57"
 
@@ -69,28 +70,33 @@ type LanguageFeaturesHandler() =
             cancellableTask {
                 let file = request.TextDocument.Uri
                 let position = request.Position
-                
+
                 let! source = context.Workspace.Query.GetSource(file)
                 let! parseAndCheckResults = context.Workspace.Query.GetParseAndCheckResultsForFile(file)
-                
+
                 match source, parseAndCheckResults with
                 | Some source, (Some parseResults, Some checkFileResults) ->
                     try
                         // Convert LSP position to F# position
                         let fcsPosition = Position.mkPos (int position.Line + 1) (int position.Character)
-                        
+
                         // Get the line text at cursor position
-                        let lines = source.GetLineString(position.Line)
-                        let lineText = lines.TrimEnd([|'\r'; '\n'|])
-                        
+                        let lineText =
+                            if position.Line < source.GetLineCount() then
+                                source.GetLineString(position.Line).TrimEnd([| '\r'; '\n' |])
+                            else
+                                ""
+
                         // Get partial name for completion
-                        let partialName = QuickParse.GetPartialLongNameEx(lineText, int position.Character - 1)
-                        
+                        let partialName =
+                            QuickParse.GetPartialLongNameEx(lineText, int position.Character - 1)
+
                         // Get completion context
-                        let completionContext = ParsedInput.TryGetCompletionContext(fcsPosition, parseResults.ParseTree, lineText)
-                        
+                        let completionContext =
+                            ParsedInput.TryGetCompletionContext(fcsPosition, parseResults.ParseTree, lineText)
+
                         // Get declaration list from compiler services
-                        let declarations = 
+                        let declarations =
                             checkFileResults.GetDeclarationListInfo(
                                 Some(parseResults),
                                 Line.fromZ position.Line,
@@ -100,21 +106,27 @@ type LanguageFeaturesHandler() =
                                 (fcsPosition, completionContext),
                                 false // genBodyForOverriddenMeth
                             )
-                        
+
                         // Convert F# completion items to LSP completion items
-                        let completionItems = 
+                        let completionItems =
                             declarations.Items
                             |> Array.mapi (fun i item ->
-                                let kind = 
+                                let kind =
                                     match item.Kind with
-                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Method _ -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Method
-                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Property -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Property
-                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Field -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Field
-                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Event -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Event
-                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Argument -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Variable
-                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Other -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Value
+                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Method _ ->
+                                        Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Method
+                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Property ->
+                                        Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Property
+                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Field ->
+                                        Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Field
+                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Event ->
+                                        Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Event
+                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Argument ->
+                                        Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Variable
+                                    | FSharp.Compiler.EditorServices.CompletionItemKind.Other ->
+                                        Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Value
                                     | _ -> Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Value
-                                
+
                                 let completionItem = Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItem()
                                 completionItem.Label <- item.NameInList
                                 completionItem.Kind <- kind
@@ -123,13 +135,38 @@ type LanguageFeaturesHandler() =
                                 completionItem.FilterText <- item.NameInList
                                 completionItem.InsertText <- item.NameInCode
                                 completionItem)
-                        
-                        return CompletionList(IsIncomplete = false, Items = completionItems)
-                    with
-                    | ex ->
+
+                        // Add keyword completions if appropriate
+                        let keywordItems =
+                            if
+                                not declarations.IsForType
+                                && not declarations.IsError
+                                && List.isEmpty partialName.QualifyingIdents
+                            then
+                                match completionContext with
+                                | None ->
+                                    FSharpKeywords.KeywordsWithDescription
+                                    |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorDisplayName keyword))
+                                    |> List.mapi (fun i (keyword, description) ->
+                                        let completionItem = Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItem()
+                                        completionItem.Label <- keyword
+                                        completionItem.Kind <- Microsoft.VisualStudio.LanguageServer.Protocol.CompletionItemKind.Keyword
+                                        completionItem.Detail <- description
+                                        completionItem.SortText <- sprintf "%06d" (1000000 + i) // Sort keywords after regular items
+                                        completionItem.FilterText <- keyword
+                                        completionItem.InsertText <- keyword
+                                        completionItem)
+                                    |> List.toArray
+                                | _ -> [||]
+                            else
+                                [||]
+
+                        let allItems = Array.append completionItems keywordItems
+
+                        return CompletionList(IsIncomplete = false, Items = allItems)
+                    with ex ->
                         context.Logger.LogError("Error in completion: " + ex.Message)
                         return CompletionList(IsIncomplete = false, Items = [||])
-                | _ ->
-                    return CompletionList(IsIncomplete = false, Items = [||])
+                | _ -> return CompletionList(IsIncomplete = false, Items = [||])
             }
             |> CancellableTask.start cancellationToken
