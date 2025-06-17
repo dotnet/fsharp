@@ -191,3 +191,37 @@ let ``Shutdown and exit`` () =
 
         do! client.JsonRpc.NotifyAsync(Methods.ExitName)
     }
+
+[<Fact>]
+let ``Text document completion`` () =
+    task {
+        let! client = initializeLanguageServer None
+        let workspace = client.Workspace
+        let contentOnDisk = "let x = System."
+        let fileOnDisk = sourceFileOnDisk contentOnDisk
+        let _projectIdentifier =
+            workspace.Projects.AddOrUpdate(ProjectConfig.Create(), [ fileOnDisk.LocalPath ])
+        do!
+            client.JsonRpc.NotifyAsync(
+                Methods.TextDocumentDidOpenName,
+                DidOpenTextDocumentParams(
+                    TextDocument = TextDocumentItem(Uri = fileOnDisk, LanguageId = "F#", Version = 1, Text = contentOnDisk)
+                )
+            )
+        
+        let! completionResponse =
+            client.JsonRpc.InvokeAsync<CompletionList>(
+                Methods.TextDocumentCompletionName,
+                CompletionParams(
+                    TextDocument = TextDocumentIdentifier(Uri = fileOnDisk),
+                    Position = Position(Line = 0, Character = 15) // Position after "System."
+                )
+            )
+
+        Assert.NotNull(completionResponse)
+        Assert.True(completionResponse.Items.Length > 0, "Should have completion items")
+        
+        // Check that we have some common System namespace members
+        let completionLabels = completionResponse.Items |> Array.map (fun item -> item.Label)
+        Assert.Contains("Console", completionLabels)
+    }
