@@ -12,10 +12,10 @@ let f p q r =
 let f1 p q r =
     [
         if p then
-            if q then 1..10
+            if q then yield! 1..10
         if p then
             if q then
-                if r then 1..10
+                if r then yield! 1..10
     ]
     
 let f2 x (|P|_|) (|Q|_|) (|R|_|) =
@@ -38,7 +38,7 @@ let f2 x (|P|_|) (|Q|_|) (|R|_|) =
 let f x (|P|_|) (|Q|_|) (|R|_|) =
     [
         match x with
-        | P _ -> 1..10
+        | P _ -> yield! 1..10
         | _ -> ()
 
         match x with
@@ -46,7 +46,7 @@ let f x (|P|_|) (|Q|_|) (|R|_|) =
             match y with
             | Q z ->
                 match z with
-                | R -> 1..10
+                | R -> yield! 1..10
                 | _ -> ()
             | _ -> ()
         | _ -> ()
