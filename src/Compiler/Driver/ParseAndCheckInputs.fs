@@ -217,7 +217,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
 let private finishPreprocessing lexbuf diagnosticOptions isScript submoduleRanges =
     WarnScopes.MergeInto diagnosticOptions isScript submoduleRanges lexbuf
-    LineDirectives.add lexbuf.StartPos.FileIndex (LineDirectiveStore.GetLineDirectives lexbuf)    
+    LineDirectives.add lexbuf.StartPos.FileIndex (LineDirectiveStore.GetLineDirectives lexbuf)
 
 let private collectParsedInputTrivia lexbuf =
     {
@@ -275,11 +275,11 @@ let PostParseModuleImpls
     ) =
 
     let isScript = IsScript fileName
-    
+
     finishPreprocessing lexbuf diagnosticOptions isScript (getImplSubmoduleRanges impls)
 
     let trivia = collectParsedInputTrivia lexbuf
-        
+
     let othersWithSameName =
         impls
         |> List.rev

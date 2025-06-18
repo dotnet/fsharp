@@ -47,7 +47,7 @@ module internal WarnScopes =
 
     type private LexbufData =
         {
-            OriginalFileIndex: int      // TODO: no longer needed
+            OriginalFileIndex: int // TODO: no longer needed
             mutable WarnDirectives: WarnDirective list
         }
 
@@ -128,6 +128,7 @@ module internal WarnScopes =
 
         let positions line offset length =
             mkPos line (startPos.Column + offset), mkPos line (startPos.Column + offset + length)
+
         let mkRange offset length =
             positions lexbuf.StartPos.Line offset length
             ||> mkFileIndexRange startPos.FileIndex

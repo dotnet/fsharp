@@ -54,6 +54,6 @@ module CommentStore =
 [<RequireQualifiedAccess>]
 module LineDirectiveStore =
 
-    val SaveLineDirective:  lexbuf: Lexbuf * fileIndex: FileIndex * line: int -> unit
+    val SaveLineDirective: lexbuf: Lexbuf * fileIndex: FileIndex * line: int -> unit
 
     val GetLineDirectives: lexbuf: Lexbuf -> (int * (FileIndex * int)) list

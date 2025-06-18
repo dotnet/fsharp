@@ -152,9 +152,11 @@ module CommentStore =
 module LineDirectiveStore =
     let private getStore (lexbuf: Lexbuf) =
         lexbuf.GetLocalData("LineDirectives", ResizeArray<int * (FileIndex * int)>)
+
     let SaveLineDirective (lexbuf: Lexbuf, fileIndex: FileIndex, line: int) =
         let store = getStore lexbuf
         store.Add(lexbuf.StartPos.Line, (fileIndex, line))
+
     let GetLineDirectives (lexbuf: Lexbuf) : (int * (FileIndex * int)) list =
         let store = getStore lexbuf
         Seq.toList store

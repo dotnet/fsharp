@@ -2183,6 +2183,7 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                     match diagnostic.Range with
                     | Some m ->
                         let m = m.ApplyLineDirectives()
+
                         let content =
                             m.FileName
                             |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
