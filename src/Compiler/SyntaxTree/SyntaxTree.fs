@@ -775,10 +775,7 @@ type SynExpr =
 
     member e.Range =
         match e with
-        | SynExpr.Paren(_, leftParenRange, rightParenRange, r) ->
-            match rightParenRange with
-            | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
-            | _ -> r
+        | SynExpr.Paren(range = m)
         | SynExpr.Quote(range = m)
         | SynExpr.Const(range = m)
         | SynExpr.Typed(range = m)

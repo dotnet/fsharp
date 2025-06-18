@@ -19,9 +19,9 @@ open FSharp.Compiler.UnicodeLexing
 
 let forceDebug = false
 
-let stringOfPos (pos: Position) = sprintf "(%d:%d)" pos.OriginalLine pos.Column
+let stringOfPos (pos: Position) = sprintf "(%d:%d)" pos.Line pos.Column
 
-let outputPos os (pos: Position) = Printf.fprintf os "(%d:%d)" pos.OriginalLine pos.Column
+let outputPos os (pos: Position) = Printf.fprintf os "(%d:%d)" pos.Line pos.Column
 
 /// Used for warning strings, which should display columns as 1-based and display
 /// the lines after taking '# line' directives into account (i.e. do not use
@@ -996,7 +996,7 @@ type LexFilterImpl (
                     let warnF = if strictIndentation then error else warn 
                     warnF tokenTup
                         (if debug then
-                            sprintf "possible incorrect indentation: this token is offside of context at position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d"
+                            sprintf "possible incorrect indentation: this token is offside of context at (original!) position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d"
                                 (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos newCtxt.StartPos) p1.Column c2
                          else
                             FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPosition p1.Position))
@@ -1305,7 +1305,7 @@ type LexFilterImpl (
         let isSameLine() =
             match token with
             | EOF _ -> false
-            | _ -> (startPosOfTokenTup (peekNextTokenTup())).OriginalLine = tokenStartPos.OriginalLine
+            | _ -> (startPosOfTokenTup (peekNextTokenTup())).Line = tokenStartPos.Line
 
         let isControlFlowOrNotSameLine() =
             match token with
@@ -1817,7 +1817,7 @@ type LexFilterImpl (
                             elif isTypeCtxt then isTypeSeqBlockElementContinuator token
                             else isSeqBlockElementContinuator token)
                     && (tokenStartCol = offsidePos.Column)
-                    && (tokenStartPos.OriginalLine <> offsidePos.OriginalLine) ->
+                    && (tokenStartPos.Line <> offsidePos.Line) ->
                 if debug then dprintf "offside at column %d matches start of block(%a)! delaying token, returning OBLOCKSEP\n" tokenStartCol outputPos offsidePos
                 replaceCtxt tokenTup (CtxtSeqBlock (FirstInSeqBlock, offsidePos, addBlockEnd))
                 // No change to offside stack: another statement block starts...
@@ -2320,7 +2320,7 @@ type LexFilterImpl (
                 //  For attributes on properties:
                 //      member  x.PublicGetSetProperty
                 //         with [<Foo>]  get() = "Ralf"
-                if (match lookaheadTokenTup.Token with LBRACK_LESS -> true | _ -> false) && (lookaheadTokenStartPos.OriginalLine = tokenTup.StartPos.OriginalLine) then
+                if (match lookaheadTokenTup.Token with LBRACK_LESS -> true | _ -> false) && (lookaheadTokenStartPos.Line = tokenTup.StartPos.Line) then
                     let offsidePos = tokenStartPos
                     pushCtxt tokenTup (CtxtWithAsLet offsidePos)
                     returnToken tokenLexbufState OWITH
