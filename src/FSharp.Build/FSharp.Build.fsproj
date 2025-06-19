@@ -69,7 +69,7 @@
     </NoneSubstituteText>
     <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' != 'Proto'">
       <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
-      <SubDir>Prerelease\</SubDir>
+      <SubDir>PreRelease\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSCorePackageVersionValue)-$(_PreReleaseLabel).final</Replacement1>
     </NoneSubstituteText>
