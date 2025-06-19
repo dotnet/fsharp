@@ -176,7 +176,16 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./Build.sh --skipbuild
+          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: '10.x'
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: ./eng/common/dotnet.sh
           - pwsh: ./check.ps1 -project $(_project)
             workingDirectory: $(Build.SourcesDirectory)/buildtools/checkpackages
             env:
@@ -856,7 +865,17 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\eng\common\dotnet.cmd tool restore
+          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: '10.x'
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: .\eng\common\dotnet.cmd
+          - script: dotnet tool restore
             displayName: Restore dotnet tools
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
