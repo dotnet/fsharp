@@ -43,7 +43,7 @@
     <FSharpCoreShippedPackageVersionValue>9.0.300</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
-    <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).$(PreReleaseVersionIteration).*</FSharpCorePreviewPackageVersionValue>
+    <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).$(FSharpPreReleaseIteration).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>14</FSToolsMajorVersion>
