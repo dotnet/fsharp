@@ -9,8 +9,10 @@
   </PropertyGroup>
   <!-- Version number computation -->
   <PropertyGroup>
-    <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-    <PreReleaseVersionIteration>1</PreReleaseVersionIteration>
+    <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
+         the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
+    <FSharpPreReleaseIteration>6</FSharpPreReleaseIteration>
+    <PreReleaseVersionLabel>preview$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- These have to be in sync with latest release branch -->
     <!-- F# Version components -->
     <FSMajorVersion>10</FSMajorVersion>
