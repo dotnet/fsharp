@@ -60,7 +60,7 @@
 
         <file src="$artifactsPackagesDir$Dependency\Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"                           target="contentFiles\Shipping" />
         <file src="$artifactsPackagesDir$Dependency\Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"                                   target="contentFiles\Release" />
-        <file src="$artifactsPackagesDir$Dependency\Prerelease\FSharp.Core.$fSharpCorePackageVersion$*nupkg"                                   target="contentFiles\Prerelease" />
+        <file src="$artifactsPackagesDir$Dependency\PreRelease\FSharp.Core.$fSharpCorePackageVersion$*nupkg"                                   target="contentFiles\PreRelease" />
 
         <file src="$artifactsPackagesDir$Dependency\Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"    target="contentFiles\Shipping" />
         <file src="$artifactsPackagesDir$Dependency\Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"            target="contentFiles\Release" />
