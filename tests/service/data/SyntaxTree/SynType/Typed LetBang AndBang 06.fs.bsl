@@ -23,7 +23,7 @@ ImplFile
                          (Atomic, false, Ident asyncOption,
                           Const (Unit, (4,36--4,38)), (4,25--4,38)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,39), false, true,
                            Paren
                              (LongIdent
                                 (SynLongIdent ([Union], [], [None]), None, None,

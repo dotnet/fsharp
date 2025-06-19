@@ -3520,6 +3520,57 @@ bindingPattern:
   | headBindingPattern
     { $1, $1.Range }
 
+/* Common pattern for bindings that may include type annotations
+   This rule unifies the pattern parsing for both regular 'let' bindings and 
+   computation expression bindings (let!, use!, and!).
+   
+   Returns: (pattern, pattern_range, optional_type)
+   - pattern: The parsed pattern (may be typed if annotation present)
+   - pattern_range: The full range including any type annotation
+   - optional_type: The type if annotation was present, None otherwise */
+bindingPatternWithOptType:
+  | headBindingPattern
+    { // Simple pattern without type annotation
+      $1, $1.Range, None }
+  
+  | headBindingPattern COLON topTypeWithTypeConstraints  
+    { // Pattern with type annotation (e.g., x: int)
+      let ty, arity = $3
+      let mWhole = unionRanges $1.Range ty.Range
+      // Create a typed pattern node
+      let typedPat = SynPat.Typed($1, ty, mWhole)
+      typedPat, mWhole, Some ty }
+  
+  | headBindingPattern COLON error
+    { // Error recovery: incomplete type annotation (e.g., "let x:" with no type)
+      let mColon = rhs parseState 2
+      let mWhole = unionRanges $1.Range mColon
+      // Create a typed pattern with an error type for recovery
+      let errorType = SynType.FromParseError(mColon.EndRange)
+      let typedPat = SynPat.Typed($1, errorType, mWhole)
+      typedPat, mWhole, Some errorType }
+
+/* Common rule for computation expression binding patterns
+   Handles the pattern part of let!, use!, and! bindings with consistent
+   type annotation support and language feature checking.
+   
+   Returns: (pattern, pattern_range, isInline, isMutable, optional_type) */
+ceBindingCore:
+  | opt_inline opt_mutable bindingPatternWithOptType
+    { let pat, mPat, tyOpt = $3
+      let isInline = Option.isSome $1
+      let isMutable = Option.isSome $2
+      
+      // For CE bindings, check language feature if type annotation is present
+      // This ensures that typed let!/use!/and! bindings are only allowed when
+      // the AllowTypedLetUseAndBang feature is enabled
+      match tyOpt with
+      | Some ty -> 
+          parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
+      | None -> ()
+      
+      pat, mPat, isInline, isMutable, tyOpt }
+
 opt_simplePatterns:
   | simplePatterns
       { Some $1 }
@@ -4099,54 +4150,45 @@ recover:
       { debugPrint("recovering via EOF"); false }
 
 moreBinders:
-  | AND_BANG headBindingPattern EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
-     { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
+  /* Refactored and! bindings to use unified ceBindingCore
+     This ensures consistent handling of patterns and type annotations
+     across all computation expression bindings */
+  | AND_BANG ceBindingCore EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
+     { // Handle and! bindings with unified pattern parsing
+       let pat, mPat, isInline, isMutable, tyOpt = $2
+       
+       // and! bindings don't support inline or mutable modifiers
+       if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $4.Range
+       // Debug point should span the entire binding: from AND_BANG through the expression
+       let spBind = DebugPointAtBinding.Yes(m)
        let mIn = rhs parseState 5
        let trivia = { AndBangKeyword = rhs parseState 1; EqualsRange = mEquals; InKeyword = Some mIn }
-       SynExprAndBang(spBind, $1, true, $2, $4, m, trivia) :: $6 }
+       
+       // Note: For and!, we always use isRecursive=false and isUse=true
+       SynExprAndBang(spBind, false, true, pat, $4, m, trivia) :: $6 }
 
-  | AND_BANG headBindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
-     { // Handle type annotations on patterns in and! bindings
-       // Example: and! y: string = asyncString()
-       let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 6)
-       let pat = 
-         match $3 with 
-         | None -> $2
-         | Some (_, SynReturnInfo((ty, _), _)) -> 
-           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
-           SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
-       let mEquals = rhs parseState 4
-       let m = unionRanges (rhs parseState 1) $5.Range
-       let mIn = rhs parseState 6
-       let trivia = { AndBangKeyword = rhs parseState 1; EqualsRange = mEquals; InKeyword = Some mIn }
-       SynExprAndBang(spBind, false, true, pat, $5, m, trivia) :: $7 }
-
-  | OAND_BANG headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
-     { let report, mIn, _ = $5
+  | OAND_BANG ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
+     { // Offside-sensitive version of and! binding
+       let pat, mPat, isInline, isMutable, tyOpt = $2
+       
+       // and! bindings don't support inline or mutable modifiers
+       if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       
+       let report, mIn, _ = $5
        report "and!" (rhs parseState 1)  // report unterminated error
-       let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $4.Range
+       // Debug point should span the entire binding: from OAND_BANG through the expression
+       let spBind = DebugPointAtBinding.Yes(m)
        let trivia = { AndBangKeyword = rhs parseState 1; EqualsRange = mEquals; InKeyword = mIn }
-       SynExprAndBang(spBind, $1, true, $2, $4, m, trivia) :: $7 }
-
-  | OAND_BANG headBindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
-     { // Handle type annotations on patterns in and! bindings (offside-sensitive version)
-       let report, mIn, _ = $6
-       report "and!" (rhs parseState 1)  // report unterminated error
-       let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $5.Range)
-       let pat = 
-         match $3 with 
-         | None -> $2
-         | Some (_, SynReturnInfo((ty, _), _)) -> 
-           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
-           SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
-       let mEquals = rhs parseState 4
-       let m = unionRanges (rhs parseState 1) $5.Range
-       let trivia = { AndBangKeyword = rhs parseState 1; EqualsRange = mEquals; InKeyword = mIn }
-       SynExprAndBang(spBind, false, true, pat, $5, m, trivia) :: $8 }
+       
+       // Note: For and!, we always use isRecursive=false and isUse=true
+       SynExprAndBang(spBind, false, true, pat, $4, m, trivia) :: $7 }
 
   | %prec prec_no_more_attr_bindings
       { [] }
@@ -4502,69 +4544,65 @@ declExpr:
                SynExpr.Typed($2, ty, m)
        SynExpr.YieldOrReturnFrom(($1, not $1), expr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
-  | BINDER headBindingPattern EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { (* This rule handles the 'use!' and 'let!' binding expressions in computation expressions *)
-       (* The BINDER token represents keywords like 'use!' or 'let!' *)
-       (* headBindingPattern represents patterns in the binding:
-          - Underscore ('_') patterns are preserved as SynPat.Wild
-          - Named patterns ('__') are represented as SynPat.Named
-          - Identifiers (like 'value') are represented as SynPat.LongIdent *)
-       let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
+  /* Refactored let! and use! bindings to use unified ceBindingCore
+     This ensures consistent handling across all computation expression bindings
+     while maintaining backward compatibility */
+  | BINDER ceBindingCore EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
+     { // Handle let! and use! bindings with unified pattern parsing
+       let pat, mPat, isInline, isMutable, tyOpt = $2
+       
+       // let! and use! bindings don't support inline or mutable modifiers
+       if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
-
-  | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { let report, mIn, _ = $5
-       report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
+       // Debug point should span from BINDER through the expression (but not the continuation)
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
+       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
+       
+       // $1 contains the actual keyword ("let!" or "use!")
+       let isUse = ($1 = "use")
+       SynExpr.LetOrUseBang(spBind, isUse, true, pat, $4, $7, $8, m, trivia) }
+
+  | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
+     { // Offside-sensitive version of let!/use! binding
+       let pat, mPat, isInline, isMutable, tyOpt = $2
+       
+       // let! and use! bindings don't support inline or mutable modifiers
+       if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       
+       let report, mIn, _ = $5
+       report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
+       // Debug point should span from OBINDER through the expression (but not the continuation)
+       let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
+       
+       let isUse = ($1 = "use")
+       SynExpr.LetOrUseBang(spBind, isUse, true, pat, $4, $7, $8, m, trivia) }
 
-  | BINDER headBindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { // Handle type annotations on patterns in let!/use! bindings
-       // Examples: let! x: int = async { return 1 }
-       //           use! _: IDisposable = async { return new MemoryStream() }
-       let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 7)
-       let pat = 
-         match $3 with 
-         | None -> $2
-         | Some (_, SynReturnInfo((ty, _), _)) -> 
-           SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang pat.Range
-       let mEquals = rhs parseState 4
-       let m = unionRanges (rhs parseState 1) $9.Range
-       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, pat, $5, $8, $9, m, trivia) }
-
-  | OBINDER headBindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { // Handle type annotations on patterns in let!/use! bindings (offside-sensitive version)
-       // This rule maintains consistent handling of binding constructs across different syntactic contexts
-       let report, mIn, _ = $6
-       report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
-       let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $5.Range)
-       let pat = 
-         match $3 with 
-         | None -> $2
-         | Some (_, SynReturnInfo((ty, _), _)) -> 
-           SynPat.Typed($2, ty, unionRanges $2.Range ty.Range)
-       parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang pat.Range
-       let mEquals = rhs parseState 4
-       let m = unionRanges (rhs parseState 1) $9.Range
-       let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, pat, $5, $8, $9, m, trivia) }
-
-  | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
-     { // error recovery that allows intellisense when writing incomplete computation expressions
+  | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
+     { // Error recovery for incomplete let!/use! bindings
+       // Allows intellisense to work when writing incomplete computation expressions
+       let pat, mPat, isInline, isMutable, tyOpt = $2
+       
+       // Error checking for invalid modifiers
+       if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
+       
+       // Debug point should span from OBINDER through the expression
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
        let trivia: SynExprLetOrUseBangTrivia = { LetOrUseBangKeyword = rhs parseState 1 ; EqualsRange = Some mEquals }
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, [], SynExpr.ImplicitZero m, mAll, trivia) }
+       
+       let isUse = ($1 = "use")
+       // Use ImplicitZero as the continuation expression for error recovery
+       SynExpr.LetOrUseBang(spBind, isUse, true, pat, $4, [], SynExpr.ImplicitZero m, mAll, trivia) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo

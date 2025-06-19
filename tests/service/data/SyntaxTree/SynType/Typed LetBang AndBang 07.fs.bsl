@@ -21,7 +21,7 @@ ImplFile
                          (Atomic, false, Ident asyncOption,
                           Const (Unit, (4,34--4,36)), (4,23--4,36)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,37), false, true,
                            LongIdent
                              (SynLongIdent ([Union], [], [None]), None, None,
                               Pats

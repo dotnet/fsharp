@@ -19,7 +19,7 @@ ImplFile
                          (Atomic, false, Ident asyncInt,
                           Const (Unit, (4,26--4,28)), (4,18--4,28)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,31), false, true,
                            As
                              (Named
                                 (SynIdent (a, None), false, None, (5,9--5,10)),

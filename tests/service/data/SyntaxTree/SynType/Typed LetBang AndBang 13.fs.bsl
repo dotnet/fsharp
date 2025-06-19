@@ -31,7 +31,7 @@ ImplFile
                          (Atomic, false, Ident asyncArray,
                           Const (Unit, (4,54--4,56)), (4,44--4,56)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,50), false, true,
                            Paren
                              (ListCons
                                 (Named

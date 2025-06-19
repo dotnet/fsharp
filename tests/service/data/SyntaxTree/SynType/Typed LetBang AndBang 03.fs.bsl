@@ -28,7 +28,7 @@ ImplFile
                          (Atomic, false, Ident asyncPerson,
                           Const (Unit, (4,59--4,61)), (4,48--4,61)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,42), false, true,
                            Paren
                              (Typed
                                 (Record

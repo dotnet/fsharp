@@ -34,7 +34,7 @@ ImplFile
                          (Atomic, false, Ident asyncInt,
                           Const (Unit, (4,37--4,39)), (4,29--4,39)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,38), false, true,
                            Paren
                              (Tuple
                                 (false,

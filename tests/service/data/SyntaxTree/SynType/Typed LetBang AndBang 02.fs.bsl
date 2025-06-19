@@ -27,7 +27,7 @@ ImplFile
                                 { YieldOrReturnKeyword = (4,30--4,36) }),
                              (4,28--4,40)), (4,22--4,40)),
                        [SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,41), false, true,
                            Paren
                              (Typed
                                 (Named

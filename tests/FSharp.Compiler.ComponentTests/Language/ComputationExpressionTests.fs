@@ -1576,8 +1576,8 @@ let testParallel3() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 44, Col 17, Line 44, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
-            (Error 3350, Line 43, Col 14, Line 43, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 43, Col 17, Line 43, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 44, Col 17, Line 44, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
         
     [<Fact>]
@@ -1693,8 +1693,8 @@ let testParallel2() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 43, Col 48, Line 43, Col 52, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
-            (Error 3350, Line 42, Col 14, Line 42, Col 48, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 42, Col 42, Line 42, Col 48, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 43, Col 48, Line 43, Col 52, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
 
     [<Fact>]
@@ -1809,10 +1809,10 @@ let testParallel2() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 35, Col 29, Line 35, Col 45, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 34, Col 14, Line 34, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 34, Col 29, Line 34, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 35, Col 29, Line 35, Col 45, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 41, Col 27, Line 41, Col 40, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
             (Error 3350, Line 42, Col 27, Line 42, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 41, Col 14, Line 41, Col 40, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
 
     [<Fact>]
