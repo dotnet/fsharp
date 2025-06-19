@@ -266,7 +266,7 @@ namespace N
         |> shouldFail
         |> withDiagnostics [
             (Warning 3569, Line 10, Col 17, Line 10, Col 26, "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.")
-            (Warning 3569, Line 15, Col 17, Line 15, Col 26, "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.")
+            (Warning 3569, Line 15, Col 17, Line 15, Col 26, "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.")
         ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
