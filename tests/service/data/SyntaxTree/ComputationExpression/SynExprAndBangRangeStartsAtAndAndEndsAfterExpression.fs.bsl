@@ -19,7 +19,7 @@ ImplFile
                          (NonAtomic, false, Ident getBar,
                           Const (Unit, (3,22--3,24)), (3,15--3,24)),
                        [SynExprAndBang
-                          (Yes (5,4--7,10), false, true,
+                          (Yes (5,4--5,24), false, true,
                            Named
                              (SynIdent (foo, None), false, None, (5,9--5,12)),
                            App

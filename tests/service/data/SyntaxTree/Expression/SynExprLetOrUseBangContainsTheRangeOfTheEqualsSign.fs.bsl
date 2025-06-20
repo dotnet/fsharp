@@ -16,7 +16,7 @@ ImplFile
                        Named (SynIdent (x, None), false, None, (3,9--3,10)),
                        Ident y,
                        [SynExprAndBang
-                          (Yes (4,4--5,10), false, true,
+                          (Yes (4,4--4,28), false, true,
                            Named (SynIdent (z, None), false, None, (4,9--4,10)),
                            App
                              (NonAtomic, false, Ident someFunction,
