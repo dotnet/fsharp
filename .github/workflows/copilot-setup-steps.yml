@@ -21,12 +21,12 @@ jobs:
       - name: Restore the compiler service solution
         env:
           CI: false
-        run: ./build.sh -c Release --verbosity quiet
+        run: ./build.sh -c Release --verbosity quiet || true
       - name: Restore the language server solution
         env:
           CI: false
-        run: dotnet build ./LSPSolutionSlim.sln -c Release --verbosity quiet
+        run: dotnet build ./LSPSolutionSlim.sln -c Release --verbosity quiet || true
       - name: Restore dotnet tools
         env:
           CI: false
-        run: dotnet tool restore
+        run: dotnet tool restore || true
