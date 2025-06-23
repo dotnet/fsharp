@@ -5142,11 +5142,6 @@
         <target state="translated">Bu öznitelik, bu dil öğesinde kullanılmak için geçerli değil. Bütünleştirilmiş kod öznitelikleri, bir 'do ()' bildirimine, gerekirse F# modülü içine iliştirilmelidir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Bu öznitelik, bu dil öğesinde kullanılmak için geçerli değil</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">İsteğe bağlı bağımsız değişkenler özel özniteliklerde kullanılamaz</target>

@@ -1146,4 +1146,10 @@
   <data name="Parser.TOKEN.WHILE.BANG" xml:space="preserve">
     <value>keyword 'while!'</value>
   </data>
+  <data name="InvalidAttributeTargetForLanguageElement1" xml:space="preserve">
+    <value>This attribute cannot be applied to {0}. Valid targets are: {1}</value>
+  </data>
+  <data name="InvalidAttributeTargetForLanguageElement2" xml:space="preserve">
+    <value>This attribute is not valid for use on this language element</value>
+  </data>
 </root>

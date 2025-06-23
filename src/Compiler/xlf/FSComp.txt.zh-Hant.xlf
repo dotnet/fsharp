@@ -5142,11 +5142,6 @@
         <target state="translated">這個屬性不能用在這個語言項目上。組件屬性應該附加到 'do ()' 宣告 (如果 F# 模組中需要的話)。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">這個屬性不能用在這個語言項目上</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">選擇性的引數不能用在自訂屬性中</target>
