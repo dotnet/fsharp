@@ -102,7 +102,7 @@ module TestModule =
 
     if getString = "A string" then ()
     """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compile
         |> shouldSucceed
 

@@ -552,7 +552,7 @@ let b = [| { 1;10 } |]
 let c = [ { 1;10 } ]
         """
         |> withOptions [ "--nowarn:0020" ]
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -579,7 +579,7 @@ let c = [ { 1;10 } ]
         compilation
         |> getCompilation
         |> withOptions [ "--nowarn:0020" ]
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -642,7 +642,7 @@ let c = [ { 1;10 } ]
         compilation
         |> getCompilation
         |> withOptions [ "--nowarn:0020" ]
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
         
@@ -685,7 +685,7 @@ let f1() =
         yield (1 : int)
     }
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> asExe
         |> ignoreWarnings
         |> compileAndRun
@@ -730,7 +730,7 @@ let f1() =
         yield! ([1;2] : int list)
     }
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> asExe
         |> ignoreWarnings
         |> compileAndRun

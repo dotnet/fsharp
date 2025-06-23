@@ -69,7 +69,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang01_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
 
@@ -77,7 +77,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang02_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
 
@@ -85,7 +85,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang03_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
         
@@ -93,7 +93,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang04_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
         
@@ -101,7 +101,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang05_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
 
