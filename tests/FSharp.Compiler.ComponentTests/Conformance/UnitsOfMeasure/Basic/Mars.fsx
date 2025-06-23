@@ -40,4 +40,4 @@ let lbfToN (force:float<lbf>) = force * 0.224809<N/lbf>
 
 do applyThruster(lbfToN(3.0<lbf>))
 
-exit 0
+ignore 0

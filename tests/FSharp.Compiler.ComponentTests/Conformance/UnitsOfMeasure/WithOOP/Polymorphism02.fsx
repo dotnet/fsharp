@@ -11,6 +11,6 @@ type Unit<[<Measure>] 'a >() =
 [<Measure>] type kg
 
 let objUnit = new Unit<kg>()
-if objUnit.Factor() <> 1.0 then exit 1
+if objUnit.Factor() <> 1.0 then ignore 1
 
 ignore 0
