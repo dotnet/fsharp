@@ -225,7 +225,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
 
                 // F# 10.0
-                LanguageFeature.EnforceAttributeTargets, languageVersion100 // Not enabled due to a number of external library dependencies on unenforced attributes
+                LanguageFeature.EnforceAttributeTargets, languageVersion100
                 LanguageFeature.UseTypeSubsumptionCache, languageVersion100
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, languageVersion100
