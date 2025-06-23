@@ -554,7 +554,7 @@ let z as
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token.";
         "(19,6--19,8): Expecting pattern";
-        "(20,0--20,0): Incomplete structured construct at or before this point in binding. Expected '=' or other token.";
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token.";
         "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'";
         "(3,4--3,10): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).";
         "(4,16--4,17): This expression was expected to have type 'bool' but here has type 'int'";
@@ -682,7 +682,7 @@ let z as =
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding";
         "(10,5--10,6): Expecting pattern";
-        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
+        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected infix operator, '=' or other token.";
         "(12,6--12,8): Expecting pattern";
         "(13,8--13,10): Unexpected keyword 'as' in binding";
         "(14,8--14,10): Unexpected keyword 'as' in binding";
@@ -879,7 +879,7 @@ let :? z as
         "(16,0--16,3): Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this further. To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.";
         "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token.";
         "(19,9--19,11): Expecting pattern";
-        "(20,0--20,0): Incomplete structured construct at or before this point in binding. Expected '=' or other token.";
+        "(20,0--20,0): Incomplete structured construct at or before this point in binding. Expected infix operator, '=' or other token.";
         "(3,7--3,8): The type 'a' is not defined.";
         "(3,4--3,8): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.";
         "(4,7--4,8): The type 'b' is not defined.";
@@ -1086,7 +1086,7 @@ let as :? z =
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding";
         "(10,5--10,6): Expecting pattern";
-        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token.";
+        "(11,10--11,12): Unexpected keyword 'as' in binding. Expected infix operator, '=' or other token.";
         "(12,6--12,8): Expecting pattern";
         "(13,8--13,10): Unexpected keyword 'as' in binding";
         "(14,8--14,10): Unexpected keyword 'as' in binding";
@@ -1141,7 +1141,7 @@ let y as ?z = 8
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(7,6--7,8): Expecting pattern";
-        "(7,9--7,11): Unexpected symbol '[<' in binding. Expected '=' or other token."
+        "(7,9--7,11): Unexpected symbol '[<' in binding. Expected infix operator, '=' or other token."
         "(8,4--8,11): This is not a valid pattern"
         "(8,4--8,16): Incomplete pattern matches on this expression."
         "(9,9--9,16): This is not a valid pattern"

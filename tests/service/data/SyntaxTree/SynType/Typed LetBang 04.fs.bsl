@@ -46,6 +46,6 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(4,14)-(4,15) parse error Unexpected symbol ',' in binding. Expected '=' or other token.
+(4,14)-(4,15) parse error Unexpected symbol ',' in binding. Expected infix operator, '=' or other token.
 (5,15)-(5,16) parse error Unexpected symbol ',' in expression. Expected '=' or other token.
 (6,4)-(6,10) parse error Incomplete structured construct at or before this point in implementation file
