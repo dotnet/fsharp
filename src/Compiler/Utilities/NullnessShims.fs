@@ -23,11 +23,7 @@ module internal NullnessShims =
         | _, null -> false
         | x, y -> nonNullEqualityFunc !!x !!y
 
-#if BUILDING_WITH_LKG
-    type ActivityDisposable = System.IDisposable
-#else
-    type ActivityDisposable = System.IDisposable | null
-#endif
+
 
 #if NET5_0_OR_GREATER
     // Argument type for overriding System.Object.Equals(arg)
