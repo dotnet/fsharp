@@ -145,12 +145,6 @@ After running the setup script once to install the SDK, you can use regular `dot
    dotnet test tests/FSharp.Compiler.Service.Tests/
    ```
 
-The `dotnet` command can now locate the needed SDK automatically via `global.json` once it's installed locally.
-
-### Why this is needed
-
-The `global.json` file in this repository pins to a specific SDK version that may be a preview or internal build not yet publicly released. The Arcade build system (used by .NET repositories) automatically downloads and uses the correct SDK version, but plain `dotnet` commands need to be pointed to this local installation.
-
 ## Testing from the command line
 
 You can find all test options as separate flags. For example `build -testAll`:
