@@ -37,8 +37,8 @@ module AnonRecd =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 8, Col 20, Line 8, Col 23, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 9, Col 28, Line 9, Col 31, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 8, Col 20, Line 8, Col 23, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 9, Col 28, Line 9, Col 31, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
 
     [<Fact>]
@@ -72,8 +72,8 @@ module AnonRecd =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 4, Col 27, Line 4, Col 30, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 6, Col 28, Line 6, Col 31, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 4, Col 27, Line 4, Col 30, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 6, Col 28, Line 6, Col 31, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ] 
     
     [<Fact>]
@@ -103,8 +103,8 @@ module AnonRecd =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 4, Col 35, Line 4, Col 38, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 6, Col 36, Line 6, Col 39, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 4, Col 35, Line 4, Col 38, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 6, Col 36, Line 6, Col 39, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
     
     [<Fact>]
@@ -134,8 +134,8 @@ module AnonRecd =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 4, Col 30, Line 4, Col 33, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 6, Col 31, Line 6, Col 34, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 4, Col 30, Line 4, Col 33, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 6, Col 31, Line 6, Col 34, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
     
     [<Fact>]
@@ -605,11 +605,11 @@ let (@>=) = (@)
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 5, Col 48, Line 5, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 6, Col 80, Line 6, Col 82, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 7, Col 80, Line 7, Col 82, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 10, Col 47, Line 10, Col 48, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 12, Col 48, Line 12, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 48, Line 5, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 6, Col 80, Line 6, Col 82, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 7, Col 80, Line 7, Col 82, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 10, Col 47, Line 10, Col 48, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 12, Col 48, Line 12, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         
         ]
 
@@ -632,11 +632,11 @@ let expr8 : {| A: Expr |} = {| A = <@@ 1 + 1 @@>|}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 5, Col 44, Line 5, Col 45, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 6, Col 70, Line 6, Col 72, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 7, Col 70, Line 7, Col 72, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 10, Col 43, Line 10, Col 44, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 12, Col 44, Line 12, Col 45, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 44, Line 5, Col 45, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 6, Col 70, Line 6, Col 72, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 7, Col 70, Line 7, Col 72, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 10, Col 43, Line 10, Col 44, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 12, Col 44, Line 12, Col 45, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
 
     [<Fact>]
@@ -654,7 +654,7 @@ let expr2 : {| A: Expr<int>; B: Expr; C: string |} =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 5, Col 50, Line 5, Col 55, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 50, Line 5, Col 55, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
 
     [<Fact>]
@@ -672,8 +672,8 @@ let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 5, Col 34, Line 5, Col 35, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 5, Col 61, Line 5, Col 66, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 5, Col 34, Line 5, Col 35, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 5, Col 61, Line 5, Col 66, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
             (Error 3350, Line 8, Col 22, Line 8, Col 24, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
             (Error 3350, Line 8, Col 44, Line 8, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
