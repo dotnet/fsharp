@@ -128,31 +128,24 @@ This downloads and installs the correct SDK version to a local `.dotnet` directo
 
 ### Using dotnet commands with the local SDK
 
-After running the setup script, you can use `dotnet` commands in two ways:
+After running the setup script once to install the SDK, you can use regular `dotnet` commands normally:
 
-1. **Use the wrapper scripts** (recommended):
+1. **One-time SDK installation**:
    ```shell
    # Linux/macOS
-   ./eng/common/dotnet.sh build FSharp.Compiler.Service.sln
-   ./eng/common/dotnet.sh test tests/FSharp.Compiler.Service.Tests/
+   ./eng/common/dotnet.sh
    
    # Windows
-   .\eng\common\dotnet.cmd build FSharp.Compiler.Service.sln
-   .\eng\common\dotnet.cmd test tests\FSharp.Compiler.Service.Tests\
+   .\eng\common\dotnet.cmd
    ```
 
-2. **Set environment variables** to use plain `dotnet` commands:
+2. **Regular dotnet commands** (after SDK installation):
    ```shell
-   # Linux/macOS
-   export DOTNET_ROOT=$(pwd)/.dotnet
-   export PATH="$DOTNET_ROOT:$PATH"
    dotnet build FSharp.Compiler.Service.sln
-   
-   # Windows (PowerShell)
-   $env:DOTNET_ROOT = "$(Get-Location)\.dotnet"
-   $env:PATH = "$env:DOTNET_ROOT;$env:PATH"
-   dotnet build FSharp.Compiler.Service.sln
+   dotnet test tests/FSharp.Compiler.Service.Tests/
    ```
+
+The `dotnet` command can now locate the needed SDK automatically via `global.json` once it's installed locally.
 
 ### Why this is needed
 
