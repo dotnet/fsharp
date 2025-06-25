@@ -30,5 +30,8 @@
     "remoteEnv": {
         "TARGET": "net9.0"
     },
-    "postCreateCommand": [ "dotnet", "build", "FSharp.Compiler.Service.sln"]
+    "postCreateCommand": [
+        "bash", "-c", 
+        "# Set up the correct .NET SDK and build the solution\n./eng/common/dotnet.sh\nexport DOTNET_ROOT=$(if [ -d '.dotnet' ]; then echo \"$PWD/.dotnet\"; else echo \"$DOTNET_ROOT\"; fi)\nexport PATH=\"$DOTNET_ROOT:$PATH\"\ndotnet build FSharp.Compiler.Service.sln"
+    ]
 }

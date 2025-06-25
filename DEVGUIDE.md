@@ -102,6 +102,62 @@ Running tests:
 
 You can then open `FSharp.sln` in your editor of choice.
 
+## Working with non-released .NET SDKs
+
+This repository may require a non-released version of the .NET SDK, as specified in the `global.json` file. When the required SDK version is not publicly available through normal channels, you may encounter an error when running `dotnet build` directly:
+
+```
+The .NET SDK could not be found, please run ./eng/common/dotnet.sh.
+```
+
+### Setting up the correct SDK
+
+Before using plain `dotnet build` commands, you need to install the required SDK version locally:
+
+**On Linux/macOS:**
+```shell
+./eng/common/dotnet.sh
+```
+
+**On Windows:**
+```shell
+.\eng\common\dotnet.cmd
+```
+
+This downloads and installs the correct SDK version to a local `.dotnet` directory in the repository root.
+
+### Using dotnet commands with the local SDK
+
+After running the setup script, you can use `dotnet` commands in two ways:
+
+1. **Use the wrapper scripts** (recommended):
+   ```shell
+   # Linux/macOS
+   ./eng/common/dotnet.sh build FSharp.Compiler.Service.sln
+   ./eng/common/dotnet.sh test tests/FSharp.Compiler.Service.Tests/
+   
+   # Windows
+   .\eng\common\dotnet.cmd build FSharp.Compiler.Service.sln
+   .\eng\common\dotnet.cmd test tests\FSharp.Compiler.Service.Tests\
+   ```
+
+2. **Set environment variables** to use plain `dotnet` commands:
+   ```shell
+   # Linux/macOS
+   export DOTNET_ROOT=$(pwd)/.dotnet
+   export PATH="$DOTNET_ROOT:$PATH"
+   dotnet build FSharp.Compiler.Service.sln
+   
+   # Windows (PowerShell)
+   $env:DOTNET_ROOT = "$(Get-Location)\.dotnet"
+   $env:PATH = "$env:DOTNET_ROOT;$env:PATH"
+   dotnet build FSharp.Compiler.Service.sln
+   ```
+
+### Why this is needed
+
+The `global.json` file in this repository pins to a specific SDK version that may be a preview or internal build not yet publicly released. The Arcade build system (used by .NET repositories) automatically downloads and uses the correct SDK version, but plain `dotnet` commands need to be pointed to this local installation.
+
 ## Testing from the command line
 
 You can find all test options as separate flags. For example `build -testAll`:
