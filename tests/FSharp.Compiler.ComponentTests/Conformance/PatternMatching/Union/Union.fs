@@ -235,7 +235,6 @@ but here has type
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"UpperUnionCasePattern.fs"|])>]
     let ``Union - UpperUnionCasePattern_fs preview - --test:ErrorRanges`` compilation =
         compilation
-        |> withLangVersionPreview
         |> asFs
         |> withOptions ["--test:ErrorRanges"; "--nowarn:026"]
         |> typecheck

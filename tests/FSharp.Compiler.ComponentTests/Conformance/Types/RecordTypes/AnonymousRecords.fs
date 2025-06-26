@@ -43,7 +43,7 @@ module AnonRecd =
         ]
 
     [<Fact>]
-    let ``Preview : Anonymous Record with unit of measures`` () =
+    let ``Anonymous Record with unit of measures`` () =
         FSharp """
 namespace FSharpTest
 
@@ -56,7 +56,6 @@ module AnonRecd =
     let c = {|a=1<m> |}
     let d = {| a=1<m>; b=2<m>; c=3<m> |}   
 """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
     
@@ -79,7 +78,7 @@ module AnonRecd =
         ] 
     
     [<Fact>]
-    let ``Preview: Anonymous Record with typeof`` () =
+    let ``Anonymous Record with typeof`` () =
         FSharp """
 namespace FSharpTest
 module AnonRecd =
@@ -88,7 +87,6 @@ module AnonRecd =
     let c = {| a=typeof<int>|}
     let d = {| a=typeof<int> |}
 """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed    
     
@@ -111,7 +109,7 @@ module AnonRecd =
         ]
     
     [<Fact>]
-    let ``Preview: Anonymous Record with typedefof`` () =
+    let ``Anonymous Record with typedefof`` () =
         FSharp """
 namespace FSharpTest
 module AnonRecd =
@@ -120,7 +118,6 @@ module AnonRecd =
     let c = {| a=typedefof<_ option>|}
     let d = {| a=typedefof<_ option> |}
 """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed    
     
@@ -143,7 +140,7 @@ module AnonRecd =
         ]
     
     [<Fact>]
-    let ``Preview: Anonymous Record with nameof`` () =
+    let ``Anonymous Record with nameof`` () =
         FSharp """
 namespace FSharpTest
 module AnonRecd =
@@ -152,7 +149,6 @@ module AnonRecd =
     let c<'T> = {| a=nameof<'T>|}
     let d<'T> = {| a=nameof<'T> |}
 """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
     
@@ -513,7 +509,7 @@ let v = {| ``A`` = 0; B = 5; A = ""; B = 0 |}
         ]
             
     [<Fact>]
-    let ``Preview: Anonymous records with typed quotations should parse correctly``() =
+    let ``Anonymous records with typed quotations should parse correctly``() =
         Fsx """
 open Microsoft.FSharp.Quotations
 
@@ -532,12 +528,11 @@ let (@>=) = (@)
 
 [1..2] =<@ [3..4] @>= [5..6]
     """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``Preview: Anonymous records with untyped quotations should parse correctly``() =
+    let ``Anonymous records with untyped quotations should parse correctly``() =
         Fsx """
 open Microsoft.FSharp.Quotations
 
@@ -551,12 +546,11 @@ let expr6 : {| A: Expr |} = {| A= <@@ 1 + 1 @@>|}
 let expr7 : {| A: Expr |} = {| A = <@@ 1 + 1 @@> |}
 let expr8 : {| A: Expr |} = {| A = <@@ 1 + 1 @@>|}
     """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``Preview: Anonymous records with mixed quotations should parse correctly``() =
+    let ``Anonymous records with mixed quotations should parse correctly``() =
         Fsx """
 open Microsoft.FSharp.Quotations
 
@@ -566,12 +560,11 @@ let expr : {| Typed: Expr<int>; Untyped: Expr |} =
 let expr2 : {| A: Expr<int>; B: Expr; C: string |} = 
     {| A = <@ 42 @>; B = <@@ true @@>; C = "normal string"|}
     """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``Preview: Nested anonymous records with quotations should parse correctly``() =
+    let ``Nested anonymous records with quotations should parse correctly``() =
         Fsx """
 open Microsoft.FSharp.Quotations
 
@@ -581,7 +574,6 @@ let nested =
 let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} = 
     {| A = {| B = <@ 42 @>|}; C = <@@ true @@>|}
     """
-        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         
