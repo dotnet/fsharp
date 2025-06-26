@@ -30,7 +30,7 @@
     "remoteEnv": {
         "TARGET": "net9.0",
         "DOTNET_ROOT": "${containerWorkspaceFolder}/.dotnet",
-        "PATH": "${containerWorkspaceFolder}/.dotnet:${PATH}"
+        "PATH": "${containerWorkspaceFolder}/.dotnet:${containerEnv:PATH}"
     },
     "postCreateCommand": [
         "bash", "-c", 
