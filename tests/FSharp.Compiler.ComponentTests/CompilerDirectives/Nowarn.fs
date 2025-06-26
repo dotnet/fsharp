@@ -179,6 +179,6 @@ let a = 1; #nowarn 20
         |> compile
         |> withDiagnostics [
             Error 3874, Line 4, Col 11, Line 4, Col 22, "#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
-            Warning 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'xy'"
-            Warning 203, Line 3, Col 12, Line 3, Col 17, "Invalid warning number 'abx'"
+            Error 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'xy'"
+            Error 203, Line 3, Col 12, Line 3, Col 17, "Invalid warning number 'abx'"
         ]

@@ -360,7 +360,7 @@ let foo items =
 
 [<EntryPoint>]
 let main args =
-    foo ({1..10} |> Seq.pairwise)
+    foo (seq {1..10} |> Seq.pairwise)
     0
         """
         |> asExe

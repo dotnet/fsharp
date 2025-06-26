@@ -21,7 +21,7 @@ module AnonRecd =
         |> withMessage "The field 'A' appears multiple times in this record expression."
 
     [<Fact>]
-    let ``Anonymous Record with unit of measures`` () =
+    let ``Anonymous Record with unit of measures v9`` () =
         FSharp """
 namespace FSharpTest
 
@@ -34,6 +34,7 @@ module AnonRecd =
     let c = {|a=1<m> |}
     let d = {| a=1<m>; b=2<m>; c=3<m> |}   
 """
+        |> withLangVersion90
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -60,7 +61,7 @@ module AnonRecd =
         |> shouldSucceed
     
     [<Fact>]
-    let ``Anonymous Record with typeof`` () =
+    let ``Anonymous Record with typeof -v9`` () =
         FSharp """
 namespace FSharpTest
 module AnonRecd =
@@ -69,6 +70,7 @@ module AnonRecd =
     let c = {| a=typeof<int>|}
     let d = {| a=typeof<int> |}
 """
+        |> withLangVersion90
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -91,7 +93,7 @@ module AnonRecd =
         |> shouldSucceed    
     
     [<Fact>]
-    let ``Anonymous Record with typedefof`` () =
+    let ``Anonymous Record with typedefof -v9`` () =
         FSharp """
 namespace FSharpTest
 module AnonRecd =
@@ -100,6 +102,7 @@ module AnonRecd =
     let c = {| a=typedefof<_ option>|}
     let d = {| a=typedefof<_ option> |}
 """
+        |> withLangVersion90
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -122,7 +125,7 @@ module AnonRecd =
         |> shouldSucceed    
     
     [<Fact>]
-    let ``Anonymous Record with nameof`` () =
+    let ``Anonymous Record with nameof -v9`` () =
         FSharp """
 namespace FSharpTest
 module AnonRecd =
@@ -131,6 +134,7 @@ module AnonRecd =
     let c<'T> = {| a=nameof<'T>|}
     let d<'T> = {| a=nameof<'T> |}
 """
+        |> withLangVersion90
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -658,7 +662,7 @@ let expr2 : {| A: Expr<int>; B: Expr; C: string |} =
         ]
 
     [<Fact>]
-    let ``Version 9: Nested anonymous records with quotations should parse correctly``() =
+    let ``Version 9: Nested anonymous records with quotations should parse correctly v9``() =
         Fsx """
 open Microsoft.FSharp.Quotations
 
@@ -674,6 +678,6 @@ let nested2 : {| A: {| B: Expr<int> |}; C: Expr |} =
         |> withDiagnostics [
             (Error 3350, Line 5, Col 34, Line 5, Col 35, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
             (Error 3350, Line 5, Col 61, Line 5, Col 66, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
-            (Error 3350, Line 8, Col 22, Line 8, Col 24, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 3350, Line 8, Col 44, Line 8, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 8, Col 22, Line 8, Col 24, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 8, Col 44, Line 8, Col 49, "Feature 'Support for better anonymous record parsing' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
