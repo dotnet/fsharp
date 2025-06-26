@@ -28,7 +28,9 @@
         }
     },
     "remoteEnv": {
-        "TARGET": "net9.0"
+        "TARGET": "net9.0",
+        "DOTNET_ROOT": "${containerWorkspaceFolder}/.dotnet",
+        "PATH": "${containerWorkspaceFolder}/.dotnet:${PATH}"
     },
     "postCreateCommand": [
         "bash", "-c", 
