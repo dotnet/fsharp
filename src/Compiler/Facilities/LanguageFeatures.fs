@@ -227,7 +227,7 @@ type LanguageVersion(versionText) =
                 // F# 10.0
                 LanguageFeature.EnforceAttributeTargets, languageVersion100
                 LanguageFeature.UseTypeSubsumptionCache, languageVersion100
-                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
+                
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, languageVersion100
                 LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, languageVersion100
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, languageVersion100
@@ -241,6 +241,7 @@ type LanguageVersion(versionText) =
                 // F# preview (still preview in 10.0)
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100 // Stopped printing arguments to indexed properties
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
