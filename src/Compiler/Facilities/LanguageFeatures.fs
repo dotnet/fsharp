@@ -227,7 +227,7 @@ type LanguageVersion(versionText) =
                 // F# 10.0
                 LanguageFeature.EnforceAttributeTargets, languageVersion100
                 LanguageFeature.UseTypeSubsumptionCache, languageVersion100
-                
+
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, languageVersion100
                 LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, languageVersion100
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, languageVersion100

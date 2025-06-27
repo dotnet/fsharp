@@ -74,6 +74,7 @@ let main _ =
     let ``IWSAM test files`` compilation =
         compilation
         |> setupCompilation false
+        |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
 
@@ -1399,6 +1400,7 @@ let inline length2 (x: ^a when ^a: (member Length: int with public get)) = x.Len
 let inline length3 (x: ^a when ^a: (member Length: int with public set)) = x.set_Length(1)
 let inline length4 (x: ^a when ^a: (member public get_Length: unit -> int)) = x.get_Length()
         """
+        |> withLangVersionPreview
         |> withRealInternalSignature realsig
         |> typecheck
         |> shouldFail
