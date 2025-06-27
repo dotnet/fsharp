@@ -28,7 +28,12 @@
         }
     },
     "remoteEnv": {
-        "TARGET": "net9.0"
+        "TARGET": "net9.0",
+        "DOTNET_ROOT": "${containerWorkspaceFolder}/.dotnet",
+        "PATH": "${containerWorkspaceFolder}/.dotnet:${containerEnv:PATH}"
     },
-    "postCreateCommand": [ "dotnet", "build", "FSharp.Compiler.Service.sln"]
+    "postCreateCommand": [
+        "bash", "-c", 
+        "./eng/common/dotnet.sh && dotnet build FSharp.Compiler.Service.sln"
+    ]
 }
