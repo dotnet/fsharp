@@ -457,11 +457,13 @@ stages:
                 _configuration: Release
                 _testKind: testFSharpQA
                 transparentCompiler:
+                cacheOverride: 256
               vs_release:
                 _configuration: Release
                 _testKind: testVs
                 setupVsHive: true
                 transparentCompiler:
+                cacheOverride: 256
               transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
@@ -485,6 +487,7 @@ stages:
               DOTNET_DbgMiniDumpType: 3 # Triage dump, 1 for mini, 2 for Heap, 3 for triage, 4 for full. Don't use 4 unless you know what you're doing.
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\$(_configuration)\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
+              FSHARP_CACHE_OVERRIDE: $(cacheOverride)
             displayName: Build and Test $(_testKind) $(transparentCompiler)
 
           - task: PublishTestResults@2
