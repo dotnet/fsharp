@@ -5,7 +5,7 @@
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
-type Foo[<ReflectedDefinition>]() =
+type Foo [<ReflectedDefinition>]() =
     let x = 2
     member this.Test y = x + y
 

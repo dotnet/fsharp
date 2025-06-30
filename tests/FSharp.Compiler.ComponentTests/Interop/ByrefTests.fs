@@ -61,7 +61,7 @@ module ``Byref interop verification tests`` =
 open System
 let x(a:Action<ReadOnlySpan<int>>) = a.Invoke(ReadOnlySpan([||]))
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
 
@@ -74,7 +74,7 @@ let x() =
     let a:(Action<ReadOnlySpan<int>>) = Unchecked.defaultof<_>
     a
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
 
@@ -89,7 +89,7 @@ let main _args =
                 with member x.CompareTo(o) = 42 }
     comparer.CompareTo(ReadOnlySpan([||]))
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
 
@@ -102,7 +102,7 @@ let processSeq (input:seq<ReadOnlySpan<int>>) =
     for ros in input do
         printfn "%i" (ros.Length)
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
 
@@ -129,7 +129,7 @@ let main _args =
     0
         """
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
         |> verifyOutputContains [|": false";"x: true";"xyz: true"|]
@@ -147,7 +147,7 @@ let main _args =
     let altLookup = myDict.GetAlternateLookup<ReadOnlySpan<char>>()
     altLookup.ContainsKey(ReadOnlySpan([|'x'|]))
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
 
@@ -179,7 +179,7 @@ let main _args =
     0
         """
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
         |> verifyOutputContains [|"1";"System.Action`1[System.ReadOnlySpan`1[System.Int32]]"|]
@@ -205,7 +205,7 @@ let processRecord (recd:MyRecordFullOfWrongStuff<Span<Span<Uri>>>) =
     recd.MyDict.["x"]
 
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldFail
         |> withDiagnostics 

@@ -27,6 +27,6 @@ let transpose (source: seq<#seq<'T>>) =
     Fsi """module Program
 val transpose: source: seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>""" 
     |> withAdditionalSourceFile encodeFs
-    |> withLangVersionPreview
+    |> withLangVersion10
     |> compile
     |> shouldSucceed

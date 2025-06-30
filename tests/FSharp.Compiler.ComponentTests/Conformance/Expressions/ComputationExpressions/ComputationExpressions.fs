@@ -151,8 +151,7 @@ module EmptyBodied =
     /// F# 9.0 and above support empty-bodied computation expressions.
     module Supported =
         /// The language version that supports empty-bodied computation expressions.
-        /// TODO: Update this to the appropriate version when the feature comes out of preview.
-        let [<Literal>] SupportedLanguageVersion = "preview"
+        let [<Literal>] SupportedLanguageVersion = "latest"
 
         [<Fact>]
         let ``seq { } ≡ seq { () }`` () =

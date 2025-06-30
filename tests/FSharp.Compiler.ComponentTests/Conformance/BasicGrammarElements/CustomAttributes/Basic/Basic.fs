@@ -160,7 +160,6 @@ module CustomAttributes_Basic =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayoutSequentialNeg_DU2.fs"|])>]
     let ``E_StructLayoutSequentialNeg_DU2_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -171,7 +170,6 @@ module CustomAttributes_Basic =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayoutSequentialNeg_Delegate.fs"|])>]
     let ``E_StructLayoutSequentialNeg_Delegate_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -182,7 +180,6 @@ module CustomAttributes_Basic =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_StructLayoutSequentialNeg_Interface.fs"|])>]
     let ``E_StructLayoutSequentialNeg_Interface_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

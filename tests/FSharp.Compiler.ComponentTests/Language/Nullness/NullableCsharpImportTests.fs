@@ -254,7 +254,7 @@ let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
     |> asLibrary
     |> withReferences [csharpLib]
     |> withStrictNullness
-    |> withLangVersionPreview
+    |> withLangVersion10
     |> compile
     |> shouldFail
     |> withDiagnostics 
