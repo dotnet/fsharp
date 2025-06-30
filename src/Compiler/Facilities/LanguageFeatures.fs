@@ -224,10 +224,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
 
+
                 // F# 10.0
                 LanguageFeature.EnforceAttributeTargets, languageVersion100
                 LanguageFeature.UseTypeSubsumptionCache, languageVersion100
-
                 LanguageFeature.AllowObjectExpressionWithoutOverrides, languageVersion100
                 LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, languageVersion100
                 LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, languageVersion100
