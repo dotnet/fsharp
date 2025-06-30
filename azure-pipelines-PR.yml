@@ -457,11 +457,13 @@ stages:
                 _configuration: Release
                 _testKind: testFSharpQA
                 transparentCompiler:
+                FSHARP_CACHE_OVERRIDE: 256
               vs_release:
                 _configuration: Release
                 _testKind: testVs
                 setupVsHive: true
                 transparentCompiler:
+                FSHARP_CACHE_OVERRIDE: 256
               transparent_compiler_release:
                 _configuration: Release
                 _testKind: testCoreclr
