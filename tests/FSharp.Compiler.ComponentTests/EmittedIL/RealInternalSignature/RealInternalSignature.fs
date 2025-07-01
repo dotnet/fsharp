@@ -1253,7 +1253,6 @@ module M =
        let res = C("http://www.myserver.com")
        0
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature true
         |> asLibrary
         |> compile
@@ -1281,7 +1280,6 @@ module M =
        let res = C("http://www.myserver.com")
        0
         """
-        |> withLangVersionPreview
         |> withRealInternalSignature false
         |> asLibrary
         |> compile
