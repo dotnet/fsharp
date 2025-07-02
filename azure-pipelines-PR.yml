@@ -928,7 +928,7 @@ stages:
             $repoName = "$(Build.Repository.Name)"
 
             if ([string]::IsNullOrEmpty($prNumber) -or [string]::IsNullOrEmpty($repoName)) {
-              Write-Host "ΓÜá∩╕Å Missing PR number or repository name, skipping assignee check"
+              Write-Host "Missing PR number or repository name, skipping assignee check"
               Write-Host "##vso[task.setvariable variable=shouldRunReport;isOutput=true]false"
               exit 0
             }
@@ -941,7 +941,7 @@ stages:
             }
 
             $prUrl = "https://api.github.com/repos/$repoName/pulls/$prNumber"
-            Write-Host "≡ƒöì Checking PR assignee for: $prUrl"
+            Write-Host "Checking PR assignee for: $prUrl"
 
             $prData = Invoke-RestMethod -Uri $prUrl -Headers $headers -Method Get
 
@@ -952,23 +952,23 @@ stages:
             }
 
             if ($assigneeLogins.Count -gt 0) {
-              Write-Host "≡ƒæñ PR assignee(s): $($assigneeLogins -join ', ')"
+              Write-Host "PR assignee(s): $($assigneeLogins -join ', ')"
 
               # Check if any assignee is in the allowed list
               $allowedAssignee = $assigneeLogins | Where-Object { $_ -in $allowedAssignees } | Select-Object -First 1
 
               if ($allowedAssignee) {
-                Write-Host "Γ£à Failure report will be generated (found allowed assignee: '$allowedAssignee')"
+                Write-Host "Failure report will be generated (found allowed assignee: '$allowedAssignee')"
                 $shouldRunReport = $true
               } else {
-                Write-Host "Γ¥î No allowed assignees found. Assignees: $($assigneeLogins -join ', ')"
+                Write-Host "No allowed assignees found. Assignees: $($assigneeLogins -join ', ')"
               }
             } else {
-              Write-Host "Γä╣∩╕Å PR has no assignees, skipping failure report"
+              Write-Host "PR has no assignees, skipping failure report"
             }
           }
           catch {
-            Write-Warning "Γ¥î Failed to check PR assignee: $($_.Exception.Message)"
+            Write-Warning "Failed to check PR assignee: $($_.Exception.Message)"
             Write-Host "Setting shouldRunReport to false due to error"
           }
 
