@@ -890,3 +890,109 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+# ============================================================================
+# FAILURE REPORTING STAGE
+# ============================================================================
+- stage: report_failures
+  displayName: Report Build and Test Failures
+  dependsOn: build
+  condition: and(
+    always(),
+    eq(variables['Build.Reason'], 'PullRequest'),
+    eq(variables['System.TeamProject'], 'public'),
+    or(
+      eq(dependencies.build.result, 'Failed'),
+      eq(dependencies.build.result, 'SucceededWithIssues')
+    ))
+  jobs:
+  - job: CollectAndReportFailures
+    displayName: 'Report Build and Test Failures to GitHub PR'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+
+    # Check if PR assignee is allowed to receive failure reports
+    - task: PowerShell@2
+      displayName: 'Check PR Assignee'
+      name: 'CheckAssignee'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $allowedAssignees = @('abonie', 'copilot', 'T-Gro')
+          $shouldRunReport = $false
+
+          try {
+            $prNumber = "$(System.PullRequest.PullRequestNumber)"
+            $repoName = "$(Build.Repository.Name)"
+
+            if ([string]::IsNullOrEmpty($prNumber) -or [string]::IsNullOrEmpty($repoName)) {
+              Write-Host "ΓÜá∩╕Å Missing PR number or repository name, skipping assignee check"
+              Write-Host "##vso[task.setvariable variable=shouldRunReport;isOutput=true]false"
+              exit 0
+            }
+
+            # Get PR details from GitHub API
+            $headers = @{
+              'Authorization' = "token $env:GITHUB_TOKEN"
+              'Accept' = 'application/vnd.github.v3+json'
+              'User-Agent' = 'Azure-DevOps-Build-Reporter'
+            }
+
+            $prUrl = "https://api.github.com/repos/$repoName/pulls/$prNumber"
+            Write-Host "≡ƒöì Checking PR assignee for: $prUrl"
+
+            $prData = Invoke-RestMethod -Uri $prUrl -Headers $headers -Method Get
+
+            $assigneeLogins = @()
+
+            if ($prData.assignees -and $prData.assignees.Count -gt 0) {
+              $assigneeLogins = $prData.assignees | ForEach-Object { $_.login }
+            }
+
+            if ($assigneeLogins.Count -gt 0) {
+              Write-Host "≡ƒæñ PR assignee(s): $($assigneeLogins -join ', ')"
+
+              # Check if any assignee is in the allowed list
+              $allowedAssignee = $assigneeLogins | Where-Object { $_ -in $allowedAssignees } | Select-Object -First 1
+
+              if ($allowedAssignee) {
+                Write-Host "Γ£à Failure report will be generated (found allowed assignee: '$allowedAssignee')"
+                $shouldRunReport = $true
+              } else {
+                Write-Host "Γ¥î No allowed assignees found. Assignees: $($assigneeLogins -join ', ')"
+              }
+            } else {
+              Write-Host "Γä╣∩╕Å PR has no assignees, skipping failure report"
+            }
+          }
+          catch {
+            Write-Warning "Γ¥î Failed to check PR assignee: $($_.Exception.Message)"
+            Write-Host "Setting shouldRunReport to false due to error"
+          }
+
+          Write-Host "##vso[task.setvariable variable=shouldRunReport;isOutput=true]$shouldRunReport"
+          Write-Host "Final decision: shouldRunReport = $shouldRunReport"
+        pwsh: true
+      env:
+        GITHUB_TOKEN: $(github-pat)
+      continueOnError: true
+
+    # Run the failure reporting script
+    - task: PowerShell@2
+      displayName: 'Generate and Post Failure Report'
+      inputs:
+        filePath: '$(Build.SourcesDirectory)/eng/scripts/Report-BuildFailures.ps1'
+        arguments: >-
+          -BuildId $(Build.BuildId)
+          -Organization "$(System.CollectionUri)"
+          -Project "$(System.TeamProject)"
+          -Repository "$(Build.Repository.Name)"
+          -PullRequestId $(System.PullRequest.PullRequestNumber)
+        pwsh: true
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        GITHUB_TOKEN: $(github-pat)
+      condition: and(always(), eq(variables['CheckAssignee.shouldRunReport'], 'true'))
+      continueOnError: true
