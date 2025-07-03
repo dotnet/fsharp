@@ -85,17 +85,7 @@
     </ItemGroup>
   </Target>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\FSharp.VisualStudio.Extension\FSharp.VisualStudio.Extension.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <!--<SetTargetFramework>TargetFramework=net8.0-windows</SetTargetFramework>-->
-      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <IncludeOutputGroupsInVSIX>ExtensionFilesOutputGroup</IncludeOutputGroupsInVSIX>
-    </ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
+<ItemGroup>
     <VSIXSourceItem Include="$(ArtifactsBinDir)\FSharp.VisualStudio.Extension\$(Configuration)\net8.0-windows\.vsextension\extension.json" VsixSubPath=".vsextension" />
   </ItemGroup>
 </Project>

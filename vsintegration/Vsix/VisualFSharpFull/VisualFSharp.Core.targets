@@ -127,6 +127,16 @@
       <Private>True</Private>
     </ProjectReference>
 
+
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.VisualStudio.Extension\FSharp.VisualStudio.Extension.csproj">
+      <Name>FSharp.VisualStudio.Extension</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <!--<SetTargetFramework>TargetFramework=net8.0-windows</SetTargetFramework>-->
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <IncludeOutputGroupsInVSIX>ExtensionFilesOutputGroup</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj">
       <Project>{c4586a06-1402-48bc-8e35-a1b8642f895b}</Project>
       <Name>FSharp.UIResources</Name>
