@@ -138,18 +138,6 @@ type FSharpXunitFramework(sink: IMessageSink) =
                 AssemblyResolver.addResolver ()
             #endif
                 
-                // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
-                use tracerProvider =
-                    OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-                        .AddSource(ActivityNames.FscSourceName)
-                        .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
-                        .AddOtlpExporter(fun o ->
-                            // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
-                            o.TimeoutMilliseconds <- 200
-                            o.BatchExportProcessorOptions.MaxQueueSize <- 16384
-                            o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
-                        )
-                        .Build()
 
                 logConfig initialConfig
                 log "Installing TestConsole redirection"
@@ -162,7 +150,6 @@ type FSharpXunitFramework(sink: IMessageSink) =
                     runner.RunAsync().Wait()
                 end
 
-                tracerProvider.ForceFlush() |> ignore
 
                 cleanUpTemporaryDirectoryOfThisTestRun ()
         }
