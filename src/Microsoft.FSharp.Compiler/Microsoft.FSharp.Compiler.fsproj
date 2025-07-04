@@ -79,6 +79,8 @@
 
     <!-- Force references among packages to use exact versions (see https://github.com/NuGet/Home/issues/7213) -->
     <Microsoft.DotNet.Tools.UpdatePackageVersionTask VersionKind="release" Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Release" AllowPreReleaseDependencies="true" ExactVersions="true" />
+    
+    <Microsoft.DotNet.Tools.UpdatePackageVersionTask VersionKind="prerelease" Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)PreRelease" AllowPreReleaseDependencies="true" ExactVersions="true" />
 
     <!-- Rewrite the version ranges of per-build pre-release packages (see https://github.com/NuGet/Home/issues/7213) -->
     <Microsoft.DotNet.Tools.UpdatePackageVersionTask Packages="@(_BuiltPackages)" OutputDirectory="$(DependentPackagesDir)Shipping" ExactVersions="true"/>
