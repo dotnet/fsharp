@@ -87,6 +87,11 @@
         <target state="new">symbol '&gt;|}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.RQUOTE.BAR.RBRACE">
+        <source>symbol '@&gt;|}' or '@@&gt;|}'</source>
+        <target state="new">symbol '@&gt;|}' or '@@&gt;|}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
         <source>interpolated string</source>
         <target state="translated">düz metin arasına kod eklenmiş dize</target>
@@ -105,11 +110,6 @@
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
         <target state="translated">düz metin arasına kod eklenmiş dize (parça)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RQUOTE.BAR.RBRACE">
-        <source>symbol '@&gt;|}' or '@@&gt;|}'</source>
-        <target state="new">symbol '@&gt;|}' or '@@&gt;|}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE.BANG">
