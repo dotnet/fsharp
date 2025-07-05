@@ -12,10 +12,6 @@
         "release/dev17.14": {
             "MergeToBranch": "main",
             "ExtraSwitches": "-QuietComments"
-        },
-        "main": {
-            "MergeToBranch": "release/dev18.0",
-            "ExtraSwitches": "-QuietComments"
         }
     }
 }
