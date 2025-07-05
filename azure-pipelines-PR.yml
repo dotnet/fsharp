@@ -913,14 +913,14 @@ stages:
     steps:
     - checkout: self
 
-    # Check if PR assignee is allowed to receive failure reports
+    # Check if PR author and assignee are allowed to receive failure reports
     - task: PowerShell@2
-      displayName: 'Check PR Assignee'
+      displayName: 'Check PR Author and Assignee'
       name: 'CheckAssignee'
       inputs:
         targetType: 'inline'
         script: |
-          $allowedAssignees = @('abonie', 'copilot', 'T-Gro')
+          $allowedUsers = @('abonie', 'copilot', 'T-Gro')
           $shouldRunReport = $false
 
           try {
@@ -928,7 +928,7 @@ stages:
             $repoName = "$(Build.Repository.Name)"
 
             if ([string]::IsNullOrEmpty($prNumber) -or [string]::IsNullOrEmpty($repoName)) {
-              Write-Host "Missing PR number or repository name, skipping assignee check"
+              Write-Host "Missing PR number or repository name, skipping author/assignee check"
               Write-Host "##vso[task.setvariable variable=shouldRunReport;isOutput=true]false"
               exit 0
             }
@@ -941,34 +941,55 @@ stages:
             }
 
             $prUrl = "https://api.github.com/repos/$repoName/pulls/$prNumber"
-            Write-Host "Checking PR assignee for: $prUrl"
+            Write-Host "Checking PR author and assignees for: $prUrl"
 
             $prData = Invoke-RestMethod -Uri $prUrl -Headers $headers -Method Get
 
-            $assigneeLogins = @()
+            # Check PR author
+            $authorLogin = $prData.user.login
+            Write-Host "PR author: $authorLogin"
+            
+            $isAuthorAllowed = $authorLogin -in $allowedUsers
+            Write-Host "Is author allowed: $isAuthorAllowed"
 
+            # Check PR assignees
+            $assigneeLogins = @()
             if ($prData.assignees -and $prData.assignees.Count -gt 0) {
               $assigneeLogins = $prData.assignees | ForEach-Object { $_.login }
+              Write-Host "PR assignee(s): $($assigneeLogins -join ', ')"
+            } else {
+              Write-Host "PR has no assignees"
             }
 
-            if ($assigneeLogins.Count -gt 0) {
-              Write-Host "PR assignee(s): $($assigneeLogins -join ', ')"
+            # Check if any assignee is in the allowed list
+            $allowedAssignee = $assigneeLogins | Where-Object { $_ -in $allowedUsers } | Select-Object -First 1
+            $hasAllowedAssignee = $null -ne $allowedAssignee
 
-              # Check if any assignee is in the allowed list
-              $allowedAssignee = $assigneeLogins | Where-Object { $_ -in $allowedAssignees } | Select-Object -First 1
+            Write-Host "Has allowed assignee: $hasAllowedAssignee"
+            if ($hasAllowedAssignee) {
+              Write-Host "Found allowed assignee: '$allowedAssignee'"
+            }
 
-              if ($allowedAssignee) {
-                Write-Host "Failure report will be generated (found allowed assignee: '$allowedAssignee')"
-                $shouldRunReport = $true
-              } else {
-                Write-Host "No allowed assignees found. Assignees: $($assigneeLogins -join ', ')"
-              }
+            # Both conditions must be met: author must be allowed AND at least one assignee must be allowed
+            if ($isAuthorAllowed -and $hasAllowedAssignee) {
+              Write-Host "Failure report will be generated (author '$authorLogin' is allowed and found allowed assignee: '$allowedAssignee')"
+              $shouldRunReport = $true
             } else {
-              Write-Host "PR has no assignees, skipping failure report"
+              if (-not $isAuthorAllowed) {
+                Write-Host "Author '$authorLogin' is not in the allowed users list: $($allowedUsers -join ', ')"
+              }
+              if (-not $hasAllowedAssignee) {
+                if ($assigneeLogins.Count -gt 0) {
+                  Write-Host "No allowed assignees found. Assignees: $($assigneeLogins -join ', ')"
+                } else {
+                  Write-Host "PR has no assignees"
+                }
+              }
+              Write-Host "Skipping failure report - both author and assignee must be from allowed users list"
             }
           }
           catch {
-            Write-Warning "Failed to check PR assignee: $($_.Exception.Message)"
+            Write-Warning "Failed to check PR author/assignee: $($_.Exception.Message)"
             Write-Host "Setting shouldRunReport to false due to error"
           }
 
