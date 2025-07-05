@@ -1731,7 +1731,15 @@ type SynModuleDecl =
     /// An 'expr' within a module.
     | Expr of expr: SynExpr * range: range
 
-    /// One or more 'type' definitions within a module
+    /// <summary>
+    /// A type definition group ('<c>type T1 ... and T2 ...</c>') or a single '<c>type</c>' definition within a module.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// Consecutive '<c>type</c>' keywords (e.g. <c>type T1 ... type T2 ...</c>) are represented individually, with
+    /// separate <c>Types</c> syntax tree nodes for each.
+    /// Only the '<c>and</c>' keyword causes multiple types to be aggregated into a single <c>Types</c> node.
+    /// </remarks>
     | Types of typeDefns: SynTypeDefn list * range: range
 
     /// An 'exception' definition within a module

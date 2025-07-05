@@ -1,131 +1,182 @@
-name: Commands on PR
+name: Run CLI Commands via PR Comment
+
 on:
   issue_comment:
     types: [created]
-  schedule:
-    # once a day at 13:00 UTC
-    - cron: '0 13 * * *'
-
-permissions:
-  contents: write
-  issues: write
-  pull-requests: read
 
 jobs:
-  cleanup_old_runs:
-    if: github.event.schedule == '0 13 * * *'
+  # This first job by definiton runs user-supplied code - you must NOT elevate its permissions to `write`
+  # Malicious code could change nuget source URL, build targets or even compiler itself to pass a GH token
+  # And use it to create branches, spam issues etc. Any write-actions happen in the second job, which does not allow
+  # user extension points (i.e. plain scripts, must NOT run scripts from within checked-out code)
+  detect-and-run:
+    runs-on: ubuntu-latest
+    outputs:
+      command: ${{ steps.parse.outputs.command }}
+      arg: ${{ steps.parse.outputs.arguments }}
+    if: github.event.issue.pull_request
+    steps:
+      - name: Parse comment
+        id: parse
+        uses: dotnet/comment-pipeline@e08a11834acf1e825ac727b732ac9d4cb8120c51
+        with:
+          comment: ${{ toJSON(github.event.comment) }}
+          commands: |
+            /run fantomas
+            /run ilverify
+            /run xlf
+            /run test-baseline
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+          
+      - name: Checkout PR branch
+        if: ${{ steps.parse.outputs.command }}
+        run: gh auth setup-git && gh pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
+
+      - name: Install dotnet tools
+        run: dotnet tool restore
+        
+      - name: Setup .NET 9.0.0 Runtime for test execution
+        if: ${{ steps.parse.outputs.command == '/run test-baseline' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run command
+        id: run-cmd
+        env:
+          TEST_UPDATE_BSL: 1
+        continue-on-error: true
+        run: |
+          case "${{ steps.parse.outputs.command }}" in
+            "/run fantomas") dotnet fantomas . ;;
+            "/run xlf") dotnet build src/Compiler /t:UpdateXlf ;;
+            "/run ilverify") pwsh tests/ILVerify/ilverify.ps1 ;;
+            "/run test-baseline") dotnet test ./FSharp.Compiler.Service.sln --filter "${{ steps.parse.outputs.arguments }}" -c Release || true ;;
+            *) echo "Unknown command" && exit 1 ;;
+          esac
+
+      - name: Create patch & metadata
+        id: meta
+        if: steps.parse.outputs.command
+        run: |
+          echo "run_step_outcome=${{ steps.run-cmd.outcome }}" > result
+          if [[ "${{ steps.run-cmd.outcome }}" == "success" ]]; then
+            git diff > repo.patch || true
+            if [ -s repo.patch ]; then echo "hasPatch=true" >> result; else echo "hasPatch=false" >> result; fi
+          else
+            echo "hasPatch=false" >> result
+          fi
+          cat result
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-results
+          path: |
+            repo.patch
+            result
+
+  apply-and-report:
+    needs: detect-and-run
     runs-on: ubuntu-latest
     permissions:
-      actions: write
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      contents: write
+      pull-requests: write
+    if: needs.detect-and-run.outputs.command != ''
     steps:
-    - name: Delete old workflow runs
-      run: |
-        _UrlPath="/repos/$GITHUB_REPOSITORY/actions/workflows"
-        _CurrentWorkflowID="$(gh api -X GET "$_UrlPath" | jq '.workflows[] | select(.name == '\""$GITHUB_WORKFLOW"\"') | .id')"
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+          
+      - name: Checkout PR branch
+        run: gh auth setup-git && gh pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-results
 
-        # delete workitems which are 'completed'. (other candidate values of status field are: 'queued' and 'in_progress')
+      - name: Read metadata
+        id: read-meta
+        run: |
+          source result
+          echo "run_step_outcome=$run_step_outcome" >> $GITHUB_OUTPUT
+          echo "hasPatch=$hasPatch" >> $GITHUB_OUTPUT
 
-        gh api -X GET "$_UrlPath/$_CurrentWorkflowID/runs" --paginate \
-          | jq '.workflow_runs[] | select(.status == "completed") | .id' \
-          | xargs -I{} gh api -X DELETE "/repos/$GITHUB_REPOSITORY/actions/runs"/{}
+      - name: Apply and push patch
+        if: ${{ steps.read-meta.outputs.run_step_outcome == 'success' && steps.read-meta.outputs.hasPatch == 'true' }}
+        run: |
+          patch -p1 -s --force < repo.patch || true
+          git config user.name "GH Actions"
+          git config user.email "actions@github.com"          
+          git add -u
+          git commit -m "Apply patch from ${{ needs.detect-and-run.outputs.command }}"
+          upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u})
+          remote=${upstream%%/*}
+          branch=${upstream#*/}
+          
+          echo "Pushing to $remote $branch"
+          git push "$remote" HEAD:"$branch"
 
-  run_command:
-    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/run')
-    runs-on: ubuntu-latest
-    steps:
-    - name: Extract command to run
-      uses: actions/github-script@v3
-      id: command-extractor
-      with:
-        result-encoding: string
-        script: |
-          if (context.eventName !== "issue_comment") throw "Error: This action only works on issue_comment events.";
+      - name: Count stats
+        id: stats
+        if: ${{ steps.read-meta.outputs.run_step_outcome == 'success' && steps.read-meta.outputs.hasPatch == 'true' }}
+        run: |
+          files=$(git diff --name-only HEAD~1 HEAD | wc -l)
+          lines=$(git diff HEAD~1 HEAD | wc -l)
+          echo "files=$files" >> $GITHUB_OUTPUT
+          echo "lines=$lines" >> $GITHUB_OUTPUT
+      - name: Generate and publish report
+        if: always()
+        env:
+          COMMAND: ${{ needs.detect-and-run.outputs.command }}
+          OUTCOME: ${{ steps.read-meta.outputs.run_step_outcome }}
+          PATCH: ${{ steps.read-meta.outputs.hasPatch }}
+        run: |
+          # Build the markdown report
+          report="
+            # 🔧 CLI Command Report
 
-          // extract the command to run, allowed characters: a-z, A-Z, digits, hyphen, underscore
-          const regex = /^\/run ([a-zA-Z\d\-\_]+)/;
-          command = regex.exec(context.payload.comment.body);
-          if (command == null) throw "Error: No command found in the trigger phrase.";
+            - **Command:** \`${COMMAND}\`
+            - **Outcome:** ${OUTCOME}
+            
+          "
 
-          return command[1];
-    - name: Get github ref
-      uses: actions/github-script@v3
-      id: get-pr
-      with:
-        script: |
-          const result = await github.pulls.get({
-            pull_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          });
-          return { "ref": result.data.head.ref, "repository": result.data.head.repo.full_name};
-    - name: Checkout repo
-      uses: actions/checkout@v2
-      with:
-        repository: ${{ fromJson(steps.get-pr.outputs.result).repository }}
-        ref: ${{ fromJson(steps.get-pr.outputs.result).ref }}
-        fetch-depth: 0
-    - name: Install dotnet
-      uses: actions/setup-dotnet@v3
-      with:
-        global-json-file: global.json
-    - name: Install dotnet tools
-      run: dotnet tool restore
-    - name: Process fantomas command
-      if: steps.command-extractor.outputs.result == 'fantomas'
-      id: fantomas
-      run: dotnet fantomas .
-    - name: Process xlf command
-      if: steps.command-extractor.outputs.result == 'xlf'
-      id: xlf
-      run: dotnet build src/Compiler /t:UpdateXlf
+          if [[ "$OUTCOME" == "success" ]]; then
+            if [[ "$PATCH" == "true" ]]; then
+              report+="✅ Patch applied:
+              - Files changed: ${{ steps.stats.outputs.files }}
+              - Lines changed: ${{ steps.stats.outputs.lines }}"
+            else
+              report+="✅ Command succeeded, no changes needed."
+            fi
+          else
+            report+="❌ Command **failed** — no patch applied."
+          fi
 
-    - name: Commit and push changes
-      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
-      run: |
-        # Only commit if there are actual changes
-        if git diff --quiet; then
-          echo "No changes to commit, skipping."
-          exit 0
-        fi
-        
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git commit -a -m 'Automated command ran: ${{ steps.command-extractor.outputs.result }}
+          # Output to GitHub Actions UI
+          echo "$report" >> "$GITHUB_STEP_SUMMARY"
 
-          Co-authored-by: ${{ github.event.comment.user.login }} <${{ github.event.comment.user.id }}+${{ github.event.comment.user.login }}@users.noreply.github.com>'
-        git push origin HEAD:"refs/heads/$PR_HEAD_REF"\
-    - name: Post command comment
-      if: steps.fantomas.outcome == 'success' || steps.xlf.outcome == 'success' || steps.ilverify.outcome == 'success'
-      uses: actions/github-script@v3
-      with:
-        script: |
-          // Probably, there's more universal way of getting outputs, but my gh-actions-fu is not that good.
-          var output = ""
-          if ("${{steps.command-extractor.outputs.result}}" == 'fantomas') {
-            output = "${{steps.fantomas.outputs.result}}"
-          } else if ("${{steps.command-extractor.outputs.result}}" == 'xlf') {
-            output = "${{steps.xlf.outputs.result}}"
-          } else if ("${{steps.command-extractor.outputs.result}}" == 'ilverify') {
-            output = "${{steps.ilverify.outputs.result}}"
-          }
-          const body = `Ran ${{ steps.command-extractor.outputs.result }}: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}\n${output}`;
-          await github.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: body
-          });
-    - name: Post command failed comment
-      if: failure()
-      uses: actions/github-script@v3
-      with:
-        script: |
-          const body = `Failed to run ${{ steps.command-extractor.outputs.result }}: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
-          await github.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: body
-          });
+          # Store for use in next step
+          echo "$report" > pr_report.md
+
+      - name: Comment on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ env.PR_NUMBER }}
+        run: |
+          # Use gh CLI to comment with multi-line markdown
+          gh pr comment ${{ github.event.issue.number }} \
+            --body-file pr_report.md
