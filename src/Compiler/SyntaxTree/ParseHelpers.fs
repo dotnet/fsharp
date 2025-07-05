@@ -1054,7 +1054,6 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
-
 /// Unified helper for creating let/let!/use/use! expressions
 /// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
@@ -1072,9 +1071,10 @@ let mkLetExpression
     ) =
     if isBang then
         match bangInfo with
-        | Some (pat, rhs, andBangs, mEquals, isUse) ->
+        | Some(pat, rhs, andBangs, mEquals, isUse) ->
             // Create let! or use! expression
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
+
             let trivia: SynExprLetOrUseBangTrivia =
                 {
                     LetOrUseBangKeyword = mKeyword
@@ -1082,11 +1082,10 @@ let mkLetExpression
                 }
             // isFromSource is true for user-written code
             SynExpr.LetOrUseBang(spBind, isUse, true, pat, rhs, andBangs, body, mWhole, trivia)
-        | None -> 
-            failwith "mkLetExpression: bangInfo required for let!/use! expressions"
+        | None -> failwith "mkLetExpression: bangInfo required for let!/use! expressions"
     else
         match bindingInfo with
-        | Some (isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
+        | Some(isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
             // Create regular let or use expression
             let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
@@ -1122,5 +1121,4 @@ let mkLetExpression
                     InKeyword = mIn'
                 }
             )
-        | None -> 
-            failwith "mkLetExpression: bindingInfo required for regular let/use expressions"
+        | None -> failwith "mkLetExpression: bindingInfo required for regular let/use expressions"

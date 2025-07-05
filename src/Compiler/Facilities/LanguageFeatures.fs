@@ -235,7 +235,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.UseBangBindingValueDiscard, languageVersion100
                 LanguageFeature.BetterAnonymousRecordParsing, languageVersion100
                 LanguageFeature.ScopedNowarn, languageVersion100
-                LanguageFeature.AllowTypedLetOrUseBang, languageVersion100
+                LanguageFeature.AllowTypedLetUseAndBang, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
