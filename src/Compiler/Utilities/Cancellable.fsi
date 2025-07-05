@@ -46,7 +46,6 @@ type internal ITrampolineInvocation<'T> =
 type internal IMachineTemplateWrapper<'T> =
     abstract Clone: unit -> ITrampolineInvocation<'T>
 
-
 type internal ICancellableStateMachine<'T> = IResumableStateMachine<CancellableData<'T>>
 
 type internal CancellableStateMachine<'T> = ResumableStateMachine<CancellableData<'T>>
