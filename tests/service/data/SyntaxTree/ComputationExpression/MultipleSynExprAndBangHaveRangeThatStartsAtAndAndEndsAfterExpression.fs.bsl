@@ -19,7 +19,7 @@ ImplFile
                          (NonAtomic, false, Ident getBar,
                           Const (Unit, (3,22--3,24)), (3,15--3,24)),
                        [SynExprAndBang
-                          (Yes (4,4--4,27), false, true,
+                          (Yes (4,4--4,24), false, true,
                            Named
                              (SynIdent (foo, None), false, None, (4,9--4,12)),
                            App
@@ -29,7 +29,7 @@ ImplFile
                                           EqualsRange = (4,13--4,14)
                                           InKeyword = Some (4,25--4,27) });
                         SynExprAndBang
-                          (Yes (5,4--6,10), false, true,
+                          (Yes (5,4--5,24), false, true,
                            Named
                              (SynIdent (meh, None), false, None, (5,9--5,12)),
                            App
