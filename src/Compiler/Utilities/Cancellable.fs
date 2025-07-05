@@ -1,3 +1,4 @@
+#nowarn FS3513
 namespace FSharp.Compiler
 
 open System
@@ -51,7 +52,7 @@ type Cancellable =
         | ValueNone -> ()
         | ValueSome token -> token.ThrowIfCancellationRequested()
 
-namespace Internal.Utilities.Library
+namespace Internal.Utilities.Library.CancellableImplementation
 
 open System
 open System.Threading
@@ -59,168 +60,240 @@ open FSharp.Compiler
 
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
-[<RequireQualifiedAccess; Struct>]
-type ValueOrCancelled<'TResult> =
-    | Value of result: 'TResult
-    | Cancelled of ``exception``: OperationCanceledException
+open Microsoft.FSharp.Core.CompilerServices
+open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 
-[<Struct>]
-type Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
+type ITrampolineInvocation =
+    abstract member MoveNext: unit -> unit
+    abstract IsCompleted: bool
 
-module Cancellable =
+and [<Sealed>] Trampoline() =
 
-    let inline run (ct: CancellationToken) (Cancellable oper) =
-        if ct.IsCancellationRequested then
-            ValueOrCancelled.Cancelled(OperationCanceledException ct)
-        else
-            try
-                oper ct
-            with
-            | :? OperationCanceledException as e when ct.IsCancellationRequested -> ValueOrCancelled.Cancelled e
-            | :? OperationCanceledException as e -> InvalidOperationException("Wrong cancellation token", e) |> raise
+    static let currentThreadTrampoline = new ThreadLocal<_>(fun () -> Trampoline())
 
-    let fold f acc seq =
-        Cancellable(fun ct ->
-            let mutable acc = ValueOrCancelled.Value acc
+    let stack = System.Collections.Generic.Stack<ITrampolineInvocation>()
 
-            for x in seq do
-                match acc with
-                | ValueOrCancelled.Value accv -> acc <- run ct (f accv x)
-                | ValueOrCancelled.Cancelled _ -> ()
+    member _.Set(invocation: ITrampolineInvocation) = stack.Push(invocation)
 
-            acc)
+    static member CurrentThreadTrampoline = currentThreadTrampoline.Value
 
-    let runWithoutCancellation comp =
-        use _ = Cancellable.UsingToken CancellationToken.None
-        let res = run CancellationToken.None comp
+    member this.Execute(invocation) =
+        stack.Push invocation
 
-        match res with
-        | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation"
-        | ValueOrCancelled.Value r -> r
+        while stack.Count > 0 do
+            stack.Peek().MoveNext()
 
-    let toAsync c =
-        async {
-            use! _holder = Cancellable.UseToken()
+            if stack.Peek().IsCompleted then
+                stack.Pop() |> ignore
 
-            let! ct = Async.CancellationToken
+[<Struct; NoComparison; NoEquality>]
+type CancellableData<'T> =
 
-            return!
-                Async.FromContinuations(fun (cont, _econt, ccont) ->
-                    match run ct c with
-                    | ValueOrCancelled.Value v -> cont v
-                    | ValueOrCancelled.Cancelled ce -> ccont ce)
-        }
+    [<DefaultValue(false)>]
+    val mutable Result: Result<'T, ExceptionDispatchInfo>
 
-    let token () = Cancellable(ValueOrCancelled.Value)
+    member this.GetValue() =
+        match this.Result with
+        | Ok value -> value
+        | Error edi ->
+            edi.Throw()
+            Unchecked.defaultof<_>
+
+type ITrampolineInvocation<'T> =
+    inherit ITrampolineInvocation
+    abstract Hijack: unit -> unit
+    abstract Data: CancellableData<'T>
+
+type IMachineTemplateWrapper<'T> =
+    abstract Clone: unit -> ITrampolineInvocation<'T>
+
+type ICancellableStateMachine<'T> = IResumableStateMachine<CancellableData<'T>>
+type CancellableStateMachine<'T> = ResumableStateMachine<CancellableData<'T>>
+type CancellableResumptionFunc<'T> = ResumptionFunc<CancellableData<'T>>
+type CancellableResumptionDynamicInfo<'T> = ResumptionDynamicInfo<CancellableData<'T>>
+type CancellableCode<'Data, 'T> = ResumableCode<CancellableData<'Data>, 'T>
+
+[<NoEquality; NoComparison>]
+type CancellableInvocation<'T, 'Machine when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>>(machine: 'Machine)
+    =
+
+    let mutable machine = machine
+
+    interface ITrampolineInvocation<'T> with
+        member _.MoveNext() = machine.MoveNext()
+        member _.IsCompleted = machine.ResumptionPoint = -1
+        member _.Data = machine.Data
+
+        member this.Hijack() =
+            Trampoline.CurrentThreadTrampoline.Set this
+
+    interface IMachineTemplateWrapper<'T> with
+        member _.Clone() = CancellableInvocation<_, _>(machine)
+
+[<Struct; NoComparison>]
+type Cancellable<'T>(template: IMachineTemplateWrapper<'T>) =
+
+    member _.GetInvocation() = template.Clone()
+
+module CancellableCode =
+    let inline WithCancelCheck (body: CancellableCode<'Data, 'T>) =
+        CancellableCode<'Data, 'T>(fun sm ->
+            Cancellable.Token.ThrowIfCancellationRequested()
+            body.Invoke(&sm))
+
+    let inline FilterOce ([<InlineIfLambda>] catch: exn -> CancellableCode<'Data, 'T>) (exn: exn) =
+        CancellableCode<'Data, 'T>(fun sm ->
+            match exn with
+            | :? OperationCanceledException as oce when oce.CancellationToken = Cancellable.Token -> true
+            | _ -> (catch exn).Invoke(&sm))
 
 type CancellableBuilder() =
 
-    member inline _.Delay([<InlineIfLambda>] f) =
-        Cancellable(fun ct ->
-            let (Cancellable g) = f ()
-            g ct)
+    member inline _.Zero() : CancellableCode<'Data, unit> = ResumableCode.Zero()
 
-    member inline _.Bind(comp, [<InlineIfLambda>] k) =
-        Cancellable(fun ct ->
+    member inline _.For(sequence, body) : CancellableCode<'Data, unit> = ResumableCode.For(sequence, body)
 
-            __debugPoint ""
+    member inline _.While(condition, body) : CancellableCode<'Data, unit> =
+        ResumableCode.While(condition, CancellableCode.WithCancelCheck body)
 
-            match Cancellable.run ct comp with
-            | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+    member inline _.Delay(generator: unit -> CancellableCode<'Data, 'T>) =
+        CancellableCode<'Data, 'T>(fun sm -> (generator ()).Invoke(&sm))
 
-    member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
-        Cancellable(fun ct ->
+    member inline _.Combine(code1, code2) =
+        ResumableCode.Combine(CancellableCode.WithCancelCheck code1, CancellableCode.WithCancelCheck code2)
 
-            __debugPoint ""
+    member inline _.Using(resource, body) : CancellableCode<'Data, 'T> = ResumableCode.Using(resource, body)
 
-            match Cancellable.run ct comp with
-            | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+    member inline _.TryWith(body, catch) : CancellableCode<'Data, 'T> =
+        ResumableCode.TryWith(CancellableCode.WithCancelCheck body, (CancellableCode.FilterOce catch))
 
-    member inline _.Combine(comp1, comp2) =
-        Cancellable(fun ct ->
-
-            __debugPoint ""
-
-            match Cancellable.run ct comp1 with
-            | ValueOrCancelled.Value() -> Cancellable.run ct comp2
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
-        Cancellable(fun ct ->
-
-            __debugPoint ""
-
-            let compRes =
-                try
-                    match Cancellable.run ct comp with
-                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-                with err ->
-                    ValueOrCancelled.Value(Choice2Of2 err)
-
-            match compRes with
-            | ValueOrCancelled.Value res ->
-                match res with
-                | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> Cancellable.run ct (handler err)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.Using(resource: _ MaybeNull, [<InlineIfLambda>] comp) =
-        Cancellable(fun ct ->
-
-            __debugPoint ""
-
-            let body = comp resource
-
-            let compRes =
-                try
-                    match Cancellable.run ct body with
-                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-                with err ->
-                    ValueOrCancelled.Value(Choice2Of2 err)
-
-            match compRes with
-            | ValueOrCancelled.Value res ->
-                Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
-
-                match res with
-                | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> raise err
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
-        Cancellable(fun ct ->
-
-            __debugPoint ""
-
-            let compRes =
-                try
-                    match Cancellable.run ct comp with
-                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-                with err ->
-                    ValueOrCancelled.Value(Choice2Of2 err)
-
-            match compRes with
-            | ValueOrCancelled.Value res ->
+    member inline _.TryFinally(body: CancellableCode<'Data, 'T>, compensation) : CancellableCode<'Data, 'T> =
+        ResumableCode.TryFinally(
+            CancellableCode.WithCancelCheck body,
+            ResumableCode(fun _sm ->
                 compensation ()
+                true)
+        )
 
-                match res with
-                | Choice1Of2 r -> ValueOrCancelled.Value r
-                | Choice2Of2 err -> raise err
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+    member inline _.Return(value: 'T) : CancellableCode<'T, 'T> =
+        CancellableCode(fun sm ->
+            sm.Data.Result <- Ok value
+            true)
 
-    member inline _.Return v =
-        Cancellable(fun _ -> ValueOrCancelled.Value v)
+    member inline this.Yield(value) = this.Return(value)
 
-    member inline _.ReturnFrom(v: Cancellable<'T>) = v
+    member inline _.Bind
+        (code: Cancellable<'U>, [<InlineIfLambda>] continuation: 'U -> CancellableCode<'Data, 'T>)
+        : CancellableCode<'Data, 'T> =
+        CancellableCode(fun sm ->
+            if __useResumableCode then
+                let mutable invocation = code.GetInvocation()
 
-    member inline _.Zero() =
-        Cancellable(fun _ -> ValueOrCancelled.Value())
+                let __stack_yield_complete = ResumableCode.Yield().Invoke(&sm)
+
+                if __stack_yield_complete then
+                    (invocation.Data.GetValue() |> continuation).Invoke(&sm)
+                else
+                    invocation.Hijack()
+                    false
+            else
+                // Dynamic Bind.
+
+                let mutable invocation = code.GetInvocation()
+
+                let cont =
+                    CancellableResumptionFunc<'Data>(fun sm -> (invocation.Data.GetValue() |> continuation).Invoke(&sm))
+
+                invocation.Hijack()
+                sm.ResumptionDynamicInfo.ResumptionFunc <- cont
+                false)
+
+    member inline this.ReturnFrom(comp: Cancellable<'T>) : CancellableCode<'T, 'T> = this.Bind(comp, this.Return)
+
+    member inline _.Run(code: CancellableCode<'T, 'T>) : Cancellable<'T> =
+        if __useResumableCode then
+            __stateMachine<CancellableData<'T>, Cancellable<'T>>
+
+                (MoveNextMethodImpl<_>(fun sm ->
+                    __resumeAt sm.ResumptionPoint
+
+                    try
+                        let __stack_code_fin = (CancellableCode.WithCancelCheck code).Invoke(&sm)
+
+                        if __stack_code_fin then
+                            sm.ResumptionPoint <- -1
+                    with exn ->
+                        sm.Data.Result <- Error(ExceptionDispatchInfo.Capture exn)
+                        sm.ResumptionPoint <- -1))
+
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+
+                (AfterCode<_, _>(fun sm ->
+                    sm.Data <- CancellableData()
+                    Cancellable(CancellableInvocation<_, _>(sm))))
+        else
+            // Dynamic Run.
+
+            let initialResumptionFunc =
+                CancellableResumptionFunc(fun sm -> (CancellableCode.WithCancelCheck code).Invoke(&sm))
+
+            let resumptionInfo =
+                { new CancellableResumptionDynamicInfo<_>(initialResumptionFunc) with
+                    member info.MoveNext(sm) =
+                        try
+                            if info.ResumptionFunc.Invoke(&sm) then
+                                sm.ResumptionPoint <- -1
+                        with exn ->
+                            sm.Data.Result <- Error(ExceptionDispatchInfo.Capture exn)
+                            sm.ResumptionPoint <- -1
+
+                    member _.SetStateMachine(_, _) = ()
+                }
+
+            let sm =
+                CancellableStateMachine(ResumptionDynamicInfo = resumptionInfo, Data = CancellableData())
+
+            Cancellable(CancellableInvocation(sm))
+
+namespace Internal.Utilities.Library
+
+open System
+open System.Threading
+
+type Cancellable<'T> = CancellableImplementation.Cancellable<'T>
 
 [<AutoOpen>]
 module CancellableAutoOpens =
-    let cancellable = CancellableBuilder()
+
+    let cancellable = CancellableImplementation.CancellableBuilder()
+
+module Cancellable =
+    open Internal.Utilities.Library.CancellableImplementation
+
+    let run ct (code: Cancellable<_>) =
+        use _ = FSharp.Compiler.Cancellable.UsingToken ct
+
+        let invocation = code.GetInvocation()
+        Trampoline.CurrentThreadTrampoline.Execute invocation
+        invocation
+
+    let runWithoutCancellation code =
+        run CancellationToken.None code |> _.Data.GetValue()
+
+    let toAsync (code: Cancellable<_>) =
+        async {
+            let! ct = Async.CancellationToken
+
+            return!
+                Async.FromContinuations(fun (cont, econt, ccont) ->
+                    match run ct code |> _.Data.Result with
+                    | Ok value -> cont value
+                    | Error edi ->
+                        match edi.SourceException with
+                        | :? OperationCanceledException as oce when oce.CancellationToken = ct -> ccont oce
+                        | exn -> econt exn)
+        }
+
+    let token () =
+        cancellable { FSharp.Compiler.Cancellable.Token }

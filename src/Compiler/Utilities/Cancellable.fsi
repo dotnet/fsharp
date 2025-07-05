@@ -13,67 +13,124 @@ type Cancellable =
     static member CheckAndThrow: unit -> unit
     static member TryCheckAndThrow: unit -> unit
 
-namespace Internal.Utilities.Library
+namespace Internal.Utilities.Library.CancellableImplementation
 
 open System
-open System.Threading
+open Microsoft.FSharp.Core.CompilerServices
+open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 
-[<RequireQualifiedAccess; Struct>]
-type internal ValueOrCancelled<'TResult> =
-    | Value of result: 'TResult
-    | Cancelled of ``exception``: OperationCanceledException
+type internal ITrampolineInvocation =
 
-/// Represents a synchronous, cold-start, cancellable computation with explicit representation of a cancelled result.
-///
-/// A cancellable computation may be cancelled via a CancellationToken, which is propagated implicitly.
-/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
-[<Struct>]
-type internal Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
+    abstract MoveNext: unit -> unit
 
-module internal Cancellable =
+    abstract IsCompleted: bool
 
-    /// Run a cancellable computation using the given cancellation token
-    val inline run: ct: CancellationToken -> Cancellable<'T> -> ValueOrCancelled<'T>
+and [<Sealed>] internal Trampoline = class end
 
-    val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
+[<NoComparison; NoEquality; Struct>]
+type internal CancellableData<'T> =
 
-    /// Run the computation in a mode where it may not be cancelled. The computation never results in a
-    /// ValueOrCancelled.Cancelled.
-    val runWithoutCancellation: comp: Cancellable<'T> -> 'T
+    [<DefaultValue(false)>]
+    val mutable Result: Result<'T, ExceptionDispatchInfo>
 
-    /// Bind the cancellation token associated with the computation
-    val token: unit -> Cancellable<CancellationToken>
+    member GetValue: unit -> 'T
 
-    val toAsync: Cancellable<'T> -> Async<'T>
+type internal ITrampolineInvocation<'T> =
+    inherit ITrampolineInvocation
+
+    abstract Hijack: unit -> unit
+
+    abstract Data: CancellableData<'T>
+
+type internal IMachineTemplateWrapper<'T> =
+    abstract Clone: unit -> ITrampolineInvocation<'T>
+
+
+type internal ICancellableStateMachine<'T> = IResumableStateMachine<CancellableData<'T>>
+
+type internal CancellableStateMachine<'T> = ResumableStateMachine<CancellableData<'T>>
+
+type internal CancellableResumptionFunc<'T> = ResumptionFunc<CancellableData<'T>>
+
+type internal CancellableResumptionDynamicInfo<'T> = ResumptionDynamicInfo<CancellableData<'T>>
+
+type internal CancellableCode<'Data, 'T> = ResumableCode<CancellableData<'Data>, 'T>
+
+[<NoEquality; NoComparison>]
+type internal CancellableInvocation<'T, 'Machine
+    when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>> =
+    interface IMachineTemplateWrapper<'T>
+    interface ITrampolineInvocation<'T>
+
+    new: machine: 'Machine -> CancellableInvocation<'T, 'Machine>
+
+[<NoComparison; Struct>]
+type internal Cancellable<'T> =
+
+    new: template: IMachineTemplateWrapper<'T> -> Cancellable<'T>
+
+    member GetInvocation: unit -> ITrampolineInvocation<'T>
+
+module internal CancellableCode =
+
+    val inline WithCancelCheck: body: CancellableCode<'Data, 'T> -> CancellableCode<'Data, 'T>
+
+    val inline FilterOce:
+        [<InlineIfLambda>] catch: (exn -> CancellableCode<'Data, 'T>) -> exn: exn -> CancellableCode<'Data, 'T>
 
 type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
 
-    member inline BindReturn: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> 'U) -> Cancellable<'U>
+    member inline Bind:
+        code: Cancellable<'U> * [<InlineIfLambda>] continuation: ('U -> CancellableCode<'Data, 'T>) ->
+            CancellableCode<'Data, 'T>
 
-    member inline Bind: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> Cancellable<'U>) -> Cancellable<'U>
+    member inline Combine:
+        code1: CancellableCode<'c, unit> * code2: CancellableCode<'c, 'd> -> ResumableCode<CancellableData<'c>, 'd>
 
-    member inline Combine: comp1: Cancellable<unit> * comp2: Cancellable<'T> -> Cancellable<'T>
+    member inline Delay: generator: (unit -> CancellableCode<'Data, 'T>) -> CancellableCode<'Data, 'T>
 
-    member inline Delay: [<InlineIfLambda>] f: (unit -> Cancellable<'T>) -> Cancellable<'T>
+    member inline For: sequence: 'e seq * body: ('e -> CancellableCode<'Data, unit>) -> CancellableCode<'Data, unit>
 
-    member inline Return: v: 'T -> Cancellable<'T>
+    member inline Return: value: 'T -> CancellableCode<'T, 'T>
 
-    member inline ReturnFrom: v: Cancellable<'T> -> Cancellable<'T>
+    member inline ReturnFrom: comp: Cancellable<'T> -> CancellableCode<'T, 'T>
 
-    member inline TryFinally: comp: Cancellable<'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> Cancellable<'T>
+    member inline Run: code: CancellableCode<'T, 'T> -> Cancellable<'T>
+
+    member inline TryFinally:
+        body: CancellableCode<'Data, 'T> * compensation: (unit -> unit) -> CancellableCode<'Data, 'T>
 
     member inline TryWith:
-        comp: Cancellable<'T> * [<InlineIfLambda>] handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
+        body: CancellableCode<'Data, 'T> * catch: (exn -> CancellableCode<'Data, 'T>) -> CancellableCode<'Data, 'T>
 
     member inline Using:
-        resource: 'Resource MaybeNull * [<InlineIfLambda>] comp: ('Resource MaybeNull -> Cancellable<'T>) ->
-            Cancellable<'T>
-            when 'Resource :> IDisposable and 'Resource: not struct and 'Resource: not null
+        resource: 'b * body: ('b -> CancellableCode<'Data, 'T>) -> CancellableCode<'Data, 'T>
+            when 'b :> IDisposable | null
 
-    member inline Zero: unit -> Cancellable<unit>
+    member inline While: condition: (unit -> bool) * body: CancellableCode<'Data, unit> -> CancellableCode<'Data, unit>
+
+    member inline Yield: value: 'a -> CancellableCode<'a, 'a>
+
+    member inline Zero: unit -> CancellableCode<'Data, unit>
+
+namespace Internal.Utilities.Library
+
+open System.Threading
+
+type internal Cancellable<'T> = CancellableImplementation.Cancellable<'T>
 
 [<AutoOpen>]
 module internal CancellableAutoOpens =
-    val cancellable: CancellableBuilder
+
+    val cancellable: CancellableImplementation.CancellableBuilder
+
+module internal Cancellable =
+
+    val runWithoutCancellation: code: Cancellable<'a> -> 'a
+
+    val toAsync: code: Cancellable<'a> -> Async<'a>
+
+    val token: unit -> Cancellable<CancellationToken>
