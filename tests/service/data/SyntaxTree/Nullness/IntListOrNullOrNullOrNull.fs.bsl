@@ -38,4 +38,4 @@ ImplFile
                       WarnDirectives = []
                       CodeComments = [] }, set []))
 
-(1,24)-(1,25) parse error Unexpected symbol '|' (directly before 'null') in binding. Expected '=' or other token.
+(1,24)-(1,25) parse error Unexpected symbol '|' (directly before 'null') in binding. Expected infix operator, '=' or other token.
