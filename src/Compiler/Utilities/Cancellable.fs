@@ -154,9 +154,22 @@ type CancellableBuilder() =
 
     member inline _.Zero() : CancellableCode<'Data, unit> = ResumableCode.Zero()
 
-    member inline _.For(sequence, body) : CancellableCode<'Data, unit> = ResumableCode.For(sequence, body)
+    member inline _.While(condition, body) : CancellableCode<'Data, unit> =
+        ResumableCode.While((fun () -> Trampoline.Current.State.IsRunning && condition ()), body)
 
-    member inline _.While(condition, body) : CancellableCode<'Data, unit> = ResumableCode.While(condition, body)
+    member inline this.For(sequence: seq<'T>, body: 'T -> CancellableCode<'Data, unit>) : CancellableCode<'Data, unit> =
+        // A for loop is just a using statement on the sequence's enumerator...
+        ResumableCode.Using(
+            sequence.GetEnumerator(),
+            // ... and its body is a while loop that advances the enumerator and runs the body on each element.
+            (fun e ->
+                this.While(
+                    (fun () ->
+                        __debugPoint "ForLoop.InOrToKeyword"
+                        e.MoveNext()),
+                    CancellableCode<'Data, unit>(fun sm -> (body e.Current).Invoke(&sm))
+                ))
+        )
 
     member inline _.Combine(code1, code2) : CancellableCode<'Data, 'T> = ResumableCode.Combine(code1, code2)
 
