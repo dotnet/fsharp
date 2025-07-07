@@ -146,6 +146,7 @@ extends:
                       /p:GenerateSbom=true
               env:
                   NativeToolsOnMachine: true
+                  FSHARP_CACHE_OVERRIDE: 256
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
