@@ -192,9 +192,9 @@ type A =
     |> compile
     |> shouldFail
     |> withDiagnostics [
-        (Error 3350, Line 5, Col 24, Line 5, Col 32, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-        (Error 3350, Line 6, Col 24, Line 6, Col 32, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-        (Error 3350, Line 7, Col 24, Line 7, Col 32, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-        (Error 3350, Line 4, Col 32, Line 4, Col 40, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
-        (Error 3350, Line 6, Col 32, Line 6, Col 40, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 'PREVIEW' or greater.")
+        (Error 3350, Line 5, Col 24, Line 5, Col 32, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 10.0 or greater.")
+        (Error 3350, Line 6, Col 24, Line 6, Col 32, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 10.0 or greater.")
+        (Error 3350, Line 7, Col 24, Line 7, Col 32, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 10.0 or greater.")
+        (Error 3350, Line 4, Col 32, Line 4, Col 40, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 10.0 or greater.")
+        (Error 3350, Line 6, Col 32, Line 6, Col 40, "Feature 'Allow access modifiers to auto properties getters and setters' is not available in F# 8.0. Please use language version 10.0 or greater.")
     ]
