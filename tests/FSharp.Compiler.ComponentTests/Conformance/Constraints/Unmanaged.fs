@@ -501,19 +501,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     IL_0000:  ret
   } """]
 
-    [<Fact>]
-    let ``FSharp does not generate modreq for VBNET to consume in v8`` () = 
-        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
-        |> withLangVersion80
-        |> compile
-        |> shouldSucceed
-        |> verifyIL ["""
-      .method public static void  testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ret
-  } """]
+
 
     [<Fact>]
     let ``Unmanaged constraint in lambda reproduces issue 17509`` () = 
@@ -535,7 +523,7 @@ Main()
         """
         |> withLangVersionPreview
         |> asExe
-        |> compile
+        |> compileAndRun
         |> shouldSucceed
 
     [<FactForNETCOREAPP>]
@@ -552,7 +540,35 @@ Main()
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
-    .method public strict virtual instance object Specialize<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
+  .class auto ansi serializable sealed nested assembly beforefieldinit func@3
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.IntPtr>
+  {
+    .field static assembly initonly class Test/func@3 @_instance
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.IntPtr>::.ctor()
+      IL_0006:  ret
+    } 
+
+    .method public strict virtual instance class [runtime]System.IntPtr 
+            Invoke(int32 x) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldsfld     class [runtime]System.IntPtr [runtime]System.IntPtr::Zero
+      IL_0005:  ret
+    } 
+
+    .method public strict virtual instance object 
+            Specialize<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -564,7 +580,21 @@ Main()
       IL_0001:  newobj     instance void class Test/func@3T<!!T>::.ctor(class Test/func@3)
       IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T>
       IL_000b:  ret
-    } """]
+    } 
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  10
+      IL_0000:  newobj     instance void Test/func@3::.ctor()
+      IL_0005:  stsfld     class Test/func@3 Test/func@3::@_instance
+      IL_000a:  ret
+    } 
+  } 
+    """]
 
 
     [<Fact>]

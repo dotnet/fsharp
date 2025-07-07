@@ -223,7 +223,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
-                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion90
 
                 // F# 10.0
                 LanguageFeature.EnforceAttributeTargets, languageVersion100
@@ -237,6 +236,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BetterAnonymousRecordParsing, languageVersion100
                 LanguageFeature.ScopedNowarn, languageVersion100
                 LanguageFeature.AllowTypedLetOrUseBang, languageVersion100
+                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
