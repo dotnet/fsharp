@@ -68,7 +68,7 @@ module N.M
 ""
 ""
 ()
-"""; errors = Map["9.0", [Warn(20, 3)]; "preview", [Warn(20, 3)]]}
+"""; errors = Map["9.0", [Warn(20, 3)]; "10.0", [Warn(20, 3)]]}
 
 let private noNowarnTest = {source = """
 module N.M
@@ -79,7 +79,7 @@ module N.M
 ()
 """; errors = Map[
     "9.0", [Warn(20, 3); Warn(20, 4); Warn(20, 5); Warn(20, 6)]
-    "preview", [Warn(20, 3); Warn(20, 4); Warn(20, 5); Warn(20, 6)
+    "10.0", [Warn(20, 3); Warn(20, 4); Warn(20, 5); Warn(20, 6)
     ]]}
 
 let private onOffTest = {source = """
@@ -92,7 +92,7 @@ module N.M
 #nowarn "20"
 ""
 ()
-"""; errors = Map["9.0", [Err(3350, 6); Warn(20, 3)]; "preview", [Warn(20, 3); Warn(20, 7)]]}
+"""; errors = Map["9.0", [Err(3350, 6); Warn(20, 3)]; "10.0", [Warn(20, 3); Warn(20, 7)]]}
 
 let mkProjectOptionsAndChecker langVersion =
     let options = createProjectOptions [onOffTest.source] [$"--langversion:{langVersion}"]
@@ -116,7 +116,7 @@ let private checkDiagnostics (expected: Expected list) (diagnostics: FSharpDiagn
     elif List.exists unexpected (List.zip expected diagnostics) then fail()
 
 [<InlineData("9.0")>]
-[<InlineData("preview")>]
+[<InlineData("10.0")>]
 [<Theory>]
 let ParseAndCheckProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
@@ -124,7 +124,7 @@ let ParseAndCheckProjectTest langVersion =
     checkDiagnostics onOffTest.errors[langVersion] (Array.toList wholeProjectResults.Diagnostics)
     
 [<InlineData("9.0")>]
-[<InlineData("preview")>]
+[<InlineData("10.0")>]
 [<Theory>]
 let ParseAndCheckFileInProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
@@ -139,7 +139,7 @@ let ParseAndCheckFileInProjectTest langVersion =
     [justNowarnTest; noNowarnTest; onOffTest] |> List.iter parseAndCheckFileInProject
 
 [<InlineData("9.0")>]
-[<InlineData("preview")>]
+[<InlineData("10.0")>]
 [<Theory>]
 let CheckFileInProjectTest langVersion =
     let projectOptions, checker = mkProjectOptionsAndChecker langVersion
@@ -156,7 +156,7 @@ let CheckFileInProjectTest langVersion =
     [justNowarnTest; noNowarnTest; onOffTest] |> List.iter checkFileInProject
 
 [<InlineData("9.0")>]
-[<InlineData("preview")>]
+[<InlineData("10.0")>]
 [<Theory>]
 let GetBackgroundCheckResultsForFileInProjectTest langVersion =
     let options, checker = mkProjectOptionsAndChecker langVersion
