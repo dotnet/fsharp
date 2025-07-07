@@ -16,6 +16,7 @@ type Cancellable =
 namespace Internal.Utilities.Library.CancellableImplementation
 
 open System
+open System.Threading
 open Microsoft.FSharp.Core.CompilerServices
 open System.Runtime.CompilerServices
 open System.Runtime.ExceptionServices
@@ -26,35 +27,36 @@ type internal ITrampolineInvocation =
 
     abstract IsCompleted: bool
 
-and [<Sealed>] internal Trampoline = class end
+[<Struct; NoComparison>]
+type internal ExecutionState =
+    | Running
+    | Complete
+    | Cancelled of oce: OperationCanceledException
+    | Error of edi: ExceptionDispatchInfo
 
-[<NoComparison; NoEquality; Struct>]
-type internal CancellableData<'T> =
-
-    [<DefaultValue(false)>]
-    val mutable Result: Result<'T, ExceptionDispatchInfo>
-
-    member GetValue: unit -> 'T
+[<Sealed>]
+type internal Trampoline =
+    member State: ExecutionState with get, set
+    member Set: ITrampolineInvocation -> unit
+    static member Current: Trampoline
 
 type internal ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
 
-    abstract Hijack: unit -> unit
-
-    abstract Data: CancellableData<'T>
+    abstract Data: 'T
 
 type internal IMachineTemplateWrapper<'T> =
     abstract Clone: unit -> ITrampolineInvocation<'T>
 
-type internal ICancellableStateMachine<'T> = IResumableStateMachine<CancellableData<'T>>
+type internal ICancellableStateMachine<'T> = IResumableStateMachine<'T>
 
-type internal CancellableStateMachine<'T> = ResumableStateMachine<CancellableData<'T>>
+type internal CancellableStateMachine<'T> = ResumableStateMachine<'T>
 
-type internal CancellableResumptionFunc<'T> = ResumptionFunc<CancellableData<'T>>
+type internal CancellableResumptionFunc<'T> = ResumptionFunc<'T>
 
-type internal CancellableResumptionDynamicInfo<'T> = ResumptionDynamicInfo<CancellableData<'T>>
+type internal CancellableResumptionDynamicInfo<'T> = ResumptionDynamicInfo<'T>
 
-type internal CancellableCode<'Data, 'T> = ResumableCode<CancellableData<'Data>, 'T>
+type internal CancellableCode<'Data, 'T> = ResumableCode<'Data, 'T>
 
 [<NoEquality; NoComparison>]
 type internal CancellableInvocation<'T, 'Machine
@@ -71,13 +73,6 @@ type internal Cancellable<'T> =
 
     member GetInvocation: unit -> ITrampolineInvocation<'T>
 
-module internal CancellableCode =
-
-    val inline WithCancelCheck: body: CancellableCode<'Data, 'T> -> CancellableCode<'Data, 'T>
-
-    val inline FilterOce:
-        [<InlineIfLambda>] catch: (exn -> CancellableCode<'Data, 'T>) -> exn: exn -> CancellableCode<'Data, 'T>
-
 type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
@@ -87,7 +82,7 @@ type internal CancellableBuilder =
             CancellableCode<'Data, 'T>
 
     member inline Combine:
-        code1: CancellableCode<'c, unit> * code2: CancellableCode<'c, 'd> -> ResumableCode<CancellableData<'c>, 'd>
+        code1: CancellableCode<'Data, unit> * code2: CancellableCode<'Data, 'T> -> CancellableCode<'Data, 'T>
 
     member inline Delay: generator: (unit -> CancellableCode<'Data, 'T>) -> CancellableCode<'Data, 'T>
 
