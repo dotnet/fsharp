@@ -471,6 +471,22 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     IL_0000:  ret
   } """]
 
+    [<FactForNETCOREAPP>]
+    let ``FSharp generates modreq for CSharp to consume in v9`` () = 
+        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
+        |> withLangVersion90
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+      .method public static void  testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
+  {
+    .param type TUnmanaged 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+    
+    .maxstack  8
+    IL_0000:  ret
+  } """]
+
     [<Fact>]
     let ``FSharp does not generate modreq for VBNET to consume in v7`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
@@ -484,6 +500,39 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     .maxstack  8
     IL_0000:  ret
   } """]
+
+    [<Fact>]
+    let ``FSharp does not generate modreq for VBNET to consume in v8`` () = 
+        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
+        |> withLangVersion80
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+      .method public static void  testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ret
+  } """]
+
+    [<Fact>]
+    let ``Unmanaged constraint in lambda works with F# 9.0`` () = 
+        Fsx """
+open System
+
+let printTypeConstraintsNative<'T when 'T : unmanaged> () = printf $"Hello: {typeof<'T>.FullName} is unmanaged"
+
+let Main() =
+    let func (x:int) : 'T when 'T : unmanaged = Unchecked.defaultof<'T>
+    let initFinite = Seq.init<nativeint> 3 func
+    printfn "%A" initFinite
+ 
+printTypeConstraintsNative<nativeint>()
+Main()
+        """
+        |> withLangVersion90
+        |> compile
+        |> shouldSucceed
 
 
     [<Fact>]

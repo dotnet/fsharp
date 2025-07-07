@@ -223,6 +223,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
+                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion90
 
                 // F# 10.0
                 LanguageFeature.EnforceAttributeTargets, languageVersion100
@@ -238,7 +239,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AllowTypedLetOrUseBang, languageVersion100
 
                 // F# preview (still preview in 10.0)
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion // Stopped printing arguments to indexed properties
             ]
