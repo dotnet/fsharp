@@ -516,7 +516,10 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
   } """]
 
     [<Fact>]
-    let ``Unmanaged constraint in lambda works with F# 9.0`` () = 
+    let ``Unmanaged constraint in lambda reproduces issue 17509`` () = 
+        // This test reproduces the issue https://github.com/dotnet/fsharp/issues/17509
+        // When UnmanagedConstraintCsharpInterop is enabled, it generates invalid IL
+        // causing a TypeLoadException at runtime
         Fsx """
 open System
 
@@ -530,9 +533,38 @@ let Main() =
 printTypeConstraintsNative<nativeint>()
 Main()
         """
-        |> withLangVersion90
+        |> withLangVersionPreview
+        |> asExe
         |> compile
         |> shouldSucceed
+
+    [<FactForNETCOREAPP>]
+    let ``Unmanaged constraint in lambda generates invalid IL for Specialize method with preview version`` () = 
+        Fsx """
+let Main() =
+    let func (x:int) : 'T when 'T : unmanaged = Unchecked.defaultof<'T>
+    let initFinite = Seq.init<nativeint> 3 func
+    printfn "%A" initFinite
+Main()
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+    .method public strict virtual instance object Specialize<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .param type T 
+        .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  newobj     instance void class Test/func@3T<!!T>::.ctor(class Test/func@3)
+      IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T>
+      IL_000b:  ret
+    } """]
 
 
     [<Fact>]
