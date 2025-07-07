@@ -63,6 +63,7 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.CompilerServices
 open System.Runtime.CompilerServices
 open System.Runtime.ExceptionServices
+open System.Diagnostics
 
 type ITrampolineInvocation =
     abstract member MoveNext: unit -> unit
@@ -78,24 +79,32 @@ type ExecutionState =
 [<Sealed>]
 type Trampoline() =
 
+    let mutable bindDepth = 0
+
     static let current = new ThreadLocal<_>(fun () -> Trampoline())
 
     let stack = System.Collections.Generic.Stack<ITrampolineInvocation>()
 
     member val State: ExecutionState = Running with get, set
 
+    member _.BindDepth = bindDepth
+
     member _.Set(invocation: ITrampolineInvocation) = stack.Push(invocation)
 
+    [<DebuggerHidden>]
     member this.Execute(invocation) =
         this.State <- Running
+        bindDepth <- bindDepth + 1
 
         stack.Push invocation
 
-        while stack.Count > 0 do
+        while not invocation.IsCompleted do
             stack.Peek().MoveNext()
 
             if stack.Peek().IsCompleted then
                 stack.Pop() |> ignore
+
+        bindDepth <- bindDepth - 1
 
     static member Current = current.Value
 
@@ -217,32 +226,40 @@ type CancellableBuilder() =
             if __useResumableCode then
                 let mutable invocation = code.GetInvocation()
 
-                match __resumableEntry () with
-                | Some contID ->
-                    sm.ResumptionPoint <- contID
-                    Trampoline.Current.Set invocation
-                    false
-                | None ->
-                    if Trampoline.Current.State.IsRunning then
-                        (invocation.Data |> continuation).Invoke(&sm)
-                    else
-                        true
+                if Trampoline.Current.BindDepth < 100 then
+                    Trampoline.Current.Execute invocation
+
+                    not Trampoline.Current.State.IsRunning
+                    || (invocation.Data |> continuation).Invoke(&sm)
+                else
+                    match __resumableEntry () with
+                    | Some contID ->
+                        sm.ResumptionPoint <- contID
+                        Trampoline.Current.Set invocation
+                        false
+                    | None ->
+                        not Trampoline.Current.State.IsRunning
+                        || (invocation.Data |> continuation).Invoke(&sm)
 
             else
                 // Dynamic Bind.
 
                 let mutable invocation = code.GetInvocation()
 
-                let cont =
-                    CancellableResumptionFunc<'Data>(fun sm ->
-                        if Trampoline.Current.State.IsRunning then
-                            (invocation.Data |> continuation).Invoke(&sm)
-                        else
-                            true)
+                if Trampoline.Current.BindDepth < 100 then
+                    Trampoline.Current.Execute invocation
 
-                Trampoline.Current.Set invocation
-                sm.ResumptionDynamicInfo.ResumptionFunc <- cont
-                false)
+                    not Trampoline.Current.State.IsRunning
+                    || (invocation.Data |> continuation).Invoke(&sm)
+                else
+                    let cont =
+                        CancellableResumptionFunc<'Data>(fun sm ->
+                            not Trampoline.Current.State.IsRunning
+                            || (invocation.Data |> continuation).Invoke(&sm))
+
+                    Trampoline.Current.Set invocation
+                    sm.ResumptionDynamicInfo.ResumptionFunc <- cont
+                    false)
 
     member inline this.ReturnFrom(comp: Cancellable<'T>) : CancellableCode<'T, 'T> = this.Bind(comp, this.Return)
 

@@ -38,6 +38,8 @@ type internal ExecutionState =
 type internal Trampoline =
     member State: ExecutionState with get, set
     member Set: ITrampolineInvocation -> unit
+    member Execute: ITrampolineInvocation -> unit
+    member BindDepth: int
     static member Current: Trampoline
 
 type internal ITrampolineInvocation<'T> =
