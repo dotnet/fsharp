@@ -132,7 +132,7 @@ type Cancellable<'T>(template: IMachineTemplateWrapper<'T>) =
     member _.GetInvocation() = template.Clone()
 
 type CancellableBuilder() =
-   
+
     // Delay checks for cancellation and skips further steps when Cancelled / Errored.
     member inline _.Delay(generator: unit -> CancellableCode<'Data, 'T>) =
         CancellableCode<'Data, 'T>(fun sm ->
