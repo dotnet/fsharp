@@ -240,7 +240,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
-                LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work                
+                LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
