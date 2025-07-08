@@ -1413,9 +1413,10 @@ module PrintTastMemberOrVals =
                         if short then
                             tauL --- withGet
                         else
-                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled prefixAccessModifier
+                            let prefixAccess = prefixAccessModifier || isNil argInfos
+                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled prefixAccess
                             let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                            stat --- ((nameL |> addColonL) ^^ (if isNil argInfos && not supportAccessModifiersBeforeGetSet then tauL else tauL --- withGet))
+                            stat --- ((nameL |> addColonL) ^^ (if isNil argInfos then tauL else (tauL --- withGet)))
                     prettyTyparInst, resL
 
             | SynMemberKind.PropertySet ->
