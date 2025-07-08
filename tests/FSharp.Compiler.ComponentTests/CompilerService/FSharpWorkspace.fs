@@ -43,7 +43,10 @@ type TestingWorkspace(testName) as _this =
 
     let activity = Activity.start $"Test FSharpWorkspace {testName}" []
 
-    do _this.Projects.Debug_DumpGraphOnEveryChange <- Some debugGraphPath
+    // Keeping graph dumping infrastructure for now
+    // To turn it on change `None` to `Some debugGraphPath`
+    // But if we want to turn it on again, it needs to only work in debug and not release
+    do _this.Projects.Debug_DumpGraphOnEveryChange <- None
 
     member _.DebugGraphPath = debugGraphPath
 

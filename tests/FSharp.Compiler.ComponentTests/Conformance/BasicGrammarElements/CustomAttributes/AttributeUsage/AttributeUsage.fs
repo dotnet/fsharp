@@ -79,7 +79,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
     let ``Preview: AttributeTargetsIsMethod01_fs opt-in warning`` compilation =
         compilation
-        |> withLangVersionPreview
         |> withWarnOn 3878
         |> verifyCompileAndRun
         |> shouldSucceed
@@ -110,7 +109,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargets01.fs"|])>]
     let ``E_AttributeTargets01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -150,7 +148,6 @@ module CustomAttributes_AttributeUsage =
     let ``E_AttributeTargetIsField01_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:25"]
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -203,7 +200,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
     let ``E_AttributeTargetIsMethod02_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
@@ -234,7 +230,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
     let ``E_AttributeTargetIsMethod03_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldFail
@@ -352,7 +347,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
     let ``E_AttributeTargetIsStruct_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -382,7 +376,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
     let ``E_AttributeTargetIsClass_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -403,7 +396,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
     let ``E_AttributeTargetIsClass01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -513,7 +505,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``E_AttributeTargetIsField03_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -524,7 +515,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``Preview: E_AttributeTargetIsField03_fs opt-in warning`` compilation =
         compilation
-        |> withLangVersionPreview
         |> withWarnOn 3878
         |> verifyCompile
         |> shouldFail
@@ -546,7 +536,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
     let ``E_AttributeTargetIsProperty01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldSucceed
         
@@ -562,7 +551,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
     let ``E_AttributeTargetIsCtor01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -599,7 +587,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
     let ``E_AttributeTargetIsEnum01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -636,7 +623,6 @@ module CustomAttributes_AttributeUsage =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
     let ``E_AttributeTargetsIsDelegate01_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -685,7 +671,6 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
     let ``E_AttributeTargetIsInterface_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
@@ -707,7 +692,6 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
     let ``E_AttributeTargetIsClass02_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

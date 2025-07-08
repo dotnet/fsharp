@@ -60,11 +60,14 @@
 
         <file src="$artifactsPackagesDir$Dependency\Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"                           target="contentFiles\Shipping" />
         <file src="$artifactsPackagesDir$Dependency\Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"                                   target="contentFiles\Release" />
+        <file src="$artifactsPackagesDir$Dependency\PreRelease\FSharp.Core.$fSharpCorePackageVersion$*nupkg"                                   target="contentFiles\PreRelease" />
 
         <file src="$artifactsPackagesDir$Dependency\Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"    target="contentFiles\Shipping" />
         <file src="$artifactsPackagesDir$Dependency\Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"            target="contentFiles\Release" />
+        <file src="$artifactsPackagesDir$Dependency\PreRelease\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"            target="contentFiles\PreRelease" />
 
         <file src="FSharp.Build\$configuration$\netstandard2.0\Shipping\Microsoft.FSharp.Core.NetSdk.props"                                         target="contentFiles\Shipping" />
         <file src="FSharp.Build\$configuration$\netstandard2.0\Release\Microsoft.FSharp.Core.NetSdk.props"                                          target="contentFiles\Release" />
+        <file src="FSharp.Build\$configuration$\netstandard2.0\PreRelease\Microsoft.FSharp.Core.NetSdk.props"                                          target="contentFiles\PreRelease" />
     </files>
 </package>
