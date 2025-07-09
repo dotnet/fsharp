@@ -72,6 +72,7 @@ module CustomAttributes_Basic =
         |> shouldFail
         |> withDiagnostics [
             (Warning 842, Line 14, Col 3, Line 14, Col 13, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: parameter")
+            (Warning 842, Line 14, Col 3, Line 14, Col 13, "This attribute cannot be applied to class. Valid targets are: parameter")
         ]
 
     // SOURCE=E_AttributeApplication05.fs     SCFLAGS="--test:ErrorRanges"	# E_AttributeApplication05.fs

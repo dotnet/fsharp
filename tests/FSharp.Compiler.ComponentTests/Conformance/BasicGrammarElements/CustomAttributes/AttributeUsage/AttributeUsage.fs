@@ -259,8 +259,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: method");
+            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: method")
+            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute cannot be applied to class. Valid targets are: method")
             (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: method")
+            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to struct. Valid targets are: method")
         ]
         
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
@@ -303,6 +305,7 @@ module CustomAttributes_AttributeUsage =
         |> shouldFail
         |> withDiagnostics [
             (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute cannot be applied to method, property, field, return value. Valid targets are: assembly, class")
+            (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute cannot be applied to property, field, return value. Valid targets are: assembly, class")
         ]
         
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
