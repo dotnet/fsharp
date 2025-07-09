@@ -31,6 +31,12 @@ parameters:
   #   container and pool.
   platform: {}
 
+  # If set to true and running on a non-public project,
+  # Internal blob storage locations will be enabled.
+  # This is not enabled by default because many repositories do not need internal sources
+  # and do not need to have the required service connections approved in the pipeline.
+  enableInternalSources: false
+
 jobs:
 - job: ${{ parameters.jobNamePrefix }}_${{ parameters.platform.name }}
   displayName: Source-Build (${{ parameters.platform.name }})
@@ -48,11 +54,11 @@ jobs:
     pool:
       ${{ if eq(variables['System.TeamProject'], 'public') }}:
         name: $[replace(replace(eq(contains(coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranch'], 'refs/heads/main'), 'release'), 'true'), True, 'NetCore-Svc-Public' ), False, 'NetCore-Public')]
-        demands: ImageOverride -equals Build.Ubuntu.1804.Amd64.Open
+        demands: ImageOverride -equals Build.Ubuntu.2204.Amd64.Open
 
       ${{ if eq(variables['System.TeamProject'], 'internal') }}:
         name: $[replace(replace(eq(contains(coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranch'], 'refs/heads/main'), 'release'), 'true'), True, 'NetCore1ESPool-Svc-Internal'), False, 'NetCore1ESPool-Internal')]
-        demands: ImageOverride -equals Build.Ubuntu.1804.Amd64
+        demands: ImageOverride -equals Build.Ubuntu.2204.Amd64
 
   ${{ if ne(parameters.platform.pool, '') }}:
     pool: ${{ parameters.platform.pool }}
@@ -61,6 +67,8 @@ jobs:
     clean: all
 
   steps:
+  - ${{ if eq(parameters.enableInternalSources, true) }}:
+    - template: /eng/common/templates/steps/enable-internal-runtimes.yml
   - template: /eng/common/templates/steps/source-build.yml
     parameters:
       platform: ${{ parameters.platform }}

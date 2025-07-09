@@ -14,7 +14,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>301</FSBuildVersion>
+    <FSBuildVersion>302</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -79,12 +79,12 @@
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
     <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
-    <SystemCollectionsImmutableVersion>7.0.0</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>8.0.0</SystemCollectionsImmutableVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <SystemDiagnosticsDiagnosticSourceVersion>7.0.2</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemReflectionMetadataVersion>7.0.0</SystemReflectionMetadataVersion>
+    <SystemReflectionMetadataVersion>8.0.0</SystemReflectionMetadataVersion>
     <SystemThreadingTasksDataflow>7.0.0</SystemThreadingTasksDataflow>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
@@ -126,10 +126,10 @@
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildVersion>17.7.0-preview-23217-02</MicrosoftBuildVersion>
-    <MicrosoftBuildFrameworkVersion>17.7.0-preview-23217-02</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildVersion>17.10.29</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildVersion)</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildVersion)</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildVersion)</MicrosoftBuildUtilitiesCoreVersion>
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>

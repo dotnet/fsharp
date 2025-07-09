@@ -19,4 +19,18 @@
     <!-- Tracked in https://github.com/dotnet/source-build/issues/3438 -->
     <UsagePattern IdentityGlob="Microsoft.VisualStudio.Setup.Configuration.Interop/3.2.2146" />
   </IgnorePatterns>
+  <Usages>
+    <Usage Id="Microsoft.Build.Framework" Version="17.10.29" IsDirectDependency="true" />
+    <Usage Id="Microsoft.Build.Tasks.Core" Version="17.10.29" IsDirectDependency="true" />
+    <Usage Id="Microsoft.Build.Utilities.Core" Version="17.10.29" IsDirectDependency="true" />
+    <Usage Id="Microsoft.NET.StringTools" Version="17.10.29" />
+    <Usage Id="System.CodeDom" Version="8.0.0" />
+    <Usage Id="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <Usage Id="System.Diagnostics.EventLog" Version="8.0.0" />
+    <Usage Id="System.Formats.Asn1" Version="8.0.0" />
+    <Usage Id="System.Resources.Extensions" Version="8.0.0" />
+    <Usage Id="System.Security.Cryptography.Pkcs" Version="8.0.0" />
+    <Usage Id="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <Usage Id="System.Security.Cryptography.Xml" Version="8.0.0" />
+  </Usages>
 </UsageData>
