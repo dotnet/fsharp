@@ -138,9 +138,9 @@
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- -->
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildFrameworkVersion>17.14.8</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.14.8</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.14.8</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildVersion)</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildVersion)</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildVersion)</MicrosoftBuildUtilitiesCoreVersion>
     <!-- -->
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
