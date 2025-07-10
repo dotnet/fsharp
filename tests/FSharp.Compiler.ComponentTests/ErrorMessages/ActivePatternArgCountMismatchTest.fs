@@ -546,7 +546,7 @@ let (|P|_|) (expr2 : int) (expr1 : int) = if expr1 = expr2 then ValueSome P else
 let expr2 = 2
 match 1 with P expr2 -> ()
             """
-            |> withLangVersionPreview
+            |> withLangVersion10
             |> withNoWarn IncompletePatternMatches
             |> typecheck
             |> shouldSucceed
