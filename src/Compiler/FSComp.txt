@@ -698,7 +698,6 @@ tcUnnamedArgumentsDoNotFormPrefix,"The unnamed arguments do not form a prefix of
 839,tcUnexpectedConditionInImportedAssembly,"Unexpected condition in imported assembly: failed to decode AttributeUsage attribute"
 840,tcUnrecognizedAttributeTarget,"Unrecognized attribute target. Valid attribute targets are 'assembly', 'module', 'type', 'method', 'property', 'return', 'param', 'field', 'event', 'constructor'."
 841,tcAttributeIsNotValidForLanguageElementUseDo,"This attribute is not valid for use on this language element. Assembly attributes should be attached to a 'do ()' declaration, if necessary within an F# module."
-842,tcAttributeIsNotValidForLanguageElement,"This attribute is not valid for use on this language element"
 843,tcOptionalArgumentsCannotBeUsedInCustomAttribute,"Optional arguments cannot be used in custom attributes"
 844,tcPropertyCannotBeSet0,"This property cannot be set"
 845,tcPropertyOrFieldNotFoundInAttribute,"This property or field was not found on this custom attribute type"
