@@ -25,7 +25,7 @@ type internal ITrampolineInvocation =
 
 [<Struct; NoComparison; NoEquality>]
 type internal CancellableStateMachineData<'T> =
-    val mutable Result: Result<'T, exn>
+    val mutable Result: 'T
 
 and internal CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
 and internal ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
@@ -35,10 +35,10 @@ and internal CancellableCode<'TOverall, 'T> = ResumableCode<CancellableStateMach
 
 type internal ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
-    abstract Result: Result<'T, exn>
+    abstract Result: 'T
 
-type internal IMachineTemplateWrapper<'T> =
-    abstract Clone: unit -> ITrampolineInvocation<'T>
+type internal ICancellableInvokable<'T> =
+    abstract Create: unit -> ITrampolineInvocation<'T>
 
 [<Sealed>]
 type internal Trampoline =
@@ -48,18 +48,17 @@ type internal Trampoline =
     member IsCancelled: bool
     member ThrowIfCancellationRequested: unit -> unit
     member ShoudBounce: bool
-    member CaptureStackFrame: exn -> exn
 
 [<NoEquality; NoComparison>]
 type internal CancellableInvocation<'T, 'Machine
     when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>> =
-    interface IMachineTemplateWrapper<'T>
+    interface ICancellableInvokable<'T>
     interface ITrampolineInvocation<'T>
     new: machine: 'Machine -> CancellableInvocation<'T, 'Machine>
 
 [<Struct; NoComparison>]
 type internal Cancellable<'T> =
-    new: template: IMachineTemplateWrapper<'T> -> Cancellable<'T>
+    new: invokable: ICancellableInvokable<'T> -> Cancellable<'T>
     member GetInvocation: unit -> ITrampolineInvocation<'T>
 
 type internal CancellableBuilder =
