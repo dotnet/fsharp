@@ -5142,11 +5142,6 @@
         <target state="translated">Ten atrybut jest nieprawidłowy do użycia w tym elemencie języka. Atrybuty zestawu powinny być dołączone do deklaracji „do ()” (w module języka F#, jeśli to konieczne).</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Ten atrybut jest nieprawidłowy do użycia w tym elemencie języka</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">Argumenty opcjonalne nie mogą być używane w atrybutach niestandardowych</target>

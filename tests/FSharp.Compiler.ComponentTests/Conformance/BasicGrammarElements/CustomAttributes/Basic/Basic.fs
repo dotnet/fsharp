@@ -61,7 +61,7 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 15, Col 7, Line 15, Col 17, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 15, Col 7, Line 15, Col 17, "This attribute cannot be applied to property, event, return value. Valid targets are: parameter")
         ]
 
     // SOURCE=E_AttributeApplication04.fs     SCFLAGS="--test:ErrorRanges"	# E_AttributeApplication04.fs
@@ -71,7 +71,8 @@ module CustomAttributes_Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 3, Line 14, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 3, Line 14, Col 13, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: parameter")
+            (Warning 842, Line 14, Col 3, Line 14, Col 13, "This attribute cannot be applied to class. Valid targets are: parameter")
         ]
 
     // SOURCE=E_AttributeApplication05.fs     SCFLAGS="--test:ErrorRanges"	# E_AttributeApplication05.fs
