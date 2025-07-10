@@ -1007,6 +1007,11 @@
         <target state="translated">잘못된 참조 어셈블리 경로'</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLanguageVersionOutOfSupport">
+        <source>Language version '{0}' is no longer supported. These language features are now always enabled. Please use language version 7.0 or later, or download .NET 9 SDK from https://dotnet.microsoft.com/download/dotnet which was the last version to support F# {1}.</source>
+        <target state="new">Language version '{0}' is no longer supported. These language features are now always enabled. Please use language version 7.0 or later, or download .NET 9 SDK from https://dotnet.microsoft.com/download/dotnet which was the last version to support F# {1}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">포함된 최적화 정보를 지정합니다. 기본값은 파일입니다. 분산 라이브러리에 중요합니다.</target>

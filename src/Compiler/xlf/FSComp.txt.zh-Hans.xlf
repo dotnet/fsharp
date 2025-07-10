@@ -1007,6 +1007,11 @@
         <target state="translated">引用程序集路径无效</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLanguageVersionOutOfSupport">
+        <source>Language version '{0}' is no longer supported. These language features are now always enabled. Please use language version 7.0 or later, or download .NET 9 SDK from https://dotnet.microsoft.com/download/dotnet which was the last version to support F# {1}.</source>
+        <target state="new">Language version '{0}' is no longer supported. These language features are now always enabled. Please use language version 7.0 or later, or download .NET 9 SDK from https://dotnet.microsoft.com/download/dotnet which was the last version to support F# {1}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">指定包含的优化信息，默认值为文件。对于分发库非常重要。</target>

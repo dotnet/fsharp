@@ -1007,6 +1007,11 @@
         <target state="translated">Geçersiz başvuru bütünleştirilmiş kodu yolu'</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsLanguageVersionOutOfSupport">
+        <source>Language version '{0}' is no longer supported. These language features are now always enabled. Please use language version 7.0 or later, or download .NET 9 SDK from https://dotnet.microsoft.com/download/dotnet which was the last version to support F# {1}.</source>
+        <target state="new">Language version '{0}' is no longer supported. These language features are now always enabled. Please use language version 7.0 or later, or download .NET 9 SDK from https://dotnet.microsoft.com/download/dotnet which was the last version to support F# {1}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">Dahil edilen iyileştirme bilgilerini belirtin; varsayılan değer dosyadır. Dağıtılmış kitaplıklar için önemlidir.</target>

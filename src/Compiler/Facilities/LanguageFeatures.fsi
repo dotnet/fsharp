@@ -104,6 +104,9 @@ type LanguageVersion =
     /// Get the list of valid versions
     static member ContainsVersion: string -> bool
 
+    /// Check if a version string is out-of-support (≤ 6.0)
+    static member IsOutOfSupportVersion: string -> bool
+
     /// Has preview been explicitly specified
     member IsPreviewEnabled: bool
 

@@ -294,6 +294,11 @@ type LanguageVersion(versionText) =
         let langVersion = getVersionFromString version
         langVersion <> 0m && languageVersions.Contains langVersion
 
+    /// Check if a version string is out-of-support (≤ 6.0)
+    static member IsOutOfSupportVersion version =
+        let langVersion = getVersionFromString version
+        langVersion <> 0m && langVersion <= languageVersion60
+
     /// Get a list of valid strings for help text
     static member ValidOptions = validOptions
 

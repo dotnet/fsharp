@@ -1150,6 +1150,8 @@ let GetLanguageVersions () =
 let setLanguageVersion (specifiedVersion: string) =
     if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
+    elif LanguageVersion.IsOutOfSupportVersion specifiedVersion then
+        error (Error(FSComp.SR.optsLanguageVersionOutOfSupport (specifiedVersion, specifiedVersion), rangeCmdArgs))
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
 
