@@ -56,7 +56,6 @@ namespace Internal.Utilities.Library.CancellableImplementation
 
 open System
 open System.Threading
-open FSharp.Compiler
 
 open FSharp.Core.CompilerServices.StateMachineHelpers
 
@@ -73,7 +72,7 @@ type ITrampolineInvocation =
 type CancellableStateMachineData<'T> =
 
     [<DefaultValue(false)>]
-    val mutable Result: 'T
+    val mutable Result: Result<'T, exn>
 
 and CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
 and ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
@@ -82,39 +81,52 @@ and CancellableResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<Cancella
 and CancellableCode<'TOverall, 'T> = ResumableCode<CancellableStateMachineData<'TOverall>, 'T>
 
 [<Sealed>]
-type Trampoline() =
+type Trampoline(cancellationToken: CancellationToken) =
+    let mutable bindDepth = 0
+    let mutable storedException: ExceptionDispatchInfo voption = ValueNone
+    let mutable capturedFramesCount = 0
 
-    [<DefaultValue(false)>]
-    val mutable Token: CancellationToken
-
-    [<DefaultValue(false)>]
-    val mutable Exception: ExceptionDispatchInfo voption
-
-    [<DefaultValue(false)>]
-    val mutable BindDepth: int
-
-    static let current = new ThreadLocal<Trampoline>()
+    let captureStackFrame exn =
+        match storedException with
+        | ValueSome edi when edi.SourceException = exn ->
+            try
+                edi.Throw()
+                Unchecked.defaultof<_>
+            with exn ->
+                capturedFramesCount <- capturedFramesCount + 1
+                let edi = ExceptionDispatchInfo.Capture exn
+                storedException <- ValueSome edi
+                edi.SourceException
+        | _ ->
+            capturedFramesCount <- 1
+            let edi = ExceptionDispatchInfo.Capture exn
+            storedException <- ValueSome edi
+            edi.SourceException
 
     let stack = System.Collections.Generic.Stack<ITrampolineInvocation>()
 
-    static member IsCancelled = current.Value.Token.IsCancellationRequested
-    static member HasError = current.Value.Exception.IsSome
+    static let current = new ThreadLocal<Trampoline>()
 
-    static member Good =
-        not (current.Value.Token.IsCancellationRequested || current.Value.Exception.IsSome)
+    member this.IsCancelled = cancellationToken.IsCancellationRequested
 
-    static member ThrowIfCancellationRequested() =
-        current.Value.Token.ThrowIfCancellationRequested()
+    member this.ThrowIfCancellationRequested() =
+        cancellationToken.ThrowIfCancellationRequested()
 
-    static member ShoudBounce = current.Value.BindDepth % 100 = 0
+    member this.ShoudBounce = bindDepth % 100 = 0
 
-    static member Install() = current.Value <- Trampoline()
+    member this.CaptureStackFrame(exn) =
+        if not this.IsCancelled && (bindDepth < 100 || capturedFramesCount < 200) then
+            captureStackFrame exn
+        else
+            exn
+
+    static member Install ct = current.Value <- Trampoline ct
 
     member _.Set(invocation: ITrampolineInvocation) = stack.Push(invocation)
 
     [<DebuggerHidden>]
     member this.Execute(invocation) =
-        this.BindDepth <- this.BindDepth + 1
+        bindDepth <- bindDepth + 1
 
         stack.Push invocation
 
@@ -124,13 +136,13 @@ type Trampoline() =
             if stack.Peek().IsCompleted then
                 stack.Pop() |> ignore
 
-        this.BindDepth <- this.BindDepth - 1
+        bindDepth <- bindDepth - 1
 
     static member Current = current.Value
 
 type ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
-    abstract Result: 'T
+    abstract Result: Result<'T, exn>
 
 type IMachineTemplateWrapper<'T> =
     abstract Clone: unit -> ITrampolineInvocation<'T>
@@ -157,51 +169,27 @@ type Cancellable<'T>(template: IMachineTemplateWrapper<'T>) =
 [<AutoOpen>]
 module CancellableCode =
 
-    let inline captureExn (exn: exn) =
-        match exn with
-        | :? OperationCanceledException as oce when oce.CancellationToken = Trampoline.Current.Token -> ()
-        | exn -> Trampoline.Current.Exception <- ValueSome(ExceptionDispatchInfo.Capture exn)
-
-        Unchecked.defaultof<_>
-
-    let inline captureStackFrame () =
-        try
-            Trampoline.Current.Exception |> ValueOption.iter _.Throw()
-        with exn ->
-            Trampoline.Current.Exception <- ValueSome <| ExceptionDispatchInfo.Capture exn
-
-    let inline protect (code: CancellableCode<_, _>) =
+    let inline filterCancellation (catch: exn -> CancellableCode<_, _>) exn =
         CancellableCode(fun sm ->
             try
-                code.Invoke(&sm)
-            with exn ->
-                captureExn exn
+                (catch exn).Invoke(&sm)
+            with :? OperationCanceledException when Trampoline.Current.IsCancelled ->
                 true)
-
-    let inline notWhenCancelled (code: CancellableCode<_, _>) =
-        CancellableCode(fun sm -> Trampoline.IsCancelled || (protect code).Invoke(&sm))
-
-    let inline notWhenError (code: CancellableCode<_, _>) =
-        CancellableCode(fun sm -> Trampoline.HasError || (protect code).Invoke(&sm))
-
-    let inline whenGood (code: CancellableCode<_, _>) =
-        CancellableCode(fun sm -> Trampoline.HasError || Trampoline.IsCancelled || (protect code).Invoke(&sm))
-
-    let inline whenGoodApply (code: _ -> CancellableCode<_, _>) arg =
-        CancellableCode(fun sm ->
-            Trampoline.HasError
-            || Trampoline.IsCancelled
-            || (code arg |> protect).Invoke(&sm))
 
     let inline throwIfCancellationRequested (code: CancellableCode<_, _>) =
         CancellableCode(fun sm ->
-            Trampoline.Current.Token.ThrowIfCancellationRequested()
+            Trampoline.Current.ThrowIfCancellationRequested()
             code.Invoke(&sm))
+
+    let inline getResult (invocation: ITrampolineInvocation<_>) =
+        match invocation.Result with
+        | Ok value -> value
+        | Error exn -> raise exn
 
 type CancellableBuilder() =
 
     member inline _.Delay(generator: unit -> CancellableCode<'TOverall, 'T>) : CancellableCode<'TOverall, 'T> =
-        ResumableCode.Delay(generator) |> protect
+        ResumableCode.Delay(fun () -> generator () |> throwIfCancellationRequested)
 
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     [<DefaultValue>]
@@ -209,7 +197,7 @@ type CancellableBuilder() =
 
     member inline _.Return(value: 'T) : CancellableCode<'T, 'T> =
         CancellableCode<'T, _>(fun sm ->
-            sm.Data.Result <- value
+            sm.Data.Result <- Ok value
             true)
 
     /// Chains together a step with its following step.
@@ -218,29 +206,20 @@ type CancellableBuilder() =
     member inline _.Combine
         (code1: CancellableCode<'TOverall, unit>, code2: CancellableCode<'TOverall, 'T>)
         : CancellableCode<'TOverall, 'T> =
-        ResumableCode.Combine(notWhenCancelled code1, whenGood code2) |> protect
+        ResumableCode.Combine(code1, code2)
 
     /// Builds a step that executes the body while the condition predicate is true.
     member inline _.While
         ([<InlineIfLambda>] condition: unit -> bool, body: CancellableCode<'TOverall, unit>)
         : CancellableCode<'TOverall, unit> =
-        ResumableCode.While(condition, throwIfCancellationRequested body) |> protect
+        ResumableCode.While(condition, throwIfCancellationRequested body)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline _.TryWith(body: CancellableCode<'TOverall, 'T>, catch: exn -> CancellableCode<'TOverall, 'T>) =
-        CancellableCode<'TOverall, 'T>(fun sm ->
-            let mutable __stack_fin = true
-            let __stack_body_fin = (protect body).Invoke(&sm)
-            __stack_fin <- __stack_body_fin
-
-            if __stack_fin && Trampoline.HasError then
-                let __stack_filtered_exn = Trampoline.Current.Exception.Value.SourceException
-                // Clear for now, will get restored if not handled.
-                Trampoline.Current.Exception <- ValueNone
-                __stack_fin <- (catch __stack_filtered_exn |> protect |> notWhenCancelled).Invoke(&sm)
-
-            __stack_fin)
+    member inline _.TryWith
+        (body: CancellableCode<'TOverall, 'T>, catch: exn -> CancellableCode<'TOverall, 'T>)
+        : CancellableCode<'TOverall, 'T> =
+        ResumableCode.TryWith(body, filterCancellation catch)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
@@ -257,11 +236,10 @@ type CancellableBuilder() =
     member inline _.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable | null>
         (resource: 'Resource, body: 'Resource -> CancellableCode<'TOverall, 'T>)
         : CancellableCode<'TOverall, 'T> =
-        ResumableCode.Using(resource, whenGoodApply body) |> protect
+        ResumableCode.Using(resource, body)
 
     member inline _.For(sequence: seq<'T>, body: 'T -> CancellableCode<'TOverall, unit>) : CancellableCode<'TOverall, unit> =
         ResumableCode.For(sequence, fun x -> body x |> throwIfCancellationRequested)
-        |> protect
 
     member inline this.Yield(value) = this.Return(value)
 
@@ -272,32 +250,32 @@ type CancellableBuilder() =
             if __useResumableCode then
                 let mutable invocation = code.GetInvocation()
 
-                if Trampoline.ShoudBounce then
+                if Trampoline.Current.ShoudBounce then
                     match __resumableEntry () with
                     | Some contID ->
                         sm.ResumptionPoint <- contID
                         Trampoline.Current.Set invocation
                         false
-                    | None -> (invocation.Result |> continuation |> whenGood).Invoke(&sm)
+                    | None -> (invocation |> getResult |> continuation).Invoke(&sm)
                 else
                     Trampoline.Current.Execute invocation
-                    (invocation.Result |> continuation |> whenGood).Invoke(&sm)
+                    (invocation |> getResult |> continuation).Invoke(&sm)
 
             else
                 // Dynamic Bind.
 
                 let mutable invocation = code.GetInvocation()
 
-                if Trampoline.ShoudBounce then
+                if Trampoline.Current.ShoudBounce then
                     let cont =
-                        CancellableResumptionFunc<'Data>(fun sm -> (whenGoodApply continuation invocation.Result).Invoke(&sm))
+                        CancellableResumptionFunc<'Data>(fun sm -> (invocation |> getResult |> continuation).Invoke(&sm))
 
                     Trampoline.Current.Set invocation
                     sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                     false
                 else
                     Trampoline.Current.Execute invocation
-                    (whenGoodApply continuation invocation.Result).Invoke(&sm))
+                    (invocation |> getResult |> continuation).Invoke(&sm))
 
     member inline this.ReturnFrom(comp: Cancellable<'T>) : CancellableCode<'T, 'T> = this.Bind(comp, this.Return)
 
@@ -307,10 +285,14 @@ type CancellableBuilder() =
 
                 (MoveNextMethodImpl<_>(fun sm ->
                     __resumeAt sm.ResumptionPoint
-                    let __stack_code_fin = (protect code).Invoke(&sm)
 
-                    if __stack_code_fin then
-                        captureStackFrame ()
+                    try
+                        let __stack_code_fin = code.Invoke(&sm)
+
+                        if __stack_code_fin then
+                            sm.ResumptionPoint <- -1
+                    with exn ->
+                        sm.Data.Result <- Error <| Trampoline.Current.CaptureStackFrame exn
                         sm.ResumptionPoint <- -1))
 
                 (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
@@ -319,14 +301,16 @@ type CancellableBuilder() =
         else
             // Dynamic Run.
 
-            let initialResumptionFunc =
-                CancellableResumptionFunc(fun sm -> (protect code).Invoke(&sm))
+            let initialResumptionFunc = CancellableResumptionFunc(fun sm -> code.Invoke(&sm))
 
             let resumptionInfo =
                 { new CancellableResumptionDynamicInfo<_>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
-                        if info.ResumptionFunc.Invoke(&sm) then
-                            captureStackFrame ()
+                        try
+                            if info.ResumptionFunc.Invoke(&sm) then
+                                sm.ResumptionPoint <- -1
+                        with exn ->
+                            sm.Data.Result <- Error <| Trampoline.Current.CaptureStackFrame exn
                             sm.ResumptionPoint <- -1
 
                     member _.SetStateMachine(_, _) = ()
@@ -355,35 +339,28 @@ module Cancellable =
         use _ = FSharp.Compiler.Cancellable.UsingToken ct
 
         let invocation = code.GetInvocation()
-        Trampoline.Install()
+        Trampoline.Install ct
         Trampoline.Current.Execute invocation
         invocation
 
     let runWithoutCancellation code =
         let invocation = run CancellationToken.None code
 
-        if Trampoline.IsCancelled then
-            raise (OperationCanceledException Trampoline.Current.Token)
-        elif Trampoline.HasError then
-            Trampoline.Current.Exception.Value.Throw()
-            Unchecked.defaultof<_>
+        if Trampoline.Current.IsCancelled then
+            failwith "Unexpected cancellation in Cancellable.runWithoutCancellation"
         else
-            invocation.Result
+            getResult invocation
 
-    let toAsync (code: Cancellable<_>) =
+    let toAsync code =
         async {
             let! ct = Async.CancellationToken
 
             return!
                 Async.FromContinuations(fun (cont, econt, ccont) ->
-                    let invocation = run ct code
-
-                    if Trampoline.IsCancelled then
-                        ccont (OperationCanceledException Trampoline.Current.Token)
-                    elif Trampoline.HasError then
-                        econt Trampoline.Current.Exception.Value.SourceException
-                    else
-                        cont invocation.Result)
+                    match run ct code |> _.Result with
+                    | _ when Trampoline.Current.IsCancelled -> ccont (OperationCanceledException ct)
+                    | Ok value -> cont value
+                    | Error exn -> econt exn)
         }
 
     let token () =

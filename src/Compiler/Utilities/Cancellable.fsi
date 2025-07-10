@@ -18,7 +18,6 @@ open System
 open System.Threading
 open Microsoft.FSharp.Core.CompilerServices
 open System.Runtime.CompilerServices
-open System.Runtime.ExceptionServices
 
 type internal ITrampolineInvocation =
     abstract MoveNext: unit -> unit
@@ -26,7 +25,7 @@ type internal ITrampolineInvocation =
 
 [<Struct; NoComparison; NoEquality>]
 type internal CancellableStateMachineData<'T> =
-    val mutable Result: 'T
+    val mutable Result: Result<'T, exn>
 
 and internal CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
 and internal ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
@@ -36,24 +35,20 @@ and internal CancellableCode<'TOverall, 'T> = ResumableCode<CancellableStateMach
 
 type internal ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
-    abstract Result: 'T
+    abstract Result: Result<'T, exn>
 
 type internal IMachineTemplateWrapper<'T> =
     abstract Clone: unit -> ITrampolineInvocation<'T>
 
 [<Sealed>]
 type internal Trampoline =
-    val mutable Token: CancellationToken
-    val mutable Exception: ExceptionDispatchInfo voption
-    val mutable BindDepth: int
     member Set: ITrampolineInvocation -> unit
     member Execute: ITrampolineInvocation -> unit
     static member Current: Trampoline
-    static member IsCancelled: bool
-    static member HasError: bool
-    static member Good: bool
-    static member ThrowIfCancellationRequested: unit -> unit
-    static member ShoudBounce: bool
+    member IsCancelled: bool
+    member ThrowIfCancellationRequested: unit -> unit
+    member ShoudBounce: bool
+    member CaptureStackFrame: exn -> exn
 
 [<NoEquality; NoComparison>]
 type internal CancellableInvocation<'T, 'Machine
@@ -99,12 +94,6 @@ type internal CancellableBuilder =
 
 [<AutoOpen>]
 module internal CancellableCode =
-    val inline captureExn: exn -> 'a
-    val inline captureStackFrame: unit -> unit
-    val inline protect: CancellableCode<'a, 'b> -> CancellableCode<'a, 'c>
-    val inline notWhenCancelled: CancellableCode<'a, 'b> -> CancellableCode<'a, 'c>
-    val inline notWhenError: CancellableCode<'a, 'b> -> CancellableCode<'a, 'c>
-    val inline whenGood: CancellableCode<'a, 'b> -> CancellableCode<'a, 'c>
     val inline throwIfCancellationRequested: CancellableCode<'a, 'b> -> CancellableCode<'a, 'c>
 
 namespace Internal.Utilities.Library
