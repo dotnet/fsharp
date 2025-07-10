@@ -922,9 +922,9 @@ let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _
 
     attrDecls @ letDecls
 
-let idOfPat (parseState: IParseState) m p =
+let idOfPat (_parseState: IParseState) m p =
     match p with
-    | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop -> mkSynId r "_"
+    | SynPat.Wild r -> mkSynId r "_"
     | SynPat.Named(SynIdent(id, _), false, _, _) -> id
     | SynPat.LongIdent(longDotId = SynLongIdent([ id ], _, _); typarDecls = None; argPats = SynArgPats.Pats []; accessibility = None) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier ())

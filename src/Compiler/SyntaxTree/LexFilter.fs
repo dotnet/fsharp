@@ -945,7 +945,6 @@ type LexFilterImpl (
             | _, CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _
             // 'static member P with get() = ' limited by 'static', likewise others
             | _, CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _
-                 when lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace
                  -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
             // REVIEW: document these
