@@ -2247,10 +2247,7 @@ opt_typ:
 
 atomicPatternLongIdent:
   | UNDERSCORE DOT pathOp
-     { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
-          raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
-
-       let underscore = ident("_", rhs parseState 1)
+     { let underscore = ident("_", rhs parseState 1)
        let mDot = rhs parseState 2
        None, prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) mDot $3 }
 
@@ -2263,10 +2260,7 @@ atomicPatternLongIdent:
      { (None, $1) }
 
   | access UNDERSCORE DOT pathOp
-     { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
-          raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedSymbolDot())
-
-       let underscore = ident("_", rhs parseState 2)
+     { let underscore = ident("_", rhs parseState 2)
        let mDot = rhs parseState 3
        Some($1), prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) mDot $4 }
 

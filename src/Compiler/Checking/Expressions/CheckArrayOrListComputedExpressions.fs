@@ -54,8 +54,7 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
     | None ->
 
         // LanguageFeatures.ImplicitYield do not require this validation
-        let implicitYieldEnabled =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+        let implicitYieldEnabled = true
 
         let validateExpressionWithIfRequiresParenthesis = not implicitYieldEnabled
         let acceptDeprecatedIfThenExpression = not implicitYieldEnabled

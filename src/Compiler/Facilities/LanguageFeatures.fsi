@@ -6,13 +6,9 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | SingleUnderscorePattern
-    | WildCardInForLoop
-    | RelaxWhitespace
     | RelaxWhitespace2
     | StrictIndentation
     | NameOf
-    | ImplicitYield
     | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement

@@ -37,8 +37,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
     // interpreting non-unit-typed expressions in statement positions as 'yield'.  'yield!' may be
     // present in the computation expression.
     let enableImplicitYield =
-        cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
-        && (YieldFree cenv comp)
+        (YieldFree cenv comp)
 
     let mkSeqDelayedExpr m (coreExpr: Expr) =
         let overallTy = tyOfExpr cenv.g coreExpr
@@ -162,9 +161,6 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let unwindExpr = mkUnitDelayLambda cenv.g mFinally unwindExpr
 
             Some(mkSeqFinally cenv env mTryToLast genOuterTy innerExpr unwindExpr, tpenv)
-
-        | SynExpr.Paren(range = m) when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield) ->
-            error (Error(FSComp.SR.tcConstructIsAmbiguousInSequenceExpression (), m))
 
         | SynExpr.ImplicitZero m -> Some(mkSeqEmpty cenv env m genOuterTy, tpenv)
 
@@ -453,8 +449,7 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
     match RewriteRangeExpr comp with
     | Some replacementExpr -> TcExpr cenv overallTy env tpenv replacementExpr
     | None ->
-        let implicitYieldEnabled =
-            cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+        let implicitYieldEnabled = true
 
         let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
 
