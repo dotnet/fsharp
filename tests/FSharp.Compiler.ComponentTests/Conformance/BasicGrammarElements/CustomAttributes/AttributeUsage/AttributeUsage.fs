@@ -112,10 +112,13 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 18, Col 7, Line 18, Col 8, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute cannot be applied to property, field. Valid targets are: method");
+            (Warning 842, Line 21, Col 21, Line 21, Col 22, "This attribute cannot be applied to field. Valid targets are: method");
+            (Warning 842, Line 24, Col 21, Line 24, Col 29, "This attribute cannot be applied to property, field. Valid targets are: method");
+            (Warning 842, Line 24, Col 21, Line 24, Col 29, "This attribute cannot be applied to field. Valid targets are: method");
+            (Warning 842, Line 27, Col 7, Line 27, Col 16, "This attribute cannot be applied to property, event, return value. Valid targets are: method");
+            (Warning 842, Line 27, Col 7, Line 27, Col 16, "This attribute cannot be applied to property. Valid targets are: method");
+            (Warning 842, Line 18, Col 7, Line 18, Col 8, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
         ]
 
     // SOURCE=E_AttributeTargets02.fs					# E_AttributeTargets02.fs
@@ -125,17 +128,17 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 7, Line 14, Col 34, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 24, Col 7, Line 24, Col 36, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 29, Col 15, Line 29, Col 47, "This attribute is not valid for use on this language element")
-            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.")
+            (Warning 842, Line 14, Col 7, Line 14, Col 34, "This attribute cannot be applied to field. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
+            (Warning 842, Line 24, Col 7, Line 24, Col 36, "This attribute cannot be applied to property, event, return value. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
+            (Warning 842, Line 29, Col 15, Line 29, Col 47, "This attribute cannot be applied to method, event, return value. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
+            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.") 
         ]
         
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField01.fs"|])>]
-    let ``E_AttributeTargetIsField01_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsField01_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
@@ -148,30 +151,30 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 9, Col 3, Line 9, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 12, Col 3, Line 12, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 15, Col 3, Line 15, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 18, Col 3, Line 18, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 21, Col 3, Line 21, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 24, Col 3, Line 24, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 27, Col 3, Line 27, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 30, Col 3, Line 30, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 33, Col 3, Line 33, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 36, Col 3, Line 36, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 39, Col 3, Line 39, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 42, Col 3, Line 42, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 45, Col 3, Line 45, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 49, Col 3, Line 49, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 56, Col 3, Line 56, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 64, Col 3, Line 64, Col 12, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 66, Col 7, Line 66, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 9, Col 3, Line 9, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 12, Col 3, Line 12, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 15, Col 3, Line 15, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 18, Col 3, Line 18, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 21, Col 3, Line 21, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 24, Col 3, Line 24, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 27, Col 3, Line 27, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 30, Col 3, Line 30, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 33, Col 3, Line 33, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 36, Col 3, Line 36, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 39, Col 3, Line 39, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 42, Col 3, Line 42, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 45, Col 3, Line 45, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 49, Col 3, Line 49, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 56, Col 3, Line 56, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 64, Col 3, Line 64, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
+            (Warning 842, Line 66, Col 7, Line 66, Col 16, "This attribute cannot be applied to method, return value. Valid targets are: field")
         ]
         
     // SOURCE=E_AttributeTargetIsField02.fs					# E_AttributeTargetIsField02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField02.fs"|])>]
-    let ``E_AttributeTargetIsField02_fs 8.0`` compilation =
+    let ``E_AttributeTargetIsField02_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
@@ -186,9 +189,9 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=E_AttributeTargetIsMethod02.fs					# E_AttributeTargetIsMethod02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
-    let ``E_AttributeTargetIsMethod02_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsMethod02_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
@@ -201,24 +204,24 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 9, Col 3, Line 9, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 12, Col 3, Line 12, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 15, Col 3, Line 15, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 18, Col 3, Line 18, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 21, Col 3, Line 21, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 24, Col 3, Line 24, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 26, Col 7, Line 26, Col 17, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 28, Col 3, Line 28, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 31, Col 3, Line 31, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 34, Col 3, Line 34, Col 13, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 39, Col 3, Line 39, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 9, Col 3, Line 9, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 12, Col 3, Line 12, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 15, Col 3, Line 15, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 18, Col 3, Line 18, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 21, Col 3, Line 21, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 24, Col 3, Line 24, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 26, Col 7, Line 26, Col 17, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 28, Col 3, Line 28, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 31, Col 3, Line 31, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 34, Col 3, Line 34, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 39, Col 3, Line 39, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
         ]
         
     // SOURCE=E_AttributeTargetIsMethod03.fs					# E_AttributeTargetIsMethod03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
-    let ``E_AttributeTargetIsMethod03_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsMethod03_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
@@ -231,21 +234,21 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 12, Col 6, Line 12, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 15, Col 6, Line 15, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 18, Col 6, Line 18, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 20, Col 10, Line 20, Col 20, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 22, Col 6, Line 22, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 25, Col 6, Line 25, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 28, Col 6, Line 28, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 31, Col 6, Line 31, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 34, Col 6, Line 34, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 37, Col 6, Line 37, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 39, Col 10, Line 39, Col 20, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 41, Col 6, Line 41, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 44, Col 6, Line 44, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 47, Col 6, Line 47, Col 16, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 52, Col 6, Line 52, Col 16, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 12, Col 6, Line 12, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 15, Col 6, Line 15, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 18, Col 6, Line 18, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 20, Col 10, Line 20, Col 20, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 22, Col 6, Line 22, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 25, Col 6, Line 25, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 28, Col 6, Line 28, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 31, Col 6, Line 31, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 34, Col 6, Line 34, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 37, Col 6, Line 37, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 39, Col 10, Line 39, Col 20, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 41, Col 6, Line 41, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 44, Col 6, Line 44, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 47, Col 6, Line 47, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Warning 842, Line 52, Col 6, Line 52, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
         ]
 
     // SOURCE=E_AttributeTargetIsMethod04.fs					# E_AttributeTargetIsMethod04.fs
@@ -256,8 +259,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: method")
+            (Warning 842, Line 10, Col 3, Line 10, Col 15, "This attribute cannot be applied to class. Valid targets are: method")
+            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: method")
+            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to struct. Valid targets are: method")
         ]
         
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
@@ -299,14 +304,15 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute cannot be applied to method, property, field, return value. Valid targets are: assembly, class")
+            (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute cannot be applied to property, field, return value. Valid targets are: assembly, class")
         ]
         
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
-    let ``AttributeTargetIsStruct_fs 8.0`` compilation =
+    let ``AttributeTargetIsStruct_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -319,9 +325,9 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
-    let ``AttributeTargetIsClass_fs 8.0`` compilation =
+    let ``AttributeTargetIsClass_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -334,9 +340,9 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=E_AttributeTargetIsStruct.fs 	# E_AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
-    let ``E_AttributeTargetIsStruct_fs 8.0`` compilation =
+    let ``E_AttributeTargetIsStruct_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -347,25 +353,25 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 13, Col 3, Line 13, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 22, Col 11, Line 22, Col 22, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 25, Col 3, Line 25, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 34, Col 3, Line 34, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 35, Col 3, Line 35, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 40, Col 3, Line 40, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 41, Col 3, Line 41, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 49, Col 3, Line 49, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 50, Col 3, Line 50, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 53, Col 3, Line 53, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 54, Col 3, Line 54, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 13, Col 3, Line 13, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 19, Col 3, Line 19, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 22, Col 11, Line 22, Col 22, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 25, Col 3, Line 25, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 34, Col 3, Line 34, Col 18, "This attribute cannot be applied to class. Valid targets are: interface")
+            (Warning 842, Line 35, Col 3, Line 35, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
+            (Warning 842, Line 40, Col 3, Line 40, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 41, Col 3, Line 41, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
+            (Warning 842, Line 49, Col 3, Line 49, Col 18, "This attribute cannot be applied to class. Valid targets are: interface")
+            (Warning 842, Line 50, Col 3, Line 50, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
+            (Warning 842, Line 53, Col 3, Line 53, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 54, Col 3, Line 54, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
         ]
 
     // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
-    let ``E_AttributeTargetIsClass_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsClass_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -376,16 +382,16 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 22, Col 10, Line 22, Col 22, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
+            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
+            (Warning 842, Line 22, Col 10, Line 22, Col 22, "This attribute cannot be applied to class. Valid targets are: struct")
         ]
         
     // SOURCE=E_AttributeTargetIsClass01.fs 	# E_AttributeTargetIsClass01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
-    let ``E_AttributeTargetIsClass01_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsClass01_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
         
@@ -396,8 +402,8 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 7, Col 3, Line 7, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 10, Col 10, Line 10, Col 25, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 7, Col 3, Line 7, Col 18, "This attribute cannot be applied to class. Valid targets are: interface");
+            (Warning 842, Line 10, Col 10, Line 10, Col 25, "This attribute cannot be applied to class. Valid targets are: interface")
         ]
 
     // SOURCE=MarshalAsAttribute.fs					# MarshalAsAttribute.fs
@@ -477,13 +483,13 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
-    let ``E_AttributeTargetIsField03_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsField03_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
         ]
         
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
@@ -495,7 +501,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
         ]
     
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
@@ -505,7 +511,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
         ]
         
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
@@ -516,16 +522,16 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute is not valid for use on this language element");
-            (Warning 3878, Line 14, Col 18, Line 14, Col 23, "This attribute is not valid for use on union cases with fields.");
+            (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
+            (Warning 3878, Line 14, Col 18, Line 14, Col 23, "This attribute is not valid for use on union cases with fields.")
             (Warning 3878, Line 15, Col 28, Line 15, Col 33, "This attribute is not valid for use on union cases with fields.")
         ]
         
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
-    let ``E_AttributeTargetIsProperty01_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsProperty01_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -538,9 +544,9 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
-    let ``E_AttributeTargetIsCtor01_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsCtor01_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -551,17 +557,17 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 9, Col 15, Line 9, Col 27, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 11, Col 16, Line 11, Col 28, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 14, Col 15, Line 14, Col 27, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 17, Col 16, Line 17, Col 28, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 9, Col 15, Line 9, Col 27, "This attribute cannot be applied to constructor. Valid targets are: method")
+            (Warning 842, Line 11, Col 16, Line 11, Col 28, "This attribute cannot be applied to constructor. Valid targets are: method")
+            (Warning 842, Line 14, Col 15, Line 14, Col 27, "This attribute cannot be applied to constructor. Valid targets are: method")
+            (Warning 842, Line 17, Col 16, Line 17, Col 28, "This attribute cannot be applied to constructor. Valid targets are: method")
         ]
         
     // SOURCE=AttributeTargetsIsEnum01.fs	# AttributeTargetsIsEnum01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsEnum01.fs"|])>]
-    let ``AttributeTargetsIsEnum01_fs 8.0`` compilation =
+    let ``AttributeTargetsIsEnum01_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -574,9 +580,9 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=E_AttributeTargetIsEnum01.fs	# E_AttributeTargetIsEnum01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
-    let ``E_AttributeTargetIsEnum01_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsEnum01_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -587,17 +593,17 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 22, Col 3, Line 22, Col 17, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute cannot be applied to enum. Valid targets are: struct")
+            (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute cannot be applied to enum. Valid targets are: class")
+            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute cannot be applied to enum. Valid targets are: interface")
+            (Warning 842, Line 22, Col 3, Line 22, Col 17, "This attribute cannot be applied to enum. Valid targets are: delegate")
         ]        
 
      // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
-    let ``AttributeTargetsIsDelegate01_fs 8.0`` compilation =
+    let ``AttributeTargetsIsDelegate01_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -610,9 +616,9 @@ module CustomAttributes_AttributeUsage =
         
     // SOURCE=E_AttributeTargetIsDelegate01.fs	# E_AttributeTargetIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
-    let ``E_AttributeTargetIsDelegate01_fs 8.0`` compilation =
+    let ``E_AttributeTargetIsDelegate01_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -623,10 +629,10 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 19, Col 3, Line 19, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 20, Col 3, Line 20, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 22, Col 3, Line 22, Col 13, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 19, Col 3, Line 19, Col 14, "This attribute cannot be applied to delegate. Valid targets are: class")
+            (Warning 842, Line 20, Col 3, Line 20, Col 15, "This attribute cannot be applied to delegate. Valid targets are: struct")
+            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute cannot be applied to delegate. Valid targets are: interface")
+            (Warning 842, Line 22, Col 3, Line 22, Col 13, "This attribute cannot be applied to delegate. Valid targets are: enum")
         ]
 
     [<Fact>]
@@ -642,9 +648,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         
      // SOURCE=AttributeTargetsIsInterface.fs	# AttributeTargetsIsInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsInterface.fs"|])>]
-    let ``AttributeTargetsIsInterface_fs 8.0`` compilation =
+    let ``AttributeTargetsIsInterface_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -658,9 +664,9 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         
     // SOURCE=E_AttributeTargetIsInterface.fs	# E_AttributeTargetIsInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
-    let ``E_AttributeTargetIsInterface_fs 8_0`` compilation =
+    let ``E_AttributeTargetIsInterface_fs 9_0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -671,17 +677,17 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 11, Col 3, Line 11, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 14, Col 3, Line 14, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 18, Col 3, Line 18, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 11, Col 3, Line 11, Col 14, "This attribute cannot be applied to interface. Valid targets are: class")
+            (Warning 842, Line 14, Col 3, Line 14, Col 15, "This attribute cannot be applied to interface. Valid targets are: struct")
+            (Warning 842, Line 18, Col 3, Line 18, Col 14, "This attribute cannot be applied to interface. Valid targets are: class")
+            (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute cannot be applied to interface. Valid targets are: struct")
         ]
 
     // SOURCE= E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
-    let ``E_AttributeTargetIsClass02_fs 8.0`` compilation =
+    let ``E_AttributeTargetIsClass02_fs 9.0`` compilation =
         compilation
-        |> withLangVersion80
+        |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
     
@@ -692,18 +698,18 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 15, Col 3, Line 15, Col 18, "This attribute is not valid for use on this language element");
-            (Warning 842, Line 16, Col 3, Line 16, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 26, Col 3, Line 26, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 27, Col 3, Line 27, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 34, Col 3, Line 34, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 35, Col 3, Line 35, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 43, Col 3, Line 43, Col 18, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 44, Col 3, Line 44, Col 15, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 47, Col 3, Line 47, Col 14, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 48, Col 3, Line 48, Col 18, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 15, Col 3, Line 15, Col 18, "This attribute cannot be applied to class. Valid targets are: interface")
+            (Warning 842, Line 16, Col 3, Line 16, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
+            (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
+            (Warning 842, Line 26, Col 3, Line 26, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 27, Col 3, Line 27, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
+            (Warning 842, Line 34, Col 3, Line 34, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 35, Col 3, Line 35, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
+            (Warning 842, Line 43, Col 3, Line 43, Col 18, "This attribute cannot be applied to class. Valid targets are: interface")
+            (Warning 842, Line 44, Col 3, Line 44, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
+            (Warning 842, Line 47, Col 3, Line 47, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
+            (Warning 842, Line 48, Col 3, Line 48, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
         ]
         
     // SOURCE= CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
@@ -760,26 +766,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
 
     // SOURCE= E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
-    let ``E_AllowNullLiteral 8.0`` compilation =
-        compilation
-        |> withLangVersion80
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 935, Line 15, Col 10, Line 15, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
-            (Error 934, Line 27, Col 10, Line 27, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 934, Line 30, Col 10, Line 30, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Warning 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
-            (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
-        ]
-    
-    // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
-    let ``E_AllowNullLiteral 90`` compilation =
+    let ``E_AllowNullLiteral 9.0`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -791,8 +778,27 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
             (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute")
-            (Warning 842, Line 41, Col 7, Line 41, Col 23, "This attribute is not valid for use on this language element")
-            (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 41, Col 7, Line 41, Col 23, "This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface")
+            (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface")
+            (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
+        ]
+    
+    // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
+    let ``E_AllowNullLiteral 90`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 935, Line 15, Col 10, Line 15, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal");
+            (Error 934, Line 27, Col 10, Line 27, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 30, Col 10, Line 30, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 33, Col 10, Line 33, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 36, Col 10, Line 36, Col 11, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Error 934, Line 39, Col 10, Line 39, Col 13, "Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute");
+            (Warning 842, Line 41, Col 7, Line 41, Col 23, "This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface");
+            (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface");
             (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
         ]
         

@@ -5142,11 +5142,6 @@
         <target state="translated">Attributo non valido per l'utilizzo in questo elemento del linguaggio. Gli attributi degli assembly devono essere collegati a una dichiarazione 'do ()', se necessario all'interno di un modulo F#.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Attributo non valido per l'utilizzo in questo elemento del linguaggio</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">Non è possibile usare argomenti facoltativi in attributi personalizzati</target>
