@@ -237,10 +237,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ScopedNowarn, languageVersion100
                 LanguageFeature.AllowTypedLetOrUseBang, languageVersion100
                 LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion // Stopped printing arguments to indexed properties
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
