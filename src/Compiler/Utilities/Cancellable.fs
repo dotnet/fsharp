@@ -72,7 +72,7 @@ type ITrampolineInvocation =
 type CancellableStateMachineData<'T> =
 
     [<DefaultValue(false)>]
-    val mutable Result: 'T
+    val mutable Result: Result<'T, ExceptionDispatchInfo>
 
 and CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
 and ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
@@ -84,7 +84,7 @@ and CancellableCode<'TOverall, 'T> = ResumableCode<CancellableStateMachineData<'
 type Trampoline(cancellationToken: CancellationToken) =
     let mutable bindDepth = 0
 
-    let stack = Collections.Generic.Stack<ITrampolineInvocation>()
+    let stack = System.Collections.Generic.Stack<ITrampolineInvocation>()
 
     static let current = new ThreadLocal<Trampoline>()
 
@@ -98,6 +98,8 @@ type Trampoline(cancellationToken: CancellationToken) =
     static member Install ct = current.Value <- Trampoline ct
 
     member _.Set(invocation) = stack.Push(invocation)
+
+    member val ExceptionMap = ConditionalWeakTable<exn, ExceptionDispatchInfo>()
 
     [<DebuggerHidden>]
     member this.Execute(invocation) =
@@ -119,24 +121,44 @@ type ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
     abstract Result: 'T
 
+[<AutoOpen>]
+module ExceptionDispatchInfoHelpers =
+    type ExceptionDispatchInfo with
+        member edi.ThrowAny() =
+            edi.Throw()
+            Unchecked.defaultof<_>
+
+        static member RestoreOrCapture(exn: exn) =
+            match Trampoline.Current.ExceptionMap.TryGetValue exn with
+            | true, edi -> edi
+            | _ ->
+                let edi = ExceptionDispatchInfo.Capture exn
+                Trampoline.Current.ExceptionMap.Add(exn, edi)
+                edi
+
+[<NoEquality; NoComparison>]
 type ICancellableInvokable<'T> =
     abstract Create: unit -> ITrampolineInvocation<'T>
 
 [<NoEquality; NoComparison>]
 type CancellableInvocation<'T, 'Machine when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>>(machine: 'Machine)
     =
-
     let mutable machine = machine
 
     interface ITrampolineInvocation<'T> with
-        member _.MoveNext() = machine.MoveNext()
+        member this.MoveNext() = machine.MoveNext()
+
+        member _.Result =
+            match machine.Data.Result with
+            | Ok value -> value
+            | Error edi -> edi.ThrowAny()
+
         member _.IsCompleted = machine.ResumptionPoint = -1
-        member _.Result = machine.Data.Result
 
     interface ICancellableInvokable<'T> with
         member _.Create() = CancellableInvocation<_, _>(machine)
 
-[<Struct; NoComparison>]
+[<Struct; NoComparison; NoEquality>]
 type Cancellable<'T>(invokable: ICancellableInvokable<'T>) =
 
     member _.GetInvocation() = invokable.Create()
@@ -166,7 +188,7 @@ type CancellableBuilder() =
 
     member inline _.Return(value: 'T) : CancellableCode<'T, 'T> =
         CancellableCode<'T, _>(fun sm ->
-            sm.Data.Result <- value
+            sm.Data.Result <- Ok value
             true)
 
     member inline _.Combine
@@ -237,7 +259,6 @@ type CancellableBuilder() =
                 else
                     Trampoline.Current.Execute invocation
                     (continuation invocation.Result).Invoke(&sm))
-        |> throwIfCancellationRequested
 
     member inline this.ReturnFrom(comp: Cancellable<'T>) : CancellableCode<'T, 'T> = this.Bind(comp, this.Return)
 
@@ -247,10 +268,15 @@ type CancellableBuilder() =
 
                 (MoveNextMethodImpl<_>(fun sm ->
                     __resumeAt sm.ResumptionPoint
-                    let __stack_code_fin = code.Invoke(&sm)
 
-                    if __stack_code_fin then
-                        sm.ResumptionPoint <- -1))
+                    try
+                        let __stack_code_fin = code.Invoke(&sm)
+
+                        if __stack_code_fin then
+                            sm.ResumptionPoint <- -1
+                    with exn ->
+                        sm.ResumptionPoint <- -1
+                        sm.Data.Result <- Error <| ExceptionDispatchInfo.RestoreOrCapture exn))
 
                 (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
 
@@ -263,8 +289,12 @@ type CancellableBuilder() =
             let resumptionInfo =
                 { new CancellableResumptionDynamicInfo<_>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
-                        if info.ResumptionFunc.Invoke(&sm) then
+                        try
+                            if info.ResumptionFunc.Invoke(&sm) then
+                                sm.ResumptionPoint <- -1
+                        with exn ->
                             sm.ResumptionPoint <- -1
+                            sm.Data.Result <- Error <| ExceptionDispatchInfo.RestoreOrCapture exn
 
                     member _.SetStateMachine(_, _) = ()
                 }

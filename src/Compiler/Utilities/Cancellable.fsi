@@ -15,9 +15,9 @@ type Cancellable =
 namespace Internal.Utilities.Library.CancellableImplementation
 
 open System
-open System.Threading
 open Microsoft.FSharp.Core.CompilerServices
 open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 
 type internal ITrampolineInvocation =
     abstract MoveNext: unit -> unit
@@ -25,7 +25,7 @@ type internal ITrampolineInvocation =
 
 [<Struct; NoComparison; NoEquality>]
 type internal CancellableStateMachineData<'T> =
-    val mutable Result: 'T
+    val mutable Result: Result<'T, ExceptionDispatchInfo>
 
 and internal CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
 and internal ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
@@ -56,10 +56,16 @@ type internal CancellableInvocation<'T, 'Machine
     interface ITrampolineInvocation<'T>
     new: machine: 'Machine -> CancellableInvocation<'T, 'Machine>
 
-[<Struct; NoComparison>]
+[<Struct; NoComparison; NoEquality>]
 type internal Cancellable<'T> =
     new: invokable: ICancellableInvokable<'T> -> Cancellable<'T>
     member GetInvocation: unit -> ITrampolineInvocation<'T>
+
+[<AutoOpen>]
+module internal ExceptionDispatchInfoHelpers =
+    type ExceptionDispatchInfo with
+        member ThrowAny: unit -> 'T
+        static member RestoreOrCapture: exn -> ExceptionDispatchInfo
 
 type internal CancellableBuilder =
     new: unit -> CancellableBuilder
