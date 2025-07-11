@@ -30,23 +30,29 @@ type GenerateILLinkSubstitutions() =
     /// Generated embedded resource items.
     /// </summary>
     [<Output>]
-    member val GeneratedItems = [| |] : ITaskItem[] with get, set
+    member val GeneratedItems = [||]: ITaskItem[] with get, set
 
     override this.Execute() =
         try
             // Define the resource prefixes that need to be removed
-            let resourcePrefixes = 
-                [| 
+            let resourcePrefixes =
+                [|
                     // Signature variants
-                    yield! [| for dataType in [| "Data"; "DataB" |] do
-                               for compression in [| ""; "Compressed" |] do
-                               yield $"FSharpSignature{compression}{dataType}" |]
-                    
+                    yield!
+                        [|
+                            for dataType in [| "Data"; "DataB" |] do
+                                for compression in [| ""; "Compressed" |] do
+                                    yield $"FSharpSignature{compression}{dataType}"
+                        |]
+
                     // Optimization variants
-                    yield! [| for dataType in [| "Data"; "DataB" |] do
-                               for compression in [| ""; "Compressed" |] do
-                               yield $"FSharpOptimization{compression}{dataType}" |]
-                               
+                    yield!
+                        [|
+                            for dataType in [| "Data"; "DataB" |] do
+                                for compression in [| ""; "Compressed" |] do
+                                    yield $"FSharpOptimization{compression}{dataType}"
+                        |]
+
                     // Info variants
                     yield "FSharpOptimizationInfo"
                     yield "FSharpSignatureInfo"
@@ -57,26 +63,29 @@ type GenerateILLinkSubstitutions() =
             sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>") |> ignore
             sb.AppendLine("<linker>") |> ignore
             sb.AppendLine($"  <assembly fullname=\"{this.AssemblyName}\">") |> ignore
-            
+
             // Add each resource entry with proper closing tag on the same line
             for prefix in resourcePrefixes do
-                sb.AppendLine($"    <resource name=\"{prefix}.{this.AssemblyName}\" action=\"remove\"></resource>") |> ignore
-            
+                sb.AppendLine($"    <resource name=\"{prefix}.{this.AssemblyName}\" action=\"remove\"></resource>")
+                |> ignore
+
             // Close assembly and linker tags
             sb.AppendLine("  </assembly>") |> ignore
             sb.AppendLine("</linker>") |> ignore
-            
+
             let xmlContent = sb.ToString()
-            
+
             // Create a file in the intermediate output path
-            let outputFileName = Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
+            let outputFileName =
+                Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
+
             Directory.CreateDirectory(this.IntermediateOutputPath) |> ignore
             File.WriteAllText(outputFileName, xmlContent)
-            
+
             // Create a TaskItem for the generated file
             let item = TaskItem(outputFileName) :> ITaskItem
             item.SetMetadata("LogicalName", "ILLink.Substitutions.xml")
-            
+
             this.GeneratedItems <- [| item |]
             true
         with ex ->
