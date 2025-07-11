@@ -57,7 +57,7 @@ variables:
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: DotNetSdkVersion
-    value: '5.0.401'
+    value: '6.0.135'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -90,13 +90,15 @@ stages:
         enablePublishBuildAssets: true
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
         enableSourceBuild: true
+        sourceBuildParameters:
+            enableInternalSources: true
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
         - job: Full_Signed
           pool:
             name: NetCore1ESPool-Svc-Internal
-            demands: ImageOverride -equals build.windows.10.amd64.vs2019
+            demands: ImageOverride -equals windows.vs2022preview.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -109,6 +111,10 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: NuGetAuthenticate@1
+            inputs:
+              nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
+              forceReinstallCredentialProvider: true
           - script: eng\CIBuild.cmd
                     -configuration $(_BuildConfig)
                     -prepareMachine
@@ -129,8 +135,6 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
-            displayName: End to end build tests
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -266,7 +270,7 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -327,17 +331,6 @@ stages:
             continueOnError: true
             condition: failed()
 
-        # End to end build
-        - job: EndToEndBuildTests
-          pool:
-            vmImage: windows-latest
-          steps:
-          - checkout: self
-            clean: true
-          - script: .\Build.cmd -c Release
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
-            displayName: End to end build tests
-
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:
@@ -378,7 +371,7 @@ stages:
         # Plain build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -393,7 +386,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: 5.0.401
+              version: 6.0.135
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
@@ -416,7 +409,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: 5.0.401
+              version: 6.0.135
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild

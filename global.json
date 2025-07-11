@@ -1,10 +1,10 @@
 {
   "sdk": {
-    "version": "5.0.401",
+    "version": "6.0.135",
     "rollForward": "minor"
   },
   "tools": {
-    "dotnet": "5.0.401",
+    "dotnet": "6.0.135",
     "vs": {
       "version": "16.8",
       "components": [
@@ -13,7 +13,7 @@
     }
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.21220.2",
+    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.25204.8",
     "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
   }
 }

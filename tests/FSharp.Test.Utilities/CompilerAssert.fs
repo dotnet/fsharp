@@ -200,18 +200,18 @@ let main argv = 0"""
         finally
             ctxt.Unload()
 #else
-
-    static let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
-
     static let adSetup =
         let setup = new System.AppDomainSetup ()
-        setup.PrivateBinPath <- pathToThisDll
+        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
+        setup.ApplicationBase <- directory
         setup
 
     static let executeBuiltApp assembly deps =
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
-        worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
+        let worker =
+            use _a = (new AlreadyLoadedAppDomainResolver())
+            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
+        worker.ExecuteTestCase assembly (deps |> Array.ofList)
 #endif
 
     static let defaultProjectOptions =
@@ -246,7 +246,7 @@ let main argv = 0"""
 
     static let compileAux isExe options source f : unit =
         let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe.foobar" else ".dll")
         try
             f (rawCompile inputFilePath outputFilePath isExe options source)
         finally
@@ -443,10 +443,10 @@ let main argv = 0"""
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net5.0",
+        "tfm": "net6.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "5.0.0"
+            "version": "6.0.0"
         }
     }
 }"""

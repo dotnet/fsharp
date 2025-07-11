@@ -118,6 +118,7 @@ module Utilities =
             match this with
                 | TestCompilation.CSharp c ->
                     let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension outputPath)
+                    let _x = c.References
                     let emitResult = c.Emit outputPath
                     if not emitResult.Success then
                         failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
@@ -168,3 +169,18 @@ module Utilities =
                         try File.Delete tmp with | _ -> ()
                         try File.Delete dllFilePath with | _ -> ()
             TestCompilation.IL (source, compute)
+
+    /// Disposable type to implement a simple resolve handler that searches the currently loaded assemblies to see if the requested assembly is already loaded.
+    type AlreadyLoadedAppDomainResolver () =
+        let resolveHandler =
+            ResolveEventHandler(fun _ args ->
+                let assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                let assembly = assemblies |> Array.tryFind(fun a -> String.Compare(a.FullName, args.Name,StringComparison.OrdinalIgnoreCase) = 0)
+                assembly |> Option.defaultValue Unchecked.defaultof<Assembly>
+                )
+        do AppDomain.CurrentDomain.add_AssemblyResolve(resolveHandler)
+
+        interface IDisposable with
+            member this.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(resolveHandler)
+
+
