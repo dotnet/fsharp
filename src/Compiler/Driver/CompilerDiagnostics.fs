@@ -2063,6 +2063,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnost
             File = ""
         }
     else
+        let m = m.ApplyLineDirectives()
         let file = m.FileName
 
         let file =
@@ -2194,6 +2195,8 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Rich ->
                     match diagnostic.Range with
                     | Some m ->
+                        let m = m.ApplyLineDirectives()
+
                         let content =
                             m.FileName
                             |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
@@ -2279,6 +2282,7 @@ type PhasedDiagnostic with
         match diagnostic.Range with
         | None -> ()
         | Some m ->
+            let m = m.ApplyLineDirectives()
             let fileName = m.FileName
             let lineA = m.StartLine
             let lineB = m.EndLine

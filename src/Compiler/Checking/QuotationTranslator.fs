@@ -214,7 +214,7 @@ let (|ObjectInitializationCheck|_|) g expr =
             isUnitTy g resultTy -> ValueSome()
     | _ -> ValueNone
 
-let rec EmitDebugInfoIfNecessary cenv env m astExpr : ExprData =
+let rec EmitDebugInfoIfNecessary cenv env (m: range) astExpr : ExprData =
     // do not emit debug info if emitDebugInfoInQuotations = false or it was already written for the given expression
     if cenv.emitDebugInfoInQuotations && not (QP.isAttributedExpression astExpr) then
         cenv.emitDebugInfoInQuotations <- false
@@ -222,12 +222,13 @@ let rec EmitDebugInfoIfNecessary cenv env m astExpr : ExprData =
             let mk_tuple g m es = mkRefTupled g m es (List.map (tyOfExpr g) es)
 
             let rangeExpr =
+                let mm = m.ApplyLineDirectives() // LineDirectives: map ranges for the debugger
                 mk_tuple cenv.g m
-                    [ mkString cenv.g m m.FileName
-                      mkInt cenv.g m m.StartLine
-                      mkInt cenv.g m m.StartColumn
-                      mkInt cenv.g m m.EndLine
-                      mkInt cenv.g m m.EndColumn ]
+                    [ mkString cenv.g m mm.FileName
+                      mkInt cenv.g m mm.StartLine
+                      mkInt cenv.g m mm.StartColumn
+                      mkInt cenv.g m mm.EndLine
+                      mkInt cenv.g m mm.EndColumn ]
             let attrExpr =
                 mk_tuple cenv.g m
                     [ mkString cenv.g m "DebugRange"
