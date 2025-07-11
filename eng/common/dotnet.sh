@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-source="${BASH_SOURCE[0]}"
+# This script is used to install the .NET SDK.
+# It will also invoke the SDK with any provided arguments.
 
+source="${BASH_SOURCE[0]}"
 # resolve $SOURCE until the file is no longer a symlink
 while [[ -h $source ]]; do
   scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
@@ -11,6 +13,14 @@ while [[ -h $source ]]; do
   # symlink file was located
   [[ $source != /* ]] && source="$scriptroot/$source"
 done
-
 scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
-time "$scriptroot/eng/build.sh" --build --restore "$@"
+
+source $scriptroot/tools.sh
+InitializeDotNetCli true # install
+
+# Invoke acquired SDK with args if they are provided
+if [[ $# > 0 ]]; then
+  __dotnetDir=${_InitializeDotNetCli}
+  dotnetPath=${__dotnetDir}/dotnet
+  ${dotnetPath} "$@"
+fi

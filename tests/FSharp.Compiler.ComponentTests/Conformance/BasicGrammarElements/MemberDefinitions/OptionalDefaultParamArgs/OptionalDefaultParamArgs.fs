@@ -73,7 +73,6 @@ module MemberDefinitions_OptionalDefaultParamArgs =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_WrongDefaultType.fs"|])>]
     let ``W_WrongDefaultType_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics 
@@ -86,7 +85,6 @@ module MemberDefinitions_OptionalDefaultParamArgs =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_WrongDefaultObj.fs"|])>]
     let ``W_WrongDefaultObjType_fs`` compilation =
         compilation
-        |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics 
