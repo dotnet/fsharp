@@ -1,6 +1,6 @@
 function CheckTrim($root, $tfm, $outputfile, $expected_len) {
     Write-Host "Publish and Execute: ${tfm} - ${root}"
-    Write-Host "Expecting ${expected_len}"
+    Write-Host "Expecting ${expected_len} for ${outputfile}"
 
     $cwd = Get-Location
     Set-Location (Join-Path $PSScriptRoot "${root}")
@@ -41,6 +41,11 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len) {
     {
         Write-Error "Test failed with unexpected ${tfm}  -  trimmed ${outputfile} length:`nExpected:`n`t${expected_len} Bytes`nActual:`n`t${file_len} Bytes`nEither codegen or trimming logic have changed. Please investigate and update expected dll size or report an issue." -ErrorAction Stop
     }
+    
+    $fileBeforePublish = Get-Item (Join-Path $PSScriptRoot "${root}\bin\release\${tfm}\win-x64\${outputfile}")
+    $sizeBeforePublish = $fileBeforePublish.Length
+    $sizeDiff = $sizeBeforePublish - $file_len
+    Write-Host "Size of ${tfm} - ${outputfile} before publish: ${sizeBeforePublish} Bytes, which means the diff is ${sizeDiff} Bytes"
 }
 
 # NOTE: Trimming now errors out on desktop TFMs, as shown below:
@@ -53,5 +58,5 @@ CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.
 CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9154048
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
-CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len -1
+CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7601152
 

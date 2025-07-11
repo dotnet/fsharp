@@ -16,16 +16,23 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net9.0/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net9.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
-    <FSharpBuildAssemblyFile>$(MSBuildThisFileDirectory)../../../../artifacts/bin/FSharp.Build/Release/net9.0/FSharp.Build.dll</FSharpBuildAssemblyFile>
+    <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net9.0</LocalFSharpBuildBinPath>    
+    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile> 
+    <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>  
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
   
-  <!-- Import the custom targets file directly from the repository to use the latest version -->
-  <Import Project="$(MSBuildThisFileDirectory)../../../../src/FSharp.Build/Microsoft.FSharp.NetSdk.props" />
-  <Import Project="$(MSBuildThisFileDirectory)../../../../src/FSharp.Build/Microsoft.FSharp.NetSdk.targets" />
+  <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
+  
+  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="AssignTargetPaths">
+    <GenerateILLinkSubstitutions
+      AssemblyName="$(AssemblyName)"
+      IntermediateOutputPath="$(IntermediateOutputPath)">
+      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
+    </GenerateILLinkSubstitutions>
+  </Target>
 
   <ItemGroup>
     <Compile Include="..\Program.fs" />
