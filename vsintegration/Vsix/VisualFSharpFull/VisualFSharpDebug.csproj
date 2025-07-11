@@ -85,7 +85,4 @@
     </ItemGroup>
   </Target>
 
-<ItemGroup>
-    <VSIXSourceItem Include="$(ArtifactsBinDir)\FSharp.VisualStudio.Extension\$(Configuration)\net8.0-windows\.vsextension\extension.json" VsixSubPath=".vsextension" />
-  </ItemGroup>
 </Project>

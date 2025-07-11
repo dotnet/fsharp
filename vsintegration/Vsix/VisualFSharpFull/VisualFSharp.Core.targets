@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <VSIXSourceItem Include="$(ArtifactsBinDir)\FSharp.VisualStudio.Extension\$(Configuration)\net8.0-windows\.vsextension\extension.json" VsixSubPath=".vsextension" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj">
       <Project>{702A7979-BCF9-4C41-853E-3ADFC9897890}</Project>
       <Name>FSharp.Build</Name>
