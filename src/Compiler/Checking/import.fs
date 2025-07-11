@@ -565,10 +565,10 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                         | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const(tcref, tcref.Range)
                         | TType_app (tcref, _, _) ->
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
-                            Measure.One(tcref.Range)
+                            Measure.One tcref.Range
                         | _ ->
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument2(tp.Name), m))
-                            Measure.One(Range.Zero)
+                            Measure.One range0
 
                     TType_measure (conv genericArg)
                 else

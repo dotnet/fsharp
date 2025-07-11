@@ -48,7 +48,7 @@ module WithOOP =
         compilation
         |> getCompilation
         |> shouldFailWithDiagnostics [
-            (Warning 842, Line 8, Col 36, Line 8, Col 51, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 8, Col 36, Line 8, Col 51, "This attribute cannot be applied to type parameter. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate")
         ]
 
     [<Theory; FileInlineData("E_NoConstructorOnMeasure01.fsx")>]
@@ -57,6 +57,7 @@ module WithOOP =
         |> getCompilation
         |> shouldFailWithDiagnostics [
             (Error 904, Line 8, Col 5, Line 8, Col 18, "Measure declarations may have only static members: constructors are not available")
+            (Error 904, Line 9, Col 5, Line 9, Col 25, "Measure declarations may have only static members: constructors are not available")
         ]
 
     [<Theory; FileInlineData("E_NoInstanceOnMeasure01.fsx")>]
