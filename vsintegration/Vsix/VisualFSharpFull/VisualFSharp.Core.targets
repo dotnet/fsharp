@@ -135,7 +135,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.VisualStudio.Extension\FSharp.VisualStudio.Extension.csproj">
       <Name>FSharp.VisualStudio.Extension</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <!--<SetTargetFramework>TargetFramework=net8.0-windows</SetTargetFramework>-->
       <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
       <IncludeInVSIX>true</IncludeInVSIX>
       <IncludeOutputGroupsInVSIX>ExtensionFilesOutputGroup</IncludeOutputGroupsInVSIX>

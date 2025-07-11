@@ -24,6 +24,7 @@ internal class ExtensionEntrypoint : Extension
                 displayName: "FSharp.VisualStudio.Extension",
                 description: "Extension description")
         {
+            // TODO: Probably should be replaced by a range of versions
             InstallationTargetVersion = "18.0",
         },
     };
@@ -34,6 +35,5 @@ internal class ExtensionEntrypoint : Extension
         base.InitializeServices(serviceCollection);
 
         // You can configure dependency injection here by adding services to the serviceCollection.
-        Debug.WriteLine("Initializing services for FSharp.VisualStudio.Extension");
     }
 }

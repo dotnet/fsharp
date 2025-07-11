@@ -2,8 +2,6 @@ namespace FSharp.Compiler.LanguageServer
 
 open System
 open System.Diagnostics
-open System.Globalization
-open System.IO
 open System.Runtime.CompilerServices
 
 open FSharp.Compiler.LanguageServer.Common
@@ -108,19 +106,6 @@ type FSharpLanguageServer
         let listener = new TextWriterTraceListener(Console.Out)
 
         jsonRpc.TraceSource.Listeners.Add(listener) |> ignore
-
-        let logDir = @"Q:\logs"
-        let guid = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)
-        let logFileName = sprintf "FSharpLSPLogs_%s.log" guid
-        let logFilePath = Path.Combine(logDir, logFileName)
-        let fileListener = new TextWriterTraceListener(logFilePath)
-
-        jsonRpc.TraceSource.Listeners.Add(fileListener) |> ignore
-
-        let processName = Process.GetCurrentProcess().ProcessName
-        let logProcessFileName = sprintf "ProcessName_%s.log" guid
-        let logLine = sprintf "[%s] Server constructor called by process: %s" (DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)) processName
-        File.AppendAllText(Path.Combine(logDir, logProcessFileName), logLine + Environment.NewLine)
 
         jsonRpc.TraceSource.Switch.Level <- SourceLevels.All
 
