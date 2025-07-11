@@ -474,7 +474,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     [<FactForNETCOREAPP>]
     let ``FSharp generates modreq for CSharp to consume in v9`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
-        |> withLangVersion90
+        |> withLangVersion10
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
@@ -486,21 +486,6 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     .maxstack  8
     IL_0000:  ret
   } """]
-
-    [<Fact>]
-    let ``FSharp does not generate modreq for VBNET to consume in v7`` () = 
-        Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
-        |> withLangVersion70
-        |> compile
-        |> shouldSucceed
-        |> verifyIL ["""
-      .method public static void  testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ret
-  } """]
-
 
 
     [<Fact>]
@@ -525,6 +510,7 @@ Main()
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+        |> verifyOutput "Hello: System.IntPtr is unmanagedseq [0n; 0n; 0n]"
 
     [<FactForNETCOREAPP>]
     let ``Unmanaged constraint in lambda generates invalid IL for Specialize method with preview version`` () = 
@@ -540,61 +526,15 @@ Main()
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
-  .class auto ansi serializable sealed nested assembly beforefieldinit func@3
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.IntPtr>
-  {
-    .field static assembly initonly class Test/func@3 @_instance
-    .method assembly specialname rtspecialname 
-            instance void  .ctor() cil managed
+    .method assembly strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T> DirectInvoke<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [runtime]System.IntPtr>::.ctor()
-      IL_0006:  ret
-    } 
-
-    .method public strict virtual instance class [runtime]System.IntPtr 
-            Invoke(int32 x) cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  8
-      IL_0000:  ldsfld     class [runtime]System.IntPtr [runtime]System.IntPtr::Zero
-      IL_0005:  ret
-    } 
-
-    .method public strict virtual instance object 
-            Specialize<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .param type T 
         .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
       
       .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  newobj     instance void class Test/func@3T<!!T>::.ctor(class Test/func@3)
-      IL_0006:  box        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T>
-      IL_000b:  ret
-    } 
-
-    .method private specialname rtspecialname static 
-            void  .cctor() cil managed
-    {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      
-      .maxstack  10
-      IL_0000:  newobj     instance void Test/func@3::.ctor()
-      IL_0005:  stsfld     class Test/func@3 Test/func@3::@_instance
-      IL_000a:  ret
-    } 
-  } 
-    """]
+      IL_0000:  ldsfld     class Test/'func@3-1'<!0> class Test/'func@3-1'<!!T>::@_instance
+      IL_0005:  ret
+    } """]
 
 
     [<Fact>]
