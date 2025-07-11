@@ -501,7 +501,7 @@ let printTypeConstraintsNative<'T when 'T : unmanaged> () = printf $"Hello: {typ
 let Main() =
     let func (x:int) : 'T when 'T : unmanaged = Unchecked.defaultof<'T>
     let initFinite = Seq.init<nativeint> 3 func
-    printfn "%A" initFinite
+    printf "%A" initFinite
  
 printTypeConstraintsNative<nativeint>()
 Main()
