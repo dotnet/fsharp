@@ -46,6 +46,7 @@
     <Compile Include="CreateFSharpManifestResourceName.fs" />
     <Compile Include="SubstituteText.fs" />
     <Compile Include="MapSourceRoots.fs" />
+    <Compile Include="GenerateILLinkSubstitutions.fs" />
     <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
