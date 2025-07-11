@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>8</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>102</FSBuildVersion>
+    <FSBuildVersion>103</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -141,10 +141,10 @@
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildVersion>17.7.0-preview-23217-02</MicrosoftBuildVersion>
-    <MicrosoftBuildFrameworkVersion>17.7.0-preview-23217-02</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.7.0-preview-23217-02</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildVersion>17.8.29</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildVersion)</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildVersion)</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildVersion)</MicrosoftBuildUtilitiesCoreVersion>
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
