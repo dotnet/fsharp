@@ -27,7 +27,7 @@ jobs:
             /run test-baseline
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  # This first job by definiton runs user-supplied code - you must NOT elevate its permissions to `write`
+  # This second job by definiton runs user-supplied code - you must NOT elevate its permissions to `write`
   # Malicious code could change nuget source URL, build targets or even compiler itself to pass a GH token
   # And use it to create branches, spam issues etc. Any write-actions happen in the second job, which does not allow
   # user extension points (i.e. plain scripts, must NOT run scripts from within checked-out code)
