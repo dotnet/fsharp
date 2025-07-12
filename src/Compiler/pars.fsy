@@ -3520,14 +3520,7 @@ bindingPattern:
   | headBindingPattern
     { $1, $1.Range }
 
-/* Common pattern for bindings that may include type annotations
-   This rule unifies the pattern parsing for both regular 'let' bindings and 
-   computation expression bindings (let!, use!, and!).
-   
-   Returns: (pattern, pattern_range, optional_type)
-   - pattern: The parsed pattern (may be typed if annotation present)
-   - pattern_range: The full range including any type annotation
-   - optional_type: The type if annotation was present, None otherwise */
+// This rule unifies the pattern parsing for both regular 'let' bindings and (let!, use!, and!)
 bindingPatternWithOptType:
   | headBindingPattern
     { // Simple pattern without type annotation
@@ -3542,24 +3535,15 @@ bindingPatternWithOptType:
       | Some(colonRangeOpt, SynReturnInfo((ty, _), _)) ->
           // Pattern with type annotation (e.g., x: int)
           let mWhole = unionRanges $1.Range ty.Range
-          // Create a typed pattern node
           let typedPat = SynPat.Typed($1, ty, mWhole)
           typedPat, mWhole, Some ty }
 
-/* Common rule for computation expression binding patterns
-   Handles the pattern part of let!, use!, and! bindings with consistent
-   type annotation support and language feature checking.
-   
-   Returns: (pattern, pattern_range, isInline, isMutable, optional_type) */
+// Handles the pattern part of let!, use!, and! bindings
 ceBindingCore:
   | opt_inline opt_mutable bindingPatternWithOptType
     { let pat, mPat, tyOpt = $3
       let isInline = Option.isSome $1
       let isMutable = Option.isSome $2
-      
-      // For CE bindings, check language feature if type annotation is present
-      // This ensures that typed let!/use!/and! bindings are only allowed when
-      // the AllowTypedLetUseAndBang feature is enabled
       match tyOpt with
       | Some ty -> 
           parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
@@ -4132,9 +4116,7 @@ sequentialExpr:
        let usedKeyword = if isUse then "use" else "let"
        reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedExpressionAfterLet(usedKeyword, usedKeyword))
        let fauxRange = m.EndRange // zero width range at end of m
-       // Extract isRec from BindingSetPreAttrs
        let isRec = match bindingSet with BindingSetPreAttrs(_, isRec, _, _, _) -> isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mLetKwd, mIn, m, arbExpr ("seqExpr", fauxRange), Some(isRec, bindingSet), None) }
 
 /* Use this as the last terminal when performing error recovery */
@@ -4149,12 +4131,8 @@ recover:
       { debugPrint("recovering via EOF"); false }
 
 moreBinders:
-  /* Refactored and! bindings to use unified ceBindingCore
-     This ensures consistent handling of patterns and type annotations
-     across all computation expression bindings */
   | AND_BANG ceBindingCore EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
-     { // Handle and! bindings with unified pattern parsing
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+     { let pat, mPat, isInline, isMutable, tyOpt = $2
        
        // and! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4191,18 +4169,14 @@ declExpr:
      { let mIn = rhs parseState 2 |> Some
        let mWhole = unionRanges (rhs2 parseState 1 2) $3.Range
        let bindingSet = $1
-       // Extract isRec and mKeyword from BindingSetPreAttrs
        let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mKeyword, mIn, mWhole, $3, Some(isRec, bindingSet), None) }
 
   | defnBindings IN error %prec expr_let
      { let mIn = rhs parseState 2 |> Some
        let mWhole = rhs2 parseState 1 2
        let bindingSet = $1
-       // Extract isRec and mKeyword from BindingSetPreAttrs
        let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mKeyword, mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), Some(isRec, bindingSet), None) }
 /*
     FSComp.SR.parsNoMatchingInForLet() -- leave this in for now - it's an unused error string
@@ -4211,34 +4185,26 @@ declExpr:
   | hardwhiteLetBindings typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $2.Range
-       // Extract isRec and mKeyword from BindingSetPreAttrs
        let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mKeyword, mIn, mWhole, $2, Some(isRec, bindingSet), None) }
 
   | hardwhiteLetBindings error %prec expr_let
      { let bindingSet, m, mIn = $1
        reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
-       // Extract isRec and mKeyword from BindingSetPreAttrs
        let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mKeyword, mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), Some(isRec, bindingSet), None) }
 
   | hardwhiteLetBindings OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $3.Range
-       // Extract isRec and mKeyword from BindingSetPreAttrs
        let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mKeyword, mIn, mWhole, $3, Some(isRec, bindingSet), None) }
 
   | hardwhiteLetBindings OBLOCKSEP error %prec expr_let
      { let bindingSet, m, mIn = $1
        //reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        let mWhole = unionRanges m (rhs parseState 3)
-       // Extract isRec and mKeyword from BindingSetPreAttrs
        let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       // Use mkLetExpression for both let and use expressions
        mkLetExpression(false, mKeyword, mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), Some(isRec, bindingSet), None) }
 
   | hardwhiteDoBinding %prec expr_let
@@ -4562,9 +4528,6 @@ declExpr:
                SynExpr.Typed($2, ty, m)
        SynExpr.YieldOrReturnFrom(($1, not $1), expr, (unionRanges (rhs parseState 1) $2.Range), trivia) }
 
-  /* Refactored let! and use! bindings to use unified ceBindingCore
-     This ensures consistent handling across all computation expression bindings
-     while maintaining backward compatibility */
   | BINDER ceBindingCore EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Handle let! and use! bindings with unified pattern parsing
        let pat, mPat, isInline, isMutable, tyOpt = $2
@@ -4580,7 +4543,6 @@ declExpr:
        // $1 contains the actual keyword ("let" or "use")
        let isUse = ($1 = "use")
        
-       // Use mkLetExpression for both let! and use! bindings
        mkLetExpression(true, mKeyword, None, m, $8, None, Some(pat, $4, $7, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
@@ -4599,7 +4561,6 @@ declExpr:
        
        let isUse = ($1 = "use")
        
-       // Use mkLetExpression for both let! and use! bindings
        mkLetExpression(true, mKeyword, None, m, $8, None, Some(pat, $4, $7, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
@@ -4619,7 +4580,6 @@ declExpr:
        let isUse = ($1 = "use")
        
        // Use ImplicitZero as the continuation expression for error recovery
-       // Use mkLetExpression for both let! and use! bindings
        mkLetExpression(true, mKeyword, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
@@ -6079,6 +6039,7 @@ opt_topReturnTypeWithTypeConstraints:
   | COLON recover
       { let mColon = rhs parseState 1
         let ty, arity = SynType.FromParseError(mColon.EndRange), SynInfo.unnamedRetVal
+        reportParseErrorAt mColon.EndRange (FSComp.SR.parsExpectingType ())
         Some(Some mColon, SynReturnInfo((ty, arity), mColon.EndRange)) }
 
 topType:

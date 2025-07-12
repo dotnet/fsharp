@@ -75,4 +75,5 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,0)-(6,4) parse error Incomplete structured construct at or before this point in member definition
+(4,20)-(4,20) parse error Expecting type
 (6,0)-(6,4) parse error Expecting member body

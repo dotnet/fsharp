@@ -869,10 +869,8 @@ let mkClassMemberLocalBindings
 
 /// Creates a SynExprAndBang node for and! bindings in computation expressions
 let mkAndBang (mKeyword: range, pat: SynPat, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option) =
-    // Calculate debug point range: from keyword through the rhs expression
     let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
-    // Create trivia
     let trivia: SynExprAndBangTrivia =
         {
             AndBangKeyword = mKeyword
@@ -1064,9 +1062,7 @@ let mkLetExpression
         mIn: Option<range>,
         mWhole: range,
         body: SynExpr,
-        // For regular let/use: binding information
         bindingInfo: (bool * BindingSet) option,
-        // For let!/use!: pattern, rhs, andBangs, equals range, and isUse flag
         bangInfo: (SynPat * SynExpr * SynExprAndBang list * range option * bool) option
     ) =
     if isBang then

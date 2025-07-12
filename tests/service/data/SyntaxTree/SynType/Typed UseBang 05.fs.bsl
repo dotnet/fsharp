@@ -35,3 +35,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (4,14)-(4,15) parse error Unexpected symbol '=' in expression
+(4,13)-(4,13) parse error Expecting type
