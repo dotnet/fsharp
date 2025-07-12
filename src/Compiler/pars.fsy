@@ -3533,22 +3533,18 @@ bindingPatternWithOptType:
     { // Simple pattern without type annotation
       $1, $1.Range, None }
   
-  | headBindingPattern COLON topTypeWithTypeConstraints  
-    { // Pattern with type annotation (e.g., x: int)
-      let ty, arity = $3
-      let mWhole = unionRanges $1.Range ty.Range
-      // Create a typed pattern node
-      let typedPat = SynPat.Typed($1, ty, mWhole)
-      typedPat, mWhole, Some ty }
-  
-  | headBindingPattern COLON error
-    { // Error recovery: incomplete type annotation (e.g., "let x:" with no type)
-      let mColon = rhs parseState 2
-      let mWhole = unionRanges $1.Range mColon
-      // Create a typed pattern with an error type for recovery
-      let errorType = SynType.FromParseError(mColon.EndRange)
-      let typedPat = SynPat.Typed($1, errorType, mWhole)
-      typedPat, mWhole, Some errorType }
+  | headBindingPattern opt_topReturnTypeWithTypeConstraints
+    { // Pattern with optional type annotation
+      match $2 with
+      | None -> 
+          // No type annotation
+          $1, $1.Range, None
+      | Some(colonRangeOpt, SynReturnInfo((ty, _), _)) ->
+          // Pattern with type annotation (e.g., x: int)
+          let mWhole = unionRanges $1.Range ty.Range
+          // Create a typed pattern node
+          let typedPat = SynPat.Typed($1, ty, mWhole)
+          typedPat, mWhole, Some ty }
 
 /* Common rule for computation expression binding patterns
    Handles the pattern part of let!, use!, and! bindings with consistent

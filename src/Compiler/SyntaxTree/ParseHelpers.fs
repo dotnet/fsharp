@@ -1082,7 +1082,7 @@ let mkLetExpression
                 }
             // isFromSource is true for user-written code
             SynExpr.LetOrUseBang(spBind, isUse, true, pat, rhs, andBangs, body, mWhole, trivia)
-        | None -> failwith "mkLetExpression: bangInfo required for let!/use! expressions"
+        | None -> SynExpr.FromParseError(body, mWhole)
     else
         match bindingInfo with
         | Some(isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
@@ -1121,4 +1121,4 @@ let mkLetExpression
                     InKeyword = mIn'
                 }
             )
-        | None -> failwith "mkLetExpression: bindingInfo required for regular let/use expressions"
+        | None -> SynExpr.FromParseError(body, mWhole)
