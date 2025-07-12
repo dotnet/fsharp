@@ -90,7 +90,7 @@ type Trampoline(cancellationToken: CancellationToken) =
     let mutable bindDepth = 0
 
     [<Literal>]
-    static let bindDepthLimit = 1000
+    static let bindDepthLimit = 100
 
     static let current = new ThreadLocal<Trampoline>()
 
@@ -101,8 +101,7 @@ type Trampoline(cancellationToken: CancellationToken) =
     member this.ThrowIfCancellationRequested() =
         cancellationToken.ThrowIfCancellationRequested()
 
-    member this.ShoudBounce =
-        bindDepth % bindDepthLimit = 0
+    member this.ShoudBounce = bindDepth % bindDepthLimit = 0
 
     static member Install ct = current.Value <- Trampoline ct
 
@@ -116,7 +115,8 @@ type Trampoline(cancellationToken: CancellationToken) =
 
     member this.RunImmediate(invocation: ITrampolineInvocation) =
         bindDepth <- bindDepth + 1
-        try 
+
+        try
             // This can throw, which is fine. We want the exception to propagate to the calling machine.
             invocation.MoveNext()
 
@@ -130,7 +130,6 @@ type Trampoline(cancellationToken: CancellationToken) =
         finally
             bindDepth <- bindDepth - 1
 
-
     static member Current = current.Value
 
 type ITrampolineInvocation<'T> =
@@ -140,7 +139,9 @@ type ITrampolineInvocation<'T> =
 [<AutoOpen>]
 module ExceptionDispatchInfoHelpers =
     type ExceptionDispatchInfo with
-        member edi.ThrowAny() = edi.Throw(); Unchecked.defaultof<_>
+        member edi.ThrowAny() =
+            edi.Throw()
+            Unchecked.defaultof<_>
 
         static member RestoreOrCapture(exn: exn) =
             match Trampoline.Current.LastError with
@@ -155,20 +156,19 @@ type ICancellableInvokable<'T> =
     abstract Create: bool -> ITrampolineInvocation<'T>
 
 [<NoEquality; NoComparison>]
-type CancellableInvocation<'T, 'Machine when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>>(machine: 'Machine, delayed: bool)
-    =
+type CancellableInvocation<'T, 'Machine when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>>
+    (machine: 'Machine, delayed: bool) =
     let mutable machine = machine
     let mutable storedException = ValueNone
     let mutable finished = false
 
-    new (machine) = CancellableInvocation(machine, false)
+    new(machine) = CancellableInvocation(machine, false)
 
     interface ITrampolineInvocation<'T> with
         member this.MoveNext() =
             let pushDelayed () =
                 match machine.Data.NextInvocation with
-                | ValueSome delayed ->
-                    Trampoline.Current.RunDelayed(this, delayed)
+                | ValueSome delayed -> Trampoline.Current.RunDelayed(this, delayed)
                 | _ -> finished <- true
 
             if delayed then
@@ -185,16 +185,19 @@ type CancellableInvocation<'T, 'Machine when 'Machine :> IAsyncStateMachine and 
 
         member _.Result = machine.Data.Result
         member _.IsCompleted = finished
-        member _.ReplayExceptionIfStored () = storedException |> ValueOption.iter _.Throw()
+
+        member _.ReplayExceptionIfStored() =
+            storedException |> ValueOption.iter _.Throw()
 
     interface ICancellableInvokable<'T> with
-        member _.Create(delayed) = CancellableInvocation<_, _>(machine, delayed)
+        member _.Create(delayed) =
+            CancellableInvocation<_, _>(machine, delayed)
 
 [<Struct; NoComparison>]
 type Cancellable<'T>(invokable: ICancellableInvokable<'T>) =
-        
+
     member _.GetInvocation(delayed) = invokable.Create(delayed)
-        
+
 [<AutoOpen>]
 module CancellableCode =
 
@@ -263,8 +266,7 @@ type CancellableBuilder() =
         : CancellableCode<'Data, 'T> =
         CancellableCode(fun sm ->
             if __useResumableCode then
-                let mutable invocation =
-                    code.GetInvocation Trampoline.Current.ShoudBounce
+                let mutable invocation = code.GetInvocation Trampoline.Current.ShoudBounce
 
                 if Trampoline.Current.ShoudBounce then
                     // Suspend this state machine and schedule both parts to run on the trampoline.
@@ -314,8 +316,7 @@ type CancellableBuilder() =
                     let __stack_code_fin = code.Invoke(&sm)
 
                     if __stack_code_fin then
-                        sm.ResumptionPoint <- -1
-                ))
+                        sm.ResumptionPoint <- -1))
 
                 (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
 
@@ -337,7 +338,6 @@ type CancellableBuilder() =
             let sm = CancellableStateMachine(ResumptionDynamicInfo = resumptionInfo)
 
             Cancellable(CancellableInvocation(sm))
-
 
 namespace Internal.Utilities.Library
 
