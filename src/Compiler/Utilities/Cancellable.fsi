@@ -22,10 +22,12 @@ open System.Runtime.ExceptionServices
 type internal ITrampolineInvocation =
     abstract MoveNext: unit -> unit
     abstract IsCompleted: bool
+    abstract ReplayExceptionIfStored: unit -> unit
 
 [<Struct; NoComparison; NoEquality>]
 type internal CancellableStateMachineData<'T> =
-    val mutable Result: Result<'T, ExceptionDispatchInfo>
+    val mutable Result: 'T
+    val mutable NextInvocation: ITrampolineInvocation voption
 
 and internal CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
 and internal ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
@@ -38,12 +40,12 @@ type internal ITrampolineInvocation<'T> =
     abstract Result: 'T
 
 type internal ICancellableInvokable<'T> =
-    abstract Create: unit -> ITrampolineInvocation<'T>
+    abstract Create: bool -> ITrampolineInvocation<'T>
 
 [<Sealed>]
 type internal Trampoline =
-    member Set: ITrampolineInvocation -> unit
-    member Execute: ITrampolineInvocation -> unit
+    member RunDelayed: ITrampolineInvocation * ITrampolineInvocation -> unit
+    member RunImmediate: ITrampolineInvocation -> unit
     static member Current: Trampoline
     member IsCancelled: bool
     member ThrowIfCancellationRequested: unit -> unit
@@ -59,7 +61,7 @@ type internal CancellableInvocation<'T, 'Machine
 [<Struct; NoComparison; NoEquality>]
 type internal Cancellable<'T> =
     new: invokable: ICancellableInvokable<'T> -> Cancellable<'T>
-    member GetInvocation: unit -> ITrampolineInvocation<'T>
+    member GetInvocation: bool -> ITrampolineInvocation<'T>
 
 [<AutoOpen>]
 module internal ExceptionDispatchInfoHelpers =
