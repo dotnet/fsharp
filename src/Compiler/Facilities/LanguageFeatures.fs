@@ -103,6 +103,7 @@ type LanguageFeature =
     | BetterAnonymousRecordParsing
     | ScopedNowarn
     | AllowTypedLetOrUseBang
+    | AllowMixedRangesAndValuesInSeqExpressions
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -241,6 +242,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -409,6 +411,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
+        | LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions -> FSComp.SR.featureAllowMixedRangesAndValuesInSeqExpressions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
