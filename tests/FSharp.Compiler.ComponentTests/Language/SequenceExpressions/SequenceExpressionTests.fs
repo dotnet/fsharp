@@ -552,7 +552,7 @@ let b = [| { 1;10 } |]
 let c = [ { 1;10 } ]
         """
         |> withOptions [ "--nowarn:0020" ]
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -579,7 +579,7 @@ let c = [ { 1;10 } ]
         compilation
         |> getCompilation
         |> withOptions [ "--nowarn:0020" ]
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -642,7 +642,7 @@ let c = [ { 1;10 } ]
         compilation
         |> getCompilation
         |> withOptions [ "--nowarn:0020" ]
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> typecheck
         |> shouldSucceed
         
@@ -666,7 +666,7 @@ let f1() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 7, Col 15, Line 7, Col 22, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 7, Col 15, Line 7, Col 22, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
         
     [<Fact>]
@@ -685,7 +685,7 @@ let f1() =
         yield (1 : int)
     }
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> asExe
         |> ignoreWarnings
         |> compileAndRun
@@ -711,7 +711,7 @@ let f1() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 7, Col 16, Line 7, Col 32, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 7, Col 16, Line 7, Col 32, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
                 
     [<Fact>]
@@ -730,7 +730,7 @@ let f1() =
         yield! ([1;2] : int list)
     }
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> asExe
         |> ignoreWarnings
         |> compileAndRun

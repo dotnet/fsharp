@@ -5147,11 +5147,6 @@
         <target state="translated">Este atributo no es válido para usarlo en este elemento de lenguaje. Los atributos de ensamblado deben asociarse a una declaración 'do ()', si es necesario en un módulo de F#.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Este atributo no es válido para usarlo en este elemento de lenguaje.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">No se pueden usar argumentos opcionales en atributos personalizados.</target>
@@ -5164,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
         <source>Property '{0}' cannot be set because the setter is private</source>
-        <target state="translated">No se puede establecer la propiedad '{0}' porque el método set es privado</target>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">

@@ -12,17 +12,18 @@ let fsiSession = getSessionForEval [||] LangVersion.Preview
 
 let runCode = evalInSharedSession fsiSession
 
+// ...existing code...
 [<Fact>]
 let ``Partial struct active pattern returns ValueOption`1 without [<return:Struct>]`` () =
     FSharp "let (|P1|_|) x = ValueNone"
-    |> withLangVersionPreview
+    |> withLangVersion10
     |> typecheck
     |> shouldSucceed
 
 [<Fact>]
 let ``Partial struct active pattern returns bool`` () =
     FSharp "let (|P1|_|) x = false"
-    |> withLangVersionPreview
+    |> withLangVersion10
     |> typecheck
     |> shouldSucceed
     

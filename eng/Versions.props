@@ -9,7 +9,10 @@
   </PropertyGroup>
   <!-- Version number computation -->
   <PropertyGroup>
-    <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
+    <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
+         the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
+    <FSharpPreReleaseIteration>7</FSharpPreReleaseIteration>
+    <PreReleaseVersionLabel>preview$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- These have to be in sync with latest release branch -->
     <!-- F# Version components -->
     <FSMajorVersion>10</FSMajorVersion>
@@ -25,7 +28,7 @@
     <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
-    <FSCoreShippedVersion>9.0.0.0</FSCoreShippedVersion>
+    <FSCoreShippedVersion>10.0.0.0</FSCoreShippedVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>43</FCSMajorVersion>
@@ -43,8 +46,8 @@
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
-    <FSToolsMajorVersion>13</FSToolsMajorVersion>
-    <FSToolsMinorVersion>9</FSToolsMinorVersion>
+    <FSToolsMajorVersion>14</FSToolsMajorVersion>
+    <FSToolsMinorVersion>0</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
@@ -205,10 +208,10 @@
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->
     <!-- MIBC profile packages -->
-    <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.25309.1</optimizationwindows_ntx64MIBCRuntimeVersion>
-    <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.25309.1</optimizationwindows_ntx86MIBCRuntimeVersion>
-    <optimizationwindows_ntarm64MIBCRuntimeVersion>1.0.0-prerelease.25309.1</optimizationwindows_ntarm64MIBCRuntimeVersion>
-    <optimizationlinuxx64MIBCRuntimeVersion>1.0.0-prerelease.25309.1</optimizationlinuxx64MIBCRuntimeVersion>
-    <optimizationlinuxarm64MIBCRuntimeVersion>1.0.0-prerelease.25309.1</optimizationlinuxarm64MIBCRuntimeVersion>
+    <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.25324.1</optimizationwindows_ntx64MIBCRuntimeVersion>
+    <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.25324.1</optimizationwindows_ntx86MIBCRuntimeVersion>
+    <optimizationwindows_ntarm64MIBCRuntimeVersion>1.0.0-prerelease.25324.1</optimizationwindows_ntarm64MIBCRuntimeVersion>
+    <optimizationlinuxx64MIBCRuntimeVersion>1.0.0-prerelease.25324.1</optimizationlinuxx64MIBCRuntimeVersion>
+    <optimizationlinuxarm64MIBCRuntimeVersion>1.0.0-prerelease.25324.1</optimizationlinuxarm64MIBCRuntimeVersion>
   </PropertyGroup>
 </Project>

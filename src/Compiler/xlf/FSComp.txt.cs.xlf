@@ -5147,11 +5147,6 @@
         <target state="translated">Tento atribut není platný pro použití u tohoto elementu jazyka. Atributy sestavení by měly být připojené k deklaraci do (), v případě potřeby v modulu F#.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Tento atribut není platný pro použití u tohoto elementu jazyka.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">Nepovinné argumenty se u vlastních atributů použít nedají.</target>
@@ -5164,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
         <source>Property '{0}' cannot be set because the setter is private</source>
-        <target state="translated">Vlastnost '{0}' nelze nastavit, protože setter je soukromý</target>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">
