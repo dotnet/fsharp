@@ -897,13 +897,11 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-
-                async {
-                    do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
+                task {
+                    do! Task.Yield()
                     return f ()
                 }
-                |> Async.RunImmediate
+                |> _.Result
             else
                 f ()
         finally
