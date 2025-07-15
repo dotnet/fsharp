@@ -897,11 +897,18 @@ type StackGuard(maxDepth: int, name: string) =
 
         try
             if depth % maxDepth = 0 then
-                task {
-                    do! Task.Yield()
+                async {
+                    let mutable w, c = 0, 0
+                    ThreadPool.GetAvailableThreads(&w, &c)
+
+                    if w > 256 then
+                        do! Async.SwitchToThreadPool()
+                    else
+                        do! Async.SwitchToNewThread()
+
                     return f ()
                 }
-                |> _.Result
+                |> Async.RunImmediate
             else
                 f ()
         finally
