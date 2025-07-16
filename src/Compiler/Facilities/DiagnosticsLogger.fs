@@ -898,10 +898,7 @@ type StackGuard(maxDepth: int, name: string) =
         try
             if depth % maxDepth = 0 then
                 async {
-                    let mutable w, c = 0, 0
-                    ThreadPool.GetAvailableThreads(&w, &c)
-
-                    if w > 256 then
+                    if Environment.Is64BitProcess then
                         do! Async.SwitchToThreadPool()
                     else
                         do! Async.SwitchToNewThread()
