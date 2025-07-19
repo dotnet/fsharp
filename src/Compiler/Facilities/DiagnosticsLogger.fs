@@ -872,26 +872,10 @@ let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFea
 type StackGuard(maxDepth: int, name: string) =
 
     let mutable depth = 1
+    do ignore name
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Guard
-        (
-            f,
-            [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
-            [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
-            [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-        ) =
-
-        Activity.addEventWithTags
-            "DiagnosticsLogger.StackGuard.Guard"
-            (seq {
-                Activity.Tags.stackGuardName, box name
-                Activity.Tags.stackGuardCurrentDepth, depth
-                Activity.Tags.stackGuardMaxDepth, maxDepth
-                Activity.Tags.callerMemberName, memberName
-                Activity.Tags.callerFilePath, path
-                Activity.Tags.callerLineNumber, line
-            })
+    member _.Guard f =
 
         depth <- depth + 1
 
@@ -899,8 +883,11 @@ type StackGuard(maxDepth: int, name: string) =
             if depth % maxDepth = 0 then
 
                 async {
-                    do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
+                    if Environment.Is64BitProcess then
+                        do! Async.SwitchToThreadPool()
+                    else
+                        do! Async.SwitchToNewThread()
+
                     return f ()
                 }
                 |> Async.RunImmediate
