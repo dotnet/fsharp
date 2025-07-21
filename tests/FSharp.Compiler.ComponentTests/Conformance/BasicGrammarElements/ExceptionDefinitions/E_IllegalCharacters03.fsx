@@ -4,5 +4,5 @@
 
 #light
 
-exception My[Exception     // err: contains '['
-exception My]Exception     // err: contains ']'
+exception ``My[Exception``     // err: contains '['
+exception ``My]Exception``     // err: contains ']'

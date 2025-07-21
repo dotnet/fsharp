@@ -267,6 +267,7 @@ module ExceptionDefinition =
         |> withDiagnostics [
             (Warning 1104, Line 8, Col 11, Line 8, Col 27, "Identifiers containing '@' are reserved for use in F# code generation")
             (Warning 1104, Line 10, Col 16, Line 10, Col 41, "Identifiers containing '@' are reserved for use in F# code generation")
+            (Error 883, Line 8, Col 11, Line 8, Col 27, "Invalid namespace, module, type or union case name")
             (Error 39, Line 10, Col 16, Line 10, Col 41, "The type 'Crazy@name.pException' is not defined. Maybe you want one of the following:\r\n   Crazy@name.p")
         ]
 
@@ -395,8 +396,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters02.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters02.fsx
@@ -407,8 +408,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters03.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters03.fsx
@@ -419,8 +420,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters04.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters04.fsx
@@ -431,8 +432,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters05.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters05.fsx
@@ -443,7 +444,7 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
             (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
         ]
 
@@ -455,7 +456,7 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 27, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=LegalExceptionNames.fsx                                                          # LegalExceptionNames.fsx
