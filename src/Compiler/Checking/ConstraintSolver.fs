@@ -1407,17 +1407,26 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, csenv.eContextInfo, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
 
-and SolveTypeEqualsTypeWithContravarianceEqns (csenv:ConstraintSolverEnv) ndeep m2 trace cxsln origl1 origl2 typars =
+and SolveTypeEqualsTypeWithContravarianceEqns (csenv:ConstraintSolverEnv) ndeep m2 trace cxsln origl1 origl2 typars tyconRef =
    let isContravariant (t:Typar) = 
         t.typar_opt_data 
         |> Option.map (fun d -> d.typar_is_contravariant) 
         |> Option.defaultValue(false)
+   
+   // Special case for IEquatable<T>: treat its type parameter as contravariant for nullness purposes
+   // This matches C# behavior where IEquatable<T> is treated as contravariant for nullness, even though
+   // it's not formally marked as contravariant in IL.
+   // See: https://github.com/dotnet/fsharp/issues/18759 and https://github.com/dotnet/roslyn/issues/37187
+   let isIEquatableContravariantForNullness (tycon:TyconRef option) (idx:int) =
+       match tycon with
+       | Some tc when tyconRefEq csenv.g tc csenv.g.system_GenericIEquatable_tcref && idx = 0 -> true
+       | _ -> false
 
    match origl1, origl2, typars with
    | [], [], [] -> CompleteD
    | _ ->
        // We unwind Iterate2D by hand here for performance reasons.
-       let rec loop l1 l2 tps =
+       let rec loop l1 l2 tps idx =
            match l1, l2, tps with
            | [], [], [] -> CompleteD
            | h1 :: t1, h2 :: t2, hTp :: tTps when t1.Length = t2.Length && t1.Length = tTps.Length ->
@@ -1425,17 +1434,18 @@ and SolveTypeEqualsTypeWithContravarianceEqns (csenv:ConstraintSolverEnv) ndeep 
                     let h1 =
                         // For contravariant typars (`<in T> in C#'), if the required type is WithNull, the actual type can have any nullness it wants
                         // Without this added logic, their nullness would be forced to be equal.
-                        if isContravariant hTp && (nullnessOfTy csenv.g h2).TryEvaluate() = ValueSome NullnessInfo.WithNull  then                            
+                        // Special case: IEquatable<T> is treated as contravariant for nullness purposes to match C# behavior
+                        if (isContravariant hTp || isIEquatableContravariantForNullness tyconRef idx) && (nullnessOfTy csenv.g h2).TryEvaluate() = ValueSome NullnessInfo.WithNull  then                            
                             replaceNullnessOfTy csenv.g.knownWithNull h1
                         else
                             h1
                     
                     do! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2
-                    do! loop t1 t2 tTps
+                    do! loop t1 t2 tTps (idx + 1)
                }
            | _ ->
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, csenv.eContextInfo, origl1, origl2, csenv.m, m2)) 
-       loop origl1 origl2 typars
+       loop origl1 origl2 typars 0
 
 and SolveFunTypeEqn csenv ndeep m2 trace cxsln domainTy1 domainTy2 rangeTy1 rangeTy2 =
     trackErrors {
@@ -1534,11 +1544,11 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                             (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> ()
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
-            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange
+            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange (Some tc1)
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
-                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange
+                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange (Some tc1)
                 do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
