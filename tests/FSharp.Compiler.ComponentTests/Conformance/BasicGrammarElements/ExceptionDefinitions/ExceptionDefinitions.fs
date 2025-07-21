@@ -385,3 +385,84 @@ module ExceptionDefinition =
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
         |> compileExeAndRun
         |> shouldSucceed
+
+    // Test cases for illegal characters in exception names
+    // SOURCE=E_IllegalCharacters01.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters01.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IllegalCharacters01.fsx"|])>]
+    let``E_IllegalCharacters01_fsx`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+        ]
+
+    // SOURCE=E_IllegalCharacters02.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters02.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IllegalCharacters02.fsx"|])>]
+    let``E_IllegalCharacters02_fsx`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+        ]
+
+    // SOURCE=E_IllegalCharacters03.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters03.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IllegalCharacters03.fsx"|])>]
+    let``E_IllegalCharacters03_fsx`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+        ]
+
+    // SOURCE=E_IllegalCharacters04.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters04.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IllegalCharacters04.fsx"|])>]
+    let``E_IllegalCharacters04_fsx`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 23, "Invalid namespace, module, type or union case name")
+        ]
+
+    // SOURCE=E_IllegalCharacters05.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters05.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IllegalCharacters05.fsx"|])>]
+    let``E_IllegalCharacters05_fsx`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 7, Col 11, Line 7, Col 23, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
+        ]
+
+    // SOURCE=E_IllegalCharacters06.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters06.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IllegalCharacters06.fsx"|])>]
+    let``E_IllegalCharacters06_fsx`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
+        ]
+
+    // SOURCE=LegalExceptionNames.fsx                                                          # LegalExceptionNames.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LegalExceptionNames.fsx"|])>]
+    let``LegalExceptionNames_fsx`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> compileExeAndRun
+        |> shouldSucceed
