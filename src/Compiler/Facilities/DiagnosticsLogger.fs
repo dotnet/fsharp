@@ -882,21 +882,22 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
 
-        Activity.addEventWithTags
-            "DiagnosticsLogger.StackGuard.Guard"
-            (seq {
-                Activity.Tags.stackGuardName, box name
-                Activity.Tags.stackGuardCurrentDepth, depth
-                Activity.Tags.stackGuardMaxDepth, maxDepth
-                Activity.Tags.callerMemberName, memberName
-                Activity.Tags.callerFilePath, path
-                Activity.Tags.callerLineNumber, line
-            })
-
         depth <- depth + 1
 
         try
             if depth % maxDepth = 0 then
+
+                use _ =
+                    Activity.start
+                        "DiagnosticsLogger.StackGuard.Guard"
+                        (seq {
+                            Activity.Tags.stackGuardName, name
+                            Activity.Tags.stackGuardCurrentDepth, string depth
+                            Activity.Tags.stackGuardMaxDepth, string maxDepth
+                            Activity.Tags.callerMemberName, memberName
+                            Activity.Tags.callerFilePath, path
+                            Activity.Tags.callerLineNumber, string line
+                        })
 
                 async {
                     do! Async.SwitchToNewThread()

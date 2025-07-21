@@ -1371,7 +1371,7 @@ module MutRecBindingChecking =
                                    let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
                                    let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
                                    TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
-                                with RecoverableException e ->
+                                with e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
@@ -5020,7 +5020,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
             return env
             
-    with RecoverableException exn -> 
+    with exn -> 
         errorRecovery exn endm 
         return env
   }
@@ -5496,7 +5496,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           return 
               (defns, [], topAttrs), env, envAtEnd
 
-    with RecoverableException exn -> 
+    with exn -> 
         errorRecovery exn synDecl.Range 
         return ([], [], []), env, env
  }
@@ -5813,7 +5813,7 @@ let CheckOneImplFile
           for check in cenv.css.GetPostInferenceChecksPreDefaults() do
             try  
                 check()
-            with RecoverableException exn -> 
+            with exn -> 
                 errorRecovery exn m
 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->

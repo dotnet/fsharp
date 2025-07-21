@@ -17,35 +17,26 @@ namespace Internal.Utilities.Library.CancellableImplementation
 open System
 open Microsoft.FSharp.Core.CompilerServices
 open System.Runtime.CompilerServices
-open System.Runtime.ExceptionServices
 
 type internal ITrampolineInvocation =
-    abstract MoveNext: unit -> unit
+    abstract MoveNext: unit -> bool
     abstract IsCompleted: bool
-    abstract ReplayExceptionIfStored: unit -> unit
 
-[<Struct; NoComparison; NoEquality>]
-type internal CancellableStateMachineData<'T> =
-    val mutable Result: 'T
-    val mutable NextInvocation: ITrampolineInvocation voption
-
-and internal CancellableStateMachine<'TOverall> = ResumableStateMachine<CancellableStateMachineData<'TOverall>>
-and internal ICancellableStateMachine<'TOverall> = IResumableStateMachine<CancellableStateMachineData<'TOverall>>
-and internal CancellableResumptionFunc<'TOverall> = ResumptionFunc<CancellableStateMachineData<'TOverall>>
-and internal CancellableResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<CancellableStateMachineData<'TOverall>>
-and internal CancellableCode<'TOverall, 'T> = ResumableCode<CancellableStateMachineData<'TOverall>, 'T>
+type internal CancellableStateMachine<'TOverall> = ResumableStateMachine<'TOverall>
+type internal ICancellableStateMachine<'TOverall> = IResumableStateMachine<'TOverall>
+type internal CancellableResumptionFunc<'TOverall> = ResumptionFunc<'TOverall>
+type internal CancellableResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<'TOverall>
+type internal CancellableCode<'TOverall, 'T> = ResumableCode<'TOverall, 'T>
 
 type internal ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
     abstract Result: 'T
 
-type internal ICancellableInvokable<'T> =
-    abstract Create: bool -> ITrampolineInvocation<'T>
-
 [<Sealed>]
 type internal Trampoline =
-    member RunDelayed: ITrampolineInvocation * ITrampolineInvocation -> unit
+    member SetDelayed: ITrampolineInvocation -> unit
     member RunImmediate: ITrampolineInvocation -> unit
+    member ReplayException: unit -> unit
     static member Current: Trampoline
     member IsCancelled: bool
     member ThrowIfCancellationRequested: unit -> unit
@@ -53,21 +44,14 @@ type internal Trampoline =
 
 [<NoEquality; NoComparison>]
 type internal CancellableInvocation<'T, 'Machine
-    when 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>> =
-    interface ICancellableInvokable<'T>
+    when 'Machine: struct and 'Machine :> IAsyncStateMachine and 'Machine :> ICancellableStateMachine<'T>> =
     interface ITrampolineInvocation<'T>
     new: machine: 'Machine -> CancellableInvocation<'T, 'Machine>
 
 [<Struct; NoComparison; NoEquality>]
 type internal Cancellable<'T> =
-    new: invokable: ICancellableInvokable<'T> -> Cancellable<'T>
-    member GetInvocation: bool -> ITrampolineInvocation<'T>
-
-[<AutoOpen>]
-module internal ExceptionDispatchInfoHelpers =
-    type ExceptionDispatchInfo with
-        member ThrowAny: unit -> 'T
-        static member RestoreOrCapture: exn -> ExceptionDispatchInfo
+    new: clone: (unit -> ITrampolineInvocation<'T>) -> Cancellable<'T>
+    member GetInvocation: unit -> ITrampolineInvocation<'T>
 
 type internal CancellableBuilder =
     new: unit -> CancellableBuilder
@@ -115,7 +99,6 @@ module internal CancellableAutoOpens =
     val cancellable: CancellableImplementation.CancellableBuilder
 
 module internal Cancellable =
-    val run: ct: CancellationToken -> code: Cancellable<'a> -> ITrampolineInvocation<'a>
     val runWithoutCancellation: code: Cancellable<'a> -> 'a
     val toAsync: code: Cancellable<'a> -> Async<'a>
     val token: unit -> Cancellable<CancellationToken>
