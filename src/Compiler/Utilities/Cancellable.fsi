@@ -38,8 +38,6 @@ type internal Trampoline =
     member RunImmediate: ITrampolineInvocation -> unit
     member ReplayException: unit -> unit
     static member Current: Trampoline
-    member IsCancelled: bool
-    member ThrowIfCancellationRequested: unit -> unit
     member ShoudBounce: bool
 
 [<NoEquality; NoComparison>]

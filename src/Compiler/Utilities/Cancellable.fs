@@ -16,18 +16,11 @@ open System.Threading
 
 [<Sealed>]
 type Cancellable =
-    static let tokenHolder = AsyncLocal<CancellationToken voption>()
+    static let tokenHolder = AsyncLocal<CancellationToken>()
 
-    static let guard =
-        String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DISABLE_CHECKANDTHROW_ASSERT"))
+    static member HasCancellationToken = tokenHolder.Value <> CancellationToken.None
 
-    static let ensureToken msg =
-        tokenHolder.Value
-        |> ValueOption.defaultWith (fun () -> if guard then failwith msg else CancellationToken.None)
-
-    static member HasCancellationToken = tokenHolder.Value.IsSome
-
-    static member Token = ensureToken "Token not available outside of Cancellable computation."
+    static member Token = tokenHolder.Value
 
     static member UseToken() =
         async {
@@ -37,22 +30,21 @@ type Cancellable =
 
     static member UsingToken(ct) =
         let oldCt = tokenHolder.Value
-        tokenHolder.Value <- ValueSome ct
+        tokenHolder.Value <- ct
 
         { new IDisposable with
             member _.Dispose() = tokenHolder.Value <- oldCt
         }
 
     static member CheckAndThrow() =
-        let token = ensureToken "CheckAndThrow invoked outside of Cancellable computation."
-        token.ThrowIfCancellationRequested()
+        tokenHolder.Value.ThrowIfCancellationRequested()
 
     static member TryCheckAndThrow() =
-        match tokenHolder.Value with
-        | ValueNone -> ()
-        | ValueSome token -> token.ThrowIfCancellationRequested()
+        tokenHolder.Value.ThrowIfCancellationRequested()
 
 namespace Internal.Utilities.Library.CancellableImplementation
+
+type Cancellable = FSharp.Compiler.Cancellable
 
 open System
 open System.Threading
@@ -62,7 +54,6 @@ open FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.CompilerServices
 open System.Runtime.CompilerServices
 open System.Runtime.ExceptionServices
-open System.Diagnostics
 
 type ITrampolineInvocation =
     abstract member MoveNext: unit -> bool
@@ -80,7 +71,7 @@ type PendingInvocation =
     | Immediate of ITrampolineInvocation
 
 [<Sealed>]
-type Trampoline(cancellationToken: CancellationToken) =
+type Trampoline() =
 
     let mutable bindDepth = 0
 
@@ -100,11 +91,6 @@ type Trampoline(cancellationToken: CancellationToken) =
             storedError <- ValueNone
             edi.Throw()
         | _ -> ()
-
-    member this.IsCancelled = cancellationToken.IsCancellationRequested
-
-    member this.ThrowIfCancellationRequested() =
-        cancellationToken.ThrowIfCancellationRequested()
 
     member this.ShoudBounce = bindDepth % bindDepthLimit = 0
 
@@ -142,8 +128,8 @@ type Trampoline(cancellationToken: CancellationToken) =
 
     static member Current = current.Value.Value
 
-    static member Install ct =
-        current.Value <- ValueSome <| Trampoline ct
+    static member Install() =
+        current.Value <- ValueSome <| Trampoline()
 
 type ITrampolineInvocation<'T> =
     inherit ITrampolineInvocation
@@ -174,12 +160,15 @@ type Cancellable<'T>(clone: unit -> ITrampolineInvocation<'T>) =
 [<AutoOpen>]
 module CancellableCode =
 
-    let inline filterCancellation (catch: exn -> CancellableCode<_, _>) exn =
-        CancellableCode(fun sm -> Trampoline.Current.IsCancelled || (catch exn).Invoke(&sm))
+    let inline filterCancellation (catch: exn -> CancellableCode<_, _>) (exn: exn) =
+        CancellableCode(fun sm ->
+            match exn with
+            | :? OperationCanceledException as oce when oce.CancellationToken = Cancellable.Token -> raise exn
+            | _ -> (catch exn).Invoke(&sm))
 
     let inline throwIfCancellationRequested (code: CancellableCode<_, _>) =
         CancellableCode(fun sm ->
-            Trampoline.Current.ThrowIfCancellationRequested()
+            Cancellable.Token.ThrowIfCancellationRequested()
             code.Invoke(&sm))
 
 type CancellableBuilder() =
@@ -194,6 +183,7 @@ type CancellableBuilder() =
         CancellableCode<'T, _>(fun sm ->
             sm.Data <- value
             true)
+        |> throwIfCancellationRequested
 
     member inline _.Combine
         (code1: CancellableCode<'TOverall, unit>, code2: CancellableCode<'TOverall, 'T>)
@@ -307,7 +297,6 @@ type CancellableBuilder() =
 
 namespace Internal.Utilities.Library
 
-open System
 open System.Threading
 
 type Cancellable<'T> = CancellableImplementation.Cancellable<'T>
@@ -322,19 +311,19 @@ module Cancellable =
 
     let run (code: Cancellable<_>) =
         let invocation = code.GetInvocation()
-        Trampoline.Install FSharp.Compiler.Cancellable.Token
+        Trampoline.Install()
         Trampoline.Current.RunImmediate invocation
         invocation.Result
 
     let runWithoutCancellation code =
-        use _ = FSharp.Compiler.Cancellable.UsingToken CancellationToken.None
+        use _ = Cancellable.UsingToken CancellationToken.None
         run code
 
     let toAsync code =
         async {
-            use! _holder = FSharp.Compiler.Cancellable.UseToken()
+            use! _holder = Cancellable.UseToken()
             return run code
         }
 
     let token () =
-        cancellable { FSharp.Compiler.Cancellable.Token }
+        cancellable { Cancellable.Token }
