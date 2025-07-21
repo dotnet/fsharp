@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="b040ce9d-5754-42d1-8a68-cffa0613fca0" name="@pkrvmq0rgcvqdmg 2025-07-21 15:41:19" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-07-21T15:41:19.2821401+00:00" queuing="2025-07-21T15:41:19.2821402+00:00" start="2025-07-21T15:41:17.7511294+00:00" finish="2025-07-21T15:41:19.2827881+00:00" />
+  <TestSettings name="default" id="2a232d4b-5d63-4bdd-8dab-ced2eacd7dda">
+    <Deployment runDeploymentRoot="_pkrvmq0rgcvqdmg_2025-07-21_15_41_19" />
+  </TestSettings>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="0" executed="0" passed="0" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.0-preview.6.25315.102)
+[xUnit.net 00:00:00.15]   Discovering: FSharpSuite.Tests
+[xUnit.net 00:00:00.32]   Discovered:  FSharpSuite.Tests
+[xUnit.net 00:00:00.34]   Starting:    FSharpSuite.Tests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="pkrvmq0rgcvqdmg" outcome="Error" timestamp="2025-07-21T15:41:19.1924271+00:00">
+        <Text>[xUnit.net 00:00:00.43] FSharpSuite.Tests: Catastrophic failure: System.TypeInitializationException: The type initializer for '&lt;StartupCode$FSharp-Test-Utilities&gt;.$TestFramework' threw an exception.
+ ---&gt; System.Exception: Couldn't find "FSharp.Compiler.Interactive.Settings/Debug/netstandard2.0/FSharp.Compiler.Interactive.Settings.dll" on the following paths: "/home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/../../artifacts/bin/FSharp.Compiler.Interactive.Settings/Debug/netstandard2.0/FSharp.Compiler.Interactive.Settings.dll", "/home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/../../artifacts/bin/fsharp.compiler.interactive.settings/debug/netstandard2.0/fsharp.compiler.interactive.settings.dll". Running 'build test' once might solve this issue
+   at TestFramework.requireFile(String dir, String path) in /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/TestFramework.fs:line 296
+   at TestFramework.requireArtifact@326.Invoke(String path)
+   at TestFramework.config(String configurationName, FSharpMap`2 envVars) in /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/TestFramework.fs:line 337
+   at &lt;StartupCode$FSharp-Test-Utilities&gt;.$TestFramework..cctor() in /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/TestFramework.fs:line 460
+   --- End of inner exception stack trace ---
+   at TestFramework.get_initialConfig()
+   at &lt;StartupCode$FSharp-Test-Utilities&gt;.$XunitHelpers.CreateExecutor@198.RunTestCases(IEnumerable`1 testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions) in /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/XunitHelpers.fs:line 216
+   at Xunit.Sdk.TestFrameworkExecutor`1.RunTests(IEnumerable`1 testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions) in /_/src/xunit.execution/Sdk/Frameworks/TestFrameworkExecutor.cs:line 100
+   at Xunit.Xunit2.RunTests(IEnumerable`1 testCases, IMessageSink messageSink, ITestFrameworkExecutionOptions executionOptions) in /_/src/xunit.runner.utility/Frameworks/v2/Xunit2.cs:line 110
+   at Xunit.XunitFrontController.RunTests(IEnumerable`1 testMethods, IMessageSink messageSink, ITestFrameworkExecutionOptions executionOptions) in /_/src/xunit.runner.utility/Frameworks/XunitFrontController.cs:line 185
+   at TestFrameworkExtensions.RunTests(ITestFrameworkExecutor executor, IEnumerable`1 testCases, IMessageSinkWithTypes executionMessageSink, ITestFrameworkExecutionOptions executionOptions) in /_/src/xunit.runner.utility/Extensions/TestFrameworkExtensions.cs:line 69
+   at Xunit.Runner.VisualStudio.VsTestRunner.RunTestsInAssembly(IRunContext runContext, IFrameworkHandle frameworkHandle, LoggerHelper logger, TestPlatformContext testPlatformContext, RunSettings runSettings, IMessageSinkWithTypes reporterMessageHandler, AssemblyRunInfo runInfo) in /_/src/xunit.runner.visualstudio/VsTestRunner.cs:line 555</Text>
+      </RunInfo>
+      <RunInfo computerName="pkrvmq0rgcvqdmg" outcome="Warning" timestamp="2025-07-21T15:41:19.1975217+00:00">
+        <Text>No test matches the given testcase filter `Simple assembly should be deterministic` in /home/runner/work/fsharp/fsharp/artifacts/bin/FSharpSuite.Tests/Debug/net9.0/FSharpSuite.Tests.dll</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
