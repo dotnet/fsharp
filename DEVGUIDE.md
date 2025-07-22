@@ -323,6 +323,7 @@ Then, use the **f5** or **ctrl+f5** keyboard shortcuts to test your tooling chan
 Alternatively, you can do this entirely via the command line if you prefer that:
 
 ```shell
+Build.cmd -c Release -deployExtensions
 devenv.exe /rootsuffix RoslynDev
 ```
 
