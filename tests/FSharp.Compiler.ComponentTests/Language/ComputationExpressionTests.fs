@@ -57,7 +57,7 @@ let f3 () =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
         
     [<Fact>]
@@ -89,7 +89,7 @@ let f1() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 16, Col 17, Line 16, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 3350, Line 16, Col 17, Line 16, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
         
     [<Fact>]
@@ -122,7 +122,7 @@ let f3 () =
         return (new MyType() : IDisposable)
     }
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> asExe
         |> ignoreWarnings
         |> compileAndRun
@@ -153,7 +153,7 @@ let f1() =
         return! (Ok 1 : Result<int, string>)
     }
         """
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> asExe
         |> ignoreWarnings
         |> compileAndRun
@@ -231,8 +231,8 @@ let x = lb {1; 2; if true then 3;}
         |> ignore
 
     [<Theory>]
-    [<InlineData("preview","BindReturn")>]
-    [<InlineData("preview","WithoutBindReturn")>]
+    [<InlineData("10.0","BindReturn")>]
+    [<InlineData("10.0","WithoutBindReturn")>]
     [<InlineData("4.7","BindReturn")>]   
     [<InlineData("4.7","WithoutBindReturn")>]  
     let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) = 

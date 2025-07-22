@@ -2906,12 +2906,12 @@ and p_tycon_objmodel_kind x st =
     | TFSharpEnum -> p_byte 4 st
     | TFSharpUnion ->
         if st.oglobals.compilingFSharpCore then
-            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("union as FSharpTyconKind ", st.ofile), range.Zero))
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("union as FSharpTyconKind ", st.ofile), range0))
 
         p_byte 5 st
     | TFSharpRecord ->
         if st.oglobals.compilingFSharpCore then
-            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("record as FSharpTyconKind ", st.ofile), range.Zero))
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("record as FSharpTyconKind ", st.ofile), range0))
 
         p_byte 6 st
 

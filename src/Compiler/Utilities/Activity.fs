@@ -89,7 +89,7 @@ module internal Activity =
 
     let private activitySource = new ActivitySource(ActivityNames.FscSourceName)
 
-    let start (name: string) (tags: (string * string) seq) : ActivityDisposable =
+    let start (name: string) (tags: (string * string) seq) : System.IDisposable | null =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
@@ -100,7 +100,7 @@ module internal Activity =
 
             activity.Start()
 
-    let startNoTags (name: string) : ActivityDisposable = activitySource.StartActivity name
+    let startNoTags (name: string) : System.IDisposable | null = activitySource.StartActivity name
 
     let addEventWithTags name (tags: (string * objnull) seq) =
         match Activity.Current with
@@ -127,7 +127,7 @@ module internal Activity =
 
         let private profiledSource = new ActivitySource(ActivityNames.ProfiledSourceName)
 
-        let startAndMeasureEnvironmentStats (name: string) : ActivityDisposable = profiledSource.StartActivity(name)
+        let startAndMeasureEnvironmentStats (name: string) : System.IDisposable | null = profiledSource.StartActivity(name)
 
         type private GCStats = int[]
 

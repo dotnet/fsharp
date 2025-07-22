@@ -759,7 +759,6 @@ type Class() = class end
 
 let implementer = { new Class()  }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
          
@@ -771,7 +770,6 @@ type Class() =
 
 let implementer = { new Class()  }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
 
@@ -783,7 +781,6 @@ type IFirst =
 
 let x = { new _ with member this.MyMember() = 42 }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -806,7 +803,6 @@ type MyClass() =
 let expr = { new MyClass() }
 (expr:> ISecond).M()
         """
-         |> withLangVersionPreview
          |> compileExeAndRun
          |> shouldSucceed
          |> withStdOutContainsAllInOrder [
@@ -820,7 +816,6 @@ type IFirst = interface end
 
 let implementer() ={ new IFirst  }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
          
@@ -834,7 +829,6 @@ type AbstractClass() =
     
 let res = { new AbstractClass() }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
 
@@ -849,7 +843,6 @@ type AbstractClass() =
 let res = { new AbstractClass() with
                 override this.ToString() = "ConcreteMethod" }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
          
@@ -862,7 +855,6 @@ type AbstractClass() =
     
 let res = { new AbstractClass() }
         """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> withStdOutContainsAllInOrder [
             "AbstractClass constructor"
@@ -878,7 +870,6 @@ type AbstractClass() =
     
 let res = { new AbstractClass() }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -895,7 +886,6 @@ let foo = { new Foo() }
 
 let foo2 = { new Foo() with member __.ToString() = base.ToString() }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
          
@@ -912,7 +902,6 @@ type MyClass() = class end
     
   interface IFirst } |> ignore
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldSucceed
          
@@ -926,7 +915,6 @@ let foo = { new Foo() }
 
 let foo1 = new Foo()
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -947,7 +935,6 @@ type MyClass() =
 
 let res = { new MyClass() }
         """
-         |> withLangVersionPreview
          |> typecheck
          |> shouldFail
          |> withDiagnostics [
@@ -982,7 +969,6 @@ open CSLib
 
 let res = { new Animal() }
 """
-            |> withLangVersionPreview
             |> withName "FSLib"
             |> withReferences [ csharp ]
 
@@ -1020,7 +1006,6 @@ open CSLib
 
 let res = { new Animal() }
 """
-            |> withLangVersionPreview
             |> withName "FSLib"
             |> withReferences [ csharp ]
 

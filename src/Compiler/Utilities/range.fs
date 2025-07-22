@@ -264,6 +264,7 @@ module FileIndex =
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type Range(code1: int64, code2: int64) =
+    [<Obsolete("Use Range.range0 instead")>]
     static member Zero = range (0L, 0L)
 
     new(fIdx, bl, bc, el, ec) =

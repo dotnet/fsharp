@@ -22,7 +22,7 @@ type Foo =
 
   new: unit -> Foo
 
-  member internal X: key1: obj * key2: obj -> bool with get
+  member X: key1: obj * key2: obj -> bool with internal get
 
   member X: key1: obj * key2: obj -> obj with set"""
 
@@ -46,4 +46,4 @@ type Foo =
 
   member Y: char with get
 
-  member internal Y: char with set"""
+  member Y: char with internal set"""

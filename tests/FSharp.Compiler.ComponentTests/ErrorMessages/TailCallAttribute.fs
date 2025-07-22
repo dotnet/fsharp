@@ -265,7 +265,7 @@ namespace N
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 3569, Line 10, Col 17, Line 10, Col 26, "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.");
+            (Warning 3569, Line 10, Col 17, Line 10, Col 26, "The member or function 'M2' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.")
             (Warning 3569, Line 15, Col 17, Line 15, Col 26, "The member or function 'M1' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way.")
         ]
 
@@ -975,7 +975,7 @@ namespace N
             | Node branches -> branches |> List.collect loop
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compile
         |> shouldFail
         |> withResults [
@@ -1437,7 +1437,7 @@ namespace N
         let someNonRecFun x = x + x
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compile
         |> shouldFail
         |> withResults [
@@ -1461,11 +1461,11 @@ namespace N
         let someX = 23
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
+            (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
             (Warning 3861, Line 7, Col 13, Line 7, Col 18, "The TailCall attribute should only be applied to recursive functions.")
         ] 
 
@@ -1480,10 +1480,10 @@ namespace N
         let rec someRecLetBoundValue = nameof(someRecLetBoundValue)
         """
         |> FSharp
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute is not valid for use on this language element")
+        |> withSingleDiagnostic (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn about self-defined attribute`` () = // is the analysis available for users of older FSharp.Core versions

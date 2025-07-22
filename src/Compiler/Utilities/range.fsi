@@ -3,6 +3,7 @@
 // The Range and Pos types form part of the public API of FSharp.Compiler.Service
 namespace FSharp.Compiler.Text
 
+open System
 open System.Collections.Generic
 
 /// An index into a global tables of filenames
@@ -121,6 +122,7 @@ type Range =
     member internal IsAdjacentTo: otherRange: Range -> bool
 
     /// The range where all values are zero
+    [<Obsolete("Use Range.range0 instead")>]
     static member Zero: range
 
 /// Represents a range within a file

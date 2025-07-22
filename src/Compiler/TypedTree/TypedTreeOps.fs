@@ -9973,6 +9973,7 @@ let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx =
       | TyparConstraint.IsNonNullableStruct _ 
       | TyparConstraint.IsReferenceType _
       | TyparConstraint.RequiresDefaultConstructor _
+      | TyparConstraint.IsUnmanaged _ //  implies "struct" and also causes a modreq
       | TyparConstraint.CoercesTo _ -> true
       | TyparConstraint.MayResolveMember _ when g.langVersion.SupportsFeature LanguageFeature.WitnessPassing -> true
       | _ -> false

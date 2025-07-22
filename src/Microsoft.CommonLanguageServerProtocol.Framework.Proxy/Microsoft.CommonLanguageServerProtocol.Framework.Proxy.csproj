@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CommonLanguageServerProtocol.Framework" PrivateAssets="all" Version="4.13.0-3.24579.1" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
+		<InternalsVisibleTo Include="FSharp.VisualStudio.Extension" />
+	</ItemGroup>
+
+</Project>

@@ -64,7 +64,6 @@ a.Invoke()"""
 let f = fun (a: int voption) -> defaultValueArg a 100 |> printf "line: %d"
 let a = A f
 a.Invoke(5)"""
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyOutput "line: 5" 

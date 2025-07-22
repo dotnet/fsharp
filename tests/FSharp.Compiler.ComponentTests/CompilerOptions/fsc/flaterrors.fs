@@ -26,6 +26,7 @@ module flaterrors =
         |> compile options
         |> shouldFail
         |> withDiagnostics [
+            (Warning 3873, Line 1, Col 10, Line 1, Col 17, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
             (Error 1, Line 1, Col 11, Line 1, Col 16, "This expression was expected to have type\n    ''a list'    \nbut here has type\n    ''b seq'    ")
             (Error 1, Line 1, Col 11, Line 1, Col 16, "This expression was expected to have type\n    ''a list'    \nbut here has type\n    'int seq'    ")
             (Warning 20, Line 1, Col 1, Line 1, Col 17, "The result of this expression has type ''a list' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
@@ -40,6 +41,7 @@ module flaterrors =
         |> compile options
         |> shouldFail
         |> withDiagnostics [
+            (Warning 3873, Line 1, Col 10, Line 1, Col 17, "This construct is deprecated. Sequence expressions should be of the form 'seq { ... }'")
             (Error 1, Line 1, Col 11, Line 1, Col 16, "This expression was expected to have type\029    ''a list'    \029but here has type\029    ''b seq'")
             (Error 1, Line 1, Col 11, Line 1, Col 16, "This expression was expected to have type\029    ''a list'    \029but here has type\029    'int seq'")
         ]

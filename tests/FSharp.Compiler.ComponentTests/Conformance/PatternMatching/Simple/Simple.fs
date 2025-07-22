@@ -53,7 +53,6 @@ module Simple =
     let ``Simple - W_BindCapitalIdent_fs preview - --test:ErrorRanges`` compilation =
         compilation
         |> getCompilation
-        |> withLangVersionPreview
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile

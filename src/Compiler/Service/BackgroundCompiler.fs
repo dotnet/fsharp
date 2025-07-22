@@ -1370,16 +1370,10 @@ type internal BackgroundCompiler
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
 
             let diags =
+                let flatErrors = options.OtherOptions |> Array.contains "--flaterrors"
+
                 loadClosure.LoadClosureRootFileDiagnostics
-                |> List.map (fun (exn, isError) ->
-                    FSharpDiagnostic.CreateFromException(
-                        exn,
-                        isError,
-                        range.Zero,
-                        false,
-                        options.OtherOptions |> Array.contains "--flaterrors",
-                        None
-                    ))
+                |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flatErrors, None))
 
             return options, (diags @ diagnostics.Diagnostics)
         }

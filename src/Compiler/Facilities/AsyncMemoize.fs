@@ -114,7 +114,7 @@ module internal Utils =
 
     /// Return file name with one directory above it
     let shortPath (path: string) =
-        let dirPath = !!Path.GetDirectoryName(path)
+        let dirPath = Path.GetDirectoryName(path) |> Option.ofObj |> Option.defaultValue ""
 
         let dir =
             dirPath.Split Path.DirectorySeparatorChar

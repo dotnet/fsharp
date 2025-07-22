@@ -170,7 +170,6 @@ let main _ =
             """
         source
             |> asExe
-            |> withLangVersionPreview
             |> withNoWarn 25
             |> compile
             |> shouldSucceed
@@ -199,7 +198,6 @@ let main _ =
             """
         source
             |> asExe
-            |> withLangVersionPreview
             |> withNoWarn 25
             |> compile
             |> shouldSucceed
@@ -228,7 +226,6 @@ let main _ =
             """
         source
             |> asExe
-            |> withLangVersionPreview
             |> withNoWarn 25
             |> compile
             |> shouldSucceed
@@ -257,7 +254,6 @@ let main _ =
             """
         source
             |> asExe
-            |> withLangVersionPreview
             |> withNoWarn 25
             |> compile
             |> shouldSucceed
@@ -267,7 +263,7 @@ let main _ =
 
 
     [<Fact>]
-    let ``Optional Arguments can be a ValueOption+StructAttribute attribute with langversion=preview`` () =
+    let ``Optional Arguments can be a ValueOption+StructAttribute attribute`` () =
         let source =
             FSharp """
 module Program
@@ -287,7 +283,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -343,7 +338,7 @@ let main _ =
 
 
     [<Fact>]
-    let ``Optional Arguments can be a ValueOption+Struct attribute with langversion=preview`` () =
+    let ``Optional Arguments can be a ValueOption+Struct attribute`` () =
         let source =
             FSharp """
 module Program
@@ -363,7 +358,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -438,7 +432,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -469,7 +462,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -500,7 +492,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -531,7 +522,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -542,7 +532,7 @@ let main _ =
             |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
 
     [<Fact>]
-    let ``Optional Arguments in constructor can be a ValueOption+StructAttribute attribute with langversion=preview`` () =
+    let ``Optional Arguments in constructor can be a ValueOption+StructAttribute attribute`` () =
         let source =
             FSharp """
 module Program
@@ -562,7 +552,6 @@ let main _ =
             """
         let compilation =
             source
-            |> withLangVersionPreview
             |> asExe
             |> compile
 
@@ -639,7 +628,6 @@ let main _args =
 
         source
         |> FSharp
-        |> withLangVersionPreview
         |> withNoWarn 25
         |> asExe
         |> compile

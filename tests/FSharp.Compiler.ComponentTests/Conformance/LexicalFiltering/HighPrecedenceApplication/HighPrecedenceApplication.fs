@@ -16,6 +16,7 @@ module HighPrecedenceApplication =
         |> getCompilation
         |> asFs
         |> withOptions ["-a"]
+        |> withNoWarn 3873 // This construct is deprecated. Sequence expressions should be of the form 'seq { ... }
         |> compile
         |> shouldSucceed
         |> ignore

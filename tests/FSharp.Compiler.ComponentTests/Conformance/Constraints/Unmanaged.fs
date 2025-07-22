@@ -471,19 +471,70 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
     IL_0000:  ret
   } """]
 
-    [<Fact>]
-    let ``FSharp does not generate modreq for VBNET to consume in v7`` () = 
+    [<FactForNETCOREAPP>]
+    let ``FSharp generates modreq for CSharp to consume in v9`` () = 
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
-        |> withLangVersion70
+        |> withLangVersion10
         |> compile
         |> shouldSucceed
         |> verifyIL ["""
-      .method public static void  testMyFunction<TUnmanaged>(!!TUnmanaged x) cil managed
+      .method public static void  testMyFunction<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) TUnmanaged>(!!TUnmanaged x) cil managed
   {
+    .param type TUnmanaged 
+      .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ret
   } """]
+
+
+    [<Fact>]
+    let ``Unmanaged constraint in lambda reproduces issue 17509`` () = 
+        // This test reproduces the issue https://github.com/dotnet/fsharp/issues/17509
+        // When UnmanagedConstraintCsharpInterop is enabled, it generates invalid IL
+        // causing a TypeLoadException at runtime
+        Fsx """
+open System
+
+let printTypeConstraintsNative<'T when 'T : unmanaged> () = printf $"Hello: {typeof<'T>.FullName} is unmanaged"
+
+let Main() =
+    let func (x:int) : 'T when 'T : unmanaged = Unchecked.defaultof<'T>
+    let initFinite = Seq.init<nativeint> 3 func
+    printf "%A" initFinite
+ 
+printTypeConstraintsNative<nativeint>()
+Main()
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyOutput "Hello: System.IntPtr is unmanagedseq [0n; 0n; 0n]"
+
+    [<FactForNETCOREAPP>]
+    let ``Unmanaged constraint in lambda generates invalid IL for Specialize method with preview version`` () = 
+        Fsx """
+let Main() =
+    let func (x:int) : 'T when 'T : unmanaged = Unchecked.defaultof<'T>
+    let initFinite = Seq.init<nativeint> 3 func
+    printfn "%A" initFinite
+Main()
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+    .method assembly strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,!!T> DirectInvoke<valuetype (class [runtime]System.ValueType modreq([runtime]System.Runtime.InteropServices.UnmanagedType)) T>() cil managed
+    {
+      .param type T 
+        .custom instance void [runtime]System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldsfld     class Test/'func@3-1'<!0> class Test/'func@3-1'<!!T>::@_instance
+      IL_0005:  ret
+    } """]
 
 
     [<Fact>]

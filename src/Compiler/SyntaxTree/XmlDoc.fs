@@ -238,7 +238,7 @@ type PreXmlDoc =
             if part1.IsEmpty then part2.Range
             elif part2.IsEmpty then part1.Range
             else unionRanges part1.Range part2.Range
-        | PreXmlDocEmpty -> Range.Zero
+        | PreXmlDocEmpty -> range0
         | PreXmlDoc(pos, collector) -> collector.LinesRange pos
 
     member x.IsEmpty =

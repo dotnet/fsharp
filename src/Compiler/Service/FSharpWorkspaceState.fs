@@ -9,8 +9,10 @@ open System.Runtime.CompilerServices
 open System.Collections.Concurrent
 
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.DependencyGraph
+open Internal.Utilities.Library
 
 #nowarn "57"
 
@@ -200,9 +202,7 @@ module internal WorkspaceDependencyGraphExtensions =
         [<Extension>]
         static member GetProjectReferencesOf(this: IDependencyGraph<_, _>, project) =
             this.GetDependenciesOf(WorkspaceNodeKey.ProjectWithoutFiles project)
-            |> Seq.choose (function
-                | WorkspaceNodeKey.ProjectSnapshot projectId -> Some projectId
-                | _ -> None)
+            |> Seq.choose WorkspaceNode.projectSnapshotKey
 
         [<Extension>]
         static member GetProjectsThatReference(this: IDependencyGraph<_, _>, dllPath) =
@@ -216,8 +216,26 @@ module internal WorkspaceDependencyGraphExtensions =
 
         [<Extension>]
         static member GetSourceFile(this: IDependencyGraph<_, _>, file) =
-            this.GetValue(WorkspaceNodeKey.SourceFile file)
-            |> _.Unpack(WorkspaceNode.sourceFile)
+            this.GetValue(WorkspaceNodeKey.SourceFile file).Unpack(WorkspaceNode.sourceFile)
+
+        [<Extension>]
+        static member GetFilesOf(this: IDependencyGraph<_, _>, project) =
+            this.GetDependenciesOf(WorkspaceNodeKey.ProjectSnapshot project)
+            |> Seq.map this.GetValue
+            |> Seq.choose WorkspaceNode.sourceFile
+
+        [<Extension>]
+        static member ReplaceSourceFiles(this: IDependencyGraph<_, _>, project, sourceFiles) =
+            let projectId = WorkspaceNodeKey.ProjectSnapshot project
+
+            this.GetDependenciesOf(WorkspaceNodeKey.ProjectSnapshot project)
+            |> Seq.where (WorkspaceNode.sourceFileKey >> _.IsSome)
+            |> Seq.iter (fun fileId -> this.RemoveDependency(projectId, noLongerDependsOn = fileId))
+
+            sourceFiles
+            |> Seq.map (fun (file, snapshot) -> WorkspaceNodeKey.SourceFile file, WorkspaceNodeValue.SourceFile snapshot)
+            |> this.AddList
+            |> Seq.iter (fun fileId -> this.AddDependency(WorkspaceNodeKey.ProjectSnapshot project, dependsOn = fileId))
 
 /// Interface for managing files in an F# workspace.
 [<Experimental("This FCS API is experimental and subject to change.")>]
@@ -227,20 +245,32 @@ type FSharpWorkspaceFiles internal (depGraph: IThreadSafeDependencyGraph<_, _>) 
     let openFiles = ConcurrentDictionary<string, string>()
 
     /// Indicates that a file has been opened and has the given content. Any updates to the file should be done through `Files.Edit`.
-    member this.Open = this.Edit
+    member _.Open(file: Uri, content) =
+        use _ = Activity.start "Files.Open" [ Activity.Tags.fileName, file.LocalPath ]
+
+        openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
+        depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
 
     /// Indicates that a file has been changed and now has the given content. If it wasn't previously open it is considered open now.
     member _.Edit(file: Uri, content) =
+        use _ = Activity.start "Files.Edit" [ Activity.Tags.fileName, file.LocalPath ]
+
         openFiles.AddOrUpdate(file.LocalPath, content, (fun _ _ -> content)) |> ignore
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromString(file.LocalPath, content))
 
     /// Indicates that a file has been closed. Any changes that were not saved to disk are undone and any further reading
     /// of the file's contents will be from the filesystem.
     member _.Close(file: Uri) =
+        use _ = Activity.start "Files.Close" [ Activity.Tags.fileName, file.LocalPath ]
+
         openFiles.TryRemove(file.LocalPath) |> ignore
 
         // The file may have had changes that weren't saved to disk and are therefore undone by closing it.
         depGraph.AddOrUpdateFile(file.LocalPath, FSharpFileSnapshot.CreateFromFileSystem(file.LocalPath))
+
+    /// Returns file paths for all source files of the given project.
+    member _.OfProject(projectIdentifier: FSharpProjectIdentifier) =
+        depGraph.GetFilesOf projectIdentifier |> Seq.map _.FileName
 
     member internal _.GetFileContentIfOpen(path: string) =
         match openFiles.TryGetValue(path) with
@@ -254,8 +284,34 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
     /// A map from project output path to project identifier.
     let outputPathMap = ConcurrentDictionary<string, FSharpProjectIdentifier>()
 
+    let createFileSnapshot path =
+        files.GetFileContentIfOpen path
+        |> Option.map (fun content -> FSharpFileSnapshot.CreateFromString(path, content))
+        |> Option.defaultWith (fun () -> FSharpFileSnapshot.CreateFromFileSystem path)
+
+    member val internal Debug_DumpGraphOnEveryChange: string option = None with get, set
+
+    member internal _.files = files
+
+    member internal this.Debug_DumpMermaid(path) =
+        let content =
+            depGraph.Debug_RenderMermaid (function
+                // Collapse all reference on disk nodes into one. Otherwise the graph is too big to render.
+                | WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk _ -> WorkspaceGraphTypes.WorkspaceNodeKey.ReferenceOnDisk "..."
+                | x -> x)
+
+        File.WriteAllText(path, content)
+
     /// Adds or updates an F# project in the workspace. Project is identified by the project file and output path or FSharpProjectIdentifier.
-    member _.AddOrUpdate(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
+    member this.AddOrUpdate(projectConfig: ProjectConfig, sourceFilePaths: string seq) =
+
+        use _ =
+            Activity.start
+                "Projects.AddOrUpdate"
+                [
+                    Activity.Tags.project, projectConfig.Identifier.ToString()
+                    "sourceFiles", sourceFilePaths |> String.concat "; "
+                ]
 
         let projectIdentifier = projectConfig.Identifier
 
@@ -293,14 +349,7 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
                         projectConfig, referencedProjects)
                 )
-                .AddSourceFiles(
-                    sourceFilePaths
-                    |> Seq.map (fun path ->
-                        path,
-                        files.GetFileContentIfOpen path
-                        |> Option.map (fun content -> FSharpFileSnapshot.CreateFromString(path, content))
-                        |> Option.defaultWith (fun () -> FSharpFileSnapshot.CreateFromFileSystem path))
-                )
+                .AddSourceFiles(sourceFilePaths |> Seq.map (fun path -> path, createFileSnapshot path))
                 .AddProjectSnapshot(
                     (fun ((projectConfig, referencedProjects), sourceFiles) ->
                         ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toList)
@@ -326,7 +375,12 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
             for dependentProjectId in dependentProjectIds do
                 depGraph.AddProjectReference(dependentProjectId, projectIdentifier)
 
+            this.Debug_DumpGraphOnEveryChange |> Option.iter (this.Debug_DumpMermaid)
+
             projectIdentifier)
+
+    member this.AddOrUpdate(projectConfig, sourceFilePaths: Uri seq) =
+        this.AddOrUpdate(projectConfig, sourceFilePaths |> Seq.map _.LocalPath)
 
     member this.AddOrUpdate(projectPath: string, outputPath, compilerArgs) =
 
@@ -336,7 +390,9 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
         let fsharpFileExtensions = set [| ".fs"; ".fsi"; ".fsx" |]
 
         let isFSharpFile (file: string) =
-            Set.exists (fun (ext: string) -> file.EndsWith(ext, StringComparison.Ordinal)) fsharpFileExtensions
+            file.Length > 0
+            && file[0] <> '-'
+            && Set.exists (fun (ext: string) -> file.EndsWith(ext, StringComparison.Ordinal)) fsharpFileExtensions
 
         let isReference: string -> bool = _.StartsWith("-r:")
 
@@ -365,3 +421,31 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
             ProjectConfig(projectFileName, Some outputFileName, referencesOnDisk, otherOptions)
 
         this.AddOrUpdate(projectConfig, sourceFiles)
+
+    member this.Update(projectIdentifier, newSourceFiles) =
+
+        let newSourceFiles = newSourceFiles |> Seq.cache
+
+        use _ =
+            Activity.start
+                "Projects.Update"
+                [
+                    Activity.Tags.project, !!projectIdentifier.ToString()
+                    "sourceFiles", newSourceFiles |> String.concat "; "
+                ]
+
+        depGraph.Transact(fun depGraph ->
+
+            let existingSourceFiles =
+                depGraph.GetFilesOf projectIdentifier |> Seq.map (fun f -> f.FileName, f) |> Map
+
+            let newFilesWithSnapshots =
+                newSourceFiles
+                |> Seq.map (fun path ->
+                    path,
+                    existingSourceFiles.TryFind path
+                    |> Option.defaultWith (fun () -> createFileSnapshot path))
+
+            depGraph.ReplaceSourceFiles(projectIdentifier, newFilesWithSnapshots)
+
+            this.Debug_DumpGraphOnEveryChange |> Option.iter (this.Debug_DumpMermaid))

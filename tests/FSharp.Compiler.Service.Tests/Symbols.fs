@@ -786,6 +786,8 @@ module GetValSignatureText =
             | :? FSharpMemberOrFunctionOrValue as mfv ->
                 let expected = expected.Replace("\r", "")
                 let signature = mfv.GetValSignatureText(symbolUse.DisplayContext, symbolUse.Range)
+                if expected <> signature.Value then
+                    printfn $"Expected:\n{expected}\n\n\nActual:\n{signature.Value}"
                 Assert.Equal(expected, signature.Value)
             | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue, got %A{symbol}"
 

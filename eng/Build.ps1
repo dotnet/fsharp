@@ -69,6 +69,7 @@ param (
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch][Alias('pb')]$productBuild,
+    [switch]$fromVMR,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
     [switch]$buildnorealsig = $true,
@@ -135,6 +136,7 @@ function Print-Usage() {
     Write-Host "  -dontUseGlobalNuGetCache      Do not use the global NuGet cache"
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -productBuild                 Build the repository in product-build mode."
+    Write-Host "  -fromVMR                      Set when building from within the VMR."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
     Write-Host "  -buildnorealsig               Build product with realsig- (default use realsig+, where necessary)"
@@ -302,7 +304,8 @@ function BuildSolution([string] $solutionName, $packSolution) {
         /p:RepoRoot=$RepoRoot `
         /p:Restore=$restore `
         /p:Build=$build `
-        /p:DotNetBuildRepo=$productBuild `
+        /p:DotNetBuild=$productBuild `
+        /p:DotNetBuildFromVMR=$fromVMR `
         /p:Rebuild=$rebuild `
         /p:Pack=$pack `
         /p:Sign=$sign `
@@ -562,6 +565,7 @@ try {
     $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild -and -not $productBuild) {
         $originalSignValue = $sign
+        $originalPublishValue = $publish
         if ($msbuildEngine -eq "dotnet") {
             # Building FSharp.sln and VisualFSharp.sln with .NET Core MSBuild
             # don't produce any artifacts to sign. Skip signing in this case.
@@ -571,9 +575,12 @@ try {
             BuildSolution "FSharp.sln" $False
         }
         else {
+            # vsixes do not count as publishing artifacts from Arcade perspective, and arcade publish.proj is failing when it encounters 0 items to publish.
+            $publish = $False
             BuildSolution "VisualFSharp.sln" $False
         }
         $sign = $originalSignValue
+        $publish = $originalPublishValue
     }
 
     if ($testBenchmarks) {

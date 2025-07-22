@@ -3,7 +3,7 @@
 module FSharp.Compiler.Service.Tests.TestDoubles
 
 open System.IO
-open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
 open Internal.Utilities
@@ -20,4 +20,4 @@ let internal getArbitraryTcConfigBuilder() =
         CopyFSharpCoreFlag.No,
         (fun _ -> None),
         None,
-        Range.Zero)
+        range0)

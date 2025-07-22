@@ -677,7 +677,7 @@ let adjustHatPrefixToTyparLookup mFull rightExpr =
 let mkSynTypeTuple (elementTypes: SynTupleTypeSegment list) : SynType =
     let range =
         match elementTypes with
-        | [] -> Range.Zero
+        | [] -> range0
         | head :: tail ->
 
             (head.Range, tail)
@@ -889,7 +889,7 @@ let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, 
     let mLetOrUse =
         match decls with
         | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
-        | _ -> Range.Zero
+        | _ -> range0
 
     SynExpr.LetOrUse(
         isRec,

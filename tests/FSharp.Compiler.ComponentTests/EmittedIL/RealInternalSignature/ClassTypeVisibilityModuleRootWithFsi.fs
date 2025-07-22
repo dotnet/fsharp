@@ -860,7 +860,6 @@ type TestType () =
     static member DefaultMethod() = ()
     static member HiddenMethod() = ()"""))
         |> asLibrary
-        |> withLangVersionPreview
         |> withRealInternalSignature realSig
         |> compile
         |> withILContains [
