@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.SyntaxTrivia
 
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type IdentTrivia =
@@ -24,8 +25,8 @@ and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type WarnDirectiveTrivia =
-    | Nowarn of warnNumbers: int list * range
-    | Warnon of warnNumbers: int list * range
+    | Nowarn of range
+    | Warnon of range
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type CommentTrivia =
@@ -98,7 +99,7 @@ type SynExprLetOrUseTrivia =
     static member Zero: SynExprLetOrUseTrivia =
         {
             InKeyword = None
-            LetOrUseKeyword = Range.Zero
+            LetOrUseKeyword = range0
         }
 
 [<NoEquality; NoComparison>]
@@ -110,7 +111,7 @@ type SynExprLetOrUseBangTrivia =
 
     static member Zero: SynExprLetOrUseBangTrivia =
         {
-            LetOrUseBangKeyword = Range.Zero
+            LetOrUseBangKeyword = range0
             EqualsRange = None
         }
 
@@ -134,7 +135,7 @@ type SynExprYieldOrReturnTrivia =
         YieldOrReturnKeyword: range
     }
 
-    static member Zero: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = Range.Zero }
+    static member Zero: SynExprYieldOrReturnTrivia = { YieldOrReturnKeyword = range0 }
 
 [<NoEquality; NoComparison>]
 type SynExprYieldOrReturnFromTrivia =
@@ -142,10 +143,7 @@ type SynExprYieldOrReturnFromTrivia =
         YieldOrReturnFromKeyword: range
     }
 
-    static member Zero: SynExprYieldOrReturnFromTrivia =
-        {
-            YieldOrReturnFromKeyword = Range.Zero
-        }
+    static member Zero: SynExprYieldOrReturnFromTrivia = { YieldOrReturnFromKeyword = range0 }
 
 [<NoEquality; NoComparison>]
 type SynExprDoBangTrivia = { DoBangKeyword: range }
@@ -288,7 +286,7 @@ type SynLeadingKeyword =
         | MemberVal(m1, m2)
         | OverrideVal(m1, m2)
         | StaticMemberVal(m1, _, m2) -> Range.unionRanges m1 m2
-        | Synthetic -> Range.Zero
+        | Synthetic -> range0
 
 [<NoEquality; NoComparison>]
 type SynBindingTrivia =

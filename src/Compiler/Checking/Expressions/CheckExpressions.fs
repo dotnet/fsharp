@@ -143,6 +143,8 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
+exception InvalidAttributeTargetForLanguageElement of elementTargets: string array * allowedTargets: string array * range: range
+
 //----------------------------------------------------------------------------------------------
 // Helpers for determining if/what specifiers a string has.
 // Used to decide if interpolated string can be lowered to a concat call.
@@ -811,10 +813,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
-            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One range0)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Divide(measure1 = ms1; measure2 = ms2) ->
-            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One range0)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
@@ -2037,7 +2039,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
 
     if fieldNum >= argTys.Length then
-        error (UnionCaseWrongNumberOfArgs(env.DisplayEnv, argTys.Length, fieldNum, m))
+        errorR (UnionCaseWrongNumberOfArgs(env.DisplayEnv, argTys.Length, fieldNum, m))
 
     let ty2 = List.item fieldNum argTys
     mkf, ty2
@@ -2307,7 +2309,7 @@ module GeneralizationHelpers =
                         declaredTypars 
                         |> List.map(fun typar ->  typar.Range)
                             
-                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range.Zero
+                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range0
                         
                     errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
@@ -5259,6 +5261,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
             error(Error(msg, m))
 
+        let isUnsolvedTyparTy g ty = tryDestTyparTy g ty |> ValueOption.exists (fun typar -> not typar.IsSolved)
+
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
@@ -5281,7 +5285,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                  showErrMsg 1
 
         // active pattern in function param (e.g. let f (|P|_|) = ...)
-        elif tryDestTyparTy g vExprTy |> ValueOption.exists (fun typar -> not typar.IsSolved) then
+        // or in mutual recursion with a lambda: `and (|P|) x = fun y -> …`
+        elif isUnsolvedTyparTy g vExprTy || tryDestFunTy g vExprTy |> ValueOption.exists (fun (_, rangeTy) -> isUnsolvedTyparTy g rangeTy) then
             List.frontAndBack args
 
         // args count should equal to AP function params count
@@ -11353,7 +11358,29 @@ and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt
         if (directedTargets = AttributeTargets.Assembly || directedTargets = AttributeTargets.Module) then
             errorR(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), mAttr))
         else
-            warning(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
+            let attributeTargetsToString (targets: int) =
+                [|
+                    if targets &&& int AttributeTargets.Assembly <> 0 then "assembly"
+                    if targets &&& int AttributeTargets.Module <> 0 then "module"
+                    if targets &&& int AttributeTargets.Class <> 0 then "class"
+                    if targets &&& int AttributeTargets.Struct <> 0 then "struct"
+                    if targets &&& int AttributeTargets.Enum <> 0 then "enum"
+                    if targets &&& int AttributeTargets.Constructor <> 0 then "constructor"
+                    if targets &&& int AttributeTargets.Method <> 0 then "method"
+                    if targets &&& int AttributeTargets.Property <> 0 then "property"
+                    if targets &&& int AttributeTargets.Field <> 0 then "field"
+                    if targets &&& int AttributeTargets.Event <> 0 then "event"
+                    if targets &&& int AttributeTargets.Interface <> 0 then "interface"
+                    if targets &&& int AttributeTargets.Parameter <> 0 then "parameter"
+                    if targets &&& int AttributeTargets.Delegate <> 0 then "delegate"
+                    if targets &&& int AttributeTargets.ReturnValue <> 0 then "return value"
+                    if targets &&& int AttributeTargets.GenericParameter <> 0 then "type parameter"
+                |]
+
+            let elementTargets = attributeTargetsToString (int attrTgt)
+            let allowedTargets = attributeTargetsToString validOn
+
+            warning(InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, mAttr))
     
     constrainedTargets
 

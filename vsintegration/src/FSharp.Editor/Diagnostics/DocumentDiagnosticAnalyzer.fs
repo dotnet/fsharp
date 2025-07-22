@@ -24,6 +24,9 @@ type internal DiagnosticsType =
 [<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
 type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
+    let shouldProduceDiagnostics (document: Document) =
+        document.Project.Solution.GetFSharpExtensionConfig().ShouldProduceDiagnostics()
+
     static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with
 
@@ -148,14 +151,20 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     interface IFSharpDocumentDiagnosticAnalyzer with
 
         member _.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMetadata then
+            if
+                document.Project.IsFSharpMetadata
+                || (not (document |> shouldProduceDiagnostics))
+            then
                 Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                 |> CancellableTask.start cancellationToken
 
         member _.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) : Task<ImmutableArray<Diagnostic>> =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
+            if
+                document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript
+                || (not (document |> shouldProduceDiagnostics))
+            then
                 Task.FromResult ImmutableArray.Empty
             else
                 FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
