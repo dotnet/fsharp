@@ -396,8 +396,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 27, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 27, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters02.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters02.fsx
@@ -408,8 +408,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 27, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 27, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters03.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters03.fsx
@@ -420,8 +420,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 27, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 27, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters04.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters04.fsx
@@ -432,8 +432,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 27, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 27, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters05.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters05.fsx
@@ -444,8 +444,8 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 883, Line 7, Col 11, Line 7, Col 26, "Invalid namespace, module, type or union case name")
-            (Error 883, Line 8, Col 11, Line 8, Col 26, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 7, Col 11, Line 7, Col 27, "Invalid namespace, module, type or union case name")
+            (Error 883, Line 8, Col 11, Line 8, Col 27, "Invalid namespace, module, type or union case name")
         ]
 
     // SOURCE=E_IllegalCharacters06.fsx                   SCFLAGS="--test:ErrorRanges"        # E_IllegalCharacters06.fsx
