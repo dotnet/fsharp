@@ -137,3 +137,6 @@ positive.exe
 *.bsl.actual
 /src/FSharp.DependencyManager.Nuget/StandardError.txt
 /src/FSharp.DependencyManager.Nuget/StandardOutput.txt
+
+# Test result files
+tests/**/TestResults/*.trx

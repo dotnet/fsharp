@@ -321,8 +321,8 @@ module HashTastMemberOrVals =
         | Const.Char x -> hash x
         | Const.String x -> hashText x
         | Const.Decimal x -> hash x
-        | Const.Unit -> hash "()"
-        | Const.Zero -> hash "Zero"
+        | Const.Unit -> 0
+        | Const.Zero -> 0
 
     let private hashNonMemberVal (g: TcGlobals, observer) (tps, v: Val, tau, cxs) =
         if HashAccessibility.isHiddenToObserver v.Accessibility observer then
@@ -336,14 +336,14 @@ module HashTastMemberOrVals =
             let flagsHash = hash v.val_flags.PickledBits
             let attribsHash = hashAttributeList v.Attribs
             
+            let combinedHash = nameHash @@ typarHash @@ typeHash @@ flagsHash @@ attribsHash
+            
             // Include literal constant value in hash for deterministic builds
-            let constHash = 
-                match v.LiteralValue with
-                | Some constVal -> hashConst constVal
-                | None -> 0
-
-            let combinedHash = nameHash @@ typarHash @@ typeHash @@ flagsHash @@ attribsHash @@ constHash
-            combinedHash
+            match v.LiteralValue with
+            | Some constVal -> 
+                let constHash = hashConst constVal
+                combinedHash @@ constHash
+            | None -> combinedHash
 
     let hashValOrMemberNoInst (g, obs) (vref: ValRef) =
         match vref.MemberInfo with
