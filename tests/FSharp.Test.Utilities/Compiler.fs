@@ -1434,9 +1434,6 @@ Actual:
             else
                 cResult
 
-    let VerifyNotInOutput (expected: string) (cResult: CompilationResult) : CompilationResult =
-        verifyNotInOutput expected cResult
-
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 
     type PdbVerificationOption =
@@ -1921,13 +1918,6 @@ Actual:
 
         let withStdOutContains (substring: string) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDOUT" [substring] (fun o -> o.StdOut)  result
-
-        let withStdOutNotContains (substring: string) (result: CompilationResult) : CompilationResult =
-            let checkOutput = fun o -> o.StdOut
-            let output = checkOutput result.Output
-            if output.Contains(substring) then
-                failwith $"""STDOUT should not contain:{Environment.NewLine}{substring}{Environment.NewLine}Actual:{Environment.NewLine}{output}{Environment.NewLine}"""
-            result
 
         let withStdOutContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDOUT" substrings (fun o -> o.StdOut) result

@@ -35,7 +35,7 @@ let x = 42
     |> withOptions ["--typecheck-only"]
     |> runFsi
     |> shouldSucceed
-    |> VerifyNotInOutput "MyCrazyString"
+    |> verifyNotInOutput "MyCrazyString"
 
 [<Fact>]
 let ``script executes without typecheck-only flag``() =
