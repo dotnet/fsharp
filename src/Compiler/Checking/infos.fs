@@ -2051,6 +2051,8 @@ type PropInfo =
     member x.IsFSharpEventProperty =
         match x with
         | FSProp(g, _, Some vref, None)  -> vref.IsFSharpEventProperty g
+        | FSProp(g, _, Some vref, Some _)  -> vref.IsFSharpEventProperty g
+        | FSProp(g, _, None, Some vref)  -> vref.IsFSharpEventProperty g
 #if !NO_TYPEPROVIDERS
         | ProvidedProp _ -> false
 #endif

@@ -18,6 +18,7 @@ These release notes track our current efforts to document changes to the F# proj
 
 ### FSharp Compiler Service (main)
 
+* CLIEvent properties are now correctly recognized as events in the Symbol API. The `IsEvent` property returns `true` for properties with the `[<CLIEvent>]` attribute, and their `XmlDocSig` uses the "E:" prefix instead of "P:" to reflect their event nature.
 * In FSharpParsingOptions, rename ConditionalCompilationDefines --> ConditionalDefines
 * Some syntax tree nodes have changed, e.g. introduction of SyntaxTree trivia
 * Resolved expressions (FSharpExpr) now reveal debug points, you must match them explicitly using `DebugPoint(dp, expr)`
