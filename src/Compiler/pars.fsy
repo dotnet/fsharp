@@ -3522,10 +3522,6 @@ bindingPattern:
 
 // This rule unifies the pattern parsing for both regular 'let' bindings and (let!, use!, and!)
 bindingPatternWithOptType:
-  | headBindingPattern
-    { // Simple pattern without type annotation
-      $1, $1.Range, None }
-  
   | headBindingPattern opt_topReturnTypeWithTypeConstraints
     { // Pattern with optional type annotation
       match $2 with
