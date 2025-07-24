@@ -49,6 +49,27 @@ module CCtorDUWithMember =
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "CCtorDUWithMember04.fs"))
         |> verifyCompilation 
 
+    // Test for issue #18767: duplicate .cctor methods
+    [<Fact>]
+    let ``CCtorDuplicateFix_NoError`` () =
+        FSharp """
+module CCtorDuplicateFix
+
+// This specific pattern previously caused duplicate .cctor methods:
+// Generic DU with nullary case and static member val
+type U<'T> =
+    | A
+    static member val X = 3
+
+// Additional test case to ensure normal cases still work
+type V =
+    | B
+    static member val Y = 4
+"""
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]
