@@ -90,7 +90,7 @@ module NonStringArgs =
 #nowarn 20 FS1104 "3391" "FS3221"
 
 module Exception =
-    exception ``Crazy@name.p`` of string
+    exception ``Crazy@name`` of string
 
 module Decimal =
     type T1 = { a : decimal }
