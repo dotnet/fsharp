@@ -17,6 +17,7 @@ module PrimitiveConstraints =
     let ``Invalid object constructor`` compilation = // Regression test for FSharp1.0:4189
         compilation
         |> getCompilation
+        |> typecheck
         |> verifyBaseline
 
     [<Fact>]
