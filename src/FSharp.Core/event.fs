@@ -83,7 +83,7 @@ type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args ->
 type Event<'Delegate, 'Args
     when 'Delegate: delegate<'Args, unit> and 'Delegate :> System.Delegate and 'Delegate: not struct>() =
 
-    let mutable multicast: 'Delegate = Unchecked.defaultof<_>
+    let mutable multicast: 'Delegate | null = Unchecked.defaultof<_>
 
     static let mi, argTypes =
         let instanceBindingFlags =
@@ -149,12 +149,18 @@ type Event<'Delegate, 'Args
                   Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> 'Delegate) &multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> 'Delegate) &multicast
+                  Atomic.setWith (fun value -> 
+                      match System.Delegate.Remove(value, d) with
+                      | null -> null
+                      | result -> result :?> 'Delegate) &multicast
           interface System.IObservable<'Args> with
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
 
-                  let h = Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> 'Delegate
+                  let h = 
+                      match Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) with
+                      | null -> null
+                      | result -> result :?> 'Delegate
 
                   (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 
@@ -166,7 +172,7 @@ type Event<'Delegate, 'Args
 
 [<CompiledName("FSharpEvent`1")>]
 type Event<'T> =
-    val mutable multicast: Handler<'T>
+    val mutable multicast: Handler<'T> | null
     new() = { multicast = null }
 
     member x.Trigger(arg: 'T) =
@@ -183,7 +189,10 @@ type Event<'T> =
                   Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> Handler<'T>) &x.multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> Handler<'T>) &x.multicast
+                  Atomic.setWith (fun value -> 
+                      match System.Delegate.Remove(value, d) with
+                      | null -> null
+                      | result -> result :?> Handler<'T>) &x.multicast
           interface System.IObservable<'T> with
               member e.Subscribe(observer) =
                   let h = new Handler<_>(fun sender args -> observer.OnNext(args))
