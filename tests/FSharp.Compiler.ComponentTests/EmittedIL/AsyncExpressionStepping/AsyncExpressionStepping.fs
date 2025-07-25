@@ -14,6 +14,7 @@ module AsyncExpressionStepping =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyBaseline
         |> verifyILBaseline
 

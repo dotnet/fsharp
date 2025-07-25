@@ -21,6 +21,7 @@ module QueryExpressionStepping =
         |> withEmbedAllSource
         |> withReferences [utilsLibrary]
         |> ignoreWarnings
+        |> typecheck
         |> verifyILBaseline
 
     // SOURCE=Linq101Aggregates01.fs         SCFLAGS="-r:Utils.dll -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Linq101Aggregates01.exe"        # Linq101Aggregates01.fs - CodeGen
