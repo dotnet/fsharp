@@ -13,6 +13,5 @@
 ### Fixed
 
 * Warn on uppercase identifiers in patterns. ([PR #15816](https://github.com/dotnet/fsharp/pull/15816))
-* Fix nullness warnings when casting non-nullable values to `IEquatable<T>` to match C# behavior. ([Issue #18759](https://github.com/dotnet/fsharp/issues/18759))
 
 ### Changed
