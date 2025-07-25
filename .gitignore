@@ -137,3 +137,7 @@ positive.exe
 *.bsl.actual
 /src/FSharp.DependencyManager.Nuget/StandardError.txt
 /src/FSharp.DependencyManager.Nuget/StandardOutput.txt
+
+# Standard output/error files in root directory
+StandardOutput.txt
+StandardError.txt
