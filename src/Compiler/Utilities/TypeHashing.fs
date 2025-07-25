@@ -335,12 +335,12 @@ module HashTastMemberOrVals =
             let typeHash = hashTopType g argInfos retTy cxs
             let flagsHash = hash v.val_flags.PickledBits
             let attribsHash = hashAttributeList v.Attribs
-            
+
             let combinedHash = nameHash @@ typarHash @@ typeHash @@ flagsHash @@ attribsHash
-            
+
             // Include literal constant value in hash for deterministic builds
             match v.LiteralValue with
-            | Some constVal -> 
+            | Some constVal ->
                 let constHash = hashConst constVal
                 combinedHash @@ constHash
             | None -> combinedHash
