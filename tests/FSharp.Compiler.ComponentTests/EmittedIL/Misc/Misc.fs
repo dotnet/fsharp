@@ -14,6 +14,7 @@ module Misc =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     // SOURCE=AbstractClass.fs             SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd AbstractClass.exe"	# AbstractClass.fs

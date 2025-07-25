@@ -14,6 +14,7 @@ module Inlining =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     let withRealInternalSignature realSig compilation =
@@ -50,6 +51,7 @@ module Inlining =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     [<Fact>]

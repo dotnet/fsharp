@@ -21,6 +21,7 @@ module TryCatch =
 
     let verifyCompilation compilation =
         setupCompilation compilation
+        |> compile
         |> verifyILBaseline
 
     [<Theory; FileInlineData("ActivePatternRecoverableException.fs")>]
