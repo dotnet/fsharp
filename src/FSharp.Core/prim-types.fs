@@ -781,7 +781,7 @@ namespace Microsoft.FSharp.Core
 
             let inline GetArraySub (arr: 'a array) (start:int) (len:int) : 'a array =
                 if len <= 0 then
-                    zeroCreate 0
+                    [||]
                 else
                     let dst = zeroCreate len
                     Array.Copy(arr, start, dst, 0, len)
