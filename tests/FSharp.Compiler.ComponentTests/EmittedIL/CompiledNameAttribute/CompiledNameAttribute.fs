@@ -10,11 +10,13 @@ module CompiledNameAttribute =
         compilation
         |> asFs
         |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> withNoWarn 988
         |> asExe
         |> withNoOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyBaseline
         |> verifyILBaseline
 

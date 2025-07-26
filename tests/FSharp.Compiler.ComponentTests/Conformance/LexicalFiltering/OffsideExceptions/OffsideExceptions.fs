@@ -38,8 +38,8 @@ module OffsideExceptions =
         |> getCompilation 
         |> asFsx
         |> withLangVersion60
+        |> typecheck
         |> verifyBaseline
-        |> ignore
 
     [<Fact>]
     let RelaxWhitespace2_Indentation() =

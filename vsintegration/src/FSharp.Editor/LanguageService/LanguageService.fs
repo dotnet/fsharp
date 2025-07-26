@@ -355,12 +355,12 @@ type internal FSharpPackage() as this =
             flushTelemetry ()
 #endif
 
-    override this.RegisterInitializationWork(packageRegistrationTasks: PackageRegistrationTasks) : unit =
-        base.RegisterInitializationWork(packageRegistrationTasks: PackageRegistrationTasks)
+    override this.RegisterInitializeAsyncWork(packageRegistrationTasks: PackageLoadTasks) : unit =
+        base.RegisterInitializeAsyncWork(packageRegistrationTasks)
 
         packageRegistrationTasks.AddTask(
             true,
-            (fun progress _tasks cancellationToken ->
+            (fun _tasks cancellationToken ->
                 foregroundCancellableTask {
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService

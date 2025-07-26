@@ -159,11 +159,12 @@ module BindingExpressions =
         ]
     
     [<Theory; FileInlineData("UpperBindingPattern.fs")>]
-    let ``UpperBindingPattern_fs`` compilation =
+    let ``UpperBindingPattern_fs v9`` compilation =
         compilation
         |> getCompilation
         |> asExe
         |> withOptions ["--test:ErrorRanges"]
+        |> withLangVersion90
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -191,11 +192,10 @@ module BindingExpressions =
         ]
         
     [<Theory; FileInlineData("UpperBindingPattern.fs")>]
-    let ``UpperBindingPattern_fs preview`` compilation =
+    let ``UpperBindingPattern_fs`` compilation =
         compilation
         |> getCompilation
-        |> asExe
-        |> withLangVersionPreview
+        |> asExe        
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed

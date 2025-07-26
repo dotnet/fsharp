@@ -25,8 +25,8 @@ module PropertyShadowingTests =
         |> asFsx
         |> withNoDebug
         |> withRealInternalSignatureOff
-        |> verifyBaselines
         |> compileAndRun
+        |> verifyBaselines
         |> shouldSucceed
 
     [<Theory;
@@ -47,8 +47,8 @@ module PropertyShadowingTests =
         |> asFsx
         |> withNoDebug
         |> withRealInternalSignatureOn
-        |> verifyBaselines
         |> compileAndRun
+        |> verifyBaselines
         |> shouldSucceed
 
 
@@ -70,8 +70,8 @@ module PropertyShadowingTests =
         |> asFsx
         |> withNoDebug
         |> withOptions ["--langversion:7.0"]
+        |> typecheck
         |> verifyBaselines
-        |> compile
         |> shouldFail
 
     [<Theory;
@@ -89,8 +89,8 @@ module PropertyShadowingTests =
         compilation
         |> asFsx
         |> withNoDebug
+        |> typecheck
         |> verifyBaselines
-        |> compile
         |> shouldFail
     
 
@@ -110,6 +110,6 @@ module PropertyShadowingTests =
         |> asFsx
         |> withNoDebug
         |> withOptions ["--langversion:7.0"]
+        |> typecheck
         |> verifyBaselines
-        |> compile
         |> shouldFail
