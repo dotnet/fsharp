@@ -1976,6 +1976,9 @@ type ArrayModule() =
 
         Assert.AreEqual(arr[1..-1].Length, 0)
         Assert.True(Object.ReferenceEquals(arr[1..-1], arr[1..-1]))
+        
+        Assert.True(Object.ReferenceEquals(arr[1..-1], ([||]: int array)))
+
 
     [<Fact>]
     member _.RandomShuffle() =
