@@ -1963,15 +1963,19 @@ type ArrayModule() =
 
 
     [<Fact>]
-    member _.``Slicing always creates new arrays`` () =
+    member _.``Slicing creates new non-empty arrays`` () =
         let arr = [|1;2;3;4;5;6|]
 
         Assert.False(Object.ReferenceEquals(arr[1..3], arr[1..3]))
         Assert.False(Object.ReferenceEquals(arr[0..], arr[0..]))
         Assert.False(Object.ReferenceEquals(arr[..^1], arr[..^1]))
         
+    [<Fact>]
+    member _.``Empty slices are referentially equivalent`` () =
+        let arr = [|1;2;3;4;5;6|]
+
         Assert.AreEqual(arr[1..-1].Length, 0)
-        Assert.False(Object.ReferenceEquals(arr[1..-1], arr[1..-1]))
+        Assert.True(Object.ReferenceEquals(arr[1..-1], arr[1..-1]))
 
     [<Fact>]
     member _.RandomShuffle() =
