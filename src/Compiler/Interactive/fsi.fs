@@ -2217,8 +2217,9 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // Add this check after CheckClosedInputSet
+        // typeCheckOnly either reports all errors found so far or exits with 0 - it stops processing the script
         if tcConfig.typeCheckOnly then
+            diagnosticsLogger.AbortOnError(fsiConsoleOutput)            
             raise StopProcessing
 
         let codegenResults, optEnv, fragName =
@@ -4767,6 +4768,7 @@ type FsiEvaluationSession
         let userRes =
             match res with
             | Choice1Of2 r -> Choice1Of2 r
+            | Choice2Of2 None when errorInfos.Length = 0 && tcConfigB.typeCheckOnly -> Choice1Of2 None
             | Choice2Of2 None ->
                 Choice2Of2(FsiCompilationException(FSIstrings.SR.fsiOperationCouldNotBeCompleted (), Some errorInfos) :> exn)
             | Choice2Of2(Some userExn) -> Choice2Of2 userExn

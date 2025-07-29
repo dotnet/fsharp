@@ -9,9 +9,10 @@ let ``typecheck-only flag works for valid script``() =
     Fsx """
 let x = 42
 printfn "This should not execute"
+exit 999 // this would have crashed if really running
 """
     |> withOptions ["--typecheck-only"]
-    |> compile
+    |> runFsi
     |> shouldSucceed
 
 [<Fact>]
@@ -20,11 +21,9 @@ let ``typecheck-only flag catches type errors``() =
 let x: int = "string"  // Type error
 """
     |> withOptions ["--typecheck-only"]
-    |> compile
+    |> runFsi
     |> shouldFail
-    |> withDiagnostics [
-        (Error 1, Line 2, Col 14, Line 2, Col 22, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'")
-    ]
+    |> withStdErrContains """This expression was expected to have type"""
 
 [<Fact>]
 let ``typecheck-only flag prevents execution side effects``() =
@@ -40,9 +39,9 @@ let x = 42
 [<Fact>]
 let ``script executes without typecheck-only flag``() =
     Fsx """
-printfn "MyCrazyString"
-let x = 42
+let x = 21+21
 """
+    |> withOptions ["--nologo"]
     |> runFsi
     |> shouldSucceed
-    |> verifyOutput "MyCrazyString"
+    |> verifyOutputContains [|"val x: int = 42"|]
