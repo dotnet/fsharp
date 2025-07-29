@@ -30,6 +30,7 @@ module ComputationExpressions =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> typecheck
         |> verifyILBaseline
 
     [<Theory; FileInlineData("ComputationExpr01.fs", Realsig=BooleanOptions.Both)>]
@@ -85,4 +86,5 @@ module ComputationExpressions =
         ]
         |> withEmbeddedPdb
         |> withEmbedAllSource
+        |> typecheck
         |> verifyILBaseline
