@@ -13,7 +13,12 @@ module ForLoop =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
+        |> verifyPEFileWithSystemDlls
+        |> withOutputContainsAllInOrderWithWildcards [
+            "All Classes and Methods in*.exe Verified."
+            ]
 
     // SOURCE=ForLoop01.fs                 SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoop01.exe"	# ForLoop01.fs -
     [<Theory; FileInlineData("ForLoop01.fs", Realsig=BooleanOptions.Both, Optimize=BooleanOptions.False)>]
