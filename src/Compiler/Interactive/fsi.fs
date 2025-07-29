@@ -2219,7 +2219,7 @@ type internal FsiDynamicCompiler
 
         // typeCheckOnly either reports all errors found so far or exits with 0 - it stops processing the script
         if tcConfig.typeCheckOnly then
-            diagnosticsLogger.AbortOnError(fsiConsoleOutput)            
+            diagnosticsLogger.AbortOnError(fsiConsoleOutput)
             raise StopProcessing
 
         let codegenResults, optEnv, fragName =
