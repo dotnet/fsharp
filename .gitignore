@@ -132,6 +132,7 @@ micro.exe
 positive.exe
 /tests/FSharp.Compiler.ComponentTests/FSharpChecker/StandardError.txt
 /tests/FSharp.Compiler.ComponentTests/FSharpChecker/StandardOutput.txt
+/tests/FSharp.Compiler.ComponentTests/TestResults/
 
 # ilverify baseline result files
 *.bsl.actual
