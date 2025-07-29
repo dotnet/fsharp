@@ -779,17 +779,17 @@ namespace Microsoft.FSharp.Core
 
             let inline SetArray (target: 'T array) (index:int) (value:'T) =  (# "stelem.any !0" type ('T) target index value #)  
 
-            let inline GetArraySub arr (start:int) (len:int) =
-                let len = if len < 0 then 0 else len
-                let dst = zeroCreate len   
-                for i = 0 to len - 1 do 
-                    SetArray dst i (GetArray arr (start + i))
-                dst
+            let inline GetArraySub (arr: 'a array) (start:int) (len:int) : 'a array =
+                if len <= 0 then
+                    [||]
+                else
+                    let dst = zeroCreate len
+                    Array.Copy(arr, start, dst, 0, len)
+                    dst
 
-            let inline SetArraySub arr (start:int) (len:int) (src:_ array) =
-                for i = 0 to len - 1 do 
-                    SetArray arr (start+i) (GetArray src i)
-
+            let inline SetArraySub (arr: 'T array) (start:int) (len:int) (src: 'T array) =
+                if len > 0 then
+                    Array.Copy(src, 0, arr, start, len)
 
             let inline GetArray2D (source: 'T[,]) (index1: int) (index2: int) = (# "ldelem.multi 2 !0" type ('T) source index1 index2 : 'T #)  
 
