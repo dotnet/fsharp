@@ -1522,3 +1522,510 @@ is not compatible with type
 'TaskCode<int64,int64>' 
 ")
         ]
+        
+    [<Fact>]
+    let ``Version 9.0: and! with type annotations requires parentheses`` () =
+        FSharp """
+module Test
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let testParallel() = 
+    parallelCE {
+        let! x = async { return 1 }
+        and! y = async { return 2 }
+        return x + y
+    }
+        
+let testParallel2() = 
+    parallelCE {
+        let! (x: int) = async { return 1 }
+        and! (y: int) = async { return 2 }
+        return x + y
+    }
+    
+let testParallel3() = 
+    parallelCE {
+        let! x: int = async { return 1 }
+        and! y: int = async { return 2 }
+        return x + y
+    }
+        """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 43, Col 17, Line 43, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
+            (Error 3350, Line 44, Col 17, Line 44, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+        ]
+        
+    [<Fact>]
+    let ``Preview: and! with type annotations works without parentheses`` () =
+        FSharp """
+module Test
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let testParallel() = 
+    parallelCE {
+        let! x = async { return 1 }
+        and! y = async { return 2 }
+        return x + y
+    }
+    
+let testParallel2() = 
+    parallelCE {
+        let! (x: int) = async { return 1 }
+        and! (y: int) = async { return 2 }
+        return x + y
+    }
+        
+let testParallel3() = 
+    parallelCE {
+        let! x: int = async { return 1 }
+        and! y: int = async { return 2 }
+        return x + y
+    }
+
+let result = testParallel() |> Async.RunSynchronously
+let result2 = testParallel2() |> Async.RunSynchronously
+let result3 = testParallel3() |> Async.RunSynchronously
+if result <> 3 then failwithf $"Expected 3, but got {result}"
+if result2 <> 3 then failwithf $"Expected 3, but got {result2}"
+if result3 <> 3 then failwithf $"Expected 3, but got {result3}"
+        """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Version 9.0: and! with record patterns and type annotations requires parentheses`` () =
+        FSharp """
+module Test
+
+type Person = { Name: string; Age: int }
+type User = { Id: int; Username: string }
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let asyncPerson() = async { return { Name = "John"; Age = 30 } }
+let asyncUser() = async { return { Id = 1; Username = "john_doe" } }
+
+let testParallel1() = 
+    parallelCE {
+        let! ({ Name = name; Age = age }: Person) = asyncPerson()
+        and! ({ Id = id; Username = username }: User) = asyncUser()
+        return (name, age, id, username)
+    }
+    
+let testParallel2() = 
+    parallelCE {
+        let! { Name = name; Age = age }: Person = asyncPerson()
+        and! { Id = id; Username = username }: User = asyncUser()
+        return (name, age, id, username)
+    }
+            """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 42, Col 42, Line 42, Col 48, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
+            (Error 3350, Line 43, Col 48, Line 43, Col 52, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+        ]
+
+    [<Fact>]
+    let ``Preview: and! with record patterns and type annotations works without parentheses`` () =
+        FSharp """
+module Test
+
+type Person = { Name: string; Age: int }
+type User = { Id: int; Username: string }
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let asyncPerson() = async { return { Name = "John"; Age = 30 } }
+let asyncUser() = async { return { Id = 1; Username = "john_doe" } }
+
+let testParallel1() = 
+    parallelCE {
+        let! ({ Name = name; Age = age }: Person) = asyncPerson()
+        and! ({ Id = id; Username = username }: User) = asyncUser()
+        return (name, age, id, username)
+    }
+    
+let testParallel2() = 
+    parallelCE {
+        let! { Name = name; Age = age }: Person = asyncPerson()
+        and! { Id = id; Username = username }: User = asyncUser()
+        return (name, age, id, username)
+    }
+
+let result1 = testParallel1() |> Async.RunSynchronously
+let result2 = testParallel2() |> Async.RunSynchronously
+
+if result1 <> ("John", 30, 1, "john_doe") then 
+    failwithf $"Expected ('John', 30, 1, 'john_doe'), but got %A{result1}"
+if result2 <> ("John", 30, 1, "john_doe") then 
+    failwithf $"Expected ('John', 30, 1, 'john_doe'), but got %A{result2}"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Version 9.0: and! with union patterns and type annotations requires parentheses`` () =
+        FSharp """
+module Test
+
+type MyOption<'T> = Some of 'T | None
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let asyncOption1() = async { return MyOption.Some 42 }
+let asyncOption2() = async { return MyOption.Some "hello" }
+
+let testParallel() = 
+    parallelCE {
+        let! (Some value1): MyOption<int> = asyncOption1()
+        and! (Some value2): MyOption<string> = asyncOption2()
+        return (value1, value2)
+    }
+
+let testParallel2() = 
+    parallelCE {
+        let! Some value1: MyOption<int> = asyncOption1()
+        and! Some value2: MyOption<string> = asyncOption2()
+        return (value1, value2)
+    }
+            """
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 34, Col 29, Line 34, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
+            (Error 3350, Line 35, Col 29, Line 35, Col 45, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
+            (Error 3350, Line 41, Col 27, Line 41, Col 40, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
+            (Error 3350, Line 42, Col 27, Line 42, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+        ]
+
+    [<Fact>]
+    let ``Preview: and! with union patterns and type annotations works without parentheses`` () =
+        FSharp """
+module Test
+
+type MyOption<'T> = Some of 'T | None
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let asyncOption1() = async { return MyOption.Some 42 }
+let asyncOption2() = async { return MyOption.Some "hello" }
+
+let testParallel1() = 
+    parallelCE {
+        let! (Some value1): MyOption<int> = asyncOption1()
+        and! (Some value2): MyOption<string> = asyncOption2()
+        return (value1, value2)
+    }
+
+let testParallel2() = 
+    parallelCE {
+        let! Some value1: MyOption<int> = asyncOption1()
+        and! Some value2: MyOption<string> = asyncOption2()
+        return (value1, value2)
+    }
+
+let result1 = testParallel1() |> Async.RunSynchronously
+let result2 = testParallel2() |> Async.RunSynchronously
+
+if result1 <> (42, "hello") then 
+    failwithf $"Expected (42, 'hello'), but got %A{result1}"
+if result2 <> (42, "hello") then 
+    failwithf $"Expected (42, 'hello'), but got %A{result2}"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: and! with mixed patterns and type annotations works`` () =
+        FSharp """
+module Test
+
+type Person = { Name: string; Age: int }
+
+type ParallelBuilder() =
+    member _.Return(x) = async { return x }
+    member _.ReturnFrom(computation: Async<'T>) = computation
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind2(comp1: Async<'T1>, comp2: Async<'T2>, binder: 'T1 * 'T2 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! result1 = task1
+            let! result2 = task2
+            return! binder (result1, result2)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let parallelCE = ParallelBuilder()
+
+let asyncInt() = async { return 42 }
+let asyncPerson() = async { return { Name = "Alice"; Age = 25 } }
+
+// Test mixing different pattern types with type annotations
+let testMixed() = 
+    parallelCE {
+        let! x: int = asyncInt()
+        and! { Name = name; Age = age }: Person = asyncPerson()
+        return (x, name, age)
+    }
+
+// Test with parentheses on one and not the other
+let testMixed2() = 
+    parallelCE {
+        let! (y: int) = asyncInt()
+        and! { Name = name2; Age = age2 }: Person = asyncPerson()
+        return (y, name2, age2)
+    }
+
+let result1 = testMixed() |> Async.RunSynchronously
+let result2 = testMixed2() |> Async.RunSynchronously
+
+if result1 <> (42, "Alice", 25) then 
+    failwithf $"Expected (42, 'Alice', 25), but got %A{result1}"
+if result2 <> (42, "Alice", 25) then 
+    failwithf $"Expected (42, 'Alice', 25), but got %A{result2}"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: multiple and! with type annotations works`` () =
+        FSharp """
+module Test
+
+type Builder() =
+    member _.Return(x) = async { return x }
+    member _.Bind(computation: Async<'T>, binder: 'T -> Async<'U>) = 
+        async {
+            let! x = computation
+            return! binder x
+        }
+    member _.Bind3(comp1: Async<'T1>, comp2: Async<'T2>, comp3: Async<'T3>, binder: 'T1 * 'T2 * 'T3 -> Async<'U>) =
+        async {
+            let! task1 = Async.StartChild comp1
+            let! task2 = Async.StartChild comp2
+            let! task3 = Async.StartChild comp3
+            let! result1 = task1
+            let! result2 = task2
+            let! result3 = task3
+            return! binder (result1, result2, result3)
+        }
+    
+    member _.Zero() = async.Zero()
+    member _.Combine(comp1, comp2) = async.Combine(comp1, comp2)
+    member _.Delay(f) = async.Delay(f)
+
+let builder = Builder()
+
+let asyncInt() = async { return 42 }
+let asyncString() = async { return "test" }
+let asyncFloat() = async { return 3.14 }
+
+// Test multiple and! with type annotations
+let testMultiple() = 
+    builder {
+        let! x: int = asyncInt()
+        and! y: string = asyncString()
+        and! z: float = asyncFloat()
+        return (x, y, z)
+    }
+
+let result = testMultiple() |> Async.RunSynchronously
+
+if result <> (42, "test", 3.14) then 
+    failwithf $"Expected (42, 'test', 3.14), but got %A{result}"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Preview: and! with generic type annotations works`` () =
+        FSharp """
+module Test
+
+type Result<'T, 'E> = Ok of 'T | Error of 'E
+
+type ResultBuilder() =
+    member _.Return(x) = Ok x
+    member _.Bind(m: Result<'T, 'E>, f: 'T -> Result<'U, 'E>) = 
+        match m with
+        | Ok x -> f x
+        | Error e -> Error e
+    member _.Bind2(m1: Result<'T1, 'E>, m2: Result<'T2, 'E>, f: 'T1 * 'T2 -> Result<'U, 'E>) =
+        match m1, m2 with
+        | Ok x1, Ok x2 -> f (x1, x2)
+        | Error e, _ -> Error e
+        | _, Error e -> Error e
+
+let result = ResultBuilder()
+
+let getValue1() = Ok 42
+let getValue2() = Ok "success"
+
+let test() = 
+    result {
+        let! x: int = getValue1()
+        and! y: string = getValue2()
+        return (x, y)
+    }
+
+match test() with
+| Ok (42, "success") -> printfn "Test passed"
+| _ -> failwith "Test failed"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed

@@ -1856,7 +1856,7 @@ let rec TryTranslateComputationExpression
                     ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.UseBangBindingValueDiscard
 
                 let supportsTypedLetOrUseBang =
-                    ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowTypedLetOrUseBang
+                    ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowTypedLetUseAndBang
 
                 //   use! x = ...
                 //   use! (x) = ...

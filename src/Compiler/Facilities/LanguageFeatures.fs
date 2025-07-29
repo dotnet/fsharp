@@ -102,8 +102,8 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | AllowTypedLetOrUseBang
     | AllowMixedRangesAndValuesInSeqExpressions
+    | AllowTypedLetUseAndBang
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -236,7 +236,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.UseBangBindingValueDiscard, languageVersion100
                 LanguageFeature.BetterAnonymousRecordParsing, languageVersion100
                 LanguageFeature.ScopedNowarn, languageVersion100
-                LanguageFeature.AllowTypedLetOrUseBang, languageVersion100
+                LanguageFeature.AllowTypedLetUseAndBang, languageVersion100
                 LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
 
@@ -410,8 +410,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
-        | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions -> FSComp.SR.featureAllowMixedRangesAndValuesInSeqExpressions ()
+        | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

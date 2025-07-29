@@ -15,6 +15,7 @@ module SeqExpressionStepping =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     //Retry SOURCE=SeqExpressionSteppingTest01.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd SeqExpressionSteppingTest1.exe"	# SeqExpressionSteppingTest1.fs -

@@ -93,8 +93,8 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | AllowTypedLetOrUseBang
     | AllowMixedRangesAndValuesInSeqExpressions
+    | AllowTypedLetUseAndBang
 
 /// LanguageVersion management
 type LanguageVersion =
