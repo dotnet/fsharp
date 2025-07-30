@@ -1951,16 +1951,33 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | [] -> methodsList // No .cctor methods, return as-is
             | [ _ ] -> methodsList // Only one .cctor method, return as-is
             | firstCctor :: additionalCctors ->
-                // Simple approach: rename additional .cctor methods to avoid duplicates
-                // Keep the first one as ".cctor" and rename others to ".cctor1", ".cctor2", etc.
+                // Rename additional .cctor methods to avoid duplicates
                 let renamedCctors =
                     additionalCctors
                     |> List.mapi (fun i (methodDef: ILMethodDef) ->
                         let newName = sprintf ".cctor%d" (i + 1)
                         methodDef.With(name = newName))
 
-                // Return the first .cctor plus renamed additional .cctor methods plus all other methods
-                firstCctor :: renamedCctors @ otherMethods
+                // Create call instructions to invoke the renamed .cctor methods from the main .cctor
+                let callInstructions =
+                    renamedCctors
+                    |> List.map (fun renamedMethod ->
+                        // Create a method spec for the renamed .cctor method
+                        // We need to construct a proper ILType for the current type
+                        let typeRef = mkILTyRef(ILScopeRef.Local, tdef.Name)
+                        let ilType = mkILNamedTy AsObject typeRef []
+                        let methodSpec = mkILNonGenericMethSpecInTy(ilType, ILCallingConv.Static, renamedMethod.Name, [], ILType.Void)
+                        I_call(Normalcall, methodSpec, None))
+
+                // Modify the first .cctor to call the renamed methods before returning
+                let modifiedFirstCctor =
+                    if callInstructions.IsEmpty then
+                        firstCctor
+                    else
+                        appendInstrsToMethod callInstructions firstCctor
+
+                // Return the modified first .cctor plus renamed additional .cctor methods plus all other methods
+                modifiedFirstCctor :: renamedCctors @ otherMethods
 
         let deduplicatedMethods =
             deduplicateStaticConstructors (ResizeArray.toList gmethods)
