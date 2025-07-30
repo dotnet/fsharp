@@ -90,7 +90,7 @@ module NonStringArgs =
 #nowarn 20 FS1104 "3391" "FS3221"
 
 module Exception =
-    exception ``Crazy@name.p`` of string
+    exception ``Crazy@name`` of string
 
 module Decimal =
     type T1 = { a : decimal }
@@ -118,7 +118,7 @@ module DoBinding =
                 (Error 3350, Line 2, Col 9, Line 2, Col 11, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Error 3350, Line 2, Col 12, Line 2, Col 18, "Feature '# directives with non-quoted string arguments' is not available in F# 8.0. Please use language version 9.0 or greater.")
                 (Warning 203, Line 2, Col 26, Line 2, Col 34, "Invalid warning number 'FS3221'")
-                (Warning 1104, Line 5, Col 15, Line 5, Col 31, "Identifiers containing '@' are reserved for use in F# code generation")
+                (Warning 1104, Line 5, Col 15, Line 5, Col 29, "Identifiers containing '@' are reserved for use in F# code generation")
                 ]
         else
             compileResult
