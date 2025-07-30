@@ -231,7 +231,7 @@ module Mod2 =
          mod2.XmlDocSig |> shouldEqual "T:Mod1.Mod2"
          mod1val1.XmlDocSig |> shouldEqual "P:Mod1.val1"
          mod2func2.XmlDocSig |> shouldEqual "M:Mod1.Mod2.func2"
-
+        
 module Attributes =
     [<Fact>]
     let ``Emit conditional attributes`` () =
@@ -1249,3 +1249,19 @@ module Delegates =
 
         symbols["EventHandler"].IsDelegate |> shouldEqual true
         symbols["Action"].IsDelegate |> shouldEqual true
+
+module MetadataAsText =
+    [<Fact>]
+    let ``TryGetMetadataAsText returns metadata for external enum field`` () =
+        let _, checkResults = getParseAndCheckResults """
+let test = System.DateTimeKind.Utc
+"""
+        let symbolUse = checkResults |> findSymbolUseByName "DateTimeKind"
+        match symbolUse.Symbol with
+        | :? FSharpEntity as symbol ->
+            match symbol.TryGetMetadataText() with
+            | Some metadataText ->
+                metadataText.ToString() |> shouldContain "The time represented is UTC"
+            | None ->
+                failwith "Expected metadata text, got None"
+        | _ -> failwith "Expected FSharpEntity symbol"
