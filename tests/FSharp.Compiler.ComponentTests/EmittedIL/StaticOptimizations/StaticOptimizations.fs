@@ -11,6 +11,7 @@ module StaticOptimizations =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     [<Theory; FileInlineData("String_Enum.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]

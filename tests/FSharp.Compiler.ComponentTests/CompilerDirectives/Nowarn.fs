@@ -113,7 +113,7 @@ module Nowarn =
         || (List.zip expected actual |> List.exists(fun((error, line), d) -> error <> d.Error || line <> d.Range.StartLine))
 
     let private withDiags testId langVersion flags (sources: SourceCodeFileKind list) (expected: (ErrorType * int) list) (result: CompilationResult) =
-        let actual = result.Output.Diagnostics
+        let actual = result.Output.Diagnostics |> List.distinctBy (fun ei -> ei.Range.StartLine, ei.Range.StartColumn, ei.Range.EndLine, ei.Range.EndColumn, ei.Message)
         if testFailed expected actual then
             let sb = new StringBuilder()
             let print (s: string) = sb.AppendLine s |> ignore

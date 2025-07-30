@@ -333,3 +333,21 @@ let inline myFunc x y = x - y"""
             Assert.Equal(mvid1,mvid2)
         else
             Assert.NotEqual(mvid1,mvid2)
+
+    [<Fact>]
+    let ``Reference assemblies MVID must change when literal constant value changes`` () =
+        let codeWithLiteral42 = """
+module TestModule
+[<Literal>]
+let X = 42
+"""
+
+        let codeWithLiteral43 = """
+module TestModule
+[<Literal>]
+let X = 43
+"""
+
+        let mvid1, mvid2 = calculateRefAssMvids codeWithLiteral42 codeWithLiteral43
+        // Different literal values should produce different MVIDs
+        Assert.NotEqual(mvid1, mvid2)

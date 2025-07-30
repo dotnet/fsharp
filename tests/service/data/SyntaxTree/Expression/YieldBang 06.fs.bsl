@@ -22,3 +22,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (5,0)-(5,0) parse error Incomplete structured construct at or before this point in expression
+(3,20)-(3,20) parse error Expecting type

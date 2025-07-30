@@ -8,7 +8,8 @@
 * Warn when `unit` is passed to an `obj`-typed argument  ([PR #18330](https://github.com/dotnet/fsharp/pull/18330))
 * Fix parsing errors using anonymous records and units of measures ([PR #18543](https://github.com/dotnet/fsharp/pull/18543))
 * Scoped Nowarn: added the #warnon compiler directive ([Language suggestion #278](https://github.com/fsharp/fslang-suggestions/issues/278), [RFC FS-1146 PR](https://github.com/fsharp/fslang-design/pull/782), [PR #18049](https://github.com/dotnet/fsharp/pull/18049))
-* Allow `let!` and `use!` type annotations without requiring parentheses. ([PR #18508](https://github.com/dotnet/fsharp/pull/18508))
+* Allow `let!`, `use!`, `and!` type annotations without requiring parentheses (([PR #18508](https://github.com/dotnet/fsharp/pull/18508) and [PR #18682](https://github.com/dotnet/fsharp/pull/18682)))
+* Exception names are now validated for illegal characters using the same mechanism as types/modules/namespaces ([Issue #18763](https://github.com/dotnet/fsharp/issues/18763))
 
 ### Fixed
 

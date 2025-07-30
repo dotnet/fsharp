@@ -14,6 +14,7 @@ module InequalityComparison =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     // SOURCE=InequalityComparison01.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd InequalityComparison01.exe"	# x <= y

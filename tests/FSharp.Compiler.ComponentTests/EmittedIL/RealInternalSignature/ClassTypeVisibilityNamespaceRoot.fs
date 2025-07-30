@@ -32,7 +32,7 @@ type public TypeFour () = class end
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PublicTypeConstructors.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
 .class public auto ansi serializable RealInternalSignature.TypeOne
@@ -202,7 +202,7 @@ type private TypeFour () = class end
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeConstructors.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
                 """
 .class private auto ansi serializable RealInternalSignature.TypeOne
        extends [runtime]System.Object
@@ -300,7 +300,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PublicTypeInstanceMethods.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig instance void PublicMethod() cil managed"
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
@@ -336,7 +336,7 @@ type private TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeInstanceMethods.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig instance void PublicMethod() cil managed"
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
@@ -373,7 +373,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeInstanceMethods.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32 get_PublicProperty() cil managed"
                 ".method public hidebysig specialname instance void set_PublicProperty(int32 v) cil managed"
@@ -418,7 +418,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeInstanceProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32 get_PublicProperty() cil managed"
                 ".method public hidebysig specialname instance void set_PublicProperty(int32 v) cil managed"
@@ -471,7 +471,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PublicTypeInstanceMixedProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname rtspecialname instance void  .ctor() cil managed"
                 ".method public hidebysig specialname instance int32 get_MixedPropertyOne() cil managed"
@@ -558,7 +558,7 @@ type private TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeInstanceMixedProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32 get_MixedPropertyOne() cil managed"
                 ".method assembly hidebysig specialname instance void  set_MixedPropertyOne(int32 _arg1) cil managed"
@@ -634,7 +634,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PublicTypeStaticMethods.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
@@ -670,7 +670,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeStaticMethods.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
@@ -706,7 +706,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PublicTypeStaticProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_PublicProperty() cil managed"
                 ".method public specialname static void set_PublicProperty(int32 v) cil managed"
@@ -750,7 +750,7 @@ type private TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeStaticProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_PublicProperty() cil managed"
                 ".method public specialname static void set_PublicProperty(int32 v) cil managed"
@@ -803,7 +803,7 @@ type public TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PublicTypeStatiMixedProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_MixedPropertyOne() cil managed"
                 ".method assembly specialname static void set_MixedPropertyOne(int32 _arg1) cil managed"
@@ -888,7 +888,7 @@ type private TestType () =
         |> withOutputContainsAllInOrderWithWildcards [
             "All Classes and Methods in*PrivateTypeStatiMixedProperties.dll Verified."
             ]
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_MixedPropertyOne() cil managed"
                 ".method assembly specialname static void set_MixedPropertyOne(int32 _arg1) cil managed"

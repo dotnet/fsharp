@@ -16,6 +16,7 @@ module SeqExpressionTailCalls =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     // SOURCE=SeqExpressionTailCalls01.fs SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd SeqExpressionTailCalls01.exe"	# SeqExpressionTailCalls01.fs -

@@ -20,7 +20,8 @@ module NullnessMetadata =
 
     let verifyCompilation (o:Optimize) compilation =
         compilation
-        |> addOptions o     
+        |> addOptions o
+        |> compile
         |> verifyILBaseline
 
     [<Theory; FileInlineData("ModuleLevelBindings.fs")>]
@@ -134,7 +135,7 @@ module NullnessMetadata =
         |> withNoWarn 52
         |> addOptions DoNotOptimize
         |> compile
-        |> withILContains 
+        |> verifyILContains 
             [".method public hidebysig virtual instance string ToString() cil managed"
              ".method public hidebysig virtual instance int32 GetHashCode() cil managed"
              "hidebysig virtual instance bool Equals(object obj) cil managed"

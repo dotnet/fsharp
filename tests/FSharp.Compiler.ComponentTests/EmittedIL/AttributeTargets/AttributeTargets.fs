@@ -14,6 +14,7 @@ module AttributeTargets =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyBaseline
         |> verifyILBaseline
 

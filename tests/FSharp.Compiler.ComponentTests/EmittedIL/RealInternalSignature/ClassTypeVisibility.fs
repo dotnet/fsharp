@@ -27,7 +27,7 @@ type public TypeFour () = class end
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             """  .class auto ansi serializable nested public TypeOne
          extends [runtime]System.Object
   {
@@ -74,7 +74,7 @@ type private TypeFour () = class end
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 //type private TypeOne public () = class end
                 """.class auto ansi serializable nested private TypeOne
@@ -161,7 +161,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig instance void 
@@ -250,7 +250,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig instance void 
@@ -339,7 +339,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig specialname 
@@ -564,7 +564,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig specialname 
@@ -797,7 +797,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig specialname 
@@ -1238,7 +1238,7 @@ type private TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method assembly hidebysig specialname 
@@ -1671,7 +1671,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig instance void 
@@ -1760,7 +1760,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig instance void 
@@ -1848,7 +1848,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .me  thod public specialname static int32 
@@ -2184,7 +2184,7 @@ type private TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig specialname 
@@ -2417,7 +2417,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method public hidebysig specialname 
@@ -2858,7 +2858,7 @@ type private TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
     .method assembly hidebysig specialname 

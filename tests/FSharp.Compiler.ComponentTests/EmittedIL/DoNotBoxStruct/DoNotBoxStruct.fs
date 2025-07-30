@@ -24,6 +24,7 @@ module DoNotBoxStruct =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     //SOURCE=DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.exe"	# DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs

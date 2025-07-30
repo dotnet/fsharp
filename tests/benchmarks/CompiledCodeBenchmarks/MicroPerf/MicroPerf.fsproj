@@ -26,6 +26,7 @@
     <Compile Include="Equality\OptionsAndCo.fs" />
     <Compile Include="Equality\ExactEquals.fs" />
     <Compile Include="Async.fs" />
+    <Compile Include="ArraySlicing.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
     <Compile Include="Program.fs" />

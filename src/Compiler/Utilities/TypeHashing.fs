@@ -302,6 +302,28 @@ module HashTastMemberOrVals =
 
             combinedHash
 
+    /// Hash a constant value with exhaustive pattern matching over all Const cases
+    let private hashConst (constVal: Const) : Hash =
+        match constVal with
+        | Const.Bool b -> hash b
+        | Const.SByte x -> hash x
+        | Const.Byte x -> hash x
+        | Const.Int16 x -> hash x
+        | Const.UInt16 x -> hash x
+        | Const.Int32 x -> hash x
+        | Const.UInt32 x -> hash x
+        | Const.Int64 x -> hash x
+        | Const.UInt64 x -> hash x
+        | Const.IntPtr x -> hash x
+        | Const.UIntPtr x -> hash x
+        | Const.Single x -> hash x
+        | Const.Double x -> hash x
+        | Const.Char x -> hash x
+        | Const.String x -> hashText x
+        | Const.Decimal x -> hash x
+        | Const.Unit -> 0
+        | Const.Zero -> 0
+
     let private hashNonMemberVal (g: TcGlobals, observer) (tps, v: Val, tau, cxs) =
         if HashAccessibility.isHiddenToObserver v.Accessibility observer then
             0
@@ -315,7 +337,13 @@ module HashTastMemberOrVals =
             let attribsHash = hashAttributeList v.Attribs
 
             let combinedHash = nameHash @@ typarHash @@ typeHash @@ flagsHash @@ attribsHash
-            combinedHash
+
+            // Include literal constant value in hash for deterministic builds
+            match v.LiteralValue with
+            | Some constVal ->
+                let constHash = hashConst constVal
+                combinedHash @@ constHash
+            | None -> combinedHash
 
     let hashValOrMemberNoInst (g, obs) (vref: ValRef) =
         match vref.MemberInfo with

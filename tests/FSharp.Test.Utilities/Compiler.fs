@@ -417,8 +417,12 @@ module rec Compiler =
 
         errors
         |> List.ofArray
-        |> List.distinctBy (fun e -> e.FileName,e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
         |> List.map toErrorInfo
+
+    let private fromFSharpDiagnosticDistinct (errors: ErrorInfo[]) : (SourceCodeFileName * ErrorInfo) list =
+        let errors = fromFSharpDiagnosticDistinct errors
+        errors
+        |> List.distinctBy (fun (name, ei) -> name, ei.NativeRange.Start, ei.NativeRange.StartColumn, ei.NativeRange.End, ei.NativeRange.EndColumn, ei.Message)
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
 
@@ -773,9 +777,13 @@ module rec Compiler =
         withOptionsHelper [ $"--preferreduilang:%s{culture}" ] "preferreduilang is only supported for F#" cUnit
 
     let rec private asMetadataReference (cUnit: CompilationUnit) reference =
+        let ignoreWarnings =
+            match cUnit with
+            | FS fs -> fs.IgnoreWarnings
+            | _ -> false
         match reference with
         | CompilationReference (cmpl, _) ->
-            let result = compileFSharpCompilation cmpl false cUnit
+            let result = compileFSharpCompilation cmpl ignoreWarnings cUnit
             match result with
             | CompilationResult.Failure f ->
                 let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (f.Diagnostics)
@@ -1264,39 +1272,81 @@ Actual:
         file.SetLength(0)
         file.WriteAllText(actualErrors)
 
-    let private verifyFSBaseline fs : unit =
-        match fs.Baseline with
-        | None -> failwith "Baseline was not provided."
-        | Some bsl ->
-            let errorsExpectedBaseLine =
-                match bsl.FSBaseline.Content with
-                | Some b -> b.Replace("\r\n","\n")
-                | None ->  String.Empty
+    /// Turn our ErrorInfo back into a genuine FSharpDiagnostic
+    let private toFSharpDiagnostic (ei: ErrorInfo) : FSharpDiagnostic =
 
-            let typecheckDiagnostics = fs |> typecheckFSharpSourceAndReturnErrors
+        // extract severity and error number
+        let (severity, code) =
+            match ei.Error with
+            | Error n       -> FSharpDiagnosticSeverity.Error,       n
+            | Warning n     -> FSharpDiagnosticSeverity.Warning,     n
+            | Information n -> FSharpDiagnosticSeverity.Info,        n
+            | Hidden n      -> FSharpDiagnosticSeverity.Hidden,      n
 
-            let errorsActual =
-                (typecheckDiagnostics
-                |> Array.map (sprintf "%A")
-                |> String.concat "\n"
-                ).Replace("\r\n","\n")
+        // Create exactly the diagnostic the compiler would have produced
+        FSharpDiagnostic.Create(
+            severity,
+            ei.Message,
+            code,
+            ei.NativeRange,
+            ei.SubCategory
+        )
 
-            if errorsExpectedBaseLine <> errorsActual then
-                fs.CreateOutputDirectory()
-                createBaselineErrors bsl.FSBaseline errorsActual
-                updateBaseLineIfEnvironmentSaysSo bsl.FSBaseline
-                let errorMsg = (convenienceBaselineInstructions bsl.FSBaseline errorsExpectedBaseLine errorsActual)
-                Assert.True((errorsExpectedBaseLine = errorsActual), errorMsg)
-            elif FileSystem.FileExistsShim(bsl.FSBaseline.FilePath) then
-                FileSystem.FileDeleteShim(bsl.FSBaseline.FilePath)
+    let formatDiagnostic (diag: FSharpDiagnostic) : string =
+        let filename = System.IO.Path.GetFileName diag.FileName
+        let range = diag.Range
+        let severity =
+            match diag.Severity with
+            | FSharpDiagnosticSeverity.Error -> "error"
+            | FSharpDiagnosticSeverity.Warning -> "warning"
+            | FSharpDiagnosticSeverity.Info -> "info"
+            | FSharpDiagnosticSeverity.Hidden -> "hidden"
 
-    /// Check the typechecker output against the baseline, if invoked with empty baseline, will expect no error/warnings output.
-    let verifyBaseline (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> (verifyFSBaseline fs) |> ignore
-        | _ -> failwith "Baseline tests are only supported for F#."
+        // produce familiar compiler-style output
+        $"{filename} ({range.StartLine},{range.StartColumn + 1})-({range.EndLine},{range.EndColumn + 1}) {diag.Subcategory} {severity} {diag.Message}"
 
-        cUnit
+    /// After compile, rebuild and print FSharpDiagnostic[] exactly as before,
+    /// then diff against your existing .err.bsl files (few lines will shift).
+    let verifyBaseline (cResult: CompilationResult) : CompilationResult =
+        // 1) Grab the ErrorInfo list from the compile result…
+        let errorInfos =
+            match cResult with
+            | CompilationResult.Success o
+            | CompilationResult.Failure o -> o.Diagnostics
+
+        // 2) Convert to FSharpDiagnostic[] and format with "%A"
+        let formattedActual =
+            errorInfos
+            |> List.map toFSharpDiagnostic
+            |> List.toArray
+            |> Array.map formatDiagnostic
+            |> String.concat "\n"
+            |> normalizeNewlines
+
+        // 3) Load the old baseline text
+        let fsSource =
+            match cResult with
+            | CompilationResult.Success o
+            | CompilationResult.Failure o ->
+                match o.Compilation with
+                | FS fs -> fs
+                | _     -> failwith "verifyBaseline only supports F#"
+        let expected =
+            fsSource.Baseline.Value.FSBaseline.Content
+            |> Option.defaultValue ""
+            |> normalizeNewlines
+
+        // 4) Compare or update
+        if expected <> formattedActual then
+            // same update mechanism you already have:
+            fsSource.CreateOutputDirectory()
+            createBaselineErrors fsSource.Baseline.Value.FSBaseline formattedActual
+            updateBaseLineIfEnvironmentSaysSo fsSource.Baseline.Value.FSBaseline
+            let msg = convenienceBaselineInstructions fsSource.Baseline.Value.FSBaseline expected formattedActual
+            Assert.True(false, msg)
+
+        // 5) Return the original result for fluent chaining
+        cResult
 
     let private doILCheck func (il: string list) result =
         match result with
@@ -1306,7 +1356,7 @@ Actual:
             | Some p -> func p il
         | CompilationResult.Failure f -> failwith $"Result should be \"Success\" in order to get IL. Failure: {Environment.NewLine}{f}"
 
-    let withILContains expected result : CompilationResult =
+    let verifyILContains expected result : CompilationResult =
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
@@ -1346,26 +1396,22 @@ Actual:
                 let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
                 Assert.Fail(errorMsg)
 
-    let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs ->
-            match fs |> compileFSharp, fs.Baseline with
-            | CompilationResult.Failure a, Some baseline ->
-                match baseline.ILBaseline.Content with
-                | Some "" -> ()
-                | Some il ->
-                    failwith $"Build failure: {a} while expected il\n{il}"
+    let verifyILBaseline (compilationResult: CompilationResult) : CompilationResult =
+        match compilationResult with
+        | CompilationResult.Success output ->
+            match output.Compilation with
+            | FS fs ->
+                match fs.Baseline with
+                | Some baseline ->
+                    verifyFSILBaseline baseline output
+                    compilationResult
                 | None ->
-                    if not (FileSystem.FileExistsShim baseline.ILBaseline.BslSource) && updateBaseline () then
-                        File.WriteAllText(baseline.ILBaseline.BslSource, "")
-                    else
-                        failwith $"Build failure empty baseline at {baseline.ILBaseline.BslSource}: {a}"
-            | CompilationResult.Success s, Some baseline -> verifyFSILBaseline baseline s
-            | _, None ->
-                failwithf $"Baseline was not provided."
-        | _ -> failwith "Baseline tests are only supported for F#."
-
-        cUnit
+                    failwith "verifyILBaselineResult: No baseline attached to the F# source."
+            | _ -> failwith "verifyILBaselineResult: Only F# CompilationResult supported."
+        | CompilationResult.Failure f ->
+            match f.Compilation with
+            | FS _ -> compilationResult
+            | _ -> failwith "verifyILBaselineResult: Only F# CompilationResult supported."
 
     let verifyBaselines = verifyBaseline >> verifyILBaseline
 
@@ -1618,7 +1664,7 @@ Actual:
 
             let expectedErrors = expected |> List.map (fun error -> errorMessage error)
             let expectedErrorsAsStr = expectedErrors |> String.concat ";\n" |> sprintf "[%s]"
-            let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
+            let sourceErrors = source |> List.distinctBy (fun ei -> ei.Range.StartLine, ei.Range.StartColumn, ei.Range.EndLine, ei.Range.EndColumn, ei.Message) |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
             let sourceErrorsAsStr = sourceErrors |> String.concat ";\n" |> sprintf "[%s]"
 
             let inline checkEqual k a b =
@@ -1871,9 +1917,13 @@ Actual:
                 | _ -> failwith "Cannot check exit code on this run result."
             result
 
-        let private getMatch (input: string) (pattern: string) useWildcards=
+        [<RequireQualifiedAccess>]
+        type MatchStyle = | Standard | Wildcards | RegexPatterns
+
+        let private getMatch (input: string) (pattern: string) (matchStyle: MatchStyle) =
             // Escape special characters and replace wildcards with regex equivalents
-            if useWildcards then
+            match matchStyle with
+            | MatchStyle.Wildcards ->
                 let input = input.Replace("\r\n", "\n")
                 let pattern = $"""^{Regex.Escape(pattern).Replace("\\*", ".*").Replace("\\?", ".")}$"""
                 let m = Regex(pattern, RegexOptions.Multiline).Match(input)
@@ -1881,10 +1931,17 @@ Actual:
                     m.Index
                 else
                     -1
-            else
-                input.IndexOf(pattern)
+            | MatchStyle.RegexPatterns ->
+                let input = input.Replace("\r\n", "\n")
+                let m = Regex(pattern, RegexOptions.Multiline).Match(input)
+                if m.Success then
+                    m.Index
+                else 
+                    -1
+            | MatchStyle.Standard ->
+                input.IndexOf(pattern) 
 
-        let private checkOutputInOrderCore useWildcards (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
+        let private checkOutputInOrderCore matchStyle (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
             | None ->
                 printfn "Execution output is missing cannot check \"%A\"" category
@@ -1895,14 +1952,17 @@ Actual:
                     let input = selector e
                     let mutable searchPos = 0
                     for substring in substrings do
-                        match getMatch (input.Substring(searchPos)) substring useWildcards with
+                        match getMatch (input.Substring(searchPos)) substring matchStyle with
                         | -1 -> failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category input)
                         | pos -> searchPos <- pos + substring.Length
                 | _ -> failwith "Cannot check output on this run result."
             result
 
+        let private checkMatchedOutputInOrder matchStyle category substrings selector result =
+            checkOutputInOrderCore matchStyle category substrings selector result
+
         let private checkOutputInOrder category substrings selector result =
-            checkOutputInOrderCore false category substrings selector result
+            checkMatchedOutputInOrder MatchStyle.Standard category substrings selector result
 
         let withOutputContainsAllInOrder (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrder "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
@@ -1920,7 +1980,10 @@ Actual:
             checkOutputInOrder "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private checkOutputInOrderWithWildcards category substrings selector result =
-            checkOutputInOrderCore true category substrings selector result
+            checkOutputInOrderCore MatchStyle.Wildcards category substrings selector result
+
+        let private checkOutputInOrderWithRegexPatterns category substrings selector result =
+            checkOutputInOrderCore MatchStyle.RegexPatterns category substrings selector result
 
         let withOutputContainsAllInOrderWithWildcards (substrings: string list) (result: CompilationResult) : CompilationResult =
             checkOutputInOrderWithWildcards "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
@@ -1936,6 +1999,21 @@ Actual:
 
         let withStdErrContainsWithWildcards (substring: string) (result: CompilationResult) : CompilationResult =
             checkOutputInOrderWithWildcards "STDERR" [substring] (fun o -> o.StdErr) result
+
+        let withOutputContainsAllInOrderWithRegexPatterns (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDERR/STDOUT" substrings (fun o -> o.StdOut + "\n" + o.StdErr) result
+
+        let withStdOutContainsWithRegexPatterns (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDOUT" [substring] (fun o -> o.StdOut)  result
+
+        let withStdOutContainsAllInOrderWithRegexPatterns (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDOUT" substrings (fun o -> o.StdOut) result
+
+        let withStdErrContainsAllInOrderWithRegexPatterns (substrings: string list) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDERR" substrings (fun o -> o.StdErr) result
+
+        let withStdErrContainsWithRegexPatterns (substring: string) (result: CompilationResult) : CompilationResult =
+            checkOutputInOrderWithRegexPatterns "STDERR" [substring] (fun o -> o.StdErr) result
 
         let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with

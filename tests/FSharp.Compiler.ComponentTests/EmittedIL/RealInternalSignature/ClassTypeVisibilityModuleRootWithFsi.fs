@@ -35,7 +35,7 @@ type HiddenType () = class end
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
 .class auto ansi serializable nested public TypeOne
@@ -253,7 +253,7 @@ type HiddenType () = class end
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 """
   .class auto ansi serializable nested private TypeOne
@@ -461,7 +461,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig instance void PublicMethod() cil managed"
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
@@ -502,7 +502,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig instance void PublicMethod() cil managed"
                 ".method assembly hidebysig instance void InternalMethod() cil managed"
@@ -545,7 +545,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32  get_PublicProperty() cil managed"
                 ".method public hidebysig specialname instance void  set_PublicProperty(int32 v) cil managed"
@@ -597,7 +597,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32  get_PublicProperty() cil managed"
                 ".method public hidebysig specialname instance void  set_PublicProperty(int32 v) cil managed"
@@ -676,7 +676,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32  get_MixedPropertyOne() cil managed"
                 ".method assembly hidebysig specialname instance void  set_MixedPropertyOne(int32 _arg1) cil managed"
@@ -783,7 +783,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public hidebysig specialname instance int32  get_MixedPropertyOne() cil managed"
                 ".method assembly hidebysig specialname instance void  set_MixedPropertyOne(int32 _arg1) cil managed"
@@ -862,7 +862,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
@@ -896,7 +896,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public static void  PublicMethod() cil managed"
                 ".method assembly static void  InternalMethod() cil managed"
@@ -940,7 +940,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_PublicProperty() cil managed"
                 ".method public specialname static void set_PublicProperty(int32 v) cil managed"
@@ -995,7 +995,7 @@ type TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_PublicProperty() cil managed"
                 ".method public specialname static void set_PublicProperty(int32 v) cil managed"
@@ -1071,7 +1071,7 @@ type public TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_MixedPropertyOne() cil managed"
                 ".method assembly specialname static void set_MixedPropertyOne(int32 _arg1) cil managed"
@@ -1180,7 +1180,7 @@ type private TestType () =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             if realSig then
                 ".method public specialname static int32 get_MixedPropertyOne() cil managed"
                 ".method assembly specialname static void set_MixedPropertyOne(int32 _arg1) cil managed"

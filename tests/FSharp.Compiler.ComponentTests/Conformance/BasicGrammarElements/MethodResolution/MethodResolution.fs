@@ -39,6 +39,7 @@ if returnvalue2<> true && value2 <> 7 then
         compilation
         |> getCompilation
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     [<Fact>]

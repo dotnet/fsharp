@@ -15,6 +15,7 @@ module StaticInit =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     // SOURCE=LetBinding01.fs SCFLAGS="   -g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd LetBinding01.exe"			# LetBinding01.fs

@@ -11,6 +11,7 @@ module ComputedCollections =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     [<Theory; FileInlineData("Int32RangeArrays.fs", Realsig = BooleanOptions.Both, Optimize = BooleanOptions.True)>]
