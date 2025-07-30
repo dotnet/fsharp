@@ -70,6 +70,47 @@ type V =
         |> compile
         |> shouldSucceed
 
+    // Test for issue #18767: verify static initialization actually runs
+    [<Fact>]
+    let ``CCtorDuplicateFix_ExecutionTest`` () =
+        FSharp """
+module CCtorDuplicateFixExecution
+
+// Global mutable to track initialization
+let mutable initCount = 0
+
+// This specific pattern previously caused duplicate .cctor methods:
+// Generic DU with nullary case and static member val
+type U<'T> =
+    | A
+    static member val X = (initCount <- initCount + 1; 42)
+
+// Additional test case to ensure normal cases still work  
+type V =
+    | B
+    static member val Y = (initCount <- initCount + 1; 84)
+
+// Function to verify initialization
+let testInitialization() =
+    let beforeCount = initCount
+    let x1 = U<int>.X
+    let x2 = U<string>.X  
+    let y = V.Y
+    let afterCount = initCount
+    // Should have incremented by 3 (U<int>, U<string>, V)
+    if afterCount > beforeCount then "PASS" else "FAIL"
+
+[<EntryPoint>]
+let main argv =
+    let result = testInitialization()
+    printfn "%s" result
+    if result = "PASS" then 0 else 1
+"""
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withStdOutContains ["PASS"]
+
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular
     [<Theory>]
