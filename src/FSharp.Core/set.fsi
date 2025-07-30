@@ -25,6 +25,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>The result set.</returns>
     ///
+    /// <remarks>Time complexity: O(n log n). Space complexity: O(n).</remarks>
+    ///
     /// <example id="set-new">
     /// <code lang="fsharp">
     /// let sequenceOfNumbers = seq { 1 .. 3 }
@@ -43,6 +45,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>The result set.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example>
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -60,6 +64,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>The result set.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -70,6 +76,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     member Remove: value: 'T -> Set<'T>
 
     /// <summary>The number of elements in the set</summary>
+    ///
+    /// <remarks>Time complexity: O(n). Space complexity: O(log n).</remarks>
     ///
     /// <example id="set-count">
     /// <code lang="fsharp">
@@ -86,6 +94,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     ///
     /// <returns>True if the set contains <c>value</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(log n). Space complexity: O(log n).</remarks>
+    ///
     /// <example id="set-contains">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
@@ -96,6 +106,8 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     member Contains: value: 'T -> bool
 
     /// <summary>A useful shortcut for Set.isEmpty. See the Set module for further operations on sets.</summary>
+    ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
     ///
     /// <example id="set-isempty">
     /// <code lang="fsharp">
