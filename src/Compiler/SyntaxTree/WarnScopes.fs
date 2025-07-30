@@ -47,18 +47,16 @@ module internal WarnScopes =
 
     type private LexbufData =
         {
-            OriginalFileIndex: int // TODO: no longer needed
             mutable WarnDirectives: WarnDirective list
         }
 
-    let private initialData (lexbuf: Lexbuf) =
+    let private getInitialData() =
         {
-            OriginalFileIndex = lexbuf.StartPos.FileIndex
             WarnDirectives = []
         }
 
     let private getLexbufData (lexbuf: Lexbuf) =
-        lexbuf.GetLocalData("WarnScopeData", (fun () -> initialData lexbuf))
+        lexbuf.GetLocalData("WarnScopeData", getInitialData)
 
     // *************************************
     // Collect the warn scopes during lexing
@@ -197,7 +195,7 @@ module internal WarnScopes =
 
     let MergeInto diagnosticOptions isScript subModuleRanges lexbuf =
         let lexbufData = getLexbufData lexbuf
-        let fileIndex = lexbufData.OriginalFileIndex
+        let fileIndex = lexbuf.StartPos.FileIndex
 
         let scopedNowarnFeatureIsSupported =
             lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn
