@@ -230,6 +230,8 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>Time complexity: O(log n) where n is the size of the map. Space complexity: O(log n) due to path copying in the balanced tree.</remarks>
+    ///
     /// <example id="add-1">
     /// <code lang="fsharp">
     /// let input = Map [ (1, "a"); (2, "b") ]
@@ -642,6 +644,8 @@ module Map =
     /// <param name="table">The input map.</param>
     ///
     /// <returns>The resulting map.</returns>
+    ///
+    /// <remarks>Time complexity: O(log n) where n is the size of the map. Space complexity: O(log n) due to path copying in the balanced tree.</remarks>
     ///
     /// <example id="remove-1">
     /// <code lang="fsharp">

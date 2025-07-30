@@ -541,6 +541,8 @@ module Set =
     ///
     /// <returns>The intersection of <c>set1</c> and <c>set2</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(n + m) where n and m are the sizes of the input sets. Space complexity: O(min(n, m)).</remarks>
+    ///
     /// <example id="set-intersect">
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
@@ -583,6 +585,8 @@ module Set =
     /// <param name="set2">The second input set.</param>
     ///
     /// <returns>The union of <c>set1</c> and <c>set2</c>.</returns>
+    ///
+    /// <remarks>Time complexity: O(n + m) where n and m are the sizes of the input sets. Space complexity: O(n + m).</remarks>
     ///
     /// <example id="set-union">
     /// <code lang="fsharp">

@@ -38,7 +38,9 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed
-    /// concurrently.</remarks>
+    /// concurrently.
+    /// 
+    /// Time complexity: O(1) - sequences are lazily evaluated. Space complexity: O(1).</remarks>
     ///
     /// <param name="source1">The first sequence.</param>
     /// <param name="source2">The second sequence.</param>
