@@ -660,7 +660,11 @@ module Seq =
     ///
     /// <remarks>The predicate is applied to the elements of the input sequence. If any application
     /// returns true then the overall result is true and no further elements are tested.
-    /// Otherwise, false is returned.</remarks>
+    /// Otherwise, false is returned.
+    ///
+    /// Time Complexity: O(n) - where n is the position of the first matching element, or length of sequence if none match
+    /// Space Complexity: O(1) - constant space for evaluation
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test each item of the input sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -694,7 +698,11 @@ module Seq =
     /// <remarks>The predicate is applied to matching elements in the two sequences up to the lesser of the
     /// two lengths of the collections. If any application returns true then the overall result is
     /// true and no further elements are tested. Otherwise, false is returned. If one sequence is shorter than
-    /// the other then the remaining elements of the longer sequence are ignored.</remarks>
+    /// the other then the remaining elements of the longer sequence are ignored.
+    ///
+    /// Time Complexity: O(min(n, m)) - where n and m are the lengths of the sequences, stops at first match
+    /// Space Complexity: O(1) - constant space for evaluation
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test each pair of items from the input sequences.</param>
     /// <param name="source1">The first input sequence.</param>
@@ -732,7 +740,11 @@ module Seq =
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
     ///
-    /// Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    /// Remember sequence is lazy, effects are delayed until it is enumerated.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration where n is the source length
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
     /// <param name="source">The input sequence.</param>
@@ -760,7 +772,11 @@ module Seq =
     ///
     /// Remember sequence is lazy, effects are delayed until it is enumerated.
     ///
-    /// A synonym for Seq.filter.</remarks>
+    /// A synonym for Seq.filter.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration where n is the source length
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
     /// <param name="source">The input sequence.</param>
@@ -788,6 +804,11 @@ module Seq =
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
     /// evaluated by the predicate</exception>
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the position of the first matching element, or length of sequence if none match
+    /// Space Complexity: O(1) - constant space for evaluation
+    /// </remarks>
     ///
     /// <example id="find-1">
     /// <code lang="fsharp">
