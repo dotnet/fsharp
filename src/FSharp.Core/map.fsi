@@ -132,6 +132,9 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// sample.[3] // throws KeyNotFoundException
     /// </code>
     /// </example>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     member Item: key: 'Key -> 'Value with get
 
     /// <summary>Removes an element from the domain of the map. No exception is raised if the element is not present.</summary>
@@ -148,6 +151,9 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// sample.Remove 3 // equal to sample
     /// </code>
     /// </example>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     member Remove: key: 'Key -> Map<'Key, 'Value>
 
     /// <summary>Lookup an element in the map, returning a <c>Some</c> value if the element is in the domain
@@ -165,6 +171,9 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// sample.TryFind 3 // evaluates to None
     /// </code>
     /// </example>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     member TryFind: key: 'Key -> 'Value option
 
     /// <summary>Lookup an element in the map, assigning to <c>value</c> if the element is in the domain
@@ -385,6 +394,9 @@ module Map =
     /// emptyMap |> Map.isEmpty // evaluates to false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     [<CompiledName("IsEmpty")>]
     val isEmpty: table: Map<'Key, 'T> -> bool
 

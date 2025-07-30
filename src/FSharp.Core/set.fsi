@@ -559,6 +559,9 @@ module Set =
     /// </code>
     /// The sample evaluates to the following output: <c>The intersection of set [1; 2; 3] and set [2; 3; 4] is set [2; 3]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n + m) operation, where n and m are the sizes of the input sets.</remarks>
+    ///
     [<CompiledName("Intersect")>]
     val intersect: set1: Set<'T> -> set2: Set<'T> -> Set<'T>
 
@@ -602,6 +605,9 @@ module Set =
     /// </code>
     /// The sample evaluates to the following output: <c>The union of set [1; 2; 3] and set [2; 3; 4] is set [1; 2; 3; 4]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n + m) operation, where n and m are the sizes of the input sets.</remarks>
+    ///
     [<CompiledName("Union")>]
     val union: set1: Set<'T> -> set2: Set<'T> -> Set<'T>
 
@@ -643,6 +649,9 @@ module Set =
     /// </code>
     /// The sample evaluates to the following output: <c>Is the set empty? false</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     [<CompiledName("IsEmpty")>]
     val isEmpty: set: Set<'T> -> bool
 
@@ -848,5 +857,8 @@ module Set =
     /// </code>
     /// The sample evaluates to the following output: <c>The difference of set [1; 2; 3] and set [2; 3; 4] is set [1]</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n + m) operation, where n and m are the sizes of the input sets.</remarks>
+    ///
     [<CompiledName("Difference")>]
     val difference: set1: Set<'T> -> set2: Set<'T> -> Set<'T>

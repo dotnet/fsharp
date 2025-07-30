@@ -266,6 +266,9 @@ module List =
     /// </code>
     /// The sample evaluates to <c>[1;   1; 2;   1; 2; 3;   1; 2; 3; 4]</c> (added extra spaces for easy reading)
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Collect")>]
     val collect: mapping:('T -> 'U list) -> list:'T list -> 'U list
 
@@ -363,6 +366,9 @@ module List =
     /// input |> List.concat  // evaluates [1; 2; 3; 4; 5; 6; 7; 8; 9]
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the total number of elements in all the lists.</remarks>
+    ///
     [<CompiledName("Concat")>]
     val concat: lists:seq<'T list> -> 'T list
     
@@ -657,6 +663,9 @@ module List =
     /// input |> List.find (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Find")>]
     val find: predicate:('T -> bool) -> list:'T list -> 'T
 
@@ -1150,6 +1159,9 @@ module List =
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
+    ///
+    /// <remarks>Lists are represented as linked lists so this is an O(n) operation, where n is the index.</remarks>
+    ///
     [<CompiledName("Item")>]
     val item: index:int -> list:'T list -> 'T
 
@@ -2376,6 +2388,9 @@ module List =
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("TryFind")>]
     val tryFind: predicate:('T -> bool) -> list:'T list -> 'T option
 
