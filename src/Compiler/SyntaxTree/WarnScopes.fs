@@ -50,10 +50,7 @@ module internal WarnScopes =
             mutable WarnDirectives: WarnDirective list
         }
 
-    let private getInitialData() =
-        {
-            WarnDirectives = []
-        }
+    let private getInitialData () = { WarnDirectives = [] }
 
     let private getLexbufData (lexbuf: Lexbuf) =
         lexbuf.GetLocalData("WarnScopeData", getInitialData)
