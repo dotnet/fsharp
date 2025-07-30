@@ -2663,8 +2663,26 @@ and SolveTypeUseSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             do! SolveLegacyNullnessSupportsNull csenv ndeep m2 trace ty
         }
 
-// Common logic for legacy F# nullness rules - used for non-langFeatureNullness path and AmbivalentToNull types
+// Common logic for legacy F# nullness rules - used for non-langFeatureNullness path
 and SolveLegacyNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
+    trackErrors {
+        let g = csenv.g
+        let m = csenv.m
+        let denv = csenv.DisplayEnv
+        if TypeNullIsExtraValue g m ty then
+            ()
+        elif isNullableTy g ty then
+            return! ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+        else
+            match tryDestTyparTy g ty with
+            | ValueSome tp ->
+                do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
+            | ValueNone ->
+                return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+    }
+
+// Common logic for legacy F# nullness rules - used for AmbivalentToNull types
+and SolveLegacyNullnessSupportsNullOptionalTrace (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty =
     trackErrors {
         let g = csenv.g
         let m = csenv.m
@@ -2696,7 +2714,7 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
             match n1 with 
             | NullnessInfo.AmbivalentToNull ->
                 // For AmbivalentToNull types (imported from older assemblies), use legacy F# nullness rules
-                do! SolveLegacyNullnessSupportsNull csenv ndeep m2 trace ty
+                do! SolveLegacyNullnessSupportsNullOptionalTrace csenv ndeep m2 trace ty
             | NullnessInfo.WithNull -> ()
             | NullnessInfo.WithoutNull ->   
                 if g.checkNullness then
