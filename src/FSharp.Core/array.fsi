@@ -25,6 +25,11 @@ module Array =
     ///
     /// <returns>The resulting array of pairs.</returns>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n*m) where n is the length of array1 and m is the length of array2.
+    /// Space Complexity: O(n*m) for the resulting array.
+    /// </remarks>
+    ///
     /// <example id="all-pairs-1">
     /// <code lang="fsharp">
     /// ([| 1; 2 |], [| 3; 4 |]) ||> Array.allPairs
@@ -46,6 +51,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n+m) where n is the length of array1 and m is the length of array2.
+    /// Space Complexity: O(n+m) for the resulting array.
+    /// </remarks>
+    ///
     /// <example id="append-1">
     /// <code lang="fsharp">
     /// Array.append [| 1; 2 |] [| 3; 4 |]
@@ -63,6 +73,11 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
     /// <returns>The average of the elements in the array.</returns>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="average-1">
     /// <code lang="fsharp">
@@ -94,6 +109,11 @@ module Array =
     /// <returns>The computed average.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="average-by-1">
     /// <code lang="fsharp">
@@ -138,6 +158,8 @@ module Array =
     /// let target = [| 0; 1; 2; 3; 4; 5 |]
     /// target[3..4] &lt;- source[1..2]
     /// </code>
+    /// Time Complexity: O(count) where count is the number of elements to copy.
+    /// Space Complexity: O(1).
     /// </remarks>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
@@ -164,6 +186,11 @@ module Array =
     /// <returns>The concatenation of the sub-arrays.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n*k) where n is the length of the input array and k is the average length of the arrays returned by the mapping function.
+    /// Space Complexity: O(n*k) for the resulting array.
+    /// </remarks>
     ///
     /// <example id="collect-1">
     /// <code lang="fsharp">
