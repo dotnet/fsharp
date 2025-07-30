@@ -22,6 +22,8 @@ module SRTPNullnessConstraints =
     [<InlineData("preview", true)>]
     let ``SRTP nullness constraint resolution issue 18390`` langVersion checknulls =
         FSharp"""
+module TestModule
+
 // Reproduces the SRTP ambiguity issue as described in https://github.com/dotnet/fsharp/issues/18390
 // Types imported from F#8/F#7 assemblies are marked as AmbivalentToNull
 // This should only satisfy 'T : null if they were nullable under legacy F# rules
@@ -41,7 +43,7 @@ let testInt = hasNullConstraint 42
         |> withVersionAndCheckNulls (langVersion, checknulls)
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 13, Col 19, Line 13, Col 37, "The type 'int' does not have 'null' as a proper value")
+        |> withSingleDiagnostic (Error 1, Line 16, Col 19, Line 16, Col 37, "The type 'int' does not have 'null' as a proper value")
 
     /// Test for GitHub issue #18344  
     /// FSharpPlus issue with nullness constraints
@@ -52,6 +54,8 @@ let testInt = hasNullConstraint 42
     [<InlineData("preview", true)>]
     let ``SRTP nullness constraint FSharpPlus issue 18344`` langVersion checknulls =
         FSharp"""
+module TestModule
+
 // Reproduces the FSharpPlus issue as described in https://github.com/dotnet/fsharp/issues/18344
 // This test requires FSharpPlus package but we'll create a minimal reproduction
 
@@ -80,6 +84,8 @@ let testNone = invoke None
     [<InlineData("preview", true)>]
     let ``AmbivalentToNull uses legacy F# nullness rules`` langVersion checknulls =
         FSharp"""
+module TestModule
+
 // Test that AmbivalentToNull types only satisfy 'T : null 
 // if they would have satisfied nullness under legacy F# rules
 
@@ -105,6 +111,8 @@ let arrayTest = testString [|1;2|]
     [<InlineData("preview", true)>]
     let ``Value types fail null constraint as expected`` langVersion checknulls =
         FSharp"""
+module TestModule
+
 // Test that value types correctly fail the null constraint
 
 let inline testNull<'T when 'T : null> (x: 'T) = x
@@ -115,4 +123,4 @@ let intTest = testNull 42
         |> withVersionAndCheckNulls (langVersion, checknulls)
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 6, Col 15, Line 6, Col 26, "The type 'int' does not have 'null' as a proper value")
+        |> withSingleDiagnostic (Error 1, Line 8, Col 19, Line 8, Col 30, "The type 'int' does not have 'null' as a proper value")
