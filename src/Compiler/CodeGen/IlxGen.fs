@@ -1943,62 +1943,26 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
         // De-duplicate .cctor methods to prevent "duplicate entry '.cctor' in method table" error 
         // See https://github.com/dotnet/fsharp/issues/18767
-        let deduplicatedMethods = 
-            let methodsList = ResizeArray.toList gmethods
+        let deduplicateStaticConstructors (methodsList: ILMethodDef list) =
             let (cctorMethods, otherMethods) = 
-                methodsList |> List.partition (fun m -> m.Name = ".cctor")
+                methodsList |> List.partition (fun (m: ILMethodDef) -> m.Name = ".cctor")
             
             match cctorMethods with
             | [] -> methodsList  // No .cctor methods, return as-is
             | [_] -> methodsList  // Only one .cctor method, return as-is
-            | multipleCctors ->
-                // Merge multiple .cctor methods: combine their method bodies and locals
-                // while preserving code order and semantics
-                let mergedCctor = 
-                    let firstCctor = List.head multipleCctors
-                    
-                    // Extract and combine all instruction sequences while preserving order
-                    let allInstrs = 
-                        multipleCctors
-                        |> List.collect (fun cctor ->
-                            match cctor.Body with
-                            | MethodBody.IL(lazyInfo) -> 
-                                let ilMethodBody = lazyInfo.Force()
-                                ilMethodBody.Code.Instrs |> Array.toList
-                            | _ -> [])
-                    
-                    // Combine all locals from all .cctor methods, handling the NoEquality constraint
-                    // by using a custom comparison based on Type and IsPinned properties
-                    let allLocals = 
-                        multipleCctors
-                        |> List.collect (fun cctor ->
-                            match cctor.Body with
-                            | MethodBody.IL(lazyInfo) -> 
-                                let ilMethodBody = lazyInfo.Force()
-                                ilMethodBody.Locals
-                            | _ -> [])
-                        |> List.distinctBy (fun local -> (local.Type, local.IsPinned, local.DebugInfo))
-                    
-                    // Create merged method body with combined instructions and locals
-                    let mergedBody = 
-                        match firstCctor.Body with
-                        | MethodBody.IL(lazyInfo) ->
-                            let originalBody = lazyInfo.Force()
-                            let newCode = 
-                                { originalBody.Code with 
-                                    Instrs = Array.ofList allInstrs }
-                            let newBody = 
-                                { originalBody with 
-                                    Code = newCode;
-                                    Locals = allLocals }
-                            MethodBody.IL(InterruptibleLazy.FromValue newBody)
-                        | _ -> firstCctor.Body  // Fallback to first method body if not IL
-                    
-                    // Create the merged .cctor method using the With method pattern 
-                    firstCctor.With(body = InterruptibleLazy.FromValue(mergedBody))
+            | firstCctor :: additionalCctors ->
+                // Simple approach: rename additional .cctor methods to avoid duplicates
+                // Keep the first one as ".cctor" and rename others to ".cctor1", ".cctor2", etc.
+                let renamedCctors = 
+                    additionalCctors 
+                    |> List.mapi (fun i (methodDef: ILMethodDef) ->
+                        let newName = sprintf ".cctor%d" (i + 1)
+                        methodDef.With(name = newName))
                 
-                // Return list with single merged .cctor plus all other methods
-                mergedCctor :: otherMethods
+                // Return the first .cctor plus renamed additional .cctor methods plus all other methods
+                firstCctor :: renamedCctors @ otherMethods
+        
+        let deduplicatedMethods = deduplicateStaticConstructors (ResizeArray.toList gmethods)
 
         tdef.With(
             methods = mkILMethods deduplicatedMethods,
