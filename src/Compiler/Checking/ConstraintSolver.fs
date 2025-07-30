@@ -2684,7 +2684,11 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
                 trace.Exec (fun () -> nv.Set KnownWithNull) (fun () -> nv.Unset())
         | Nullness.Known n1 -> 
             match n1 with 
-            | NullnessInfo.AmbivalentToNull -> ()
+            | NullnessInfo.AmbivalentToNull ->
+                if TypeNullIsExtraValue g m ty then
+                    ()
+                else
+                    return! ErrorD(ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
             | NullnessInfo.WithNull -> ()
             | NullnessInfo.WithoutNull ->   
                 if g.checkNullness then
