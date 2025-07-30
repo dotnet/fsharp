@@ -21,6 +21,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n * m) - where n is the length of source1 and m is the length of source2
+    /// Space Complexity: O(m) - for caching source2, plus O(1) for lazy evaluation
+    /// </remarks>
+    ///
     /// <example id="all-pairs-1">
     /// <code lang="fsharp">
     /// ([1; 2], [3; 4]) ||> Seq.allPairs
@@ -38,7 +43,11 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed
-    /// concurrently.</remarks>
+    /// concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n + m) for full enumeration
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="source1">The first sequence.</param>
     /// <param name="source2">The second sequence.</param>
@@ -60,7 +69,11 @@ module Seq =
     /// <summary>Returns the average of the elements in the sequence.</summary>
     ///
     /// <remarks>The elements are averaged using the <c>+</c> operator, <c>DivideByInt</c> method and <c>Zero</c> property
-    /// associated with the element type.</remarks>
+    /// associated with the element type.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(1) - constant space for accumulating sum and count
+    /// </remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -93,7 +106,11 @@ module Seq =
     /// of the sequence.</summary>
     ///
     /// <remarks>The elements are averaged using the <c>+</c> operator, <c>DivideByInt</c> method and <c>Zero</c> property
-    /// associated with the generated type.</remarks>
+    /// associated with the generated type.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(1) - constant space for accumulating sum and count
+    /// </remarks>
     ///
     /// <param name="projection">A function applied to transform each element of the sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -151,7 +168,11 @@ module Seq =
     /// The enumerator may be disposed and underlying cache storage released by
     /// converting the returned sequence object to type IDisposable, and calling the Dispose method
     /// on this object. The sequence object may then be re-enumerated and a fresh enumerator will
-    /// be used.</remarks>
+    /// be used.
+    ///
+    /// Time Complexity: O(1) - for initial setup, O(k) for accessing k elements from cache
+    /// Space Complexity: O(k) - where k is the number of elements accessed from the source sequence
+    /// </remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -177,7 +198,11 @@ module Seq =
     /// <remarks>The use of this function usually requires a type annotation.
     /// An incorrect type annotation may result in runtime type
     /// errors.
-    /// Individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// Individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -200,7 +225,11 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not
-    /// be accessed concurrently.</remarks>
+    /// be accessed concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="chooser">A function to transform items of type T into options of type U.</param>
     /// <param name="source">The input sequence of type T.</param>
