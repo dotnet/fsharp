@@ -18,12 +18,13 @@ module TestFunctions =
     let verifyCompileAndRun compilation =
         compilation
         |> verifyCore
-        |> verifyILBaseline
         |> compileAndRun
+        |> verifyILBaseline
 
     let verifyCompilation compilation =
         compilation
         |> verifyCore
+        |> compile
         |> verifyILBaseline
 
     //SOURCE=TestFunction01.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction01.exe"	# TestFunction01.fs
