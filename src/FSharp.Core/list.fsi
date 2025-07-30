@@ -598,6 +598,9 @@ module List =
     /// input |> List.exists (fun (n, name) -> n > 5)      // evaluates false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Exists")>]
     val exists: predicate:('T -> bool) -> list:'T list -> bool
 
@@ -951,6 +954,9 @@ module List =
     /// [1; 2] |> List.forall isEven // evaluates to false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation in the worst case, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("ForAll")>]
     val forall: predicate:('T -> bool) -> list:'T list -> bool
 
@@ -1112,6 +1118,9 @@ module List =
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
+    ///
+    /// <remarks>This is an O(1) operation.</remarks>
+    ///
     [<CompiledName("IsEmpty")>]
     val isEmpty: list:'T list -> bool
 
@@ -1810,6 +1819,9 @@ module List =
     /// </code>
     /// Evaluates to <c>[ 2; 1; 0 ]</c>.
     /// </example>
+    ///
+    /// <remarks>This is an O(n) operation, where n is the length of the list.</remarks>
+    ///
     [<CompiledName("Reverse")>]
     val rev: list:'T list -> 'T list
 

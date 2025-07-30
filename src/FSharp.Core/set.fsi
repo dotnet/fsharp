@@ -50,6 +50,9 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [1; 2]</c>
     /// </example>
+    ///
+    /// <remarks>Sets are represented as binary trees so this is an O(log n) operation, where n is the number of elements in the set.</remarks>
+    ///
     member Add: value: 'T -> Set<'T>
 
     /// <summary>A useful shortcut for Set.remove. Note this operation produces a new set
@@ -67,6 +70,9 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [2]</c>
     /// </example>
+    ///
+    /// <remarks>Sets are represented as binary trees so this is an O(log n) operation, where n is the number of elements in the set.</remarks>
+    ///
     member Remove: value: 'T -> Set<'T>
 
     /// <summary>The number of elements in the set</summary>
@@ -78,6 +84,9 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// </code>
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
+    ///
+    /// <remarks>Sets are represented as binary trees so this is an O(n) operation, where n is the number of elements in the set.</remarks>
+    ///
     member Count: int
 
     /// <summary>A useful shortcut for Set.contains. See the Set module for further operations on sets.</summary>
@@ -93,6 +102,9 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// </code>
     /// The sample evaluates to the following output: <c>Does the set contain 1? false</c>
     /// </example>
+    ///
+    /// <remarks>Sets are represented as binary trees so this is an O(log n) operation, where n is the number of elements in the set.</remarks>
+    ///
     member Contains: value: 'T -> bool
 
     /// <summary>A useful shortcut for Set.isEmpty. See the Set module for further operations on sets.</summary>

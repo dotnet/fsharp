@@ -97,6 +97,9 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// sample.ContainsKey 3 // evaluates to false
     /// </code>
     /// </example>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     member ContainsKey: key: 'Key -> bool
 
     /// <summary>The number of bindings in the map.</summary>
@@ -108,6 +111,9 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     /// sample.Count // evaluates to 2
     /// </code>
     /// </example>
+    ///
+    /// <remarks>Maps are represented as binary trees so this is an O(n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     member Count: int
 
     /// <summary>Lookup an element in the map. Raise <c>KeyNotFoundException</c> if no binding
