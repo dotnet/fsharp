@@ -46,6 +46,8 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
     ///
+    /// <remarks>Time complexity: O(n + m) where n and m are the lengths of the input arrays. Space complexity: O(n + m).</remarks>
+    ///
     /// <example id="append-1">
     /// <code lang="fsharp">
     /// Array.append [| 1; 2 |] [| 3; 4 |]
@@ -277,6 +279,8 @@ module Array =
     /// <returns>The concatenation of the sequence of input arrays.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <remarks>Time complexity: O(n) where n is the total number of elements in all arrays. Space complexity: O(n).</remarks>
     ///
     /// <example id="concat-1">
     /// <code lang="fsharp">
@@ -1234,6 +1238,8 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     ///
+    /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
+    ///
     /// <example id="head-1">
     /// <code lang="fsharp">
     /// let inputs = [| "banana"; "pear" |]
@@ -1530,7 +1536,7 @@ module Array =
     ///
     /// <returns>The length of the array.</returns>
     ///
-    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    /// <remarks>Time complexity: O(1). Space complexity: O(1). The notation <c>array.Length</c> is preferred.</remarks>
     ///
     /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
     ///
@@ -2581,6 +2587,8 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
     /// <returns>A new array containing the elements of the original except the first element.</returns>
+    ///
+    /// <remarks>Time complexity: O(n) where n is the length of the array. Space complexity: O(n).</remarks>
     ///
     /// <example id="tail-1">
     /// <code lang="fsharp">

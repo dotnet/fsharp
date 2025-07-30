@@ -2674,6 +2674,8 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpList`1")>]
     type List<'T> =
         | ([]): 'T list
+        /// <summary>Cons operator for adding an element to the front of a list.</summary>
+        /// <remarks>Time complexity: O(1). Space complexity: O(1).</remarks>
         | (::): Head: 'T * Tail: 'T list -> 'T list
 
         /// <summary>Returns an empty list of a particular type</summary>
@@ -3799,6 +3801,8 @@ namespace Microsoft.FSharp.Core
         /// <param name="list2">The second list.</param>
         ///
         /// <returns>The concatenation of the lists.</returns>
+        /// 
+        /// <remarks>Time complexity: O(n) where n is the length of the first list. Space complexity: O(n).</remarks>
         /// 
         /// <example id="list-concat-example">
         /// <code lang="fsharp">

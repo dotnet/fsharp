@@ -297,6 +297,8 @@ module Set =
     ///
     /// <returns>A new set containing <c>value</c>.</returns>
     ///
+    /// <remarks>Time complexity: O(log n) where n is the size of the set. Space complexity: O(log n) due to path copying in the balanced tree.</remarks>
+    ///
     /// <example id="set-add">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
@@ -679,6 +681,8 @@ module Set =
     /// <param name="set">The input set.</param>
     ///
     /// <returns>The input set with <c>value</c> removed.</returns>
+    ///
+    /// <remarks>Time complexity: O(log n) where n is the size of the set. Space complexity: O(log n) due to path copying in the balanced tree.</remarks>
     ///
     /// <example id="set-remove">
     /// <code lang="fsharp">
