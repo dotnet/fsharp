@@ -466,7 +466,11 @@ module Seq =
     /// <remarks>Note that this function returns a sequence that digests the whole initial sequence as soon as
     /// that sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences. The function makes no assumption on the ordering of the original
-    /// sequence.</remarks>
+    /// sequence.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(k) - where k is the number of unique keys
+    /// </remarks>
     ///
     /// <param name="projection">A function transforming each item of the input sequence into a key to be
     /// compared against the others.</param>
@@ -493,7 +497,11 @@ module Seq =
     /// sequence.</summary>
     ///
     /// <remarks>The input function is evaluated each time an IEnumerator for the sequence
-    /// is requested.</remarks>
+    /// is requested.
+    ///
+    /// Time Complexity: O(1) - for creating the delayed sequence wrapper
+    /// Space Complexity: O(1) - constant overhead for the delay mechanism
+    /// </remarks>
     ///
     /// <param name="generator">The generating function for the sequence.</param>
     /// <returns>The result sequence.</returns>
@@ -518,6 +526,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the length of the source sequence 
+    /// Space Complexity: O(k) - where k is the number of distinct elements
+    /// </remarks>
+    ///
     /// <example id="distinct-1">
     /// <code lang="fsharp">
     /// [1; 1; 2; 3] |> Seq.distinct
@@ -538,6 +551,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(k) - where k is the number of distinct keys
+    /// </remarks>
+    ///
     /// <example id="distinct-by-1">
     /// <code lang="fsharp">
     /// let inputs = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
@@ -552,7 +570,11 @@ module Seq =
     /// <summary>Splits the input sequence into at most <c>count</c> chunks.</summary>
     ///
     /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
-    /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
+    /// sequence is iterated. As a result this function should not be used with large or infinite sequences.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(n) - for materializing the sequence and creating chunks
+    /// </remarks>
     ///
     /// <param name="count">The maximum number of chunks.</param>
     /// <param name="source">The input sequence.</param>
@@ -588,6 +610,11 @@ module Seq =
     ///
     /// <returns>An empty sequence.</returns>
     ///
+    /// <remarks>
+    /// Time Complexity: O(1) - constant time creation
+    /// Space Complexity: O(1) - no memory allocation for empty sequence
+    /// </remarks>
+    ///
     /// <example id="empty">
     /// <code lang="fsharp">
     /// Seq.empty // Evaluates to seq { }
@@ -603,7 +630,11 @@ module Seq =
     /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
     /// the result sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences in the first parameter. The function makes no assumption on the ordering of the first input
-    /// sequence.</remarks>
+    /// sequence.
+    ///
+    /// Time Complexity: O(n + m) - where n is the length of itemsToExclude and m is the length of source
+    /// Space Complexity: O(n) - for storing the exclusion set from itemsToExclude
+    /// </remarks>
     ///
     /// <param name="itemsToExclude">A sequence whose elements that also occur in the second sequence will cause those elements to be
     /// removed from the returned sequence.</param>
