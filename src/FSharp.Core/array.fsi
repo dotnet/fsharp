@@ -912,6 +912,11 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(k) where k is the number of elements that satisfy the predicate.
+    /// </remarks>
+    ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4 |]
@@ -1137,6 +1142,11 @@ module Array =
     /// <returns>The final state.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <example id="fold-1">
     /// <code lang="fsharp">
@@ -1620,7 +1630,10 @@ module Array =
     ///
     /// <returns>The length of the array.</returns>
     ///
-    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    /// <remarks>The notation <c>array.Length</c> is preferred.
+    /// Time Complexity: O(1).
+    /// Space Complexity: O(1).
+    /// </remarks>
     ///
     /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
     ///
@@ -1669,6 +1682,11 @@ module Array =
     /// <returns>The array of transformed elements.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) where n is the length of the array.
+    /// Space Complexity: O(n) for the new array.
+    /// </remarks>
     ///
     /// <example id="map-1">
     /// <code lang="fsharp">
@@ -2358,7 +2376,10 @@ module Array =
     /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
     ///
     /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
-    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
+    /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.
+    /// Time Complexity: O(n log n) where n is the length of the array.
+    /// Space Complexity: O(n) for the new array.
+    /// </remarks>
     ///
     /// <param name="array">The input array.</param>
     ///
