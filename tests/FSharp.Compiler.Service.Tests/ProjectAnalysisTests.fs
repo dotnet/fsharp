@@ -991,7 +991,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_InterfacePropertySet", ["slot"; "member"; "setter"]);
         ("property InterfacePropertySet", ["slot"; "member"; "prop"]);
         ("property InterfaceProperty", ["slot"; "member"; "prop"]);
-        ("property InterfaceEvent", ["slot"; "member"; "prop"; "clievent"]);
+        ("event InterfaceEvent", ["slot"; "member"; "prop"; "clievent"]);
         ("CFoo", ["class"]);
         ("member .ctor", ["member"; "ctor"]);
         ("member AbstractClassMethod", ["slot"; "member"]);
@@ -1002,7 +1002,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_AbstractClassPropertySet", ["slot"; "member"; "setter"]);
         ("property AbstractClassPropertySet", ["slot"; "member"; "prop"]);
         ("property AbstractClassProperty", ["slot"; "member"; "prop"]);
-        ("property AbstractClassEvent", ["slot"; "member"; "prop"; "clievent"]);
+        ("event AbstractClassEvent", ["slot"; "member"; "prop"; "clievent"]);
         ("CBaseFoo", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member BaseClassMethod", ["slot"; "member"]);
         ("member BaseClassMethod", ["member"; "overridemem"]);
@@ -1020,8 +1020,8 @@ let ``Test project3 all symbols in signature`` () =
         ("property BaseClassPropertySet", ["slot"; "member"; "prop"]);
         ("property BaseClassProperty", ["member"; "prop"; "overridemem"]);
         ("property BaseClassProperty", ["slot"; "member"; "prop"]);
-        ("property BaseClassEvent", ["member"; "prop"; "overridemem"]);
-        ("property BaseClassEvent", ["slot"; "member"; "prop"]);
+        ("event BaseClassEvent", ["member"; "prop"; "clievent"; "overridemem"]);
+        ("event BaseClassEvent", ["slot"; "member"; "prop"; "clievent"]);
         ("IFooImpl", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member InterfaceMethod", ["member"; "overridemem"; "intfmem"]);
         ("member add_InterfaceEvent", ["member"; "overridemem"; "intfmem"]);
@@ -1038,7 +1038,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_AbstractClassPropertySet", ["member"; "setter"; "overridemem"]);
         ("property AbstractClassPropertySet", ["member"; "prop"; "overridemem"]);
         ("property AbstractClassProperty", ["member"; "prop"; "overridemem"]);
-        ("property AbstractClassEvent", ["member"; "prop"; "clievent"; "overridemem"]);
+        ("event AbstractClassEvent", ["member"; "prop"; "clievent"; "overridemem"]);
         ("CBaseFooImpl", ["class"]); ("member .ctor", ["member"; "ctor"]);
         ("member BaseClassMethod", ["member"; "overridemem"]);
         ("member add_BaseClassEvent", ["member"; "add"; "overridemem"]);
@@ -1048,7 +1048,7 @@ let ``Test project3 all symbols in signature`` () =
         ("member set_BaseClassPropertySet", ["member"; "setter"; "overridemem"]);
         ("property BaseClassPropertySet", ["member"; "prop"; "overridemem"]);
         ("property BaseClassProperty", ["member"; "prop"; "overridemem"]);
-        ("property BaseClassEvent", ["member"; "prop"; "clievent"; "overridemem"])]
+        ("event BaseClassEvent", ["member"; "prop"; "clievent"; "overridemem"])]
         |> List.iter (fun x ->
             if results |> List.exists (fun y -> x = y) |> not then
                 failwithf "%A does not exist in the collection." x
@@ -4031,13 +4031,13 @@ let ``Test project28 all symbols in signature`` () =
         ("FSharpMemberOrFunctionOrValue", "TestEvent2", "M:M.XmlDocSigTest.TestEvent2(System.Object)");
         ("FSharpMemberOrFunctionOrValue", "add_AnEvent", "M:M.XmlDocSigTest.add_AnEvent(Microsoft.FSharp.Control.FSharpHandler{System.Tuple{M.XmlDocSigTest,System.Object}})");
         ("FSharpMemberOrFunctionOrValue", "AProperty", "P:M.XmlDocSigTest.AProperty");
-        ("FSharpMemberOrFunctionOrValue", "AnEvent", "P:M.XmlDocSigTest.AnEvent");
+        ("FSharpMemberOrFunctionOrValue", "AnEvent", "E:M.XmlDocSigTest.AnEvent");
         ("FSharpMemberOrFunctionOrValue", "AnotherEvent", "P:M.XmlDocSigTest.AnotherEvent");
         ("FSharpMemberOrFunctionOrValue", "AnotherProperty", "P:M.XmlDocSigTest.AnotherProperty");
         ("FSharpMemberOrFunctionOrValue", "remove_AnEvent", "M:M.XmlDocSigTest.remove_AnEvent(Microsoft.FSharp.Control.FSharpHandler{System.Tuple{M.XmlDocSigTest,System.Object}})");
         ("FSharpMemberOrFunctionOrValue", "AnotherProperty", "P:M.XmlDocSigTest.AnotherProperty");
         ("FSharpMemberOrFunctionOrValue", "AnotherEvent", "P:M.XmlDocSigTest.AnotherEvent");
-        ("FSharpMemberOrFunctionOrValue", "AnEvent", "P:M.XmlDocSigTest.AnEvent");
+        ("FSharpMemberOrFunctionOrValue", "AnEvent", "E:M.XmlDocSigTest.AnEvent");
         ("FSharpMemberOrFunctionOrValue", "AProperty", "P:M.XmlDocSigTest.AProperty");
         ("FSharpField", "event1", "P:M.XmlDocSigTest.event1");
         ("FSharpField", "event2", "P:M.XmlDocSigTest.event2");
