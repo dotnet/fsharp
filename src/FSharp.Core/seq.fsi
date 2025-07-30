@@ -264,6 +264,11 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration
+    /// Space Complexity: O(chunkSize) - for each chunk array, plus O(1) for lazy evaluation
+    /// </remarks>
+    ///
     /// <example id="chunk-by-size-1">
     /// <code lang="fsharp">
     /// [1; 2; 3] |> Seq.chunkBySize 2
@@ -283,7 +288,11 @@ module Seq =
     /// <summary>Applies the given function to each element of the sequence and concatenates all the
     /// results.</summary>
     ///
-    /// <remarks>Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    /// <remarks>Remember sequence is lazy, effects are delayed until it is enumerated.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n + Σk_i) for full enumeration where k_i is the length of each mapped subsequence
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="mapping">A function to transform elements of the input sequence into the sequences
     /// that will then be concatenated.</param>
@@ -328,6 +337,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
     /// is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(min(n, m)) - where n and m are lengths of the sequences, stops at first difference
+    /// Space Complexity: O(1) - constant space for comparison
+    /// </remarks>
     ///
     /// <example id="compare-with-1">
     /// <code lang="fsharp">
@@ -400,7 +414,11 @@ module Seq =
     /// enumeration.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(Σn_i) for full enumeration where n_i is the length of each subsequence
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="sources">The input enumeration-of-enumerations.</param>
     ///
@@ -427,6 +445,11 @@ module Seq =
     /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the position of the element or the length of the sequence if not found
+    /// Space Complexity: O(1) - constant space for comparison
+    /// </remarks>
     ///
     /// <example id="contains-1">
     /// <code lang="fsharp">
