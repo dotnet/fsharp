@@ -231,7 +231,7 @@ module Mod2 =
          mod2.XmlDocSig |> shouldEqual "T:Mod1.Mod2"
          mod1val1.XmlDocSig |> shouldEqual "P:Mod1.val1"
          mod2func2.XmlDocSig |> shouldEqual "M:Mod1.Mod2.func2"
-        
+
 module Attributes =
     [<Fact>]
     let ``Emit conditional attributes`` () =
