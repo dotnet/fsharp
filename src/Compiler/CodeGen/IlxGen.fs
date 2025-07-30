@@ -1941,28 +1941,29 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             else
                 tdef.CustomAttrs
 
-        // De-duplicate .cctor methods to prevent "duplicate entry '.cctor' in method table" error 
+        // De-duplicate .cctor methods to prevent "duplicate entry '.cctor' in method table" error
         // See https://github.com/dotnet/fsharp/issues/18767
         let deduplicateStaticConstructors (methodsList: ILMethodDef list) =
-            let (cctorMethods, otherMethods) = 
+            let (cctorMethods, otherMethods) =
                 methodsList |> List.partition (fun (m: ILMethodDef) -> m.Name = ".cctor")
-            
+
             match cctorMethods with
-            | [] -> methodsList  // No .cctor methods, return as-is
-            | [_] -> methodsList  // Only one .cctor method, return as-is
+            | [] -> methodsList // No .cctor methods, return as-is
+            | [ _ ] -> methodsList // Only one .cctor method, return as-is
             | firstCctor :: additionalCctors ->
                 // Simple approach: rename additional .cctor methods to avoid duplicates
                 // Keep the first one as ".cctor" and rename others to ".cctor1", ".cctor2", etc.
-                let renamedCctors = 
-                    additionalCctors 
+                let renamedCctors =
+                    additionalCctors
                     |> List.mapi (fun i (methodDef: ILMethodDef) ->
                         let newName = sprintf ".cctor%d" (i + 1)
                         methodDef.With(name = newName))
-                
+
                 // Return the first .cctor plus renamed additional .cctor methods plus all other methods
                 firstCctor :: renamedCctors @ otherMethods
-        
-        let deduplicatedMethods = deduplicateStaticConstructors (ResizeArray.toList gmethods)
+
+        let deduplicatedMethods =
+            deduplicateStaticConstructors (ResizeArray.toList gmethods)
 
         tdef.With(
             methods = mkILMethods deduplicatedMethods,
