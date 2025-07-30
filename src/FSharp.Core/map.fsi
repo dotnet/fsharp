@@ -24,6 +24,8 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     ///
     /// <returns>The resulting map.</returns>
     ///
+    /// <remarks>Maps are represented as binary trees so this is an O(log n) operation, where n is the number of bindings in the map.</remarks>
+    ///
     /// <example id="member-add-1">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b") ]
