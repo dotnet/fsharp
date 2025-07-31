@@ -4120,6 +4120,7 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
             mkILClassCtor body
         | multipleCctors ->
             // Handle multiple .cctor methods by merging their instruction bodies
+            // This resolves the "duplicate entry '.cctor' in method table" error
             // Extract the instruction sequences from all .cctor methods (excluding the final 'ret')
             let allInstrs = 
                 multipleCctors
