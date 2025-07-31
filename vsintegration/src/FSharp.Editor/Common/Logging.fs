@@ -150,18 +150,6 @@ module FSharpServiceTelemetry =
 
         ActivitySource.AddActivityListener(listener)
 
-    let logCacheMetricsToOutput () =
-
-        let timer = new System.Timers.Timer(1000.0, AutoReset = true)
-
-        timer.Elapsed.Add(fun _ ->
-            let stats = CacheMetrics.GetStatsUpdateForAllCaches(clearCounts = true)
-
-            if stats <> "" then
-                logMsg $"\n{stats}")
-
-        timer.Start()
-
 #if DEBUG
     open OpenTelemetry.Resources
     open OpenTelemetry.Trace
