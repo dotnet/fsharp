@@ -1,0 +1,199 @@
+# Regression Testing Pipeline
+# Tests F# compiler regressions by building third-party F# projects with the freshly built compiler
+
+trigger:
+  branches:
+    include:
+    - main
+    - release/*
+    - feature/*
+  paths:
+    include:
+    - src/Compiler/*
+    - src/fsc/*
+    - src/FSharp.Core/*
+    - src/FSharp.Build/*
+    exclude:
+    - docs/*
+    - .github/*
+    - '*.md'
+
+pr:
+  branches:
+    include:
+    - main
+    - release/*
+    - feature/*
+  paths:
+    include:
+    - src/Compiler/*
+    - src/fsc/*
+    - src/FSharp.Core/*
+    - src/FSharp.Build/*
+    exclude:
+    - docs/*
+    - .github/*
+    - '*.md'
+
+variables:
+  - name: _TeamName
+    value: FSharp
+  - name: _BuildConfig
+    value: Release
+  - name: _PublishUsingPipelines
+    value: true
+  - name: Codeql.Enabled
+    value: false  # Disabled for regression tests
+  # Pick up pool provider name behavior from shared yaml template
+  - template: /eng/common/templates/variables/pool-providers.yml
+
+# Matrix of third-party repositories to test against
+# This configuration can be extended in the future
+parameters:
+- name: testMatrix
+  type: object
+  default:
+  - repo: fsprojects/FSharpPlus
+    commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+    buildScript: build.cmd
+    displayName: FSharpPlus
+
+stages:
+- stage: RegressionTest
+  displayName: F# Compiler Regression Tests
+  jobs:
+  - job: BuildCompiler
+    displayName: Build F# Compiler
+    pool:
+      name: $(DncEngPublicBuildPool)
+      demands: ImageOverride -equals windows.vs2022.amd64.open
+    timeoutInMinutes: 60
+    steps:
+    - checkout: self
+      clean: true
+      displayName: Checkout F# compiler source
+
+    - script: dotnet --list-sdks
+      displayName: Report .NET SDK versions
+
+    - script: .\Build.cmd -c $(_BuildConfig) -pack
+      env:
+        NativeToolsOnMachine: true
+      displayName: Build F# compiler and create packages
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish F# Compiler Artifacts
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/artifacts'
+        artifactName: 'FSharpCompilerArtifacts'
+        publishLocation: pipeline
+      condition: succeeded()
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish UseLocalCompiler props file
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props'
+        artifactName: 'UseLocalCompilerProps'
+        publishLocation: pipeline
+      condition: succeeded()
+
+  # Test against third-party repositories
+  - ${{ each item in parameters.testMatrix }}:
+    - job: Test_${{ replace(item.repo, '/', '_') }}
+      displayName: 'Regression Test: ${{ item.displayName }}'
+      dependsOn: BuildCompiler
+      pool:
+        name: $(DncEngPublicBuildPool)
+        demands: ImageOverride -equals windows.vs2022.amd64.open
+      timeoutInMinutes: 60
+      variables:
+        TestRepoName: ${{ item.repo }}
+        TestCommit: ${{ item.commit }}
+        BuildScript: ${{ item.buildScript }}
+        DisplayName: ${{ item.displayName }}
+      steps:
+      - checkout: none
+        displayName: Skip default checkout
+
+      # Download the F# compiler artifacts
+      - task: DownloadPipelineArtifact@2
+        displayName: Download F# Compiler Artifacts
+        inputs:
+          artifactName: 'FSharpCompilerArtifacts'
+          downloadPath: '$(Pipeline.Workspace)/FSharpCompiler'
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download UseLocalCompiler props
+        inputs:
+          artifactName: 'UseLocalCompilerProps'
+          downloadPath: '$(Pipeline.Workspace)/Props'
+
+      # Checkout the third-party repository at specific commit
+      - script: |
+          git clone https://github.com/$(TestRepoName).git $(Pipeline.Workspace)/TestRepo
+          cd $(Pipeline.Workspace)/TestRepo
+          git checkout $(TestCommit)
+          echo "Checked out $(TestRepoName) at commit $(TestCommit)"
+          git log -1 --oneline
+        displayName: 'Checkout $(DisplayName) at specific commit'
+
+      # Inject UseLocalCompiler.Directory.Build.props
+      - script: |
+          cd $(Pipeline.Workspace)/TestRepo
+          echo Creating Directory.Build.props to use local F# compiler
+          echo ^<Project^> > Directory.Build.props
+          echo   ^<Import Project="UseLocalCompiler.Directory.Build.props" /^> >> Directory.Build.props
+          echo ^</Project^> >> Directory.Build.props
+          
+          echo Copying UseLocalCompiler.Directory.Build.props with updated path
+          powershell -Command "& { $content = Get-Content '$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props' -Raw; $content = $content -replace 'LocalFSharpCompilerPath.*MSBuildThisFileDirectory.*', 'LocalFSharpCompilerPath>$(Pipeline.Workspace)/FSharpCompiler<'; Set-Content 'UseLocalCompiler.Directory.Build.props' -Value $content }"
+          
+          echo Directory.Build.props content:
+          type Directory.Build.props
+          echo.
+          echo UseLocalCompiler.Directory.Build.props content (first 20 lines):
+          powershell -Command "Get-Content 'UseLocalCompiler.Directory.Build.props' | Select-Object -First 20"
+        displayName: 'Setup local compiler configuration for $(DisplayName)'
+
+      # Report dotnet info in test environment
+      - script: |
+          cd $(Pipeline.Workspace)/TestRepo
+          dotnet --info
+          echo.
+          echo F# Compiler artifacts available:
+          dir "$(Pipeline.Workspace)\FSharpCompiler\bin\fsc\Release\net9.0" /B
+        displayName: 'Report build environment for $(DisplayName)'
+
+      # Build the third-party project using local F# compiler
+      - script: |
+          cd $(Pipeline.Workspace)/TestRepo
+          echo Running build script: $(BuildScript)
+          call $(BuildScript)
+        displayName: 'Build $(DisplayName) with local F# compiler'
+        env:
+          # Ensure the build uses local compiler
+          LoadLocalFSharpBuild: true
+          LocalFSharpCompilerConfiguration: Release
+        timeoutInMinutes: 45
+
+      # Capture and publish build logs on failure
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish $(DisplayName) Build Logs'
+        inputs:
+          targetPath: '$(Pipeline.Workspace)/TestRepo'
+          artifactName: '$(DisplayName)_BuildOutput'
+          publishLocation: pipeline
+        condition: always()
+        continueOnError: true
+
+      # Report success/failure
+      - script: |
+          echo.
+          echo ============================================
+          echo Regression test completed for $(DisplayName)
+          echo Repository: $(TestRepoName)
+          echo Commit: $(TestCommit)
+          echo Status: %AGENT_JOBSTATUS%
+          echo ============================================
+        displayName: 'Report $(DisplayName) test result'
+        condition: always()
