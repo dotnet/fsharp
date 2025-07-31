@@ -56,11 +56,14 @@ type ComputationExpressionContext<'a> =
         ad: AccessorDomain
         builderTy: TType
         isQuery: bool
+        tailCall: bool
         enableImplicitYield: bool
         origComp: SynExpr
         mWhole: range
         emptyVarSpace: LazyWithContext<list<Val> * TcEnv, range>
     }
+
+let noTailCall ceenv = { ceenv with tailCall = false }
 
 let inline TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
@@ -1306,7 +1309,7 @@ let rec TryTranslateComputationExpression
             let reduced =
                 elimFastIntegerForLoop (spFor, spTo, id, start, dir, finish, innerComp, m)
 
-            Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace reduced translatedCtxt)
+            Some(TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace reduced translatedCtxt)
         | SynExpr.While(spWhile, guardExpr, innerComp, _) ->
             let mGuard = guardExpr.Range
 
@@ -1328,7 +1331,7 @@ let rec TryTranslateComputationExpression
                 | DebugPointAtWhile.No -> guardExpr
 
             Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+                TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                     translatedCtxt (
                         mkSynCall
                             "While"
@@ -1451,7 +1454,8 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "TryFinally" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
             requireBuilderMethod "Delay" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
 
-            let innerExpr = TranslateComputationExpressionNoQueryOps ceenv innerComp
+            let innerExpr =
+                TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp
 
             let innerExpr =
                 match spTry with
@@ -1573,7 +1577,7 @@ let rec TryTranslateComputationExpression
 
                 match
                     TryTranslateComputationExpression
-                        ceenv
+                        (noTailCall ceenv)
                         CompExprTranslationPass.Initial
                         CustomOperationsMode.Denied
                         varSpace
@@ -2186,7 +2190,8 @@ let rec TryTranslateComputationExpression
             requireBuilderMethod "TryWith" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
             requireBuilderMethod "Delay" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
 
-            let innerExpr = TranslateComputationExpressionNoQueryOps ceenv innerComp
+            let innerExpr =
+                TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp
 
             let innerExpr =
                 match spTry with
@@ -2833,6 +2838,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             ad = ad
             builderTy = builderTy
             isQuery = isQuery
+            tailCall = not isQuery
             enableImplicitYield = enableImplicitYield
             origComp = origComp
             mWhole = mWhole
