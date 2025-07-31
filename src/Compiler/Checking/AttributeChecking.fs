@@ -441,7 +441,17 @@ let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProv
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m = 
     let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
-    Option.isSome (TryDecodeILAttribute tref cattrs)
+    let hasObsolete = Option.isSome (TryDecodeILAttribute tref cattrs)
+    if hasObsolete then
+        // Exclude types marked with IsByRefLikeAttribute from being considered obsolete,
+        // even if ObsoleteAttribute is present. This avoids improper suppression of types 
+        // like Span and ReadOnlySpan in completion lists due to their dual attributes.
+        match g.attrib_IsByRefLikeAttribute_opt with
+        | Some (AttribInfo(isByRefLikeTref, _)) ->
+            not (Option.isSome (TryDecodeILAttribute isByRefLikeTref cattrs))
+        | None -> true
+    else
+        false
 
 /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.
