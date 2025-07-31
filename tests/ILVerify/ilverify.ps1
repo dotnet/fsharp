@@ -38,7 +38,11 @@ if ($LASTEXITCODE -ne 0) {
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
-    & $script -c $configuration $additional_arguments
+    if ($additional_arguments) {
+        & $script -c $configuration $additional_arguments
+    } else {
+        & $script -c $configuration
+    }
     if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
         Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
         exit 1

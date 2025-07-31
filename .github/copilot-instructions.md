@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions for F# Compiler
 
-## Build and test steps (Linux)
+## Build and test steps (only on Linux)
 
 Always build and test the project before submitting your solution.
 
@@ -28,6 +28,9 @@ After that, report all relevant build errors, error messages and specific detail
 - Builds without errors.
 - Runs tests without errors. If some tests needed adjustments, those test expectations/baseline adjustments were done.
 - If the acceptance criteria was not met, collect the error messages (build failures or failing tests) and report them.
+
+## Release notes
+- Each PR must have release notes attached. Those are saved in the `docs` folder, split by version and product aspect. Follow the existing notes to figure out the right format.
 
 ## Coding standards
 
