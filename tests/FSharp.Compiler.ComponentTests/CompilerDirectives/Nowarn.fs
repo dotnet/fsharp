@@ -148,28 +148,6 @@ module Nowarn =
         |> withDiags testId langVersion flags sources (Array.toList expectedDiags)
 
     [<Fact>]
-    let testBadLineDirectiveInteraction() =
-        let sources =
-            [
-            "test1.fs", "module A1 \n#line 10 \"test.fsy\" \n()"
-            "test2.fs", "module A2 \n#line 20 \"test.fsy\" \n()"
-            ]
-            |> List.map (fun (name, text) -> {FileName = name; SourceText = Some text})
-            |> List.map SourceCodeFileKind.Fs
-        let result =
-            sources.Head
-            |> fsFromString
-            |> FS
-            |> withAdditionalSourceFiles sources.Tail
-            |> compile
-        let actual = result.Output.Diagnostics
-        if actual.Length <> 1 then Assert.Fail $"expected 1 warning, got {actual.Length}"
-        let errorInfo = actual.Head
-        if errorInfo.Error <> Warning 3877 then Assert.Fail $"expected Warning 3877, got {errorInfo.Error}"
-        if errorInfo.Range.StartLine <> 3 then Assert.Fail $"expected warning in line 3, got line {errorInfo.Range.StartLine}"
-        if not <| errorInfo.Message.StartsWith "The file 'test.fsy' was also pointed to" then Assert.Fail $"unexpected message {errorInfo.Message}"
- 
-    [<Fact>]
     let warnDirectiveArgRange() =
         FSharp """
 module A

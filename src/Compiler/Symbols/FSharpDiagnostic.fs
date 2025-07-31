@@ -235,7 +235,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
              | _ -> diagnostic.FormatCore(flatErrors, suggestNames)
 
         let errorNum = diagnostic.Number
-        let m = match diagnostic.Range with Some m -> m | None -> range0
+        let m = match diagnostic.Range with Some m -> m.ApplyLineDirectives() | None -> range0
         FSharpDiagnostic(m, severity, msg, diagnostic.Subcategory(), errorNum, "FS", extendedData)
 
     static member NewlineifyErrorString(message) = NewlineifyErrorString(message)
@@ -335,10 +335,13 @@ module DiagnosticHelpers =
         | FSharpDiagnosticSeverity.Hidden -> []
         | adjustedSeverity ->
 
-            let diagnostic = FSharpDiagnostic.CreateFromException (diagnostic, adjustedSeverity, suggestNames, flatErrors, symbolEnv)
-            let fileName = diagnostic.Range.FileName
+            let fileName = 
+                match diagnostic.Range with
+                | Some r -> r.FileName
+                | None -> TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
+            let fDiagnostic = FSharpDiagnostic.CreateFromException (diagnostic, adjustedSeverity, suggestNames, flatErrors, symbolEnv)
             if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
-                [diagnostic]
+                [fDiagnostic]
             else []
 
     let CreateDiagnostics (options, allErrors, mainInputFileName, diagnostics, suggestNames, flatErrors, symbolEnv) =

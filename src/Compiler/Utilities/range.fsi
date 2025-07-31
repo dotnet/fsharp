@@ -102,6 +102,9 @@ type Range =
 
     /// The file name for the file of the range
     member FileName: string
+    
+    /// Apply the line directives to the range.
+    member ApplyLineDirectives: unit -> range
 
     /// Synthetic marks ranges which are produced by intermediate compilation phases. This
     /// bit signifies that the range covers something that should not be visible to language
@@ -185,6 +188,13 @@ module internal FileIndex =
 
     val startupFileName: string
 
+[<RequireQualifiedAccess>]
+module internal LineDirectives =
+
+    /// Add the line directive data of the source file with originalFileIndex. Each line directive is represented 
+    /// by the line number of the directive and the file index and line number of the target.
+    val add: originalFileIndex: FileIndex -> lineDirectives: (int * (FileIndex * int)) list -> unit
+    
 module Range =
 
     /// Ordering on positions
