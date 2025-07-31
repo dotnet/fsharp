@@ -4118,7 +4118,26 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
         | [] ->
             let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode [], tag, imports)
             mkILClassCtor body
-        | _ -> failwith "bad method table: more than one .cctor found"
+        | multipleCctors ->
+            // Handle multiple .cctor methods by merging their instruction bodies
+            // Extract the instruction sequences from all .cctor methods (excluding the final 'ret')
+            let allInstrs = 
+                multipleCctors
+                |> List.collect (fun mdef ->
+                    match mdef.Body with
+                    | MethodBody.IL(il) ->
+                        let ilCode = il.Value.Code
+                        // Remove the final 'ret' instruction and collect the rest
+                        let instrs = ilCode.Instrs |> Array.toList
+                        match List.rev instrs with
+                        | I_ret :: rest -> List.rev rest
+                        | _ -> instrs
+                    | _ -> [])
+            
+            // Create merged .cctor body with all instructions plus a single 'ret'
+            let mergedInstrs = allInstrs @ [I_ret]
+            let mergedBody = mkMethodBody (false, [], 8, nonBranchingInstrsToCode mergedInstrs, tag, imports)
+            mkILClassCtor mergedBody
 
     let methods =
         ILMethodDefs(fun () ->
