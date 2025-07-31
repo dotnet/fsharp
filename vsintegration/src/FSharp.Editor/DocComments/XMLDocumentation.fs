@@ -295,22 +295,20 @@ module internal XmlDocumentation =
 
         /// Retrieve the preexisting xml index or None
         let GetMemberIndexOfAssembly (assemblyName) =
-            let memberIndex = 
-                cache.GetOrAdd(assemblyName, fun name ->
-                    let ok, memberIndex = xmlIndexService.CreateXMLMemberIndex(name)
-                    if Com.Succeeded(ok) then
-                        let ok = memberIndex.BuildMemberIndex()
+            let memberIndex =
+                cache.GetOrAdd(
+                    assemblyName,
+                    fun name ->
+                        let ok, memberIndex = xmlIndexService.CreateXMLMemberIndex(name)
+
                         if Com.Succeeded(ok) then
-                            memberIndex
+                            let ok = memberIndex.BuildMemberIndex()
+                            if Com.Succeeded(ok) then memberIndex else null
                         else
                             null
-                    else
-                        null)
-            
-            if memberIndex <> null then
-                Some(memberIndex)
-            else
-                None
+                )
+
+            if memberIndex <> null then Some(memberIndex) else None
 
         let AppendMemberData
             (
