@@ -1057,6 +1057,11 @@
         <target state="translated">サポートされる言語バージョン:</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
         <target state="translated">--optimizationdata の値 '{0}' が無効です。有効な値は none、file、compress です。</target>

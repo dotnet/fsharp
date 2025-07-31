@@ -1471,6 +1471,15 @@ Actual:
                     failwith $"""Output does not match expected:{Environment.NewLine}{item}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
             cResult
 
+    let verifyNotInOutput (expected: string) (cResult: CompilationResult) : CompilationResult =
+        match getOutput cResult with
+        | None -> cResult
+        | Some actual ->
+            if actual.Contains(expected) then
+                failwith $"""Output should not contain:{Environment.NewLine}{expected}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
+            else
+                cResult
+
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 
     type PdbVerificationOption =
