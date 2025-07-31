@@ -2131,17 +2131,6 @@ Ops.()
         VerifyCompletionList(fileContents, "Ops.(", [], [ "|>>"; "(|>>)" ])
 
     [<Fact>]
-    let ``Span appears in completion and is not marked obsolete`` () =
-        let fileContents =
-            """
-let test = System.Sp
-"""
-
-        // Verify that Span appears in completion when typing "System.Sp"
-        // and is not suppressed due to IsByRefLikeAttribute
-        VerifyCompletionList(fileContents, "System.Sp", [ "Span" ], [])
-
-    [<Fact>]
     let ``Check code generation for completion to overridable slots`` () =
         let fileContents =
             """

@@ -360,3 +360,18 @@ module Module =
 
 """
     assertHasNoItemsWithNames ["E"] info
+
+#if NETCOREAPP
+[<Fact>]
+let ``Span appears in completion and is not marked obsolete`` () =
+    let info = Checker.getCompletionInfo """
+let test = System.Sp{caret}
+"""
+    // Debug: Print all completion items that start with "Sp"
+    let spItems = info.Items |> Array.filter (fun item -> item.NameInCode.StartsWith("Sp")) |> Array.map (_.NameInCode)
+    printfn "Items starting with 'Sp': %A" spItems
+    
+    // Verify that Span appears in completion when typing "System.Sp"
+    // and is not suppressed due to IsByRefLikeAttribute
+    assertHasItemWithNames ["Span"] info
+#endif
