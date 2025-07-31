@@ -1,5 +1,23 @@
-# Regression Testing Pipeline
-# Tests F# compiler regressions by building third-party F# projects with the freshly built compiler
+# Regression Testing Pipeline for F# Compiler
+# 
+# This pipeline tests for regressions in the F# compiler by building third-party F# projects 
+# with the freshly built compiler from this repository.
+#
+# Purpose:
+# - Catch regressions early by testing the compiler against real-world F# libraries
+# - Provide detailed build logs when third-party builds fail with the new compiler
+# - Support extensible matrix configuration for testing multiple libraries
+#
+# Matrix Configuration:
+# The testMatrix parameter supports multiple repositories with their specific build requirements.
+# Each entry should specify:
+# - repo: GitHub repository in format "owner/name"
+# - commit: Specific commit SHA to test against for reproducible results
+# - buildScript: Build script to execute (relative to repo root)
+# - displayName: Human-readable name for the test job
+#
+# Current matrix includes:
+# - FSharpPlus: A popular F# library with extensive use of advanced F# features
 
 trigger:
   branches:
@@ -76,6 +94,20 @@ stages:
     - script: dotnet --list-sdks
       displayName: Report .NET SDK versions
 
+    # We first download a publicly available .NET SDK. That one has support for `path` in global.json. 
+    # dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
+    - task: UseDotNet@2
+      displayName: install SDK
+      inputs:
+        packageType: sdk
+        version: '10.x'
+        includePreviewVersions: true
+        workingDirectory: $(Build.SourcesDirectory)
+        installationPath: $(Build.SourcesDirectory)/.dotnet
+
+    - script: .\eng\common\dotnet.cmd
+      displayName: Ensure correct .NET SDK version
+
     - script: .\Build.cmd -c $(_BuildConfig) -pack
       env:
         NativeToolsOnMachine: true
@@ -130,11 +162,28 @@ stages:
 
       # Checkout the third-party repository at specific commit
       - script: |
+          echo Cloning repository: $(TestRepoName)
           git clone https://github.com/$(TestRepoName).git $(Pipeline.Workspace)/TestRepo
           cd $(Pipeline.Workspace)/TestRepo
+          
+          echo Checking out commit: $(TestCommit)
           git checkout $(TestCommit)
-          echo "Checked out $(TestRepoName) at commit $(TestCommit)"
+          
+          echo Successfully checked out $(TestRepoName) at commit $(TestCommit)
           git log -1 --oneline
+          
+          echo Repository structure:
+          dir /B
+          
+          echo Verifying build script exists: $(BuildScript)
+          if exist "$(BuildScript)" (
+            echo ✓ Build script found: $(BuildScript)
+          ) else (
+            echo ✗ Build script not found: $(BuildScript)
+            echo Available files in root:
+            dir
+            exit /b 1
+          )
         displayName: 'Checkout $(DisplayName) at specific commit'
 
       # Inject UseLocalCompiler.Directory.Build.props
@@ -158,17 +207,49 @@ stages:
       # Report dotnet info in test environment
       - script: |
           cd $(Pipeline.Workspace)/TestRepo
+          echo ===========================================
+          echo Environment Information for $(DisplayName)
+          echo ===========================================
           dotnet --info
+          echo.
+          echo MSBuild version:
+          dotnet msbuild -version
           echo.
           echo F# Compiler artifacts available:
           dir "$(Pipeline.Workspace)\FSharpCompiler\bin\fsc\Release\net9.0" /B
+          echo.
+          echo F# Core available:
+          if exist "$(Pipeline.Workspace)\FSharpCompiler\bin\FSharp.Core\Release\netstandard2.0\FSharp.Core.dll" (
+            echo ✓ FSharp.Core.dll found
+          ) else (
+            echo ✗ FSharp.Core.dll not found
+          )
+          echo.
+          echo Directory.Build.props content:
+          type Directory.Build.props
+          echo.
+          echo ===========================================
         displayName: 'Report build environment for $(DisplayName)'
 
       # Build the third-party project using local F# compiler
       - script: |
           cd $(Pipeline.Workspace)/TestRepo
-          echo Running build script: $(BuildScript)
+          echo ============================================
+          echo Starting build for $(DisplayName)
+          echo Repository: $(TestRepoName)
+          echo Commit: $(TestCommit)
+          echo Build Script: $(BuildScript)
+          echo ============================================
+          echo.
+          
+          echo Executing: $(BuildScript)
           call $(BuildScript)
+          
+          echo.
+          echo ============================================
+          echo Build completed for $(DisplayName)
+          echo Exit code: %ERRORLEVEL%
+          echo ============================================
         displayName: 'Build $(DisplayName) with local F# compiler'
         env:
           # Ensure the build uses local compiler
@@ -186,14 +267,43 @@ stages:
         condition: always()
         continueOnError: true
 
+      # Publish any MSBuild binary logs if they exist
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish $(DisplayName) Binary Logs'
+        inputs:
+          targetPath: '$(Pipeline.Workspace)/TestRepo'
+          artifactName: '$(DisplayName)_BinaryLogs'
+          publishLocation: pipeline
+        condition: always()
+        continueOnError: true
+
       # Report success/failure
       - script: |
+          cd $(Pipeline.Workspace)/TestRepo
           echo.
           echo ============================================
           echo Regression test completed for $(DisplayName)
           echo Repository: $(TestRepoName)
           echo Commit: $(TestCommit)
-          echo Status: %AGENT_JOBSTATUS%
+          echo Build Script: $(BuildScript)
+          if "%AGENT_JOBSTATUS%"=="Succeeded" (
+            echo Status: ✓ SUCCESS
+            echo The $(DisplayName) library builds successfully with the new F# compiler
+          ) else (
+            echo Status: ✗ FAILED
+            echo The $(DisplayName) library failed to build with the new F# compiler
+            echo Check the build logs and artifacts for details
+          )
           echo ============================================
+          
+          echo Build artifacts in repository:
+          if exist "bin" (
+            echo Checking bin directory:
+            dir bin /S /B 2>nul | findstr /R "^.*$" | findstr /N "^" | findstr "^[1-9]:"
+          )
+          if exist "*.binlog" (
+            echo Binary logs found:
+            dir *.binlog /B 2>nul
+          )
         displayName: 'Report $(DisplayName) test result'
         condition: always()
