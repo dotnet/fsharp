@@ -4112,38 +4112,47 @@ let prependInstrsToMethod newCode md =
 let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
     let mdefs = cd.Methods
 
-    let cctor =
+    let cctor, renamedCctors =
         match mdefs.FindByName ".cctor" with
-        | [ mdef ] -> mdef
+        | [ mdef ] -> mdef, []
         | [] ->
             let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode [], tag, imports)
-            mkILClassCtor body
+            mkILClassCtor body, []
         | multipleCctors ->
-            // Handle multiple .cctor methods by merging their instruction bodies
+            // Handle multiple .cctor methods by renaming them and creating a new .cctor that calls them
             // This resolves the "duplicate entry '.cctor' in method table" error
-            // Extract the instruction sequences from all .cctor methods (excluding the final 'ret')
-            let allInstrs = 
+            let renamedCctors = 
                 multipleCctors
-                |> List.collect (fun mdef ->
-                    match mdef.Body with
-                    | MethodBody.IL(il) ->
-                        let ilCode = il.Value.Code
-                        // Remove the final 'ret' instruction and collect the rest
-                        let instrs = ilCode.Instrs |> Array.toList
-                        match List.rev instrs with
-                        | I_ret :: rest -> List.rev rest
-                        | _ -> instrs
-                    | _ -> [])
+                |> List.mapi (fun i mdef ->
+                    let newName = 
+                        match i with
+                        | 0 -> "cctor_IncrClass"
+                        | 1 -> "cctor_UnionErasure" 
+                        | _ -> sprintf "cctor_%d" i
+                    mdef.With(name = newName))
             
-            // Create merged .cctor body with all instructions plus a single 'ret'
-            let mergedInstrs = allInstrs @ [I_ret]
-            let mergedBody = mkMethodBody (false, [], 8, nonBranchingInstrsToCode mergedInstrs, tag, imports)
-            mkILClassCtor mergedBody
+            // Create call instructions for each renamed .cctor
+            // Use a simple self-referencing type
+            let currentTypeRef = mkILTyRef (ILScopeRef.Local, cd.Name)
+            let currentType = mkILNonGenericBoxedTy currentTypeRef
+            let callInstrs = 
+                renamedCctors
+                |> List.map (fun mdef -> 
+                    let mspec = mkILNonGenericStaticMethSpecInTy (currentType, mdef.Name, [], ILType.Void)
+                    mkNormalCall mspec)
+            
+            // Create new .cctor that calls all renamed methods
+            let newCctorInstrs = callInstrs @ [I_ret]
+            let newCctorBody = mkMethodBody (false, [], 8, nonBranchingInstrsToCode newCctorInstrs, tag, imports)
+            let newCctor = mkILClassCtor newCctorBody
+            
+            newCctor, renamedCctors
 
     let methods =
         ILMethodDefs(fun () ->
             [|
                 yield f cctor
+                yield! renamedCctors
                 for md in mdefs do
                     if md.Name <> ".cctor" then
                         yield md
