@@ -527,7 +527,7 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
     /// <remarks>
-    /// Time Complexity: O(n) - where n is the length of the source sequence 
+    /// Time Complexity: O(n) - where n is the length of the source sequence
     /// Space Complexity: O(k) - where k is the number of distinct elements
     /// </remarks>
     ///
