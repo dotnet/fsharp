@@ -32,7 +32,7 @@ IL_0000:  call       !!0[] [runtime]System.Array::Empty<!!0>()
 IL_0005:  ret""" ]
 
     [<Fact>]
-    let ``Discriminated union with generic statics generates single merged cctor``() =
+    let ``Discriminated union with generic statics generates single cctor calling renamed methods``() =
         FSharp """
 module DuplicateCctorFix
 
@@ -50,4 +50,13 @@ type TestUnion<'T when 'T: comparison> =
          |> compile
          |> shouldSucceed
          |> verifyIL [""".method private specialname rtspecialname static 
-          void  .cctor() cil managed"""]
+          void  .cctor() cil managed
+  {
+    // Code size
+    IL_0000:  call       void DuplicateCctorFix/TestUnion`1::cctor_IncrClass()
+    IL_0005:  call       void DuplicateCctorFix/TestUnion`1::cctor_UnionErasure()
+    IL_000a:  ret
+  } // end of method TestUnion`1::.cctor
+
+  .method private static void cctor_IncrClass() cil managed
+  .method private static void cctor_UnionErasure() cil managed"""]
