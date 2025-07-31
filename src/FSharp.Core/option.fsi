@@ -64,12 +64,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <returns>The option if the option is Some, else the result of evaluating <paramref name="defThunk"/>.</returns>
-    /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.
-    /// <example>
-    /// Additional text here
-    /// </remarks>
-    /// More text
-    /// </example>
+    /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
     ///
     /// <example id="defaultWith-1">
     /// <code lang="fsharp">
