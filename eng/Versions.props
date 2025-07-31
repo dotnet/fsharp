@@ -103,7 +103,7 @@
     <VisualStudioProjectSystemPackagesVersion>17.14.79</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>17.14.40254</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.14.15</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildVersion>17.15.0-preview-25378-01</MicrosoftBuildVersion>
+    <MicrosoftBuildVersion>17.15.0-preview-25380-06</MicrosoftBuildVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
@@ -140,9 +140,9 @@
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <!-- -->
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildFrameworkVersion>17.15.0-preview-25378-01</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.15.0-preview-25378-01</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.15.0-preview-25378-01</MicrosoftBuildUtilitiesCoreVersion>
+    <MicrosoftBuildFrameworkVersion>17.15.0-preview-25380-06</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>17.15.0-preview-25380-06</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>17.15.0-preview-25380-06</MicrosoftBuildUtilitiesCoreVersion>
     <!-- -->
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
