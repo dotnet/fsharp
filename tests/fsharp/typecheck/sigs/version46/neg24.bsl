@@ -13,8 +13,6 @@ neg24.fs(16,14,16,35): typecheck error FS0035: This construct is deprecated: Thi
 
 neg24.fs(17,18,17,45): typecheck error FS0739: Invalid object, sequence or record expression
 
-neg24.fs(17,20,17,43): typecheck error FS0793: This construct is ambiguous as part of a sequence expression. Nested expressions may be written using 'let _ = (...)' and nested sequences using 'yield! seq {... }'.
-
 neg24.fs(53,24,53,30): typecheck error FS0816: One or more of the overloads of this method has curried arguments. Consider redesigning these members to take arguments in tupled form.
 
 neg24.fs(55,31,55,37): typecheck error FS0816: One or more of the overloads of this method has curried arguments. Consider redesigning these members to take arguments in tupled form.
