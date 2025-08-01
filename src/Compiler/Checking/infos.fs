@@ -2050,9 +2050,10 @@ type PropInfo =
     /// Indicates if this is an F# property compiled as a CLI event, e.g. a [<CLIEvent>] property.
     member x.IsFSharpEventProperty =
         match x with
-        | FSProp(g, _, Some vref, None)  -> vref.IsFSharpEventProperty g
-        | FSProp(g, _, Some vref, Some _)  -> vref.IsFSharpEventProperty g
-        | FSProp(g, _, None, Some vref)  -> vref.IsFSharpEventProperty g
+        | FSProp(g, _, getterOpt, setterOpt) ->
+            match getterOpt, setterOpt with
+            | Some vref, _ | None, Some vref -> vref.IsFSharpEventProperty g
+            | None, None -> false
 #if !NO_TYPEPROVIDERS
         | ProvidedProp _ -> false
 #endif
