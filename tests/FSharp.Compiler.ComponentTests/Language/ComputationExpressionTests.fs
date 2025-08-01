@@ -4,6 +4,7 @@ namespace Language
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test
 
 module ComputationExpressionTests =
     [<Fact>]
@@ -2029,3 +2030,11 @@ match test() with
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+    [<Theory; FileInlineData("tailcalls.fs")>]
+    let ``tail call methods work`` compilation =
+        compilation
+         |> getCompilation 
+         |> asFs
+         |> compileExeAndRun
+         |> shouldSucceed
