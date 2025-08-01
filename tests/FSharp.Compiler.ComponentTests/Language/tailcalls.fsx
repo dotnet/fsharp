@@ -14,7 +14,6 @@ type SyncBuilder(signal) =
     member b.ReturnFromFinal x = signal ReturnFromFinal; x
     member b.For(e,f) = (fun () -> for x in e do f x ())
     member b.While(gd,x) = (fun () -> while gd() do x())
-    member b.Run(x) = x()
 
 let shouldEqual x y =
     printfn "%A" x
@@ -24,12 +23,24 @@ let expectReturnFrom = shouldEqual ReturnFrom
 let expectReturnFromFinal = shouldEqual ReturnFromFinal
 let expectNone _ = failwith "Should not be called"
 
+let run f = f () |> ignore
+
 do 
     let sync = SyncBuilder expectReturnFromFinal
 
     sync {
         printf "expectReturnFromFinal: "
-        return! sync.Return 1 } |> ignore
+        return! sync.Return 1
+    } |> run
+
+
+do 
+    let sync = SyncBuilder expectReturnFromFinal
+
+    sync {
+        printf "expectReturnFromFinal: "
+        do! sync { printfn "inner" }
+    } |> run
 
 do
    let sync = SyncBuilder expectReturnFrom
@@ -39,7 +50,7 @@ do
        try 
            return! sync.Return 1
        finally ()
-   } |> ignore
+   } |> run
 
 do 
    let sync = SyncBuilder expectNone
@@ -49,4 +60,4 @@ do
        let! a = sync.Return 1
        let! b = sync.Return 2
        return a + b
-   } |> ignore
+   } |> run

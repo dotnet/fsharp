@@ -2031,10 +2031,10 @@ match test() with
         |> compileAndRun
         |> shouldSucceed
 
-    [<Theory; FileInlineData("tailcalls.fs")>]
+    [<Theory; FileInlineData("tailcalls.fsx")>]
     let ``tail call methods work`` compilation =
         compilation
          |> getCompilation 
-         |> asFs
-         |> compileExeAndRun
+         |> asFsx
+         |> runFsi
          |> shouldSucceed

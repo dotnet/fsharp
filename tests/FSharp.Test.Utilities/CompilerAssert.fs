@@ -136,6 +136,8 @@ type SourceCodeFileKind =
         | Fsi s -> s.FileName
         | Cs s -> s.FileName
 
+    member this.LoadSourceText() = FileSystem.OpenFileForReadShim(this.GetSourceFileName).ReadAllText()
+
     member this.GetSourceText =
         match this with
         | Fs s -> s.SourceText
