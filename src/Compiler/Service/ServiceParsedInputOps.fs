@@ -851,7 +851,7 @@ module ParsedInput =
             | SynExpr.LetOrUseBang(rhs = e1; andBangs = es; body = e2) ->
                 [
                     yield e1
-                    for SynExprAndBang(body = eAndBang) in es do
+                    for SynBinding(expr = eAndBang) in es do
                         yield eAndBang
                     yield e2
                 ]
@@ -2159,7 +2159,7 @@ module ParsedInput =
                 walkPat pat
                 walkExpr e1
 
-                for SynExprAndBang(pat = patAndBang; body = eAndBang) in es do
+                for SynBinding(headPat = patAndBang; expr = eAndBang) in es do
                     walkPat patAndBang
                     walkExpr eAndBang
 

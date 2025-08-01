@@ -766,7 +766,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkBindSeqPt spBind
                             yield! walkExpr true rhsExpr
 
-                            for SynExprAndBang(debugPoint = andBangSpBind; body = eAndBang) in andBangs do
+                            for SynBinding(debugPoint = andBangSpBind; expr = eAndBang) in andBangs do
                                 yield! walkBindSeqPt andBangSpBind
                                 yield! walkExpr true eAndBang
 

@@ -871,15 +871,28 @@ let mkClassMemberLocalBindings
 let mkAndBang (mKeyword: range, pat: SynPat, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option) =
     let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
-    let trivia: SynExprAndBangTrivia =
+    let trivia: SynBindingTrivia =
         {
-            AndBangKeyword = mKeyword
-            EqualsRange = mEquals
-            InKeyword = mIn
+            LeadingKeyword = SynLeadingKeyword.And mKeyword
+            InlineKeyword = mIn
+            EqualsRange = Some mEquals
         }
 
-    // For and!, isUse is always true, isFromSource is always true
-    SynExprAndBang(spBind, false, true, pat, rhs, mWhole, trivia)
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = pat,
+        returnInfo = None,
+        expr = rhs,
+        range = mWhole,
+        debugPoint = spBind,
+        trivia = trivia
+    )
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) =
     if isUse then
@@ -1063,7 +1076,7 @@ let mkLetExpression
         mWhole: range,
         body: SynExpr,
         bindingInfo: (bool * BindingSet) option,
-        bangInfo: (SynPat * SynExpr * SynExprAndBang list * range option * bool) option
+        bangInfo: (SynPat * SynExpr * SynBinding list * range option * bool) option
     ) =
     if isBang then
         match bangInfo with

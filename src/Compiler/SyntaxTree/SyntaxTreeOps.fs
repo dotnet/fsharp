@@ -985,7 +985,7 @@ let rec synExprContainsError inpExpr =
             walkExpr e1
             || walkExprs
                 [
-                    for SynExprAndBang(body = e) in es do
+                    for SynBinding(expr = e) in es do
                         yield e
                 ]
             || walkExpr e2

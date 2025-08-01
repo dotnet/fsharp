@@ -262,7 +262,7 @@ module Structure =
                 let exprs =
                     [
                         eLet
-                        for SynExprAndBang(body = eAndBang) in es do
+                        for SynBinding(expr = eAndBang) in es do
                             eAndBang
                     ]
 
