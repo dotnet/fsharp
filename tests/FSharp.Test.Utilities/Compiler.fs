@@ -1191,7 +1191,7 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs ->
-            let source = fs.Source.GetSourceText |> Option.defaultValue ""
+            let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
             let name = fs.Name |> Option.defaultValue "unnamed"
             let options = fs.Options |> Array.ofList
             let outputDirectory =
