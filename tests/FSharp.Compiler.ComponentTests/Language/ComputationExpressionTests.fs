@@ -2038,3 +2038,12 @@ match test() with
          |> asFsx
          |> runFsi
          |> shouldSucceed
+
+    [<Theory; FileInlineData("coroutines.fsx")>]
+    let ``YieldFromFinal works in coroutines`` compilation =
+        compilation
+         |> getCompilation 
+         |> asFsx
+         |> runFsi
+         |> shouldSucceed
+         //|> withOutputContainsAllInOrder [ "yieldFromFinalCallCount = 1000004" ]
