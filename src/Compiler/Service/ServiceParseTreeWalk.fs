@@ -751,7 +751,7 @@ module SyntaxTraversal =
                         yield dive synExpr synExpr.Range traverseSynExpr
                         yield!
                             [
-                                for SynExprAndBang(pat = andBangSynPat; body = andBangSynExpr) in andBangSynExprs do
+                                for SynBinding(headPat = andBangSynPat; expr = andBangSynExpr) in andBangSynExprs do
                                     yield (dive andBangSynPat andBangSynPat.Range traversePat)
                                     yield (dive andBangSynExpr andBangSynExpr.Range traverseSynExpr)
                             ]

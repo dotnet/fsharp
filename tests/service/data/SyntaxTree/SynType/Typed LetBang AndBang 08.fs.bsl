@@ -28,8 +28,12 @@ ImplFile
                        App
                          (Atomic, false, Ident asyncOption,
                           Const (Unit, (4,48--4,50)), (4,37--4,50)),
-                       [SynExprAndBang
-                          (Yes (5,4--5,51), false, true,
+                       [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
                            Typed
                              (Paren
                                 (LongIdent
@@ -45,12 +49,14 @@ ImplFile
                                  None,
                                  [LongIdent (SynLongIdent ([int], [], [None]))],
                                  [], None, true, (5,25--5,35)), (5,9--5,35)),
+                           None,
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (5,49--5,51)), (5,38--5,51)),
-                           (5,4--5,51), { AndBangKeyword = (5,4--5,8)
-                                          EqualsRange = (5,36--5,37)
-                                          InKeyword = None })],
+                           (5,4--5,51), Yes (5,4--5,51),
+                           { LeadingKeyword = And (5,4--5,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (5,36--5,37) })],
                        YieldOrReturn
                          ((false, true),
                           App
