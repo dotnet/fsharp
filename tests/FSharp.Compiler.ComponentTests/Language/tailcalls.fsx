@@ -1,16 +1,16 @@
 type Method = ReturnFrom | ReturnFromFinal | YieldFrom | YieldFromFinal
 
 type Sync<'a> = (unit -> 'a)
-type SyncBuilder(signal) = 
+type SyncBuilder<'a>(signal) = 
     member b.Bind(x,f) = f (x())
     member b.Using(x,f) = (fun () -> use r = x in f r ())
     member b.TryFinally(x,f) = (fun () -> try x() finally f())
-    member b.TryWith(x,f) = (fun () -> try x() with e -> f e ())
+    member b.TryWith(x, f) = (fun () -> try x() with e -> f e)
     member b.Combine(f1,g) = (fun () -> f1(); g()())
     member b.Delay(f) = (fun () -> f()())
     member b.Zero() = (fun () -> ())
-    member b.Return x = (fun () -> x)
-    member b.ReturnFrom x = signal ReturnFrom; x
+    member b.Return (x: 'a) = (fun () -> x)
+    member b.ReturnFrom (x: Sync<_>) = signal ReturnFrom; x
     member b.ReturnFromFinal x = signal ReturnFromFinal; x
     member b.YieldFrom x = (fun () -> signal YieldFrom; x)
     member b.YieldFromFinal x = (fun () -> signal YieldFromFinal; x)
@@ -32,7 +32,7 @@ do
 
     sync {
         printf "expect ReturnFromFinal: "
-        return! sync.Return 1
+        return! sync { return 1 }
     } |> run
 
 
@@ -45,12 +45,14 @@ do
     } |> run
 
 do
-   let sync = SyncBuilder (expect ReturnFrom)
+   let sync = SyncBuilder<int> (expect ReturnFrom)
+
+   sync { return 1 } |> run
 
    sync {
        printf "expect ReturnFrom: "
        try 
-           return! sync.Return 1
+           return! sync { return 1 }
        finally ()
    } |> run
 
@@ -59,17 +61,17 @@ do
 
     sync {
         printf "expect YieldFromFinal: "
-        yield! sync.Return 1
+        yield! sync { return 1 }
     } |> run
 
 do
-   let sync = SyncBuilder (expect YieldFrom)
+   let sync = SyncBuilder<int> (expect YieldFrom)
 
    sync {
        printf "expect YieldFrom: "
-       try 
-           yield! sync.Return 1
-       finally ()
+       try
+           yield! sync { return 1 }
+       with _ -> return 0
    } |> run
 
 do 
@@ -77,7 +79,7 @@ do
 
    sync {
        printf "expectNone: "
-       let! a = sync.Return 1
-       let! b = sync.Return 2
+       let! a = sync { return 1 }
+       let! b = sync { return 2 }
        return a + b
    } |> run
