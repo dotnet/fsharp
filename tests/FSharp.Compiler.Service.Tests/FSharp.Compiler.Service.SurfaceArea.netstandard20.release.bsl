@@ -6598,10 +6598,10 @@ FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynPat get_headPat()
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynPat headPat
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynValData get_valData()
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Syntax.SynValData valData
-FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia trivia
+FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia Trivia
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia get_Trivia()
-FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] andBangs
-FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] get_andBangs()
+FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia get_trivia()
+FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia trivia
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfBindingWithRhs
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfBindingWithoutRhs
 FSharp.Compiler.Syntax.SynBinding: FSharp.Compiler.Text.Range RangeOfHeadPattern
@@ -7235,6 +7235,8 @@ FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.SyntaxTrivia.SynExp
 FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.SyntaxTrivia.SynExprLetOrUseBangTrivia trivia
 FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] andBangs
+FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] get_andBangs()
 FSharp.Compiler.Syntax.SynExpr+LibraryOnlyILAssembly: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+LibraryOnlyILAssembly: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+LibraryOnlyILAssembly: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] args
