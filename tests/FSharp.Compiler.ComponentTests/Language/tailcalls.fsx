@@ -1,4 +1,4 @@
-type Method = ReturnFrom | ReturnFromFinal
+type Method = ReturnFrom | ReturnFromFinal | YieldFrom | YieldFromFinal
 
 type Sync<'a> = (unit -> 'a)
 type SyncBuilder(signal) = 
@@ -12,6 +12,8 @@ type SyncBuilder(signal) =
     member b.Return x = (fun () -> x)
     member b.ReturnFrom x = signal ReturnFrom; x
     member b.ReturnFromFinal x = signal ReturnFromFinal; x
+    member b.YieldFrom x = (fun () -> signal YieldFrom; x)
+    member b.YieldFromFinal x = (fun () -> signal YieldFromFinal; x)
     member b.For(e,f) = (fun () -> for x in e do f x ())
     member b.While(gd,x) = (fun () -> while gd() do x())
 
@@ -19,36 +21,54 @@ let shouldEqual x y =
     printfn "%A" x
     if x <> y then failwithf "Expected %A but got %A" y x
 
-let expectReturnFrom = shouldEqual ReturnFrom
-let expectReturnFromFinal = shouldEqual ReturnFromFinal
+let expect = shouldEqual
+
 let expectNone _ = failwith "Should not be called"
 
 let run f = f () |> ignore
 
 do 
-    let sync = SyncBuilder expectReturnFromFinal
+    let sync = SyncBuilder (expect ReturnFromFinal)
 
     sync {
-        printf "expectReturnFromFinal: "
+        printf "expect ReturnFromFinal: "
         return! sync.Return 1
     } |> run
 
 
 do 
-    let sync = SyncBuilder expectReturnFromFinal
+    let sync = SyncBuilder (expect ReturnFromFinal)
 
     sync {
-        printf "expectReturnFromFinal: "
+        printf "expect ReturnFromFinal: "
         do! sync { printfn "inner" }
     } |> run
 
 do
-   let sync = SyncBuilder expectReturnFrom
+   let sync = SyncBuilder (expect ReturnFrom)
 
    sync {
-       printf "expectReturnFrom: "
+       printf "expect ReturnFrom: "
        try 
            return! sync.Return 1
+       finally ()
+   } |> run
+
+do 
+    let sync = SyncBuilder (expect YieldFromFinal)
+
+    sync {
+        printf "expect YieldFromFinal: "
+        yield! sync.Return 1
+    } |> run
+
+do
+   let sync = SyncBuilder (expect YieldFrom)
+
+   sync {
+       printf "expect YieldFrom: "
+       try 
+           yield! sync.Return 1
        finally ()
    } |> run
 
