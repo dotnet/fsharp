@@ -1071,9 +1071,10 @@ let mkLetExpression
             // Create let! or use! expression
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
-            let trivia: SynExprLetOrUseBangTrivia =
+            let trivia: SynExprLetOrUseTrivia =
                 {
-                    LetOrUseBangKeyword = mKeyword
+                    LetOrUseKeyword = mKeyword
+                    InKeyword = mIn
                     EqualsRange = mEquals
                 }
             // isFromSource is true for user-written code
@@ -1106,6 +1107,11 @@ let mkLetExpression
                 | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
                 | _ -> range0
 
+            let mEquals =
+                match decls with
+                | SynBinding(trivia = trivia) :: _ -> trivia.EqualsRange
+                | _ -> None
+
             SynExpr.LetOrUse(
                 isRec,
                 isUse, // Pass through the isUse flag from binding info
@@ -1115,6 +1121,7 @@ let mkLetExpression
                 {
                     LetOrUseKeyword = mLetOrUse
                     InKeyword = mIn'
+                    EqualsRange = mEquals
                 }
             )
         | None -> SynExpr.FromParseError(body, mWhole)
