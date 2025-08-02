@@ -94,24 +94,13 @@ type SynExprLetOrUseTrivia =
     {
         LetOrUseKeyword: range
         InKeyword: range option
+        EqualsRange: range option
     }
 
     static member Zero: SynExprLetOrUseTrivia =
         {
             InKeyword = None
             LetOrUseKeyword = range0
-        }
-
-[<NoEquality; NoComparison>]
-type SynExprLetOrUseBangTrivia =
-    {
-        LetOrUseBangKeyword: range
-        EqualsRange: range option
-    }
-
-    static member Zero: SynExprLetOrUseBangTrivia =
-        {
-            LetOrUseBangKeyword = range0
             EqualsRange = None
         }
 
