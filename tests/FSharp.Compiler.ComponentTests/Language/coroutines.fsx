@@ -26,6 +26,7 @@ open FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open FSharp.Collections
 
 let mutable yieldFromFinalCallCount = 0
+let mutable yieldFromCount = 0
 
 let verbose = false
 
@@ -197,11 +198,14 @@ type CoroutineBuilder() =
                 let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
                 __stack_yield_fin
             else
+               printfn "done YieldFrom"
+               yieldFromCount <- yieldFromCount + 1
                true))
 
     // The implementation of `return!`, non-standard for tailcalls
     member inline _.YieldFromFinal (other: Coroutine) : CoroutineCode = 
         ResumableCode<_,_>(fun sm ->
+            if yieldFromFinalCallCount < 10 then printfn "starting YieldFromFinal"
             yieldFromFinalCallCount <- yieldFromFinalCallCount + 1 
             sm.Data.TailcallTarget <- Some other
             // For tailcalls we return 'false' and re-run from the entry (trampoline)
@@ -219,6 +223,7 @@ let t1 () =
         yield ()
         printfn "hey ho"
         yield ()
+        printfn "This should YieldFromFinal because of final position"
         yield! 
             coroutine{ 
                 printfn "hey yo"
@@ -227,13 +232,22 @@ let t1 () =
             }
     }
 
+let testNonTailcall () = 
+    coroutine {
+        try 
+            printfn "this should not be tailcall because of try/finally"
+            yield! t1()
+        finally ()
+    }
+
 let testTailcallTiny () = 
     coroutine {
+        printfn "in testTailcallTiny"
         yield! t1()
     }
 let rec testTailcall (n: int) = 
     coroutine {
-        if n % 10_000 = 0 then printfn $"in t1, n = {n}"
+        if n % 10_000 = 0 then printfn $"in testTailcall, n = {n}"
         yield ()
         if n > 0 then
             yield! testTailcall(n-1)
@@ -246,20 +260,36 @@ let t2 () =
         yield ()
         printfn "in t2 b"
         yield! t1()
-        //for x in t1 () do 
-        //    printfn "t2 - got %A" x
-        //    yield ()
-        //    yield! 
-        //        coroutine {
-        //            printfn "hey yo"
-        //        }
-        //    yield "[T1]" + x
+        printfn "This should YieldFrom because of non final position"
         yield!
             coroutine {
                 printfn "hey yo"
                 //do! Task.Delay(10)
             }
         yield ()
+    }
+
+let t3 () = 
+    coroutine {
+        printfn "in t3"
+        try
+            printfn "in t3 b"
+            yield! t1()
+            for x in 1 .. 3 do 
+                printfn "t2 - got %A" x
+                yield ()
+                yield! 
+                    coroutine {
+                        printfn "hey yo"
+                    }
+            yield ()
+            printfn "This should YieldFrom because of try/with"
+            yield!
+                coroutine {
+                    printfn "in t3 inner"
+                    printfn "hey yo"
+                }
+        with _ -> ()
     }
 
 
@@ -271,8 +301,12 @@ let dumpCoroutine (t: Coroutine) =
         () // printfn "yield"
 
 dumpCoroutine (t1())
+dumpCoroutine (testNonTailcall())
 dumpCoroutine (testTailcallTiny())
-dumpCoroutine (testTailcall(1000000))
 dumpCoroutine (t2())
+dumpCoroutine (t3())
+dumpCoroutine (testTailcall(1000000))
 
+printfn "\n-----"
 printfn "yieldFromFinalCallCount = %d" yieldFromFinalCallCount
+printfn "yieldFromCount = %d" yieldFromCount
