@@ -1112,6 +1112,11 @@ let mkLetExpression
                 | SynBinding(trivia = trivia) :: _ -> trivia.EqualsRange
                 | _ -> None
 
+            let mEquals =
+                match decls with
+                | SynBinding(trivia = trivia) :: _ -> trivia.EqualsRange
+                | _ -> None
+
             SynExpr.LetOrUse(
                 isRec,
                 isUse, // Pass through the isUse flag from binding info
