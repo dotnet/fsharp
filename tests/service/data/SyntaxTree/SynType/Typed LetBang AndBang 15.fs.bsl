@@ -38,7 +38,8 @@ ImplFile
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (4,37--4,39)), (4,29--4,39)), [],
                            ImplicitZero (4,39--4,39), (4,4--5,16),
-                           { LetOrUseBangKeyword = (4,4--4,8)
+                           { LetOrUseKeyword = (4,4--4,8)
+                             InKeyword = None
                              EqualsRange = Some (4,27--4,28) }); Ident y],
                        [(5,15--5,16)], (4,4--5,18)), (3,6--7,1)), (3,0--7,1)),
               (3,0--7,1))],

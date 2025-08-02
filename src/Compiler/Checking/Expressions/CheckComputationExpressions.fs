@@ -861,7 +861,7 @@ let (|ExprAsUseBang|_|) expr =
         rhs = rhsExpr
         andBangs = andBangs
         body = innerComp
-        trivia = { LetOrUseBangKeyword = mBind }) -> ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
+        trivia = { LetOrUseKeyword = mBind }) -> ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
     | _ -> ValueNone
 
 [<return: Struct>]
@@ -875,7 +875,7 @@ let (|ExprAsLetBang|_|) expr =
         rhs = letRhsExpr
         andBangs = andBangBindings
         body = innerComp
-        trivia = { LetOrUseBangKeyword = mBind }) -> ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
+        trivia = { LetOrUseKeyword = mBind }) -> ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
     | _ -> ValueNone
 
 // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
@@ -1393,7 +1393,7 @@ let rec TryTranslateComputationExpression
                             [],
                             setCondExpr,
                             mGuard,
-                            SynExprLetOrUseBangTrivia.Zero
+                            SynExprLetOrUseTrivia.Zero
                         )
 
                     let whileExpr =
@@ -1422,7 +1422,7 @@ let rec TryTranslateComputationExpression
                     [],
                     body,
                     mGuard,
-                    SynExprLetOrUseBangTrivia.Zero
+                    SynExprLetOrUseTrivia.Zero
                 )
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
@@ -1637,7 +1637,7 @@ let rec TryTranslateComputationExpression
                                     [],
                                     innerComp2,
                                     m,
-                                    SynExprLetOrUseBangTrivia.Zero
+                                    SynExprLetOrUseTrivia.Zero
                                 ))
                                 translatedCtxt
                         )
@@ -2393,7 +2393,7 @@ and ConsumeCustomOpClauses
                                 [],
                                 contExpr,
                                 intoPat.Range,
-                                SynExprLetOrUseBangTrivia.Zero
+                                SynExprLetOrUseTrivia.Zero
                             )
                         else
                             SynExpr.ForEach(
@@ -2434,7 +2434,7 @@ and ConsumeCustomOpClauses
                     [],
                     compClausesExpr,
                     compClausesExpr.Range,
-                    SynExprLetOrUseBangTrivia.Zero
+                    SynExprLetOrUseTrivia.Zero
                 )
             else
                 SynExpr.ForEach(
@@ -2697,7 +2697,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         [],
                         bodyExpr,
                         m,
-                        SynExprLetOrUseBangTrivia.Zero
+                        SynExprLetOrUseTrivia.Zero
                     )
 
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt

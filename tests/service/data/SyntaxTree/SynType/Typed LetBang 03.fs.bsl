@@ -113,11 +113,13 @@ ImplFile
                                       Ident c, (6,11--6,20)), (6,11--6,22)),
                                 Ident d, (6,11--6,24)), (6,4--6,24),
                              { YieldOrReturnKeyword = (6,4--6,10) }),
-                          (5,4--6,24), { LetOrUseBangKeyword = (5,4--5,8)
+                          (5,4--6,24), { LetOrUseKeyword = (5,4--5,8)
+                                         InKeyword = None
                                          EqualsRange = Some (5,26--5,27) }),
                        (4,4--6,24), { LetOrUseKeyword = (4,4--4,7)
-                                      InKeyword = None }), (3,6--7,1)),
-                 (3,0--7,1)), (3,0--7,1))],
+                                      InKeyword = None
+                                      EqualsRange = Some (4,25--4,26) }),
+                    (3,6--7,1)), (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

@@ -132,21 +132,11 @@ type SynExprLetOrUseTrivia =
         LetOrUseKeyword: range
         /// The syntax range of the `in` keyword.
         InKeyword: range option
-    }
 
-    static member Zero: SynExprLetOrUseTrivia
-
-/// Represents additional information for SynExpr.LetOrUseBang
-[<NoEquality; NoComparison>]
-type SynExprLetOrUseBangTrivia =
-    {
-        /// The syntax range of the `let!` or `use!` keyword.
-        LetOrUseBangKeyword: range
-        /// The syntax range of the `=` token.
         EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseBangTrivia
+    static member Zero: SynExprLetOrUseTrivia
 
 /// Represents additional information for SynExpr.Match
 [<NoEquality; NoComparison>]

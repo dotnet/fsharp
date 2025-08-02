@@ -28,7 +28,8 @@ ImplFile
                        YieldOrReturn
                          ((false, true), Ident res, (5,4--5,14),
                           { YieldOrReturnKeyword = (5,4--5,10) }), (4,4--5,14),
-                       { LetOrUseBangKeyword = (4,4--4,8)
+                       { LetOrUseKeyword = (4,4--4,8)
+                         InKeyword = None
                          EqualsRange = Some (4,20--4,21) }), (3,6--6,1)),
                  (3,0--6,1)), (3,0--6,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
