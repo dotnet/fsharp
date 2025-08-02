@@ -305,7 +305,7 @@ module internal PrintUtilities =
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
             GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
-            |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL             
+            |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
 
@@ -465,9 +465,11 @@ module PrintIL =
         | None -> WordL.equals ^^ (comment "value unavailable")
         | Some s -> WordL.equals ^^ wordL s
 
-    let layoutILEnumCase nm litVal =
+    let layoutILEnumCase nm litVal xmlDocOpt =
         let nameL = ConvertLogicalNameToDisplayLayout (tagEnum >> wordL) nm
-        WordL.bar ^^ nameL ^^ layoutILFieldInit litVal
+        match xmlDocOpt with
+        | Some layout -> layout @@ (WordL.bar ^^ nameL ^^ layoutILFieldInit litVal)
+        | None -> WordL.bar ^^ nameL ^^ layoutILFieldInit litVal
 
 module PrintTypes = 
     // Note: We need nice printing of constants in order to print literals and attributes 
@@ -2225,6 +2227,18 @@ module TastDefinitionPrinting =
             else 
                 (lhsL ^^ WordL.equals) -* rhsL
 
+        let tryGetFieldXml (layoutList: Layout list) idxOpt =
+            match idxOpt with
+            | Some i ->
+                let t = layoutList[i]
+                match t with
+                | Node (left, _, _) ->
+                    match left with
+                    | Node (_, right, _) -> Some right
+                    | _ -> None
+                | _ -> None
+            | None -> None
+
         let typeDeclL = 
 
             match repr with 
@@ -2327,9 +2341,16 @@ module TastDefinitionPrinting =
                 |> addLhs
 
             | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
-                infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
-                |> List.filter (fun x -> x.FieldName <> "value__")
-                |> List.map (fun x -> PrintIL.layoutILEnumCase x.FieldName x.LiteralValue)
+                let ilFieldsSorted = 
+                    ilFields
+                    |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), x)
+                    |> List.sortBy fst
+                    |> List.map snd
+                infoReader.GetILFieldInfosOfType (None, ad, m, ty)
+                |> List.filter (fun (x: ILFieldInfo) -> x.FieldName <> "value__")
+                |> List.map (fun (x: ILFieldInfo) ->
+                    let xmlDocOpt = List.tryFindIndex (fun (e: ILFieldInfo) -> e.FieldName = x.FieldName) ilFieldsSorted |> tryGetFieldXml ilFieldsL
+                    PrintIL.layoutILEnumCase x.FieldName x.LiteralValue xmlDocOpt)
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> addLhs
