@@ -1106,11 +1106,6 @@ let mkLetExpression
                 match decls with
                 | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
                 | _ -> range0
-                
-            let mEquals =
-                match decls with
-                | SynBinding(trivia = trivia) :: _ -> trivia.EqualsRange
-                | _ -> None
 
             let mEquals =
                 match decls with
