@@ -2086,9 +2086,6 @@ module TastDefinitionPrinting =
                 IsILFieldInfoAccessible g amap m ad fld &&
                 not (isDiscard fld.FieldName) &&
                 typeEquiv g ty fld.ApparentEnclosingType)
-            |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), x)
-            |> List.sortBy fst
-            |> List.map snd
 
         let ctorLs =
             if denv.shrinkOverloads then
@@ -2113,7 +2110,9 @@ module TastDefinitionPrinting =
 
         let ilFieldsL =
             ilFields
-            |> List.map (fun x -> layoutILFieldInfo denv infoReader m x)
+            |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv infoReader m x)
+            |> List.sortBy fst
+            |> List.map snd
 
         let staticVals =
             if isRecdTy g ty then
@@ -2342,10 +2341,15 @@ module TastDefinitionPrinting =
                 |> addLhs
 
             | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
-                infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
+                let ilFieldsSorted = 
+                    ilFields
+                    |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), x)
+                    |> List.sortBy fst
+                    |> List.map snd
+                infoReader.GetILFieldInfosOfType (None, ad, m, ty)
                 |> List.filter (fun (x: ILFieldInfo) -> x.FieldName <> "value__")
                 |> List.map (fun (x: ILFieldInfo) ->
-                    let xmlDocOpt = List.tryFindIndex (fun (e: ILFieldInfo) -> e.FieldName = x.FieldName) ilFields |> tryGetFieldXml ilFieldsL
+                    let xmlDocOpt = List.tryFindIndex (fun (e: ILFieldInfo) -> e.FieldName = x.FieldName) ilFieldsSorted |> tryGetFieldXml ilFieldsL
                     PrintIL.layoutILEnumCase x.FieldName x.LiteralValue xmlDocOpt)
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
