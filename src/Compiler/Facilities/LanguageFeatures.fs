@@ -411,7 +411,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
-        | LanguageFeature.ReturnFromFinal -> "" // FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
