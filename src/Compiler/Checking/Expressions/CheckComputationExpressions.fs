@@ -2174,7 +2174,11 @@ let rec TryTranslateComputationExpression
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
             let yieldFromMethodName =
-                if ceenv.tailCall && hasBuilderMethod ceenv m "YieldFromFinal" then
+                if
+                    ceenv.tailCall
+                    && ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.ReturnFromFinal
+                    && hasBuilderMethod ceenv m "YieldFromFinal"
+                then
                     "YieldFromFinal"
                 else
                     requireBuilderMethod "YieldFrom" ceenv m m
@@ -2199,7 +2203,11 @@ let rec TryTranslateComputationExpression
                 error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
             let returnFromMethodName =
-                if ceenv.tailCall && hasBuilderMethod ceenv m "ReturnFromFinal" then
+                if
+                    ceenv.tailCall
+                    && ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.ReturnFromFinal
+                    && hasBuilderMethod ceenv m "ReturnFromFinal"
+                then
                     "ReturnFromFinal"
                 else
                     requireBuilderMethod "ReturnFrom" ceenv m m
@@ -2609,7 +2617,11 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
             // This only occurs in final position in a sequence
             match comp with
             // "do! expr;" in tail call position is treated as { return! expr } when ReturnFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "ReturnFromFinal") ->
+            | SynExpr.DoBang(rhsExpr, m, _) when
+                ceenv.tailCall
+                && ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.ReturnFromFinal
+                && (hasBuilderMethod ceenv m "ReturnFromFinal")
+                ->
                 let returnFrom =
                     SynExpr.YieldOrReturnFrom((false, false), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
 
