@@ -729,7 +729,7 @@ type SynExpr =
         andBangs: SynBinding list *
         body: SynExpr *
         range: range *
-        trivia: SynExprLetOrUseBangTrivia
+        trivia: SynExprLetOrUseTrivia
 
     | MatchBang of
         matchDebugPoint: DebugPointAtBinding *

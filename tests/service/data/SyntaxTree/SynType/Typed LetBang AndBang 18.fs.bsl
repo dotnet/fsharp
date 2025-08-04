@@ -61,7 +61,8 @@ ImplFile
                                    (6,13--6,14)), Ident x, (6,11--6,14)),
                              Ident b, (6,11--6,16)), (6,4--6,16),
                           { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,16),
-                       { LetOrUseBangKeyword = (4,4--4,8)
+                       { LetOrUseKeyword = (4,4--4,8)
+                         InKeyword = None
                          EqualsRange = Some (4,23--4,24) }), (3,6--7,1)),
                  (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

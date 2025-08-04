@@ -47,7 +47,8 @@ ImplFile
                           (5,30--5,38), { YieldOrReturnKeyword = (5,30--5,36) }),
                        (5,28--5,40)), (5,22--5,40)), [],
                  ImplicitZero (5,40--5,40), (5,0--5,40),
-                 { LetOrUseBangKeyword = (5,0--5,4)
+                 { LetOrUseKeyword = (5,0--5,4)
+                   InKeyword = None
                    EqualsRange = Some (5,20--5,21) }), (5,0--5,40))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,40), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
