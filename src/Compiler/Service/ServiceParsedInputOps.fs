@@ -834,9 +834,17 @@ module ParsedInput =
                 walkExprWithKind (Some EntityKind.Type) e
                 |> Option.orElseWith (fun () -> List.tryPick walkType tys)
 
-            | SynExpr.LetOrUse(bindings = bindings; body = e) ->
-                List.tryPick walkBinding bindings
-                |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
+            | SynExpr.LetOrUse(isComputed = isComputed; bindings = bindings; body = e) ->
+                if isComputed then
+                    [
+                        for SynBinding(expr = bindingExpr) in bindings do
+                            yield bindingExpr
+                        yield e
+                    ]
+                    |> List.tryPick (walkExprWithKind parentKind)
+                else
+                    List.tryPick walkBinding bindings
+                    |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
             | SynExpr.IfThenElse(ifExpr = e1; thenExpr = e2; elseExpr = e3) ->
                 walkExprWithKind parentKind e1
@@ -2102,9 +2110,16 @@ module ParsedInput =
                 List.iter walkType tys
                 walkExpr e
 
-            | SynExpr.LetOrUse(bindings = bindings; body = e) ->
-                List.iter walkBinding bindings
-                walkExpr e
+            | SynExpr.LetOrUse(isComputed = isComputed; bindings = bindings; body = e) ->
+                if isComputed then
+                    for SynBinding(headPat = pat; expr = bindingExpr) in bindings do
+                        walkPat pat
+                        walkExpr bindingExpr
+
+                    walkExpr e
+                else
+                    List.iter walkBinding bindings
+                    walkExpr e
 
             | SynExpr.TryWith(tryExpr = e; withCases = clauses) ->
                 List.iter walkClause clauses

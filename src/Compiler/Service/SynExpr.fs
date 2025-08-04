@@ -444,7 +444,6 @@ module SynExpr =
         [<return: Struct>]
         let (|LetOrUse|_|) =
             dangling (function
-                | SynExpr.LetOrUse _
                 | SynExpr.LetOrUse _ as expr -> Some expr
                 | _ -> None)
 

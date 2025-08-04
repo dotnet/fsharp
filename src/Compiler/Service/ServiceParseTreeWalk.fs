@@ -669,17 +669,27 @@ module SyntaxTraversal =
                         ]
                         |> pick expr
 
-                | SynExpr.LetOrUse(isRecursive = isRecursive; bindings = synBindingList; body = synExpr; range = range) ->
-                    match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
-                    | None ->
+                | SynExpr.LetOrUse(
+                    isRecursive = isRecursive; isComputed = isComputed; bindings = synBindingList; body = synExpr; range = range) ->
+                    if isComputed then
                         [
-                            yield!
-                                synBindingList
-                                |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
+                            for SynBinding(headPat = pat; expr = bindingExpr) in synBindingList do
+                                yield dive pat pat.Range traversePat
+                                yield dive bindingExpr bindingExpr.Range traverseSynExpr
                             yield dive synExpr synExpr.Range traverseSynExpr
                         ]
                         |> pick expr
-                    | x -> x
+                    else
+                        match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
+                        | None ->
+                            [
+                                yield!
+                                    synBindingList
+                                    |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
+                                yield dive synExpr synExpr.Range traverseSynExpr
+                            ]
+                            |> pick expr
+                        | x -> x
 
                 | SynExpr.IfThenElse(ifExpr = synExpr; thenExpr = synExpr2; elseExpr = synExprOpt) ->
                     [

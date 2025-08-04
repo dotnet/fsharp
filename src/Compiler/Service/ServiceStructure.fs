@@ -263,9 +263,21 @@ module Structure =
                 rcheck Scope.For Collapse.Below r r
                 parseExpr e
 
-            | SynExpr.LetOrUse(bindings = bindings; body = body) ->
-                parseBindings bindings
-                parseExpr body
+            | SynExpr.LetOrUse(isComputed = isComputed; bindings = bindings; body = body) ->
+                if isComputed then
+                    for SynBinding(headPat = pat; expr = expr) in bindings do
+                        // for `let!`, `use!` or `and!` the pattern begins at the end of the
+                        // keyword so that this scope can be used without adjustment if there is no `=`
+                        // on the same line. If there is an `=` the range will be adjusted during the
+                        // tooltip creation
+                        let r = Range.endToEnd pat.Range expr.Range
+                        rcheck Scope.LetOrUseBang Collapse.Below r r
+                        parseExpr expr
+
+                    parseExpr body
+                else
+                    parseBindings bindings
+                    parseExpr body
 
             | SynExpr.Match(matchDebugPoint = seqPointAtBinding; clauses = clauses; range = r)
             | SynExpr.MatchBang(matchDebugPoint = seqPointAtBinding; clauses = clauses; range = r) ->

@@ -1066,7 +1066,7 @@ let leadingKeywordIsAbstract =
     | _ -> false
 
 /// Unified helper for creating let/let!/use/use! expressions
-/// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
+/// Creates SynExpr.LetOrUse for all cases with appropriate flags
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
 let mkLetExpression
     (
@@ -1122,7 +1122,7 @@ let mkLetExpression
                 false,
                 isUse, // Pass through the isUse flag from binding info
                 true, // isFromSource is true for user-written code
-                true, // isComputed is true for bang let/let!
+                true, // isComputed is true for let!/use!
                 binding :: decls,
                 body,
                 mWhole,
@@ -1164,7 +1164,7 @@ let mkLetExpression
                 isRec,
                 isUse, // Pass through the isUse flag from binding info
                 true, // isFromSource is true for user-written code
-                false, // isComputed is false for non-bang let/let!
+                false, // isComputed is false for let/use
                 decls,
                 body,
                 mWhole',
