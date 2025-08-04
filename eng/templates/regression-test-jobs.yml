@@ -26,10 +26,16 @@ jobs:
 
     # Download the F# compiler artifacts from EndToEndBuildTests job
     - task: DownloadPipelineArtifact@2
-      displayName: Download F# Compiler Artifacts
+      displayName: Download F# Compiler FSC Artifacts
       inputs:
-        artifactName: 'FSharpCompilerArtifacts'
-        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler'
+        artifactName: 'FSharpCompilerFscArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/bin/fsc'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download F# Core Artifacts
+      inputs:
+        artifactName: 'FSharpCoreArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core'
 
     - task: DownloadPipelineArtifact@2
       displayName: Download UseLocalCompiler props

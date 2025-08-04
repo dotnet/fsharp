@@ -731,10 +731,18 @@ stages:
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1
-            displayName: Publish F# Compiler Artifacts for Regression Tests
+            displayName: Publish F# Compiler FSC Artifacts for Regression Tests
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts'
-              artifactName: 'FSharpCompilerArtifacts'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/fsc'
+              artifactName: 'FSharpCompilerFscArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Core Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/FSharp.Core'
+              artifactName: 'FSharpCoreArtifacts'
               publishLocation: pipeline
             condition: succeeded()
 
