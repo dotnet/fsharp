@@ -4209,7 +4209,7 @@ declExpr:
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
        SynExpr.Do(e, unionRanges (rhs parseState 1).StartRange e.Range) }
 
-  | openDecl opt_seps typedSequentialExpr
+  | openDecl seps typedSequentialExprBlock
     { let target, mOpen = $1
       SynExpr.Open(target, mOpen, $3) }
 

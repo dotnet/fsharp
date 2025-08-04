@@ -997,7 +997,7 @@ let rec synExprContainsError inpExpr =
                 | SynInterpolatedStringPart.FillExpr(x, _) -> Some x)
             |> walkExprs
 
-        | SynExpr.Open (body = e) -> walkExpr e
+        | SynExpr.Open(body = e) -> walkExpr e
 
     walkExpr inpExpr
 
