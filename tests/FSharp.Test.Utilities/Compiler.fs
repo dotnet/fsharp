@@ -1137,7 +1137,7 @@ module rec Compiler =
 
 
     let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
-        let source = fs.Source.GetSourceText |> Option.defaultValue ""
+        let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
         use capture = new TestConsole.ExecutionCapture()
         let result = script.Eval(source)
         let outputWritten, errorsWritten = capture.OutText, capture.ErrorText
