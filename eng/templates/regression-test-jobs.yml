@@ -4,17 +4,12 @@
 parameters:
 - name: testMatrix
   type: object
-  default:
-  - repo: fsprojects/FSharpPlus
-    commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
-    buildScript: build.cmd
-    displayName: FSharpPlus
 
 jobs:
 # Test against third-party repositories
 - ${{ each item in parameters.testMatrix }}:
   - job: RegressionTest_${{ replace(item.repo, '/', '_') }}
-    displayName: 'Regression Test: ${{ item.displayName }}'
+    displayName: 'Regression Test: ${{ item.repo }}'
     dependsOn: EndToEndBuildTests
     pool:
       name: $(DncEngPublicBuildPool)

@@ -1,24 +1,35 @@
-# F# Compiler Regression Testing Pipeline
+# F# Compiler Regression Testing
 
-This document describes the F# compiler regression testing pipeline implemented in `azure-pipelines-regression-test.yml`.
+This document describes the F# compiler regression testing functionality implemented as a reusable Azure DevOps template in `eng/templates/regression-test-jobs.yml` and integrated into the main PR pipeline (`azure-pipelines-PR.yml`).
 
 ## Purpose
 
-The regression testing pipeline helps catch F# compiler regressions by building popular third-party F# libraries with the freshly built compiler from this repository. This provides early detection of breaking changes that might affect real-world F# projects.
+The regression testing helps catch F# compiler regressions by building popular third-party F# libraries with the freshly built compiler from this repository. This provides early detection of breaking changes that might affect real-world F# projects.
 
 ## How It Works
 
-### Pipeline Workflow
+### Integration with PR Pipeline
 
-1. **Build F# Compiler**: The pipeline first builds the F# compiler and packages from the current source code using the standard build process.
+The regression tests are automatically run as part of every PR build, depending on the `EndToEndBuildTests` job for the F# compiler artifacts.
 
-2. **Test Against Third-Party Libraries**: For each library in the test matrix:
+### Template-Based Architecture
+
+The regression testing logic is implemented as a reusable Azure DevOps template that can be consumed by multiple pipelines:
+
+- **Template Location**: `eng/templates/regression-test-jobs.yml`
+- **Integration**: Called from `azure-pipelines-PR.yml` 
+- **Dependencies**: Depends on `EndToEndBuildTests` job for compiler artifacts
+
+### Workflow
+
+1. **Build F# Compiler**: The `EndToEndBuildTests` job builds the F# compiler and publishes required artifacts
+2. **Matrix Execution**: For each library in the test matrix (running in parallel):
    - Checkout the third-party repository at a specific commit
-   - Inject the `UseLocalCompiler.Directory.Build.props` configuration to use the locally built compiler
-   - Run the library's build script
-   - Capture detailed build logs and artifacts
-
-3. **Report Results**: Success/failure status is reported with detailed logs for diagnosis.
+   - Install appropriate .NET SDK version using the repository's `global.json`
+   - Setup `Directory.Build.props` to import `UseLocalCompiler.Directory.Build.props`
+   - Build the library using its standard build script
+   - Publish MSBuild binary logs for analysis
+3. **Report Results**: Success/failure status is reported with build logs for diagnosis
 
 ### Key Features
 
@@ -37,54 +48,51 @@ The pipeline currently tests against:
 
 ## Adding New Libraries
 
-To add a new library to the test matrix:
-
-1. **Choose a Library**: Select a representative F# library that uses features you want to test.
-
-2. **Find a Stable Commit**: Choose a specific commit SHA that is known to build successfully with the current F# compiler.
-
-3. **Update the Matrix**: Add an entry to the `testMatrix` parameter in the pipeline:
+To add a new library to the test matrix, update the template invocation in `azure-pipelines-PR.yml`:
 
 ```yaml
-parameters:
-- name: testMatrix
-  type: object
-  default:
-  - repo: fsprojects/FSharpPlus
-    commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
-    buildScript: build.cmd
-    displayName: FSharpPlus
-  - repo: your-org/your-library    # Add your library here
-    commit: abc123def456...         # Specific commit SHA
-    buildScript: build.sh           # Build script (build.cmd, build.sh, etc.)
-    displayName: YourLibrary        # Human-readable name
+# F# Compiler Regression Tests using third-party libraries
+- template: /eng/templates/regression-test-jobs.yml
+  parameters:
+    testMatrix:
+    - repo: fsprojects/FSharpPlus
+      commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+      buildScript: build.cmd
+      displayName: FSharpPlus
+    - repo: your-org/your-library    # Add your library here
+      commit: abc123def456...         # Specific commit SHA
+      buildScript: build.sh           # Build script (build.cmd, build.sh, etc.)
+      displayName: YourLibrary        # Human-readable name
 ```
 
-4. **Test the Configuration**: Verify that your library builds correctly with the current compiler before adding it to the matrix.
+Each test matrix entry requires:
+- **repo**: GitHub repository in `owner/name` format
+- **commit**: Specific commit SHA for reproducible results
+- **buildScript**: Build script to execute (e.g., `build.cmd`, `build.sh`)
+- **displayName**: Human-readable name for the job
 
 ## Pipeline Configuration
 
 ### Triggers
 
-The pipeline is triggered by:
-- **Branches**: main, release/*, feature/*
-- **Paths**: Changes to compiler source code (src/Compiler/, src/fsc/, src/FSharp.Core/, src/FSharp.Build/)
-- **Exclusions**: Documentation and non-compiler changes
+Regression tests run automatically as part of PR builds when:
+- **PR Pipeline**: Triggered by pull requests to main branches  
+- **Dependencies**: Runs after `EndToEndBuildTests` completes successfully
+- **Parallel Execution**: Each repository in the test matrix runs as a separate job in parallel
 
 ### Build Environment
 
-- **OS**: Windows (windows.vs2022.amd64.open)
-- **Pool**: Uses the standard public build pool (`DncEngPublicBuildPool`)
-- **Timeout**: 60 minutes per job
-- **.NET SDK**: Automatically installs the required preview SDK
+- **OS**: Windows (using `$(WindowsMachineQueueName)`)
+- **Pool**: Standard public build pool (`$(DncEngPublicBuildPool)`)
+- **Timeout**: 60 minutes per regression test job
+- **.NET SDK**: Automatically detects and installs SDK version from each repository's `global.json`
 
 ### Artifacts
 
-The pipeline publishes several artifacts for analysis:
-- **FSharpCompilerArtifacts**: Complete F# compiler build output
-- **UseLocalCompilerProps**: Configuration file for using local compiler
-- **{Library}_BuildOutput**: Complete build output from each tested library
-- **{Library}_BinaryLogs**: MSBuild binary logs when available
+The regression tests publish focused artifacts for analysis:
+- **FSharpCompilerArtifacts**: F# compiler build output (from `EndToEndBuildTests`)
+- **UseLocalCompilerProps**: Configuration file for using local compiler (from `EndToEndBuildTests`)
+- **{LibraryName}_BinaryLogs**: MSBuild binary logs from each tested library for efficient diagnosis
 
 ## Troubleshooting Build Failures
 
