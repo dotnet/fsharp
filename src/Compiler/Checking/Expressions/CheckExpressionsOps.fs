@@ -229,7 +229,7 @@ let YieldFree (cenv: TcFileState) expr =
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
 
-            | SynExpr.LetOrUse(isComputed = false)
+            | SynExpr.LetOrUse(isComputed = true)
             | SynExpr.YieldOrReturnFrom _
             | SynExpr.YieldOrReturn _
             | SynExpr.ImplicitZero _
