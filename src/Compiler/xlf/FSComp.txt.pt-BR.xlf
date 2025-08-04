@@ -1057,6 +1057,11 @@
         <target state="translated">Versões de linguagens com suporte:</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
         <target state="translated">Valor inválido '{0}' para --optimizationdata, o valor válido é: none, file, compact.</target>
