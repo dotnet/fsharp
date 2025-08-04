@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CheckComputationExpressions
 
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Xml
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -861,7 +862,7 @@ let (|ExprAsUseBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: _ ->
+        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: bindings ->
             ValueSome(spBind, isFromSource, pat, rhsExpr, bindings, innerComp, mBind)
         | _ -> ValueNone
 
@@ -875,11 +876,11 @@ let (|ExprAsLetBang|_|) expr =
         isFromSource = isFromSource
         isComputed = true
         bindings = bindings
-        body = letRhsExpr
+        body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = letPat; expr = rhsExpr) :: andBangBindings ->
-            ValueSome(spBind, isFromSource, letPat, rhsExpr, andBangBindings, letRhsExpr, mBind)
+        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: bindings ->
+            ValueSome(spBind, isFromSource, pat, rhsExpr, bindings, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -1357,14 +1358,14 @@ let rec TryTranslateComputationExpression
             let mGuard = mGuard.MakeSynthetic()
 
             // 'while!' is hit just before each time the guard is called
-            let _guardExpr =
+            let guardExpr =
                 match spWhile with
                 | DebugPointAtWhile.Yes _ -> SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             let rewrittenWhileExpr =
                 let idFirst = mkSynId mGuard (CompilerGeneratedName "first")
-                let _patFirst = mkSynPatVar None idFirst
+                let patFirst = mkSynPatVar None idFirst
 
                 let body =
                     let idCond = mkSynId mGuard (CompilerGeneratedName "cond")
@@ -1372,7 +1373,7 @@ let rec TryTranslateComputationExpression
 
                     let condBinding =
                         mkSynBinding
-                            (Xml.PreXmlDoc.Empty, patCond)
+                            (PreXmlDoc.Empty, patCond)
                             (None,
                              false,
                              true,
@@ -1388,13 +1389,30 @@ let rec TryTranslateComputationExpression
 
                     let setCondExpr = SynExpr.Set(SynExpr.Ident idCond, SynExpr.Ident idFirst, mGuard)
 
+                    let binding =
+                        SynBinding(
+                            accessibility = None,
+                            kind = SynBindingKind.Normal,
+                            isInline = false,
+                            isMutable = false,
+                            attributes = [],
+                            xmlDoc = PreXmlDoc.Empty,
+                            valData = SynInfo.emptySynValData,
+                            headPat = patFirst,
+                            returnInfo = None,
+                            expr = guardExpr,
+                            range = mGuard,
+                            debugPoint = DebugPointAtBinding.NoneAtSticky,
+                            trivia = SynBindingTrivia.Zero
+                        )
+
                     let bindCondExpr =
                         SynExpr.LetOrUse(
                             false,
                             false,
-                            false, // isFromSource is true for user-written code
+                            true, // isFromSource is true for user-written code
                             true, // isComputed is true for bang let/let!
-                            [],
+                            [ binding ],
                             setCondExpr,
                             mGuard,
                             SynExprLetOrUseTrivia.Zero
@@ -1415,7 +1433,7 @@ let rec TryTranslateComputationExpression
                             mOrig
                         )
 
-                    SynExpr.LetOrUse(false, false, false, true, [ condBinding ], whileExpr, mGuard, SynExprLetOrUseTrivia.Zero)
+                    SynExpr.LetOrUse(false, false, true, true, [ condBinding ], whileExpr, mGuard, SynExprLetOrUseTrivia.Zero)
 
                 SynExpr.LetOrUse(
                     false,
@@ -1618,17 +1636,52 @@ let rec TryTranslateComputationExpression
                     // "do! expr; cexpr" is treated as { let! () = expr in cexpr }
                     match innerComp1 with
                     | SynExpr.DoBang(expr = rhsExpr; range = m) ->
-                        let _sp =
+                        let sp =
                             match sp with
                             | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo
                             | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.NoneAtDo
                             | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes m
                             | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
 
-                        let letOrUse =
-                            SynExpr.LetOrUse(false, false, false, false, [], rhsExpr, m, SynExprLetOrUseTrivia.Zero)
-
-                        Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letOrUse translatedCtxt)
+                        Some(
+                            TranslateComputationExpression
+                                ceenv
+                                CompExprTranslationPass.Initial
+                                q
+                                varSpace
+                                (SynExpr.LetOrUse(
+                                    false,
+                                    false,
+                                    true,
+                                    true,
+                                    [
+                                        SynBinding(
+                                            accessibility = None,
+                                            kind = SynBindingKind.Normal,
+                                            isInline = false,
+                                            isMutable = false,
+                                            attributes = [],
+                                            xmlDoc = PreXmlDoc.Empty,
+                                            valData = SynInfo.emptySynValData,
+                                            headPat = SynPat.Const(SynConst.Unit, rhsExpr.Range),
+                                            returnInfo = None,
+                                            expr = rhsExpr,
+                                            range = m,
+                                            debugPoint = sp,
+                                            trivia =
+                                                {
+                                                    LeadingKeyword = SynLeadingKeyword.Do m
+                                                    InlineKeyword = None
+                                                    EqualsRange = None
+                                                }
+                                        )
+                                    ],
+                                    innerComp2,
+                                    m,
+                                    SynExprLetOrUseTrivia.Zero
+                                ))
+                                translatedCtxt
+                        )
 
                     // "expr; cexpr" is treated as sequential execution
                     | _ ->
@@ -2371,7 +2424,33 @@ and ConsumeCustomOpClauses
                     // Rebind using either for ... or let!....
                     let rebind =
                         if maintainsVarSpaceUsingBind then
-                            SynExpr.LetOrUse(false, false, true, false, [], contExpr, intoPat.Range, SynExprLetOrUseTrivia.Zero)
+                            SynExpr.LetOrUse(
+                                false,
+                                false,
+                                true,
+                                true,
+                                [
+                                    SynBinding(
+                                        accessibility = None,
+                                        kind = SynBindingKind.Normal,
+                                        isInline = false,
+                                        isMutable = false,
+                                        attributes = [],
+                                        xmlDoc = PreXmlDoc.Empty,
+                                        valData = SynInfo.emptySynValData,
+                                        headPat = intoPat,
+                                        returnInfo = None,
+                                        expr = dataCompAfterOp,
+                                        range = intoPat.Range,
+                                        debugPoint = DebugPointAtBinding.NoneAtLet,
+                                        trivia = SynBindingTrivia.Zero
+
+                                    )
+                                ],
+                                contExpr,
+                                intoPat.Range,
+                                SynExprLetOrUseTrivia.Zero
+                            )
                         else
                             SynExpr.ForEach(
                                 DebugPointAtFor.No,
@@ -2402,7 +2481,33 @@ and ConsumeCustomOpClauses
         // Rebind using either for ... or let!....
         let rebind =
             if lastUsesBind then
-                SynExpr.LetOrUse(false, false, false, false, [], compClausesExpr, compClausesExpr.Range, SynExprLetOrUseTrivia.Zero)
+                SynExpr.LetOrUse(
+                    false,
+                    false,
+                    true,
+                    true,
+                    [
+                        SynBinding(
+                            accessibility = None,
+                            kind = SynBindingKind.Normal,
+                            isInline = false,
+                            isMutable = false,
+                            attributes = [],
+                            xmlDoc = PreXmlDoc.Empty,
+                            valData = SynInfo.emptySynValData,
+                            headPat = varSpacePat,
+                            returnInfo = None,
+                            expr = dataCompPrior,
+                            range = varSpacePat.Range,
+                            debugPoint = DebugPointAtBinding.NoneAtLet,
+                            trivia = SynBindingTrivia.Zero
+
+                        )
+                    ],
+                    compClausesExpr,
+                    compClausesExpr.Range,
+                    SynExprLetOrUseTrivia.Zero
+                )
             else
                 SynExpr.ForEach(
                     DebugPointAtFor.No,
@@ -2619,13 +2724,13 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
             match comp with
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = m }) ->
-                let _mUnit = rhsExpr.Range
+                let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr ceenv.sourceMethInfo ceenv.builderValName
 
                 if ceenv.isQuery then
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
 
-                let _bodyExpr =
+                let bodyExpr =
                     if
                         isNil (
                             TryFindIntrinsicOrExtensionMethInfo
@@ -2660,8 +2765,29 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         false,
                         true, // isFromSource is true for user-written code
                         true, // isComputed is true for bang let/let!
-                        [],
-                        rhsExpr,
+                        [
+                            SynBinding(
+                                accessibility = None,
+                                kind = SynBindingKind.Normal,
+                                isInline = false,
+                                isMutable = false,
+                                attributes = [],
+                                xmlDoc = PreXmlDoc.Empty,
+                                valData = SynInfo.emptySynValData,
+                                headPat = SynPat.Const(SynConst.Unit, mUnit),
+                                returnInfo = None,
+                                expr = rhsExpr,
+                                range = m,
+                                debugPoint = DebugPointAtBinding.NoneAtDo,
+                                trivia =
+                                    {
+                                        LeadingKeyword = SynLeadingKeyword.Let m
+                                        InlineKeyword = None
+                                        EqualsRange = None
+                                    }
+                            )
+                        ],
+                        bodyExpr,
                         m,
                         SynExprLetOrUseTrivia.Zero
                     )
