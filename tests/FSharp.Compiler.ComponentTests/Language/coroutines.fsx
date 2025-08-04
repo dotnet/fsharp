@@ -198,19 +198,13 @@ type CoroutineBuilder() =
                 let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
                 __stack_yield_fin
             else
-
-               printfn "done YieldFrom"
                yieldFromCount <- yieldFromCount + 1
-
                true))
 
     // The implementation of `return!`, non-standard for tailcalls
     member inline _.YieldFromFinal (other: Coroutine) : CoroutineCode = 
         ResumableCode<_,_>(fun sm ->
-
-            if yieldFromFinalCallCount < 10 then printfn "starting YieldFromFinal"
             yieldFromFinalCallCount <- yieldFromFinalCallCount + 1 
-
             sm.Data.TailcallTarget <- Some other
             // For tailcalls we return 'false' and re-run from the entry (trampoline)
             false 
@@ -220,6 +214,23 @@ type CoroutineBuilder() =
             )
 
 let coroutine = CoroutineBuilder()
+
+let dumpCoroutine (t: Coroutine) =
+    yieldFromFinalCallCount <- 0
+    yieldFromCount <- 0
+    printfn "-----"
+    while ( //if verbose then printfn $"[{t.Id}] calling t.MoveNext, will resume at {t.ResumptionPoint}"; 
+            t.MoveNext()
+            not t.IsCompleted) do 
+        () // printfn "yield"
+    printfn $"YieldFromFinal called {yieldFromFinalCallCount} times, YieldFrom called {yieldFromCount} times"
+
+let expect final standard t =
+    dumpCoroutine t
+    if yieldFromFinalCallCount <> final then failwithf "Expected yieldFromFinalCallCount = %d, got %d" final yieldFromFinalCallCount
+    if yieldFromCount <> standard then failwithf "Expected yieldFromCount = %d, got %d" standard yieldFromCount
+
+let t0 () = coroutine { printfn "in t0" } 
 
 let t1 () = 
     coroutine {
@@ -236,6 +247,8 @@ let t1 () =
             }
     }
 
+t1() |> expect 1 0
+
 let testNonTailcall () = 
     coroutine {
         try 
@@ -244,17 +257,23 @@ let testNonTailcall () =
         finally ()
     }
 
+testNonTailcall() |> expect 1 1
+
 let testTailcallTiny () = 
     coroutine {
         printfn "in testTailcallTiny"
         yield! t1()
     }
 
+testTailcallTiny() |> expect 2 0
+
 let testTailcallTinyDoBang () = 
     coroutine {
         printfn "in testTailcallTinyDoBang, desugaring do!"
         do! t1() // this should desugr to YieldFromFinal, because ReturnFromFinal is not provided.
     }
+
+testTailcallTinyDoBang() |> expect 2 0
 
 let rec testTailcall (n: int) = 
     coroutine {
@@ -264,6 +283,9 @@ let rec testTailcall (n: int) =
             yield! testTailcall(n-1)
     }
 
+
+// Large number of recursive calls does not blow up the stack
+testTailcall(1000000) |> expect 1000000 0
 
 let t2 () = 
     coroutine {
@@ -275,10 +297,11 @@ let t2 () =
         yield!
             coroutine {
                 printfn "hey yo"
-                //do! Task.Delay(10)
             }
         yield ()
     }
+
+t2() |> expect 1 2
 
 let t3 () = 
     coroutine {
@@ -303,22 +326,77 @@ let t3 () =
         with _ -> ()
     }
 
+t3() |> expect 1 5
 
-let dumpCoroutine (t: Coroutine) = 
-    printfn "-----"
-    while ( //if verbose then printfn $"[{t.Id}] calling t.MoveNext, will resume at {t.ResumptionPoint}"; 
-            t.MoveNext()
-            not t.IsCompleted) do 
-        () // printfn "yield"
+let negativeTest () = 
+    coroutine {
+        printfn "in negativeTest"
+        try 
+            yield! t0()
+        finally ()
 
-dumpCoroutine (t1())
-dumpCoroutine (testNonTailcall())
-dumpCoroutine (testTailcallTiny())
-dumpCoroutine (testTailcallTinyDoBang())
-dumpCoroutine (t2())
-dumpCoroutine (t3())
-dumpCoroutine (testTailcall(1000000))
+        try
+            yield! t0 ()
+            failwith "crash"
+        with
+        | _ ->
+            yield! t0 ()
+            printfn "in handler"
 
-printfn "\n-----"
-printfn "yieldFromFinalCallCount = %d" yieldFromFinalCallCount
-printfn "yieldFromCount = %d" yieldFromCount
+        let mutable x = 0
+
+        while (x <- x + 1; x < 5) do
+            yield! t0 ()
+
+        for x in 1 .. 5 do
+            yield! t0 ()
+
+        yield! t0 ()
+
+        printfn "done!"
+    }
+
+negativeTest () |> expect 0 13
+
+
+// Test also translation of return!
+
+type CorutineBuilderWithReturnFrom() =
+    inherit CoroutineBuilder()
+    
+    member inline this.ReturnFrom (value: 'T) : CoroutineCode = 
+        this.YieldFrom(value)
+
+    member inline this.ReturnFromFinal (value: 'T) : CoroutineCode = 
+        this.YieldFromFinal(value)
+
+let coroutineWithReturnFrom = CorutineBuilderWithReturnFrom()
+
+let mostlyNegativeTestReturnFrom () = 
+    coroutineWithReturnFrom {
+        printfn "in mostlyNegativeTestReturnFrom"
+        try 
+            return! t0()
+        finally ()
+
+        try
+            return! t0 ()
+            failwith "crash"
+        with
+        | _ ->
+            return! t0 ()
+
+        let mutable x = 0
+
+        while (x <- x + 1; x < 5) do
+            return! t0 ()
+
+        for x in 1 .. 5 do
+            return! t0 ()
+
+        return! t0 () // this one is ReturnFromFinal
+    }
+
+mostlyNegativeTestReturnFrom () |> expect 1 12
+
+
