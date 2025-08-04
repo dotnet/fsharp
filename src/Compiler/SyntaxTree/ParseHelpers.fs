@@ -1080,9 +1080,36 @@ let mkLetExpression
     ) =
     if isBang then
         match bangInfo with
-        | Some(pat, rhs, andBangs, mEquals, isUse) ->
-            // Create let! or use! expression
+        | Some(pat, rhs, decls, mEquals, isUse) ->
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
+
+            let trivia: SynBindingTrivia =
+                {
+                    LeadingKeyword =
+                        if isUse then
+                            SynLeadingKeyword.Use mKeyword
+                        else
+                            SynLeadingKeyword.Let mKeyword
+                    InlineKeyword = mIn
+                    EqualsRange = mEquals
+                }
+
+            let binding =
+                SynBinding(
+                    accessibility = None,
+                    kind = SynBindingKind.Normal,
+                    isInline = false,
+                    isMutable = false,
+                    attributes = [],
+                    xmlDoc = PreXmlDoc.Empty,
+                    valData = SynInfo.emptySynValData,
+                    headPat = pat,
+                    returnInfo = None,
+                    expr = rhs,
+                    range = mWhole,
+                    debugPoint = spBind,
+                    trivia = trivia
+                )
 
             let trivia: SynExprLetOrUseTrivia =
                 {
@@ -1090,13 +1117,21 @@ let mkLetExpression
                     InKeyword = mIn
                     EqualsRange = mEquals
                 }
-            // isFromSource is true for user-written code
-            SynExpr.LetOrUseBang(spBind, isUse, true, pat, rhs, andBangs, body, mWhole, trivia)
+
+            SynExpr.LetOrUse(
+                false,
+                isUse, // Pass through the isUse flag from binding info
+                true, // isFromSource is true for user-written code
+                true, // isComputed is true for bang let/let!
+                binding :: decls,
+                body,
+                mWhole,
+                trivia
+            )
         | None -> SynExpr.FromParseError(body, mWhole)
     else
         match bindingInfo with
         | Some(isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
-            // Create regular let or use expression
             let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
             let mWhole' =
@@ -1128,6 +1163,8 @@ let mkLetExpression
             SynExpr.LetOrUse(
                 isRec,
                 isUse, // Pass through the isUse flag from binding info
+                true, // isFromSource is true for user-written code
+                false, // isComputed is false for non-bang let/let!
                 decls,
                 body,
                 mWhole',

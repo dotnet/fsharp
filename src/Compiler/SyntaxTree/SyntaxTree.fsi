@@ -878,25 +878,16 @@ type SynExpr =
     /// F# syntax: let f pat1 .. patN = expr in expr
     /// F# syntax: let rec f pat1 .. patN = expr in expr
     /// F# syntax: use pat = expr in expr
-    | LetOrUse of
-        isRecursive: bool *
-        isUse: bool *
-        bindings: SynBinding list *
-        body: SynExpr *
-        range: range *
-        trivia: SynExprLetOrUseTrivia
-
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseBang of
-        bindDebugPoint: DebugPointAtBinding *
+    | LetOrUse of
+        isRecursive: bool *
         isUse: bool *
         isFromSource: bool *
-        pat: SynPat *
-        rhs: SynExpr *
-        andBangs: SynBinding list *
+        isComputed: bool *
+        bindings: SynBinding list *
         body: SynExpr *
         range: range *
         trivia: SynExprLetOrUseTrivia
