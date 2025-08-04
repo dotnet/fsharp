@@ -437,8 +437,23 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> funcNodes @ argNodes |> continuation))
         | SynExpr.TypeApp(expr = expr; typeArgs = typeArgs) ->
             visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
-        | SynExpr.LetOrUse(bindings = bindings; body = body) ->
-            visit body (fun nodes -> List.collect visitBinding bindings @ nodes |> continuation)
+        | SynExpr.LetOrUse(isComputed = isComputed; bindings = bindings; body = body) ->
+            if isComputed then
+                let bindingExprs = List.map (fun (SynBinding(expr = expr)) -> expr) bindings
+                let continuations = List.map visit (body :: bindingExprs)
+
+                let finalContinuation nodes =
+                    [
+                        yield! List.concat nodes
+                        for SynBinding(headPat = pat) in bindings do
+                            yield! visitPat pat
+                    ]
+                    |> continuation
+
+                Continuation.sequence continuations finalContinuation
+            else
+                // Handle regular let and use expressions
+                visit body (fun nodes -> List.collect visitBinding bindings @ nodes |> continuation)
         | SynExpr.TryWith(tryExpr = tryExpr; withCases = withCases) ->
             visit tryExpr (fun nodes -> nodes @ List.collect visitSynMatchClause withCases |> continuation)
         | SynExpr.TryFinally(tryExpr = tryExpr; finallyExpr = finallyExpr) ->
