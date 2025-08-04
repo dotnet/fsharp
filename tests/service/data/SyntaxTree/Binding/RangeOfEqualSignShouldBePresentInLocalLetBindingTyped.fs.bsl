@@ -32,8 +32,10 @@ ImplFile
                           EqualsRange = Some (3,15--3,16) })],
                     Const (Unit, (4,4--4,6)), (3,4--4,6),
                     { LetOrUseKeyword = (3,4--3,7)
-                      InKeyword = None }), (2,0--4,6)), (2,0--4,6))],
-          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                      InKeyword = None
+                      EqualsRange = Some (3,15--3,16) }), (2,0--4,6)),
+              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))
