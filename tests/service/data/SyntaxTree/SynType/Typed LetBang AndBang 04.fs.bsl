@@ -9,24 +9,34 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,59), false, true,
-                       Typed
-                         (Record
-                            ([(([], Name), Some (4,16--4,17),
-                               Named
-                                 (SynIdent (name, None), false, None,
-                                  (4,18--4,22)));
-                              (([], Age), Some (4,28--4,29),
-                               Named
-                                 (SynIdent (age, None), false, None,
-                                  (4,30--4,33)))], (4,9--4,35)),
-                          LongIdent (SynLongIdent ([Person], [], [None])),
-                          (4,9--4,43)),
-                       App
-                         (Atomic, false, Ident asyncPerson,
-                          Const (Unit, (4,57--4,59)), (4,46--4,59)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Typed
+                             (Record
+                                ([(([], Name), Some (4,16--4,17),
+                                   Named
+                                     (SynIdent (name, None), false, None,
+                                      (4,18--4,22)));
+                                  (([], Age), Some (4,28--4,29),
+                                   Named
+                                     (SynIdent (age, None), false, None,
+                                      (4,30--4,33)))], (4,9--4,35)),
+                              LongIdent (SynLongIdent ([Person], [], [None])),
+                              (4,9--4,43)), None,
+                           App
+                             (Atomic, false, Ident asyncPerson,
+                              Const (Unit, (4,57--4,59)), (4,46--4,59)),
+                           (4,4--6,15), Yes (4,4--4,59),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,44--4,45) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,
