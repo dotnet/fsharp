@@ -1361,11 +1361,11 @@ module MutRecBindingChecking =
                              
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             [Phase2BMember rbind.RecBindingInfo.Index], innerState
+
                         | Phase2AOpen (target, m) ->
                             let scopem = unionRanges m.EndRange scopem
                             let envInstance, _openDecls = TcOpenDecl cenv m scopem envInstance target
                             let envStatic, _openDecls = TcOpenDecl cenv m scopem envStatic target
-                            let envNonRec, _openDecls = TcOpenDecl cenv m scopem envNonRec target
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             [], innerState
                     )
@@ -1991,7 +1991,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
 
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
-              let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
+              let (MutRecDefnsPhase2DataForTycon(tyconOpt, parent, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
               
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
               let isStaticClass = HasFSharpAttribute g g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
@@ -2017,10 +2017,26 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                 | _ -> 
                     envForDecls
               let obinds = tyconBindingsOfTypeDefn tyconData
-              let ibinds = 
-                      let intfTypes = interfacesFromTypeDefn envForDecls tyconData
-                      let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv envForDecls.AccessRights false (List.map (fun (intfTy, _, m) -> (intfTy, m)) intfTypes)
-                      (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
+              let ibinds =                     
+                    // The env with type-scoped `open`s applied
+                    let envForDecls =
+                        // Get the whole range that containing the type definition
+                        // Used to add `open`s to the environment
+                        let mParent = 
+                            match parent with
+                            | Parent parent -> parent.DefinitionRange
+                            | ParentNone -> tcref.DefinitionRange
+                        (envForDecls, synMembers) ||> List.fold (fun envForDecls ->
+                            function
+                            | SynMemberDefn.Open (target, mOpen) ->
+                                let envForDecls, _openDecl = TcOpenDecl cenv mOpen mParent envForDecls target
+                                envForDecls
+                            | _ -> envForDecls
+                        )
+                
+                    let intfTypes = interfacesFromTypeDefn envForDecls tyconData
+                    let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv envForDecls.AccessRights false (List.map (fun (intfTy, _, m) -> (intfTy, m)) intfTypes)
+                    (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
               MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds, fixupFinalAttrs))
       
       MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv mBinds scopem mutRecNSInfo envMutRec binds
@@ -3193,12 +3209,31 @@ module EstablishTypeDefinitionCores =
         let tyconWithImplementsL = 
             (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo, tyconAndAttrsOpt) -> 
                match origInfo, tyconAndAttrsOpt with 
-               | (typeDefCore, _, _), Some (tycon, (attrs, _)) ->
+               | (typeDefCore, memberDefns, parent), Some (tycon, (attrs, _)) ->
                 let (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, explicitImplements, _, _, _)) = typeDefCore
                 let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
                 let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false 
+
+                // The env with type-scoped `open`s applied
+                let envinner =
+                    match box memberDefns with
+                    | :? (SynMemberDefn list) as memberDefns ->
+                        // Get the whole range that containing the type definition
+                        // Used to add `open`s to the environment
+                        let mParent = 
+                            match parent with
+                            | Parent parent -> parent.DefinitionRange
+                            | ParentNone -> m
+                        (envinner, memberDefns) ||> List.fold (fun envinner ->
+                            function
+                            | SynMemberDefn.Open (target, mOpen) ->
+                                let envinner, _openDecl = TcOpenDecl cenv mOpen mParent envinner target
+                                envinner
+                            | _ -> envinner
+                        )
+                    | _ -> envinner
                 
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
 
@@ -4021,7 +4056,26 @@ module EstablishTypeDefinitionCores =
             (envMutRecPrelim, withEnvs) 
             ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                    match origInfo, tyconOpt with 
-                   | (typeDefCore, _, _), Some tycon -> Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
+                   | (typeDefCore, memberDefns, parent), Some tycon -> 
+                        // The env with type-scoped `open`s applied
+                        let envForDecls =
+                            match box memberDefns with
+                            | :? (SynMemberDefn list) as memberDefns ->
+                                // Get the whole range that containing the type definition
+                                // Used to add `open`s to the environment
+                                let mParent = 
+                                    match parent with
+                                    | Parent parent -> parent.DefinitionRange
+                                    | ParentNone -> m
+                                (envForDecls, memberDefns) ||> List.fold (fun envForDecls ->
+                                    function
+                                    | SynMemberDefn.Open (target, mOpen) ->
+                                        let envForDecls, _openDecl = TcOpenDecl cenv mOpen mParent envForDecls target
+                                        envForDecls
+                                    | _ -> envForDecls
+                                )
+                            | _ -> envForDecls
+                        Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
                    | _ -> None) 
             |> MutRecShapes.collectTycons 
             |> List.choose id
@@ -4067,7 +4121,26 @@ module EstablishTypeDefinitionCores =
             (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
                 let info = 
                     match origInfo, tyconAndAttrsOpt with 
-                    | (typeDefCore, _, _), Some (tycon, (attrs, _)) -> TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
+                    | (typeDefCore, memberDefns, parent), Some (tycon, (attrs, _)) -> 
+                        // The env with type-scoped `open`s applied
+                        let envForDecls =
+                            match box memberDefns with
+                            | :? (SynMemberDefn list) as memberDefns ->
+                                // Get the whole range that containing the type definition
+                                // Used to add `open`s to the environment
+                                let mParent = 
+                                    match parent with
+                                    | Parent parent -> parent.DefinitionRange
+                                    | ParentNone -> m
+                                (envForDecls, memberDefns) ||> List.fold (fun envForDecls ->
+                                    function
+                                    | SynMemberDefn.Open (target, mOpen) ->
+                                        let envForDecls, _openDecl = TcOpenDecl cenv mOpen mParent envForDecls target
+                                        envForDecls
+                                    | _ -> envForDecls
+                                )
+                            | _ -> envForDecls
+                        TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
                     | _ -> None, NoSafeInitInfo 
                 let tyconOpt, fixupFinalAttrs = 
                     match tyconAndAttrsOpt with
