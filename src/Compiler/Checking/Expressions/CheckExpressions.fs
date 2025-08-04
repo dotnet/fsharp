@@ -4052,6 +4052,14 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+/// Adjust the TcEnv to account for opening a type implied by an `open type` declaration
+let OpenTypeContent tcSink g amap scopem env (ty: TType) openDeclaration =
+    let env =
+        { env with eNameResEnv = AddTypeContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv ty }
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    CallOpenDeclarationSink tcSink openDeclaration
+    env
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -12839,6 +12847,32 @@ and TcLetrecBindings overridesOK (cenv: cenv) env tpenv (binds, bindsm, scopem) 
     // Post letrec env
     let envbody = AddLocalVals g cenv.tcSink scopem prelimRecValues env
     binds, envbody, tpenv
+
+and TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
+    let g = cenv.g
+
+    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
+
+    let ty, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
+
+    if not (isAppTy g ty) then
+        errorR(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
+
+    if isByrefTy g ty then
+        errorR(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
+
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [ty], scopem, false)
+    let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env ty openDecl
+    env, [openDecl]
+
+and TcOpenDecl (cenv: cenv) mOpenDecl scopem env target = 
+    let g = cenv.g
+    match target with
+    | SynOpenDeclTarget.ModuleOrNamespace (longId, m) ->
+        TcOpenModuleOrNamespaceDecl cenv.tcSink g cenv.amap scopem env (longId.LongIdent, m)
+
+    | SynOpenDeclTarget.Type (synType, m) ->
+        TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
 
 //-------------------------------------------------------------------------
 // Bind specifications of values

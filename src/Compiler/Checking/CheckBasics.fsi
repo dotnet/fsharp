@@ -358,3 +358,12 @@ type TcFileState =
                 -> range * Expr * TType * SynExpr
                 -> Expr * UnscopedTyparEnv) ->
             TcFileState
+
+val TcOpenModuleOrNamespaceDecl:
+    tcSink: TcResultsSink ->
+    g: TcGlobals ->
+    amap: Import.ImportMap ->
+    scopem: range ->
+    env: TcEnv ->
+    longId: LongIdent * m: range ->
+        TcEnv * OpenDeclaration list
