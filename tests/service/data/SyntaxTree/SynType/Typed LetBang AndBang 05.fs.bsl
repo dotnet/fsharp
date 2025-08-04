@@ -27,8 +27,12 @@ ImplFile
                        App
                          (Atomic, false, Ident asyncPerson,
                           Const (Unit, (4,59--4,61)), (4,48--4,61)),
-                       [SynExprAndBang
-                          (Yes (5,4--5,40), false, true,
+                       [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
                            Typed
                              (Record
                                 ([(([], Id), Some (5,14--5,15),
@@ -36,17 +40,19 @@ ImplFile
                                      (SynIdent (id, None), false, None,
                                       (5,16--5,18)))], (5,9--5,20)),
                               LongIdent (SynLongIdent ([User], [], [None])),
-                              (5,9--5,26)),
+                              (5,9--5,26)), None,
                            App
                              (Atomic, false, Ident asyncUser,
                               Const (Unit, (5,38--5,40)), (5,29--5,40)),
-                           (5,4--5,40), { AndBangKeyword = (5,4--5,8)
-                                          EqualsRange = (5,27--5,28)
-                                          InKeyword = None })],
+                           (5,4--5,40), Yes (5,4--5,40),
+                           { LeadingKeyword = And (5,4--5,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (5,27--5,28) })],
                        YieldOrReturn
                          ((false, true), Ident name, (6,4--6,15),
                           { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,15),
-                       { LetOrUseBangKeyword = (4,4--4,8)
+                       { LetOrUseKeyword = (4,4--4,8)
+                         InKeyword = None
                          EqualsRange = Some (4,46--4,47) }), (3,6--7,1)),
                  (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
