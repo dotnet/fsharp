@@ -4120,7 +4120,7 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
             mkILClassCtor body, []
         | multipleCctors ->
             // Handle multiple .cctor methods by renaming them and creating a new .cctor that calls them
-            // This resolves the "duplicate entry '.cctor' in method table" error
+            // This resolves the "duplicate entry '.cctor' in method table" error (FS2014)
             let renamedCctors = 
                 multipleCctors
                 |> List.mapi (fun i mdef ->
