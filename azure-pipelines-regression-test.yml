@@ -56,8 +56,10 @@ stages:
 - stage: RegressionTest
   displayName: F# Compiler Regression Tests
   jobs:
+  # Note: This pipeline should be integrated with azure-pipelines-PR.yml EndToEndBuildTests job
+  # For now, keeping a minimal build job until architectural integration is completed
   - job: BuildCompiler
-    displayName: Build F# Compiler
+    displayName: Build F# Compiler (temporary - should use EndToEndBuildTests)
     pool:
       name: $(DncEngPublicBuildPool)
       demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -159,35 +161,16 @@ stages:
               exit 1
             }
 
-      # Detect .NET SDK version from global.json if it exists
-      - task: PowerShell@2
-        displayName: 'Detect .NET SDK version for $(DisplayName)'
-        inputs:
-          script: |
-            Set-Location $(Pipeline.Workspace)/TestRepo
-            
-            if (Test-Path "global.json") {
-              Write-Host "Found global.json, reading .NET SDK version"
-              $globalJson = Get-Content "global.json" | ConvertFrom-Json
-              $sdkVersion = $globalJson.sdk.version
-              Write-Host "Detected .NET SDK version: $sdkVersion"
-              Write-Host "##vso[task.setvariable variable=DotNetSdkVersion]$sdkVersion"
-            } else {
-              Write-Host "No global.json found, will use latest public SDK"
-              Write-Host "##vso[task.setvariable variable=DotNetSdkVersion]10.x"
-            }
-
-      # Install appropriate .NET SDK version
+      # Install appropriate .NET SDK version using global.json if present
       - task: UseDotNet@2
         displayName: 'Install .NET SDK for $(DisplayName)'
         inputs:
           packageType: sdk
-          version: $(DotNetSdkVersion)
-          includePreviewVersions: true
+          useGlobalJson: true
           workingDirectory: $(Pipeline.Workspace)/TestRepo
           installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
-      # Setup Directory.Build.props and UseLocalCompiler configuration using F# script
+      # Setup Directory.Build.props to import UseLocalCompiler configuration
       - task: PowerShell@2
         displayName: 'Setup local compiler configuration for $(DisplayName)'
         inputs:
@@ -200,7 +183,7 @@ stages:
             open System.IO
             open System.Xml
             
-            let useLocalCompilerImport = """<Import Project="UseLocalCompiler.Directory.Build.props" />"""
+            let useLocalCompilerImport = """<Import Project="$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props" />"""
             
             let directoryBuildPropsPath = "Directory.Build.props"
             
@@ -213,10 +196,10 @@ stages:
                 let projectElement = doc.SelectSingleNode("/Project")
                 if projectElement <> null then
                     // Check if our import already exists
-                    let existingImport = doc.SelectSingleNode(sprintf "//Import[@Project='UseLocalCompiler.Directory.Build.props']")
+                    let existingImport = doc.SelectSingleNode(sprintf "//Import[@Project='$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props']")
                     if existingImport = null then
                         let importElement = doc.CreateElement("Import")
-                        importElement.SetAttribute("Project", "UseLocalCompiler.Directory.Build.props")
+                        importElement.SetAttribute("Project", "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props")
                         projectElement.InsertBefore(importElement, projectElement.FirstChild) |> ignore
                         doc.Save(directoryBuildPropsPath)
                         printfn "Added UseLocalCompiler import to existing Directory.Build.props"
@@ -238,11 +221,7 @@ stages:
             # Run the F# script using dotnet fsi
             dotnet fsi PrepareRepoForTesting.fsx
             
-            # Copy UseLocalCompiler.Directory.Build.props as-is (path will be set via environment variable)
-            Copy-Item "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props" "UseLocalCompiler.Directory.Build.props" -Force
-            
-            Write-Host "UseLocalCompiler.Directory.Build.props content (first 20 lines):"
-            Get-Content "UseLocalCompiler.Directory.Build.props" | Select-Object -First 20
+            Write-Host "UseLocalCompiler.Directory.Build.props will be referenced from: $(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
 
       # Report dotnet info in test environment
       - task: PowerShell@2
@@ -310,14 +289,14 @@ stages:
               exit $exitCode
             }
 
-      # Capture and publish build logs on failure
-      # Publish only MSBuild binary logs
+      # Publish only MSBuild binary logs for efficient storage
       - task: PublishPipelineArtifact@1
         displayName: 'Publish $(DisplayName) Binary Logs'
         inputs:
           targetPath: '$(Pipeline.Workspace)/TestRepo'
           artifactName: '$(DisplayName)_BinaryLogs'
           publishLocation: pipeline
+          artifact: '*.binlog'
         condition: always()
         continueOnError: true
 
