@@ -445,7 +445,7 @@ module SynExpr =
         let (|LetOrUse|_|) =
             dangling (function
                 | SynExpr.LetOrUse _
-                | SynExpr.LetOrUseBang _ as expr -> Some expr
+                | SynExpr.LetOrUse _ as expr -> Some expr
                 | _ -> None)
 
         /// Matches a dangling sequential expression.
@@ -697,7 +697,6 @@ module SynExpr =
         | _, SyntaxNode.SynExpr(SynExpr.Lazy _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.LetOrUse _ as outer) :: _
-        | _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.TryWith _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.TryFinally _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.For _ as outer) :: _
@@ -1211,7 +1210,6 @@ module SynExpr =
             | SynExpr.Match _, _
             | SynExpr.MatchBang _, _
             | SynExpr.LetOrUse _, _
-            | SynExpr.LetOrUseBang _, _
             | SynExpr.Sequential _, _
             | SynExpr.Do _, _
             | SynExpr.DoBang _, _

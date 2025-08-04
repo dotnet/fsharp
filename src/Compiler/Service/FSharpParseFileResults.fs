@@ -762,15 +762,13 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkExpr false e2
                             yield! walkExpr false e3
 
-                        | SynExpr.LetOrUseBang(spBind, _, _, _, rhsExpr, andBangs, bodyExpr, _, _) ->
-                            yield! walkBindSeqPt spBind
-                            yield! walkExpr true rhsExpr
+                        | SynExpr.LetOrUse(isComputed = true; bindings = decls; body = rhsExpr) ->
 
-                            for SynBinding(debugPoint = andBangSpBind; expr = eAndBang) in andBangs do
+                            for SynBinding(debugPoint = andBangSpBind; expr = eAndBang) in decls do
                                 yield! walkBindSeqPt andBangSpBind
                                 yield! walkExpr true eAndBang
 
-                            yield! walkExpr true bodyExpr
+                            yield! walkExpr true rhsExpr
                 ]
 
             // Process a class declaration or F# type declaration
