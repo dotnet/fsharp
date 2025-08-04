@@ -1858,7 +1858,7 @@ let rec TryTranslateComputationExpression
                 let m =
                     match andBangs with
                     | [] -> comp.Range
-                    | h :: _ -> h.Trivia.AndBangKeyword
+                    | h :: _ -> h.Trivia.LeadingKeyword.Range
 
                 error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
 
@@ -1910,7 +1910,7 @@ let rec TryTranslateComputationExpression
                     let andBangRange =
                         match andBangBindings with
                         | [] -> comp.Range
-                        | h :: _ -> h.Trivia.AndBangKeyword
+                        | h :: _ -> h.Trivia.LeadingKeyword.Range
 
                     error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
 
@@ -1918,12 +1918,11 @@ let rec TryTranslateComputationExpression
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
                 let sources =
-                    (letRhsExpr
-                     :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
+                    (letRhsExpr :: [ for SynBinding(expr = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
                 let pats =
-                    letPat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
+                    letPat :: [ for SynBinding(headPat = andPat) in andBangBindings -> andPat ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 

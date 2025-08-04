@@ -293,14 +293,6 @@ type SynBindingTrivia =
         }
 
 [<NoEquality; NoComparison>]
-type SynExprAndBangTrivia =
-    {
-        AndBangKeyword: range
-        EqualsRange: range
-        InKeyword: range option
-    }
-
-[<NoEquality; NoComparison>]
 type SynModuleDeclNestedModuleTrivia =
     {
         ModuleKeyword: range option
