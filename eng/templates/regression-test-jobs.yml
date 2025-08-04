@@ -206,7 +206,6 @@ jobs:
         targetPath: '$(Pipeline.Workspace)/TestRepo'
         artifactName: '$(DisplayName)_BinaryLogs'
         publishLocation: pipeline
-        artifact: '*.binlog'
       condition: always()
       continueOnError: true
 
