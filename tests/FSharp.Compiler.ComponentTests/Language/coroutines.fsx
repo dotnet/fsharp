@@ -47,7 +47,7 @@ type Coroutine() =
     /// Executes the coroutine until the next 'yield'
     abstract MoveNext: unit -> unit
 
-    /// Gets the tailcall target if the coroutine has executed a `return!`
+    /// Gets the tailcall target if the coroutine has executed a `yield!` in tailcall position.
     abstract TailcallTarget: Coroutine option
     
 /// This is the implementation of Coroutine with respect to a particular struct state machine type.
@@ -87,7 +87,7 @@ and [<NoEquality; NoComparison>]
 and [<Struct; NoComparison; NoEquality>]
     CoroutineStateMachineData =
 
-    /// This is used for tailcalls using 'return!'
+    /// This is used for tailcalls using 'yield!'
     [<DefaultValue(false)>]
     val mutable TailcallTarget: Coroutine option
 
@@ -198,15 +198,19 @@ type CoroutineBuilder() =
                 let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
                 __stack_yield_fin
             else
+
                printfn "done YieldFrom"
                yieldFromCount <- yieldFromCount + 1
+
                true))
 
     // The implementation of `return!`, non-standard for tailcalls
     member inline _.YieldFromFinal (other: Coroutine) : CoroutineCode = 
         ResumableCode<_,_>(fun sm ->
+
             if yieldFromFinalCallCount < 10 then printfn "starting YieldFromFinal"
             yieldFromFinalCallCount <- yieldFromFinalCallCount + 1 
+
             sm.Data.TailcallTarget <- Some other
             // For tailcalls we return 'false' and re-run from the entry (trampoline)
             false 
@@ -245,6 +249,13 @@ let testTailcallTiny () =
         printfn "in testTailcallTiny"
         yield! t1()
     }
+
+let testTailcallTinyDoBang () = 
+    coroutine {
+        printfn "in testTailcallTinyDoBang, desugaring do!"
+        do! t1() // this should desugr to YieldFromFinal, because ReturnFromFinal is not provided.
+    }
+
 let rec testTailcall (n: int) = 
     coroutine {
         if n % 10_000 = 0 then printfn $"in testTailcall, n = {n}"
@@ -303,6 +314,7 @@ let dumpCoroutine (t: Coroutine) =
 dumpCoroutine (t1())
 dumpCoroutine (testNonTailcall())
 dumpCoroutine (testTailcallTiny())
+dumpCoroutine (testTailcallTinyDoBang())
 dumpCoroutine (t2())
 dumpCoroutine (t3())
 dumpCoroutine (testTailcall(1000000))
