@@ -349,18 +349,6 @@ type SynBindingTrivia =
 
     static member Zero: SynBindingTrivia
 
-/// Represents additional information for SynExprAndBang
-[<NoEquality; NoComparison>]
-type SynExprAndBangTrivia =
-    {
-        /// The syntax range of the `and!` keyword
-        AndBangKeyword: range
-        /// The syntax range of the `=` token.
-        EqualsRange: range
-        /// The syntax range of the `in` keyword.
-        InKeyword: range option
-    }
-
 /// Represents additional information for SynModuleDecl.NestedModule
 [<NoEquality; NoComparison>]
 type SynModuleDeclNestedModuleTrivia =

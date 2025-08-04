@@ -18,16 +18,22 @@ ImplFile
                        App
                          (NonAtomic, false, Ident getBar,
                           Const (Unit, (3,22--3,24)), (3,15--3,24)),
-                       [SynExprAndBang
-                          (Yes (5,4--5,24), false, true,
+                       [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
                            Named
                              (SynIdent (foo, None), false, None, (5,9--5,12)),
+                           None,
                            App
                              (NonAtomic, false, Ident getFoo,
                               Const (Unit, (5,22--5,24)), (5,15--5,24)),
-                           (5,4--5,24), { AndBangKeyword = (5,4--5,8)
-                                          EqualsRange = (5,13--5,14)
-                                          InKeyword = None })],
+                           (5,4--5,24), Yes (5,4--5,24),
+                           { LeadingKeyword = And (5,4--5,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (5,13--5,14) })],
                        YieldOrReturn
                          ((false, true), Ident bar, (7,4--7,14),
                           { YieldOrReturnKeyword = (7,4--7,10) }), (3,4--7,14),
