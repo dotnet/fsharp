@@ -850,6 +850,8 @@ module MutRecBindingChecking =
       /// Indicates the last 'field' has been initialized, only 'do' comes after 
       | Phase2AIncrClassCtorJustAfterLastLet
 
+      | Phase2AOpen of target: SynOpenDeclTarget * range: range
+
     /// The collected syntactic input definitions for a single type or type-extension definition
     type TyconBindingsPhase2A = 
       | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
@@ -1061,6 +1063,9 @@ module MutRecBindingChecking =
 
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
                             cbinds, innerState
+                        
+                        | Some (SynMemberDefn.Open (target, m)), _ -> [Phase2AOpen (target, m)], innerState
+                        
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
 
@@ -1108,7 +1113,7 @@ module MutRecBindingChecking =
                         let rest = 
                             let isAfter b = 
                                 match b with 
-                                | Phase2AIncrClassCtor _ | Phase2AInherit _ | Phase2AIncrClassCtorJustAfterSuperInit -> false
+                                | Phase2AIncrClassCtor _ | Phase2AInherit _ | Phase2AIncrClassCtorJustAfterSuperInit | Phase2AOpen _ -> false
                                 | Phase2AIncrClassBindings (_, binds, _, _, _) -> binds |> List.exists (function SynBinding (kind=SynBindingKind.Do) -> true | _ -> false)
                                 | Phase2AIncrClassCtorJustAfterLastLet
                                 | Phase2AMember _ -> true
@@ -1224,7 +1229,7 @@ module MutRecBindingChecking =
                 let defnBs, (tpenv, _, _, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable) = 
 
                     let initialInnerState = (tpenv, envForTycon, envForTycon, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                    (initialInnerState, defnAs) ||> List.mapFold (fun innerState defnA -> 
+                    (initialInnerState, defnAs) ||> List.collectFold (fun innerState defnA -> 
 
                         let tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable = innerState
 
@@ -1257,7 +1262,7 @@ module MutRecBindingChecking =
                                 | Some incrCtorInfo -> TcLetrecComputeCtorSafeThisValBind cenv incrCtorInfo.InstanceCtorSafeThisValOpt
 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt), innerState
+                            [Phase2BIncrClassCtor (staticCtorInfo, incrCtorInfoOpt, safeThisValBindOpt)], innerState
                             
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
@@ -1272,7 +1277,7 @@ module MutRecBindingChecking =
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envNonRec | None -> envNonRec
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BInherit inheritsExpr, innerState
+                            [Phase2BInherit inheritsExpr], innerState
                             
                         // Phase2B: let and let rec value and function definitions
                         | Phase2AIncrClassBindings (tcref, binds, isStatic, isRec, mBinds) ->
@@ -1317,15 +1322,15 @@ module MutRecBindingChecking =
                             let envInstance = (if isStatic then (binds, envInstance) ||> List.foldBack (fun b e -> AddLocalVal g cenv.tcSink scopem b.Var e) else env)
                             let envStatic = (if isStatic then env else envStatic)
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BIncrClassBindings bindRs, innerState
+                            [Phase2BIncrClassBindings bindRs], innerState
                               
                         | Phase2AIncrClassCtorJustAfterSuperInit -> 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BIncrClassCtorJustAfterSuperInit, innerState
+                            [Phase2BIncrClassCtorJustAfterSuperInit], innerState
                             
                         | Phase2AIncrClassCtorJustAfterLastLet -> 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BIncrClassCtorJustAfterLastLet, innerState
+                            [Phase2BIncrClassCtorJustAfterLastLet], innerState
 
                         // Note: this path doesn't add anything the environment, because the member is already available off via its type 
                         
@@ -1355,7 +1360,15 @@ module MutRecBindingChecking =
                                 TcLetrecBinding (cenv, envForBinding, scopem, extraGeneralizableTypars, reqdThisValTyOpt) (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, tpenv, uncheckedRecBindsTable) rbind
                              
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
-                            Phase2BMember rbind.RecBindingInfo.Index, innerState)
+                            [Phase2BMember rbind.RecBindingInfo.Index], innerState
+                        | Phase2AOpen (target, m) ->
+                            let scopem = unionRanges m.EndRange scopem
+                            let envInstance, _openDecls = TcOpenDecl cenv m scopem envInstance target
+                            let envStatic, _openDecls = TcOpenDecl cenv m scopem envStatic target
+                            let envNonRec, _openDecls = TcOpenDecl cenv m scopem envNonRec target
+                            let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
+                            [], innerState
+                    )
 
                 let tyconOpt =
                     if not(cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired)) then
@@ -1964,10 +1977,10 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                     match mem with
                     | SynMemberDefn.AutoProperty (isStatic=isStatic)
                     | SynMemberDefn.LetBindings (isStatic=isStatic)  when isStatic -> ()
+                    | SynMemberDefn.Open _ 
                     | SynMemberDefn.Member _
                     | SynMemberDefn.GetSetMember _
                     | SynMemberDefn.Interface _ -> () 
-                    | SynMemberDefn.Open _ 
                     | SynMemberDefn.AutoProperty _
                     | SynMemberDefn.LetBindings _  
                     | SynMemberDefn.ImplicitCtor _ // accept implicit ctor pattern, should be first! 

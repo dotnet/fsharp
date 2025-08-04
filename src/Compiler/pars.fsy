@@ -2125,7 +2125,7 @@ classDefnMember:
        assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; InlineKeyword = None; EqualsRange = None }
        [ SynMemberDefn.Member(SynBinding(None, SynBindingKind.Normal, false, false, $1, xmlDoc, valSynData, declPat, None, expr, m, DebugPointAtBinding.NoneAtInvisible, synBindingTrivia), m) ] }
-
+       
   | opt_attributes opt_access NEW atomicPattern optAsSpec OBLOCKSEP
      { reportParseErrorAt (rhs parseState 5) (FSComp.SR.parsMissingMemberBody ())
        let mNew = rhs parseState 3
@@ -2157,6 +2157,8 @@ classDefnMember:
        let leadingKeyword = SynTypeDefnLeadingKeyword.StaticType(rhs parseState 3, rhs parseState 4)
        [ SynMemberDefn.NestedType($5 leadingKeyword, None, rhs2 parseState 1 5) ] }
 
+  | openDecl
+      { [ SynMemberDefn.Open $1 ] }
 
 /* A 'val' definition in an object type definition */
 valDefnDecl:
@@ -4206,6 +4208,10 @@ declExpr:
   | hardwhiteDoBinding %prec expr_let
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
        SynExpr.Do(e, unionRanges (rhs parseState 1).StartRange e.Range) }
+
+  | openDecl opt_seps typedSequentialExpr
+    { let target, mOpen = $1
+      SynExpr.Open(target, mOpen, $3) }
 
   | anonMatchingExpr %prec expr_function
       { $1 }

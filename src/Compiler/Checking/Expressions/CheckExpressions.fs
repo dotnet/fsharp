@@ -6091,6 +6091,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.IndexRange (range=m) ->
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
 
+    | SynExpr.Open (target, m, body) ->
+        let env, _openDecls = TcOpenDecl cenv m body.Range env target
+        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false body id
+
 and TcExprMatch (cenv: cenv) overallTy env tpenv synInputExpr spMatch synClauses =
     let inputExpr, inputTy, tpenv =
         let env = { env with eIsControlFlow = false }
@@ -9213,6 +9217,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.TraitCall _
         | SynExpr.IndexFromEnd _
         | SynExpr.IndexRange _
+        | SynExpr.Open _
             -> false
 
     // Propagate the known application structure into function types

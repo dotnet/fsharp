@@ -423,7 +423,8 @@ module SyntaxTraversal =
                 | SynExpr.TypeApp(expr = synExpr)
                 | SynExpr.DotLambda(expr = synExpr)
                 | SynExpr.Quote(quotedExpr = synExpr)
-                | SynExpr.Paren(expr = synExpr) -> traverseSynExpr synExpr
+                | SynExpr.Paren(expr = synExpr)
+                | SynExpr.Open(body = synExpr) -> traverseSynExpr synExpr
 
                 | SynExpr.InterpolatedString(contents = parts) ->
                     [

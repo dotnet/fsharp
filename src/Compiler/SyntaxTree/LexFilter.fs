@@ -66,6 +66,8 @@ type Context =
     // Indicates we're processing the second part of a match, after the 'with'
     // First bool indicates "was this 'with' followed immediately by a '|'"?
     | CtxtMatchClauses of bool * Position
+    // Used to avoid early inserting OBLOCKEND in `open type ...`
+    | CtxtOpen of Position
 
     member c.StartPos =
         match c with
@@ -74,6 +76,7 @@ type Context =
         | CtxtWithAsLet p
         | CtxtWithAsAugment p
         | CtxtMatchClauses (_, p) | CtxtIf p | CtxtMatch p | CtxtFor p | CtxtWhile p | CtxtWhen p | CtxtFunction p | CtxtFun p | CtxtTry p | CtxtThen p | CtxtElse p | CtxtVanilla (p, _)
+        | CtxtOpen p
         | CtxtSeqBlock (_, p, _) -> p
 
     member c.StartCol = c.StartPos.Column
@@ -109,6 +112,7 @@ type Context =
         | CtxtThen _ -> "then"
         | CtxtElse p -> sprintf "else(%s)" (stringOfPos p)
         | CtxtVanilla (p, _) -> sprintf "vanilla(%s)" (stringOfPos p)
+        | CtxtOpen _ -> "open"
 
 and AddBlockEnd = AddBlockEnd | NoAddBlockEnd | AddOneSidedBlockEnd
 and FirstInSequence = FirstInSeqBlock | NotFirstInSeqBlock
@@ -765,7 +769,8 @@ type LexFilterImpl (
             | _, [] -> PositionWithColumn(newCtxt.StartPos, -1)
 
             // ignore Vanilla because a SeqBlock is always coming
-            | _, CtxtVanilla _ :: rest -> undentationLimit strict rest
+            | _, CtxtVanilla _ :: rest
+            | _, CtxtOpen _ :: rest -> undentationLimit strict rest
 
             |  CtxtSeqBlock(FirstInSeqBlock, _, _), (CtxtDo _ as limitCtxt) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ | CtxtModuleBody _) :: _ ->
                 PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
@@ -2469,6 +2474,18 @@ type LexFilterImpl (
             pushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
+        // The `open type ...` case
+        | OPEN, _ when peekNextToken().IsTYPE ->
+            pushCtxt tokenTup (CtxtOpen tokenStartPos)
+            if debug then dprintf "pushing CtxtOpen at tokenStartPos = %a\n" outputPos tokenStartPos
+            returnToken tokenLexbufState token
+
+        // The `open type ...` case
+        | TYPE, CtxtOpen _ :: _ ->
+            if debug then dprintf "--> because TYPE is coming, popping CtxtOpen\n"
+            popCtxt()
+            returnToken tokenLexbufState token
+            
         | TYPE, _ ->
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
             if debug then dprintf "TYPE, pushing CtxtTypeDefns(%a)\n" outputPos tokenStartPos
