@@ -1057,6 +1057,11 @@
         <target state="translated">Desteklenen dil sürümleri:</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
         <target state="translated">--optimizationdata için geçersiz '{0}' değeri, geçerli değerler: none, file, compress.</target>
@@ -5142,11 +5147,6 @@
         <target state="translated">Bu öznitelik, bu dil öğesinde kullanılmak için geçerli değil. Bütünleştirilmiş kod öznitelikleri, bir 'do ()' bildirimine, gerekirse F# modülü içine iliştirilmelidir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Bu öznitelik, bu dil öğesinde kullanılmak için geçerli değil</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">İsteğe bağlı bağımsız değişkenler özel özniteliklerde kullanılamaz</target>
@@ -5159,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
         <source>Property '{0}' cannot be set because the setter is private</source>
-        <target state="translated">'{0}' özelliği, setter'ı özel olduğu için ayarlanamaz.</target>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">

@@ -1057,6 +1057,11 @@
         <target state="translated">サポートされる言語バージョン:</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
         <target state="translated">--optimizationdata の値 '{0}' が無効です。有効な値は none、file、compress です。</target>
@@ -5142,11 +5147,6 @@
         <target state="translated">この言語要素では、この属性を使用できません。アセンブリの属性は (必要に応じて F# モジュール内で) 'do ()' 宣言にアタッチする必要があります。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">この言語要素では、この属性を使用できません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">カスタム属性にはオプションの引数を使用できません</target>
@@ -5159,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
         <source>Property '{0}' cannot be set because the setter is private</source>
-        <target state="translated">プロパティ '{0}' は setter が private のため設定できません。</target>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">

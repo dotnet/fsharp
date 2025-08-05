@@ -102,7 +102,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | AllowTypedLetOrUseBang
+    | AllowTypedLetUseAndBang
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -235,12 +235,12 @@ type LanguageVersion(versionText) =
                 LanguageFeature.UseBangBindingValueDiscard, languageVersion100
                 LanguageFeature.BetterAnonymousRecordParsing, languageVersion100
                 LanguageFeature.ScopedNowarn, languageVersion100
-                LanguageFeature.AllowTypedLetOrUseBang, languageVersion100
+                LanguageFeature.AllowTypedLetUseAndBang, languageVersion100
+                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
 
                 // F# preview (still preview in 10.0)
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion // Stopped printing arguments to indexed properties
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -408,7 +408,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
-        | LanguageFeature.AllowTypedLetOrUseBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
+        | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
