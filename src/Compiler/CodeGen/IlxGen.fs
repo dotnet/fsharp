@@ -1849,6 +1849,8 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (cenv: cenv, isIncrementalFra
 
 /// Generate IL debugging information.
 let GenILSourceMarker (g: TcGlobals) (m: range) =
+    let m = m.ApplyLineDirectives()
+
     ILDebugPoint.Create(
         document = g.memoize_file m.FileIndex,
         line = m.StartLine,
@@ -2512,7 +2514,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     // Add a nop to make way for the first debug point.
     do
         if mgbuf.cenv.options.generateDebugSymbols then
-            let doc = g.memoize_file m.FileIndex
+            let doc = g.memoize_file (m.ApplyLineDirectives().FileIndex)
             let i = FeeFeeInstr mgbuf.cenv doc
             codebuf.Add i // for the FeeFee or a better debug point
 
@@ -2599,7 +2601,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() =
         if mgbuf.cenv.options.generateDebugSymbols then
-            let doc = g.memoize_file m.FileIndex
+            let doc = g.memoize_file (m.ApplyLineDirectives().FileIndex)
             let i = FeeFeeInstr mgbuf.cenv doc
             hasDebugPoints <- true
 

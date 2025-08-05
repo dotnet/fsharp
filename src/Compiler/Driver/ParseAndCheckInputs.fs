@@ -215,24 +215,24 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) =
-    let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-
-    [
-        yield! CommentStore.GetComments(lexbuf)
-        yield! (List.map CommentTrivia.LineComment tripleSlashComments)
-    ]
-    |> List.sortBy (function
-        | CommentTrivia.LineComment r
-        | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
-
-let private collectParsedInputTrivia lexbuf diagnosticOptions isScript submoduleRanges =
+let private finishPreprocessing lexbuf diagnosticOptions isScript submoduleRanges =
     WarnScopes.MergeInto diagnosticOptions isScript submoduleRanges lexbuf
+    LineDirectives.add lexbuf.StartPos.FileIndex (LineDirectiveStore.GetLineDirectives lexbuf)
 
+let private collectParsedInputTrivia lexbuf =
     {
         ConditionalDirectives = IfdefStore.GetTrivia(lexbuf)
         WarnDirectives = WarnScopes.getDirectiveTrivia (lexbuf)
-        CodeComments = collectCodeComments lexbuf
+        CodeComments =
+            let tripleSlashComments = XmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+
+            [
+                yield! CommentStore.GetComments(lexbuf)
+                yield! List.map CommentTrivia.LineComment tripleSlashComments
+            ]
+            |> List.sortBy (function
+                | CommentTrivia.LineComment r
+                | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
     }
 
 let private getImplSubmoduleRanges (impls: ParsedImplFileFragment list) =
@@ -276,8 +276,9 @@ let PostParseModuleImpls
 
     let isScript = IsScript fileName
 
-    let trivia =
-        collectParsedInputTrivia lexbuf diagnosticOptions isScript (getImplSubmoduleRanges impls)
+    finishPreprocessing lexbuf diagnosticOptions isScript (getImplSubmoduleRanges impls)
+
+    let trivia = collectParsedInputTrivia lexbuf
 
     let othersWithSameName =
         impls
@@ -309,8 +310,9 @@ let PostParseModuleSpecs
         identifiers: Set<string>
     ) =
 
-    let trivia =
-        collectParsedInputTrivia lexbuf diagnosticOptions false (getSpecSubmoduleRanges specs)
+    finishPreprocessing lexbuf diagnosticOptions false (getSpecSubmoduleRanges specs)
+
+    let trivia = collectParsedInputTrivia lexbuf
 
     let othersWithSameName =
         specs
