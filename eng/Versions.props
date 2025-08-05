@@ -91,8 +91,6 @@
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
-    <SystemComponentModelCompositionVersion>9.0.0</SystemComponentModelCompositionVersion>
-    <SystemCompositionVersion>9.0.0</SystemCompositionVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
