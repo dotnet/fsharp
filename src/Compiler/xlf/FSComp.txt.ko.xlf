@@ -1757,6 +1757,11 @@
         <target state="translated">특성은 optional, in, out, ParamArray, CallerInfo, Quote 인수를 지정할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDefinitionsMustHaveOpensBeforeOtherMembers">
+        <source>'open' declarations must come before all other definitions in type definitions or augmentation</source>
+        <target state="new">'open' declarations must come before all other definitions in type definitions or augmentation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualification.</source>
         <target state="new">The type '{0}' does not support a nullness qualification.</target>
