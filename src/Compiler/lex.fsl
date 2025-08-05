@@ -818,15 +818,13 @@ rule token (args: LexArgs) (skip: bool) = parse
             // Construct the new position
             if args.applyLineDirectives then
                 let fileIndex = match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex
-                WarnScopes.RegisterLineDirective(lexbuf, fileIndex, line)
-                lexbuf.EndPos <- pos.ApplyLineDirective(fileIndex, line)
-            else
-                // add a newline when we don't apply a directive since we consumed a newline getting here
-                incrLine lexbuf
+                LineDirectiveStore.SaveLineDirective(lexbuf, fileIndex, line)
+            // we consumed a newline getting here
+            incrLine lexbuf
 
             token args skip lexbuf
         else
-            // add a newline when we don't apply a directive since we consumed a newline getting here
+            // we consumed a newline getting here
             incrLine lexbuf
             HASH_LINE (LexCont.Token (args.ifdefStack, args.stringNest))
      }
