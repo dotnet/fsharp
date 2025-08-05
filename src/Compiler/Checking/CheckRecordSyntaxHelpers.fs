@@ -180,4 +180,4 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
              None,
              SynBindingTrivia.Zero)
 
-    SynExpr.LetOrUse(false, false, [ binding ], mkRecdExpr (Some withExpr), mOrigExprSynth, SynExprLetOrUseTrivia.Zero)
+    SynExpr.LetOrUse(false, false, false, false, [ binding ], mkRecdExpr (Some withExpr), mOrigExprSynth, SynExprLetOrUseTrivia.Zero)

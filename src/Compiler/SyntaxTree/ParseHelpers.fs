@@ -1066,7 +1066,7 @@ let leadingKeywordIsAbstract =
     | _ -> false
 
 /// Unified helper for creating let/let!/use/use! expressions
-/// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
+/// Creates SynExpr.LetOrUse based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
 let mkLetExpression
     (
@@ -1081,8 +1081,35 @@ let mkLetExpression
     if isBang then
         match bangInfo with
         | Some(pat, rhs, andBangs, mEquals, isUse) ->
-            // Create let! or use! expression
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
+
+            let trivia: SynBindingTrivia =
+                {
+                    LeadingKeyword =
+                        if isUse then
+                            SynLeadingKeyword.Use mKeyword
+                        else
+                            SynLeadingKeyword.Let mKeyword
+                    InlineKeyword = mIn
+                    EqualsRange = mEquals
+                }
+
+            let binding =
+                SynBinding(
+                    accessibility = None,
+                    kind = SynBindingKind.Normal,
+                    isInline = false,
+                    isMutable = false,
+                    attributes = [],
+                    xmlDoc = PreXmlDoc.Empty,
+                    valData = SynInfo.emptySynValData,
+                    headPat = pat,
+                    returnInfo = None,
+                    expr = rhs,
+                    range = mWhole,
+                    debugPoint = spBind,
+                    trivia = trivia
+                )
 
             let trivia: SynExprLetOrUseTrivia =
                 {
@@ -1090,22 +1117,21 @@ let mkLetExpression
                     InKeyword = mIn
                     EqualsRange = mEquals
                 }
-            // isFromSource is true for user-written code
-            SynExpr.LetOrUseBang(spBind, isUse, true, pat, rhs, andBangs, body, mWhole, trivia)
+
+            SynExpr.LetOrUse(false, isUse, true, true, binding :: andBangs, body, mWhole, trivia)
         | None -> SynExpr.FromParseError(body, mWhole)
     else
         match bindingInfo with
         | Some(isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
-            // Create regular let or use expression
             let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
-            let mWhole' =
+            let mWhole =
                 match decls with
                 | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
                 | _ -> mWhole
 
             if not (isNil ignoredFreeAttrs) then
-                warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole'))
+                warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole))
 
             let mIn' =
                 mIn
@@ -1127,10 +1153,12 @@ let mkLetExpression
 
             SynExpr.LetOrUse(
                 isRec,
-                isUse, // Pass through the isUse flag from binding info
+                isUse,
+                true,
+                false,
                 decls,
                 body,
-                mWhole',
+                mWhole,
                 {
                     LetOrUseKeyword = mLetOrUse
                     InKeyword = mIn'

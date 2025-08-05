@@ -92,9 +92,9 @@ module SynPat =
         //     set (x: …, y: …) = …
         | SynPat.Typed _, SyntaxNode.SynPat(Rightmost(SynPat.Paren(Is pat, _))) :: SyntaxNode.SynMatchClause _ :: _
         | Rightmost(SynPat.Typed _), SyntaxNode.SynMatchClause _ :: _
-        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
-        | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
-        | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
+        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.LetOrUse _) :: _
+        | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.LetOrUse _) :: _
+        | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(SynExpr.LetOrUse _) :: _
         | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynBinding _ :: _
         | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynBinding _ :: _
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynBinding _ :: _
@@ -144,7 +144,6 @@ module SynPat =
 
                     | SyntaxNode.SynExpr(SynExpr.Lambda(body = rhs)) :: _
                     | SyntaxNode.SynExpr(SynExpr.LetOrUse(body = rhs)) :: _
-                    | SyntaxNode.SynExpr(SynExpr.LetOrUseBang(body = rhs)) :: _
                     | SyntaxNode.SynBinding(SynBinding(expr = rhs)) :: _
                     | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = rhs)) :: _ ->
                         let rhsRange = rhs.Range
@@ -243,7 +242,7 @@ module SynPat =
         //     fun (x) -> …
         | _, SyntaxNode.SynBinding _ :: _
         | _, SyntaxNode.SynExpr(SynExpr.ForEach _) :: _
-        | _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _) :: _
+        | _, SyntaxNode.SynExpr(SynExpr.LetOrUse _) :: _
         | _, SyntaxNode.SynMatchClause _ :: _
         | Atomic, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> false
 
