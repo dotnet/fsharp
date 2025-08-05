@@ -53,28 +53,65 @@ module ImportDeclarations =
             (Error 39, Line 34, Col 9, Line 34, Col 10, "The value or constructor 'C' is not defined.")
         ]
 
+    // SOURCE=E_openInTypeInterface.fs SCFLAGS="--test:ErrorRanges"		# E_openInTypeInterface.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openInTypeInterface.fs"|])>]
+    let ``E_openInTypeInterface_fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 0010, Line 3, Col 5, Line 3, Col 9, "Unexpected keyword 'open' in member definition. Expected 'member', 'override', 'static' or other token.")
+            (Error 3567, Line 3, Col 17, Line 4, Col 5, "Expecting member body")
+        ]
+
     // SOURCE=E_openInTypeDecl.fs SCFLAGS="--test:ErrorRanges"		# E_openInTypeDecl.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openInTypeDecl.fs"|])>]
     let ``E_openInTypeDecl_fs`` compilation =
         compilation
-        |> verifyCompile
+        |> withLangVersionPreview
+        |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 7, Col 5, Line 7, Col 9, "Unexpected keyword 'open' in member definition")
+            (Error 3879, Line 23, Col 5, Line 23, Col 23, "'open' declarations must come before all other definitions in type definitions or augmentation")
+            (Error 0039, Line 20, Col 15, Line 20, Col 26, "The type 'IDisposable' is not defined.")
+            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:   obj")
+            (Error 0887, Line 20, Col 15, Line 20, Col 26, "The type 'obj' is not an interface type")
+            (Error 0039, Line 20, Col 15, Line 20, Col 26, "The type 'IDisposable' is not defined.")
+            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:   obj")
+            (Error 0039, Line 9, Col 37, Line 9, Col 42, "The type 'Int64' is not defined. Maybe you want one of the following:   int64   uint64   int8   int   int16")
+            (Error 0039, Line 20, Col 15, Line 20, Col 26, "The type 'IDisposable' is not defined.")
+            (Error 0855, Line 21, Col 21, Line 21, Col 28, "No abstract or interface member was found that corresponds to this override")
+            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:   obj")
+            (Error 0039, Line 12, Col 21, Line 12, Col 26, "The value, namespace, type or module 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 3879, Line 28, Col 9, Line 28, Col 20, "'open' declarations must come before all other definitions in type definitions or augmentation")
+            (Error 3879, Line 33, Col 9, Line 33, Col 20, "'open' declarations must come before all other definitions in type definitions or augmentation")
+            (Error 3879, Line 38, Col 9, Line 38, Col 20, "'open' declarations must come before all other definitions in type definitions or augmentation")
+            (Error 0039, Line 37, Col 44, Line 37, Col 50, "The value or constructor 'Random' is not defined.")
+            (Error 0039, Line 40, Col 15, Line 40, Col 20, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 0039, Line 40, Col 15, Line 40, Col 20, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 0039, Line 44, Col 25, Line 44, Col 30, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 0039, Line 48, Col 22, Line 48, Col 27, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 0039, Line 48, Col 22, Line 48, Col 27, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 3879, Line 59, Col 5, Line 59, Col 16, "'open' declarations must come before all other definitions in type definitions or augmentation")
+            (Error 3879, Line 63, Col 5, Line 63, Col 26, "'open' declarations must come before all other definitions in type definitions or augmentation")
         ]
-
-    // SOURCE=E_openModInFun.fs   SCFLAGS="--test:ErrorRanges"		# E_openModInFun.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openModInFun.fs"|])>]
-    let ``E_openModInFun_fs`` compilation =
+        
+    // SOURCE=openInTypeDecl.fs 		# openInTypeDecl.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openInTypeDecl.fs"|])>]
+    let ``openInTypeDecl_fs`` compilation =
         compilation
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 10, Line 9, Col 5, Line 9, Col 9, "Unexpected keyword 'open' in binding. Expected incomplete structured construct at or before this point or other token.")
-            (Error 10, Line 17, Col 9, Line 17, Col 13, "Unexpected keyword 'open' in binding")
-            (Error 10, Line 23, Col 9, Line 23, Col 13, "Unexpected keyword 'open' in expression")
-            (Error 3567, Line 23, Col 9, Line 23, Col 13, "Expecting member body")
-        ]
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
+
+    // SOURCE=openModInFun.fs   		# openModInFun.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openModInFun.fs"|])>]
+    let ``openModInFun_fs`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldSucceed
 
     // SOURCE=OpenNestedModule01.fs					# OpenNestedModule01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OpenNestedModule01.fs"|])>]

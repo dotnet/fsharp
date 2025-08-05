@@ -769,8 +769,7 @@ type LexFilterImpl (
             | _, [] -> PositionWithColumn(newCtxt.StartPos, -1)
 
             // ignore Vanilla because a SeqBlock is always coming
-            | _, CtxtVanilla _ :: rest
-            | _, CtxtOpen _ :: rest -> undentationLimit strict rest
+            | _, CtxtVanilla _ :: rest -> undentationLimit strict rest
 
             |  CtxtSeqBlock(FirstInSeqBlock, _, _), (CtxtDo _ as limitCtxt) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ | CtxtModuleBody _) :: _ ->
                 PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
@@ -976,7 +975,7 @@ type LexFilterImpl (
 
 
             // These contexts all require indentation by at least one space
-            | _, (CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _ as limitCtxt :: _)
+            | _, (CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _ | CtxtOpen _ as limitCtxt :: _)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1)
 
             // These contexts can have their contents exactly aligning
@@ -2474,8 +2473,17 @@ type LexFilterImpl (
             pushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
-        // The `open type ...` case
-        | OPEN, _ when peekNextToken().IsTYPE ->
+        // The `open type ...` case, prevent early inserting OBLOCKEND by `insertComingSoonTokens`
+        | OPEN, head :: _ when peekNextToken().IsTYPE && 
+            isSameLine() &&     // `open` and `type` should be on the same line
+            (match head with    // follow the checks in `insertComingSoonTokens`
+             // open-parens of sorts
+             | CtxtParen(TokenLExprParen, _) -> true
+             // seq blocks
+             | CtxtSeqBlock _ -> true
+             // vanillas
+             | CtxtVanilla _ -> true
+             | _ -> false) ->
             pushCtxt tokenTup (CtxtOpen tokenStartPos)
             if debug then dprintf "pushing CtxtOpen at tokenStartPos = %a\n" outputPos tokenStartPos
             returnToken tokenLexbufState token
