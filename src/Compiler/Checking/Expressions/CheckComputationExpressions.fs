@@ -862,8 +862,8 @@ let (|ExprAsUseBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: bindings ->
-            ValueSome(spBind, isFromSource, pat, rhsExpr, bindings, innerComp, mBind)
+        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: remainingBindings ->
+            ValueSome(spBind, isFromSource, pat, rhsExpr, remainingBindings, innerComp, mBind)
         | _ -> ValueNone
 
     | _ -> ValueNone
@@ -879,8 +879,8 @@ let (|ExprAsLetBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: bindings ->
-            ValueSome(spBind, isFromSource, pat, rhsExpr, bindings, innerComp, mBind)
+        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: andBangBindings ->
+            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangBindings, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -1435,12 +1435,29 @@ let rec TryTranslateComputationExpression
 
                     SynExpr.LetOrUse(false, false, true, true, [ condBinding ], whileExpr, mGuard, SynExprLetOrUseTrivia.Zero)
 
+                let firstBinding =
+                    SynBinding(
+                        accessibility = None,
+                        kind = SynBindingKind.Normal,
+                        isInline = false,
+                        isMutable = false,
+                        attributes = [],
+                        xmlDoc = PreXmlDoc.Empty,
+                        valData = SynInfo.emptySynValData,
+                        headPat = patFirst,
+                        returnInfo = None,
+                        expr = guardExpr,
+                        range = mGuard,
+                        debugPoint = DebugPointAtBinding.NoneAtSticky,
+                        trivia = SynBindingTrivia.Zero
+                    )
+
                 SynExpr.LetOrUse(
                     false,
                     false, // Pass through the isUse flag from binding info
                     true, // isFromSource is true for user-written code
                     true, // isComputed is true for bang let/let!
-                    [],
+                    [ firstBinding ],
                     body,
                     mGuard,
                     SynExprLetOrUseTrivia.Zero

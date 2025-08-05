@@ -1123,7 +1123,7 @@ let mkLetExpression
                 isUse, // Pass through the isUse flag from binding info
                 true, // isFromSource is true for user-written code
                 true, // isComputed is true for let!/use!
-                binding :: decls,
+                binding :: List.rev decls,
                 body,
                 mWhole,
                 trivia
