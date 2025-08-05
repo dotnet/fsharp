@@ -161,3 +161,16 @@ let main _ =
         |> withOptimize
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``State machine defined as top level value is statically compiled`` () =
+        Fsx """
+let test = task { return 42 }
+if test.Result <> 42 then failwith "expected 42"
+
+task { printfn "Hello, World!"; return 42 }
+"""
+        |> runFsi
+        |> shouldSucceed
+
+
