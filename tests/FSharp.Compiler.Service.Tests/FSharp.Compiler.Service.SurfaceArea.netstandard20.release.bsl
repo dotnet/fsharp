@@ -10863,6 +10863,7 @@ FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position End
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position Start
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_End()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Position get_Start()
+FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range ApplyLineDirectives()
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range EndRange
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range StartRange
 FSharp.Compiler.Text.Range: FSharp.Compiler.Text.Range Zero

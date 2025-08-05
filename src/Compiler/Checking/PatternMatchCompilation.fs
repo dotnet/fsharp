@@ -1069,11 +1069,12 @@ let CompilePatternBasic
                     mkCompGenSequential mMatch e (mkDefault (mMatch, resultTy))
 
             | ThrowIncompleteMatchException ->
+                let mmMatch = mMatch.ApplyLineDirectives()
                 mkThrow mMatch resultTy
                     (mkExnExpr(g.MatchFailureException_tcr,
-                                [ mkString g mMatch mMatch.FileName
-                                  mkInt g mMatch mMatch.StartLine
-                                  mkInt g mMatch mMatch.StartColumn], mMatch))
+                                [ mkString g mMatch mmMatch.FileName
+                                  mkInt g mMatch mmMatch.StartLine
+                                  mkInt g mMatch mmMatch.StartColumn], mMatch))
 
             | IgnoreWithWarning ->
                 mkUnit g mMatch
