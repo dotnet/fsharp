@@ -360,3 +360,14 @@ module Module =
 
 """
     assertHasNoItemsWithNames ["E"] info
+
+#if NETCOREAPP
+[<Fact>]
+let ``Span appears in completion and is not marked obsolete`` () =
+    let info = Checker.getCompletionInfo """
+let test = System.Sp{caret}
+"""
+    // Verify that Span appears in completion when typing "System.Sp"
+    // and is not suppressed due to IsByRefLikeAttribute
+    assertHasItemWithNames ["Span"] info
+#endif

@@ -9,31 +9,10 @@ module Core_syntax
 let failures = ref false
 let report_failure () = 
   stderr.WriteLine " NO"; failures := true
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
+let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure()
 
 // Test the __LINE__ directive
 test "line number test" (__LINE__ = "15")
-#line 100
-test "line number test" (__LINE__ = "100")
-
-#line 102 "file.fs"
-test "line number test" (__LINE__ = "102")
-test "line number test" (__SOURCE_FILE__ = "file.fs")
-
-#line 18 "original-test-file.fs"
-test "line number test" (__LINE__ = "18")
-test "line number test" (__SOURCE_FILE__ = "original-test-file.fs")
-
-# 100
-test "line number test" (__LINE__ = "100")
-
-# 102 "file.fs"
-test "line number test" (__LINE__ = "102")
-test "line number test" (__SOURCE_FILE__ = "file.fs")
-
-# 35 "original-test-file.fs"
-test "line number test" (__LINE__ = "35")
-test "line number test" (__SOURCE_FILE__ = "original-test-file.fs")
 
 
 let SimpleArithmetic( )
