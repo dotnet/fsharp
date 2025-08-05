@@ -33,8 +33,12 @@ ImplFile
                        App
                          (Atomic, false, Ident asyncInt,
                           Const (Unit, (4,37--4,39)), (4,29--4,39)),
-                       [SynExprAndBang
-                          (Yes (5,4--5,39), false, true,
+                       [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
                            Typed
                              (Paren
                                 (Tuple
@@ -55,17 +59,19 @@ ImplFile
                                   Type
                                     (LongIdent
                                        (SynLongIdent ([int], [], [None])))],
-                                 (5,17--5,26)), (5,9--5,26)),
+                                 (5,17--5,26)), (5,9--5,26)), None,
                            App
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (5,37--5,39)), (5,29--5,39)),
-                           (5,4--5,39), { AndBangKeyword = (5,4--5,8)
-                                          EqualsRange = (5,27--5,28)
-                                          InKeyword = None })],
+                           (5,4--5,39), Yes (5,4--5,39),
+                           { LeadingKeyword = And (5,4--5,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (5,27--5,28) })],
                        YieldOrReturn
                          ((false, true), Const (Unit, (6,11--6,13)), (6,4--6,13),
                           { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,13),
-                       { LetOrUseBangKeyword = (4,4--4,8)
+                       { LetOrUseKeyword = (4,4--4,8)
+                         InKeyword = None
                          EqualsRange = Some (4,27--4,28) }), (3,6--7,1)),
                  (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

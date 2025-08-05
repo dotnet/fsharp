@@ -41,7 +41,8 @@ ImplFile
                              ([e1; Value], [(4,10--4,11)], [None; None]), None,
                            (4,8--4,16))], [(4,6--4,7)], (4,0--4,16)),
                     (3,0--4,16), { LetOrUseKeyword = (3,0--3,3)
-                                   InKeyword = None }), (2,0--4,16)),
+                                   InKeyword = None
+                                   EqualsRange = Some (3,7--3,8) }), (2,0--4,16)),
               (2,0--4,16))], PreXmlDocEmpty, [], None, (2,0--5,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

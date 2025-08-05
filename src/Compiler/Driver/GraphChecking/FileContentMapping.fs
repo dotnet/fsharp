@@ -507,14 +507,14 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.YieldOrReturnFrom(expr = expr) -> visit expr continuation
         | SynExpr.LetOrUseBang(pat = pat; rhs = rhs; andBangs = andBangs; body = body) ->
             let continuations =
-                let andBangExprs = List.map (fun (SynExprAndBang(body = body)) -> body) andBangs
+                let andBangExprs = List.map (fun (SynBinding(expr = body)) -> body) andBangs
                 List.map visit (body :: rhs :: andBangExprs)
 
             let finalContinuation nodes =
                 [
                     yield! List.concat nodes
                     yield! visitPat pat
-                    for SynExprAndBang(pat = pat) in andBangs do
+                    for SynBinding(headPat = pat) in andBangs do
                         yield! visitPat pat
                 ]
                 |> continuation
