@@ -682,6 +682,11 @@
         <target state="new">Use type conversion cache during compilation</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWarnOnUnexpectedModuleDefinitionsInsideTypes">
+        <source>Warn when a module definition is encountered inside a type definition</source>
+        <target state="new">Warn when a module definition is encountered inside a type definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
         <target state="translated">索引屬性 getter 和 setter 必須具有相同的類型</target>

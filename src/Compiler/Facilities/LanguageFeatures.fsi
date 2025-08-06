@@ -93,6 +93,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
+    | WarnOnUnexpectedModuleDefinitionsInsideTypes
     | AllowTypedLetUseAndBang
 
 /// LanguageVersion management

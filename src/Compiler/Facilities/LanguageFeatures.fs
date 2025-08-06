@@ -102,6 +102,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
+    | WarnOnUnexpectedModuleDefinitionsInsideTypes
     | AllowTypedLetUseAndBang
 
 /// LanguageVersion management
@@ -238,6 +239,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AllowTypedLetUseAndBang, languageVersion100
                 LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
+                LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -408,6 +410,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
+        | LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes -> FSComp.SR.featureWarnOnUnexpectedModuleDefinitionsInsideTypes ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
 
     /// Get a version string associated with the given feature.
