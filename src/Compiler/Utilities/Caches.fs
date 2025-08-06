@@ -48,11 +48,6 @@ type CachedEntity<'Key, 'Value> =
         entity.node <- LinkedListNode(entity)
         entity
 
-    member this.ReUse(key, value) =
-        this.key <- key
-        this.value <- value
-        this
-
     override this.ToString() = $"{this.Key}"
 
 // Currently the Cache itself exposes Metrics.Counters that count raw cache events: hits, misses, evictions etc.
@@ -128,22 +123,6 @@ type CacheMetrics(cacheId: string) =
     static member GetStats(cacheId) =
         observedCaches[cacheId].GetInstanceStats()
 
-// Creates and, after reclaiming, holds entities for reuse.
-// More than totalCapacity can be created, but it will hold for reuse at most totalCapacity.
-type EntityPool<'Key, 'Value>(totalCapacity, metrics: CacheMetrics) =
-    let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
-
-    member _.Acquire(key, value) =
-        match pool.TryTake() with
-        | true, entity -> entity.ReUse(key, value)
-        | _ ->
-            metrics.Created.Add 1L
-            CachedEntity.Create(key, value)
-
-    member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
-        if pool.Count < totalCapacity then
-            pool.Add(entity)
-
 module Cache =
     // During testing a lot of compilations are started in app domains and subprocesses.
     // This is a reliable way to pass the override to all of them.
@@ -174,8 +153,6 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
         if listen then
             metrics.ObserveMetrics()
 
-    let pool = EntityPool<'Key, 'Value>(totalCapacity, metrics)
-
     let store =
         ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity)
 
@@ -203,9 +180,8 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
                                 let first = nonNull evictionQueue.First
 
                                 match store.TryRemove(first.Value.Key) with
-                                | true, removed ->
+                                | true, _ ->
                                     evictionQueue.Remove(first)
-                                    pool.Reclaim(removed)
                                     metrics.Evictions.Add 1L
                                     evicted.Trigger()
                                 | _ ->
@@ -244,14 +220,12 @@ type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalC
             false
 
     member _.TryAdd(key: 'Key, value: 'Value) =
-        let entity = pool.Acquire(key, value)
+        let entity = CachedEntity.Create(key, value)
 
         let added = store.TryAdd(key, entity)
 
         if added then
             evictionProcessor.Post(EvictionQueueMessage.Add entity)
-        else
-            pool.Reclaim(entity)
 
         added
 
