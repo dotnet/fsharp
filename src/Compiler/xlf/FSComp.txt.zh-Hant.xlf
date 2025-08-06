@@ -412,6 +412,11 @@
         <target state="translated">更多支援測量單位的類型</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpressionAndTypeScopedOpens">
+        <source>'open' declarations in expression or type scopes</source>
+        <target state="new">'open' declarations in expression or type scopes</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
         <target state="translated">ByRef 和 GetPinnableReference 的擴充固定繫結</target>

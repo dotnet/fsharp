@@ -412,6 +412,11 @@
         <target state="translated">más tipos admiten las unidades de medida</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpressionAndTypeScopedOpens">
+        <source>'open' declarations in expression or type scopes</source>
+        <target state="new">'open' declarations in expression or type scopes</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
         <target state="translated">enlaces fijos extendidos para byref y GetPinnableReference</target>

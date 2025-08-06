@@ -68,8 +68,8 @@ else
 try
     open type System.Int32
     open Checked
-    MaxValue + 1
-with | exn -> open type System.Console; WriteLine exn.Message; 0
+    ignore(MaxValue + 1)
+with | exn -> open type System.Console; WriteLine exn.Message
 
 // In lambdas
 let fun1 = fun x -> open System; x + 1

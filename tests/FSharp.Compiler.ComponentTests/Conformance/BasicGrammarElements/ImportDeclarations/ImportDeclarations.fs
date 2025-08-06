@@ -75,24 +75,20 @@ module ImportDeclarations =
         |> withDiagnostics [
             (Error 3879, Line 23, Col 5, Line 23, Col 23, "'open' declarations must come before all other definitions in type definitions or augmentation")
             (Error 0039, Line 20, Col 15, Line 20, Col 26, "The type 'IDisposable' is not defined.")
-            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:   obj")
+            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:\n   obj")
             (Error 0887, Line 20, Col 15, Line 20, Col 26, "The type 'obj' is not an interface type")
-            (Error 0039, Line 20, Col 15, Line 20, Col 26, "The type 'IDisposable' is not defined.")
-            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:   obj")
-            (Error 0039, Line 9, Col 37, Line 9, Col 42, "The type 'Int64' is not defined. Maybe you want one of the following:   int64   uint64   int8   int   int16")
-            (Error 0039, Line 20, Col 15, Line 20, Col 26, "The type 'IDisposable' is not defined.")
+            (Error 0039, Line 9, Col 37, Line 9, Col 42, "The type 'Int64' is not defined. Maybe you want one of the following:\n   int64\n   uint64\n   int8\n   int\n   int16")
             (Error 0855, Line 21, Col 21, Line 21, Col 28, "No abstract or interface member was found that corresponds to this override")
-            (Error 0039, Line 7, Col 13, Line 7, Col 19, "The type 'Object' is not defined. Maybe you want one of the following:   obj")
-            (Error 0039, Line 12, Col 21, Line 12, Col 26, "The value, namespace, type or module 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 0039, Line 12, Col 21, Line 12, Col 26, "The value, namespace, type or module 'Int32' is not defined. Maybe you want one of the following:\n   int32\n   uint32\n   int8\n   int\n   int16")
             (Error 3879, Line 28, Col 9, Line 28, Col 20, "'open' declarations must come before all other definitions in type definitions or augmentation")
             (Error 3879, Line 33, Col 9, Line 33, Col 20, "'open' declarations must come before all other definitions in type definitions or augmentation")
             (Error 3879, Line 38, Col 9, Line 38, Col 20, "'open' declarations must come before all other definitions in type definitions or augmentation")
             (Error 0039, Line 37, Col 44, Line 37, Col 50, "The value or constructor 'Random' is not defined.")
-            (Error 0039, Line 40, Col 15, Line 40, Col 20, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
-            (Error 0039, Line 40, Col 15, Line 40, Col 20, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
-            (Error 0039, Line 44, Col 25, Line 44, Col 30, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
-            (Error 0039, Line 48, Col 22, Line 48, Col 27, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
-            (Error 0039, Line 48, Col 22, Line 48, Col 27, "The type 'Int32' is not defined. Maybe you want one of the following:   int32   uint32   int8   int   int16")
+            (Error 0039, Line 40, Col 15, Line 40, Col 20, "The type 'Int32' is not defined. Maybe you want one of the following:\n   int32\n   uint32\n   int8\n   int\n   int16")
+            (Warning 1178, Line 40, Col 6, Line 40, Col 7, "The struct, record or union type 'B' is not structurally comparable because the type 'obj' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'B' to clarify that the type is not comparable")
+            (Error 0039, Line 44, Col 25, Line 44, Col 30, "The type 'Int32' is not defined. Maybe you want one of the following:\n   int32\n   uint32\n   int8\n   int\n   int16")
+            (Error 0039, Line 48, Col 22, Line 48, Col 27, "The type 'Int32' is not defined. Maybe you want one of the following:\n   int32\n   uint32\n   int8\n   int\n   int16")
+            (Warning 1178, Line 48, Col 6, Line 48, Col 13, "The struct, record or union type 'BRecord' is not structurally comparable because the type 'obj' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'BRecord' to clarify that the type is not comparable")
             (Error 3879, Line 59, Col 5, Line 59, Col 16, "'open' declarations must come before all other definitions in type definitions or augmentation")
             (Error 3879, Line 63, Col 5, Line 63, Col 26, "'open' declarations must come before all other definitions in type definitions or augmentation")
         ]
@@ -101,6 +97,7 @@ module ImportDeclarations =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openInTypeDecl.fs"|])>]
     let ``openInTypeDecl_fs`` compilation =
         compilation
+        |> withOptions ["--nowarn:52"]
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed

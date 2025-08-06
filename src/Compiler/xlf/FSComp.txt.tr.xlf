@@ -412,6 +412,11 @@
         <target state="translated">tür daha ölçü birimlerini destekler</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpressionAndTypeScopedOpens">
+        <source>'open' declarations in expression or type scopes</source>
+        <target state="new">'open' declarations in expression or type scopes</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
         <target state="translated">byref ve GetPinnableReference için genişletilmiş sabit bağlamalar</target>

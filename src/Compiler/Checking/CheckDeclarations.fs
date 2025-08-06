@@ -676,7 +676,7 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv augSpfn =
 let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) = 
     CheckBasics.TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m)
 
-let private buildTcEnvWithTypeScopedOpensApplied cenv parent mFallback synMembers env =
+let private buildTcEnvWithTypeScopedOpensApplied (cenv: cenv) parent mFallback synMembers env =
     // Because 'MemberInfo is not SynMemberDefn list when it is in a signature file,
     // we need to check the type first
     match box synMembers with
@@ -692,6 +692,8 @@ let private buildTcEnvWithTypeScopedOpensApplied cenv parent mFallback synMember
         // we can just go through until we hit a non-open declaration
         let rec loop env = function
             | SynMemberDefn.Open (target, mOpen) :: rest ->
+                checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.ExpressionAndTypeScopedOpens mOpen
+                
                 let env, _openDecl = TcOpenDecl cenv mOpen mParent env target
                 loop env rest
             | SynMemberDefn.ImplicitCtor _ :: rest -> loop env rest
@@ -1095,8 +1097,12 @@ module MutRecBindingChecking =
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
                             cbinds, innerState
                         
-                        | Some (SynMemberDefn.Open (target, m)), _ -> [Phase2AOpen (target, m)], innerState
-                        
+                        | Some (SynMemberDefn.Open (target, m)), _ -> 
+                            if cenv.g.langVersion.SupportsFeature(LanguageFeature.ExpressionAndTypeScopedOpens) then
+                                [Phase2AOpen (target, m)], innerState
+                            else
+                                [], innerState
+
                         | definition -> 
                             error(InternalError(sprintf "Unexpected definition %A" definition, m)))
 

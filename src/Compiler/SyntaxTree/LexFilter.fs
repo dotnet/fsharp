@@ -2473,10 +2473,12 @@ type LexFilterImpl (
             pushCtxtSeqBlock tokenTup AddBlockEnd
             returnToken tokenLexbufState token
 
-        // The `open type ...` case, prevent early inserting OBLOCKEND by `insertComingSoonTokens`
+        // The expression/type-scoped `open type ...` case, 
+        // prevent early inserting OBLOCKEND by `insertComingSoonTokens`
         | OPEN, head :: _ when peekNextToken().IsTYPE && 
-            isSameLine() &&     // `open` and `type` should be on the same line
-            (match head with    // follow the checks in `insertComingSoonTokens`
+            isSameLine() &&     // `open` and `type` should be on the same line. If them can be on different lines, 
+                                // the `type` keyword can have same indentation as `open`.
+            (match head with    // Follow the checks in `insertComingSoonTokens`
              // open-parens of sorts
              | CtxtParen(TokenLExprParen, _) -> true
              // seq blocks
@@ -2488,7 +2490,7 @@ type LexFilterImpl (
             if debug then dprintf "pushing CtxtOpen at tokenStartPos = %a\n" outputPos tokenStartPos
             returnToken tokenLexbufState token
 
-        // The `open type ...` case
+        // The expression/type-scoped `open type ...` case
         | TYPE, CtxtOpen _ :: _ ->
             if debug then dprintf "--> because TYPE is coming, popping CtxtOpen\n"
             popCtxt()
