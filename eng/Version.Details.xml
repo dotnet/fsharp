@@ -22,6 +22,14 @@
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
+    <Dependency Name="System.ComponentModel.Composition" Version="9.0.0">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
+    </Dependency>
+    <Dependency Name="System.Composition" Version="9.0.0">
+      <Uri>https://github.com/dotnet/runtime</Uri>
+      <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
+    </Dependency>
     <Dependency Name="System.Collections.Immutable" Version="9.0.0">
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
@@ -36,9 +44,9 @@
     </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.25374.4">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.25401.2">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>e2fed65f9c524d12c64876194ae4ce177b935bb3</Sha>
+      <Sha>40693ae2ee51e447f6ca96d07bc1ba779dcb9b9c</Sha>
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.25374.3">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
