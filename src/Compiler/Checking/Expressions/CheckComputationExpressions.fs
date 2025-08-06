@@ -1442,7 +1442,7 @@ let rec TryTranslateComputationExpression
                         trivia = SynBindingTrivia.Zero
                     )
 
-                SynExpr.LetOrUse(false, false, true, true, [ binding ], body, mGuard, SynExprLetOrUseTrivia.Zero)
+                SynExpr.LetOrUse(false, false, true, false, [ binding ], body, mGuard, SynExprLetOrUseTrivia.Zero)
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
 
@@ -1664,7 +1664,7 @@ let rec TryTranslateComputationExpression
                                 CompExprTranslationPass.Initial
                                 q
                                 varSpace
-                                (SynExpr.LetOrUse(false, false, true, false, [ binding ], innerComp2, m, SynExprLetOrUseTrivia.Zero))
+                                (SynExpr.LetOrUse(false, false, true, true, [ binding ], innerComp2, m, SynExprLetOrUseTrivia.Zero))
                                 translatedCtxt
                         )
 
@@ -1732,7 +1732,7 @@ let rec TryTranslateComputationExpression
                 )
 
         // 'let binds in expr'
-        | SynExpr.LetOrUse(isRec, false, isFromSource, isComputed, binds, innerComp, m, trivia) ->
+        | SynExpr.LetOrUse(isRec, false, isFromSource, false, binds, innerComp, m, trivia) ->
 
             // For 'query' check immediately
             if ceenv.isQuery then
@@ -1765,12 +1765,13 @@ let rec TryTranslateComputationExpression
 
             Some(
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
-                    translatedCtxt (SynExpr.LetOrUse(isRec, false, isFromSource, isComputed, binds, holeFill, m, trivia)))
+                    translatedCtxt (SynExpr.LetOrUse(isRec, false, isFromSource, false, binds, holeFill, m, trivia)))
             )
 
         // 'use x = expr in expr'
         | SynExpr.LetOrUse(
             isUse = true
+            isComputed = false
             bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
             body = innerComp
             trivia = { LetOrUseKeyword = mBind }) ->
@@ -2426,7 +2427,7 @@ and ConsumeCustomOpClauses
                                     trivia = SynBindingTrivia.Zero
                                 )
 
-                            SynExpr.LetOrUse(false, false, false, false, [ binding ], contExpr, intoPat.Range, SynExprLetOrUseTrivia.Zero)
+                            SynExpr.LetOrUse(false, false, false, true, [ binding ], contExpr, intoPat.Range, SynExprLetOrUseTrivia.Zero)
                         else
                             SynExpr.ForEach(
                                 DebugPointAtFor.No,
@@ -2478,7 +2479,7 @@ and ConsumeCustomOpClauses
                     false,
                     false,
                     false,
-                    false,
+                    true,
                     [ binding ],
                     compClausesExpr,
                     compClausesExpr.Range,
@@ -2629,11 +2630,11 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
             | Some elseExprOpt ->
                 Some(SynExpr.IfThenElse(guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia), None)
 
-    | SynExpr.LetOrUse(isRec, false, isFromSource, isComputed, binds, innerComp, m, trivia) ->
+    | SynExpr.LetOrUse(isRec, false, isFromSource, false, binds, innerComp, m, trivia) ->
         match convertSimpleReturnToExpr ceenv comp varSpace innerComp with
         | None -> None
         | Some(_, Some _) -> None
-        | Some(innerExpr, None) -> Some(SynExpr.LetOrUse(isRec, false, isFromSource, isComputed, binds, innerExpr, m, trivia), None)
+        | Some(innerExpr, None) -> Some(SynExpr.LetOrUse(isRec, false, isFromSource, false, binds, innerExpr, m, trivia), None)
 
     | OptionalSequential(CustomOperationClause ceenv (nm, _, _, mClause, _), _) when customOperationMaintainsVarSpaceUsingBind ceenv nm ->
 
