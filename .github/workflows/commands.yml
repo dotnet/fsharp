@@ -118,7 +118,15 @@ jobs:
       - name: Read metadata
         id: read-meta
         run: |
-          source result
+          run_step_outcome=""
+          hasPatch=""
+          while IFS='=' read -r key value; do
+            case "$key" in
+              run_step_outcome) run_step_outcome="$value" ;;
+              hasPatch) hasPatch="$value" ;;
+              *) echo "Unexpected key: $key" >&2; exit 1 ;;
+            esac
+          done < result
           echo "run_step_outcome=$run_step_outcome" >> $GITHUB_OUTPUT
           echo "hasPatch=$hasPatch" >> $GITHUB_OUTPUT
 
