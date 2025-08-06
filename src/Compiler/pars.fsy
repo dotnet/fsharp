@@ -1272,16 +1272,12 @@ moduleDefnsOrExpr:
 /* A sequence of definitions in a namespace or module */
 moduleDefns:
   | moduleDefnOrDirective moduleDefnOrDirective
-      { match $1, $2 with
-        | [SynModuleDecl.Types(_, mType)], [SynModuleDecl.NestedModule(_, _, _, _, mModule, { ModuleKeyword = Some m })] ->
-            // Check if the module appears to be incorrectly nested based on indentation
-            if mModule.StartColumn > mType.StartColumn then
-                errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), m))
-            $1 @ $2
-        | _ -> $1 @ $2 }
+      { checkInvalidDeclsInTypeDefn $1 $2 parseState.LexBuffer
+        $1 @ $2 }
 
   | moduleDefnOrDirective moduleDefns
-      { $1 @ $2 }
+      { checkInvalidDeclsInTypeDefn $1 $2 parseState.LexBuffer
+        $1 @ $2 }
 
   | moduleDefnOrDirective topSeparators moduleDefnsOrExpr
       { $1 @ $3 }

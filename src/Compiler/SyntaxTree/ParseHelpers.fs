@@ -1065,6 +1065,27 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
+let checkInvalidDeclsInTypeDefn (moduleDecls1: SynModuleDecl list) (moduleDecls2: SynModuleDecl list) (lexBuf: Lexbuf) =
+    match moduleDecls1, moduleDecls2 with
+    | [ SynModuleDecl.Types(typeDefns = defns) ], rest ->
+        let mLastSynDefn =
+            defns
+            |> List.choose (function
+                | SynTypeDefn(trivia = { LeadingKeyword = mKeyword }) -> Some mKeyword.Range)
+            |> List.tryLast
+            |> Option.defaultValue range0
+
+        for defn in rest do
+            match defn with
+            | SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mKeyword }) ->
+                lexBuf.CheckLanguageFeatureAndRecover LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes mKeyword
+
+                if lexBuf.SupportsFeature(LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
+                    if mKeyword.StartColumn > mLastSynDefn.StartColumn then
+                        warning (Error(FSComp.SR.parsInvalidDeclarationSyntax (), mKeyword))
+            | _ -> ()
+    | _ -> ()
+
 /// Unified helper for creating let/let!/use/use! expressions
 /// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'

@@ -7,6 +7,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
@@ -270,3 +271,7 @@ val mkSynField:
         SynField
 
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool
+
+/// Check for invalid declarations inside type definitions
+val checkInvalidDeclsInTypeDefn:
+    moduleDecls1: SynModuleDecl list -> moduleDecls2: SynModuleDecl list -> lexBuf: Lexbuf -> unit

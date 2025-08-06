@@ -54,4 +54,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(6,4)-(6,10) parse error Invalid declaration syntax
+(6,4)-(6,10) parse warning Invalid declaration syntax
