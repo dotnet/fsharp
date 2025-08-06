@@ -21,8 +21,6 @@ module internal Cache =
 
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
-    new: totalCapacity: int * headroom: int * ?name: string * ?observeMetrics: bool -> Cache<'Key, 'Value>
-
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
     /// Cancels the background eviction task.
@@ -32,6 +30,7 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
 
     /// For testing only
     member Evicted: IEvent<unit>
+    member EvictionFailed: IEvent<unit>
 
     static member Create<'Key, 'Value> :
         options: CacheOptions * ?name: string * ?observeMetrics: bool -> Cache<'Key, 'Value>
@@ -39,6 +38,5 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
 [<Class>]
 type internal CacheMetrics =
     static member Meter: Meter
-    static member GetStats: cacheId: string -> string
-    /// Retrieves current hit ratio, hits, misses, evictions etc. formatted for printing or logging.
-    static member GetStatsUpdateForAllCaches: clearCounts: bool -> string
+    static member GetStats: cacheId: string -> Map<string, float>
+    static member GetTotals: cacheId: string -> Map<string, int64>
