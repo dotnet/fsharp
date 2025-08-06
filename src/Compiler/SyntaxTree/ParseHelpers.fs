@@ -1065,15 +1065,17 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
+[<return: Struct>]
 let (|NestedModuleAt|_|) =
     function
-    | SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mKeyword }) -> Some mKeyword
-    | _ -> None
+    | SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mKeyword }) -> ValueSome mKeyword
+    | _ -> ValueNone
 
+[<return: Struct>]
 let (|TypesFollowedByModules|_|) =
     function
-    | [ SynModuleDecl.Types(typeDefns = defns) ], rest -> Some(defns, rest)
-    | _ -> None
+    | [ SynModuleDecl.Types(typeDefns = defns) ], rest -> ValueSome(defns, rest)
+    | _ -> ValueNone
 
 let getLastTypeColumn (defns: SynTypeDefn list) =
     defns

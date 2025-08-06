@@ -242,7 +242,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes, languageVersion100
+                LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
