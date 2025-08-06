@@ -69,6 +69,7 @@ module ImportDeclarations =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openInTypeDecl.fs"|])>]
     let ``E_openInTypeDecl_fs`` compilation =
         compilation
+        |> withOptions ["--nowarn:52"] // The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
@@ -97,7 +98,7 @@ module ImportDeclarations =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openInTypeDecl.fs"|])>]
     let ``openInTypeDecl_fs`` compilation =
         compilation
-        |> withOptions ["--nowarn:52"]
+        |> withOptions ["--nowarn:52"] // The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
