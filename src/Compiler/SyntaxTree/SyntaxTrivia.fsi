@@ -186,6 +186,8 @@ type SynExprYieldOrReturnFromTrivia =
         YieldOrReturnFromKeyword: range
     }
 
+    static member Zero: SynExprYieldOrReturnFromTrivia
+
 /// Represents additional information for SynExpr.AnonRecd
 [<NoEquality; NoComparison>]
 type SynExprAnonRecdTrivia =

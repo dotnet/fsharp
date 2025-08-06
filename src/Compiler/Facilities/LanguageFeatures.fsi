@@ -95,6 +95,7 @@ type LanguageFeature =
     | ScopedNowarn
     | WarnOnUnexpectedModuleDefinitionsInsideTypes
     | AllowTypedLetUseAndBang
+    | ReturnFromFinal
 
 /// LanguageVersion management
 type LanguageVersion =
