@@ -52,7 +52,6 @@ type Name = Name of string
     Assert.Equal(expected, actual)
 
 [<Theory>]
-[<InlineData "type X = open">]
 [<InlineData "=">]
 [<InlineData "let f x = 
     match x with

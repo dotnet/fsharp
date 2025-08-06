@@ -9,7 +9,7 @@ type Foo() =
 
     [<DefaultValue>] val mutable x: Int64
     let x = 42
-    let timeConstructed = Now.TemporarilySuspendReportingTypecheckResultsToSink
+    let timeConstructed = Now.Ticks
     do printfn "%d" Int32.MaxValue    
     static member Now () = DateTime.Now
     member val TimeConstructed = timeConstructed with get, set
