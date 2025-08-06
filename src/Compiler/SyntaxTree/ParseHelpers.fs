@@ -1065,23 +1065,35 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
+let (|NestedModuleAt|_|) =
+    function
+    | SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mKeyword }) -> Some mKeyword
+    | _ -> None
+
+let (|TypesFollowedByModules|_|) =
+    function
+    | [ SynModuleDecl.Types(typeDefns = defns) ], rest -> Some(defns, rest)
+    | _ -> None
+
+let getLastTypeColumn (defns: SynTypeDefn list) =
+    defns
+    |> List.choose (function
+        | SynTypeDefn(trivia = { LeadingKeyword = mKeyword }) -> Some mKeyword.Range)
+    |> List.tryLast
+    |> Option.defaultValue range0
+
 let checkInvalidDeclsInTypeDefn (moduleDecls1: SynModuleDecl list) (moduleDecls2: SynModuleDecl list) (lexBuf: Lexbuf) =
     match moduleDecls1, moduleDecls2 with
-    | [ SynModuleDecl.Types(typeDefns = defns) ], rest ->
-        let mLastSynDefn =
-            defns
-            |> List.choose (function
-                | SynTypeDefn(trivia = { LeadingKeyword = mKeyword }) -> Some mKeyword.Range)
-            |> List.tryLast
-            |> Option.defaultValue range0
+    | TypesFollowedByModules(defns, rest) ->
+        let lastTypeColumn = getLastTypeColumn defns
 
         for defn in rest do
             match defn with
-            | SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mKeyword }) ->
+            | NestedModuleAt mKeyword ->
                 lexBuf.CheckLanguageFeatureAndRecover LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes mKeyword
 
                 if lexBuf.SupportsFeature(LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
-                    if mKeyword.StartColumn > mLastSynDefn.StartColumn then
+                    if mKeyword.StartColumn > lastTypeColumn.StartColumn then
                         warning (Error(FSComp.SR.parsInvalidDeclarationSyntax (), mKeyword))
             | _ -> ()
     | _ -> ()
