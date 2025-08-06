@@ -118,6 +118,7 @@ module UnusedOpens =
                                 AppliedScope = openDecl.AppliedScope
                             }
                 | _ -> None)
+        |> Array.sortBy (fun openStmt -> openStmt.Range.StartLine)
 
     /// Only consider symbol uses which are the first part of a long ident, i.e. with no qualifying identifiers
     let filterSymbolUses (getSourceLineStr: int -> string) (symbolUses: seq<FSharpSymbolUse>) =

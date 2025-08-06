@@ -61,11 +61,3 @@ type ABC =
 type System.Int32 with
     member this.Abs111 = Abs(this)
     open type System.Math
-
-type A =
-    | A
-    open System
-    member _.F _ = 3
-and B =
-    | B
-    member _.F _ = Console.WriteLine()

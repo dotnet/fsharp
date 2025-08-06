@@ -92,6 +92,7 @@ module ImportDeclarations =
             (Warning 1178, Line 48, Col 6, Line 48, Col 13, "The struct, record or union type 'BRecord' is not structurally comparable because the type 'obj' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'BRecord' to clarify that the type is not comparable")
             (Error 3879, Line 59, Col 5, Line 59, Col 16, "'open' declarations must come before all other definitions in type definitions or augmentation")
             (Error 3879, Line 63, Col 5, Line 63, Col 26, "'open' declarations must come before all other definitions in type definitions or augmentation")
+            (Error 0039, Line 71, Col 20, Line 71, Col 27, "The value, namespace, type or module 'Console' is not defined. Maybe you want one of the following:\n   Control\n   cosh")
         ]
         
     // SOURCE=openInTypeDecl.fs 		# openInTypeDecl.fs

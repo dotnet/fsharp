@@ -2,7 +2,8 @@
 module openInTypeDecl
 
 type Foo() =
-    open type System.DateTime
+    open global.System
+    open type DateTime
     
     inherit Object()
 
@@ -20,52 +21,31 @@ type Foo() =
     interface IDisposable with
         member this.Dispose (): unit = 
             raise (NotImplementedException())
-    open global.System
-
+ 
 type A = A of int
     with
-        member _.RandomNumber with get() = Random().Next()
         open System
+        member _.RandomNumber with get() = Random().Next()
 
 type ARecord = { A : int }
     with
-        member _.RandomNumber with get() = Random().Next()
         open System
-        
+        member _.RandomNumber with get() = Random().Next()
+
 exception AException of int
     with
+        open System
         member _.RandomNumber with get() = Random().Next()
-        open System
-        
-type B = A of Int32
-    with
-        open System
 
-exception BException of Int32
-    with
-        open System
-        
-type BRecord = { A : Int32 }
-    with
-        open System
-        
 [<Struct>]
 type ABC =
+    open System
     val a: Int32
     val b: Int32
     new (a) = 
         open type System.Int32
         { a = a; b = MinValue }
-    open System
 
 type System.Int32 with
-    member this.Abs111 = Abs(this)
     open type System.Math
-
-type A =
-    | A
-    open System
-    member _.F _ = 3
-and B =
-    | B
-    member _.F _ = Console.WriteLine()
+    member this.Abs111 = Abs(this)
