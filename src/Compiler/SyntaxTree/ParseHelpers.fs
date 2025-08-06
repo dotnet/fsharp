@@ -1092,8 +1092,6 @@ let checkInvalidDeclsInTypeDefn (moduleDecls1: SynModuleDecl list) (moduleDecls2
         for defn in rest do
             match defn with
             | NestedModuleAt mKeyword ->
-                lexBuf.CheckLanguageFeatureAndRecover LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes mKeyword
-
                 if lexBuf.SupportsFeature(LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
                     if mKeyword.StartColumn > lastTypeColumn.StartColumn then
                         warning (Error(FSComp.SR.parsInvalidDeclarationSyntax (), mKeyword))
