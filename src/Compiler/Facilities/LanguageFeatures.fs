@@ -103,6 +103,7 @@ type LanguageFeature =
     | BetterAnonymousRecordParsing
     | ScopedNowarn
     | AllowTypedLetUseAndBang
+    | ReturnFromFinal
     | ExpressionAndTypeScopedOpens
 
 /// LanguageVersion management
@@ -239,6 +240,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AllowTypedLetUseAndBang, languageVersion100
                 LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
+                LanguageFeature.ReturnFromFinal, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -411,6 +413,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
+        | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
         | LanguageFeature.ExpressionAndTypeScopedOpens -> FSComp.SR.featureExpressionAndTypeScopedOpens ()
 
     /// Get a version string associated with the given feature.
