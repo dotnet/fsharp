@@ -1,4 +1,5 @@
 <Project>
+  <Import Project="Version.Details.props" Condition="Exists('Version.Details.props')" />
   <PropertyGroup>
     <!-- opt-out properties -->
     <UsingToolXUnit>false</UsingToolXUnit>
@@ -90,14 +91,7 @@
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
-    <SystemPackageVersionVersion>9.0.0</SystemPackageVersionVersion>
-    <SystemCollectionsImmutableVersion>$(SystemPackageVersionVersion)</SystemCollectionsImmutableVersion>
-    <SystemComponentModelCompositionVersion>$(SystemPackageVersionVersion)</SystemComponentModelCompositionVersion>
-    <SystemCompositionVersion>$(SystemPackageVersionVersion)</SystemCompositionVersion>
-    <SystemDiagnosticsDiagnosticSourceVersion>$(SystemPackageVersionVersion)</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemReflectionMetadataVersion>$(SystemPackageVersionVersion)</SystemReflectionMetadataVersion>
-    <SystemThreadingTasksDataflow>$(SystemPackageVersionVersion)</SystemThreadingTasksDataflow>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
     <RoslynVersion>5.0.0-1.25276.102</RoslynVersion>
@@ -106,7 +100,6 @@
     <VisualStudioProjectSystemPackagesVersion>17.14.79</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>17.14.40254</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.14.15</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildVersion>17.15.0-preview-25278-01</MicrosoftBuildVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
@@ -141,11 +134,6 @@
     <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
-    <!-- -->
-    <!-- Microsoft Build packages -->
-    <MicrosoftBuildFrameworkVersion>17.15.0-preview-25278-01</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>17.15.0-preview-25278-01</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>17.15.0-preview-25278-01</MicrosoftBuildUtilitiesCoreVersion>
     <!-- -->
     <!-- Visual Studio Editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
@@ -192,7 +180,6 @@
     <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
-    <MicrosoftMSXMLVersion>$(SystemPackageVersionVersion)</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
@@ -207,11 +194,5 @@
     <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->
-    <!-- MIBC profile packages -->
-    <optimizationwindows_ntx64MIBCRuntimeVersion>1.0.0-prerelease.25374.3</optimizationwindows_ntx64MIBCRuntimeVersion>
-    <optimizationwindows_ntx86MIBCRuntimeVersion>1.0.0-prerelease.25374.3</optimizationwindows_ntx86MIBCRuntimeVersion>
-    <optimizationwindows_ntarm64MIBCRuntimeVersion>1.0.0-prerelease.25374.3</optimizationwindows_ntarm64MIBCRuntimeVersion>
-    <optimizationlinuxx64MIBCRuntimeVersion>1.0.0-prerelease.25374.3</optimizationlinuxx64MIBCRuntimeVersion>
-    <optimizationlinuxarm64MIBCRuntimeVersion>1.0.0-prerelease.25374.3</optimizationlinuxarm64MIBCRuntimeVersion>
   </PropertyGroup>
 </Project>
