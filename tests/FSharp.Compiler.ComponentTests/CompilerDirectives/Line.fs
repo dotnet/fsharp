@@ -15,10 +15,9 @@ open FSharp.Test.Compiler
 
 module Line =
 
-    let parse (source: string) =
+    let parse (source: string) sourceFileName =
         let checker = FSharpChecker.Create()
         let langVersion = "preview"
-        let sourceFileName = "Line.fs"
         let parsingOptions =
             { FSharpParsingOptions.Default with
                 SourceFiles = [| sourceFileName |]
@@ -30,7 +29,7 @@ module Line =
 
     [<Literal>]
     let private case1 = """module A
-#line 1 "xyz.fs"
+#line 1 "xyz1.fs"
 (
 printfn ""
 )
@@ -39,7 +38,7 @@ printfn ""
     [<Literal>]
     let private case2 = """module A
 (
-#line 1 "xyz.fs"
+#line 1 "xyz2.fs"
 printfn ""
 )
     """
@@ -47,16 +46,16 @@ printfn ""
     [<Literal>]
     let private case3 = """module A
 (
-#line 1 "xyz.fs"
+#line 1 "xyz3.fs"
 )
     """
 
     [<Theory>]
-    [<InlineData(1, case1, "xyz.fs:(1,0--3,1)")>]
-    [<InlineData(2, case2, "Line.fs:(2,0--5,1)")>]
-    [<InlineData(3, case3, "Line.fs:(2,0--4,1)")>]
+    [<InlineData(1, case1, "xyz1.fs:(1,0--3,1)")>]
+    [<InlineData(2, case2, "Line2.fs:(2,0--5,1)")>]
+    [<InlineData(3, case3, "Line3.fs:(2,0--4,1)")>]
     let ``check expr range interacting with line directive`` (case, source, expectedRange) =
-        let parseResults = parse source
+        let parseResults = parse source $"Line{case}.fs"
         if parseResults.ParseHadErrors then failwith "unexpected: parse error"
         let exprRange =
             match parseResults.ParseTree with
@@ -111,12 +110,12 @@ printfn ""
         let errors =
             source
             |> FSharp
-            |> withFileName "test.fs"
+            |> withFileName "testn.fs"
             |> compile
             |> shouldFail
             |> fun cr -> cr.Output.PerFileErrors |> List.map (fun (fn, d) -> fn, d.Range.StartLine)
         let expectedErrors =
-            [("test.fs", 3); ("test.fs", 4)]
+            [("testn.fs", 3); ("testn.fs", 4)]
         Assert.True(
             List.forall2 (fun (e_fn, e_line) (fn, line) -> e_fn = fn && e_line = line) expectedErrors errors,
             sprintf "Expected: %A, Found: %A" expectedErrors errors
@@ -137,7 +136,7 @@ printfn ""
                 true
             )
         let lexbuf = StringAsLexbuf(true, langVersion, None, sourceText)
-        resetLexbufPos "test.fs" lexbuf
+        resetLexbufPos "testt.fs" lexbuf
         let tokenizer _ =
             let t = Lexer.token lexargs true lexbuf
             let p = lexbuf.StartPos
@@ -149,14 +148,14 @@ printfn ""
 1
 #line 5 "other.fs"
 2
-#line 10 "test.fs"
+#line 10 "testt.fs"
 3
 """
 
     let private expected = [
-        "test.fs", 2
-        "test.fs", 4
-        "test.fs", 6
+        "testt.fs", 2
+        "testt.fs", 4
+        "testt.fs", 6
     ]
 
     [<Fact>]
@@ -166,3 +165,35 @@ printfn ""
         for ((e_idx, e_line), (_, idx, line)) in List.zip expected tokens do
             Assert.Equal(e_idx, idx)
             Assert.Equal(e_line, line)
+
+    let callerInfoSource = """
+        open System.Runtime.CompilerServices
+        open System.Runtime.InteropServices
+
+        type C() =
+            static member M (
+                [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
+                [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string) = 
+                c, d
+
+        #line 1 "/aaaa"
+        let line1, file1 = C.M()
+        #line 551 "/aabb"
+        let line2, file2 = C.M()
+        
+        printfn $"{file1} {line1} {file2} {line2}"
+"""
+
+    [<Fact>]
+    let ``CallerLineNumber and CallerFilePath work with line directives`` () =
+        let results =
+            callerInfoSource
+            |> FSharp
+            |> withFileName "CallerInfo.fs"
+            |> withLangVersion "preview"
+            |> compileExeAndRun
+        let expectedOutput = "/aaaa 1 /aabb 551"
+        match results.RunOutput with
+        | Some (ExecutionOutput output) ->
+            Assert.Equal(expectedOutput, output.StdOut.Trim())
+        | _ -> failwith "Unexpected: no run output"
