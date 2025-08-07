@@ -2457,16 +2457,7 @@ and ConsumeCustomOpClauses
                         trivia = SynBindingTrivia.Zero
                     )
 
-                SynExpr.LetOrUse(
-                    false,
-                    false,
-                    false,
-                    true,
-                    [ binding ],
-                    compClausesExpr,
-                    compClausesExpr.Range,
-                    SynExprLetOrUseTrivia.Zero
-                )
+                SynExpr.LetOrUse(false, false, false, true, [ binding ], compClausesExpr, compClausesExpr.Range, SynExprLetOrUseTrivia.Zero)
             else
                 SynExpr.ForEach(
                     DebugPointAtFor.No,
