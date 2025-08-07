@@ -62,10 +62,10 @@ type System.Int32 with
     member this.Abs111 = Abs(this)
     open type System.Math
 
-type A =
+type A123 =
     | A
     open System
     member _.F _ = 3
-and B =
+and B123 =
     | B
     member _.F _ = Console.WriteLine()
