@@ -1,4 +1,8 @@
-let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+let assertEqual a b = 
+    if a <> b then 
+        match box a, box b with
+        | :? string as a, :? string as b -> printfn "not equal: (%d length string) and (%d length string)" a.Length b.Length
+        failwithf "not equal: %A and %A" a b
 
 let res = 
     seq {
@@ -7,7 +11,10 @@ let res =
             yield "    ignore ()"
         yield "    \"\""
     }
-    |> String.concat "\r\n"
+    // The source code text that the compiler get uses the default newline character.
+    // See: https://learn.microsoft.com/en-us/dotnet/api/system.text.stringbuilder.appendline?view=net-9.0
+    // and the implementation for FSharp.Compiler.Text.StringText.GetSubTextFromRange
+    |> String.concat System.Environment.NewLine
 
 open System.Runtime.CompilerServices
 
