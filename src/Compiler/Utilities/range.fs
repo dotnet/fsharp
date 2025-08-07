@@ -270,7 +270,7 @@ module internal LineDirectives =
     let mutable store: Map<FileIndex, (int * (FileIndex * int)) list> = Map.empty
 
     let add originalFileIndex lineDirectives =
-        lock lineDirectives
+        lock store
         <| fun () -> store <- store.Add(originalFileIndex, lineDirectives)
 
 [<Struct; CustomEquality; NoComparison>]
