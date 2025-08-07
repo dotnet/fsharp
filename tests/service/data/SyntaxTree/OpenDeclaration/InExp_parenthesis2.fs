@@ -1,0 +1,5 @@
+(
+    open
+        System
+    Console.WriteLine()
+)

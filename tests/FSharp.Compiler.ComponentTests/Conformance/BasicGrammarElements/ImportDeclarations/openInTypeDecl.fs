@@ -49,3 +49,10 @@ type ABC =
 type System.Int32 with
     open type System.Math
     member this.Abs111 = Abs(this)
+
+type IA =
+    open System
+    open type Int32
+    open System.Collections.Generic
+    inherit IDisposable
+    inherit IEquatable<IA>

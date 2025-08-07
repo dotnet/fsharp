@@ -1,0 +1,1 @@
+let fun2 = function x -> open type System.Int32; x + MinValue

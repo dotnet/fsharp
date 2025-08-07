@@ -6094,7 +6094,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.Open (target, mOpen, _m, body) ->
         checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExpressionAndTypeScopedOpens mOpen
         let env, _openDecls = TcOpenDecl cenv mOpen body.Range env target
-        TcExpr cenv overallTy env tpenv body
+        TcExprThatCanBeCtorBody cenv overallTy env tpenv body
 
 and TcExprMatch (cenv: cenv) overallTy env tpenv synInputExpr spMatch synClauses =
     let inputExpr, inputTy, tpenv =

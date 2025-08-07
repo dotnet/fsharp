@@ -1,0 +1,1 @@
+1 |> _.(open Checked; fun x -> x + 1)
