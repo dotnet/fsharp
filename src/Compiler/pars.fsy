@@ -4210,8 +4210,9 @@ declExpr:
        SynExpr.Do(e, unionRanges (rhs parseState 1).StartRange e.Range) }
 
   | openDecl seps typedSequentialExprBlock
-    { let target, mOpen = $1
-      SynExpr.Open(target, mOpen, $3) }
+    { let target, mOpenDecl = $1
+      let mWhole = unionRanges mOpenDecl $3.Range
+      SynExpr.Open(target, mOpenDecl, mWhole, $3) }
 
   | anonMatchingExpr %prec expr_function
       { $1 }

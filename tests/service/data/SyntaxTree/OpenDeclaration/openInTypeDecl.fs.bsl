@@ -190,7 +190,7 @@ ImplFile
                                     (SynLongIdent
                                        ([System; ArgumentException],
                                         [(18,24--18,25)], [None; None])),
-                                  (18,18--18,42)), (18,8--18,42),
+                                  (18,18--18,42)), (18,8--18,42), (18,8--19,22),
                                LongIdent
                                  (false,
                                   SynLongIdent
@@ -200,7 +200,7 @@ ImplFile
                             { LeadingKeyword = Member (17,4--17,10)
                               InlineKeyword = None
                               EqualsRange = Some (17,17--17,18) }),
-                         (17,4--18,42));
+                         (17,4--19,22));
                       Interface
                         (LongIdent (SynLongIdent ([IDisposable], [], [None])),
                          Some (21,26--21,30),
@@ -534,7 +534,7 @@ ImplFile
                                     (SynLongIdent
                                        ([System; Int32], [(46,24--46,25)],
                                         [None; None])), (46,18--46,30)),
-                               (46,8--46,30),
+                               (46,8--46,30), (46,8--47,31),
                                Record
                                  (None, None,
                                   [SynExprRecordField
@@ -550,10 +550,10 @@ ImplFile
                             { LeadingKeyword = New (45,4--45,7)
                               InlineKeyword = None
                               EqualsRange = Some (45,12--45,13) }),
-                         (45,4--46,30))], (42,4--46,30)), [], None,
-                  (40,0--46,30), { LeadingKeyword = Type (41,0--41,4)
+                         (45,4--47,31))], (42,4--47,31)), [], None,
+                  (40,0--47,31), { LeadingKeyword = Type (41,0--41,4)
                                    EqualsRange = Some (41,9--41,10)
-                                   WithKeyword = None })], (40,0--46,30));
+                                   WithKeyword = None })], (40,0--47,31));
            Types
              ([SynTypeDefn
                  (SynComponentInfo

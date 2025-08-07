@@ -676,26 +676,20 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv augSpfn =
 let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) = 
     CheckBasics.TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m)
 
-let private buildTcEnvWithTypeScopedOpensApplied (cenv: cenv) parent mFallback synMembers env =
-    // Because 'MemberInfo is not SynMemberDefn list when it is in a signature file,
+let private buildTcEnvWithTypeScopedOpensApplied (cenv: cenv) scopem (synMembers: 'MemberInfo) env =
+    // Because 'MemberInfo is not SynMemberDefn list when it is in signature files,
     // we need to check the type first
     match box synMembers with
     | :? (SynMemberDefn list) as synMembers ->
-        // Get the whole range that containing the type definition
-        // Used to add `open`s to the environment
-        let mParent = 
-            match parent with
-            | Parent parent -> parent.DefinitionRange
-            | ParentNone -> mFallback
-            
         // Since type-scoped opens are always at the top of the type definition, 
         // we can just go through until we hit a non-open declaration
         let rec loop env = function
             | SynMemberDefn.Open (target, mOpen) :: rest ->
                 checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.ExpressionAndTypeScopedOpens mOpen
-                
-                let env, _openDecl = TcOpenDecl cenv mOpen mParent env target
+                let env, _openDecl = TcOpenDecl cenv mOpen scopem env target
                 loop env rest
+            
+            // The implicit constructor maybe on the first one, skip them.
             | SynMemberDefn.ImplicitCtor _ :: rest -> loop env rest
             | _ -> env
             
@@ -1400,7 +1394,8 @@ module MutRecBindingChecking =
                             [Phase2BMember rbind.RecBindingInfo.Index], innerState
 
                         | Phase2AOpen (target, m) ->
-                            let scopem = unionRanges m.EndRange scopem
+                            // excepts the line before 'open'
+                            let scopem = withStart m.End scopem
                             let envInstance, _openDecls = TcOpenDecl cenv m scopem envInstance target
                             let envStatic, _openDecls = TcOpenDecl cenv m scopem envStatic target
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
@@ -2028,7 +2023,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
 
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
-              let (MutRecDefnsPhase2DataForTycon(tyconOpt, parent, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
+              let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
               
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
               let isStaticClass = HasFSharpAttribute g g.attrib_SealedAttribute tcref.Attribs && HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs
@@ -2056,7 +2051,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
               let obinds = tyconBindingsOfTypeDefn tyconData
               let ibinds =                     
                     // The env with type-scoped `open`s applied
-                    let envForDecls = buildTcEnvWithTypeScopedOpensApplied cenv parent tcref.Range synMembers envForDecls
+                    let envForDecls = buildTcEnvWithTypeScopedOpensApplied cenv scopem synMembers envForDecls
                     let intfTypes = interfacesFromTypeDefn envForDecls tyconData
                     let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv envForDecls.AccessRights false (List.map (fun (intfTy, _, m) -> (intfTy, m)) intfTypes)
                     (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
@@ -2345,6 +2340,7 @@ let CheckForDuplicateModule env nm m =
 // Check the ordering of opens
 // 'open' declarations must come before all other definitions in type definitions
 let rec private CheckOpensOrderInTypeDefinition metNonOpen = function
+// The implicit constructor maybe on the first one, skip them.
 | (SynMemberDefn.Open _ | SynMemberDefn.ImplicitCtor _) :: ds when not metNonOpen -> CheckOpensOrderInTypeDefinition false ds
 | SynMemberDefn.Open (range = m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsMustHaveOpensBeforeOtherMembers(), m))
 | _ :: ds -> CheckOpensOrderInTypeDefinition true ds
@@ -3241,7 +3237,7 @@ module EstablishTypeDefinitionCores =
         let tyconWithImplementsL = 
             (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envinner (origInfo, tyconAndAttrsOpt) -> 
                match origInfo, tyconAndAttrsOpt with 
-               | (typeDefCore, memberDefns, parent), Some (tycon, (attrs, _)) ->
+               | (typeDefCore, memberDefns, _), Some (tycon, (attrs, _)) ->
                 let (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, explicitImplements, _, _, _)) = typeDefCore
                 let m = tycon.Range
                 let tcref = mkLocalTyconRef tycon
@@ -3249,7 +3245,8 @@ module EstablishTypeDefinitionCores =
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false 
 
                 // The env with type-scoped `open`s applied
-                let envinner = buildTcEnvWithTypeScopedOpensApplied cenv parent m memberDefns envinner                
+                // Used to type check TYPENAME in `interface TYPENAME with ...` or `inherit TYPENAME`
+                let envinner = buildTcEnvWithTypeScopedOpensApplied cenv synTyconRepr.Range memberDefns envinner
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
 
                 if firstPass then 
@@ -4071,13 +4068,14 @@ module EstablishTypeDefinitionCores =
             (envMutRecPrelim, withEnvs) 
             ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                    match origInfo, tyconOpt with 
-                   | (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _) as typeDefCore, memberDefns, parent), Some tycon -> 
+                   | (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _) as typeDefCore, memberDefns, _), Some tycon -> 
                         // The env with type-scoped `open`s applied. 
+                        // Used for type check fields on structs.
                         // Only apply when the type is not a union/record/exception, to avoid the field types 
                         // can reference a type open in the `with` section.
                         let envForDecls = 
                             if synTyconRepr.IsGeneral then
-                                buildTcEnvWithTypeScopedOpensApplied cenv parent m memberDefns envForDecls
+                                buildTcEnvWithTypeScopedOpensApplied cenv synTyconRepr.Range memberDefns envForDecls
                             else envForDecls
                         Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
                    | _ -> None) 
@@ -4125,13 +4123,14 @@ module EstablishTypeDefinitionCores =
             (envMutRecPrelim, withAttrs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconAndAttrsOpt) -> 
                 let info = 
                     match origInfo, tyconAndAttrsOpt with 
-                    | (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _) as typeDefCore, memberDefns, parent), Some (tycon, (attrs, _)) -> 
+                    | (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _) as typeDefCore, memberDefns, _), Some (tycon, (attrs, _)) -> 
                         // The env with type-scoped `open`s applied. 
+                        // Used for type check fields.
                         // Only apply when the type is not a union/record/exception, to avoid the field types 
                         // can reference a type open in the `with` section.
                         let envForDecls = 
                             if synTyconRepr.IsGeneral then
-                                buildTcEnvWithTypeScopedOpensApplied cenv parent m memberDefns envForDecls
+                                buildTcEnvWithTypeScopedOpensApplied cenv synTyconRepr.Range memberDefns envForDecls
                             else envForDecls
                         TcTyconDefnCore_Phase1G_EstablishRepresentation cenv envForDecls tpenv inSig typeDefCore tycon attrs
                     | _ -> None, NoSafeInitInfo 

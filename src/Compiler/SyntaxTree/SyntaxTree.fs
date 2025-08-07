@@ -773,7 +773,7 @@ type SynExpr =
 
     | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
 
-    | Open of target: SynOpenDeclTarget * range: range * body: SynExpr
+    | Open of target: SynOpenDeclTarget * openDeclRange: range * range: range * body: SynExpr
 
     member e.Range =
         match e with

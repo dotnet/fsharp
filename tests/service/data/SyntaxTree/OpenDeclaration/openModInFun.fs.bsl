@@ -49,7 +49,7 @@ ImplFile
                      Open
                        (ModuleOrNamespace
                           (SynLongIdent ([System], [], [None]), (6,9--6,15)),
-                        (6,4--6,15),
+                        (6,4--6,15), (6,4--10,32),
                         Sequential
                           (SuppressNeither, true,
                            App
@@ -74,7 +74,7 @@ ImplFile
                              (Type
                                 (LongIdent
                                    (SynLongIdent ([Console], [], [None])),
-                                 (9,14--9,21)), (9,4--9,21),
+                                 (9,14--9,21)), (9,4--9,21), (9,4--10,32),
                               App
                                 (Atomic, false, Ident WriteLine,
                                  Paren
@@ -89,14 +89,14 @@ ImplFile
                                        Const (Unit, (10,29--10,31)),
                                        (10,14--10,31)), (10,13--10,14),
                                     Some (10,31--10,32), (10,13--10,32)),
-                                 (10,4--10,32))), (7,4--9,21),
-                           { SeparatorRange = None })), (5,4--6,15),
+                                 (10,4--10,32))), (7,4--10,32),
+                           { SeparatorRange = None })), (5,4--10,32),
                      { LetOrUseKeyword = (5,4--5,7)
                        InKeyword = None
                        EqualsRange = Some (5,15--5,16) }), (4,4--4,9), NoneAtLet,
                   { LeadingKeyword = Let (4,0--4,3)
                     InlineKeyword = None
-                    EqualsRange = Some (4,10--4,11) })], (4,0--6,15));
+                    EqualsRange = Some (4,10--4,11) })], (4,0--10,32));
            Let
              (false,
               [SynBinding
@@ -192,6 +192,7 @@ ImplFile
                                  (ModuleOrNamespace
                                     (SynLongIdent ([System], [], [None]),
                                      (16,13--16,19)), (16,8--16,19),
+                                  (16,8--17,40),
                                   App
                                     (Atomic, false,
                                      LongIdent
@@ -252,24 +253,25 @@ ImplFile
                              SynValData
                                (None,
                                 SynValInfo ([], SynArgInfo ([], false, None)),
-                                None), Const (Unit, (21,4--22,19)), None,
+                                None), Const (Unit, (21,4--24,21)), None,
                              Open
                                (ModuleOrNamespace
                                   (SynLongIdent ([System], [], [None]),
-                                   (22,13--22,19)), (22,8--22,19),
+                                   (22,13--22,19)), (22,8--22,19), (22,8--24,21),
                                 Open
                                   (Type
                                      (LongIdent
                                         (SynLongIdent ([Console], [], [None])),
                                       (23,18--23,25)), (23,8--23,25),
+                                   (23,8--24,21),
                                    App
                                      (NonAtomic, false, Ident WriteLine,
                                       Const (Int32 123, (24,18--24,21)),
-                                      (24,8--24,21)))), (21,4--22,19), NoneAtDo,
+                                      (24,8--24,21)))), (21,4--24,21), NoneAtDo,
                              { LeadingKeyword = Do (21,4--21,6)
                                InlineKeyword = None
                                EqualsRange = None })], false, false,
-                         (21,4--22,19));
+                         (21,4--24,21));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -297,7 +299,7 @@ ImplFile
                             Open
                               (ModuleOrNamespace
                                  (SynLongIdent ([System], [], [None]),
-                                  (26,13--26,19)), (26,8--26,19),
+                                  (26,13--26,19)), (26,8--26,19), (26,8--27,35),
                                App
                                  (Atomic, false,
                                   LongIdent
@@ -316,15 +318,15 @@ ImplFile
                             { LeadingKeyword = Member (25,4--25,10)
                               InlineKeyword = None
                               EqualsRange = Some (25,36--25,37) }),
-                         (25,4--26,19))], (21,4--26,19)), [],
+                         (25,4--27,35))], (21,4--27,35)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (20,8--20,10)), None,
                         PreXmlDoc ((20,8), FSharp.Compiler.Xml.XmlDocCollector),
-                        (20,5--20,8), { AsKeyword = None })), (20,5--26,19),
+                        (20,5--20,8), { AsKeyword = None })), (20,5--27,35),
                   { LeadingKeyword = Type (20,0--20,4)
                     EqualsRange = Some (20,11--20,12)
-                    WithKeyword = None })], (20,0--26,19));
+                    WithKeyword = None })], (20,0--27,35));
            Expr
              (Paren
                 (Open
@@ -332,7 +334,7 @@ ImplFile
                       (LongIdent
                          (SynLongIdent
                             ([System; Console], [(32,14--32,15)], [None; None])),
-                       (32,8--32,22)), (31,4--32,22),
+                       (32,8--32,22)), (31,4--32,22), (31,4--33,15),
                     App
                       (Atomic, false, Ident WriteLine,
                        Const (Unit, (33,13--33,15)), (33,4--33,15))),
@@ -351,7 +353,7 @@ ImplFile
                        (Open
                           (ModuleOrNamespace
                              (SynLongIdent ([System], [], [None]),
-                              (39,19--39,25)), (39,14--39,25),
+                              (39,19--39,25)), (39,14--39,25), (39,14--39,45),
                            App
                              (NonAtomic, false,
                               App
@@ -375,11 +377,12 @@ ImplFile
                              (SynLongIdent
                                 ([System; Console], [(40,20--40,21)],
                                  [None; None])), (40,14--40,28)), (40,4--40,28),
+                        (40,4--41,20),
                         App
                           (NonAtomic, false, Ident WriteLine,
                            Const
                              (String ("Is 1", Regular, (41,14--41,20)),
-                              (41,14--41,20)), (41,4--41,20))), (39,2--40,28),
+                              (41,14--41,20)), (41,4--41,20))), (39,2--41,20),
                      Yes, { ArrowRange = Some (39,46--39,48)
                             BarRange = Some (39,0--39,1) });
                   SynMatchClause
@@ -396,7 +399,7 @@ ImplFile
                    (ModuleOrNamespace
                       (SynLongIdent
                          ([System; Linq], [(45,20--45,21)], [None; None]),
-                       (45,14--45,25)), (45,9--45,25),
+                       (45,14--45,25)), (45,9--45,25), (45,9--45,50),
                     App
                       (Atomic, false,
                        LongIdent
@@ -416,7 +419,7 @@ ImplFile
                       (LongIdent
                          (SynLongIdent
                             ([System; Console], [(46,20--46,21)], [None; None])),
-                       (46,14--46,28)), (46,4--46,28),
+                       (46,14--46,28)), (46,4--46,28), (46,4--47,29),
                     App
                       (NonAtomic, false, Ident WriteLine,
                        Const
@@ -432,7 +435,7 @@ ImplFile
                          (LongIdent
                             (SynLongIdent
                                ([System; Int32], [(51,21--51,22)], [None; None])),
-                          (51,15--51,27)), (51,5--51,27),
+                          (51,15--51,27)), (51,5--51,27), (51,5--52,17),
                        App
                          (NonAtomic, false,
                           App
@@ -450,7 +453,7 @@ ImplFile
                       (LongIdent
                          (SynLongIdent
                             ([System; Console], [(53,20--53,21)], [None; None])),
-                       (53,14--53,28)), (53,4--53,28),
+                       (53,14--53,28)), (53,4--53,28), (53,4--54,36),
                     App
                       (NonAtomic, false, Ident WriteLine,
                        Const
@@ -466,7 +469,7 @@ ImplFile
                          (LongIdent
                             (SynLongIdent
                                ([System; Int32], [(57,20--57,21)], [None; None])),
-                          (57,14--57,26)), (57,4--57,26),
+                          (57,14--57,26)), (57,4--57,26), (57,4--57,48),
                        App
                          (NonAtomic, false,
                           App
@@ -484,7 +487,7 @@ ImplFile
                       (LongIdent
                          (SynLongIdent
                             ([System; Console], [(58,20--58,21)], [None; None])),
-                       (58,14--58,28)), (58,4--58,28),
+                       (58,14--58,28)), (58,4--58,28), (58,4--59,49),
                     App
                       (NonAtomic, false, Ident WriteLine,
                        Const
@@ -500,7 +503,7 @@ ImplFile
                                   (SynLongIdent
                                      ([System; Int32], [(60,22--60,23)],
                                       [None; None])), (60,16--60,28)),
-                             (60,6--60,28),
+                             (60,6--60,28), (60,6--60,42),
                              App
                                (NonAtomic, false,
                                 App
@@ -520,7 +523,7 @@ ImplFile
                                (SynLongIdent
                                   ([System; Console], [(61,20--61,21)],
                                    [None; None])), (61,14--61,28)),
-                          (61,4--61,28),
+                          (61,4--61,28), (61,4--62,36),
                           App
                             (NonAtomic, false, Ident WriteLine,
                              Const
@@ -535,7 +538,7 @@ ImplFile
                                   (SynLongIdent
                                      ([System; Console], [(64,20--64,21)],
                                       [None; None])), (64,14--64,28)),
-                             (64,4--64,28),
+                             (64,4--64,28), (64,4--65,36),
                              App
                                (NonAtomic, false, Ident WriteLine,
                                 Const
@@ -543,17 +546,17 @@ ImplFile
                                      ("MaxValue is positive", Regular,
                                       (65,14--65,36)), (65,14--65,36)),
                                 (65,4--65,36)))), Yes (60,0--60,48), false,
-                       (60,0--64,28), { IfKeyword = (60,0--60,4)
+                       (60,0--65,36), { IfKeyword = (60,0--60,4)
                                         IsElif = true
                                         ThenKeyword = (60,44--60,48)
                                         ElseKeyword = Some (63,0--63,4)
                                         IfToThenRange = (60,0--60,48) })),
-                 Yes (57,0--57,54), false, (57,0--64,28),
+                 Yes (57,0--57,54), false, (57,0--65,36),
                  { IfKeyword = (57,0--57,2)
                    IsElif = false
                    ThenKeyword = (57,50--57,54)
                    ElseKeyword = None
-                   IfToThenRange = (57,0--57,54) }), (57,0--64,28));
+                   IfToThenRange = (57,0--57,54) }), (57,0--65,36));
            Expr
              (TryWith
                 (Open
@@ -561,11 +564,11 @@ ImplFile
                       (LongIdent
                          (SynLongIdent
                             ([System; Int32], [(69,20--69,21)], [None; None])),
-                       (69,14--69,26)), (69,4--69,26),
+                       (69,14--69,26)), (69,4--69,26), (69,4--71,24),
                     Open
                       (ModuleOrNamespace
                          (SynLongIdent ([Checked], [], [None]), (70,9--70,16)),
-                       (70,4--70,16),
+                       (70,4--70,16), (70,4--71,24),
                        App
                          (Atomic, false, Ident ignore,
                           Paren
@@ -592,6 +595,7 @@ ImplFile
                              (SynLongIdent
                                 ([System; Console], [(72,30--72,31)],
                                  [None; None])), (72,24--72,38)), (72,14--72,38),
+                        (72,14--72,61),
                         App
                           (NonAtomic, false, Ident WriteLine,
                            LongIdent
@@ -599,13 +603,13 @@ ImplFile
                               SynLongIdent
                                 ([exn; Message], [(72,53--72,54)], [None; None]),
                               None, (72,50--72,61)), (72,40--72,61))),
-                     (72,7--72,38), Yes, { ArrowRange = Some (72,11--72,13)
+                     (72,7--72,61), Yes, { ArrowRange = Some (72,11--72,13)
                                            BarRange = Some (72,5--72,6) })],
-                 (68,0--72,38), Yes (68,0--68,3), Yes (72,0--72,4),
+                 (68,0--72,61), Yes (68,0--68,3), Yes (72,0--72,4),
                  { TryKeyword = (68,0--68,3)
                    TryToWithRange = (68,0--72,4)
                    WithKeyword = (72,0--72,4)
-                   WithToEndRange = (72,0--72,38) }), (68,0--72,38));
+                   WithToEndRange = (72,0--72,61) }), (68,0--72,61));
            Let
              (false,
               [SynBinding
@@ -625,7 +629,7 @@ ImplFile
                      Open
                        (ModuleOrNamespace
                           (SynLongIdent ([System], [], [None]), (75,25--75,31)),
-                        (75,20--75,31),
+                        (75,20--75,31), (75,20--75,38),
                         App
                           (NonAtomic, false,
                            App
@@ -642,7 +646,7 @@ ImplFile
                         Open
                           (ModuleOrNamespace
                              (SynLongIdent ([System], [], [None]),
-                              (75,25--75,31)), (75,20--75,31),
+                              (75,25--75,31)), (75,20--75,31), (75,20--75,38),
                            App
                              (NonAtomic, false,
                               App
@@ -654,11 +658,11 @@ ImplFile
                                        [Some (OriginalNotation "+")]), None,
                                     (75,35--75,36)), Ident x, (75,33--75,36)),
                               Const (Int32 1, (75,37--75,38)), (75,33--75,38)))),
-                     (75,11--75,31), { ArrowRange = Some (75,17--75,19) }),
+                     (75,11--75,38), { ArrowRange = Some (75,17--75,19) }),
                   (75,4--75,8), NoneAtLet, { LeadingKeyword = Let (75,0--75,3)
                                              InlineKeyword = None
                                              EqualsRange = Some (75,9--75,10) })],
-              (75,0--75,31));
+              (75,0--75,38));
            Let
              (false,
               [SynBinding
@@ -678,7 +682,7 @@ ImplFile
                                  (SynLongIdent
                                     ([System; Int32], [(76,41--76,42)],
                                      [None; None])), (76,35--76,47)),
-                            (76,25--76,47),
+                            (76,25--76,47), (76,25--76,61),
                             App
                               (NonAtomic, false,
                                App
@@ -689,13 +693,13 @@ ImplFile
                                        ([op_Addition], [],
                                         [Some (OriginalNotation "+")]), None,
                                      (76,51--76,52)), Ident x, (76,49--76,52)),
-                               Ident MinValue, (76,49--76,61))), (76,20--76,47),
+                               Ident MinValue, (76,49--76,61))), (76,20--76,61),
                          Yes, { ArrowRange = Some (76,22--76,24)
                                 BarRange = None })], NoneAtInvisible,
-                     (76,11--76,47)), (76,4--76,8), NoneAtLet,
+                     (76,11--76,61)), (76,4--76,8), NoneAtLet,
                   { LeadingKeyword = Let (76,0--76,3)
                     InlineKeyword = None
-                    EqualsRange = Some (76,9--76,10) })], (76,0--76,47));
+                    EqualsRange = Some (76,9--76,10) })], (76,0--76,61));
            Let
              (false,
               [SynBinding
@@ -711,7 +715,7 @@ ImplFile
                         Open
                           (ModuleOrNamespace
                              (SynLongIdent ([System], [], [None]), (80,9--80,15)),
-                           (80,4--80,15),
+                           (80,4--80,15), (80,4--83,12),
                            Sequential
                              (SuppressNeither, true,
                               App
@@ -782,7 +786,7 @@ ImplFile
                                          ([System; Linq; Enumerable],
                                           [(89,24--89,25); (89,29--89,30)],
                                           [None; None; None])), (89,18--89,40)),
-                                 (89,8--89,40),
+                                 (89,8--89,40), (89,8--92,30),
                                  ForEach
                                    (Yes (90,8--90,11), Yes (90,14--90,16),
                                     SeqExprOnly false, true,
@@ -804,6 +808,7 @@ ImplFile
                                          (LongIdent
                                             (SynLongIdent ([int], [], [None])),
                                           (91,22--91,25)), (91,12--91,25),
+                                       (91,12--92,30),
                                        YieldOrReturn
                                          ((true, false),
                                           App

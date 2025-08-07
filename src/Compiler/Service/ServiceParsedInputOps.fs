@@ -1495,7 +1495,7 @@ module ParsedInput =
                             ->
                             Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
 
-                        | SynExpr.Open(target, m, _) -> tryMakeOpenDeclarationCtx target m pos
+                        | SynExpr.Open(target, mOpen, _, _) -> tryMakeOpenDeclarationCtx target mOpen pos
 
                         | _ -> defaultTraverse expr
 

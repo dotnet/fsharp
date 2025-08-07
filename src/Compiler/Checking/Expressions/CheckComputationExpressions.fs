@@ -2242,9 +2242,9 @@ let rec TryTranslateComputationExpression
 
             Some(translatedCtxt yieldOrReturnCall)
 
-        | SynExpr.Open(target, m, body) ->
+        | SynExpr.Open(target, mOpen, m, body) ->
             let body = TranslateComputationExpressionNoQueryOps ceenv body
-            Some(translatedCtxt (SynExpr.Open(target, m, body)))
+            Some(translatedCtxt (SynExpr.Open(target, mOpen, m, body)))
 
         | _ -> None
 

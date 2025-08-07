@@ -185,7 +185,7 @@ ImplFile
                                     (SynLongIdent
                                        ([System; ArgumentException],
                                         [(17,24--17,25)], [None; None])),
-                                  (17,18--17,42)), (17,8--17,42),
+                                  (17,18--17,42)), (17,8--17,42), (17,8--18,22),
                                LongIdent
                                  (false,
                                   SynLongIdent
@@ -195,7 +195,7 @@ ImplFile
                             { LeadingKeyword = Member (16,4--16,10)
                               InlineKeyword = None
                               EqualsRange = Some (16,17--16,18) }),
-                         (16,4--17,42));
+                         (16,4--18,22));
                       Interface
                         (LongIdent (SynLongIdent ([IDisposable], [], [None])),
                          Some (20,26--20,30),
@@ -603,7 +603,7 @@ ImplFile
                                     (SynLongIdent
                                        ([System; Int32], [(57,24--57,25)],
                                         [None; None])), (57,18--57,30)),
-                               (57,8--57,30),
+                               (57,8--57,30), (57,8--58,31),
                                Record
                                  (None, None,
                                   [SynExprRecordField
@@ -619,7 +619,7 @@ ImplFile
                             { LeadingKeyword = New (56,4--56,7)
                               InlineKeyword = None
                               EqualsRange = Some (56,12--56,13) }),
-                         (56,4--57,30));
+                         (56,4--58,31));
                       Open
                         (ModuleOrNamespace
                            (SynLongIdent ([System], [], [None]), (59,9--59,15)),

@@ -966,7 +966,7 @@ type SynExpr =
 
     /// An 'open' definition within an expr
     /// let open System in ...
-    | Open of target: SynOpenDeclTarget * range: range * body: SynExpr
+    | Open of target: SynOpenDeclTarget * openDeclRange: range * range: range * body: SynExpr
 
     /// Gets the syntax range of this construct
     member Range: range
