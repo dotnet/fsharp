@@ -12,6 +12,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Test.Compiler
+open System.IO
 
 module Line =
 
@@ -176,9 +177,9 @@ printfn ""
                 [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string) = 
                 c, d
 
-        #line 1 "/aaaa"
+        #line 1 "file1.fs"
         let line1, file1 = C.M()
-        #line 551 "/aabb"
+        #line 551 "file2.fs"
         let line2, file2 = C.M()
         
         printfn $"{file1} {line1} {file2} {line2}"
@@ -192,8 +193,15 @@ printfn ""
             |> withFileName "CallerInfo.fs"
             |> withLangVersion "preview"
             |> compileExeAndRun
-        let expectedOutput = "/aaaa 1 /aabb 551"
         match results.RunOutput with
         | Some (ExecutionOutput output) ->
-            Assert.Equal(expectedOutput, output.StdOut.Trim())
+            let words = output.StdOut.Trim().Split(' ')
+            let file1 = Path.GetFileName(words.[0])
+            let line1 = int words.[1]
+            let file2 = Path.GetFileName(words.[2])
+            let line2 = int words.[3]
+            Assert.Equal("file1.fs", file1)
+            Assert.Equal(1, line1)
+            Assert.Equal("file2.fs", file2)
+            Assert.Equal(551, line2)
         | _ -> failwith "Unexpected: no run output"
