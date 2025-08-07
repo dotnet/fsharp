@@ -1415,7 +1415,7 @@ let rec TryTranslateComputationExpression
                         )
 
                     let bindCondExpr =
-                        SynExpr.LetOrUse(false, false, true, false, [ binding ], setCondExpr, mGuard, SynExprLetOrUseTrivia.Zero)
+                        SynExpr.LetOrUse(false, false, true, true, [ binding ], setCondExpr, mGuard, SynExprLetOrUseTrivia.Zero)
 
                     let whileExpr =
                         SynExpr.While(
@@ -1432,7 +1432,7 @@ let rec TryTranslateComputationExpression
                             mOrig
                         )
 
-                    SynExpr.LetOrUse(false, false, false, true, [ condBinding ], whileExpr, mGuard, SynExprLetOrUseTrivia.Zero)
+                    SynExpr.LetOrUse(false, false, false, false, [ condBinding ], whileExpr, mGuard, SynExprLetOrUseTrivia.Zero)
 
                 let binding =
                     SynBinding(
@@ -1451,7 +1451,7 @@ let rec TryTranslateComputationExpression
                         trivia = SynBindingTrivia.Zero
                     )
 
-                SynExpr.LetOrUse(false, false, true, false, [ binding ], body, mGuard, SynExprLetOrUseTrivia.Zero)
+                SynExpr.LetOrUse(false, false, true, true, [ binding ], body, mGuard, SynExprLetOrUseTrivia.Zero)
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
 
