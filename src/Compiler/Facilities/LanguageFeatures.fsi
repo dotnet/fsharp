@@ -94,6 +94,7 @@ type LanguageFeature =
     | BetterAnonymousRecordParsing
     | ScopedNowarn
     | AllowTypedLetUseAndBang
+    | ReturnFromFinal
 
 /// LanguageVersion management
 type LanguageVersion =
