@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <VSIXSourceItem Include="$(ArtifactsBinDir)\FSharp.VisualStudio.Extension\$(Configuration)\net8.0-windows\.vsextension\extension.json" VsixSubPath=".vsextension" ExtensionMetadata="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj">
       <Project>{702A7979-BCF9-4C41-853E-3ADFC9897890}</Project>
       <Name>FSharp.Build</Name>
@@ -125,6 +129,15 @@
       <Ngen>true</Ngen>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
+    </ProjectReference>
+
+
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.VisualStudio.Extension\FSharp.VisualStudio.Extension.csproj">
+      <Name>FSharp.VisualStudio.Extension</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <IncludeOutputGroupsInVSIX>ExtensionFilesOutputGroup</IncludeOutputGroupsInVSIX>
     </ProjectReference>
 
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj">
