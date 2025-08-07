@@ -211,40 +211,35 @@ open System.Collections.Generic
 type internal Position =
     val FileIndex: int
     val Line: int
-    val OriginalLine: int
     val AbsoluteOffset: int
     val StartOfLineAbsoluteOffset: int
     member x.Column = x.AbsoluteOffset - x.StartOfLineAbsoluteOffset
 
-    new(fileIndex: int, line: int, originalLine: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
+    new(fileIndex: int, line: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
         {
             FileIndex = fileIndex
             Line = line
-            OriginalLine = originalLine
             AbsoluteOffset = absoluteOffset
             StartOfLineAbsoluteOffset = startOfLineAbsoluteOffset
         }
 
     member x.NextLine =
-        Position(x.FileIndex, x.Line + 1, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(x.FileIndex, x.Line + 1, x.AbsoluteOffset, x.AbsoluteOffset)
 
     member x.EndOfToken n =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + n)
+        Position(x.FileIndex, x.Line, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + n)
 
     member x.ShiftColumnBy by =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + by)
+        Position(x.FileIndex, x.Line, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + by)
 
     member x.ColumnMinusOne =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
-
-    member x.ApplyLineDirective(fileIdx, line) =
-        Position(fileIdx, line, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(x.FileIndex, x.Line, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
 
     override p.ToString() = $"({p.Line},{p.Column})"
 
     static member Empty = Position()
 
-    static member FirstLine fileIdx = Position(fileIdx, 1, 1, 0, 0)
+    static member FirstLine fileIdx = Position(fileIdx, 1, 0, 0)
 
 type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 

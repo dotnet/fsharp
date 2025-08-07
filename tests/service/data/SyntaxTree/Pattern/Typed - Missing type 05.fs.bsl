@@ -31,7 +31,8 @@ ImplFile
                              EqualsRange = None })],
                        ArbitraryAfterError ("seqExpr", (4,10--4,10)),
                        (4,4--4,10), { LetOrUseKeyword = (4,4--4,7)
-                                      InKeyword = None }), (4,4--4,10)),
+                                      InKeyword = None
+                                      EqualsRange = None }), (4,4--4,10)),
                  (3,0--4,10)), (3,0--4,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
@@ -40,6 +41,7 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,4)-(6,5) parse error Incomplete structured construct at or before this point in binding
+(4,10)-(4,10) parse error Expecting type
 (7,0)-(7,0) parse error Unexpected end of input in value, function or member definition
 (4,4)-(4,7) parse error Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.
 (4,4)-(4,7) parse error The block following this 'let' is unfinished. Every code block is an expression and must have a result. 'let' cannot be the final code element in a block. Consider giving this block an explicit result.

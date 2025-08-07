@@ -355,64 +355,65 @@ type internal FSharpPackage() as this =
             flushTelemetry ()
 #endif
 
-    override this.InitializeAsync(cancellationToken: CancellationToken, progress: IProgress<ServiceProgressData>) : Tasks.Task =
-        // `base.` methods can't be called in the `async` builder, so we have to cache it
-        let baseInitializeAsync = base.InitializeAsync(cancellationToken, progress)
+    override this.RegisterInitializeAsyncWork(packageRegistrationTasks: PackageLoadTasks) : unit =
+        base.RegisterInitializeAsyncWork(packageRegistrationTasks)
 
-        foregroundCancellableTask {
-            do! baseInitializeAsync
+        packageRegistrationTasks.AddTask(
+            true,
+            (fun _tasks cancellationToken ->
+                foregroundCancellableTask {
+                    let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
+                    let commandService = commandService :?> OleMenuCommandService
 
-            let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
-            let commandService = commandService :?> OleMenuCommandService
+                    // Switch to UI thread
+                    do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
 
-            // Switch to UI thread
-            do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    // FSI-LINKAGE-POINT: sited init
+                    FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
 
-            // FSI-LINKAGE-POINT: sited init
-            FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    let _fsiPropertyPage =
+                        this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
 
-            // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-            let _fsiPropertyPage =
-                this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
+                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
 
-            let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let _ =
+                        this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
-            let _ =
-                this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
+                    let optionsManager =
+                        workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
-            let optionsManager =
-                workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+                    let metadataAsSource =
+                        this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
 
-            let metadataAsSource =
-                this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
+                    let! solution = this.GetServiceAsync(typeof<SVsSolution>)
+                    let solution = solution :?> IVsSolution
 
-            let! solution = this.GetServiceAsync(typeof<SVsSolution>)
-            let solution = solution :?> IVsSolution
+                    let solutionEvents = FSharpSolutionEvents(optionsManager, metadataAsSource)
 
-            let solutionEvents = FSharpSolutionEvents(optionsManager, metadataAsSource)
+                    let! rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>)
+                    let rdt = rdt :?> IVsRunningDocumentTable
 
-            let! rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>)
-            let rdt = rdt :?> IVsRunningDocumentTable
+                    solutionEventsOpt <- Some(solutionEvents)
+                    solution.AdviseSolutionEvents(solutionEvents) |> ignore
 
-            solutionEventsOpt <- Some(solutionEvents)
-            solution.AdviseSolutionEvents(solutionEvents) |> ignore
+                    let projectContextFactory =
+                        this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
 
-            let projectContextFactory =
-                this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
+                    let miscFilesWorkspace =
+                        this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
 
-            let miscFilesWorkspace =
-                this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
+                    do
+                        SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
+                        |> ignore
 
-            do
-                SingleFileWorkspaceMap(FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory), rdt)
-                |> ignore
+                    do
+                        LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
+                        |> ignore
 
-            do
-                LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
-                |> ignore
-
-        }
-        |> CancellableTask.startAsTask cancellationToken
+                }
+                |> CancellableTask.startAsTask cancellationToken)
+        )
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)

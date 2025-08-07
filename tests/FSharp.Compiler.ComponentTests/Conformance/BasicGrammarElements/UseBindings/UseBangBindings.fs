@@ -50,13 +50,26 @@ module UseBangBindingsVersion9 =
         |> withDiagnostics [
             (Error 1228, Line 47, Col 14, Line 47, Col 15, "'use!' bindings must be of the form 'use! <var> = <expr>'")
         ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBang05.fs"|])>]
+    let ``UseBangBindings - UseBang05_fs - Current LangVersion`` compilation =
+        compilation
+        |> asFsx
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 40, Col 18, Line 40, Col 29, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 41, Col 17, Line 41, Col 28, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+            (Error 3350, Line 43, Col 17, Line 43, Col 28, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
+        ]
 
 module UseBangBindingsPreview =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBang01.fs"|])>]
     let ``UseBangBindings - UseBang01_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
 
@@ -64,7 +77,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang02_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
 
@@ -72,7 +85,7 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang03_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
         
@@ -80,7 +93,16 @@ module UseBangBindingsPreview =
     let ``UseBangBindings - UseBang04_fs - Preview LangVersion`` compilation =
         compilation
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBang05.fs"|])>]
+    let ``UseBangBindings - UseBang05_fs - Preview LangVersion`` compilation =
+        compilation
+        |> asExe
+        |> withLangVersion10
+        |> compileAndRun
+        |> shouldSucceed
+
 

@@ -283,9 +283,11 @@ module internal TokenClassifications =
         | LBRACE_BAR -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces)
 
         | GREATER_RBRACK
+        | GREATER_BAR_RBRACE
         | GREATER_BAR_RBRACK -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None)
 
         | RQUOTE _
+        | RQUOTE_BAR_RBRACE _
         | RBRACK
         | RBRACE _
         | RBRACE_COMING_SOON
@@ -1387,6 +1389,8 @@ type FSharpTokenKind =
     | Comma
     | RightArrow
     | GreaterBarRightBracket
+    | GreaterBarRightBrace
+    | RQuoteBarRightBrace
     | LeftParenthesisStarRightParenthesis
     | Open
     | Or
@@ -1598,6 +1602,7 @@ type FSharpToken =
         | STAR -> FSharpTokenKind.Star
         | COMMA -> FSharpTokenKind.Comma
         | RARROW -> FSharpTokenKind.RightArrow
+        | GREATER_BAR_RBRACE -> FSharpTokenKind.GreaterBarRightBrace
         | GREATER_BAR_RBRACK -> FSharpTokenKind.GreaterBarRightBracket
         | LPAREN_STAR_RPAREN -> FSharpTokenKind.LeftParenthesisStarRightParenthesis
         | OPEN -> FSharpTokenKind.Open
@@ -1656,6 +1661,7 @@ type FSharpToken =
         | LQUOTE _ -> FSharpTokenKind.LeftQuote
         | RQUOTE _ -> FSharpTokenKind.RightQuote
         | RQUOTE_DOT _ -> FSharpTokenKind.RightQuoteDot
+        | RQUOTE_BAR_RBRACE _ -> FSharpTokenKind.RQuoteBarRightBrace
         | PERCENT_OP _ -> FSharpTokenKind.PercentOperator
         | BINDER _ -> FSharpTokenKind.Binder
         | LESS _ -> FSharpTokenKind.Less

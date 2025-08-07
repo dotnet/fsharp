@@ -726,18 +726,6 @@ type SynExpr =
         typeArgsRange: range *
         range: range
 
-    /// F# syntax: let pat = expr in expr
-    /// F# syntax: let f pat1 .. patN = expr in expr
-    /// F# syntax: let rec f pat1 .. patN = expr in expr
-    /// F# syntax: use pat = expr in expr
-    | LetOrUse of
-        isRecursive: bool *
-        isUse: bool *
-        bindings: SynBinding list *
-        body: SynExpr *
-        range: range *
-        trivia: SynExprLetOrUseTrivia
-
     /// F# syntax: try expr with pat -> expr
     | TryWith of
         tryExpr: SynExpr *
@@ -886,6 +874,18 @@ type SynExpr =
     /// Computation expressions only
     | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
+    /// F# syntax: let pat = expr in expr
+    /// F# syntax: let f pat1 .. patN = expr in expr
+    /// F# syntax: let rec f pat1 .. patN = expr in expr
+    /// F# syntax: use pat = expr in expr
+    | LetOrUse of
+        isRecursive: bool *
+        isUse: bool *
+        bindings: SynBinding list *
+        body: SynExpr *
+        range: range *
+        trivia: SynExprLetOrUseTrivia
+
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
@@ -896,10 +896,10 @@ type SynExpr =
         isFromSource: bool *
         pat: SynPat *
         rhs: SynExpr *
-        andBangs: SynExprAndBang list *
+        andBangs: SynBinding list *
         body: SynExpr *
         range: range *
-        trivia: SynExprLetOrUseBangTrivia
+        trivia: SynExprLetOrUseTrivia
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
@@ -977,28 +977,12 @@ type SynExpr =
     member IsArbExprAndThusAlreadyReportedError: bool
 
 [<NoEquality; NoComparison>]
-type SynExprAndBang =
-    | SynExprAndBang of
-        debugPoint: DebugPointAtBinding *
-        isUse: bool *
-        isFromSource: bool *
-        pat: SynPat *
-        body: SynExpr *
-        range: range *
-        trivia: SynExprAndBangTrivia
-
-    /// Gets the syntax range of this construct
-    member Range: range
-
-    /// Gets the trivia associated with this construct
-    member Trivia: SynExprAndBangTrivia
-
-[<NoEquality; NoComparison>]
 type SynExprRecordField =
     | SynExprRecordField of
         fieldName: RecordFieldName *
         equalsRange: range option *
         expr: SynExpr option *
+        range: range *
         blockSeparator: BlockSeparator option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1252,6 +1236,8 @@ type SynBinding =
     member RangeOfBindingWithRhs: range
 
     member RangeOfHeadPattern: range
+
+    member Trivia: SynBindingTrivia
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
@@ -1730,7 +1716,15 @@ type SynModuleDecl =
     /// An 'expr' within a module.
     | Expr of expr: SynExpr * range: range
 
-    /// One or more 'type' definitions within a module
+    /// <summary>
+    /// A type definition group ('<c>type T1 ... and T2 ...</c>') or a single '<c>type</c>' definition within a module.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// Consecutive '<c>type</c>' keywords (e.g. <c>type T1 ... type T2 ...</c>) are represented individually, with
+    /// separate <c>Types</c> syntax tree nodes for each.
+    /// Only the '<c>and</c>' keyword causes multiple types to be aggregated into a single <c>Types</c> node.
+    /// </remarks>
     | Types of typeDefns: SynTypeDefn list * range: range
 
     /// An 'exception' definition within a module

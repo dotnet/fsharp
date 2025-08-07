@@ -52,7 +52,7 @@ module Int64 =
     val order: IComparer<int64>
 
 module Pair =
-    val order: compare1: IComparer<'T1> * compare2: IComparer<'T2> -> IComparer<'T1 * 'T2>
+    val order: compare1: IComparer<'T1> * compare2: IComparer<'T2> -> IComparer<struct ('T1 * 'T2)>
 
 type NameSet = Zset<string>
 
@@ -291,3 +291,7 @@ module ListParallel =
     val map: ('T -> 'U) -> 'T list -> 'U list
 
 //val inline mapi: (int -> 'T -> 'U) -> 'T list -> 'U list
+
+[<RequireQualifiedAccess>]
+module Async =
+    val map: ('T -> 'U) -> Async<'T> -> Async<'U>

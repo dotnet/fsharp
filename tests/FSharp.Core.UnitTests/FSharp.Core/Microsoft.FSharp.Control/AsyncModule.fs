@@ -10,7 +10,7 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
-open FsCheck
+open FSharp.Test
 
 #nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
 // Why warned - the tests here are actually trying to assert that Async<unit> still works.
@@ -151,6 +151,7 @@ module LeakUtils =
 
 // ---------------------------------------------------
 
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 type AsyncModule() =
     
     /// Simple asynchronous task that delays 200ms and returns a list of the current tick count
@@ -393,7 +394,7 @@ type AsyncModule() =
 
         // Wait for the test to start then dispose waithandle - nothing should happen.
         started.Wait()
-        Assert.False(test.Wait 100, "Test completed too early.")
+        Assert.False(test.Wait 1000, "Test completed too early.")
         printfn "disposing"
         dispose wh
         printfn "cancelling in 1 second"

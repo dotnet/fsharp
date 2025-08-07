@@ -155,6 +155,7 @@ type Exception with
         | LibraryUseOnly m
         | FieldsFromDifferentTypes(_, _, _, m)
         | IndeterminateType m
+        | InvalidAttributeTargetForLanguageElement(_, _, m)
         | TyconBadArgs(_, _, _, m) -> Some m
 
         | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
@@ -353,6 +354,7 @@ type Exception with
         | ConstraintSolverNullnessWarningWithTypes _ -> 3261
         | ConstraintSolverNullnessWarningWithType _ -> 3261
         | ConstraintSolverNullnessWarning _ -> 3261
+        | InvalidAttributeTargetForLanguageElement _ -> 842
         | _ -> 193
 
 type PhasedDiagnostic with
@@ -402,6 +404,7 @@ type PhasedDiagnostic with
         | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | 3570 -> false // tcAmbiguousDiscardDotLambda - off by default
+        | 3878 -> false // tcAttributeIsNotValidForUnionCaseWithFields - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
@@ -609,6 +612,9 @@ module OldStyleMessages =
 
     let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
         Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
+
+    let InvalidAttributeTargetForLanguageElement1E () = Message("InvalidAttributeTargetForLanguageElement1", "%s%s")
+    let InvalidAttributeTargetForLanguageElement2E () = Message("InvalidAttributeTargetForLanguageElement2", "")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -888,7 +894,7 @@ type Exception with
                     |> List.map (fun (name, tTy) ->
                         tTy,
                         {
-                            ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero))
+                            ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range0))
                             ArgReprInfo.Attribs = []
                             ArgReprInfo.OtherRange = None
                         })
@@ -1141,6 +1147,7 @@ type Exception with
                 | Parser.TOKEN_COLON_EQUALS -> SR.GetString("Parser.TOKEN.COLON.EQUALS")
                 | Parser.TOKEN_LARROW -> SR.GetString("Parser.TOKEN.LARROW")
                 | Parser.TOKEN_EQUALS -> SR.GetString("Parser.TOKEN.EQUALS")
+                | Parser.TOKEN_GREATER_BAR_RBRACE -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACE")
                 | Parser.TOKEN_GREATER_BAR_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACK")
                 | Parser.TOKEN_MINUS -> SR.GetString("Parser.TOKEN.MINUS")
                 | Parser.TOKEN_ADJACENT_PREFIX_OP -> SR.GetString("Parser.TOKEN.ADJACENT.PREFIX.OP")
@@ -1167,6 +1174,7 @@ type Exception with
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
                 | Parser.TOKEN_RQUOTE_DOT
                 | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
+                | Parser.TOKEN_RQUOTE_BAR_RBRACE -> SR.GetString("Parser.TOKEN.RQUOTE.BAR.RBRACE")
                 | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
                 | Parser.TOKEN_RBRACE_COMING_SOON
@@ -1929,6 +1937,14 @@ type Exception with
                     s2
             )
 
+        | InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, _m) ->
+            if Array.isEmpty elementTargets then
+                os.AppendString(InvalidAttributeTargetForLanguageElement2E().Format)
+            else
+                let elementTargets = String.concat ", " elementTargets
+                let allowedTargets = allowedTargets |> String.concat ", "
+                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
+
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
 
@@ -2047,6 +2063,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnost
             File = ""
         }
     else
+        let m = m.ApplyLineDirectives()
         let file = m.FileName
 
         let file =
@@ -2178,6 +2195,8 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Rich ->
                     match diagnostic.Range with
                     | Some m ->
+                        let m = m.ApplyLineDirectives()
+
                         let content =
                             m.FileName
                             |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
@@ -2263,6 +2282,7 @@ type PhasedDiagnostic with
         match diagnostic.Range with
         | None -> ()
         | Some m ->
+            let m = m.ApplyLineDirectives()
             let fileName = m.FileName
             let lineA = m.StartLine
             let lineB = m.EndLine

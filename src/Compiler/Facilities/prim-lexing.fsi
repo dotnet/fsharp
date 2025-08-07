@@ -76,10 +76,6 @@ type internal Position =
     /// for the new line by modifying the EndPos property of the LexBuffer.
     val Line: int
 
-    /// The line number for the position in the input stream, assuming fresh positions have been updated
-    /// using for the new line.
-    val OriginalLine: int
-
     /// The character number in the input stream.
     val AbsoluteOffset: int
 
@@ -101,9 +97,6 @@ type internal Position =
 
     /// Same line, column -1.
     member ColumnMinusOne: Position
-
-    /// Apply a #line directive.
-    member ApplyLineDirective: fileIdx: int * line: int -> Position
 
     /// Get an arbitrary position, with the empty string as file name.
     static member Empty: Position
