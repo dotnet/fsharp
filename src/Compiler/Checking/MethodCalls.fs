@@ -1448,7 +1448,6 @@ type CheckCallerAttributesEnv<'t> =
     {
         eCallerMemberName: string option
         sourceText: ISourceText option
-        fGetOriginalRange: range -> range
         assignedArgs: AssignedCalledArg<'t> list
     }
     
@@ -1458,7 +1457,6 @@ let tryPickArgumentCodeText checkCallerAttributesEnv paramName =
     |> List.tryPick (fun { CalledArg=called; CallerArg=caller } -> 
     match called.NameOpt, checkCallerAttributesEnv.sourceText with
     | Some x, Some sourceText when x.idText = paramName ->
-        // let range = checkCallerAttributesEnv.fGetOriginalRange caller.Range
         let range = caller.Range
         let code = sourceText.GetSubTextFromRange range
         if System.String.IsNullOrEmpty code then None
@@ -1676,7 +1674,7 @@ let AdjustCallerArgForOptional tcVal tcFieldInit checkCallerAttributesEnv (infoR
 //    - VB also allows you to pass intrinsic values as optional values to parameters 
 //        typed as Object. What we do in this case is we box the intrinsic value."
 //
-let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr (eCallerMemberName, sourceText, fGetOriginalRange) =
+let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr (eCallerMemberName, sourceText) =
     let g = infoReader.g
 
     let assignedNamedArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.AssignedNamedArgs)
@@ -1690,7 +1688,6 @@ let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (
         {
             sourceText = sourceText
             eCallerMemberName = eCallerMemberName
-            fGetOriginalRange = fGetOriginalRange
             assignedArgs = assignedNamedArgs @ unnamedArgs
         }
 
@@ -1750,7 +1747,7 @@ let AdjustParamArrayCallerArgs tcVal g amap infoReader ad (calledMeth: CalledMet
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
 /// contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
-let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr (eCallerMemberName, sourceText, fGetOriginalRange) =
+let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr (eCallerMemberName, sourceText) =
     let g = infoReader.g
     let amap = infoReader.amap
     let calledMethInfo = calledMeth.Method
@@ -1772,7 +1769,7 @@ let AdjustCallerArgs tcVal tcFieldInit (infoReader: InfoReader) ad (calledMeth: 
         AdjustParamArrayCallerArgs tcVal g amap infoReader ad calledMeth mMethExpr
 
     let optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedFinalAssignedNamedArgs = 
-        AdjustCallerArgsForOptionals tcVal tcFieldInit infoReader ad calledMeth mItem mMethExpr (eCallerMemberName, sourceText, fGetOriginalRange)
+        AdjustCallerArgsForOptionals tcVal tcFieldInit infoReader ad calledMeth mItem mMethExpr (eCallerMemberName, sourceText)
 
     let outArgs, outArgExprs, outArgTmpBinds =
         AdjustOutCallerArgs g calledMeth mMethExpr

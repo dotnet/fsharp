@@ -330,7 +330,3 @@ module internal WarnScopes =
                 let scopes = getScopes m.FileIndex warningNumber data.WarnScopes // LineDirectives: n/a
                 List.exists (isEnclosingNowarnScope m) scopes
             | None -> false
-
-    let GetOriginalRange (diagnosticOptions: FSharpDiagnosticOptions) (m: range) =
-        let data = getWarnScopeData diagnosticOptions
-        originalRange data.LineMaps m

@@ -10305,7 +10305,7 @@ and TcMethodApplication
 
     let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
         let tcVal = LightweightTcValForUsingInBuildMethodCall g
-        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText, WarnScopes.GetOriginalRange cenv.diagnosticOptions)
+        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText)
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->

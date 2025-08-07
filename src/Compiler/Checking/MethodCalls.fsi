@@ -440,7 +440,7 @@ val AdjustCallerArgs:
     lambdaVars: 'a option ->
     mItem: range ->
     mMethExpr: range ->
-    eCallerMemberName: string option * sourceText: ISourceText option * fGetOriginalRange: (range -> range) ->
+    eCallerMemberName: string option * sourceText: ISourceText option ->
         (Expr -> Expr) *
         Expr list *
         'b option list *

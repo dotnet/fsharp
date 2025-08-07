@@ -25,6 +25,3 @@ module internal WarnScopes =
 
     /// Check if the range is inside a "nowarn" scope for the given warning number.
     val IsNowarn: FSharpDiagnosticOptions -> warningNumber: int -> mo: range option -> bool
-
-    /// Get the original range of a range that may have been modified by a #nowarn directive.
-    val GetOriginalRange: diagnosticOptions: FSharpDiagnosticOptions -> m: range -> range
