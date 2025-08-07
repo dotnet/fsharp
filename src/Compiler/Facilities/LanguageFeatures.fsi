@@ -95,6 +95,7 @@ type LanguageFeature =
     | ScopedNowarn
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | SupportCallerArgumentExpression
 
 /// LanguageVersion management
 type LanguageVersion =
