@@ -52,7 +52,8 @@ type Name = Name of string
     Assert.Equal(expected, actual)
 
 [<Theory>]
-[<InlineData "type X = open">]
+// [<InlineData "type X = open">] // This case will not trigger the code fix in VS because the error message of
+//                                // this is not related with missing equals now.
 [<InlineData "=">]
 [<InlineData "let f x = 
     match x with

@@ -771,6 +771,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true eAndBang
 
                             yield! walkExpr true bodyExpr
+                        | SynExpr.Open(body = bodyExpr) -> yield! walkExpr true bodyExpr
                 ]
 
             // Process a class declaration or F# type declaration

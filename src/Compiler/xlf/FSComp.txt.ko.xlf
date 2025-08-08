@@ -532,6 +532,11 @@
         <target state="translated">개방형 형식 선언</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOpensInExpressionScope">
+        <source>'open' declarations in expression scopes</source>
+        <target state="new">'open' declarations in expression scopes</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
         <target state="translated">사용자 지정 작업의 오버로드</target>
