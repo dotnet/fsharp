@@ -9,7 +9,7 @@ ImplFile
                  ComputationExpr
                    (false,
                     LetOrUse
-                      (false, false,
+                      (false, false, true, false,
                        [SynBinding
                           (None, Normal, false, false, [],
                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -36,27 +36,38 @@ ImplFile
                            { LeadingKeyword = Let (4,4--4,7)
                              InlineKeyword = None
                              EqualsRange = Some (4,23--4,24) })],
-                       LetOrUseBang
-                         (Yes (5,4--5,44), false, true,
-                          Typed
-                            (As
-                               (LongIdent
-                                  (SynLongIdent ([Even], [], [None]), None, None,
-                                   Pats [], None, (5,9--5,13)),
-                                Named
-                                  (SynIdent (x, None), false, None, (5,17--5,18)),
-                                (5,9--5,18)),
-                             LongIdent (SynLongIdent ([int], [], [None])),
-                             (5,9--5,23)),
-                          App
-                            (NonAtomic, false, Ident async,
-                             ComputationExpr
-                               (false,
-                                YieldOrReturn
-                                  ((false, true), Const (Int32 2, (5,41--5,42)),
-                                   (5,34--5,42),
-                                   { YieldOrReturnKeyword = (5,34--5,40) }),
-                                (5,32--5,44)), (5,26--5,44)), [],
+                       LetOrUse
+                         (false, false, true, true,
+                          [SynBinding
+                             (None, Normal, false, false, [], PreXmlDocEmpty,
+                              SynValData
+                                (None,
+                                 SynValInfo ([], SynArgInfo ([], false, None)),
+                                 None),
+                              Typed
+                                (As
+                                   (LongIdent
+                                      (SynLongIdent ([Even], [], [None]), None,
+                                       None, Pats [], None, (5,9--5,13)),
+                                    Named
+                                      (SynIdent (x, None), false, None,
+                                       (5,17--5,18)), (5,9--5,18)),
+                                 LongIdent (SynLongIdent ([int], [], [None])),
+                                 (5,9--5,23)), None,
+                              App
+                                (NonAtomic, false, Ident async,
+                                 ComputationExpr
+                                   (false,
+                                    YieldOrReturn
+                                      ((false, true),
+                                       Const (Int32 2, (5,41--5,42)),
+                                       (5,34--5,42),
+                                       { YieldOrReturnKeyword = (5,34--5,40) }),
+                                    (5,32--5,44)), (5,26--5,44)), (5,4--6,12),
+                              Yes (5,4--5,44),
+                              { LeadingKeyword = Let (5,4--5,8)
+                                InlineKeyword = None
+                                EqualsRange = Some (5,24--5,25) })],
                           YieldOrReturn
                             ((false, true), Ident x, (6,4--6,12),
                              { YieldOrReturnKeyword = (6,4--6,10) }),

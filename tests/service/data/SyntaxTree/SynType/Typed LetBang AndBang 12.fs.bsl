@@ -9,16 +9,28 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,28), false, true,
-                       As
-                         (Named (SynIdent (x, None), false, None, (4,9--4,10)),
-                          Named (SynIdent (y, None), false, None, (4,14--4,15)),
-                          (4,9--4,15)),
-                       App
-                         (Atomic, false, Ident asyncInt,
-                          Const (Unit, (4,26--4,28)), (4,18--4,28)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           As
+                             (Named
+                                (SynIdent (x, None), false, None, (4,9--4,10)),
+                              Named
+                                (SynIdent (y, None), false, None, (4,14--4,15)),
+                              (4,9--4,15)), None,
+                           App
+                             (Atomic, false, Ident asyncInt,
+                              Const (Unit, (4,26--4,28)), (4,18--4,28)),
+                           (4,4--6,16), Yes (4,4--4,28),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,16--4,17) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,

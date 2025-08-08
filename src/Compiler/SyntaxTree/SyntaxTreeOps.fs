@@ -209,7 +209,6 @@ let rec IsControlFlowExpression e =
     // Treat "ident { ... }" as a control flow expression
     | SynExpr.App(_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
     | SynExpr.IfThenElse _
-    | SynExpr.LetOrUseBang _
     | SynExpr.Match _
     | SynExpr.TryWith _
     | SynExpr.TryFinally _
@@ -980,15 +979,6 @@ let rec synExprContainsError inpExpr =
         | SynExpr.DotIndexedSet(e1, indexArgs, e2, _, _, _) -> walkExpr e1 || walkExpr indexArgs || walkExpr e2
 
         | SynExpr.DotNamedIndexedPropertySet(e1, _, e2, e3, _) -> walkExpr e1 || walkExpr e2 || walkExpr e3
-
-        | SynExpr.LetOrUseBang(rhs = e1; body = e2; andBangs = es) ->
-            walkExpr e1
-            || walkExprs
-                [
-                    for SynBinding(expr = e) in es do
-                        yield e
-                ]
-            || walkExpr e2
 
         | SynExpr.InterpolatedString(parts, _, _m) ->
             parts

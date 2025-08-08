@@ -9,7 +9,7 @@ ImplFile
                  ComputationExpr
                    (false,
                     LetOrUse
-                      (false, false,
+                      (false, false, true, false,
                        [SynBinding
                           (None, Normal, false, false, [],
                            PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -43,38 +43,50 @@ ImplFile
                            { LeadingKeyword = Let (4,4--4,7)
                              InlineKeyword = None
                              EqualsRange = Some (4,25--4,26) })],
-                       LetOrUseBang
-                         (Yes (5,4--5,49), false, true,
-                          Paren
-                            (Tuple
-                               (false,
-                                [Typed
-                                   (Named
-                                      (SynIdent (c, None), false, None,
-                                       (5,10--5,11)),
-                                    LongIdent (SynLongIdent ([int], [], [None])),
-                                    (5,10--5,16));
-                                 Typed
-                                   (Named
-                                      (SynIdent (d, None), false, None,
-                                       (5,18--5,19)),
-                                    LongIdent (SynLongIdent ([int], [], [None])),
-                                    (5,18--5,24))], [(5,16--5,17)], (5,10--5,24)),
-                             (5,9--5,25)),
-                          App
-                            (NonAtomic, false, Ident async,
-                             ComputationExpr
-                               (false,
-                                YieldOrReturn
-                                  ((false, true),
-                                   Tuple
-                                     (false,
-                                      [Const (Int32 1, (5,43--5,44));
-                                       Const (Int32 3, (5,46--5,47))],
-                                      [(5,44--5,45)], (5,43--5,47)),
-                                   (5,36--5,47),
-                                   { YieldOrReturnKeyword = (5,36--5,42) }),
-                                (5,34--5,49)), (5,28--5,49)), [],
+                       LetOrUse
+                         (false, false, true, true,
+                          [SynBinding
+                             (None, Normal, false, false, [], PreXmlDocEmpty,
+                              SynValData
+                                (None,
+                                 SynValInfo ([], SynArgInfo ([], false, None)),
+                                 None),
+                              Paren
+                                (Tuple
+                                   (false,
+                                    [Typed
+                                       (Named
+                                          (SynIdent (c, None), false, None,
+                                           (5,10--5,11)),
+                                        LongIdent
+                                          (SynLongIdent ([int], [], [None])),
+                                        (5,10--5,16));
+                                     Typed
+                                       (Named
+                                          (SynIdent (d, None), false, None,
+                                           (5,18--5,19)),
+                                        LongIdent
+                                          (SynLongIdent ([int], [], [None])),
+                                        (5,18--5,24))], [(5,16--5,17)],
+                                    (5,10--5,24)), (5,9--5,25)), None,
+                              App
+                                (NonAtomic, false, Ident async,
+                                 ComputationExpr
+                                   (false,
+                                    YieldOrReturn
+                                      ((false, true),
+                                       Tuple
+                                         (false,
+                                          [Const (Int32 1, (5,43--5,44));
+                                           Const (Int32 3, (5,46--5,47))],
+                                          [(5,44--5,45)], (5,43--5,47)),
+                                       (5,36--5,47),
+                                       { YieldOrReturnKeyword = (5,36--5,42) }),
+                                    (5,34--5,49)), (5,28--5,49)), (5,4--6,24),
+                              Yes (5,4--5,49),
+                              { LeadingKeyword = Let (5,4--5,8)
+                                InlineKeyword = None
+                                EqualsRange = Some (5,26--5,27) })],
                           YieldOrReturn
                             ((false, true),
                              App

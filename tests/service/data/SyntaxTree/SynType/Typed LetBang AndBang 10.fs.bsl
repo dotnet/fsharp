@@ -9,22 +9,33 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,35), false, true,
-                       Typed
-                         (Paren
-                            (As
-                               (Named
-                                  (SynIdent (x, None), false, None, (4,10--4,11)),
-                                Named
-                                  (SynIdent (y, None), false, None, (4,15--4,16)),
-                                (4,10--4,16)), (4,9--4,17)),
-                          LongIdent (SynLongIdent ([int], [], [None])),
-                          (4,9--4,22)),
-                       App
-                         (Atomic, false, Ident asyncInt,
-                          Const (Unit, (4,33--4,35)), (4,25--4,35)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Typed
+                             (Paren
+                                (As
+                                   (Named
+                                      (SynIdent (x, None), false, None,
+                                       (4,10--4,11)),
+                                    Named
+                                      (SynIdent (y, None), false, None,
+                                       (4,15--4,16)), (4,10--4,16)), (4,9--4,17)),
+                              LongIdent (SynLongIdent ([int], [], [None])),
+                              (4,9--4,22)), None,
+                           App
+                             (Atomic, false, Ident asyncInt,
+                              Const (Unit, (4,33--4,35)), (4,25--4,35)),
+                           (4,4--6,16), Yes (4,4--4,35),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,23--4,24) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,

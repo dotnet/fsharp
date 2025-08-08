@@ -8,21 +8,31 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,38), false, true,
-                       Typed
-                         (Named (SynIdent (res, None), false, None, (4,9--4,12)),
-                          LongIdent (SynLongIdent ([int], [], [None])),
-                          (4,9--4,17)),
-                       App
-                         (NonAtomic, false, Ident async,
-                          ComputationExpr
-                            (false,
-                             YieldOrReturn
-                               ((false, true), Const (Int32 1, (4,35--4,36)),
-                                (4,28--4,36),
-                                { YieldOrReturnKeyword = (4,28--4,34) }),
-                             (4,26--4,38)), (4,20--4,38)), [],
+                    LetOrUse
+                      (false, false, true, true,
+                       [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Typed
+                             (Named
+                                (SynIdent (res, None), false, None, (4,9--4,12)),
+                              LongIdent (SynLongIdent ([int], [], [None])),
+                              (4,9--4,17)), None,
+                           App
+                             (NonAtomic, false, Ident async,
+                              ComputationExpr
+                                (false,
+                                 YieldOrReturn
+                                   ((false, true), Const (Int32 1, (4,35--4,36)),
+                                    (4,28--4,36),
+                                    { YieldOrReturnKeyword = (4,28--4,34) }),
+                                 (4,26--4,38)), (4,20--4,38)), (4,4--5,14),
+                           Yes (4,4--4,38), { LeadingKeyword = Let (4,4--4,8)
+                                              InlineKeyword = None
+                                              EqualsRange = Some (4,18--4,19) })],
                        YieldOrReturn
                          ((false, true), Ident res, (5,4--5,14),
                           { YieldOrReturnKeyword = (5,4--5,10) }), (4,4--5,14),

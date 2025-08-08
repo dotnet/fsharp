@@ -956,15 +956,6 @@ module InterfaceStubGenerator =
                 | SynExpr.YieldOrReturnFrom(expr = synExpr)
                 | SynExpr.DoBang(expr = synExpr) -> walkExpr synExpr
 
-                | SynExpr.LetOrUseBang(rhs = synExpr1; andBangs = synExprAndBangs; body = synExpr2) ->
-                    [
-                        yield synExpr1
-                        for SynBinding(expr = eAndBang) in synExprAndBangs do
-                            yield eAndBang
-                        yield synExpr2
-                    ]
-                    |> List.tryPick walkExpr
-
                 | SynExpr.LibraryOnlyILAssembly _
                 | SynExpr.LibraryOnlyStaticOptimization _
                 | SynExpr.LibraryOnlyUnionCaseFieldGet _

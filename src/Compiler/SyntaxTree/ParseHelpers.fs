@@ -1066,46 +1066,79 @@ let leadingKeywordIsAbstract =
     | _ -> false
 
 /// Unified helper for creating let/let!/use/use! expressions
-/// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
+/// Creates SynExpr.LetOrUse based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
 let mkLetExpression
     (
         isBang: bool,
-        mKeyword: range,
-        mIn: Option<range>,
+        mIn: range option,
         mWhole: range,
         body: SynExpr,
-        bindingInfo: (bool * BindingSet) option,
-        bangInfo: (SynPat * SynExpr * SynBinding list * range option * bool) option
+        bindingInfo: BindingSet option,
+        bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option
     ) =
     if isBang then
         match bangInfo with
-        | Some(pat, rhs, andBangs, mEquals, isUse) ->
-            // Create let! or use! expression
+        | Some(pat, rhs, andBangs, mKeyword, mEquals, isUse) ->
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
-            let trivia: SynExprLetOrUseTrivia =
+            let trivia: SynBindingTrivia =
                 {
-                    LetOrUseKeyword = mKeyword
-                    InKeyword = mIn
+                    LeadingKeyword =
+                        if isUse then
+                            SynLeadingKeyword.Use mKeyword
+                        else
+                            SynLeadingKeyword.Let mKeyword
+                    InlineKeyword = mIn
                     EqualsRange = mEquals
                 }
-            // isFromSource is true for user-written code
-            SynExpr.LetOrUseBang(spBind, isUse, true, pat, rhs, andBangs, body, mWhole, trivia)
+
+            let binding =
+                SynBinding(
+                    accessibility = None,
+                    kind = SynBindingKind.Normal,
+                    isInline = false,
+                    isMutable = false,
+                    attributes = [],
+                    xmlDoc = PreXmlDoc.Empty,
+                    valData = SynInfo.emptySynValData,
+                    headPat = pat,
+                    returnInfo = None,
+                    expr = rhs,
+                    range = mWhole,
+                    debugPoint = spBind,
+                    trivia = trivia
+                )
+
+            SynExpr.LetOrUse(
+                isRecursive = false,
+                isUse = isUse,
+                isFromSource = true,
+                isBang = true,
+                bindings = binding :: andBangs,
+                body = body,
+                range = mWhole,
+                trivia =
+                    {
+                        LetOrUseKeyword = mKeyword
+                        InKeyword = mIn
+                        EqualsRange = mEquals
+                    }
+            )
+
         | None -> SynExpr.FromParseError(body, mWhole)
     else
         match bindingInfo with
-        | Some(isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
-            // Create regular let or use expression
+        | Some(BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _)) ->
             let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
-            let mWhole' =
+            let mWhole =
                 match decls with
                 | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
                 | _ -> mWhole
 
             if not (isNil ignoredFreeAttrs) then
-                warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole'))
+                warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole))
 
             let mIn' =
                 mIn
@@ -1126,15 +1159,18 @@ let mkLetExpression
                 | _ -> None
 
             SynExpr.LetOrUse(
-                isRec,
-                isUse, // Pass through the isUse flag from binding info
-                decls,
-                body,
-                mWhole',
-                {
-                    LetOrUseKeyword = mLetOrUse
-                    InKeyword = mIn'
-                    EqualsRange = mEquals
-                }
+                isRecursive = isRec,
+                isUse = isUse,
+                isFromSource = true,
+                isBang = false,
+                bindings = decls,
+                body = body,
+                range = mWhole,
+                trivia =
+                    {
+                        LetOrUseKeyword = mLetOrUse
+                        InKeyword = mIn'
+                        EqualsRange = mEquals
+                    }
             )
         | None -> SynExpr.FromParseError(body, mWhole)

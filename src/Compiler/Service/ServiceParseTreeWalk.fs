@@ -745,20 +745,6 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.LetOrUseBang(pat = synPat; rhs = synExpr; andBangs = andBangSynExprs; body = synExpr2) ->
-                    [
-                        yield dive synPat synPat.Range traversePat
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield!
-                            [
-                                for SynBinding(headPat = andBangSynPat; expr = andBangSynExpr) in andBangSynExprs do
-                                    yield (dive andBangSynPat andBangSynPat.Range traversePat)
-                                    yield (dive andBangSynExpr andBangSynExpr.Range traverseSynExpr)
-                            ]
-                        yield dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
                 | SynExpr.Dynamic _
                 | SynExpr.Ident _
                 | SynExpr.LongIdent _

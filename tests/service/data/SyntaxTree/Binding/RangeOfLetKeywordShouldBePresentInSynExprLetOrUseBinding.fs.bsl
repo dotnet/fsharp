@@ -16,7 +16,7 @@ ImplFile
                     (None, SynValInfo ([], SynArgInfo ([], false, None)), None),
                   Named (SynIdent (a, None), false, None, (2,4--2,5)), None,
                   LetOrUse
-                    (false, false,
+                    (false, false, true, false,
                      [SynBinding
                         (None, Normal, false, false, [],
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),

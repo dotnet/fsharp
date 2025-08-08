@@ -9,28 +9,39 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,56), false, true,
-                       Paren
-                         (Typed
-                            (ArrayOrList
-                               (true,
-                                [Named
-                                   (SynIdent (first, None), false, None,
-                                    (4,13--4,18));
-                                 Named
-                                   (SynIdent (second, None), false, None,
-                                    (4,20--4,26))], (4,10--4,29)),
-                             App
-                               (LongIdent (SynLongIdent ([array], [], [None])),
-                                None,
-                                [LongIdent (SynLongIdent ([int], [], [None]))],
-                                [], None, true, (4,31--4,40)), (4,10--4,40)),
-                          (4,9--4,41)),
-                       App
-                         (Atomic, false, Ident asyncArray,
-                          Const (Unit, (4,54--4,56)), (4,44--4,56)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Paren
+                             (Typed
+                                (ArrayOrList
+                                   (true,
+                                    [Named
+                                       (SynIdent (first, None), false, None,
+                                        (4,13--4,18));
+                                     Named
+                                       (SynIdent (second, None), false, None,
+                                        (4,20--4,26))], (4,10--4,29)),
+                                 App
+                                   (LongIdent
+                                      (SynLongIdent ([array], [], [None])), None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (4,31--4,40)), (4,10--4,40)),
+                              (4,9--4,41)), None,
+                           App
+                             (Atomic, false, Ident asyncArray,
+                              Const (Unit, (4,54--4,56)), (4,44--4,56)),
+                           (4,4--6,16), Yes (4,4--4,56),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,42--4,43) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,

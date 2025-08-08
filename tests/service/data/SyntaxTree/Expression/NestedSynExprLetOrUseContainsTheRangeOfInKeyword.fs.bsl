@@ -17,7 +17,7 @@ ImplFile
                      Pats [Paren (Const (Unit, (2,6--2,8)), (2,6--2,8))], None,
                      (2,4--2,8)), None,
                   LetOrUse
-                    (false, false,
+                    (false, false, true, false,
                      [SynBinding
                         (None, Normal, false, false, [],
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -30,7 +30,7 @@ ImplFile
                                             InlineKeyword = None
                                             EqualsRange = Some (3,10--3,11) })],
                      LetOrUse
-                       (false, false,
+                       (false, false, true, false,
                         [SynBinding
                            (None, Normal, false, false, [],
                             PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),

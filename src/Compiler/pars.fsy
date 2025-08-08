@@ -4112,8 +4112,7 @@ sequentialExpr:
        let usedKeyword = if isUse then "use" else "let"
        reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedExpressionAfterLet(usedKeyword, usedKeyword))
        let fauxRange = m.EndRange // zero width range at end of m
-       let isRec = match bindingSet with BindingSetPreAttrs(_, isRec, _, _, _) -> isRec
-       mkLetExpression(false, mLetKwd, mIn, m, arbExpr ("seqExpr", fauxRange), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, m, arbExpr ("seqExpr", fauxRange), Some bindingSet, None) }
 
 /* Use this as the last terminal when performing error recovery */
 /* The contract for using this is that (a) if EOF occurs then the */
@@ -4165,15 +4164,13 @@ declExpr:
      { let mIn = rhs parseState 2 |> Some
        let mWhole = unionRanges (rhs2 parseState 1 2) $3.Range
        let bindingSet = $1
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, $3, Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, $3, Some bindingSet, None) }
 
   | defnBindings IN error %prec expr_let
      { let mIn = rhs parseState 2 |> Some
        let mWhole = rhs2 parseState 1 2
        let bindingSet = $1
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), Some bindingSet, None) }
 /*
     FSComp.SR.parsNoMatchingInForLet() -- leave this in for now - it's an unused error string
 */
@@ -4181,27 +4178,23 @@ declExpr:
   | hardwhiteLetBindings typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $2.Range
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, $2, Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, $2, Some bindingSet, None) }
 
   | hardwhiteLetBindings error %prec expr_let
      { let bindingSet, m, mIn = $1
        reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), Some bindingSet, None) }
 
   | hardwhiteLetBindings OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $3.Range
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, $3, Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, $3, Some bindingSet, None) }
 
   | hardwhiteLetBindings OBLOCKSEP error %prec expr_let
      { let bindingSet, m, mIn = $1
        //reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        let mWhole = unionRanges m (rhs parseState 3)
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), Some bindingSet, None) }
 
   | hardwhiteDoBinding %prec expr_let
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
@@ -4539,7 +4532,7 @@ declExpr:
        // $1 contains the actual keyword ("let" or "use")
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, mKeyword, None, m, $8, None, Some(pat, $4, $7, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Offside-sensitive version of let!/use! binding
@@ -4557,7 +4550,7 @@ declExpr:
        
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, mKeyword, None, m, $8, None, Some(pat, $4, $7, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // Error recovery for incomplete let!/use! bindings
@@ -4576,7 +4569,7 @@ declExpr:
        let isUse = ($1 = "use")
        
        // Use ImplicitZero as the continuation expression for error recovery
-       mkLetExpression(true, mKeyword, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mEquals, isUse)) }
+       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mKeyword, mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo

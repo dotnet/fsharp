@@ -12,13 +12,25 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (3,4--3,24), false, true,
-                       Named (SynIdent (bar, None), false, None, (3,9--3,12)),
-                       App
-                         (NonAtomic, false, Ident getBar,
-                          Const (Unit, (3,22--3,24)), (3,15--3,24)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Named
+                             (SynIdent (bar, None), false, None, (3,9--3,12)),
+                           None,
+                           App
+                             (NonAtomic, false, Ident getBar,
+                              Const (Unit, (3,22--3,24)), (3,15--3,24)),
+                           (3,4--6,14), Yes (3,4--3,24),
+                           { LeadingKeyword = Let (3,4--3,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (3,13--3,14) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,

@@ -11,11 +11,20 @@ ImplFile
                 (NonAtomic, false, Ident comp,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (3,4--3,14), false, true,
-                       Named (SynIdent (x, None), false, None, (3,9--3,10)),
-                       Ident y,
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Named (SynIdent (x, None), false, None, (3,9--3,10)),
+                           None, Ident y, (3,4--5,13), Yes (3,4--3,14),
+                           { LeadingKeyword = Let (3,4--3,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (3,11--3,12) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,
