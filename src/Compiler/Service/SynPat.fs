@@ -97,6 +97,12 @@ module SynPat =
         | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(SynExpr.LetOrUse _) :: _
         | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynBinding _ :: _
         | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynBinding _ :: _
+
+        //     let! (_ : obj) = …
+        | SynPat.Typed _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.LetOrUse(isComputed = true)) :: _ -> true
+
+        //     let! (A _) = …
+        | SynPat.LongIdent _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.LetOrUse(isComputed = true)) :: _ -> false
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynBinding _ :: _
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
         | SynPat.Tuple(isStruct = false), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
