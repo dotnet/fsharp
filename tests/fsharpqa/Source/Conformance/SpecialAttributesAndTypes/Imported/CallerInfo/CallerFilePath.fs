@@ -57,7 +57,7 @@ module Program =
 
 # 345 "qwerty1"
         match CallerInfoTest.AllInfo(123) with
-        | (path, _, _) when matchesPath "Conformance#SpecialAttributesAndTypes#Imported#CallerInfo#querty1.fs" path -> ()
+        | (path, _, _) when matchesPath "Conformance#SpecialAttributesAndTypes#Imported#CallerInfo#qwerty1.fs" path -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 
 # 456 "qwerty2"
