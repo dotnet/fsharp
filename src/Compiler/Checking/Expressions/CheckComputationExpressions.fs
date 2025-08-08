@@ -1418,7 +1418,7 @@ let rec TryTranslateComputationExpression
                         SynExpr.LetOrUse(
                             isRecursive = false,
                             isUse = false,
-                            isFromSource = true,
+                            isFromSource = true, // compiler generated during desugaring
                             isComputed = true,
                             bindings = [ binding ],
                             body = setCondExpr,
@@ -1444,7 +1444,7 @@ let rec TryTranslateComputationExpression
                     SynExpr.LetOrUse(
                         isRecursive = false,
                         isUse = false,
-                        isFromSource = false,
+                        isFromSource = false, // compiler generated during desugaring
                         isComputed = false,
                         bindings = [ condBinding ],
                         body = whileExpr,
@@ -1472,7 +1472,7 @@ let rec TryTranslateComputationExpression
                 SynExpr.LetOrUse(
                     isRecursive = false,
                     isUse = false,
-                    isFromSource = true,
+                    isFromSource = true, // compiler generated during desugaring
                     isComputed = true,
                     bindings = [ binding ],
                     body = body,
@@ -1692,7 +1692,7 @@ let rec TryTranslateComputationExpression
                                 (SynExpr.LetOrUse(
                                     isRecursive = false,
                                     isUse = false,
-                                    isFromSource = true,
+                                    isFromSource = true, // compiler generated during desugaring
                                     isComputed = true,
                                     bindings = [ binding ],
                                     body = innerComp2,
@@ -2467,7 +2467,7 @@ and ConsumeCustomOpClauses
                             SynExpr.LetOrUse(
                                 isRecursive = false,
                                 isUse = false,
-                                isFromSource = false,
+                                isFromSource = false, // compiler generated during desugaring
                                 isComputed = true,
                                 bindings = [ binding ],
                                 body = contExpr,
@@ -2524,7 +2524,7 @@ and ConsumeCustomOpClauses
                 SynExpr.LetOrUse(
                     isRecursive = false,
                     isUse = false,
-                    isFromSource = false,
+                    isFromSource = false, // compiler generated during desugaring
                     isComputed = true,
                     bindings = [ binding ],
                     body = compClausesExpr,
@@ -2804,7 +2804,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                     SynExpr.LetOrUse(
                         isRecursive = false,
                         isUse = false,
-                        isFromSource = false,
+                        isFromSource = false, // compiler generated during desugaring
                         isComputed = true,
                         bindings = [ binding ],
                         body = bodyExpr,

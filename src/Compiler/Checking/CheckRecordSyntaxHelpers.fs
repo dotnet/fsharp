@@ -183,7 +183,7 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
     SynExpr.LetOrUse(
         isRecursive = false,
         isUse = false,
-        isFromSource = false,
+        isFromSource = false, // compiler generated during desugaring
         isComputed = false,
         bindings = [ binding ],
         body = mkRecdExpr (Some withExpr),
