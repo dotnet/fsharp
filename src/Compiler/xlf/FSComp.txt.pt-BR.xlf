@@ -537,11 +537,6 @@
         <target state="new">'open' declarations in expression scopes</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpensInTypeScope">
-        <source>'open' declarations in type scopes</source>
-        <target state="new">'open' declarations in type scopes</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
         <target state="translated">sobrecargas para operações personalizadas</target>
@@ -1775,11 +1770,6 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="translated">Uma característica não pode especificar os argumentos optional, in, out, ParamArray, CallerInfo ou Quote</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcTypeDefinitionsMustHaveOpensBeforeOtherMembers">
-        <source>'open' declarations must come before all other definitions in type definitions or augmentation</source>
-        <target state="new">'open' declarations must come before all other definitions in type definitions or augmentation</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">

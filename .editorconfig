@@ -13,10 +13,12 @@ fsharp_max_dot_get_expression_width=80
 fsharp_multiline_block_brackets_on_same_column=true
 fsharp_multiline_bracket_style=aligned
 fsharp_keep_max_number_of_blank_lines=1
+end_of_line=crlf
 
 [*.fsi]
 fsharp_newline_between_type_definition_and_members=true
 fsharp_keep_max_number_of_blank_lines=1
+end_of_line=crlf
 
 # These files contains many imperative if-then expressions which are not clearer on one line
 # Reducing fsharp_max_if_then_else_short_width back to its default formats these over multiple lines.

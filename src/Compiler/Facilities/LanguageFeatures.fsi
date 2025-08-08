@@ -96,7 +96,6 @@ type LanguageFeature =
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
     | OpensInExpressionScope
-    | OpensInTypeScope
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -66,7 +66,7 @@ module ImportDeclarations =
         ]
 
     // SOURCE=E_openInTypeDecl.fs SCFLAGS="--test:ErrorRanges"		# E_openInTypeDecl.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openInTypeDecl.fs"|])>]
+    [<Theory(Skip = "'open's in type is not implemented yet"); Directory(__SOURCE_DIRECTORY__, Includes=[|"E_openInTypeDecl.fs"|])>]
     let ``E_openInTypeDecl_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:52"] // The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed
@@ -96,7 +96,7 @@ module ImportDeclarations =
         ]
         
     // SOURCE=openInTypeDecl.fs 		# openInTypeDecl.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"openInTypeDecl.fs"|])>]
+    [<Theory(Skip = "'open's in type is not implemented yet"); Directory(__SOURCE_DIRECTORY__, Includes=[|"openInTypeDecl.fs"|])>]
     let ``openInTypeDecl_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:52"] // The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed

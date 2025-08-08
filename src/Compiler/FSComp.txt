@@ -1809,6 +1809,4 @@ featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type an
 3877,lexLineDirectiveMappingIsNotUnique,"The file '%s' was also pointed to in a line directive in '%s'. Proper warn directive application may not be possible."
 3878,tcAttributeIsNotValidForUnionCaseWithFields,"This attribute is not valid for use on union cases with fields."
 featureReturnFromFinal,"Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder."
-3879,tcTypeDefinitionsMustHaveOpensBeforeOtherMembers,"'open' declarations must come before all other definitions in type definitions or augmentation"
 featureOpensInExpressionScope,"'open' declarations in expression scopes"
-featureOpensInTypeScope,"'open' declarations in type scopes"

@@ -861,7 +861,7 @@ let f() =
     """
     => [3, (14, 28)]
     
-[<Fact>]
+[<Fact(Skip = "'open's in type is not implemented yet")>]
 let ``unused open C# type in type scoped``() =
     """
 type T() =
@@ -871,7 +871,7 @@ type T() =
     => [3, (14, 28); 3, (14, 28)]
     
 
-[<Fact>]
+[<Fact(Skip = "'open's in type is not implemented yet")>]
 let ``type-scoped open declaration duplication in module is unused``() =
     """
 module TopModule
@@ -895,7 +895,7 @@ let _ =
     => [ 5, (9, 18) ]
 
 
-[<Fact>]
+[<Fact(Skip = "'open's in type is not implemented yet")>]
 let ``type- and expression-scoped open declaration duplication in module is unused``() =
     """
 module TopModule
