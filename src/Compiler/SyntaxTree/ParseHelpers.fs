@@ -1110,14 +1110,22 @@ let mkLetExpression
                     trivia = trivia
                 )
 
-            let trivia: SynExprLetOrUseTrivia =
-                {
-                    LetOrUseKeyword = mKeyword
-                    InKeyword = mIn
-                    EqualsRange = mEquals
-                }
+            SynExpr.LetOrUse(
+                isRecursive = false,
+                isUse = isUse,
+                isFromSource = true,
+                isComputed = true,
+                bindings = binding :: andBangs,
+                body = body,
+                range = mWhole,
+                trivia =
+                    {
+                        LetOrUseKeyword = mKeyword
+                        InKeyword = mIn
+                        EqualsRange = mEquals
+                    }
+            )
 
-            SynExpr.LetOrUse(false, isUse, true, true, binding :: andBangs, body, mWhole, trivia)
         | None -> SynExpr.FromParseError(body, mWhole)
     else
         match bindingInfo with
@@ -1151,17 +1159,18 @@ let mkLetExpression
                 | _ -> None
 
             SynExpr.LetOrUse(
-                isRec,
-                isUse,
-                true,
-                false,
-                decls,
-                body,
-                mWhole,
-                {
-                    LetOrUseKeyword = mLetOrUse
-                    InKeyword = mIn'
-                    EqualsRange = mEquals
-                }
+                isRecursive = isRec,
+                isUse = isUse,
+                isFromSource = true,
+                isComputed = false,
+                bindings = decls,
+                body = body,
+                range = mWhole,
+                trivia =
+                    {
+                        LetOrUseKeyword = mLetOrUse
+                        InKeyword = mIn'
+                        EqualsRange = mEquals
+                    }
             )
         | None -> SynExpr.FromParseError(body, mWhole)
