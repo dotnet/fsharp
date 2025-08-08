@@ -412,11 +412,6 @@
         <target state="translated">更多类型支持度量单位</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExpressionAndTypeScopedOpens">
-        <source>'open' declarations in expression or type scopes</source>
-        <target state="new">'open' declarations in expression or type scopes</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
         <target state="translated">byref 和 GetPinnableReference 的扩展固定绑定</target>
@@ -535,6 +530,16 @@
       <trans-unit id="featureOpenTypeDeclaration">
         <source>open type declaration</source>
         <target state="translated">开放类型声明</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpensInExpressionScope">
+        <source>'open' declarations in expression scopes</source>
+        <target state="new">'open' declarations in expression scopes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpensInTypeScope">
+        <source>'open' declarations in type scopes</source>
+        <target state="new">'open' declarations in type scopes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">

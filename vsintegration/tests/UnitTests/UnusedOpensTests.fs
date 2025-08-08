@@ -868,7 +868,7 @@ type T() =
     open type System.Console
     do printfn "%s" "Hello World"
     """
-    => [3, (14, 28)]
+    => [3, (14, 28); 3, (14, 28)]
     
 
 [<Fact>]
@@ -880,7 +880,7 @@ type T() =
     open System.IO
     do File.Create ""
 """
-    => [ 5, (9, 18) ]
+    => [ 5, (9, 18); 5, (9, 18) ]
 
     
 [<Fact>]

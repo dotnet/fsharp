@@ -676,6 +676,8 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv augSpfn =
 let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) = 
     CheckBasics.TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m)
 
+// Build a TcEnv with type-scoped opens applied.
+// This function maybe call multiple times during the type checking.
 let private buildTcEnvWithTypeScopedOpensApplied (cenv: cenv) scopem (synMembers: 'MemberInfo) env =
     // Because 'MemberInfo is not SynMemberDefn list when it is in signature files,
     // we need to check the type first
@@ -685,7 +687,7 @@ let private buildTcEnvWithTypeScopedOpensApplied (cenv: cenv) scopem (synMembers
         // we can just go through until we hit a non-open declaration
         let rec loop env = function
             | SynMemberDefn.Open (target, mOpen) :: rest ->
-                checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.ExpressionAndTypeScopedOpens mOpen
+                checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.OpensInTypeScope mOpen
                 let env, _openDecl = TcOpenDecl cenv mOpen scopem env target
                 loop env rest
             
@@ -1092,7 +1094,7 @@ module MutRecBindingChecking =
                             cbinds, innerState
                         
                         | Some (SynMemberDefn.Open (target, m)), _ -> 
-                            if cenv.g.langVersion.SupportsFeature(LanguageFeature.ExpressionAndTypeScopedOpens) then
+                            if cenv.g.langVersion.SupportsFeature(LanguageFeature.OpensInTypeScope) then
                                 [Phase2AOpen (target, m)], innerState
                             else
                                 [], innerState

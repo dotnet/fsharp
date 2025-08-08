@@ -95,7 +95,8 @@ type LanguageFeature =
     | ScopedNowarn
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
-    | ExpressionAndTypeScopedOpens
+    | OpensInExpressionScope
+    | OpensInTypeScope
 
 /// LanguageVersion management
 type LanguageVersion =

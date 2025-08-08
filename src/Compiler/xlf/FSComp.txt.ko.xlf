@@ -412,11 +412,6 @@
         <target state="translated">더 많은 형식이 측정 단위를 지원함</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExpressionAndTypeScopedOpens">
-        <source>'open' declarations in expression or type scopes</source>
-        <target state="new">'open' declarations in expression or type scopes</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtendedFixedBindings">
         <source>extended fixed bindings for byref and GetPinnableReference</source>
         <target state="translated">byref 및 GetPinnableReference에 대한 확장된 고정 바인딩</target>
@@ -535,6 +530,16 @@
       <trans-unit id="featureOpenTypeDeclaration">
         <source>open type declaration</source>
         <target state="translated">개방형 형식 선언</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpensInExpressionScope">
+        <source>'open' declarations in expression scopes</source>
+        <target state="new">'open' declarations in expression scopes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpensInTypeScope">
+        <source>'open' declarations in type scopes</source>
+        <target state="new">'open' declarations in type scopes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">

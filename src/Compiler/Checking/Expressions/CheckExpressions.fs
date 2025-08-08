@@ -6092,7 +6092,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
 
     | SynExpr.Open (target, mOpen, _m, body) ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ExpressionAndTypeScopedOpens mOpen
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.OpensInExpressionScope mOpen
         let env, _openDecls = TcOpenDecl cenv mOpen body.Range env target
         TcExprThatCanBeCtorBody cenv overallTy env tpenv body
 
