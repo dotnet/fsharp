@@ -45,45 +45,15 @@ module internal WarnScopes =
         | [] -> false
         | h :: _ -> h.IsWarnon
 
-    type private LineDirective =
-        {
-            SurrogateFileIndex: FileIndex
-            SurrogateLine: LineNumber
-            OriginalLine: LineNumber
-        }
-
     type private LexbufData =
         {
-            OriginalFileIndex: int
             mutable WarnDirectives: WarnDirective list
-            mutable LineDirectives: LineDirective list
         }
 
-    let private initialData (lexbuf: Lexbuf) =
-        {
-            OriginalFileIndex = lexbuf.StartPos.FileIndex
-            WarnDirectives = []
-            LineDirectives = []
-        }
+    let private getInitialData () = { WarnDirectives = [] }
 
     let private getLexbufData (lexbuf: Lexbuf) =
-        lexbuf.GetLocalData("WarnScopeData", (fun () -> initialData lexbuf))
-
-    // *************************************
-    // Collect the line directives during lexing
-    // *************************************
-
-    let RegisterLineDirective (lexbuf, fileIndex, line: int) = //TODO: send OriginalLine i.o. lexbuf
-        let data = getLexbufData lexbuf
-
-        let lineDirective =
-            {
-                SurrogateFileIndex = fileIndex
-                SurrogateLine = line
-                OriginalLine = lexbuf.StartPos.OriginalLine + 1
-            }
-
-        data.LineDirectives <- lineDirective :: data.LineDirectives
+        lexbuf.GetLocalData("WarnScopeData", getInitialData)
 
     // *************************************
     // Collect the warn scopes during lexing
@@ -142,7 +112,7 @@ module internal WarnScopes =
 
         Regex("""( *)#(\S+)(?: +([^ \r\n/;]+))*(?:;;)?( *)(\/\/.*)?$""", RegexOptions.CultureInvariant)
 
-    let private parseDirective originalFileIndex lexbuf =
+    let private parseDirective lexbuf =
         let text = Lexbuf.LexemeString lexbuf
         let startPos = lexbuf.StartPos
 
@@ -153,14 +123,10 @@ module internal WarnScopes =
 
         let positions line offset length =
             mkPos line (startPos.Column + offset), mkPos line (startPos.Column + offset + length)
-        // "normal" ranges (i.e. taking #line directives into account), for errors in the warn directive
+
         let mkRange offset length =
             positions lexbuf.StartPos.Line offset length
             ||> mkFileIndexRange startPos.FileIndex
-        // "original" ranges, for the warn scopes
-        let mkOriginalRange offset length =
-            positions lexbuf.StartPos.OriginalLine offset length
-            ||> mkFileIndexRange originalFileIndex
 
         let directiveRange = mkRange 0 totalLength
 
@@ -168,8 +134,8 @@ module internal WarnScopes =
             errorR (Error(FSComp.SR.lexWarnDirectiveMustHaveArgs (), directiveRange))
 
         let mkDirective ctor (c: Capture) =
-            getNumber lexbuf.LanguageVersion (mkRange c.Index c.Length) c.Value
-            |> Option.map (fun n -> ctor (n, mkOriginalRange c.Index c.Length))
+            let m = mkRange c.Index c.Length
+            getNumber lexbuf.LanguageVersion m c.Value |> Option.map (fun n -> ctor (n, m))
 
         let warnCmds =
             match dIdent with
@@ -186,7 +152,7 @@ module internal WarnScopes =
 
     let ParseAndRegisterWarnDirective (lexbuf: Lexbuf) =
         let data = getLexbufData lexbuf
-        let warnDirective = parseDirective data.OriginalFileIndex lexbuf
+        let warnDirective = parseDirective lexbuf
         data.WarnDirectives <- warnDirective :: data.WarnDirectives
 
     // *************************************
@@ -200,18 +166,11 @@ module internal WarnScopes =
         | OpenOff of range
         | OpenOn of range
 
-    /// Information about the mapping implied by the #line directives.
-    /// The Map key is the file index of the surrogate source (the source file pointed to by the line directive).
-    /// The Map value contains the file index of the original source (the one just being parsed) and
-    /// a list of mapped sections (surrogate and original start lines).
-    type private LineMaps = Map<FileIndex, FileIndex * (LineNumber * LineNumber) list>
-
     type private WarnScopeData =
         {
             ScopedNowarnFeatureIsSupported: bool
             ScriptNowarns: WarningNumber list // only needed to avoid breaking changes for previous language versions
             WarnScopes: Map<FileIndex, Map<WarningNumber, WarnScope list>>
-            LineMaps: LineMaps
         }
 
     let private getWarnScopeData (diagnosticOptions: FSharpDiagnosticOptions) =
@@ -221,7 +180,6 @@ module internal WarnScopes =
                 ScopedNowarnFeatureIsSupported = true
                 ScriptNowarns = []
                 WarnScopes = Map.empty
-                LineMaps = Map.empty
             }
         | Some data -> data :?> WarnScopeData
 
@@ -234,7 +192,7 @@ module internal WarnScopes =
 
     let MergeInto diagnosticOptions isScript subModuleRanges lexbuf =
         let lexbufData = getLexbufData lexbuf
-        let fileIndex = lexbufData.OriginalFileIndex
+        let fileIndex = lexbuf.StartPos.FileIndex
 
         let scopedNowarnFeatureIsSupported =
             lexbuf.LanguageVersion.SupportsFeature LanguageFeature.ScopedNowarn
@@ -275,7 +233,8 @@ module internal WarnScopes =
                 Map.tryFind warningNumber warnScopes |> Option.defaultValue []
 
             let mkScope (m1: range) (m2: range) =
-                mkFileIndexRange m1.FileIndex m1.Start m2.End
+                assert (m1.FileIndex = m2.FileIndex)
+                mkFileIndexRange m1.FileIndex m1.Start m2.End // LineDirectives: n/a
 
             match warnCmd with
             | WarnCmd.Nowarn(n, m) ->
@@ -299,47 +258,17 @@ module internal WarnScopes =
 
         let fileWarnScopes = fileWarnCmds |> List.fold processWarnCmd Map.empty
 
-        let fileLineMaps: LineMaps =
-            let sortedSectionMaps =
-                List.map (fun ld -> ld.SurrogateLine, ld.OriginalLine) >> List.sortBy fst
-
-            lexbufData.LineDirectives
-            |> List.groupBy _.SurrogateFileIndex
-            |> List.map (fun (surrIdx, lineDirectives) -> surrIdx, (fileIndex, sortedSectionMaps lineDirectives))
-            |> Map
-
         let merge () =
             let projectData = getWarnScopeData diagnosticOptions
 
             // If the same file is parsed again (same fileIndex), we replace the warn scopes.
             let projectWarnScopes = projectData.WarnScopes.Add(fileIndex, fileWarnScopes)
 
-            // If the same surrogate file has entries already (from another parse), we replace the line maps.
-            // However, if it was referred to from a different original file before, we issue a warning.
-            // (Because it means the maps are not reliable.)
-            let projectLineMaps =
-                let checkAndAdd previousLinemaps surrIdx (newOrigIdx, linePairList as newLinemaps) =
-                    match Map.tryFind surrIdx previousLinemaps with
-                    | Some(origIdx, _) when origIdx <> newOrigIdx ->
-                        let _, origLine = List.head linePairList
-                        let m = mkFileIndexRange origIdx (mkPos origLine 0) (mkPos origLine 4)
-
-                        let getName idx =
-                            FileIndex.fileOfFileIndex idx |> System.IO.Path.GetFileName |> string
-
-                        warning (Error(FSComp.SR.lexLineDirectiveMappingIsNotUnique (getName surrIdx, getName origIdx), m))
-                    | _ -> ()
-
-                    Map.add surrIdx newLinemaps previousLinemaps
-
-                Map.fold checkAndAdd projectData.LineMaps fileLineMaps
-
             let newWarnScopeData =
                 {
                     ScopedNowarnFeatureIsSupported = scopedNowarnFeatureIsSupported
                     ScriptNowarns = List.distinct (projectData.ScriptNowarns @ fileScriptNowarns)
                     WarnScopes = projectWarnScopes
-                    LineMaps = projectLineMaps
                 }
 
             setWarnScopeData diagnosticOptions newWarnScopeData
@@ -364,20 +293,6 @@ module internal WarnScopes =
         |> Option.bind (Map.tryFind warningNumber)
         |> Option.defaultValue []
 
-    let private originalRange lineMaps (m: range) =
-        match Map.tryFind m.FileIndex lineMaps with
-        | None -> m
-        | Some(origFileIndex, sectionMaps) ->
-            let surrLine, origLine =
-                if List.isEmpty sectionMaps || m.StartLine < fst sectionMaps.Head then
-                    (1, 1)
-                else
-                    sectionMaps |> List.skipWhile (fun (s, _) -> m.StartLine < s) |> List.head
-
-            let origStart = mkPos (m.StartLine + origLine - surrLine) m.StartColumn
-            let origEnd = mkPos (m.EndLine + origLine - surrLine) m.EndColumn
-            mkFileIndexRange origFileIndex origStart origEnd
-
     // true if m1 contains the *start* of m2
     // i.e. if the error range encloses the closing warn directive, we still say it is in scope
     let private contains (m2: range) (m1: range) =
@@ -400,9 +315,8 @@ module internal WarnScopes =
 
         match mo, data.ScopedNowarnFeatureIsSupported with
         | Some m, true ->
-            let mOrig = originalRange data.LineMaps m
-            let scopes = getScopes mOrig.FileIndex warningNumber data.WarnScopes
-            List.exists (isEnclosingWarnonScope mOrig) scopes
+            let scopes = getScopes m.FileIndex warningNumber data.WarnScopes // LineDirectives: n/a
+            List.exists (isEnclosingWarnonScope m) scopes
         | _ -> false
 
     let IsNowarn (diagnosticOptions: FSharpDiagnosticOptions) warningNumber (mo: range option) =
@@ -413,7 +327,6 @@ module internal WarnScopes =
         else
             match mo with
             | Some m ->
-                let mOrig = originalRange data.LineMaps m
-                let scopes = getScopes mOrig.FileIndex warningNumber data.WarnScopes
-                List.exists (isEnclosingNowarnScope mOrig) scopes
+                let scopes = getScopes m.FileIndex warningNumber data.WarnScopes // LineDirectives: n/a
+                List.exists (isEnclosingNowarnScope m) scopes
             | None -> false
