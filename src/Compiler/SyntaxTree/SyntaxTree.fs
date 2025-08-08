@@ -722,7 +722,7 @@ type SynExpr =
         isRecursive: bool *
         isUse: bool *
         isFromSource: bool *
-        isComputed: bool *
+        isBang: bool *
         bindings: SynBinding list *
         body: SynExpr *
         range: range *

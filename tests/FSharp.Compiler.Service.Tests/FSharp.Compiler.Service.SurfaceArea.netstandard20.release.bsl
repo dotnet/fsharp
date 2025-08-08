@@ -7207,11 +7207,11 @@ FSharp.Compiler.Syntax.SynExpr+Lazy: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+Lazy: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+Lazy: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Lazy: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean get_isComputed()
+FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean get_isBang()
 FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean get_isFromSource()
 FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean get_isUse()
-FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean isComputed
+FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean isBang
 FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean isFromSource
 FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean isRecursive
 FSharp.Compiler.Syntax.SynExpr+LetOrUse: Boolean isUse

@@ -860,7 +860,7 @@ let (|ExprAsUseBang|_|) expr =
     | SynExpr.LetOrUse(
         isUse = true
         isFromSource = isFromSource
-        isComputed = true
+        isBang = true
         bindings = bindings
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
@@ -876,7 +876,7 @@ let (|ExprAsLetBang|_|) expr =
     | SynExpr.LetOrUse(
         isUse = false
         isFromSource = isFromSource
-        isComputed = true
+        isBang = true
         bindings = bindings
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
@@ -1419,7 +1419,7 @@ let rec TryTranslateComputationExpression
                             isRecursive = false,
                             isUse = false,
                             isFromSource = true, // compiler generated during desugaring
-                            isComputed = true,
+                            isBang = true,
                             bindings = [ binding ],
                             body = setCondExpr,
                             range = mGuard,
@@ -1445,7 +1445,7 @@ let rec TryTranslateComputationExpression
                         isRecursive = false,
                         isUse = false,
                         isFromSource = false, // compiler generated during desugaring
-                        isComputed = false,
+                        isBang = false,
                         bindings = [ condBinding ],
                         body = whileExpr,
                         range = mGuard,
@@ -1473,7 +1473,7 @@ let rec TryTranslateComputationExpression
                     isRecursive = false,
                     isUse = false,
                     isFromSource = true, // compiler generated during desugaring
-                    isComputed = true,
+                    isBang = true,
                     bindings = [ binding ],
                     body = body,
                     range = mGuard,
@@ -1693,7 +1693,7 @@ let rec TryTranslateComputationExpression
                                     isRecursive = false,
                                     isUse = false,
                                     isFromSource = true, // compiler generated during desugaring
-                                    isComputed = true,
+                                    isBang = true,
                                     bindings = [ binding ],
                                     body = innerComp2,
                                     range = m,
@@ -1770,7 +1770,7 @@ let rec TryTranslateComputationExpression
             isRecursive = isRec
             isUse = false
             isFromSource = isFromSource
-            isComputed = false
+            isBang = false
             bindings = binds
             body = innerComp
             range = m
@@ -1812,7 +1812,7 @@ let rec TryTranslateComputationExpression
                             isRecursive = isRec,
                             isUse = false,
                             isFromSource = isFromSource,
-                            isComputed = false,
+                            isBang = false,
                             bindings = binds,
                             body = holeFill,
                             range = m,
@@ -1824,7 +1824,7 @@ let rec TryTranslateComputationExpression
         // 'use x = expr in expr'
         | SynExpr.LetOrUse(
             isUse = true
-            isComputed = false
+            isBang = false
             bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
             body = innerComp
             trivia = { LetOrUseKeyword = mBind }) ->
@@ -2468,7 +2468,7 @@ and ConsumeCustomOpClauses
                                 isRecursive = false,
                                 isUse = false,
                                 isFromSource = false, // compiler generated during desugaring
-                                isComputed = true,
+                                isBang = true,
                                 bindings = [ binding ],
                                 body = contExpr,
                                 range = intoPat.Range,
@@ -2525,7 +2525,7 @@ and ConsumeCustomOpClauses
                     isRecursive = false,
                     isUse = false,
                     isFromSource = false, // compiler generated during desugaring
-                    isComputed = true,
+                    isBang = true,
                     bindings = [ binding ],
                     body = compClausesExpr,
                     range = compClausesExpr.Range,
@@ -2664,7 +2664,7 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
         isRecursive = isRec
         isUse = false
         isFromSource = isFromSource
-        isComputed = false
+        isBang = false
         bindings = binds
         body = innerComp
         range = m
@@ -2678,7 +2678,7 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
                     isRecursive = isRec,
                     isUse = false,
                     isFromSource = isFromSource,
-                    isComputed = false,
+                    isBang = false,
                     bindings = binds,
                     body = innerExpr,
                     range = m,
@@ -2726,8 +2726,8 @@ and isSimpleExpr ceenv comp =
         && (match elseCompOpt with
             | None -> true
             | Some c -> isSimpleExpr ceenv c)
-    | SynExpr.LetOrUse(isComputed = false; body = innerComp) -> isSimpleExpr ceenv innerComp
-    | SynExpr.LetOrUse(isComputed = true) -> false
+    | SynExpr.LetOrUse(isBang = false; body = innerComp) -> isSimpleExpr ceenv innerComp
+    | SynExpr.LetOrUse(isBang = true) -> false
     | SynExpr.Match(clauses = clauses) ->
         clauses
         |> List.forall (fun (SynMatchClause(resultExpr = innerComp)) -> isSimpleExpr ceenv innerComp)
@@ -2805,7 +2805,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         isRecursive = false,
                         isUse = false,
                         isFromSource = false, // compiler generated during desugaring
-                        isComputed = true,
+                        isBang = true,
                         bindings = [ binding ],
                         body = bodyExpr,
                         range = m,
