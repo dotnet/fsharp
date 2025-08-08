@@ -200,12 +200,11 @@ val mkClassMemberLocalBindings:
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
 val mkLetExpression:
     isBang: bool *
-    mKeyword: range *
     mIn: range option *
     mWhole: range *
     body: SynExpr *
-    bindingInfo: (bool * BindingSet) option *
-    bangInfo: (SynPat * SynExpr * SynBinding list * range option * bool) option ->
+    bindingInfo: BindingSet option *
+    bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option ->
         SynExpr
 
 val mkAndBang:

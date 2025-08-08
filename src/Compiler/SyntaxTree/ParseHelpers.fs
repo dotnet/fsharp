@@ -1071,16 +1071,15 @@ let leadingKeywordIsAbstract =
 let mkLetExpression
     (
         isBang: bool,
-        mKeyword: range,
-        mIn: Option<range>,
+        mIn: range option,
         mWhole: range,
         body: SynExpr,
-        bindingInfo: (bool * BindingSet) option,
-        bangInfo: (SynPat * SynExpr * SynBinding list * range option * bool) option
+        bindingInfo: BindingSet option,
+        bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option
     ) =
     if isBang then
         match bangInfo with
-        | Some(pat, rhs, andBangs, mEquals, isUse) ->
+        | Some(pat, rhs, andBangs, mKeyword, mEquals, isUse) ->
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
             let trivia: SynBindingTrivia =
@@ -1122,7 +1121,7 @@ let mkLetExpression
         | None -> SynExpr.FromParseError(body, mWhole)
     else
         match bindingInfo with
-        | Some(isRec, BindingSetPreAttrs(_, _, isUse, declsPreAttrs, _)) ->
+        | Some(BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _)) ->
             let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
             let mWhole =
