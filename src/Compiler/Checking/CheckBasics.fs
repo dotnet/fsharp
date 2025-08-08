@@ -381,7 +381,6 @@ type TcFileState =
     override _.ToString() = "<cenv>"
 
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreeBasics
