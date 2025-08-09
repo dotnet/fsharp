@@ -1065,6 +1065,18 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
+/// See https://github.com/dotnet/fsharp/issues/10066.
+let checkMisleadinglyIndentedTrailingDecls (leadingDecls: SynModuleDecl list) (trailingDecls: SynModuleDecl list) (lexBuf: Lexbuf) =
+    if lexBuf.SupportsFeature LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes then
+        leadingDecls
+        |> List.tryLast
+        |> Option.iter (fun leadingDecl ->
+            let leadingStartCol = leadingDecl.Range.StartColumn
+            for trailingDecl in trailingDecls do
+                let mTrailing = trailingDecl.Range
+                if leadingStartCol < mTrailing.StartColumn then
+                    warning (Error(FSComp.SR.parsInvalidDeclarationSyntax (), mTrailing)))
+
 /// Unified helper for creating let/let!/use/use! expressions
 /// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
