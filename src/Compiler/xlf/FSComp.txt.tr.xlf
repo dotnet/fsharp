@@ -342,6 +342,11 @@
         <target state="translated">'TailCall' özniteliği özyinelemeli olmayan işlevlerde kullanılıyorsa uyarılar oluşturur.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCommaInsteadOfSemicolonInPatterns">
+        <source>Allow comma instead of semicolon in pattern matching field separators</source>
+        <target state="new">Allow comma instead of semicolon in pattern matching field separators</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">Esnek türlerde kısıtlama kesişimi</target>

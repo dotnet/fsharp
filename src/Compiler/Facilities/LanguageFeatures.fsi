@@ -95,6 +95,7 @@ type LanguageFeature =
     | ScopedNowarn
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | CommaInsteadOfSemicolonInPatterns
 
 /// LanguageVersion management
 type LanguageVersion =

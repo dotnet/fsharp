@@ -104,6 +104,7 @@ type LanguageFeature =
     | ScopedNowarn
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | CommaInsteadOfSemicolonInPatterns
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -243,6 +244,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.CommaInsteadOfSemicolonInPatterns, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -412,6 +414,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.CommaInsteadOfSemicolonInPatterns -> FSComp.SR.featureCommaInsteadOfSemicolonInPatterns ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

@@ -342,6 +342,11 @@
         <target state="translated">Vyvolá upozornění, pokud je atribut TailCall použit u nerekurzivních funkcí.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCommaInsteadOfSemicolonInPatterns">
+        <source>Allow comma instead of semicolon in pattern matching field separators</source>
+        <target state="new">Allow comma instead of semicolon in pattern matching field separators</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
         <source>Constraint intersection on flexible types</source>
         <target state="translated">Průnik omezení u flexibilních typů</target>
