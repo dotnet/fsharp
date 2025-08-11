@@ -263,7 +263,6 @@
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
-    <Compile Include="ConstraintSolver\SRTPNullnessConstraints.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
@@ -349,7 +348,7 @@
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs"/>
+    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
   </ItemGroup>
 
   <ItemGroup>

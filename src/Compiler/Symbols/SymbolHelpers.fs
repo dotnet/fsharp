@@ -405,7 +405,7 @@ module internal SymbolHelpers =
 
               //| _ -> false
 
-          member x.Equals(item1, item2) =
+          member x.Equals(item1:_|null, item2:_|null) =
             match item1,item2 with
             | null,null -> true
             | null,_ | _,null -> false

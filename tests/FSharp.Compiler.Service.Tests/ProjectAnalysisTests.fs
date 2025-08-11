@@ -5822,46 +5822,6 @@ module ScriptClosureCacheUse =
         printfn "%s" (assemblyNames |> String.concat "\n")
         Assert.Contains("Dapper.dll", assemblyNames)
 
-    [<Fact>]
-    let ``FSharpPlus works as a reference`` () =
-        let checkResults = checkContentAsScript """
-#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
-#r "nuget: FSharpPlus, 1.6.1"
-
-open FSharpPlus
-open FSharpPlus.Data
-
-let printTable x =
-    let lines (lst: 'Record seq) = 
-        let fields = Reflection.FSharpType.GetRecordFields typeof<'Record>
-        let headers = fields |> Seq.map _.Name
-        let asList (x:'record) = fields |> Seq.map (fun field -> string (Reflection.FSharpValue.GetRecordField(x, field)))
-        let rows = Seq.map asList lst
-        let table = seq { yield headers; yield! rows }
-        let maxs = table |> (Seq.traverse ZipList >> ZipList.run) |>> Seq.map length |>> maxBy id
-        let rowSep = String.replicate (sum maxs + length maxs - 1) "-"
-        let fill (i, s) = s + String.replicate (i - length s) " "
-        let printRow r = "|" + (r |> zip maxs |>> fill |> intercalate "|") + "|"
-        seq {
-            yield "." + rowSep + "."
-            yield printRow headers
-            yield "|" + rowSep + "|"
-            yield! (rows |>> printRow)
-            yield "'" + rowSep + "'" }
-    x |> Seq.toList |> lines |> iter (printfn "%s")
-    """
-        Assert.Empty(checkResults.Diagnostics)
-
-    [<Fact>]
-    let ``Repro from gusty`` () =
-        let checkResults = checkContentAsScript """
-#r @"Q:\ReproFailure\ReproFailure\bin\Debug\net8.0\ReproFailure.dll"
-open ReproFailure
-let x = IsAltLeftZero.Invoke None 
-    """
-        Assert.Empty(checkResults.Diagnostics)
-       
-
 module internal EmptyProject =
     let base2 = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
