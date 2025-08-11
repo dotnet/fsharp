@@ -143,3 +143,20 @@ module CommentStore =
     let GetComments (lexbuf: Lexbuf) : CommentTrivia list =
         let store = getStore lexbuf
         Seq.toList store
+
+//------------------------------------------------------------------------
+// Storage to hold the current accumulated line directives, and related access functions
+//------------------------------------------------------------------------
+
+[<RequireQualifiedAccess>]
+module LineDirectiveStore =
+    let private getStore (lexbuf: Lexbuf) =
+        lexbuf.GetLocalData("LineDirectives", ResizeArray<int * (FileIndex * int)>)
+
+    let SaveLineDirective (lexbuf: Lexbuf, fileIndex: FileIndex, line: int) =
+        let store = getStore lexbuf
+        store.Add(lexbuf.StartPos.Line, (fileIndex, line))
+
+    let GetLineDirectives (lexbuf: Lexbuf) : (int * (FileIndex * int)) list =
+        let store = getStore lexbuf
+        Seq.toList store

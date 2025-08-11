@@ -602,6 +602,11 @@
         <target state="translated">可恢复状态机</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReturnFromFinal">
+        <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
+        <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
         <target state="translated">只要它们具有相同的名称和类型，即可在 [&lt;Struct&gt;] 中共享基础字段</target>
@@ -1055,6 +1060,11 @@
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">支持的语言版本:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
