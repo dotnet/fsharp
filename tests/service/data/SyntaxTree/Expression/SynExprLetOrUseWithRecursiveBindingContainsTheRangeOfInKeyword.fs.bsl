@@ -10,7 +10,7 @@ ImplFile
           [Expr
              (Do
                 (LetOrUse
-                   (true, false,
+                   (true, false, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
