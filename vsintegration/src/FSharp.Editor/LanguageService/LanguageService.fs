@@ -344,8 +344,6 @@ type internal FSharpPackage() as this =
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
 #if DEBUG
-    do Logging.FSharpServiceTelemetry.logCacheMetricsToOutput ()
-
     let flushTelemetry = Logging.FSharpServiceTelemetry.otelExport ()
 
     override this.Dispose(disposing: bool) =
