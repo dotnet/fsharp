@@ -2110,9 +2110,8 @@ module TastDefinitionPrinting =
 
         let ilFieldsL =
             ilFields
-            |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv infoReader m x)
-            |> List.sortBy fst
-            |> List.map snd
+            |> List.sortBy (fun x -> x.IsStatic, x.FieldName)
+            |> List.map (fun x -> layoutILFieldInfo denv infoReader m x)
 
         let staticVals =
             if isRecdTy g ty then
@@ -2229,15 +2228,11 @@ module TastDefinitionPrinting =
 
         let tryGetFieldXml (layoutList: Layout list) idxOpt =
             match idxOpt with
-            | Some i ->
-                let t = layoutList[i]
-                match t with
-                | Node (left, _, _) ->
-                    match left with
-                    | Node (_, right, _) -> Some right
-                    | _ -> None
+            | Some i when i >= 0 && i < layoutList.Length ->
+                match layoutList[i] with
+                | Node (Node (_, right, _), _, _) -> Some right
                 | _ -> None
-            | None -> None
+            | _ -> None
 
         let typeDeclL = 
 
@@ -2343,9 +2338,7 @@ module TastDefinitionPrinting =
             | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
                 let ilFieldsSorted = 
                     ilFields
-                    |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), x)
-                    |> List.sortBy fst
-                    |> List.map snd
+                    |> List.sortBy (fun x -> x.IsStatic, x.FieldName)
                 infoReader.GetILFieldInfosOfType (None, ad, m, ty)
                 |> List.filter (fun (x: ILFieldInfo) -> x.FieldName <> "value__")
                 |> List.map (fun (x: ILFieldInfo) ->
