@@ -848,15 +848,6 @@ module ParsedInput =
 
             | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some(EntityKind.FunctionOrValue false))
 
-            | SynExpr.LetOrUseBang(rhs = e1; andBangs = es; body = e2) ->
-                [
-                    yield e1
-                    for SynBinding(expr = eAndBang) in es do
-                        yield eAndBang
-                    yield e2
-                ]
-                |> List.tryPick (walkExprWithKind parentKind)
-
             | SynExpr.TraitCall(TypesForTypar ts, sign, e, _) ->
                 List.tryPick walkType ts
                 |> Option.orElseWith (fun () -> walkMemberSig sign)
@@ -2154,16 +2145,6 @@ module ParsedInput =
                 walkExpr e1
                 walkExpr e2
                 walkExpr e3
-
-            | SynExpr.LetOrUseBang(pat = pat; rhs = e1; andBangs = es; body = e2) ->
-                walkPat pat
-                walkExpr e1
-
-                for SynBinding(headPat = patAndBang; expr = eAndBang) in es do
-                    walkPat patAndBang
-                    walkExpr eAndBang
-
-                walkExpr e2
 
             | SynExpr.TraitCall(TypesForTypar ts, sign, e, _) ->
                 List.iter walkType ts
