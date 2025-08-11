@@ -56,11 +56,14 @@ type ComputationExpressionContext<'a> =
         ad: AccessorDomain
         builderTy: TType
         isQuery: bool
+        tailCall: bool
         enableImplicitYield: bool
         origComp: SynExpr
         mWhole: range
         emptyVarSpace: LazyWithContext<list<Val> * TcEnv, range>
     }
+
+let inline noTailCall ceenv = { ceenv with tailCall = false }
 
 let inline TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: TcEnv) m ad nm ty =
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
@@ -861,7 +864,7 @@ let (|ExprAsUseBang|_|) expr =
         rhs = rhsExpr
         andBangs = andBangs
         body = innerComp
-        trivia = { LetOrUseBangKeyword = mBind }) -> ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
+        trivia = { LetOrUseKeyword = mBind }) -> ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
     | _ -> ValueNone
 
 [<return: Struct>]
@@ -875,7 +878,7 @@ let (|ExprAsLetBang|_|) expr =
         rhs = letRhsExpr
         andBangs = andBangBindings
         body = innerComp
-        trivia = { LetOrUseBangKeyword = mBind }) -> ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
+        trivia = { LetOrUseKeyword = mBind }) -> ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
     | _ -> ValueNone
 
 // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
@@ -939,9 +942,15 @@ let inline addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>
         id
     )
 
+let tryFindBuilderMethod (ceenv: ComputationExpressionContext<_>) (m: range) (methodName: string) =
+    TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult ceenv.cenv ceenv.env m ceenv.ad methodName ceenv.builderTy
+
+let hasBuilderMethod ceenv m methodName =
+    tryFindBuilderMethod ceenv m methodName |> isNil |> not
+
 /// Checks if a builder method exists and reports an error if it doesn't
-let requireBuilderMethod methodName m1 cenv env ad builderTy m2 =
-    if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m1 ad methodName builderTy) then
+let requireBuilderMethod methodName ceenv m1 m2 =
+    if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
 /// <summary>
@@ -1245,7 +1254,7 @@ let rec TryTranslateComputationExpression
 
             let mPat = pat.Range
 
-            requireBuilderMethod "For" mFor cenv ceenv.env ceenv.ad ceenv.builderTy mFor
+            requireBuilderMethod "For" ceenv mFor mFor
 
             // Add the variables to the query variable space, on demand
             let varSpace =
@@ -1306,7 +1315,7 @@ let rec TryTranslateComputationExpression
             let reduced =
                 elimFastIntegerForLoop (spFor, spTo, id, start, dir, finish, innerComp, m)
 
-            Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace reduced translatedCtxt)
+            Some(TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace reduced translatedCtxt)
         | SynExpr.While(spWhile, guardExpr, innerComp, _) ->
             let mGuard = guardExpr.Range
 
@@ -1318,8 +1327,8 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcNoWhileInQuery (), mWhile))
 
-            requireBuilderMethod "While" mWhile cenv ceenv.env ceenv.ad ceenv.builderTy mWhile
-            requireBuilderMethod "Delay" mWhile cenv ceenv.env ceenv.ad ceenv.builderTy mWhile
+            requireBuilderMethod "While" ceenv mWhile mWhile
+            requireBuilderMethod "Delay" ceenv mWhile mWhile
 
             // 'while' is hit just before each time the guard is called
             let guardExpr =
@@ -1328,7 +1337,7 @@ let rec TryTranslateComputationExpression
                 | DebugPointAtWhile.No -> guardExpr
 
             Some(
-                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
+                TranslateComputationExpression (noTailCall ceenv) CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                     translatedCtxt (
                         mkSynCall
                             "While"
@@ -1393,7 +1402,7 @@ let rec TryTranslateComputationExpression
                             [],
                             setCondExpr,
                             mGuard,
-                            SynExprLetOrUseBangTrivia.Zero
+                            SynExprLetOrUseTrivia.Zero
                         )
 
                     let whileExpr =
@@ -1422,7 +1431,7 @@ let rec TryTranslateComputationExpression
                     [],
                     body,
                     mGuard,
-                    SynExprLetOrUseBangTrivia.Zero
+                    SynExprLetOrUseTrivia.Zero
                 )
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
@@ -1448,10 +1457,11 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcNoTryFinallyInQuery (), mTry))
 
-            requireBuilderMethod "TryFinally" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
-            requireBuilderMethod "Delay" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
+            requireBuilderMethod "TryFinally" ceenv mTry mTry
+            requireBuilderMethod "Delay" ceenv mTry mTry
 
-            let innerExpr = TranslateComputationExpressionNoQueryOps ceenv innerComp
+            let innerExpr =
+                TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp
 
             let innerExpr =
                 match spTry with
@@ -1479,19 +1489,7 @@ let rec TryTranslateComputationExpression
         // will be checked/reported appropriately (though the error message won't mention computation expressions
         // like our other error messages for missing methods).
         | SynExpr.ImplicitZero m ->
-            if
-                (not ceenv.enableImplicitYield)
-                && isNil (
-                    TryFindIntrinsicOrExtensionMethInfo
-                        ResultCollectionSettings.AtMostOneResult
-                        cenv
-                        ceenv.env
-                        m
-                        ceenv.ad
-                        "Zero"
-                        ceenv.builderTy
-                )
-            then
+            if (not ceenv.enableImplicitYield) && not (hasBuilderMethod ceenv m "Zero") then
                 match ceenv.origComp with
                 // builder { }
                 //
@@ -1573,7 +1571,7 @@ let rec TryTranslateComputationExpression
 
                 match
                     TryTranslateComputationExpression
-                        ceenv
+                        (noTailCall ceenv)
                         CompExprTranslationPass.Initial
                         CustomOperationsMode.Denied
                         varSpace
@@ -1590,8 +1588,8 @@ let rec TryTranslateComputationExpression
                         | SynExpr.YieldOrReturnFrom(trivia = yieldOrReturnFrom) -> yieldOrReturnFrom.YieldOrReturnFromKeyword
                         | expr -> expr.Range
 
-                    requireBuilderMethod "Combine" m cenv ceenv.env ceenv.ad ceenv.builderTy combineDelayRange
-                    requireBuilderMethod "Delay" m cenv ceenv.env ceenv.ad ceenv.builderTy combineDelayRange
+                    requireBuilderMethod "Combine" ceenv m combineDelayRange
+                    requireBuilderMethod "Delay" ceenv m combineDelayRange
 
                     let combineCall =
                         mkSynCall
@@ -1637,7 +1635,7 @@ let rec TryTranslateComputationExpression
                                     [],
                                     innerComp2,
                                     m,
-                                    SynExprLetOrUseBangTrivia.Zero
+                                    SynExprLetOrUseTrivia.Zero
                                 ))
                                 translatedCtxt
                         )
@@ -1694,7 +1692,7 @@ let rec TryTranslateComputationExpression
                 )
             | None ->
                 let elseComp =
-                    requireBuilderMethod "Zero" trivia.IfToThenRange cenv ceenv.env ceenv.ad ceenv.builderTy trivia.IfToThenRange
+                    requireBuilderMethod "Zero" ceenv trivia.IfToThenRange trivia.IfToThenRange
 
                     mkSynCall "Zero" trivia.IfToThenRange [] ceenv.builderValName
 
@@ -1772,7 +1770,7 @@ let rec TryTranslateComputationExpression
                     innerCompRange
                 )
 
-            requireBuilderMethod "Using" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+            requireBuilderMethod "Using" ceenv mBind mBind
 
             Some(
                 translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
@@ -1787,8 +1785,8 @@ let rec TryTranslateComputationExpression
             match andBangs with
             | [] ->
                 // Valid pattern case - handle with Using + Bind
-                requireBuilderMethod "Using" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
-                requireBuilderMethod "Bind" mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+                requireBuilderMethod "Using" ceenv mBind mBind
+                requireBuilderMethod "Bind" ceenv mBind mBind
 
                 let supportsUseBangBindingValueDiscard =
                     ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.UseBangBindingValueDiscard
@@ -1860,7 +1858,7 @@ let rec TryTranslateComputationExpression
                 let m =
                     match andBangs with
                     | [] -> comp.Range
-                    | h :: _ -> h.Trivia.AndBangKeyword
+                    | h :: _ -> h.Trivia.LeadingKeyword.Range
 
                 error (Error(FSComp.SR.tcInvalidUseBangBindingNoAndBangs (), m))
 
@@ -1912,7 +1910,7 @@ let rec TryTranslateComputationExpression
                     let andBangRange =
                         match andBangBindings with
                         | [] -> comp.Range
-                        | h :: _ -> h.Trivia.AndBangKeyword
+                        | h :: _ -> h.Trivia.LeadingKeyword.Range
 
                     error (Error(FSComp.SR.tcAndBangNotSupported (), andBangRange))
 
@@ -1920,12 +1918,11 @@ let rec TryTranslateComputationExpression
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), mBind))
 
                 let sources =
-                    (letRhsExpr
-                     :: [ for SynExprAndBang(body = andExpr) in andBangBindings -> andExpr ])
+                    (letRhsExpr :: [ for SynBinding(expr = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
                 let pats =
-                    letPat :: [ for SynExprAndBang(pat = andPat) in andBangBindings -> andPat ]
+                    letPat :: [ for SynBinding(headPat = andPat) in andBangBindings -> andPat ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
@@ -1934,19 +1931,7 @@ let rec TryTranslateComputationExpression
                 let bindNName = "Bind" + string numSources
 
                 // Check if this is a Bind2Return etc.
-                let hasBindReturnN =
-                    not (
-                        isNil (
-                            TryFindIntrinsicOrExtensionMethInfo
-                                ResultCollectionSettings.AtMostOneResult
-                                cenv
-                                ceenv.env
-                                mBind
-                                ceenv.ad
-                                bindReturnNName
-                                ceenv.builderTy
-                        )
-                    )
+                let hasBindReturnN = hasBuilderMethod ceenv mBind bindReturnNName
 
                 if
                     hasBindReturnN
@@ -1980,19 +1965,7 @@ let rec TryTranslateComputationExpression
                     )
                 else
                     // Check if this is a Bind2 etc.
-                    let hasBindN =
-                        not (
-                            isNil (
-                                TryFindIntrinsicOrExtensionMethInfo
-                                    ResultCollectionSettings.AtMostOneResult
-                                    cenv
-                                    ceenv.env
-                                    mBind
-                                    ceenv.ad
-                                    bindNName
-                                    ceenv.builderTy
-                            )
-                        )
+                    let hasBindN = hasBuilderMethod ceenv mBind bindNName
 
                     if hasBindN then
                         let consumePat = SynPat.Tuple(false, pats, [], letPat.Range)
@@ -2033,18 +2006,7 @@ let rec TryTranslateComputationExpression
                             let rec loop (n: int) =
                                 let mergeSourcesName = mkMergeSourcesName n
 
-                                if
-                                    isNil (
-                                        TryFindIntrinsicOrExtensionMethInfo
-                                            ResultCollectionSettings.AtMostOneResult
-                                            cenv
-                                            ceenv.env
-                                            mBind
-                                            ceenv.ad
-                                            mergeSourcesName
-                                            ceenv.builderTy
-                                    )
-                                then
+                                if not (hasBuilderMethod ceenv mBind mergeSourcesName) then
                                     (n - 1)
                                 else
                                     loop (n + 1)
@@ -2066,7 +2028,7 @@ let rec TryTranslateComputationExpression
                                 // Call MergeSources2(e1, e2), MergeSources3(e1, e2, e3) etc
                                 let mergeSourcesName = mkMergeSourcesName numSourcesAndPats
 
-                                requireBuilderMethod mergeSourcesName mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+                                requireBuilderMethod mergeSourcesName ceenv mBind mBind
 
                                 let source =
                                     mkSynCall mergeSourcesName sourcesRange (List.map fst sourcesAndPats) ceenv.builderValName
@@ -2082,7 +2044,7 @@ let rec TryTranslateComputationExpression
 
                                 let mergeSourcesName = mkMergeSourcesName maxMergeSources
 
-                                requireBuilderMethod mergeSourcesName mBind cenv ceenv.env ceenv.ad ceenv.builderTy mBind
+                                requireBuilderMethod mergeSourcesName ceenv mBind mBind
 
                                 let laterSource, laterPat = mergeSources laterSourcesAndPats
 
@@ -2145,7 +2107,7 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery (), trivia.MatchBangKeyword))
 
-            requireBuilderMethod "Bind" trivia.MatchBangKeyword cenv ceenv.env ceenv.ad ceenv.builderTy trivia.MatchBangKeyword
+            requireBuilderMethod "Bind" ceenv trivia.MatchBangKeyword trivia.MatchBangKeyword
 
             let clauses =
                 clauses
@@ -2183,10 +2145,11 @@ let rec TryTranslateComputationExpression
             let consumeExpr =
                 SynExpr.MatchLambda(true, mTryToLast, clauses, spWith2, mTryToLast)
 
-            requireBuilderMethod "TryWith" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
-            requireBuilderMethod "Delay" mTry cenv ceenv.env ceenv.ad ceenv.builderTy mTry
+            requireBuilderMethod "TryWith" ceenv mTry mTry
+            requireBuilderMethod "Delay" ceenv mTry mTry
 
-            let innerExpr = TranslateComputationExpressionNoQueryOps ceenv innerComp
+            let innerExpr =
+                TranslateComputationExpressionNoQueryOps (noTailCall ceenv) innerComp
 
             let innerExpr =
                 match spTry with
@@ -2209,10 +2172,19 @@ let rec TryTranslateComputationExpression
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
-            requireBuilderMethod "YieldFrom" m cenv ceenv.env ceenv.ad ceenv.builderTy m
+            let yieldFromMethodName =
+                if
+                    ceenv.tailCall
+                    && ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.ReturnFromFinal
+                    && hasBuilderMethod ceenv m "YieldFromFinal"
+                then
+                    "YieldFromFinal"
+                else
+                    requireBuilderMethod "YieldFrom" ceenv m m
+                    "YieldFrom"
 
             let yieldFromCall =
-                mkSynCall "YieldFrom" synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
+                mkSynCall yieldFromMethodName synYieldExpr.Range [ yieldFromExpr ] ceenv.builderValName
 
             let yieldFromCall =
                 if IsControlFlowExpression synYieldExpr then
@@ -2229,10 +2201,19 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery then
                 error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
-            requireBuilderMethod "ReturnFrom" m cenv ceenv.env ceenv.ad ceenv.builderTy m
+            let returnFromMethodName =
+                if
+                    ceenv.tailCall
+                    && ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.ReturnFromFinal
+                    && hasBuilderMethod ceenv m "ReturnFromFinal"
+                then
+                    "ReturnFromFinal"
+                else
+                    requireBuilderMethod "ReturnFrom" ceenv m m
+                    "ReturnFrom"
 
             let returnFromCall =
-                mkSynCall "ReturnFrom" synReturnExpr.Range [ returnFromExpr ] ceenv.builderValName
+                mkSynCall returnFromMethodName synReturnExpr.Range [ returnFromExpr ] ceenv.builderValName
 
             let returnFromCall =
                 if IsControlFlowExpression synReturnExpr then
@@ -2248,7 +2229,7 @@ let rec TryTranslateComputationExpression
             if ceenv.isQuery && not isYield then
                 error (Error(FSComp.SR.tcReturnMayNotBeUsedInQueries (), m))
 
-            requireBuilderMethod methName m cenv ceenv.env ceenv.ad ceenv.builderTy m
+            requireBuilderMethod methName ceenv m m
 
             let yieldOrReturnCall =
                 mkSynCall methName synYieldOrReturnExpr.Range [ synYieldOrReturnExpr ] ceenv.builderValName
@@ -2393,7 +2374,7 @@ and ConsumeCustomOpClauses
                                 [],
                                 contExpr,
                                 intoPat.Range,
-                                SynExprLetOrUseBangTrivia.Zero
+                                SynExprLetOrUseTrivia.Zero
                             )
                         else
                             SynExpr.ForEach(
@@ -2434,7 +2415,7 @@ and ConsumeCustomOpClauses
                     [],
                     compClausesExpr,
                     compClausesExpr.Range,
-                    SynExprLetOrUseBangTrivia.Zero
+                    SynExprLetOrUseTrivia.Zero
                 )
             else
                 SynExpr.ForEach(
@@ -2476,23 +2457,7 @@ and TranslateComputationExpressionBind
             None
 
     match innerCompReturn with
-    | Some(innerExpr, customOpInfo) when
-        (let bindName = bindName + "Return"
-
-         not (
-             isNil (
-                 TryFindIntrinsicOrExtensionMethInfo
-                     ResultCollectionSettings.AtMostOneResult
-                     ceenv.cenv
-                     ceenv.env
-                     bindRange
-                     ceenv.ad
-                     bindName
-                     ceenv.builderTy
-             )
-         ))
-        ->
-
+    | Some(innerExpr, customOpInfo) when hasBuilderMethod ceenv bindRange (bindName + "Return") ->
         let bindName = bindName + "Return"
 
         // Build the `BindReturn` call
@@ -2518,7 +2483,7 @@ and TranslateComputationExpressionBind
 
     | _ ->
 
-        requireBuilderMethod bindName bindRange ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy bindRange
+        requireBuilderMethod bindName ceenv bindRange bindRange
 
         // Build the `Bind` call
         TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
@@ -2650,6 +2615,22 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
         | None ->
             // This only occurs in final position in a sequence
             match comp with
+            // "do! expr;" in tail call position is treated as { return! expr } when ReturnFromFinal is provided
+            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && ((hasBuilderMethod ceenv m "ReturnFromFinal")) ->
+                let returnFrom =
+                    // Flags indicate isTrueYield, isTrueReturn
+                    SynExpr.YieldOrReturnFrom((false, true), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
+
+                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace returnFrom translatedCtxt
+
+            // "do! expr;" in tail call position is treated as { yield! expr } when YieldFromFinal is provided
+            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && ((hasBuilderMethod ceenv m "YieldFromFinal")) ->
+                let returnFrom =
+                    // Flags indicate isTrueYield, isTrueReturn
+                    SynExpr.YieldOrReturnFrom((true, false), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
+
+                TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace returnFrom translatedCtxt
+
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang(expr = rhsExpr; trivia = { DoBangKeyword = m }) ->
                 let mUnit = rhsExpr.Range
@@ -2659,30 +2640,10 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                     error (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
 
                 let bodyExpr =
-                    if
-                        isNil (
-                            TryFindIntrinsicOrExtensionMethInfo
-                                ResultCollectionSettings.AtMostOneResult
-                                ceenv.cenv
-                                ceenv.env
-                                m
-                                ceenv.ad
-                                "Return"
-                                ceenv.builderTy
-                        )
-                    then
+                    if not (hasBuilderMethod ceenv m "Return") then
                         SynExpr.ImplicitZero m
                     else
-                        match
-                            TryFindIntrinsicOrExtensionMethInfo
-                                ResultCollectionSettings.AtMostOneResult
-                                ceenv.cenv
-                                ceenv.env
-                                m
-                                ceenv.ad
-                                "Zero"
-                                ceenv.builderTy
-                        with
+                        match tryFindBuilderMethod ceenv m "Zero" with
                         | minfo :: _ when MethInfoHasAttribute ceenv.cenv.g m ceenv.cenv.g.attrib_DefaultValueAttribute minfo ->
                             SynExpr.ImplicitZero m
                         | _ -> SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m, SynExprYieldOrReturnTrivia.Zero)
@@ -2697,7 +2658,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         [],
                         bodyExpr,
                         m,
-                        SynExprLetOrUseBangTrivia.Zero
+                        SynExprLetOrUseTrivia.Zero
                     )
 
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
@@ -2833,6 +2794,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
             ad = ad
             builderTy = builderTy
             isQuery = isQuery
+            tailCall = not isQuery
             enableImplicitYield = enableImplicitYield
             origComp = origComp
             mWhole = mWhole
@@ -2869,7 +2831,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     // Add a call to 'Delay' if the method is present
     let delayedExpr =
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Delay" builderTy with
+        match tryFindBuilderMethod ceenv mBuilderVal "Delay" with
         | [] -> basicSynExpr
         | _ -> mkSynCall "Delay" mDelayOrQuoteOrRun [ (mkSynDelay2 basicSynExpr) ] builderValName
 
@@ -2882,7 +2844,7 @@ let TcComputationExpression (cenv: TcFileState) env (overallTy: OverallTy) tpenv
 
     // Add a call to 'Run' if the method is present
     let runExpr =
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Run" builderTy with
+        match tryFindBuilderMethod ceenv mBuilderVal "Run" with
         | [] -> quotedSynExpr
         | _ -> mkSynCall "Run" mDelayOrQuoteOrRun [ quotedSynExpr ] builderValName
 

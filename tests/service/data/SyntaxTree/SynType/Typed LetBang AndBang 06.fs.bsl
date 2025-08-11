@@ -22,8 +22,12 @@ ImplFile
                        App
                          (Atomic, false, Ident asyncOption,
                           Const (Unit, (4,36--4,38)), (4,25--4,38)),
-                       [SynExprAndBang
-                          (Yes (5,4--5,39), false, true,
+                       [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
                            Paren
                              (LongIdent
                                 (SynLongIdent ([Union], [], [None]), None, None,
@@ -31,13 +35,14 @@ ImplFile
                                    [Named
                                       (SynIdent (value2, None), false, None,
                                        (5,16--5,22))], None, (5,10--5,22)),
-                              (5,9--5,23)),
+                              (5,9--5,23)), None,
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (5,37--5,39)), (5,26--5,39)),
-                           (5,4--5,39), { AndBangKeyword = (5,4--5,8)
-                                          EqualsRange = (5,24--5,25)
-                                          InKeyword = None })],
+                           (5,4--5,39), Yes (5,4--5,39),
+                           { LeadingKeyword = And (5,4--5,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (5,24--5,25) })],
                        YieldOrReturn
                          ((false, true),
                           App
@@ -52,7 +57,8 @@ ImplFile
                                    (6,17--6,18)), Ident value, (6,11--6,18)),
                              Ident value2, (6,11--6,25)), (6,4--6,25),
                           { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,25),
-                       { LetOrUseBangKeyword = (4,4--4,8)
+                       { LetOrUseKeyword = (4,4--4,8)
+                         InKeyword = None
                          EqualsRange = Some (4,23--4,24) }), (3,6--7,1)),
                  (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
