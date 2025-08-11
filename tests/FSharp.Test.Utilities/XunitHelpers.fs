@@ -194,7 +194,9 @@ type OpenTelemetryExport(testRunName, enable) =
 // For example when executing "run until failure" command in Test Explorer.
 // However, we want to ensure that OneTimeSetup is called only once per test run.
 module OneTimeSetup =
-    do
+
+    let init =
+        lazy
     #if !NETCOREAPP
         // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
         log "Adding AssemblyResolver"
@@ -207,9 +209,15 @@ module OneTimeSetup =
 
         logConfig initialConfig
 
+    let EnsureInitialized() =
+        // Ensure that the initialization is done only once per test run.
+        init.Force()
+
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
+
+    do OneTimeSetup.EnsureInitialized()
             
     override this.CreateExecutor (assemblyName) =
         { new XunitTestFrameworkExecutor(assemblyName, this.SourceInformationProvider, this.DiagnosticMessageSink) with
