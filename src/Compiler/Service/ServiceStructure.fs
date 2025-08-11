@@ -258,25 +258,6 @@ module Structure =
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
 
-            | SynExpr.LetOrUseBang(pat = pat; rhs = eLet; andBangs = es; body = eBody) ->
-                let exprs =
-                    [
-                        eLet
-                        for SynBinding(expr = eAndBang) in es do
-                            eAndBang
-                    ]
-
-                for e in exprs do
-                    // for `let!`, `use!` or `and!` the pattern begins at the end of the
-                    // keyword so that this scope can be used without adjustment if there is no `=`
-                    // on the same line. If there is an `=` the range will be adjusted during the
-                    // tooltip creation
-                    let r = Range.endToEnd pat.Range e.Range
-                    rcheck Scope.LetOrUseBang Collapse.Below r r
-                    parseExpr e
-
-                parseExpr eBody
-
             | SynExpr.For(doBody = e; range = r)
             | SynExpr.ForEach(_, _, _, _, _, _, e, r) ->
                 rcheck Scope.For Collapse.Below r r
