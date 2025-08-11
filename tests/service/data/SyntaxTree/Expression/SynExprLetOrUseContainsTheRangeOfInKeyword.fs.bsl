@@ -6,7 +6,7 @@ ImplFile
          ([SynExprLetOrUseContainsTheRangeOfInKeyword], false, AnonModule,
           [Expr
              (LetOrUse
-                (false, false,
+                (false, false, true, false,
                  [SynBinding
                     (None, Normal, false, false, [],
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
