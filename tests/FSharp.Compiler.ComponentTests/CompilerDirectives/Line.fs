@@ -205,3 +205,148 @@ printfn ""
             Assert.Equal("file2.fs", file2)
             Assert.Equal(551, line2)
         | _ -> failwith "Unexpected: no run output"
+
+
+
+    let csharpLibSource = """
+using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+
+namespace CSharpLib
+{
+    public class CallerInfoTest
+    {
+        public static int LineNumber([CallerLineNumber] int line = 777)
+        {
+            return line;
+        }
+        
+        public static string FilePath([CallerFilePath] string filePath = "dummy1")
+        {
+            return filePath;
+        }
+		
+		public static string MemberName([CallerMemberName] string memberName = "dummy1")
+        {
+            return memberName;
+        }
+        
+        public static Tuple<string, int, string> AllInfo(int normalArg, [CallerFilePath] string filePath = "dummy2", [CallerLineNumber] int line = 778, [CallerMemberName] string memberName = "dummy3")
+        {
+            return new Tuple<string, int, string>(filePath, line, memberName);
+        }
+    }
+
+    public class MyCallerInfoAttribute : Attribute
+    {
+        public int LineNumber { get; set; }
+        
+        public MyCallerInfoAttribute([CallerLineNumber] int lineNumber = -1)
+        {
+            LineNumber = lineNumber;
+        }
+    }
+
+    public class MyCallerMemberNameAttribute : Attribute
+    {
+        public string MemberName { get; set; }
+
+        public MyCallerMemberNameAttribute([CallerMemberName] string member = "dflt")
+        {
+            MemberName = member;
+        }
+    }
+}
+"""
+
+    let fsharpSource = """
+
+        open System.Runtime.CompilerServices
+        open CSharpLib
+
+        type MyTy([<CallerFilePath>] ?p0 : string) =
+            let mutable p = p0
+
+            member x.Path with get() = p
+
+            static member GetCallerFilePath([<CallerFilePath>] ?path : string) =
+                path
+
+        module Program =
+            let doubleSeparator = "##".Replace('#', System.IO.Path.DirectorySeparatorChar)
+            let sameDirectory = "#.#".Replace('#', System.IO.Path.DirectorySeparatorChar)
+            let parentDirectory = ".."
+            let matchesPath (path : string) (s : string) =
+                s.EndsWith(path.Replace('#', System.IO.Path.DirectorySeparatorChar))
+                && not (s.Contains(doubleSeparator))
+                && not (s.Contains(sameDirectory))
+                && not (s.Contains(parentDirectory))
+
+                
+            [<EntryPoint>]
+            let main (_:string[]) =
+                printfn "starting main"
+                let o = MyTy()
+                let o1 = MyTy("42")
+
+                match o.Path with
+                | Some(path) when matchesPath "CallerInfo.fs" path -> ()
+                | Some(path) -> failwithf "Unexpected (1): %s" path
+                | None -> failwith "Unexpected (1): None"
+
+                match o1.Path with
+                | Some(path) when matchesPath "42" path -> ()
+                | Some(path) -> failwithf "Unexpected (2): %s" path
+                | None -> failwith "Unexpected (2): None"
+
+                match MyTy.GetCallerFilePath() with
+                | Some(path) when matchesPath "CallerInfo.fs" path -> ()
+                | Some(path) -> failwithf "Unexpected (3): %s" path
+                | None -> failwith "Unexpected (3): None"
+                
+                match MyTy.GetCallerFilePath("42") with
+                | Some("42") -> ()
+                | Some(path) -> failwithf "Unexpected (4): %s" path
+                | None -> failwith "Unexpected (4): None"
+                
+                match CallerInfoTest.FilePath() with
+                | path when matchesPath "CallerInfo.fs" path -> ()
+                | path -> failwithf "Unexpected (5): %s" path
+                
+                match CallerInfoTest.FilePath("xyz") with
+                | "xyz" -> ()
+                | path -> failwithf "Unexpected (6): %s" path
+                
+                match CallerInfoTest.AllInfo(21) with
+                | (path, _, _) when matchesPath "CallerInfo.fs" path -> ()
+                | (path, _, _) -> failwithf "Unexpected (7): %s" path
+
+        # 345 "qwerty.fsy"
+                match CallerInfoTest.AllInfo(123) with
+                | (path, _, _) when matchesPath "qwerty.fsy" path -> ()
+                | (path, _, _) -> failwithf "Unexpected (8): %s" path
+
+        # 456 "qwerty.fsl"
+                match CallerInfoTest.AllInfo(123) with
+                | (path, _, _) when matchesPath "qwerty.fsl" path -> ()
+                | (path, _, _) -> failwithf "Unexpected (9): %s" path
+
+                0
+        """
+
+    [<Fact>]
+    let ``C# CallerLineNumber and CallerFilePath work with line directives`` () =
+        let csharp =
+            csharpLibSource
+            |> CSharp
+            |> withFileName "CallerInfoLib.cs"
+        
+        fsharpSource
+        |> FSharp
+        |> withFileName "CallerInfo.fs"
+        |> withLangVersion "preview"
+        |> withReferences [csharp]
+        |> compileExeAndRun
+        |> shouldSucceed
+    
