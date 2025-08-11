@@ -196,20 +196,19 @@ val mkClassMemberLocalBindings:
     isStatic: bool * initialRangeOpt: range option * attrs: SynAttributes * vis: SynAccess option * BindingSet ->
         SynMemberDefn
 
-/// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
+/// Creates SynExpr.LetOrUse based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
 val mkLetExpression:
     isBang: bool *
-    mKeyword: range *
     mIn: range option *
     mWhole: range *
     body: SynExpr *
-    bindingInfo: (bool * BindingSet) option *
-    bangInfo: (SynPat * SynExpr * SynExprAndBang list * range option * bool) option ->
+    bindingInfo: BindingSet option *
+    bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option ->
         SynExpr
 
 val mkAndBang:
-    mKeyword: range * pat: SynPat * rhs: SynExpr * mWhole: range * mEquals: range * mIn: range option -> SynExprAndBang
+    mKeyword: range * pat: SynPat * rhs: SynExpr * mWhole: range * mEquals: range * mIn: range option -> SynBinding
 
 val mkDefnBindings:
     mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range -> SynModuleDecl list

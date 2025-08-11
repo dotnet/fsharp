@@ -11,7 +11,7 @@ ImplFile
                     Tuple
                       (false,
                        [LetOrUse
-                          (false, false,
+                          (false, false, true, false,
                            [SynBinding
                               (None, Normal, false, false, [],
                                PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -37,7 +37,8 @@ ImplFile
                                  EqualsRange = None })],
                            ArbitraryAfterError ("declExpr3", (5,15--5,16)),
                            (4,4--5,16), { LetOrUseKeyword = (4,4--4,7)
-                                          InKeyword = None }); Ident d],
+                                          InKeyword = None
+                                          EqualsRange = None }); Ident d],
                        [(5,15--5,16)], (4,4--5,18)), (3,6--5,47)), (3,0--5,47)),
               (3,0--5,47))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
