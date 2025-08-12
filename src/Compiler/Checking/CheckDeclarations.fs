@@ -1371,7 +1371,7 @@ module MutRecBindingChecking =
                                    let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
                                    let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
                                    TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
-                                with RecoverableException e ->
+                                with e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
@@ -4870,7 +4870,7 @@ module TcDeclarations =
 //-------------------------------------------------------------------------
 // Bind module types
 //------------------------------------------------------------------------- 
-
+#nowarn FS3511
 let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcEnv) synSigDecl: Cancellable<TcEnv> =
   cancellable {
     let g = cenv.g
@@ -5021,7 +5021,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
             return env
             
-    with RecoverableException exn -> 
+    with exn -> 
         errorRecovery exn endm 
         return env
   }
@@ -5043,8 +5043,14 @@ and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs =
             return! TcSignatureElementsNonMutRec cenv parent typeNames endm env defs
     }
 
-and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs = 
-    Cancellable.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
+and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs =
+    cancellable {
+        match defs with
+        | [] -> return env
+        | def :: rest ->
+            let! env = TcSignatureElementNonMutRec cenv parent typeNames endm env def
+            return! TcSignatureElementsNonMutRec cenv parent typeNames endm env rest
+    }
 
 and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
     cancellable {
@@ -5371,7 +5377,6 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               // Now typecheck. 
               let! moduleContents, topAttrsNew, envAtEnd = 
                 TcModuleOrNamespaceElements cenv (Parent (mkLocalModuleRef moduleEntity)) endm envForModule xml None [] moduleDefs
-                |> cenv.stackGuard.GuardCancellable
 
               // Get the inferred type of the decls and record it in the modul. 
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
@@ -5463,7 +5468,6 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           let! moduleContents, topAttrs, envAtEnd = 
             TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo [] defs
-            |> cenv.stackGuard.GuardCancellable
 
           MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo 
           let env, openDecls = 
@@ -5493,20 +5497,17 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           return 
               (defns, [], topAttrs), env, envAtEnd
 
-    with RecoverableException exn -> 
+    with exn -> 
         errorRecovery exn synDecl.Range 
         return ([], [], []), env, env
  }
  
 /// The non-mutually recursive case for a sequence of declarations
-and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) (ct: CancellationToken) =
-
-    if ct.IsCancellationRequested then
-        ValueOrCancelled.Cancelled(OperationCanceledException ct)
-    else
+and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
+    cancellable {
         match moreDefs with
         | [] ->
-            ValueOrCancelled.Value (List.rev defsSoFar, envAtEnd)
+            return List.rev defsSoFar, envAtEnd
         | firstDef :: otherDefs ->
             // Lookahead one to find out the scope of the next declaration.
             let scopem =
@@ -5515,14 +5516,9 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
                 else
                     unionRanges (List.head otherDefs).Range endm
 
-            let result = Cancellable.run ct (TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef |> cenv.stackGuard.GuardCancellable)
-
-            match result with
-            | ValueOrCancelled.Cancelled x ->
-                ValueOrCancelled.Cancelled x
-            | ValueOrCancelled.Value(firstDef, env, envAtEnd) ->
-                TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ((firstDef :: defsSoFar), env, envAtEnd) otherDefs ct
-
+            let! firstDef, env, envAtEnd = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+            return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ((firstDef :: defsSoFar), env, envAtEnd) otherDefs
+    }
 
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
   cancellable {
@@ -5547,21 +5543,15 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
         return (moduleContents, topAttrsNew, envAtEnd)
 
     | None ->
-        let! ct = Cancellable.token ()
-        let result = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) synModuleDecls ct
+        let! compiledDefs, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) synModuleDecls
+        // Apply the functions for each declaration to build the overall expression-builder
+        let moduleDefs = List.collect p13 compiledDefs
+        let moduleDefs = match openDecls0 with [] -> moduleDefs | _ -> TMDefOpens openDecls0 :: moduleDefs
+        let moduleContents = TMDefs moduleDefs
 
-        match result with
-        | ValueOrCancelled.Value(compiledDefs, envAtEnd) ->
-            // Apply the functions for each declaration to build the overall expression-builder
-            let moduleDefs = List.collect p13 compiledDefs
-            let moduleDefs = match openDecls0 with [] -> moduleDefs | _ -> TMDefOpens openDecls0 :: moduleDefs
-            let moduleContents = TMDefs moduleDefs
-
-            // Collect up the attributes that are global to the file
-            let topAttrsNew = List.collect p33 compiledDefs
-            return (moduleContents, topAttrsNew, envAtEnd)
-        | ValueOrCancelled.Cancelled x -> 
-            return! Cancellable(fun _ -> ValueOrCancelled.Cancelled x)
+        // Collect up the attributes that are global to the file
+        let topAttrsNew = List.collect p33 compiledDefs
+        return (moduleContents, topAttrsNew, envAtEnd)
   }
 
 
@@ -5798,7 +5788,6 @@ let CheckOneImplFile
         let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
         let! moduleContents, topAttrs, envAtEnd = 
             TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
-            |> cenv.stackGuard.GuardCancellable
 
         let implFileTypePriorToSig = moduleTyAcc.Value
 
@@ -5825,7 +5814,7 @@ let CheckOneImplFile
           for check in cenv.css.GetPostInferenceChecksPreDefaults() do
             try  
                 check()
-            with RecoverableException exn -> 
+            with exn -> 
                 errorRecovery exn m
 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->

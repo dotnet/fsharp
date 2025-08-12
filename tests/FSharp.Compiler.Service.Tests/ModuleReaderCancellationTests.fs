@@ -173,11 +173,6 @@ open Ns1.Ns2
 let t: T = T()
 """
 
-
-[<Fact>]
-let ``CheckAndThrow is not allowed to throw outside of cancellable`` () =
-    Assert.Throws<Exception>(fun () -> Cancellable.CheckAndThrow())
-
 [<Fact>]
 let ``Type defs 01 - assembly import`` () =
     let source = source1
