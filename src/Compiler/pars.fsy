@@ -2157,9 +2157,6 @@ classDefnMember:
        let leadingKeyword = SynTypeDefnLeadingKeyword.StaticType(rhs parseState 3, rhs parseState 4)
        [ SynMemberDefn.NestedType($5 leadingKeyword, None, rhs2 parseState 1 5) ] }
 
-  | openDecl
-      { [ SynMemberDefn.Open $1 ] }
-
 /* A 'val' definition in an object type definition */
 valDefnDecl:
   | VAL opt_mutable opt_access ident COLON typ
