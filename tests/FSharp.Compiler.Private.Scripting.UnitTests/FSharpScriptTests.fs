@@ -333,7 +333,7 @@ printfn "{@"%A"}" result
     [<Fact>]
     member _.``FsharpPlus - report errors``() =
         let code = """
-#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
+#i "nuget:https://api.nuget.org/v3/index.json"
 #r "nuget: FSharpPlus, 1.6.1"
 
 open FSharpPlus
