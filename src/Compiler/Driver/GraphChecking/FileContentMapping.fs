@@ -505,21 +505,6 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             Continuation.concatenate continuations continuation
         | SynExpr.YieldOrReturn(expr = expr) -> visit expr continuation
         | SynExpr.YieldOrReturnFrom(expr = expr) -> visit expr continuation
-        | SynExpr.LetOrUseBang(pat = pat; rhs = rhs; andBangs = andBangs; body = body) ->
-            let continuations =
-                let andBangExprs = List.map (fun (SynBinding(expr = body)) -> body) andBangs
-                List.map visit (body :: rhs :: andBangExprs)
-
-            let finalContinuation nodes =
-                [
-                    yield! List.concat nodes
-                    yield! visitPat pat
-                    for SynBinding(headPat = pat) in andBangs do
-                        yield! visitPat pat
-                ]
-                |> continuation
-
-            Continuation.sequence continuations finalContinuation
         | SynExpr.MatchBang(expr = expr; clauses = clauses) ->
             visit expr (fun exprNodes ->
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
