@@ -2,17 +2,13 @@
 
 ## Build and test steps (only on Linux)
 
-Always build and test the project before submitting your solution.
+Always build and test the project before submitting your final solution.
 
-1. As an initial smoke test for a quick build, run `dotnet build ./FSharp.Compiler.Service.sln --verbosity quiet --no-restore` from the repository root. 
-Only if this succeeds, move on.
-2. From the repository root, run `./build.sh -c Release --norestore`. This creates a prototype compiler, and then the proto compiler builds itself again.
-3. Only if two previous steps suceed, run automated tests with `./build.sh -c Release --testcoreclr --norestore`.
-
+In order to build and test, run  `./build.sh -c Release --testcoreclr` .
 
 If the build fails with errors or non-zero exit code, fix it based on the error messages given and repeat the build step.
 
-If either of the steps 1/2/3 fails, fix the errors and repeat from step 1 - up to 3 times.
+If either of the steps 3 fails, fix the errors and repeat - up to 3 times.
 After that, report all relevant build errors, error messages and specific details about failing tests and their test test failure details.
 
 ### Fixing tests
@@ -27,10 +23,12 @@ After that, report all relevant build errors, error messages and specific detail
 - Code is formatted using `dotnet fantomas .` executed at the repo root.
 - Builds without errors.
 - Runs tests without errors. If some tests needed adjustments, those test expectations/baseline adjustments were done.
+- Follow the docs/release-notes folder by adding release notes. The guidelines are in docs/release-notes/About.md.
 - If the acceptance criteria was not met, collect the error messages (build failures or failing tests) and report them.
 
 ## Release notes
 - Each PR must have release notes attached. Those are saved in the `docs` folder, split by version and product aspect. Follow the existing notes to figure out the right format.
+- Follow the docs/release-notes structure and writing style. The guidelines are in docs/release-notes/About.md.
 
 ## Coding standards
 
