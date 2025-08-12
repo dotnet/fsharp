@@ -1101,18 +1101,18 @@ module PrintTypes =
             attrsLayout ^^
             LeftL.questionMark ^^ 
             (idL |> addColonL) ^^
-            layoutTypeWithInfoAndPrec denv env 2 ty 
+            layoutTypeWithInfoAndPrec denv env 5 ty
 
         // Layout an unnamed argument
         // Cannot have any attributes
         | None, _, _ -> 
-            layoutTypeWithInfoAndPrec denv env 2 ty
+            layoutTypeWithInfoAndPrec denv env 5 ty
 
         // Layout a named argument 
         | Some id, _, _ -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
             let prefix = layoutAttribsOneline denv argInfo.Attribs ^^ idL
-            (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+            (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 5 ty
 
     let layoutCurriedArgInfos denv env argInfos =
         argInfos 
@@ -2946,7 +2946,7 @@ let minimalStringOfType denv ty =
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
     let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
-    showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
+    showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 5 ty)
 
 let minimalStringOfTypeWithNullness denv ty = 
     minimalStringOfType {denv with showNullnessAnnotations = Some true} ty
