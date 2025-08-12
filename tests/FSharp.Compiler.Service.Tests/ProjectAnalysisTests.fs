@@ -5370,7 +5370,7 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives active`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunImmediate
@@ -5388,7 +5388,7 @@ let ``Test diagnostics with line directives active`` () =
         let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [10, 10, "Test.fsy"]
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
