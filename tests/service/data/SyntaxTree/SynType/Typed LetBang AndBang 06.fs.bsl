@@ -9,20 +9,30 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,38), false, true,
-                       Paren
-                         (LongIdent
-                            (SynLongIdent ([Union], [], [None]), None, None,
-                             Pats
-                               [Named
-                                  (SynIdent (value, None), false, None,
-                                   (4,16--4,21))], None, (4,10--4,21)),
-                          (4,9--4,22)),
-                       App
-                         (Atomic, false, Ident asyncOption,
-                          Const (Unit, (4,36--4,38)), (4,25--4,38)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Paren
+                             (LongIdent
+                                (SynLongIdent ([Union], [], [None]), None, None,
+                                 Pats
+                                   [Named
+                                      (SynIdent (value, None), false, None,
+                                       (4,16--4,21))], None, (4,10--4,21)),
+                              (4,9--4,22)), None,
+                           App
+                             (Atomic, false, Ident asyncOption,
+                              Const (Unit, (4,36--4,38)), (4,25--4,38)),
+                           (4,4--6,25), Yes (4,4--4,38),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,23--4,24) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,

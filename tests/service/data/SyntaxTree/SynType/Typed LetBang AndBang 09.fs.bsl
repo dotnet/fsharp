@@ -9,24 +9,35 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,48), false, true,
-                       Typed
-                         (LongIdent
-                            (SynLongIdent ([Union], [], [None]), None, None,
-                             Pats
-                               [Named
-                                  (SynIdent (value, None), false, None,
-                                   (4,15--4,20))], None, (4,9--4,20)),
-                          App
-                            (LongIdent (SynLongIdent ([option], [], [None])),
-                             None,
-                             [LongIdent (SynLongIdent ([int], [], [None]))], [],
-                             None, true, (4,22--4,32)), (4,9--4,32)),
-                       App
-                         (Atomic, false, Ident asyncOption,
-                          Const (Unit, (4,46--4,48)), (4,35--4,48)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Typed
+                             (LongIdent
+                                (SynLongIdent ([Union], [], [None]), None, None,
+                                 Pats
+                                   [Named
+                                      (SynIdent (value, None), false, None,
+                                       (4,15--4,20))], None, (4,9--4,20)),
+                              App
+                                (LongIdent (SynLongIdent ([option], [], [None])),
+                                 None,
+                                 [LongIdent (SynLongIdent ([int], [], [None]))],
+                                 [], None, true, (4,22--4,32)), (4,9--4,32)),
+                           None,
+                           App
+                             (Atomic, false, Ident asyncOption,
+                              Const (Unit, (4,46--4,48)), (4,35--4,48)),
+                           (4,4--6,25), Yes (4,4--4,48),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,33--4,34) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,
