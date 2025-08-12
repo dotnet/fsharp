@@ -513,6 +513,7 @@ let f2 b1 b2 b3 b4 b5 =
     [<InlineData("((int -> int) | null) list", "((int -> int) | null) list")>]
     [<InlineData("((int -> int) | null -> int) | null", "((int -> int) | null -> int) | null")>]
     [<InlineData("int -> string | null", "int -> string | null")>]
+    [<InlineData("string | null -> int", "string | null -> int")>]
     [<InlineData("int -> int * string | null", "int -> int * (string | null)")>]
     [<InlineData("int -> string | null -> int", "int -> string | null -> int")>]
     [<InlineData("('a | null) list", "('a | null) list")>]
