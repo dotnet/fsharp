@@ -861,28 +861,6 @@ let f() =
     """
     => [3, (14, 28)]
     
-[<Fact(Skip = "'open's in type is not implemented yet")>]
-let ``unused open C# type in type scoped``() =
-    """
-type T() =
-    open type System.Console
-    do printfn "%s" "Hello World"
-    """
-    => [3, (14, 28); 3, (14, 28)]
-    
-
-[<Fact(Skip = "'open's in type is not implemented yet")>]
-let ``type-scoped open declaration duplication in module is unused``() =
-    """
-module TopModule
-open System.IO
-type T() =
-    open System.IO
-    do File.Create ""
-"""
-    => [ 5, (9, 18); 5, (9, 18) ]
-
-    
 [<Fact>]
 let ``expression-scoped open declaration duplication in module is unused``() =
     """
@@ -893,17 +871,3 @@ let _ =
     File.Create ""
 """
     => [ 5, (9, 18) ]
-
-
-[<Fact(Skip = "'open's in type is not implemented yet")>]
-let ``type- and expression-scoped open declaration duplication in module is unused``() =
-    """
-module TopModule
-open System.IO
-type T() =
-    open System.IO
-    do 
-        open System.IO
-        File.Create ""
-"""
-    => [ 5, (9, 18); 5, (9, 18); 7, (13, 22) ]
