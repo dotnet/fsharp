@@ -321,6 +321,31 @@ type Interface1 =
         |> shouldSucceed
         |> ignore
       
+    [<FactForNETCOREAPP>]
+    let ``Should not apply argument expr to indirected method invoke`` () =
+        FSharp """module Lib
+let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue "no value">]n: string) =
+    n
+    
+A.B "abc" |> assertEqual "\"abc\""
+
+(A.B) "abc" |> assertEqual "no value"
+"abc" |> A.B |> assertEqual "no value"
+A.B <| "abc" |> assertEqual "no value"
+let f = A.B
+f "abc" |> assertEqual "no value"
+        """ 
+          |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+        
     (* ------------ C# Interop tests ------------- *)
     [<FactForNETCOREAPP>]
     let ``C# can consume methods using CallerArgumentExpression receiving special parameter names`` () =

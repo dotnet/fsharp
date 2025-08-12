@@ -10304,8 +10304,18 @@ and TcMethodApplication
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
     let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
+        
+        // We apply CallerArgumentExpression to optional parameters only when the method call has syntactic arguments.
+        // Otherwise, we cannot get the range of the argument. The argument range will be the method name range.
+        //      System.ArgumentException.ThrowIfNullOrEmpty(null)              <-- Can get the argument text through its range
+        //      (System.ArgumentException.ThrowIfNullOrEmpty) null             <-- Cannot get the right text
+        //      System.ArgumentException.ThrowIfNullOrEmpty <| null            <-- Cannot get the right text
+        //      null |> System.ArgumentException.ThrowIfNullOrEmpty            <-- Cannot get the right text
+        //      let f = System.ArgumentException.ThrowIfNullOrEmpty in f(null) <-- Cannot get the right text
+        let canApplyCallerArgumentExpression = curriedCallerArgsOpt.IsSome
+        
         let tcVal = LightweightTcValForUsingInBuildMethodCall g
-        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText)
+        AdjustCallerArgs tcVal TcFieldInit cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr (env.eCallerMemberName, cenv.SourceText, canApplyCallerArgumentExpression)
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->
