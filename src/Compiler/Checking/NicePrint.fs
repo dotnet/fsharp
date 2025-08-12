@@ -145,6 +145,9 @@ module internal PrintUtilities =
         | [x] -> [resultFunction x (layoutFunction x)] 
         | x :: rest -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
+
+    let showNullness (denv: DisplayEnv) (nullness: Nullness) =
+        denv.showNullnessAnnotations <> Some false && nullness.Evaluate() = NullnessInfo.WithNull
     
     let tagEntityRefName(denv: DisplayEnv) (xref: EntityRef) name =
         if xref.IsNamespace then tagNamespace name
@@ -940,15 +943,12 @@ module PrintTypes =
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 SepL.comma args) --- tcL)
 
-    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) =
+    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) prec =
         // Show nullness annotations unless explicitly turned off
-        if denv.showNullnessAnnotations <> Some false then
-            match nullness.Evaluate() with
-            | NullnessInfo.WithNull -> part2 ^^ wordL (tagPunctuation "|") ^^ wordL (tagKeyword "null") 
-            | NullnessInfo.WithoutNull -> part2
-            | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
+        if showNullness denv nullness then
+            part2 ^^ wordL (tagPunctuation "|") ^^ wordL (tagKeyword "null") |> bracketIfL (prec <= 3)
         else
-            part2
+            part2 // if NullnessInfo.AmbivalentToNull -> part2 ^^ wordL (tagText "__maybenull")
     
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -1012,7 +1012,7 @@ module PrintTypes =
                     prefix
                     args
 
-            let part2 = layoutNullness denv part1 nullness
+            let part2 = layoutNullness denv part1 nullness prec
 
             part2
         // Layout a tuple type 
@@ -1044,14 +1044,15 @@ module PrintTypes =
             let retTyL = layoutTypeWithInfoAndPrec denv env 5 retTy
             let argTysL = argTys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
             let funcTyL = curriedLayoutsL arrow argTysL retTyL
-            let part1 = bracketIfL (prec <= 4) funcTyL
-            let part2 = layoutNullness denv part1 nullness
+            let showNull = showNullness denv nullness
+            let part1 = bracketIfL (prec <= 4 || showNull) funcTyL
+            let part2 = layoutNullness denv part1 nullness prec
             part2
 
         // Layout a type variable . 
         | TType_var (r, nullness) ->
             let part1 = layoutTyparRefWithInfo denv env r
-            let part2 = layoutNullness denv part1 nullness
+            let part2 = layoutNullness denv part1 nullness prec
             part2
 
         | TType_measure unt -> layoutMeasure denv unt
