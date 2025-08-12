@@ -1,8 +1,6 @@
-let assertEqual a b = 
+let assertEqual (a: string) (b: string) = 
     if a <> b then 
-        match box a, box b with
-        | :? string as a, :? string as b -> printfn "not equal: (%d length string) and (%d length string)" a.Length b.Length
-        failwithf "not equal: %A and %A" a b
+        failwithf "not equal: (%d length string) and (%d length string)" a.Length b.Length
 
 let res = 
     seq {

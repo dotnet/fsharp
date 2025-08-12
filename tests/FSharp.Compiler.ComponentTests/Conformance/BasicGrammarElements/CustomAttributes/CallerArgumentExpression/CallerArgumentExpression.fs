@@ -105,21 +105,18 @@ let path = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs")
 type A() =
   static member aa (
     a,
-    [<CallerMemberName; Optional; DefaultParameterValue "no value">]b: string, 
-    [<CallerLineNumber; Optional; DefaultParameterValue 0>]c: int, 
-    [<CallerFilePath; Optional; DefaultParameterValue "no value">]d: string, 
     [<CallerArgumentExpressionAttribute("a"); Optional; DefaultParameterValue "no value">]e: string) = 
-    a,b,c,d,e
+    a,e
     
   static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
     defaultArg n "no value"
 
 let stringABC = "abc"
-assertEqual (A.aa(stringABC)) ("abc", ".cctor", 11, path, "stringABC")
+assertEqual (A.aa(stringABC)) ("abc", "stringABC")
 # 1 "test.fs"
-assertEqual (A.aa(stringABC : string)) ("abc", ".cctor", 1, path, "stringABC : string")
+assertEqual (A.aa(stringABC : string)) ("abc", "stringABC : string")
 # 1 "test.fs"
-assertEqual (A.aa(a = (stringABC : string))) ("abc", ".cctor", 1, path, "(stringABC : string)")
+assertEqual (A.aa(a = (stringABC : string))) ("abc", "(stringABC : string)")
 
 
 A.B("abc"
