@@ -39,11 +39,11 @@ module Program =
 
 # 345 "qwerty"
         match CallerInfoTest.AllInfo(123) with
-        | (_, 41, _) -> ()
+        | (_, 345, _) -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 # 456 "qwerty"
         match CallerInfoTest.AllInfo(123) with
-        | (_, 45, _) -> ()
+        | (_, 456, _) -> ()
         | x -> failwithf "Unexpected C# result with multiple parameter types: %A" x
 
         0
