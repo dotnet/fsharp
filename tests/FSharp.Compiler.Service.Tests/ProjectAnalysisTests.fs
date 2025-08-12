@@ -5397,7 +5397,7 @@ let ``Test diagnostics with line directives ignored`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     [ for e in wholeProjectResults.Diagnostics ->
-        let m = e.Range.ApplyLineDirectives() in m.StartLine, m.EndLine, m.FileName ]
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
     let checkResults =
@@ -5409,7 +5409,7 @@ let ``Test diagnostics with line directives ignored`` () =
         printfn "ProjectLineDirectives checkResults error file: <<<%s>>>" e.Range.FileName
 
     [ for e in checkResults.Diagnostics ->
-        let m = e.Range.ApplyLineDirectives() in m.StartLine, m.EndLine, m.FileName ]
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
