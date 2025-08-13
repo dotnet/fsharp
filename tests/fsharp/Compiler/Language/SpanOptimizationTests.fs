@@ -183,7 +183,22 @@ module Test =
 
       IL_0022:  ldloca.s   V_1
       IL_0024:  call       instance !0& valuetype [runtime]System.Span`1/Enumerator<object>::get_Current()
+      IL_0029:  stloc.3
+      IL_002a:  ldloc.3
+      IL_002b:  ldobj      [runtime]System.Object
+      IL_0030:  call       void [runtime]System.Console::WriteLine(object)
+      IL_0035:  ldloca.s   V_1
+      IL_0037:  call       instance bool valuetype [runtime]System.Span`1/Enumerator<object>::MoveNext()
+      IL_003c:  brtrue.s   IL_0022
 
+      IL_003e:  leave.s    IL_004e
+    }  
+    finally
+    {
+      IL_0040:  ldloca.s   V_1
+      IL_0042:  constrained. valuetype [runtime]System.Span`1/Enumerator<object>
+      IL_0048:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+      IL_004d:  endfinally
 """
                         ]))
 
