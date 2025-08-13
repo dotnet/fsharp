@@ -7722,19 +7722,20 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
 // Check an 'assert x' expression.
 and TcAssertExpr cenv overallTy env (m: range) tpenv x =
     let synm = m.MakeSynthetic() // Mark as synthetic so the language service won't pick it up.
-    let mArgExpr = x.Range.MakeSynthetic()
     
     // wrap an extra parentheses so 'assert(x=1) isn't considered a named argument to a method call
     let arg1Expr = SynExpr.Paren (x, range0, None, synm)
+    
     let argExpr = 
         match cenv.SourceText with
-        | Some sourceText -> 
+        | Some sourceText when cenv.g.langVersion.SupportsFeature LanguageFeature.SupportCallerArgumentExpression -> 
+            let mArgExpr = x.Range.MakeSynthetic()
             let code = sourceText.GetSubTextFromRange mArgExpr
             if System.String.IsNullOrEmpty code then arg1Expr
             else 
                 let arg2Expr = SynExpr.Const (SynConst.String (code, SynStringKind.Regular, mArgExpr), mArgExpr)
                 SynExpr.Tuple(false, [arg1Expr; arg2Expr], [], mArgExpr)
-        | None -> arg1Expr
+        | _ -> arg1Expr
 
     let callDiagnosticsExpr = SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet synm ["System";"Diagnostics";"Debug"] "Assert",
                                            argExpr, synm)

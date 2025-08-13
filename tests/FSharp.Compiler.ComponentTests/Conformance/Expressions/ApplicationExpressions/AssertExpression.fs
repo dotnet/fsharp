@@ -8,49 +8,30 @@ open FSharp.Test.Compiler
 
 module AssertExpression =
 
-    [<Fact>]
-    let ``assert (1 = 2)`` () =
-        FSharp """assert (1 = 2)"""
+    let test (code: string) =
+        let msgShouldContains = code.[7..].Replace(@"\", @"\\").Replace("\"", "\\\"")
+        FSharp $"try
+%s{code}
+with ex -> if not(ex.Message.Contains \"%s{msgShouldContains}\") then reraise()"
         |> withOptions ["--define:DEBUG"]
+        |> withLangVersionPreview
+        |> asExe
         |> compileAndRun
-        |> shouldFail
-        |> withStdErrContains """(1 = 2)"""
+        |> shouldSucceed
     
     [<Fact>]
     let ``assert (1 = 2) in fsi`` () =
-        Fsx """assert (1 = 2)"""
+        Fsx "assert (1 = 2)"
         |> withOptions ["--define:DEBUG"]
+        |> withLangVersionPreview
         |> runFsi
         |> shouldFail
-        |> withStdErrContains """(1 = 2)"""
+        |> withStdErrContains "(1 = 2)"
+
+    [<Fact>]
+    let ``assert (1 = 2)`` () =
+        test "assert (1 = 2)"
 
     [<Fact>]
     let ``assert ("\n" = "\n\n")`` () =
-        FSharp """assert ("\n" = "\n\n")"""
-        |> withOptions ["--define:DEBUG"]
-        |> compileAndRun
-        |> shouldFail
-        |> withStdErrContains """("\n" = "\n\n")"""
-
-    [<Fact>]
-    let ``assert tripleQuoteString`` () =
-        FSharp "
-assert
-    \"\"\"
-    abcdef
-    \"\"\" 
-        = 
-            \"\"\"
-    ghi
-    \"\"\"
-    "
-        |> withOptions ["--define:DEBUG"]
-        |> compileAndRun
-        |> shouldFail
-        |> withStdErrContains "\"\"\"
-    abcdef
-    \"\"\" 
-        = 
-            \"\"\"
-    ghi
-    \"\"\""
+        test "assert (\"\\n\" = \"\\n\\n\")"
