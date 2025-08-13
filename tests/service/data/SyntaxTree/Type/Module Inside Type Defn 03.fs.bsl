@@ -54,4 +54,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(6,4)-(6,10) parse warning Invalid declaration syntax
+(6,4)-(6,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.

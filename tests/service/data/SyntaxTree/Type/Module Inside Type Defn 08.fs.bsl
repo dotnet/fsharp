@@ -61,5 +61,8 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
+(12,8)-(12,14) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
 (12,8)-(12,14) parse error Unexpected keyword 'module' in type definition. Expected incomplete structured construct at or before this point, 'end' or other token.
+(13,8)-(13,14) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
 (13,8)-(13,14) parse error Unexpected keyword 'module' in implementation file
+(14,8)-(14,14) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.

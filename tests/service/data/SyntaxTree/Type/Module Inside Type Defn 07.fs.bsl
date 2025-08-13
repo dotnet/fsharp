@@ -95,6 +95,6 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(11,4)-(11,10) parse warning Invalid declaration syntax
-(12,4)-(12,10) parse warning Invalid declaration syntax
-(13,4)-(13,10) parse warning Invalid declaration syntax
+(11,4)-(11,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(12,4)-(12,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(13,4)-(13,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
