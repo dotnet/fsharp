@@ -7038,11 +7038,17 @@ seps:
 namePatSepsWithCommas:
   | OBLOCKSEP { None }
   | SEMICOLON { Some (rhs parseState 1) }
-  | COMMA { Some (rhs parseState 1) }
+  | COMMA 
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields (rhs parseState 1)
+        Some (rhs parseState 1) }
   | OBLOCKSEP SEMICOLON { Some (rhs parseState 2) }
-  | OBLOCKSEP COMMA { Some (rhs parseState 2) }
+  | OBLOCKSEP COMMA 
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields (rhs parseState 2)
+        Some (rhs parseState 2) }
   | SEMICOLON OBLOCKSEP { Some (rhs parseState 1) }
-  | COMMA OBLOCKSEP { Some (rhs parseState 1) }
+  | COMMA OBLOCKSEP 
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields (rhs parseState 1)
+        Some (rhs parseState 1) }
 
 opt_namePatSepsWithCommas:
   | namePatSepsWithCommas { }

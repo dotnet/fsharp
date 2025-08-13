@@ -287,6 +287,11 @@
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields">
+        <source>Allow comma as separator for pattern matching on multiple named discriminated unions fields</source>
+        <target state="new">Allow comma as separator for pattern matching on multiple named discriminated unions fields</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowLetOrUseBangTypeAnnotationWithoutParens">
         <source>Allow let! and use! type annotations without requiring parentheses</source>
         <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
@@ -340,11 +345,6 @@
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Gera avisos se o atributo "TailCall" for usado em funções não recursivas.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureCommaInsteadOfSemicolonInPatterns">
-        <source>Allow comma instead of semicolon in pattern matching field separators</source>
-        <target state="new">Allow comma instead of semicolon in pattern matching field separators</target>
         <note />
       </trans-unit>
       <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">

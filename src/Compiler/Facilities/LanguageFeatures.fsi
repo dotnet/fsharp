@@ -95,7 +95,7 @@ type LanguageFeature =
     | ScopedNowarn
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
-    | CommaInsteadOfSemicolonInPatterns
+    | AllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields
 
 /// LanguageVersion management
 type LanguageVersion =
