@@ -54,7 +54,4 @@ ImplFile
           (2,0--4,46), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
-        CodeComments = [LineComment (1,0--1,56)] }, set []))
-
-(4,11)-(4,15) parse warning Nested type definitions are not allowed. Types must be defined at module or namespace level.
-(4,22)-(4,28) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+        CodeComments = [LineComment (1,0--1,68)] }, set []))

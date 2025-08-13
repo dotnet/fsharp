@@ -1371,18 +1371,19 @@ type LexFilterImpl (
         // Check if we're inappropriately inside a type definition for constructs that shouldn't be there
         // This validates that TYPE, MODULE, EXCEPTION, and OPEN declarations are not nested within type definitions
         // The check works as follows:
-        // 1. We traverse the context stack looking for a CtxtTypeDefns
-        // 2. If found, we check if the current token is indented inside it (column check)
-        // 3. We verify we're not in a legitimate nested context (members, augmentations, or escaped to module/namespace)
-        // 4. If all conditions match and the language feature is enabled, we issue a warning
+        // 1. Only check if the language feature WarnOnUnexpectedModuleDefinitionsInsideTypes is enabled
+        // 2. Skip validation inside parentheses (to avoid false positives with inline IL)
+        // 3. Traverse the context stack looking for a CtxtTypeDefns
+        // 4. If found, check if the current token is indented INSIDE it (greater column, not equal)
+        // 5. Verify we're not in a legitimate nested context (members, augmentations, or escaped to module/namespace)
+        // 6. If all conditions match, issue a warning
         //
         // Note: We don't check 'let' bindings as they can be valid in classes with constructors
-        // Note: We skip validation inside parentheses to avoid false positives with inline IL syntax (# ... type ... #)
+        // Note: Constructs at the same column level are NOT nested (e.g., type A = A type B = B on same line)
         let checkIfInvalidConstructsInTypeDefinition keyword =
             // Only perform validation if the language feature is enabled
-            if not (lexbuf.SupportsFeature LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
-                ()
-            else
+            if lexbuf.SupportsFeature LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes then
+                // Skip validation if we're inside a parenthesis context
                 // This avoids false positives with inline IL: (# "unbox.any !0" type ('T) x : 'T #)
                 let rec hasParenContext stack =
                     match stack with
@@ -1394,6 +1395,7 @@ type LexFilterImpl (
                 
                 // Don't validate if we're in a paren context (could be inline IL or other valid syntax)
                 if not (hasParenContext offsideStack) then
+                    // Find the nearest type definition context and check if we're inappropriately nested
                     let rec checkNesting stack typeDefnsSeen =
                         match stack with
                         | [] -> 
@@ -1407,7 +1409,10 @@ type LexFilterImpl (
                             
                         | CtxtTypeDefns(typePos, _) :: rest ->
                             // Found a type definition - check if we're inappropriately inside it
-                            if tokenStartCol > typePos.Column then
+                            // IMPORTANT: Same-line declarations are sequential, not nested
+                            // Example: type A = A type B = B (all on same line, B is not nested in A)
+                            // Only warn if on a DIFFERENT line with GREATER indentation
+                            if tokenStartPos.Line > typePos.Line && tokenStartCol > typePos.Column then
                                 // We're indented inside the type - this might be invalid
                                 // But first check if we're in a valid member/augmentation context
                                 let rec isInMemberContext s =
@@ -1422,7 +1427,7 @@ type LexFilterImpl (
                                 
                                 not (isInMemberContext stack)
                             else
-                                // Not indented inside this type, check deeper in the stack
+                                // Not indented inside this type (same column or less), check deeper in the stack
                                 checkNesting rest true
                                 
                         | CtxtSeqBlock _ :: rest 
