@@ -159,27 +159,7 @@ module Test =
             (fun verifier ->
                 verifier.VerifyIL [
                             """
-      .method public static void  test() cil managed
-      {
 
-        .maxstack  3
-        .locals init (valuetype System.Span`1<object> V_0,
-                 valuetype [runtime]System.Span`1/Enumerator<object> V_1,
-                 valuetype [runtime]System.Span`1<object> V_2,
-                 object& V_3)
-        IL_0000:  call       !!0[] [runtime]System.Array::Empty<object>()
-        IL_0005:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
-        IL_000a:  stloc.0
-        IL_000b:  ldloca.s   V_0
-        IL_000d:  ldfld      !0[] valuetype System.Span`1<object>::arr
-        IL_0012:  call       valuetype [runtime]System.Span`1<!!0> [runtime]System.MemoryExtensions::AsSpan<object>(!!0[])
-        IL_0017:  stloc.2
-        IL_0018:  ldloca.s   V_2
-        IL_001a:  call       instance valuetype [runtime]System.Span`1/Enumerator<!0> valuetype [runtime]System.Span`1<object>::GetEnumerator()
-        IL_001f:  stloc.1
-        .try
-        {
-          IL_0020:  br.s       IL_0035
 
           IL_0022:  ldloca.s   V_1
           IL_0024:  call       instance !0& valuetype [runtime]System.Span`1/Enumerator<object>::get_Current()
