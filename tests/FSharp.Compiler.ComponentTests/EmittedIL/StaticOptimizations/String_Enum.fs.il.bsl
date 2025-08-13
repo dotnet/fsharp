@@ -130,53 +130,61 @@
     .method public static string  'string<SByteEnum>'(valuetype assembly/String/SByteEnum 'enum') cil managed
     {
       
-      .maxstack  3
-      .locals init (valuetype assembly/String/SByteEnum V_0)
+      .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/SByteEnum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
+      IL_0001:  box        assembly/String/SByteEnum
+      IL_0006:  unbox.any  [runtime]System.IFormattable
+      IL_000b:  ldnull
+      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0011:  tail.
+      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
+                                                                                      class [netstandard]System.IFormatProvider)
+      IL_0018:  ret
     } 
 
     .method public static string  'string<Int16Enum>'(valuetype assembly/String/Int16Enum 'enum') cil managed
     {
       
-      .maxstack  3
-      .locals init (valuetype assembly/String/Int16Enum V_0)
+      .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/Int16Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
+      IL_0001:  box        assembly/String/Int16Enum
+      IL_0006:  unbox.any  [runtime]System.IFormattable
+      IL_000b:  ldnull
+      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0011:  tail.
+      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
+                                                                                      class [netstandard]System.IFormatProvider)
+      IL_0018:  ret
     } 
 
     .method public static string  'string<Int32Enum>'(valuetype assembly/String/Int32Enum 'enum') cil managed
     {
       
-      .maxstack  3
-      .locals init (valuetype assembly/String/Int32Enum V_0)
+      .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/Int32Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
+      IL_0001:  box        assembly/String/Int32Enum
+      IL_0006:  unbox.any  [runtime]System.IFormattable
+      IL_000b:  ldnull
+      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0011:  tail.
+      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
+                                                                                      class [netstandard]System.IFormatProvider)
+      IL_0018:  ret
     } 
 
     .method public static string  'string<Int64Enum>'(valuetype assembly/String/Int64Enum 'enum') cil managed
     {
       
-      .maxstack  3
-      .locals init (valuetype assembly/String/Int64Enum V_0)
+      .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  stloc.0
-      IL_0002:  ldloca.s   V_0
-      IL_0004:  constrained. assembly/String/Int64Enum
-      IL_000a:  callvirt   instance string [netstandard]System.Object::ToString()
-      IL_000f:  ret
+      IL_0001:  box        assembly/String/Int64Enum
+      IL_0006:  unbox.any  [runtime]System.IFormattable
+      IL_000b:  ldnull
+      IL_000c:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+      IL_0011:  tail.
+      IL_0013:  callvirt   instance string [netstandard]System.IFormattable::ToString(string,
+                                                                                      class [netstandard]System.IFormatProvider)
+      IL_0018:  ret
     } 
 
     .method public static string  'string<ByteEnum>'(valuetype assembly/String/ByteEnum 'enum') cil managed
@@ -535,7 +543,6 @@
   } 
 
 } 
-
 
 
 
