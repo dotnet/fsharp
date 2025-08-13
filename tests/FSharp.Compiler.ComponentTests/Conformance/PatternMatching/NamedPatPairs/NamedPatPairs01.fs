@@ -1,19 +1,21 @@
-// #Conformance #PatternMatching #ActivePatterns 
-#light
+// #Conformance #PatternMatching #NamedPatPairs 
+type MyUnion = 
+    | CaseA of a: int * b: string
+    | CaseB of x: float * y: bool * z: char
 
-type Shape =
-| Rectangle of width : float * length : float
-| Circle of radius : float
-| Prism of width : float * float * height : float
-    
-let getShapeWidth shape =
-    match shape with
-    | Rectangle(width = w) -> w
-    | Circle(radius = r) -> 2. * r
-    | Prism(width = w, height = h) -> w * h
+let testComma value =
+    match value with
+    | CaseA(a = x, b = y) -> sprintf "CaseA: a=%d, b=%s" x y
+    | CaseB(x = p, y = q, z = r) -> sprintf "CaseB: x=%f, y=%b, z=%c" p q r
 
-let result = getShapeWidth (Rectangle(10., 20.))
+let testSemicolon value =
+    match value with
+    | CaseA(a = x; b = y) -> sprintf "CaseA: a=%d, b=%s" x y
+    | CaseB(x = p; y = q; z = r) -> sprintf "CaseB: x=%f, y=%b, z=%c" p q r
 
-if result <> 10 then exit 1
-
-exit 0   
+let testMixed value =
+    match value with
+    | CaseA(a = x; b = y) -> sprintf "CaseA: a=%d, b=%s" x y
+    | CaseB(x = p, y = q; z = r) -> sprintf "CaseB: x=%f, y=%b, z=%c" p q r
+    | CaseA(a = x, b = y) -> sprintf "CaseA: a=%d, b=%s" x y
+    | CaseB(x = p; y = q, z = r) -> sprintf "CaseB: x=%f, y=%b, z=%c" p q r
