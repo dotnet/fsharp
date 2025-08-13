@@ -192,13 +192,13 @@ module Test =
       IL_003c:  brtrue.s   IL_0022
 
       IL_003e:  leave.s    IL_004e
+
     }  
     finally
     {
       IL_0040:  ldloca.s   V_1
       IL_0042:  constrained. valuetype [runtime]System.Span`1/Enumerator<object>
       IL_0048:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_004d:  endfinally
 """
                         ]))
 
