@@ -912,6 +912,31 @@
         <target state="new">There is another {0} for this warning already in line {1}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexfltInvalidNestedConstruct">
+        <source>'{0}' must be defined at module level, not inside a type.</source>
+        <target state="new">'{0}' must be defined at module level, not inside a type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedExceptionDefinition">
+        <source>Exceptions must be defined at module level, not inside types.</source>
+        <target state="new">Exceptions must be defined at module level, not inside types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedModule">
+        <source>Modules cannot be nested inside types. Define modules at module or namespace level.</source>
+        <target state="new">Modules cannot be nested inside types. Define modules at module or namespace level.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedOpenDeclaration">
+        <source>'open' declarations must appear at module level, not inside types.</source>
+        <target state="new">'open' declarations must appear at module level, not inside types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedTypeDefinition">
+        <source>Nested type definitions are not allowed. Types must be defined at module or namespace level.</source>
+        <target state="new">Nested type definitions are not allowed. Types must be defined at module or namespace level.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">列表的所有元素必须可隐式转换为第一个元素的类型，这是一个长度为 {0} 的类型的元组\n    {1}    \n此元素是长度为 {2} 类型的元组\n    {3}    \n</target>

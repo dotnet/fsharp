@@ -1380,9 +1380,11 @@ type LexFilterImpl (
         //
         // Note: We don't check 'let' bindings as they can be valid in classes with constructors
         // Note: Constructs at the same column level are NOT nested (e.g., type A = A type B = B on same line)
-        let checkIfInvalidConstructsInTypeDefinition keyword =
+        let (|InvalidConstructInTypeDefinition|_|) keyword =
             // Only perform validation if the language feature is enabled
-            if lexbuf.SupportsFeature LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes then
+            if not (lexbuf.SupportsFeature LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
+                None
+            else
                 // Skip validation if we're inside a parenthesis context
                 // This avoids false positives with inline IL: (# "unbox.any !0" type ('T) x : 'T #)
                 let rec hasParenContext stack =
@@ -1394,7 +1396,9 @@ type LexFilterImpl (
                     | _ -> false
                 
                 // Don't validate if we're in a paren context (could be inline IL or other valid syntax)
-                if not (hasParenContext offsideStack) then
+                if hasParenContext offsideStack then
+                    None
+                else
                     // Find the nearest type definition context and check if we're inappropriately nested
                     let rec checkNesting stack typeDefnsSeen =
                         match stack with
@@ -1445,22 +1449,24 @@ type LexFilterImpl (
                             // Other contexts - continue checking
                             checkNesting rest typeDefnsSeen
                     
+                    // Perform the check and return warning message if needed
                     if checkNesting offsideStack false then
                         let warningMessage = 
                             match keyword with
                             | "TYPE" -> 
-                                "Nested type definitions are not allowed. Types must be defined at module or namespace level."
+                                FSComp.SR.lexfltInvalidNestedTypeDefinition()
                             | "MODULE" -> 
-                                "Modules cannot be nested inside types. Define modules at module or namespace level."
+                                FSComp.SR.lexfltInvalidNestedModule()
                             | "EXCEPTION" -> 
-                                "Exceptions must be defined at module level, not inside types."
+                                FSComp.SR.lexfltInvalidNestedExceptionDefinition()
                             | "OPEN" -> 
-                                "'open' declarations must appear at module level, not inside types."
+                                FSComp.SR.lexfltInvalidNestedOpenDeclaration()
                             | _ -> 
-                                sprintf "'%s' must be defined at module level, not inside a type." keyword
+                                FSComp.SR.lexfltInvalidNestedConstruct(keyword)
                         
-                        warn tokenTup warningMessage
-
+                        Some warningMessage
+                    else
+                        None
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
         let relaxWhitespace2OffsideRule =
             // Offside rule for CtxtLetDecl (in types or modules) / CtxtMemberHead / CtxtTypeDefns... (given RelaxWhitespace2)
@@ -2115,7 +2121,9 @@ type LexFilterImpl (
         //  Check for inappropriate nesting within type definitions
         | MODULE, _ :: _ ->
             // Check if this module definition is inappropriately nested in a type
-            checkIfInvalidConstructsInTypeDefinition "MODULE"
+            match "MODULE" with
+            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | _ -> ()
                 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
@@ -2127,7 +2135,9 @@ type LexFilterImpl (
         // exception ... ~~~> CtxtException
         | EXCEPTION, _ :: _ ->
             // Check if this exception definition is inappropriately nested in a type
-            checkIfInvalidConstructsInTypeDefinition "EXCEPTION"
+            match "EXCEPTION" with
+            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | _ -> ()
             if debug then dprintf "EXCEPTION: entering CtxtException(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtException tokenStartPos)
             returnToken tokenLexbufState token
@@ -2570,7 +2580,9 @@ type LexFilterImpl (
 
         | TYPE, _ ->
             // Check if this type definition is inappropriately nested in another type
-            checkIfInvalidConstructsInTypeDefinition "TYPE"
+            match "TYPE" with
+            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | _ -> ()
                 
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
             if debug then dprintf "TYPE, pushing CtxtTypeDefns(%a)\n" outputPos tokenStartPos
@@ -2594,7 +2606,9 @@ type LexFilterImpl (
 
         | OPEN, _ :: _ ->
             // Check if this open declaration is inappropriately nested in a type
-            checkIfInvalidConstructsInTypeDefinition "OPEN"
+            match "OPEN" with
+            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | _ -> ()
             returnToken tokenLexbufState token
 
         | ODUMMY _, _ ->

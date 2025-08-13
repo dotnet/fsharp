@@ -912,6 +912,31 @@
         <target state="new">There is another {0} for this warning already in line {1}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexfltInvalidNestedConstruct">
+        <source>'{0}' must be defined at module level, not inside a type.</source>
+        <target state="new">'{0}' must be defined at module level, not inside a type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedExceptionDefinition">
+        <source>Exceptions must be defined at module level, not inside types.</source>
+        <target state="new">Exceptions must be defined at module level, not inside types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedModule">
+        <source>Modules cannot be nested inside types. Define modules at module or namespace level.</source>
+        <target state="new">Modules cannot be nested inside types. Define modules at module or namespace level.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedOpenDeclaration">
+        <source>'open' declarations must appear at module level, not inside types.</source>
+        <target state="new">'open' declarations must appear at module level, not inside types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedTypeDefinition">
+        <source>Nested type definitions are not allowed. Types must be defined at module or namespace level.</source>
+        <target state="new">Nested type definitions are not allowed. Types must be defined at module or namespace level.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Tutti gli elementi di un elenco devono essere convertibili in modo implicito nel tipo del primo elemento, che qui è una tupla di lunghezza {0} di tipo\n {1}    \nQuesto elemento è una tupla di lunghezza {2} di tipo\n    {3} \n</target>
