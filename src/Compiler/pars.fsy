@@ -1272,12 +1272,10 @@ moduleDefnsOrExpr:
 /* A sequence of definitions in a namespace or module */
 moduleDefns:
   | moduleDefnOrDirective moduleDefnOrDirective
-      { checkInvalidDeclsInTypeDefn $1 $2 parseState.LexBuffer
-        $1 @ $2 }
+      { $1 @ $2 }
 
   | moduleDefnOrDirective moduleDefns
-      { checkInvalidDeclsInTypeDefn $1 $2 parseState.LexBuffer
-        $1 @ $2 }
+      { $1 @ $2 }
 
   | moduleDefnOrDirective topSeparators moduleDefnsOrExpr
       { $1 @ $3 }

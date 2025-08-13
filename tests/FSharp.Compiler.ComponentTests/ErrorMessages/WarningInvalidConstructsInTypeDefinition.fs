@@ -51,13 +51,13 @@ type D = D
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 554, Line 31, Col 5, Line 31, Col 11, "Invalid declaration syntax")
-            (Warning 554, Line 32, Col 5, Line 32, Col 11, "Invalid declaration syntax")
-            (Warning 554, Line 33, Col 5, Line 33, Col 11, "Invalid declaration syntax")
-            (Warning 554, Line 20, Col 5, Line 20, Col 11, "Invalid declaration syntax")
-            (Warning 554, Line 15, Col 5, Line 15, Col 11, "Invalid declaration syntax")
-            (Warning 554, Line 9, Col 5, Line 9, Col 11, "Invalid declaration syntax");
-            (Warning 554, Line 4, Col 5, Line 4, Col 11, "Invalid declaration syntax")
+            (Warning 58, Line 4, Col 5, Line 4, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+            (Warning 58, Line 9, Col 5, Line 9, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+            (Warning 58, Line 15, Col 5, Line 15, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+            (Warning 58, Line 20, Col 5, Line 20, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+            (Warning 58, Line 31, Col 5, Line 31, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+            (Warning 58, Line 32, Col 5, Line 32, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+            (Warning 58, Line 33, Col 5, Line 33, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
         ]
         
     [<Fact>]

@@ -270,7 +270,3 @@ val mkSynField:
         SynField
 
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool
-
-/// Check for invalid declarations inside type definitions
-val checkInvalidDeclsInTypeDefn:
-    moduleDecls1: SynModuleDecl list -> moduleDecls2: SynModuleDecl list -> lexBuf: Lexbuf -> unit

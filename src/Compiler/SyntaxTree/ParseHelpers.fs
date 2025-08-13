@@ -1065,39 +1065,6 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
-[<return: Struct>]
-let (|NestedModuleAt|_|) =
-    function
-    | SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mKeyword }) -> ValueSome mKeyword
-    | _ -> ValueNone
-
-[<return: Struct>]
-let (|TypesFollowedByModules|_|) =
-    function
-    | [ SynModuleDecl.Types(typeDefns = defns) ], rest -> ValueSome(defns, rest)
-    | _ -> ValueNone
-
-let getLastTypeColumn (defns: SynTypeDefn list) =
-    defns
-    |> List.choose (function
-        | SynTypeDefn(trivia = { LeadingKeyword = mKeyword }) -> Some mKeyword.Range)
-    |> List.tryLast
-    |> Option.defaultValue range0
-
-let checkInvalidDeclsInTypeDefn (moduleDecls1: SynModuleDecl list) (moduleDecls2: SynModuleDecl list) (lexBuf: Lexbuf) =
-    match moduleDecls1, moduleDecls2 with
-    | TypesFollowedByModules(defns, rest) ->
-        let lastTypeColumn = getLastTypeColumn defns
-
-        for defn in rest do
-            match defn with
-            | NestedModuleAt mKeyword ->
-                if lexBuf.SupportsFeature(LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
-                    if mKeyword.StartColumn > lastTypeColumn.StartColumn then
-                        warning (Error(FSComp.SR.parsInvalidDeclarationSyntax (), mKeyword))
-            | _ -> ()
-    | _ -> ()
-
 /// Unified helper for creating let/let!/use/use! expressions
 /// Creates SynExpr.LetOrUse based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
