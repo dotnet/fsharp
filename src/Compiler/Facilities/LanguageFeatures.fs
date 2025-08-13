@@ -414,7 +414,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
-        | LanguageFeature.AllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields -> FSComp.SR.featureAllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields ()
+        | LanguageFeature.AllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields ->
+            FSComp.SR.featureAllowCommaAsSeparatorForPatternMatchingOnMultipleNamedDiscriminatedUnionsFields ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
