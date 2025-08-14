@@ -18,6 +18,9 @@ let pats: obj array list =
         [|[Unneeded; Unneeded]; "let ((Lazy x)) = lazy 1"|]
         [|[Needed; Unneeded]; "let (()) = ()"|]
         [|[Needed; Unneeded; Unneeded]; "let ((())) = ()"|]
+        [|[Needed]; "async { let! (_ : obj) = Unchecked.defaultof<_>; return () }"|]
+        [|[Unneeded]; "async { let! (A _) = Unchecked.defaultof<_>; return () }"|]
+        [|[Needed]; "async { let! (x : int) = async { return 3 }"|]
     ]
 
 // `expected` represents whether each parenthesized pattern, from the inside outward, requires its parentheses.
