@@ -10,14 +10,6 @@ open System.IO
 open System.Text
 open System.Diagnostics
 
-module MessageSink =
-    let sinkWriter =
-#if DEBUG
-        Console.Out
-#else
-        TextWriter.Null
-#endif
-
 [<AutoOpen>]
 module Scripting =
 
@@ -83,9 +75,12 @@ module Scripting =
 
     let deleteDirectory output =
         if Directory.Exists output then 
-            Directory.Delete(output, true) 
-
-    let log format = fprintfn MessageSink.sinkWriter format
+            Directory.Delete(output, true)
+            
+    // Capture the original stdout for logging.
+    let private originalOut = stdout
+    // When used during test run, log will always output to the original stdout of the testhost, instead of the test output.
+    let log format = fprintfn originalOut format
 
     type FilePath = string
 

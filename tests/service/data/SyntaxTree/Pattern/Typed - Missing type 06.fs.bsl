@@ -1,13 +1,13 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Pattern/Typed - Missing type 06.fs", false,
-      QualifiedNameOfFile Module, [], [],
+      QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr
              (Do
                 (LetOrUse
-                   (false, false,
+                   (false, false, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -28,10 +28,14 @@ ImplFile
                           EqualsRange = Some (4,11--4,12) })],
                     Const (Unit, (6,4--6,6)), (4,4--6,6),
                     { LetOrUseKeyword = (4,4--4,7)
-                      InKeyword = None }), (3,0--6,6)), (3,0--6,6))],
+                      InKeyword = None
+                      EqualsRange = Some (4,11--4,12) }), (3,0--6,6)),
+              (3,0--6,6))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (4,11)-(4,12) parse error Unexpected symbol '=' in binding
+(4,10)-(4,10) parse error Expecting type

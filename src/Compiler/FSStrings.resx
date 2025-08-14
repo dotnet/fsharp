@@ -357,6 +357,12 @@
   <data name="Parser.TOKEN.EQUALS" xml:space="preserve">
     <value>symbol '='</value>
   </data>
+  <data name="Parser.TOKEN.GREATER.BAR.RBRACE" xml:space="preserve">
+    <value>symbol '&gt;|}'</value>
+  </data>  
+  <data name="Parser.TOKEN.RQUOTE.BAR.RBRACE" xml:space="preserve">
+    <value>symbol '@&gt;|}' or '@@&gt;|}'</value>
+  </data>  
   <data name="Parser.TOKEN.GREATER.BAR.RBRACK" xml:space="preserve">
     <value>symbol '&gt;|]'</value>
   </data>
@@ -1029,8 +1035,14 @@
   <data name="Obsolete2" xml:space="preserve">
     <value>. {0}</value>
   </data>
-  <data name="Experimental" xml:space="preserve">
-    <value>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</value>
+  <data name="Experimental1" xml:space="preserve">
+    <value>This construct is experimental</value>
+  </data>
+  <data name="Experimental2" xml:space="preserve">
+    <value>. {0}</value>
+  </data>
+  <data name="Experimental3" xml:space="preserve">
+    <value>. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</value>
   </data>
   <data name="PossibleUnverifiableCode" xml:space="preserve">
     <value>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</value>
@@ -1133,5 +1145,11 @@
   </data>
   <data name="Parser.TOKEN.WHILE.BANG" xml:space="preserve">
     <value>keyword 'while!'</value>
+  </data>
+  <data name="InvalidAttributeTargetForLanguageElement1" xml:space="preserve">
+    <value>This attribute cannot be applied to {0}. Valid targets are: {1}</value>
+  </data>
+  <data name="InvalidAttributeTargetForLanguageElement2" xml:space="preserve">
+    <value>This attribute is not valid for use on this language element</value>
   </data>
 </root>

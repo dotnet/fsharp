@@ -6,13 +6,10 @@
     <LangVersion Condition="'$(FSharpLangVersion)' != ''">$(FSharpLangVersion)</LangVersion>
     <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)</RepoRoot>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-    <FSharpNetCoreProductDefaultTargetFramework>net9.0</FSharpNetCoreProductDefaultTargetFramework>
+    <FSharpNetCoreProductDefaultTargetFramework>net10.0</FSharpNetCoreProductDefaultTargetFramework>
     <IgnoreMibc Condition="'$(IgnoreMibc)' == ''">$(DotNetBuildSourceOnly)</IgnoreMibc>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!-- TODO: These need to be removed once we merge/release the new SDK with noward and line fixes. -->
-    <NoWarn>$(NoWarn);FS0064;FS1182</NoWarn>
+    <!-- When building the .NET product, there's no need to publish Windows PDBs. Any conversion to Windows PDBs will be done during staging, if necessary. -->
+    <PublishWindowsPdb Condition="'$(DotNetBuild)' == 'true'">false</PublishWindowsPdb>
   </PropertyGroup>
 
   <!--
@@ -62,7 +59,7 @@
          since it's a non-arcade and non-sourcebuild scenario -->
     <FsLexPath>$(ArtifactsDir)/bin/fslex/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fslex.dll</FsLexPath>
     <FsYaccPath>$(ArtifactsDir)/bin/fsyacc/$(Configuration)/$(FSharpNetCoreProductDefaultTargetFramework)/$(RuntimeIdentifier)/fsyacc.dll</FsYaccPath>
-    <DefineConstants>NO_CHECKNULLS;BUILDING_WITH_LKG;NO_NULLCHECKING_LIB_SUPPORT;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)/eng/Versions.props" Condition="'$(DISABLE_ARCADE)' == 'true'" />
@@ -77,7 +74,7 @@
          we should also support $(NetPrevious) for all releases.
          This will likely include FCS and FSharp.Core as well as shipped products.
          Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
-    <When Condition="'$(DotNetBuildSourceOnly)' == 'true' AND '$(DotNetBuildOrchestrator)' == 'true'">
+    <When Condition="'$(DotNetBuildSourceOnly)' == 'true' AND '$(DotNetBuildFromVMR)' == 'true'">
       <PropertyGroup>
         <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
       </PropertyGroup>

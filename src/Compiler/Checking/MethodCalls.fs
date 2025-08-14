@@ -348,6 +348,12 @@ let inline mkOptionalNone (g: TcGlobals) ty calledArgTy mMethExpr =
     else
         mkNone g calledArgTy mMethExpr
 
+let inline mkOptionalSome (g: TcGlobals) outerOptTy innerNonOptionalType expr mMethExpr =
+    if g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters && isValueOptionTy g outerOptTy then
+        mkValueSome g innerNonOptionalType expr mMethExpr
+    else
+        mkSome g innerNonOptionalType expr mMethExpr
+
 
 /// Adjust the called argument type to take into account whether the caller's argument is CSharpMethod(?arg=Some(3)) or CSharpMethod(arg=1) 
 let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
@@ -1120,7 +1126,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-            let n = mbase.PUntaint((fun x -> x.GetParameters().Length), m)
+            let n = mbase.PApplyArray((fun x -> x.GetParameters()),"GetParameters", m).Length
             match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, None, methodName, n)) with 
             | true, vref -> Some vref
             | _ -> 
@@ -1458,11 +1464,12 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
         | ByrefTy g inst ->
             GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg inst (PassByRef(inst, currDfltVal)) eCallerMemberName mMethExpr
         | _ ->
+            let mLineDirectivesApplied = mMethExpr.ApplyLineDirectives()
             match calledArg.CallerInfo, eCallerMemberName with
             | CallerLineNumber, _ when typeEquiv g currCalledArgTy g.int_ty ->
-                emptyPreBinder, Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
+                emptyPreBinder, Expr.Const (Const.Int32(mLineDirectivesApplied.StartLine), mMethExpr, currCalledArgTy)
             | CallerFilePath, _ when typeEquiv g currCalledArgTy g.string_ty ->
-                let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
+                let fileName = mLineDirectivesApplied.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
                 emptyPreBinder, Expr.Const (Const.String fileName, mMethExpr, currCalledArgTy)
             | CallerMemberName, Some callerName when (typeEquiv g currCalledArgTy g.string_ty) ->
                 emptyPreBinder, Expr.Const (Const.String callerName, mMethExpr, currCalledArgTy)
@@ -1498,18 +1505,19 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) =
     let calledArgTy = calledArg.CalledArgumentType
     let calledNonOptTy = tryDestOptionalTy g calledArgTy
+    let mLineDirectivesApplied = mMethExpr.ApplyLineDirectives()
 
     match calledArg.CallerInfo, eCallerMemberName with
     | CallerLineNumber, _ when typeEquiv g calledNonOptTy g.int_ty ->
-        let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
-        mkSome g calledNonOptTy lineExpr mMethExpr
+        let lineExpr = Expr.Const(Const.Int32 mLineDirectivesApplied.StartLine, mMethExpr, calledNonOptTy)
+        mkOptionalSome g calledArgTy calledNonOptTy lineExpr mMethExpr
     | CallerFilePath, _ when typeEquiv g calledNonOptTy g.string_ty ->
-        let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
+        let fileName = mLineDirectivesApplied.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
         let filePathExpr = Expr.Const (Const.String(fileName), mMethExpr, calledNonOptTy)
-        mkSome g calledNonOptTy filePathExpr mMethExpr
+        mkOptionalSome g calledArgTy calledNonOptTy filePathExpr mMethExpr
     | CallerMemberName, Some(callerName) when typeEquiv g calledNonOptTy g.string_ty ->
         let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
-        mkSome g calledNonOptTy memberNameExpr mMethExpr
+        mkOptionalSome g calledArgTy calledNonOptTy memberNameExpr mMethExpr
     | _ ->
         mkOptionalNone g calledArgTy calledNonOptTy mMethExpr
 
@@ -1815,14 +1823,14 @@ module ProvidedMethodCalls =
         let rec loop (st: Tainted<ProvidedType>) = 
             if st.PUntaint((fun st -> st.IsGenericParameter), m) then st
             elif st.PUntaint((fun st -> st.IsArray), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 let rank = st.PUntaint((fun st -> st.GetArrayRank()), m)
                 (loop et).PApply((fun st -> if rank = 1 then st.MakeArrayType() else st.MakeArrayType(rank)), m)
             elif st.PUntaint((fun st -> st.IsByRef), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 (loop et).PApply((fun st -> st.MakeByRefType()), m)
             elif st.PUntaint((fun st -> st.IsPointer), m) then 
-                let et = st.PApply((fun st -> st.GetElementType()), m)
+                let et = st.PApply((fun st -> !! st.GetElementType()), m)
                 (loop et).PApply((fun st -> st.MakePointerType()), m)
             else
                 let isGeneric = st.PUntaint((fun st -> st.IsGenericType), m)
@@ -1863,7 +1871,7 @@ module ProvidedMethodCalls =
              allArgs: Exprs,
              paramVars: Tainted<ProvidedVar>[],
              g, amap, mut, isProp, isSuperInit, m,
-             expr: Tainted<ProvidedExpr>) = 
+             expr: Tainted<ProvidedExpr MaybeNull>) = 
 
         let varConv =
             // note: Assuming the size based on paramVars
@@ -1873,7 +1881,7 @@ module ProvidedMethodCalls =
                 dict.Add(v, (None, e))
             dict
 
-        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr>) =
+        let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr MaybeNull>) =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
@@ -2115,7 +2123,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName |> string), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif

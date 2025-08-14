@@ -360,7 +360,8 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
                               checkEntityIsResolved entity
-                              if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
+                              if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity]
+                              elif entity.IsFSharpException then Item.ExnCase entity
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
@@ -741,7 +742,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef, tyargs: TType list) =
     
         if entity.IsILEnumTycon then
             let (TILObjectReprData(_scoref, _enc, tdef)) = entity.ILTyconInfo
-            let formalTypars = entity.Typars(range.Zero)
+            let formalTypars = entity.Typars range0
             let formalTypeInst = generalizeTypars formalTypars
             let ty = TType_app(entity, formalTypeInst, cenv.g.knownWithoutNull)
             let formalTypeInfo = ILTypeInfo.FromType cenv.g ty
@@ -1596,6 +1597,11 @@ type FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
         | TyparConstraint.IsDelegate(ty1, ty2, _) ->  FSharpGenericParameterDelegateConstraint(cenv, ty1, ty2) 
         | _ -> invalidOp "not a delegate constraint"
 
+    member _.IsAllowsRefStructConstraint = 
+        match cx with 
+        | TyparConstraint.AllowsRefStruct _ -> true 
+        | _ -> false
+
     override x.ToString() = "<type constraint>"
 
 type FSharpInlineAnnotation = 
@@ -2395,22 +2401,24 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         let stringValOfPropInfo (p: PropInfo) =
             let supportAccessModifiersBeforeGetSet =
                 cenv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-            if not supportAccessModifiersBeforeGetSet then
-                match p with
-                | DifferentGetterAndSetter(getValRef, setValRef) ->
-                    let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
-                    let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
-                    $"{g}\n{s}"
-                | _ ->
-                    let t = p.GetPropertyType(cenv.amap, m) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
-                    let withGetSet =
-                        if p.HasGetter && p.HasSetter then "with get, set"
-                        elif p.HasGetter then "with get"
-                        elif p.HasSetter then "with set"
-                        else ""
 
-                    $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
-            else
+            match p with
+            | DifferentGetterAndSetter(getValRef, setValRef) when (not supportAccessModifiersBeforeGetSet || p.IsIndexer) ->
+                let g = NicePrint.stringValOrMember displayEnv cenv.infoReader getValRef
+                let s = NicePrint.stringValOrMember displayEnv cenv.infoReader setValRef
+                $"{g}\n{s}"
+            
+            | _ when not supportAccessModifiersBeforeGetSet->
+                let t = p.GetPropertyType(cenv.amap, m) |> NicePrint.layoutType displayEnv |> LayoutRender.showL
+                let withGetSet =
+                    if p.HasGetter && p.HasSetter then "with get, set"
+                    elif p.HasGetter then "with get"
+                    elif p.HasSetter then "with set"
+                    else ""
+
+                $"member %s{p.DisplayName}: %s{t} %s{withGetSet}"
+
+            | _ ->
                 let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
                     let isInternalCompPath x = 
                         match x with 
@@ -2774,7 +2782,7 @@ type FSharpType(cenv, ty:TType) =
 
 type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) = 
 
-    let rec resolveArgObj (arg: obj) =
+    let rec resolveArgObj (arg: objnull) =
         match arg with
         | :? TType as t -> box (FSharpType(cenv, t)) 
         | :? (obj[]) as a -> a |> Array.map resolveArgObj |> box
@@ -2985,6 +2993,8 @@ type FSharpAssembly internal (cenv, ccu: CcuThunk) =
     member _.FileName = ccu.FileName
 
     member _.SimpleName = ccu.AssemblyName 
+
+    member _.IsFSharp = ccu.IsFSharp
 
 #if !NO_TYPEPROVIDERS
     member _.IsProviderGenerated = ccu.IsProviderGenerated

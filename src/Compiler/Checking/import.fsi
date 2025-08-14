@@ -5,12 +5,11 @@ module internal FSharp.Compiler.Import
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Caches
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
-
-open System.Collections.Concurrent
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -45,16 +44,14 @@ type CanCoerce =
 [<Struct; NoComparison; CustomEquality>]
 type TTypeCacheKey =
     interface System.IEquatable<TTypeCacheKey>
-    private new: ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
+    private new: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
 
-    static member FromStrippedTypes:
-        ty1: TType * ty2: TType * canCoerce: CanCoerce * tcGlobals: TcGlobals -> TTypeCacheKey
+    static member FromStrippedTypes: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
 
     val ty1: TType
     val ty2: TType
     val canCoerce: CanCoerce
-    val tcGlobals: TcGlobals
-    override Equals: other: obj -> bool
+
     override GetHashCode: unit -> int
 
 /// Represents a context used for converting AbstractIL .NET and provided types to F# internal compiler data structures.
@@ -74,7 +71,7 @@ type ImportMap =
     member g: TcGlobals
 
     /// Type subsumption cache
-    member TypeSubsumptionCache: ConcurrentDictionary<TTypeCacheKey, bool>
+    member TypeSubsumptionCache: Cache<TTypeCacheKey, bool>
 
 module Nullness =
 

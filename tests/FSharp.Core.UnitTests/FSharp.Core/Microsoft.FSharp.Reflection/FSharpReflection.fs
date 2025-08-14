@@ -12,6 +12,9 @@ open Xunit
 
 open Microsoft.FSharp.Reflection
 
+#nowarn "3397" // This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime.
+// Why warned - the tests here are testing also how APIs react to unit being passed to it.
+
 (*
 [Test Strategy]
 Make sure each method works on:
@@ -51,10 +54,12 @@ type DiscUnionType<'T> =
         | B of 'T * DiscUnionType<'T> option
         | C of float * string
 
+[<Struct>]
 type DiscStructUnionType<'T> =
         | A // No data associated with tag
         | B of 'T 
-        | C of float * string
+        | Evil_C of f:float  // This is sharing the field "f" in the struct
+        | C of f:float * s:string
 
 exception ExceptionInt of int
 
@@ -1204,6 +1209,11 @@ type UnionCaseInfoTests() =
     let ((discUnionInfoC:UnionCaseInfo), discvaluearray) = FSharpValue.GetUnionFields(discUniontypeC, typeof<DiscUnionType<float>>)
     
     let ((recDiscCaseinfo:UnionCaseInfo), recDiscCasevaluearray) = FSharpValue.GetUnionFields(recDiscUniontypeB, typeof<DiscUnionType<int>>)
+
+    let ((sharedstructUnionInfoA:UnionCaseInfo), _) = FSharpValue.GetUnionFields(DiscStructUnionType<int>.A, typeof<DiscStructUnionType<int>>)
+    let ((sharedstructUnionInfoB:UnionCaseInfo), _) = FSharpValue.GetUnionFields(DiscStructUnionType<int>.B(15), typeof<DiscStructUnionType<int>>)
+    let ((sharedstructUnionInfoC:UnionCaseInfo), _) = FSharpValue.GetUnionFields(DiscStructUnionType<int>.C(15.,"x"), typeof<DiscStructUnionType<int>>)
+    let ((sharedstructUnionInfoEvilC:UnionCaseInfo), _) = FSharpValue.GetUnionFields(DiscStructUnionType<int>.Evil_C(15.), typeof<DiscStructUnionType<int>>)
     
     [<Fact>]
     member _.Equals() =   
@@ -1266,6 +1276,15 @@ type UnionCaseInfoTests() =
         // rec disc union
         let recdiscFieldInfo  = (recDiscCaseinfo.GetFields()).[0] 
         Assert.AreEqual(recdiscFieldInfo.PropertyType , typeof<int>)
+
+
+        Assert.AreEqual(sharedstructUnionInfoA.GetFields().Length ,0)
+        Assert.AreEqual(sharedstructUnionInfoB.GetFields().[0].PropertyType ,typeof<int>)
+
+        Assert.AreEqual(sharedstructUnionInfoC.GetFields().[0].PropertyType ,typeof<float>)
+        Assert.AreEqual(sharedstructUnionInfoC.GetFields().[1].PropertyType ,typeof<string>)
+
+        Assert.AreEqual(sharedstructUnionInfoEvilC.GetFields().[0].PropertyType ,typeof<float>)
         
     [<Fact>]
     member _.GetHashCode() =   

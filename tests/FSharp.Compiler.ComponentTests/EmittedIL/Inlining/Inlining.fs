@@ -14,6 +14,7 @@ module Inlining =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     let withRealInternalSignature realSig compilation =
@@ -40,6 +41,18 @@ module Inlining =
         compilation
         |> getCompilation
         |> verifyCompilation
+
+    [<Theory; FileInlineData("FSharpDelegateBetaReduction.fs", Realsig=BooleanOptions.True, Optimize=BooleanOptions.Both)>]
+    let ``FSharpDelegateBetaReduction_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> asExe
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> ignoreWarnings
+        |> compile
+        |> verifyILBaseline
 
     [<Fact>]
     let ``List contains inlining`` () =

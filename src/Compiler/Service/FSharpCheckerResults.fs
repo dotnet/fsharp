@@ -188,7 +188,7 @@ and FSharpProjectOptions =
             && options1.ReferencedProjects = options2.ReferencedProjects
             && options1.LoadTime = options2.LoadTime
 
-    member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
+    member po.ProjectDirectory = !!Path.GetDirectoryName(po.ProjectFileName)
 
     override this.ToString() =
         "FSharpProjectOptions(" + this.ProjectFileName + ")"
@@ -348,7 +348,7 @@ type internal TypeCheckInfo
         tcAccessRights: AccessorDomain,
         projectFileName: string,
         mainInputFileName: string,
-        projectOptions: FSharpProjectOptions,
+        projectOptions: FSharpProjectOptions option,
         sResolutions: TcResolutions,
         sSymbolUses: TcSymbolUses,
         sFallback: NameResolutionEnv,
@@ -1063,7 +1063,7 @@ type internal TypeCheckInfo
         |> Option.defaultValue completions
 
     /// Gets all methods that a type can override, but has not yet done so.
-    let GetOverridableMethods pos ctx (typeNameRange: range) spacesBeforeOverrideKeyword hasThis isStatic =
+    let GetOverridableMethods pos ctx (typeNameRange: range) newlineIndentCount hasThis isStatic genBodyForOverriddenMeth =
         let checkImplementedSlotDeclareType ty slots =
             slots
             |> Option.map (List.exists (fun (TSlotSig(declaringType = ty2)) -> typeEquiv g ty ty2))
@@ -1111,8 +1111,11 @@ type internal TypeCheckInfo
         let (nenv, ad), m = GetBestEnvForPos pos
         let denv = nenv.DisplayEnv
 
+        /// Check if the method is abstract, return "raise (NotImplementedException())" if it is abstract, otherwise return the given body
         let checkMethAbstractAndGetImplementBody (meth: MethInfo) implementBody =
-            if meth.IsAbstract then
+            if not genBodyForOverriddenMeth then
+                String.Empty
+            elif meth.IsAbstract then
                 if nenv.DisplayEnv.openTopPathsSorted.Force() |> List.contains [ "System" ] then
                     "raise (NotImplementedException())"
                 else
@@ -1120,8 +1123,8 @@ type internal TypeCheckInfo
             else
                 implementBody
 
-        let newlineIndent =
-            Environment.NewLine + String.make (spacesBeforeOverrideKeyword + 4) ' '
+        let newlineIndentCount = max 1 newlineIndentCount
+        let newlineIndent = Environment.NewLine + String.make newlineIndentCount ' '
 
         let getOverridableMethods superTy (overriddenMethods: MethInfo list) overriddenProperties =
             // Do not check a method with same name twice
@@ -1197,12 +1200,6 @@ type internal TypeCheckInfo
 
                     let this = if hasThis || prop.IsStatic then String.Empty else "this."
 
-                    let getterWithBody =
-                        if String.IsNullOrWhiteSpace getterWithBody then
-                            String.Empty
-                        else
-                            getterWithBody + newlineIndent
-
                     let name = $"{prop.DisplayName} with {getter}{keywordAnd}{setter}"
 
                     let textInCode =
@@ -1211,6 +1208,10 @@ type internal TypeCheckInfo
                         + newlineIndent
                         + "with "
                         + getterWithBody
+                        + (if String.IsNullOrEmpty keywordAnd then
+                               String.Empty
+                           else
+                               newlineIndent)
                         + keywordAnd
                         + setterWithBody
 
@@ -1721,7 +1722,8 @@ type internal TypeCheckInfo
             filterCtors,
             resolveOverloads,
             completionContextAtPos: (pos * CompletionContext option) option,
-            getAllSymbols: unit -> AssemblySymbol list
+            getAllSymbols: unit -> AssemblySymbol list,
+            genBodyForOverriddenMeth
         ) : (CompletionItem list * DisplayEnv * CompletionContext option * range) option =
 
         let loc =
@@ -1957,8 +1959,22 @@ type internal TypeCheckInfo
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
 
-            | Some(CompletionContext.MethodOverride(ctx, enclosingTypeNameRange, spacesBeforeOverrideKeyword, hasThis, isStatic)) ->
-                GetOverridableMethods pos ctx enclosingTypeNameRange spacesBeforeOverrideKeyword hasThis isStatic
+            | Some(CompletionContext.MethodOverride(ctx,
+                                                    enclosingTypeNameRange,
+                                                    spacesBeforeOverrideKeyword,
+                                                    hasThis,
+                                                    isStatic,
+                                                    spacesBeforeEnclosingDefinition)) ->
+                let indent = max 1 (spacesBeforeOverrideKeyword - spacesBeforeEnclosingDefinition)
+
+                GetOverridableMethods
+                    pos
+                    ctx
+                    enclosingTypeNameRange
+                    (spacesBeforeOverrideKeyword + indent)
+                    hasThis
+                    isStatic
+                    genBodyForOverriddenMeth
 
             // Other completions
             | cc ->
@@ -2025,7 +2041,9 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
     /// Get the auto-complete items at a location
-    member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
+    member _.GetDeclarations
+        (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, genBodyForOverriddenMeth)
+        =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -2044,7 +2062,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         completionContextAtPos,
-                        getAllEntities
+                        getAllEntities,
+                        genBodyForOverriddenMeth
                     )
 
                 match declItemsOpt with
@@ -2085,7 +2104,7 @@ type internal TypeCheckInfo
                 DeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities) =
+    member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities, genBodyForOverriddenMeth) =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -2104,7 +2123,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        getAllEntities
+                        getAllEntities,
+                        genBodyForOverriddenMeth
                     )
 
                 match declItemsOpt with
@@ -2285,7 +2305,8 @@ type internal TypeCheckInfo
                             ResolveTypeNamesToCtors,
                             ResolveOverloads.Yes,
                             None,
-                            (fun () -> [])
+                            (fun () -> []),
+                            false
                         )
 
                     match declItemsOpt with
@@ -2347,7 +2368,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.No,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2393,7 +2415,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.No,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2434,7 +2457,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.No,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2470,7 +2494,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2618,7 +2643,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2647,7 +2673,8 @@ type internal TypeCheckInfo
                         ResolveTypeNamesToCtors,
                         ResolveOverloads.Yes,
                         None,
-                        (fun () -> [])
+                        (fun () -> []),
+                        false
                     )
 
                 match declItemsOpt with
@@ -2770,20 +2797,10 @@ module internal ParseAndCheckFile =
 
     /// Diagnostics handler for parsing & type checking while processing a single file
     type DiagnosticsHandler
-        (
-            reportErrors,
-            mainInputFileName,
-            diagnosticsOptions: FSharpDiagnosticOptions,
-            sourceText: ISourceText,
-            suggestNamesForErrors: bool,
-            flatErrors: bool
-        ) =
+        (reportErrors, mainInputFileName, diagnosticsOptions: FSharpDiagnosticOptions, suggestNamesForErrors: bool, flatErrors: bool) =
         let mutable options = diagnosticsOptions
         let diagnosticsCollector = ResizeArray<_>()
         let mutable errorCount = 0
-
-        // We'll need number of lines for adjusting error messages at EOF
-        let fileInfo = sourceText.GetLastCharacterPosition()
 
         let collectOne severity diagnostic =
             // 1. Extended diagnostic data should be created after typechecking because it requires a valid SymbolEnv
@@ -2854,7 +2871,6 @@ module internal ParseAndCheckFile =
                             options,
                             false,
                             mainInputFileName,
-                            fileInfo,
                             diagnostic,
                             severity,
                             suggestNamesForErrors,
@@ -2933,7 +2949,7 @@ module internal ParseAndCheckFile =
 
         usingLexbufForParsing (createLexbuf options.LangVersionText options.StrictIndentation sourceText, fileName) (fun lexbuf ->
             let errHandler =
-                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, false)
+                DiagnosticsHandler(false, fileName, options.DiagnosticOptions, suggestNamesForErrors, false)
 
             let lexfun = createLexerFunction fileName options lexbuf errHandler ct
 
@@ -3037,7 +3053,7 @@ module internal ParseAndCheckFile =
             Activity.start "ParseAndCheckFile.parseFile" [| Activity.Tags.fileName, fileName |]
 
         let errHandler =
-            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors, flatErrors)
+            DiagnosticsHandler(true, fileName, options.DiagnosticOptions, suggestNamesForErrors, flatErrors)
 
         use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
@@ -3076,7 +3092,7 @@ module internal ParseAndCheckFile =
 
     let ApplyLoadClosure
         (
-            tcConfig,
+            tcConfig: TcConfig,
             parsedMainInput,
             mainInputFileName: string,
             loadClosure: LoadClosure option,
@@ -3170,7 +3186,7 @@ module internal ParseAndCheckFile =
             ApplyMetaCommandsFromInputToTcConfig(
                 tcConfig,
                 parsedMainInput,
-                !! Path.GetDirectoryName(mainInputFileName),
+                !!Path.GetDirectoryName(mainInputFileName),
                 tcImports.DependencyProvider
             )
             |> ignore
@@ -3206,25 +3222,11 @@ module internal ParseAndCheckFile =
 
             // Initialize the error handler
             let errHandler =
-                DiagnosticsHandler(
-                    true,
-                    mainInputFileName,
-                    tcConfig.diagnosticsOptions,
-                    sourceText,
-                    suggestNamesForErrors,
-                    tcConfig.flatErrors
-                )
+                DiagnosticsHandler(true, mainInputFileName, tcConfig.diagnosticsOptions, suggestNamesForErrors, tcConfig.flatErrors)
 
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
             use _unwindBP = UseBuildPhase BuildPhase.TypeCheck
-
-            // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-            let tcConfig =
-                ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
-
-            // update the error handler with the modified tcConfig
-            errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 
             // If additional references were brought in by the preprocessor then we need to process them
             ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
@@ -3272,7 +3274,9 @@ module internal ParseAndCheckFile =
             // Play background errors and warnings for this file.
             do
                 for err, severity in backgroundDiagnostics do
-                    diagnosticSink (err, severity)
+                    match err.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
+                    | FSharpDiagnosticSeverity.Hidden -> ()
+                    | s -> diagnosticSink (err, s)
 
             let (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState = resOpt
 
@@ -3289,7 +3293,7 @@ module internal ParseAndCheckFile =
                     tcEnvAtEnd.AccessRights,
                     projectFileName,
                     mainInputFileName,
-                    projectOptions,
+                    Some projectOptions,
                     sink.GetResolutions(),
                     sink.GetSymbolUses(),
                     tcEnvAtEnd.NameEnv,
@@ -3302,9 +3306,14 @@ module internal ParseAndCheckFile =
         }
 
 [<Sealed>]
-type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions) =
+type FSharpProjectContext
+    (thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions option) =
 
-    member _.ProjectOptions = projectOptions
+    // TODO: Once API around Transparent Compiler is stabilized we should probably remove this.
+    member _.ProjectOptions =
+        projectOptions
+        |> Option.defaultWith (fun () ->
+            failwith "ProjectOptions are not available. This is expected when using FSharpChecker with useTransparentCompiler=true.")
 
     member _.GetReferencedAssemblies() = assemblies
 
@@ -3343,20 +3352,33 @@ type FSharpCheckFileResults
         | Some(scope, _builderOpt) -> Some scope.TcImports
 
     /// Intellisense autocompletions
-    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos) =
+    member _.GetDeclarationListInfo
+        (parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos, ?genBodyForOverriddenMeth)
+        =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
+        let genBodyForOverriddenMeth = defaultArg genBodyForOverriddenMeth true
 
         match details with
         | None -> DeclarationListInfo.Empty
         | Some(scope, _builderOpt) ->
-            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities)
+            scope.GetDeclarations(
+                parsedFileResults,
+                line,
+                lineText,
+                partialName,
+                completionContextAtPos,
+                getAllEntities,
+                genBodyForOverriddenMeth
+            )
 
-    member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
+    member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?genBodyForOverriddenMeth) =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
+        let genBodyForOverriddenMeth = defaultArg genBodyForOverriddenMeth true
 
         match details with
         | None -> []
-        | Some(scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
+        | Some(scope, _builderOpt) ->
+            scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities, genBodyForOverriddenMeth)
 
     member _.GetKeywordTooltip(names: string list) =
         ToolTipText.ToolTipText
@@ -3366,7 +3388,7 @@ type FSharpCheckFileResults
                     | None -> ()
                     | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                        yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range.Zero)))
+                        yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range0)))
             ]
 
     /// Resolve the names at the given location to give a data tip
@@ -3579,12 +3601,7 @@ type FSharpCheckFileResults
         FSharpCheckFileResults(fileName, creationErrors, None, [||], None, keepAssemblyContents)
 
     static member JoinErrors
-        (
-            isIncompleteTypeCheckEnvironment,
-            creationErrors: FSharpDiagnostic[],
-            parseErrors: FSharpDiagnostic[],
-            tcErrors: FSharpDiagnostic[]
-        ) =
+        (isIncompleteTypeCheckEnvironment, creationErrors: FSharpDiagnostic[], parseErrors: FSharpDiagnostic[], tcErrors: FSharpDiagnostic[]) =
         [|
             yield! creationErrors
             yield! parseErrors
@@ -3713,7 +3730,7 @@ type FSharpCheckProjectResults
             AccessorDomain *
             CheckedImplFile list option *
             string[] *
-            FSharpProjectOptions) option
+            FSharpProjectOptions option) option
     ) =
 
     let getDetails () =
@@ -3947,6 +3964,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                     defaultFSharpBinariesDir,
                     fileName,
                     sourceText,
+                    None,
                     CodeContext.Editing,
                     tcConfig.useSimpleResolution,
                     tcConfig.useFsiAuxLib,
@@ -4009,7 +4027,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
                  tcState.TcEnvFromImpls.AccessRights,
                  None,
                  dependencyFiles,
-                 projectOptions)
+                 Some projectOptions)
 
             let projectResults =
                 FSharpCheckProjectResults(fileName, Some tcConfig, keepAssemblyContents, errors, Some details)

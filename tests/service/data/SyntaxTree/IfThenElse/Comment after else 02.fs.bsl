@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/IfThenElse/Comment after else 02.fs", false,
-      QualifiedNameOfFile Comment after else 02, [], [],
+      QualifiedNameOfFile Comment after else 02, [],
       [SynModuleOrNamespace
          ([Comment after else 02], false, AnonModule,
           [Expr
@@ -17,6 +17,7 @@ ImplFile
            Expr (Ident b, (2,0--2,1))], PreXmlDocEmpty, [], None, (1,0--3,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [BlockComment (3,5--3,33)] }, set []))
 
 (2,0)-(2,1) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this further.

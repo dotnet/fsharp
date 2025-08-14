@@ -41,7 +41,7 @@ module internal CodeGenerationUtils =
         member _.Unindent i =
             indentWriter.Indent <- max 0 (indentWriter.Indent - i)
 
-        member _.Dump() = !! indentWriter.InnerWriter.ToString()
+        member _.Dump() = !!indentWriter.InnerWriter.ToString()
 
         interface IDisposable with
             member _.Dispose() =
@@ -955,15 +955,6 @@ module InterfaceStubGenerator =
                 | SynExpr.YieldOrReturn(expr = synExpr)
                 | SynExpr.YieldOrReturnFrom(expr = synExpr)
                 | SynExpr.DoBang(expr = synExpr) -> walkExpr synExpr
-
-                | SynExpr.LetOrUseBang(rhs = synExpr1; andBangs = synExprAndBangs; body = synExpr2) ->
-                    [
-                        yield synExpr1
-                        for SynExprAndBang(body = eAndBang) in synExprAndBangs do
-                            yield eAndBang
-                        yield synExpr2
-                    ]
-                    |> List.tryPick walkExpr
 
                 | SynExpr.LibraryOnlyILAssembly _
                 | SynExpr.LibraryOnlyStaticOptimization _

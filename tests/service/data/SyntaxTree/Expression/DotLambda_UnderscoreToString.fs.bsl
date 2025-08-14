@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_UnderscoreToString.fs", false,
-      QualifiedNameOfFile DotLambda_UnderscoreToString, [], [],
+      QualifiedNameOfFile DotLambda_UnderscoreToString, [],
       [SynModuleOrNamespace
          ([DotLambda_UnderscoreToString], false, AnonModule,
           [Expr
@@ -13,4 +13,5 @@ ImplFile
               (1,0--1,12))], PreXmlDocEmpty, [], None, (1,0--1,12),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

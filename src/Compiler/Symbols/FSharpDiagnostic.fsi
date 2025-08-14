@@ -46,9 +46,29 @@ module public ExtendedData =
 
     /// Contextually-relevant data to each particular diagnostic
     [<Interface; Experimental("This FCS API is experimental and subject to change.")>]
-    type public IFSharpDiagnosticExtendedData =
-        interface
-        end
+    type public IFSharpDiagnosticExtendedData = interface end
+
+    /// Additional data for diagnostics about obsolete attributes.
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type public ObsoleteDiagnosticExtendedData =
+        interface IFSharpDiagnosticExtendedData
+
+        /// Represents the DiagnosticId of the diagnostic
+        member DiagnosticId: string option
+
+        /// Represents the URL format of the diagnostic
+        member UrlFormat: string option
+
+    /// Additional data for diagnostics about experimental attributes.
+    [<Class; Experimental("This FCS API is experimental and subject to change.")>]
+    type public ExperimentalExtendedData =
+        interface IFSharpDiagnosticExtendedData
+
+        /// Represents the DiagnosticId of the diagnostic
+        member DiagnosticId: string option
+
+        /// Represents the URL format of the diagnostic
+        member UrlFormat: string option
 
     /// Additional data for type-mismatch-like (usually with ErrorNumber = 1) diagnostics
     [<Class; Experimental("This FCS API is experimental and subject to change.")>]
@@ -171,20 +191,9 @@ type public FSharpDiagnostic =
         ?subcategory: string ->
             FSharpDiagnostic
 
-    static member internal CreateFromExceptionAndAdjustEof:
-        diagnostic: PhasedDiagnostic *
-        severity: FSharpDiagnosticSeverity *
-        range *
-        lastPosInFile: (int * int) *
-        suggestNames: bool *
-        flatErrors: bool *
-        symbolEnv: SymbolEnv option ->
-            FSharpDiagnostic
-
     static member internal CreateFromException:
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
-        range *
         suggestNames: bool *
         flatErrors: bool *
         symbolEnv: SymbolEnv option ->
@@ -231,7 +240,6 @@ module internal DiagnosticHelpers =
         FSharpDiagnosticOptions *
         allErrors: bool *
         mainInputFileName: string *
-        fileInfo: (int * int) *
         diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
         suggestNames: bool *

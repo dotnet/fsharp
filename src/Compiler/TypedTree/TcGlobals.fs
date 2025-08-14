@@ -1278,6 +1278,8 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
+  member val SupportsWhenTEnum_tcr = mk_MFCompilerServices_tcref fslibCcu "SupportsWhenTEnum"
+
   member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
     if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
         embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
@@ -1369,6 +1371,7 @@ type TcGlobals(
   member val system_Array_ty = mkSysNonGenericTy sys "Array"
   member val system_Object_ty = mkSysNonGenericTy sys "Object"
   member val system_IDisposable_ty = mkSysNonGenericTy sys "IDisposable"
+  member val system_IDisposableNull_ty = mkNonGenericTyWithNullness (findSysTyconRef sys "IDisposable") v_knownWithNull
   member val system_RuntimeHelpers_ty = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
   member val system_Value_ty = mkSysNonGenericTy sys "ValueType"
   member val system_Delegate_ty = mkSysNonGenericTy sys "Delegate"
@@ -1478,6 +1481,7 @@ type TcGlobals(
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
+  member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
   member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
@@ -1561,6 +1565,7 @@ type TcGlobals(
   member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
   member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
   member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
+  member val attrib_IlExperimentalAttribute                   = findSysAttrib "System.Diagnostics.CodeAnalysis.ExperimentalAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 

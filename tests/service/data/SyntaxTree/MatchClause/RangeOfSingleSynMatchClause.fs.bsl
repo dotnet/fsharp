@@ -1,13 +1,13 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfSingleSynMatchClause.fs", false,
-      QualifiedNameOfFile RangeOfSingleSynMatchClause, [], [],
+      QualifiedNameOfFile RangeOfSingleSynMatchClause, [],
       [SynModuleOrNamespace
          ([RangeOfSingleSynMatchClause], false, AnonModule,
           [Expr
              (TryWith
                 (LetOrUse
-                   (false, false,
+                   (false, false, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -26,7 +26,8 @@ ImplFile
                     App
                       (NonAtomic, false, Ident Some, Ident content, (4,4--4,16)),
                     (3,4--4,16), { LetOrUseKeyword = (3,4--3,7)
-                                   InKeyword = None }),
+                                   InKeyword = None
+                                   EqualsRange = Some (3,16--3,17) }),
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (5,5--5,7)), None,
                      Sequential
@@ -48,4 +49,5 @@ ImplFile
                                    WithToEndRange = (5,0--7,8) }), (2,0--7,8))],
           PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
                       CodeComments = [] }, set []))

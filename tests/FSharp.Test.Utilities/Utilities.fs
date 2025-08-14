@@ -138,7 +138,7 @@ module Utilities =
     [<RequireQualifiedAccess>]
     module public TargetFrameworkUtil =
 
-        let private config = TestFramework.initializeSuite ()
+        let private config = initialConfig
 
         // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
         let private projectFile = """
@@ -208,7 +208,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net9.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net10.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
@@ -239,7 +239,7 @@ let main argv = 0"""
 Project directory: %s{projectDirectory}
 STDOUT: %s{output}
 STDERR: %s{errors}
-An error occurred getting netcoreapp references: %A{e}
+An error occurred getting netcoreapp references (compare the output of `dotnet --list-sdks` and/or the contents of the local `/.dotnet` directory against what is in `global.json`): %A{e}
 """
                     raise (Exception (message, e))
             finally

@@ -1325,7 +1325,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that binds and eventually disposes <c>resource</c>.</returns>
         ///
         /// <example-tbd></example-tbd>
-        member Using: resource:'T * binder:('T -> Async<'U>) -> Async<'U> when 'T :> System.IDisposable
+        member Using: resource:'T * binder:('T -> Async<'U>) -> Async<'U> when 'T :> System.IDisposable|null
 
         /// <summary>Creates an asynchronous computation that runs <c>computation</c>, and when 
         /// <c>computation</c> generates a result <c>T</c>, runs <c>binder res</c>.</summary>

@@ -3,7 +3,7 @@ ImplFile
      ("/root/CodeComment/TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation.fs",
       false,
       QualifiedNameOfFile
-        TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation, [], [],
+        TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation, [],
       [SynModuleOrNamespace
          ([TripleSlashCommentShouldBeCapturedIfUsedInAnInvalidLocation], false,
           AnonModule,
@@ -38,6 +38,7 @@ ImplFile
           PreXmlDocEmpty, [], None, (3,0--10,0), { LeadingKeyword = None })],
       (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments =
          [LineComment (4,4--4,40); LineComment (6,4--6,36);
           LineComment (7,4--7,27)] }, set []))

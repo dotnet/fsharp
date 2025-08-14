@@ -128,10 +128,7 @@ module internal ClassificationDefinitions =
             ]
 
         let setIsDarkBackground () =
-            isDarkBackground <-
-                VSColorTheme
-                    .GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey)
-                    .GetBrightness() < 0.5f
+            isDarkBackground <- VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey).GetBrightness() < 0.5f
 
         let setColors _ =
 

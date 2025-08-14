@@ -237,7 +237,85 @@ module LowPriority =
         /// </summary>
         member inline Using:
             resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
-                when 'Resource :> IDisposable
+                when 'Resource :> IDisposable | null
+
+    type TaskBuilder with
+
+        /// <summary>
+        /// Implementation of the `and!` operation for two task-like values.
+        /// </summary>
+        member inline MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2> :
+            task1: ^TaskLike1 * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+    type BackgroundTaskBuilder with
+
+        /// <summary>
+        /// Implementation of the `and!` operation for two task-like values.
+        /// </summary>
+        member inline MergeSources< ^TaskLike1, ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter1, ^Awaiter2> :
+            task1: ^TaskLike1 * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+module LowPlusPriority =
+
+    type TaskBuilder with
+
+        /// <summary>
+        /// Implementation of the `and!` operation for an async and a task-like value.
+        /// </summary>
+        member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
+            computation: Async< ^TResult1 > * task: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a task-like value and an async.
+        /// </summary>
+        member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
+            task: ^TaskLike1 * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+
+    type BackgroundTaskBuilder with
+
+        /// <summary>
+        /// Implementation of the `and!` operation for an async and a task-like value.
+        /// </summary>
+        member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
+            computation: Async< ^TResult1 > * task: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a task-like value and an async.
+        /// </summary>
+        member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
+            task: ^TaskLike1 * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
 
 /// <summary>
 /// Contains medium-priority overloads for the `task` computation expression builder.
@@ -257,6 +335,86 @@ module MediumPriority =
         /// Specifies a unit of task code which draws a result from an F# async value.
         /// </summary>
         member inline ReturnFrom: computation: Async<'T> -> TaskCode<'T, 'T>
+
+    type TaskBuilder with
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a a task and a task-like value.
+        /// </summary>
+        member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
+            task1: Task< ^TResult1 > * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a task-like value and a task.
+        /// </summary>
+        member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
+            task1: ^TaskLike1 * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+
+        /// <summary>
+        /// Implementation of the `and!` operation for two asyncs.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            computation1: Async< ^TResult1 > * computation2: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a task and an async.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            task: Task< ^TResult1 > * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+        /// <summary>
+        /// Implementation of the `and!` operation for an async and a task.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            computation: Async< ^TResult1 > * task: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+    type BackgroundTaskBuilder with
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a a task and a task-like value.
+        /// </summary>
+        member inline MergeSources< ^TaskLike2, ^TResult1, ^TResult2, ^Awaiter2> :
+            task1: Task< ^TResult1 > * task2: ^TaskLike2 -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike2: (member GetAwaiter: unit -> ^Awaiter2)
+                and ^Awaiter2 :> ICriticalNotifyCompletion
+                and ^Awaiter2: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter2: (member GetResult: unit -> ^TResult2)
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a task-like value and a task.
+        /// </summary>
+        member inline MergeSources< ^TaskLike1, ^TResult1, ^TResult2, ^Awaiter1> :
+            task1: ^TaskLike1 * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+                when ^TaskLike1: (member GetAwaiter: unit -> ^Awaiter1)
+                and ^Awaiter1 :> ICriticalNotifyCompletion
+                and ^Awaiter1: (member get_IsCompleted: unit -> bool)
+                and ^Awaiter1: (member GetResult: unit -> ^TResult1)
+
+        /// <summary>
+        /// Implementation of the `and!` operation for two asyncs.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            computation1: Async< ^TResult1 > * computation2: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+        /// <summary>
+        /// Implementation of the `and!` operation for a task and an async.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            task: Task< ^TResult1 > * computation: Async< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+        /// <summary>
+        /// Implementation of the `and!` operation for an async and a task.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            computation: Async< ^TResult1 > * task: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
 
 /// <summary>
 /// Contains high-priority overloads for the `task` computation expression builder.
@@ -285,3 +443,17 @@ module HighPriority =
             task: Task<'TResult1> *
             continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>) ->
                 bool
+
+    type TaskBuilder with
+        /// <summary>
+        /// Implementation of the `and!` operation for two tasks.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            task1: Task< ^TResult1 > * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>
+
+    type BackgroundTaskBuilder with
+        /// <summary>
+        /// Implementation of the `and!` operation for two tasks.
+        /// </summary>
+        member inline MergeSources< ^TResult1, ^TResult2> :
+            task1: Task< ^TResult1 > * task2: Task< ^TResult2 > -> Task<struct (^TResult1 * ^TResult2)>

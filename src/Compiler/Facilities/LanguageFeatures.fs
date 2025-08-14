@@ -98,6 +98,12 @@ type LanguageFeature =
     | UseTypeSubsumptionCache
     | DeprecatePlacesWhereSeqCanBeOmitted
     | SupportValueOptionsAsOptionalParameters
+    | WarnWhenUnitPassedToObjArg
+    | UseBangBindingValueDiscard
+    | BetterAnonymousRecordParsing
+    | ScopedNowarn
+    | AllowTypedLetUseAndBang
+    | ReturnFromFinal
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -110,10 +116,11 @@ type LanguageVersion(versionText) =
     static let languageVersion70 = 7.0m
     static let languageVersion80 = 8.0m
     static let languageVersion90 = 9.0m
+    static let languageVersion100 = 10.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion90 // Language version when default specified
+    static let defaultVersion = languageVersion100 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion90 // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion100 // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
@@ -127,6 +134,7 @@ type LanguageVersion(versionText) =
                 languageVersion70
                 languageVersion80
                 languageVersion90
+                languageVersion100
             |]
 
     static let features =
@@ -216,17 +224,25 @@ type LanguageVersion(versionText) =
                 LanguageFeature.LowerSimpleMappingsInComprehensionsToFastLoops, languageVersion90
                 LanguageFeature.ParsedHashDirectiveArgumentNonQuotes, languageVersion90
                 LanguageFeature.EmptyBodiedComputationExpressions, languageVersion90
-                LanguageFeature.EnforceAttributeTargets, languageVersion90
 
-                // F# preview
-                LanguageFeature.UseTypeSubsumptionCache, previewVersion
-                LanguageFeature.UnmanagedConstraintCsharpInterop, previewVersion // not enabled because: https://github.com/dotnet/fsharp/issues/17509
+                // F# 10.0
+                LanguageFeature.EnforceAttributeTargets, languageVersion100
+                LanguageFeature.UseTypeSubsumptionCache, languageVersion100
+                LanguageFeature.AllowObjectExpressionWithoutOverrides, languageVersion100
+                LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, languageVersion100
+                LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, languageVersion100
+                LanguageFeature.SupportValueOptionsAsOptionalParameters, languageVersion100
+                LanguageFeature.WarnWhenUnitPassedToObjArg, languageVersion100
+                LanguageFeature.UseBangBindingValueDiscard, languageVersion100
+                LanguageFeature.BetterAnonymousRecordParsing, languageVersion100
+                LanguageFeature.ScopedNowarn, languageVersion100
+                LanguageFeature.AllowTypedLetUseAndBang, languageVersion100
+                LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
+                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
+                LanguageFeature.ReturnFromFinal, languageVersion100
+
+                // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, previewVersion
-                LanguageFeature.AllowObjectExpressionWithoutOverrides, previewVersion
-                LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns, previewVersion
-                LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted, previewVersion
-                LanguageFeature.SupportValueOptionsAsOptionalParameters, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -250,6 +266,8 @@ type LanguageVersion(versionText) =
         | "8" -> languageVersion80
         | "9.0"
         | "9" -> languageVersion90
+        | "10.0"
+        | "10" -> languageVersion100
         | _ -> 0m
 
     let specified = getVersionFromString versionText
@@ -388,6 +406,12 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseTypeSubsumptionCache -> FSComp.SR.featureUseTypeSubsumptionCache ()
         | LanguageFeature.DeprecatePlacesWhereSeqCanBeOmitted -> FSComp.SR.featureDeprecatePlacesWhereSeqCanBeOmitted ()
         | LanguageFeature.SupportValueOptionsAsOptionalParameters -> FSComp.SR.featureSupportValueOptionsAsOptionalParameters ()
+        | LanguageFeature.WarnWhenUnitPassedToObjArg -> FSComp.SR.featureSupportWarnWhenUnitPassedToObjArg ()
+        | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
+        | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
+        | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
+        | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
+        | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

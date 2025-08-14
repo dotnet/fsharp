@@ -657,7 +657,7 @@ namespace Microsoft.FSharp.Core
     /// their original forms. It is not intended for use from user code.</remarks>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.All,AllowMultiple=true)>]  
     [<Sealed>]
     type CompilationMappingAttribute =
         inherit Attribute
@@ -993,6 +993,20 @@ namespace Microsoft.FSharp.Core
     type TailCallAttribute =
         inherit System.Attribute
         new : unit -> TailCallAttribute
+
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open System.ComponentModel
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// A marker type that only compilers that support the <c>when 'T : Enum</c>
+    /// library-only static optimization constraint will recognize.
+    /// </summary>
+    [<Sealed; AbstractClass>]
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    type SupportsWhenTEnum = class end
 
 namespace System.Diagnostics.CodeAnalysis
 
@@ -1391,11 +1405,8 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
-#if BUILDING_WITH_LKG || NO_NULLCHECKING_LIB_SUPPORT
-        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
-#else
         val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> | null when 'T : comparison 
-#endif
+
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T: equality
@@ -1796,7 +1807,8 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic for the efficient compilation of sequence expressions</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val Dispose<'T when 'T :> System.IDisposable> : resource: 'T -> unit
+            val Dispose<'T when 'T :> System.IDisposable> : resource: 'T|null -> unit
+
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -3202,7 +3214,6 @@ namespace Microsoft.FSharp.Core
         /// 
         val inline (<|||): func: ('T1 -> 'T2 -> 'T3 -> 'U) -> arg1: 'T1 * arg2: 'T2 * arg3: 'T3 -> 'U
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         /// <summary>Used to specify a default value for a nullable reference argument in the implementation of a function</summary>
         /// <param name="defaultValue">The default value of the argument.</param>
         /// <param name="arg">A nullable value representing the argument.</param>
@@ -3216,7 +3227,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
         [<CompiledName("DefaultIfNullV")>]
         val inline defaultIfNullV : defaultValue:'T -> arg:Nullable<'T> -> 'T 
-#endif
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         ///
@@ -3515,7 +3525,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNull")>]
         val inline isNull: value: 'T -> bool when 'T: null
         
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
@@ -3550,13 +3559,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNullV")>]
         val inline isNullV : value:Nullable<'T> -> bool
-#else
-        /// <summary>Determines whether the given value is null.</summary>
-        /// <param name="value">The value to check.</param>
-        /// <returns>A choice indicating whether the value is null or not-null.</returns>
-        [<CompiledName("NullMatchPattern")>]
-        val inline (|Null|NonNull|) : value: 'T -> Choice<unit, 'T>  when 'T : null and 'T : not struct 
-#endif
 
         /// <summary>Determines whether the given value is not null.</summary>
         ///
@@ -3566,7 +3568,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNotNull")>]
         val inline internal isNotNull: value:'T -> bool when 'T : null
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         /// <summary>Get the null value for a value type.</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'null'.</remarks>
         /// <returns>The null value for a value type.</returns>
@@ -3587,19 +3588,18 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNullV")>]
         val inline nonNullV : value:Nullable<'T> -> 'T 
 
-        /// <summary>Asserts that the value is non-null.</summary>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <summary>Re-types a value into a nullable reference type (|null)</summary>
+        /// <param name="value">The non-nullable value.</param>
+        /// <returns>The same value re-typed as a nullable reference type.</returns>
         [<CompiledName("WithNull")>]
         val inline withNull : value:'T -> 'T | null when 'T : not null and 'T : not struct
 
-        /// <summary>Asserts that the value is non-null.</summary>
+        /// <summary>Wraps a value type into System.Nullable</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'withNull'.</remarks>
-        /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <param name="value">The value to wrap.</param>
+        /// <returns>System.Nullable wrapper of the input argument.</returns>
         [<CompiledName("WithNullV")>]
         val inline withNullV : value:'T -> Nullable<'T> 
-#endif
 
         /// <summary>Throw a <see cref="T:System.Exception"/> exception.</summary>
         ///
@@ -3665,7 +3665,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NullArg")>]
         val inline nullArg: argumentName: string -> 'T 
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         /// <summary>Throw a <c>System.ArgumentNullException if the given value is null</c> exception</summary>
         /// 
         /// <param name="argumentName">The argument name.</param>
@@ -3673,7 +3672,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result value.</returns>
         [<CompiledName("NullArgCheck")>]
         val inline nullArgCheck : argumentName:string -> 'T | null -> 'T when 'T : not null and 'T : not struct
-#endif
 
         /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>
         ///
@@ -4788,7 +4786,7 @@ namespace Microsoft.FSharp.Core
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
         ///
-        /// <remarks>For standard integer and floating point values and any type that implements <c>IFormattable</c>
+        /// <remarks>For standard integer and floating point values and any type that implements <c>IFormattable</c>,
         /// <c>ToString</c> conversion uses <c>CultureInfo.InvariantCulture</c>. </remarks>
         /// <param name="value">The input value.</param>
         ///
@@ -5808,21 +5806,13 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The possibly nullable value.</param>
             /// <returns>The same value as in the input.</returns>
             [<CompiledName("NonNull")>]
-            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
             val inline nonNull : value: 'T | null -> 'T when 'T : not null and 'T : not struct
-            #else
-            val inline nonNull : value: 'T  -> 'T
-            #endif
 
             /// <summary>When used in a pattern forgets 'nullness' of the value without any runtime check. This is an unsafe operation, as null check is being skipped and null value can be returned.</summary>
             /// <param name="value">The value to retype from ('T | null) to 'T .</param>
             /// <returns>The non-null value.</returns>
             [<CompiledName("NonNullQuickPattern")>]
-            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
             val inline (|NonNullQuick|) : value: 'T | null -> 'T when 'T : not null and 'T : not struct
-            #else
-            val inline (|NonNullQuick|) : value: 'T  -> 'T
-            #endif
 
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>

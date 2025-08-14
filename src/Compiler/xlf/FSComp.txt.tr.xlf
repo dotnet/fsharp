@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSComp.resx">
     <body>
+      <trans-unit id="FieldNotContainedTypesDifferNullness">
+        <source>Nullness warning: The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ in their nullness annotations</source>
+        <target state="new">Nullness warning: The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ in their nullness annotations</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueNotContainedMutabilityTypesDifferNullness">
+        <source>Nullness warning: Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe types differ in their nullness annotations</source>
+        <target state="new">Nullness warning: Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe types differ in their nullness annotations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="alwaysUseTypedStringInterpolation">
         <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
         <target state="translated">İlişkilendirilmiş dize, türü belirsiz tanımlayıcılar içeriyor. Türü belirtilen biçim belirticiler eklenmesi önerilir.</target>
@@ -162,6 +172,11 @@
         <target state="translated">Kullanılabilir aşırı yüklemeler:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csComparisonDelegateConstraintInconsistent">
+        <source>The constraints 'comparison' and 'delegate' are inconsistent</source>
+        <target state="new">The constraints 'comparison' and 'delegate' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">'{0}', gerekli (gerçek veya yerleşik) '{2}' üyesine sahip olmadığından '{1}' türünü desteklemiyor</target>
@@ -200,6 +215,11 @@
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNullStructConstraintInconsistent">
+        <source>The constraints 'struct' and 'null' are inconsistent</source>
+        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
@@ -267,6 +287,11 @@
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowLetOrUseBangTypeAnnotationWithoutParens">
+        <source>Allow let! and use! type annotations without requiring parentheses</source>
+        <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>
@@ -285,6 +310,11 @@
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">'modül' anahtar sözcüğünün sağındaki öznitelikler</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureBetterAnonymousRecordParsing">
+        <source>Support for better anonymous record parsing</source>
+        <target state="new">Support for better anonymous record parsing</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBetterExceptionPrinting">
@@ -572,9 +602,19 @@
         <target state="translated">sürdürülebilir durum makineleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReturnFromFinal">
+        <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
+        <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
         <target state="translated">Aynı ada ve türe sahip oldukları sürece temel alınan alanları [&lt;Struct&gt;] ayırt edici birleşim biçiminde paylaşın</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureScopedNowarn">
+        <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
+        <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -617,6 +657,11 @@
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportWarnWhenUnitPassedToObjArg">
+        <source>Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</source>
+        <target state="new">Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">Birleşim durumu test özellikleri</target>
@@ -630,6 +675,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C# ile F#' arasında yönetilmeyen genel kısıtlama (ek modreq yayın)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUseBangBindingValueDiscard">
+        <source>Allows use! _ = ... in computation expressions</source>
+        <target state="new">Allows use! _ = ... in computation expressions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUseTypeSubsumptionCache">
@@ -807,6 +857,11 @@
         <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexLineDirectiveMappingIsNotUnique">
+        <source>The file '{0}' was also pointed to in a line directive in '{1}'. Proper warn directive application may not be possible.</source>
+        <target state="new">The file '{0}' was also pointed to in a line directive in '{1}'. Proper warn directive application may not be possible.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">Bir '}}' karakteri, düz metin arasına kod eklenmiş bir dizede kaçış dizisi ile (yineleme yapılarak) belirtilir.</target>
@@ -835,6 +890,21 @@
       <trans-unit id="lexUnmatchedRBracesInTripleQuote">
         <source>The interpolated string contains unmatched closing braces.</source>
         <target state="translated">İlişkilendirilmiş dize, eşleşmeyen kapatma küme ayraçları içeriyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustHaveArgs">
+        <source>Warn directives must have warning number(s) as argument(s)</source>
+        <target state="new">Warn directives must have warning number(s) as argument(s)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexWarnDirectivesMustMatch">
+        <source>There is another {0} for this warning already in line {1}.</source>
+        <target state="new">There is another {0} for this warning already in line {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -990,6 +1060,11 @@
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Desteklenen dil sürümleri:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
@@ -1332,6 +1407,11 @@
         <target state="translated">'{0}' alanı bu anonim kayıt türünde birden fazla yerde görünüyor.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
+        <source>This attribute is not valid for use on union cases with fields.</source>
+        <target state="new">This attribute is not valid for use on union cases with fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>
@@ -1360,6 +1440,11 @@
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
         <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
         <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute">
+        <source>Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</source>
+        <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1695,6 +1780,11 @@
       <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
         <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
         <target state="translated">Birleşim durumu alan tanımında beklenmeyen işlev türü. Alanın bir işlev olmasını amaçlıyorsanız işlev imzasını parens ile sarmalamayı göz önünde bulundurun. Ör. | (a -&gt; b) durumunda | a -&gt; b durumu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnitToObjSubsumption">
+        <source>This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime. This warning may be disabled using '#nowarn \"3397\".</source>
+        <target state="new">This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime. This warning may be disabled using '#nowarn \"3397\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -5062,11 +5152,6 @@
         <target state="translated">Bu öznitelik, bu dil öğesinde kullanılmak için geçerli değil. Bütünleştirilmiş kod öznitelikleri, bir 'do ()' bildirimine, gerekirse F# modülü içine iliştirilmelidir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">Bu öznitelik, bu dil öğesinde kullanılmak için geçerli değil</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">İsteğe bağlı bağımsız değişkenler özel özniteliklerde kullanılamaz</target>
@@ -5075,6 +5160,11 @@
       <trans-unit id="tcPropertyCannotBeSet0">
         <source>This property cannot be set</source>
         <target state="translated">Bu özellik ayarlanamaz</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
+        <source>Property '{0}' cannot be set because the setter is private</source>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">

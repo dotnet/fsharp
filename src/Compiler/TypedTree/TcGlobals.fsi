@@ -276,6 +276,8 @@ type internal TcGlobals =
 
     member ListCollector_tcr: FSharp.Compiler.TypedTree.EntityRef
 
+    member SupportsWhenTEnum_tcr: FSharp.Compiler.TypedTree.EntityRef
+
     member MatchFailureException_tcr: FSharp.Compiler.TypedTree.EntityRef
 
     member ResumableCode_tcr: FSharp.Compiler.TypedTree.EntityRef
@@ -496,6 +498,8 @@ type internal TcGlobals =
 
     member attrib_SystemObsolete: BuiltinAttribInfo
 
+    member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
+
     member attrib_ThreadStaticAttribute: BuiltinAttribInfo option
 
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo
@@ -505,6 +509,8 @@ type internal TcGlobals =
     member attrib_VolatileFieldAttribute: BuiltinAttribInfo
 
     member attrib_WarnOnWithoutNullArgumentAttribute: BuiltinAttribInfo
+
+    member attrib_IlExperimentalAttribute: BuiltinAttribInfo
 
     member attribs_Unsupported: FSharp.Compiler.TypedTree.TyconRef list
 
@@ -833,7 +839,10 @@ type internal TcGlobals =
     member knownFSharpCoreModules: System.Collections.Generic.IDictionary<string, FSharp.Compiler.TypedTree.EntityRef>
 
     member knownIntrinsics:
-        System.Collections.Concurrent.ConcurrentDictionary<(string * string option * string * int), FSharp.Compiler.TypedTree.ValRef>
+        System.Collections.Concurrent.ConcurrentDictionary<
+            (string * string option * string * int),
+            FSharp.Compiler.TypedTree.ValRef
+         >
 
     member knownWithNull: FSharp.Compiler.TypedTree.Nullness
 
@@ -1198,6 +1207,8 @@ type internal TcGlobals =
     member system_GenericIEquatable_tcref: FSharp.Compiler.TypedTree.EntityRef
 
     member system_IDisposable_ty: FSharp.Compiler.TypedTree.TType
+
+    member system_IDisposableNull_ty: FSharp.Compiler.TypedTree.TType
 
     member system_IFormattable_tcref: FSharp.Compiler.TypedTree.EntityRef
 

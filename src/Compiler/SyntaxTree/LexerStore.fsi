@@ -4,8 +4,8 @@ module internal FSharp.Compiler.LexerStore
 
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.SyntaxTrivia
-open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Xml
 
 val getSynArgNameGenerator: Lexbuf -> SynArgNameGenerator
@@ -50,3 +50,10 @@ module CommentStore =
     val SaveBlockComment: lexbuf: Lexbuf * startRange: range * endRange: range -> unit
 
     val GetComments: lexbuf: Lexbuf -> CommentTrivia list
+
+[<RequireQualifiedAccess>]
+module LineDirectiveStore =
+
+    val SaveLineDirective: lexbuf: Lexbuf * fileIndex: FileIndex * line: int -> unit
+
+    val GetLineDirectives: lexbuf: Lexbuf -> (int * (FileIndex * int)) list

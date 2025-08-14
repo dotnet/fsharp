@@ -1,13 +1,13 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/MatchClause/RangeOfSingleSynMatchClauseFollowedByBar.fs", false,
-      QualifiedNameOfFile RangeOfSingleSynMatchClauseFollowedByBar, [], [],
+      QualifiedNameOfFile RangeOfSingleSynMatchClauseFollowedByBar, [],
       [SynModuleOrNamespace
          ([RangeOfSingleSynMatchClauseFollowedByBar], false, AnonModule,
           [Expr
              (TryWith
                 (LetOrUse
-                   (false, false,
+                   (false, false, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -26,7 +26,8 @@ ImplFile
                     App
                       (NonAtomic, false, Ident Some, Ident content, (4,4--4,16)),
                     (3,4--4,16), { LetOrUseKeyword = (3,4--3,7)
-                                   InKeyword = None }),
+                                   InKeyword = None
+                                   EqualsRange = Some (3,16--3,17) }),
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (6,2--6,4)), None,
                      Const (Unit, (7,4--7,6)), (6,2--7,6), Yes,
@@ -39,6 +40,7 @@ ImplFile
               (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--9,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (9,0)-(9,0) parse error Incomplete structured construct at or before this point in pattern matching

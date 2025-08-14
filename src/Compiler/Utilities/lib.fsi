@@ -19,7 +19,7 @@ val isEnvVarSet: s: string -> bool
 
 val GetEnvInteger: e: string -> dflt: int -> int
 
-val dispose: x: System.IDisposable -> unit
+val dispose: x: (System.IDisposable MaybeNull) -> unit
 
 module Bits =
     /// Get the least significant byte of a 32-bit integer
@@ -52,7 +52,7 @@ module Int64 =
     val order: IComparer<int64>
 
 module Pair =
-    val order: compare1: IComparer<'T1> * compare2: IComparer<'T2> -> IComparer<'T1 * 'T2>
+    val order: compare1: IComparer<'T1> * compare2: IComparer<'T2> -> IComparer<struct ('T1 * 'T2)>
 
 type NameSet = Zset<string>
 
@@ -263,7 +263,7 @@ type DisposablesTracker =
     new: unit -> DisposablesTracker
 
     /// Register some items to dispose
-    member Register: i: System.IDisposable -> unit
+    member Register: i: 'a MaybeNull -> unit when 'a :> System.IDisposable and 'a: not struct and 'a: not null
 
     interface System.IDisposable
 
@@ -291,3 +291,7 @@ module ListParallel =
     val map: ('T -> 'U) -> 'T list -> 'U list
 
 //val inline mapi: (int -> 'T -> 'U) -> 'T list -> 'U list
+
+[<RequireQualifiedAccess>]
+module Async =
+    val map: ('T -> 'U) -> Async<'T> -> Async<'U>

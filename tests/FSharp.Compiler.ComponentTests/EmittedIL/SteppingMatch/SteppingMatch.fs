@@ -15,6 +15,7 @@ module SteppingMatch =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
 

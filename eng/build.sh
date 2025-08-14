@@ -35,7 +35,9 @@ usage()
   echo "  --skipAnalyzers                Do not run analyzers during build operations"
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
-  echo "  --sourceBuild                  Simulate building for source-build"
+  echo "  --sourceBuild                  Build the repository in source-only mode."
+  echo "  --productBuild                 Build the repository in product-build mode."
+  echo "  --fromVMR                      Set when building from within the VMR"
   echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
   echo ""
@@ -73,13 +75,15 @@ skip_analyzers=false
 skip_build=false
 prepare_machine=false
 source_build=false
+product_build=false
+from_vmr=false
 buildnorealsig=true
+testbatch=""
 properties=""
-
 docker=false
 args=""
 
-tfm="net9.0" # This needs to be changed every time it's bumped by arcade/us.
+tfm="net10.0" # This needs to be changed every time it's bumped by arcade/us.
 
 BuildCategory=""
 BuildMessage=""
@@ -99,6 +103,11 @@ while [[ $# > 0 ]]; do
       ;;
     --configuration|-c)
       configuration=$2
+      args="$args $1"
+      shift
+      ;;
+    --testbatch)
+      testbatch=$2
       args="$args $1"
       shift
       ;;
@@ -161,8 +170,15 @@ while [[ $# > 0 ]]; do
     --docker)
       docker=true
       ;;
-    --sourcebuild)
+    --sourcebuild|--source-build|-sb)
       source_build=true
+      product_build=true
+      ;;
+    --productbuild|--product-build|-pb)
+      product_build=true
+      ;;
+    --fromvmr|--from-vmr)
+      from_vmr=true
       ;;
     --buildnorealsig)
       buildnorealsig=true
@@ -172,7 +188,7 @@ while [[ $# > 0 ]]; do
       shift
       ;;
     /p:*)
-      properties="$properties $1"
+      properties+=("$1")
       ;;
     *)
       echo "Invalid argument: $1"
@@ -218,9 +234,17 @@ function Test() {
 
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
-  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration -p:vstestusemsbuildoutput=false"
-  args+=" -- xUnit.MaxParallelThreads=1"
+  testbatchsuffix=""
+    if [[ "$testbatch" != "" ]]; then
+    testbatchsuffix="_batch$testbatch"
+  fi
+  testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework$testbatchsuffix.xml"
+  args="test \"$testproject\" --no-build -c $configuration -f $targetframework --logger \"xunit;LogFilePath=$testlogpath\" --blame-hang-timeout 5minutes --results-directory $artifacts_dir/TestResults/$configuration"
+
+  if [[ "$testbatch" != "" ]]; then
+    args="$args --filter batch=$testbatch"
+  fi
+
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
@@ -238,6 +262,9 @@ function BuildSolution {
   fi
 
   local projects="$repo_root/FSharp.sln"
+  if [[ "$product_build" = true ]]; then
+    projects="$repo_root/Microsoft.FSharp.Compiler.sln"
+  fi
 
   echo "$projects:"
 
@@ -246,11 +273,6 @@ function BuildSolution {
   UNAME="$(uname)"
   if [[ "$UNAME" == "Darwin" ]]; then
     enable_analyzers=false
-  fi
-  
-  local source_build_args=""
-  if [[ "$source_build" == true ]]; then
-    source_build_args="/p:DotNetBuildRepo=true /p:DotNetBuildSourceOnly=true"
   fi
 
   # NuGet often exceeds the limit of open files on Mac and Linux
@@ -285,14 +307,15 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto $source_build_args $properties"
+    local args=("publish" "$repo_root/proto.proj" "$blrestore" "$bltools" "/p:Configuration=Proto" "/p:DotNetBuild=$product_build" "/p:DotNetBuildSourceOnly=$source_build" "/p:DotNetBuildFromVMR=$from_vmr" ${properties[@]+"${properties[@]}"})
     echo $args
-    "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
+    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}"  #$args || exit $?
   fi
 
   if [[ "$skip_build" != true ]]; then
     # do real build
     BuildMessage="Error building solution"
+
     MSBuild $toolset_build_proj \
       $bl \
       /p:Configuration=$configuration \
@@ -309,8 +332,10 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:BuildNoRealsig=$buildnorealsig \
-      $source_build_args \
-      $properties
+      /p:DotNetBuild=$product_build \
+      /p:DotNetBuildSourceOnly=$source_build \
+      /p:DotNetBuildFromVMR=$from_vmr \
+      ${properties[@]+"${properties[@]}"}
   fi
 }
 
@@ -331,6 +356,7 @@ BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
+  Test --testproject "$repo_root/tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
   Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework

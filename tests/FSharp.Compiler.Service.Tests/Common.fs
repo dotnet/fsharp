@@ -5,9 +5,9 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -119,7 +119,6 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
         yield "--doc:test.xml"
         yield "--warn:3"
         yield "--fullpaths"
-        yield "--flaterrors"
         yield "--target:library"
         for x in fileNames do
             yield x
@@ -129,7 +128,7 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
      |]
 #endif
 
-let mkTestFileAndOptions source additionalArgs =
+let mkTestFileAndOptions additionalArgs =
     let fileName = Path.ChangeExtension(getTemporaryFileName (), ".fs")
     let project = getTemporaryFileName ()
     let dllName = Path.ChangeExtension(project, ".dll")
@@ -193,7 +192,7 @@ let parseSourceCode (name: string, code: string) =
     let filePath = Path.Combine(location, name)
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
-    let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     parseResults.ParseTree
 
@@ -203,7 +202,7 @@ let matchBraces (name: string, code: string) =
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
-    let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     braces
 
@@ -265,7 +264,7 @@ let attribsOfSymbol (symbol: FSharpSymbol) =
             if v.IsStatic then yield "static"
             if v.IsLiteral then yield sprintf "%A" v.LiteralValue.Value
             if v.IsAnonRecordField then
-                let info, tys, i = v.AnonRecordFieldDetails
+                let info, _tys, i = v.AnonRecordFieldDetails
                 yield "anon(" + string i + ", [" + info.Assembly.QualifiedName + "/" + String.concat "+" info.EnclosingCompiledTypeNames + "/" + info.CompiledName + "]" + String.concat "," info.SortedFieldNames + ")"
 
 
@@ -352,6 +351,9 @@ let getParseResultsOfSignatureFile (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("Test.fsx", source)
 
+let getParseAndCheckResultsWithOptions options source =
+    parseAndCheckScriptWithOptions ("Test.fsx", source, options)
+
 let getParseAndCheckResultsOfSignatureFile (source: string) =
     parseAndCheckScript("Test.fsi", source)
 
@@ -370,9 +372,15 @@ let inline dumpDiagnostics (results: FSharpCheckFileResults) =
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')
-            |> Array.map (fun s -> s.Trim())
+            |> Array.map _.Trim()
+            |> Array.filter (fun s -> s.Length > 0)
             |> String.concat " "
         sprintf "%s: %s" (e.Range.ToString()) message)
+    |> List.ofArray
+
+let inline dumpDiagnosticNumbers (results: FSharpCheckFileResults) =
+    results.Diagnostics
+    |> Array.map (fun e -> e.Range.ToString(), e.ErrorNumber)
     |> List.ofArray
 
 let getSymbolUses (results: FSharpCheckFileResults) =
@@ -484,5 +492,5 @@ let createProjectOptions fileSources extraArgs =
                 let fileName = changeExtension (getTemporaryFileNameInDirectory tempDir) ".fs"
                 FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
                 fileName |]
-    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, []) |]
+    let args = [| yield! mkProjectCommandLineArgs (dllName, []); yield! extraArgs |]
     { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = sourceFiles }

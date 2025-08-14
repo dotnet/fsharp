@@ -77,7 +77,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override x.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
 
-        match diagnostic.AdjustSeverity(tcConfigB.diagnosticsOptions, severity) with
+        match diagnostic.AdjustSeverity(tcConfig.diagnosticsOptions, severity) with
         | FSharpDiagnosticSeverity.Error ->
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
@@ -139,18 +139,8 @@ let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
         exiter.Exit 1
 
 let TypeCheck
-    (
-        ctok,
-        tcConfig,
-        tcImports,
-        tcGlobals,
-        diagnosticsLogger: DiagnosticsLogger,
-        assemblyName,
-        tcEnv0,
-        openDecls0,
-        inputs,
-        exiter: Exiter
-    ) =
+    (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger: DiagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter: Exiter)
+    =
     try
         if isNil inputs then
             error (Error(FSComp.SR.fscNoImplementationFiles (), rangeStartup))
@@ -164,7 +154,7 @@ let TypeCheck
 
         CheckClosedInputSet(
             ctok,
-            diagnosticsLogger.CheckForErrors,
+            (fun () -> diagnosticsLogger.CheckForRealErrorsIgnoringWarnings),
             tcConfig,
             tcImports,
             tcGlobals,
@@ -234,11 +224,6 @@ let AdjustForScriptCompile (tcConfigB: TcConfigBuilder, commandLineSourceFiles, 
 
             references
             |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
-
-            // Also record the other declarations from the script.
-            closure.NoWarns
-            |> List.collect (fun (n, ms) -> ms |> List.map (fun m -> m, n))
-            |> List.iter (fun (x, m) -> tcConfigB.TurnWarningOff(x, m))
 
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
@@ -346,9 +331,7 @@ module InterfaceFileWriter =
                 if String.IsNullOrEmpty(tcConfig.printSignatureFile) then
                     Console.Out
                 else
-                    FileSystem
-                        .OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create)
-                        .GetWriter()
+                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create).GetWriter()
 
             writeHeader tcConfig.printSignatureFile os
 
@@ -367,7 +350,7 @@ module InterfaceFileWriter =
         let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
             for CheckedImplFile(qualifiedNameOfFile = name) as impl in declaredImpls do
                 let fileName =
-                    !! Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                    !!Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
 
                 printfn "writing impl file to %s" fileName
                 use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
@@ -388,7 +371,7 @@ module InterfaceFileWriter =
 // 2) If not, but FSharp.Core.dll exists beside the compiler binaries, it will copy it to output directory.
 // 3) If not, it will produce an error.
 let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
-    let outDir = !! Path.GetDirectoryName(outFile)
+    let outDir = !!Path.GetDirectoryName(outFile)
     let fsharpCoreAssemblyName = GetFSharpCoreLibraryName() + ".dll"
     let fsharpCoreDestinationPath = Path.Combine(outDir, fsharpCoreAssemblyName)
 
@@ -408,7 +391,7 @@ let CopyFSharpCore (outFile: string, referencedDlls: AssemblyReference list) =
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation = Assembly.GetExecutingAssembly().Location
-        let compilerLocation = !! Path.GetDirectoryName(executionLocation)
+        let compilerLocation = !!Path.GetDirectoryName(executionLocation)
 
         let compilerFsharpCoreDllPath =
             Path.Combine(compilerLocation, fsharpCoreAssemblyName)
@@ -656,7 +639,6 @@ let main1
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
 
-    // Apply any nowarn flags
     let tcConfig =
         (tcConfig, inputs)
         ||> List.fold (fun z (input, sourceFileDirectory) ->
@@ -747,13 +729,7 @@ let main2
     let oldLogger = diagnosticsLogger
 
     let diagnosticsLogger =
-        let scopedPragmas =
-            [
-                for CheckedImplFile(pragmas = pragmas) in typedImplFiles do
-                    yield! pragmas
-            ]
-
-        GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+        GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfig.diagnosticsOptions, oldLogger)
 
     SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 

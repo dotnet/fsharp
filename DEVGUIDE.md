@@ -136,7 +136,7 @@ To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to y
 
 ```xml
 <PropertyGroup>
-    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net9.0\fsc.dll</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net10.0\fsc.dll</DotnetFscCompilerPath>
 </PropertyGroup>
 ```
 
@@ -204,6 +204,33 @@ Linux/macOS:
 export TEST_UPDATE_BSL=1
 ```
 
+## Retain Test run built artifacts
+
+When investigating tests issues it is sometimes useful to examine the artifacts built when running tests.  Those built using the newer test framework are usually,
+built in the %TEMP%\FSharp.Test.Utilities subdirectory.
+
+To tell the test framework to not cleanup these files use the: FSHARP_RETAIN_TESTBUILDS environment variable
+
+Windows:
+
+CMD:
+
+```shell
+set FSHARP_RETAIN_TESTBUILDS=1
+```
+
+PowerShell:
+
+```shell
+$env:FSHARP_RETAIN_TESTBUILDS=1
+```
+
+Linux/macOS:
+
+```shell
+export FSHARP_RETAIN_TESTBUILDS=1
+```
+
 Next, run a build script build (debug or release, desktop or coreclr, depending which baselines you need to update), and test as described [above](#Testing-from-the-command-line). For example:
 
 `./Build.cmd -c Release -testCoreClr` to update Release CoreCLR baselines.
@@ -214,6 +241,25 @@ or
 
 > **Note**
 > Please note, that by default, **Release** version of IL baseline tests will be running in CI, so when updating baseline (.bsl) files, make sure to add `-c Release` flag to the build command.
+
+
+### Parallel execution of tests
+
+Tests utilizing xUnit framework by default run in parallel. If your tests depend on some shared state or are time-critical, you can add the module to predefined `NotThreadSafeResourceCollection` to prevent parallel execution.
+For example:
+```fsharp
+[<Collection(nameof NotThreadSafeResourceCollection)>]
+module TimeCritical =
+```
+
+For stress testing async code you can use a custom `FSharp.Test.StressAttribute`.
+For example, applied to a single xUnit test case:
+```fsharp
+[<Theory; Stress(Count = 1000)>]
+```
+it will start it many times at the same time, and execute in parallel.
+
+
 
 
 ### Updating FCS surface area baselines
@@ -231,9 +277,9 @@ dotnet test tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fs
 These are IL baseline tests for the core assemblies of the compiler (FSharp.Core and FSharp.Compiler.Service). The baselines are located in the `tests/ILVerify` folder and look like:
 
 ```
-ilverify_FSharp.Compiler.Service_Debug_net9.0.bsl
+ilverify_FSharp.Compiler.Service_Debug_net10.0.bsl
 ilverify_FSharp.Compiler.Service_Debug_netstandard2.0.bsl
-ilverify_FSharp.Compiler.Service_Release_net9.0.bsl
+ilverify_FSharp.Compiler.Service_Release_net10.0.bsl
 ilverify_FSharp.Compiler.Service_Release_netstandard2.0.bsl
 ilverify_FSharp.Core_Debug_netstandard2.0.bsl
 ilverify_FSharp.Core_Debug_netstandard2.1.bsl
@@ -277,6 +323,7 @@ Then, use the **f5** or **ctrl+f5** keyboard shortcuts to test your tooling chan
 Alternatively, you can do this entirely via the command line if you prefer that:
 
 ```shell
+Build.cmd -c Release -deployExtensions
 devenv.exe /rootsuffix RoslynDev
 ```
 

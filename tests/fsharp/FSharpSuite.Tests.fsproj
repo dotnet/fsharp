@@ -11,7 +11,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --langversion:preview</OtherFlags>
+    <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
     <UnitTestType>xunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
@@ -45,7 +45,6 @@
     <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
-    <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
     <Compile Include="Compiler\Language\InitOnlyPropertyConsumptionTests.fs" />
@@ -113,6 +112,9 @@
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" >
+        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
 
   <!-- Runtime dependencies. Beware. -->
@@ -121,10 +123,13 @@
     <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+  <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />

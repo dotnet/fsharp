@@ -164,7 +164,7 @@ type TypeBuilder with
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
 
         //Buggy annotation in ns20, will not be fixed.
-#if NETSTANDARD && !NO_CHECKNULLS
+#if NETSTANDARD
         !!(typB.CreateTypeInfo()) :> Type
 #else
         typB.CreateTypeInfo() :> Type
@@ -290,10 +290,7 @@ type OpCode with
     member opcode.RefEmitName =
         match opcode.Name with
         | null -> ""
-        | name ->
-            (string (Char.ToUpper(name[0])) + name[1..])
-                .Replace(".", "_")
-                .Replace("_i4", "_I4")
+        | name -> (string (Char.ToUpper(name[0])) + name[1..]).Replace(".", "_").Replace("_i4", "_I4")
 
 type ILGenerator with
 
@@ -713,7 +710,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
 
 and convTypeAux cenv emEnv preferCreated ty =
     match ty with
-    | ILType.Void -> !! Type.GetType("System.Void")
+    | ILType.Void -> !!Type.GetType("System.Void")
     | ILType.Array(shape, eltType) ->
         let baseT = convTypeAux cenv emEnv preferCreated eltType
         let nDims = shape.Rank
@@ -1491,7 +1488,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             ilG.EmitAndLog(OpCodes.Ldelema, convType cenv emEnv ty)
         else
             let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
-            let elemTy = !! arrayTy.GetElementType()
+            let elemTy = !!arrayTy.GetElementType()
             let argTys = Array.create shape.Rank typeof<int>
             let retTy = elemTy.MakeByRefType()
 
@@ -1517,7 +1514,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             ilG.EmitAndLog(OpCodes.Stelem, convType cenv emEnv ty)
         else
             let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
-            let elemTy = !! arrayTy.GetElementType()
+            let elemTy = !!arrayTy.GetElementType()
 
             let meth =
                 modB.GetArrayMethodAndLog(
@@ -2497,7 +2494,7 @@ let mkDynamicAssemblyAndModule (assemblyName: string, optimize, collectible) =
         let daType = typeof<System.Diagnostics.DebuggableAttribute>
 
         let daCtor =
-            !! daType.GetConstructor([| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |])
+            !!daType.GetConstructor([| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |])
 
         let daBuilder =
             CustomAttributeBuilder(
@@ -2548,7 +2545,7 @@ let EmitDynamicAssemblyFragment
             ignore (typB.InvokeMemberAndLog(methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [||]))
             None
         with :? TargetInvocationException as exn ->
-            Some exn.InnerException
+            Option.ofObj exn.InnerException
 
     let emEnv, entryPts = envPopEntryPts emEnv
     let execs = List.map execEntryPtFun entryPts

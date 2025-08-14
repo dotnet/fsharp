@@ -56,12 +56,8 @@ type SyntaxVisitorBase<'T>() =
             'T option
 
     default _.VisitExpr
-        (
-            path: SyntaxVisitorPath,
-            traverseSynExpr: SynExpr -> 'T option,
-            defaultTraverse: SynExpr -> 'T option,
-            synExpr: SynExpr
-        ) =
+        (path: SyntaxVisitorPath, traverseSynExpr: SynExpr -> 'T option, defaultTraverse: SynExpr -> 'T option, synExpr: SynExpr)
+        =
         ignore (path, traverseSynExpr, defaultTraverse, synExpr)
         None
 
@@ -749,20 +745,6 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.LetOrUseBang(pat = synPat; rhs = synExpr; andBangs = andBangSynExprs; body = synExpr2) ->
-                    [
-                        yield dive synPat synPat.Range traversePat
-                        yield dive synExpr synExpr.Range traverseSynExpr
-                        yield!
-                            [
-                                for SynExprAndBang(pat = andBangSynPat; body = andBangSynExpr) in andBangSynExprs do
-                                    yield (dive andBangSynPat andBangSynPat.Range traversePat)
-                                    yield (dive andBangSynExpr andBangSynExpr.Range traverseSynExpr)
-                            ]
-                        yield dive synExpr2 synExpr2.Range traverseSynExpr
-                    ]
-                    |> pick expr
-
                 | SynExpr.Dynamic _
                 | SynExpr.Ident _
                 | SynExpr.LongIdent _
@@ -1018,6 +1000,8 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynBinding b :: origPath
 
                 match b with
+                | SynBinding(kind = SynBindingKind.Do; expr = expr) -> traverseSynExpr path expr
+
                 | SynBinding(headPat = synPat; expr = synExpr; attributes = attributes; range = m) ->
                     [
                         yield! attributeApplicationDives path attributes

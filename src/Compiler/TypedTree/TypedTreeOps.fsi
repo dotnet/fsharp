@@ -881,15 +881,17 @@ val stripMeasuresFromTy: TcGlobals -> TType -> TType
 [<NoEquality; NoComparison>]
 type TypeEquivEnv =
     { EquivTypars: TyparMap<TType>
-      EquivTycons: TyconRefRemap }
+      EquivTycons: TyconRefRemap
+      NullnessMustEqual: bool }
 
-    static member Empty: TypeEquivEnv
+    static member EmptyIgnoreNulls: TypeEquivEnv
+    static member EmptyWithNullChecks: TcGlobals -> TypeEquivEnv
 
     member BindEquivTypars: Typars -> Typars -> TypeEquivEnv
 
-    static member FromTyparInst: TyparInstantiation -> TypeEquivEnv
+    member FromTyparInst: TyparInstantiation -> TypeEquivEnv
 
-    static member FromEquivTypars: Typars -> Typars -> TypeEquivEnv
+    member FromEquivTypars: Typars -> Typars -> TypeEquivEnv
 
 val traitsAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TraitConstraintInfo -> TraitConstraintInfo -> bool
 
@@ -906,8 +908,6 @@ val typarConstraintsAEquiv: TcGlobals -> TypeEquivEnv -> TyparConstraint -> Typa
 val typarsAEquiv: TcGlobals -> TypeEquivEnv -> Typars -> Typars -> bool
 
 val typeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
-
-val nullnessSensitivetypeAEquivAux: Erasure -> TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
 val typeAEquiv: TcGlobals -> TypeEquivEnv -> TType -> TType -> bool
 
@@ -1186,6 +1186,9 @@ val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVar
 /// Get the free variables in a module definition.
 val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
 
+/// Get the free variables in an expression with accumulator
+val accFreeInExpr: FreeVarOptions -> Expr -> FreeVars -> FreeVars
+
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
 
@@ -1435,7 +1438,9 @@ val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Ex
 /// Make a delegate invoke expression for an F# delegate type, doing beta reduction by introducing let-bindings
 /// if the delegate expression is a construction of a delegate.
 val MakeFSharpDelegateInvokeAndTryBetaReduce:
-    TcGlobals -> delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * delInvokeArg: Expr * m: range -> Expr
+    TcGlobals ->
+    delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * tyargs: TypeInst * delInvokeArg: Expr * m: range ->
+        Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -1731,13 +1736,18 @@ val isStructOrEnumTyconTy: TcGlobals -> TType -> bool
 ///
 /// Note, isStructTy does not include type parameters with the ': struct' constraint
 /// This predicate is used to detect those type parameters.
-val isNonNullableStructTyparTy: TcGlobals -> TType -> bool
+val IsNonNullableStructTyparTy: TcGlobals -> TType -> bool
+
+val inline HasConstraint: [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> Typar -> bool
+
+val inline IsTyparTyWithConstraint:
+    TcGlobals -> [<InlineIfLambda>] predicate: (TyparConstraint -> bool) -> TType -> bool
 
 /// Determine if a type is a variable type with the ': not struct' constraint.
 ///
 /// Note, isRefTy does not include type parameters with the ': not struct' constraint
 /// This predicate is used to detect those type parameters.
-val isReferenceTyparTy: TcGlobals -> TType -> bool
+val IsReferenceTyparTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is an unmanaged type
 val isUnmanagedTy: TcGlobals -> TType -> bool
@@ -1825,6 +1835,8 @@ val GetDisallowedNullness: TcGlobals -> TType -> TType list
 val TypeHasAllowNull: TyconRef -> TcGlobals -> range -> bool
 
 val TypeNullIsExtraValueNew: TcGlobals -> range -> TType -> bool
+
+val GetTyparTyIfSupportsNull: TcGlobals -> TType -> Typar voption
 
 val TypeNullNever: TcGlobals -> TType -> bool
 
@@ -2377,8 +2389,6 @@ val mkCompilationSourceNameAttr: TcGlobals -> string -> ILAttribute
 
 val mkSignatureDataVersionAttr: TcGlobals -> ILVersionInfo -> ILAttribute
 
-val mkCompilerGeneratedAttr: TcGlobals -> int -> ILAttribute
-
 //-------------------------------------------------------------------------
 // More common type construction
 //-------------------------------------------------------------------------
@@ -2599,6 +2609,9 @@ val (|ConstToILFieldInit|_|): Const -> ILFieldInit voption
 val (|ExtractAttribNamedArg|_|): string -> AttribNamedArg list -> AttribExpr voption
 
 [<return: Struct>]
+val (|ExtractILAttributeNamedArg|_|): string -> ILAttributeNamedArg list -> ILAttribElem voption
+
+[<return: Struct>]
 val (|AttribInt32Arg|_|): (AttribExpr -> int32 voption)
 
 [<return: Struct>]
@@ -2609,6 +2622,8 @@ val (|AttribBoolArg|_|): (AttribExpr -> bool voption)
 
 [<return: Struct>]
 val (|AttribStringArg|_|): (AttribExpr -> string voption)
+
+val (|AttribElemStringArg|_|): (ILAttribElem -> string option)
 
 [<return: Struct>]
 val (|Int32Expr|_|): Expr -> int32 voption
@@ -2738,7 +2753,7 @@ val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * rang
 
 /// Match a .Invoke on a delegate
 [<return: Struct>]
-val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr * range) voption
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Expr * range) voption
 
 /// Match 'if __useResumableCode then ... else ...' expressions
 [<return: Struct>]

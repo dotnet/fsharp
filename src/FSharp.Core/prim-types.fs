@@ -221,7 +221,7 @@ namespace Microsoft.FSharp.Core
         member _.Minor = minor
         member _.Release = release
 
-    [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
+    [<AttributeUsage(AttributeTargets.All, AllowMultiple=true)>]
     [<Sealed>]
     type CompilationMappingAttribute(sourceConstructFlags:SourceConstructFlags,
                                      variantNumber:int,
@@ -390,6 +390,20 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type TailCallAttribute() =
         inherit System.Attribute()
+
+namespace Microsoft.FSharp.Core.CompilerServices
+
+    open System.ComponentModel
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// A marker type that only compilers that support the <c>when 'T : Enum</c>
+    /// library-only static optimization constraint will recognize.
+    /// </summary>
+    [<Sealed; AbstractClass>]
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true)>]
+    type SupportsWhenTEnum = class end
 
 #if !NET5_0_OR_GREATER
 namespace System.Diagnostics.CodeAnalysis
@@ -740,7 +754,7 @@ namespace Microsoft.FSharp.Core
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
                 notnullPrim(isinstPrim<'T>(source)) 
 
-            let Dispose<'T when 'T :> IDisposable >(resource:'T) = 
+            let Dispose<'T when 'T :> IDisposable >(resource:'T|null) = 
                 match box resource with 
                 | null -> ()
                 | _ -> resource.Dispose()
@@ -765,17 +779,17 @@ namespace Microsoft.FSharp.Core
 
             let inline SetArray (target: 'T array) (index:int) (value:'T) =  (# "stelem.any !0" type ('T) target index value #)  
 
-            let inline GetArraySub arr (start:int) (len:int) =
-                let len = if len < 0 then 0 else len
-                let dst = zeroCreate len   
-                for i = 0 to len - 1 do 
-                    SetArray dst i (GetArray arr (start + i))
-                dst
+            let inline GetArraySub (arr: 'a array) (start:int) (len:int) : 'a array =
+                if len <= 0 then
+                    [||]
+                else
+                    let dst = zeroCreate len
+                    Array.Copy(arr, start, dst, 0, len)
+                    dst
 
-            let inline SetArraySub arr (start:int) (len:int) (src:_ array) =
-                for i = 0 to len - 1 do 
-                    SetArray arr (start+i) (GetArray src i)
-
+            let inline SetArraySub (arr: 'T array) (start:int) (len:int) (src: 'T array) =
+                if len > 0 then
+                    Array.Copy(src, 0, arr, start, len)
 
             let inline GetArray2D (source: 'T[,]) (index1: int) (index2: int) = (# "ldelem.multi 2 !0" type ('T) source index1 index2 : 'T #)  
 
@@ -4416,8 +4430,6 @@ namespace Microsoft.FSharp.Core
             | null -> false 
             | _ -> true
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
-
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
 
@@ -4470,13 +4482,6 @@ namespace Microsoft.FSharp.Core
             match value with 
             | null -> raise (new ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
-#else
-        [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NonNull|) (value : 'T) : Choice<unit, 'T> when 'T : null and 'T : not struct = 
-            match value with 
-            | null -> Null () 
-            | _ -> NonNull (# "" value : 'T #)
-#endif
 
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) =
@@ -4570,7 +4575,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
-#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
         [<CompiledName("DefaultIfNull")>]
         let inline defaultIfNull defaultValue (arg: 'T | null when 'T : not null and 'T : not struct) = 
             match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
@@ -4578,7 +4582,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultIfNullV")>]
         let inline defaultIfNullV defaultValue (arg: Nullable<'T>) = 
             if arg.HasValue then arg.Value else defaultValue
-#endif
 
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~-) (n: ^T) : ^T = 
@@ -5160,11 +5163,10 @@ namespace Microsoft.FSharp.Core
              when ^T : decimal    = (# "conv.i" (int64 (# "" value : decimal #)) : unativeint #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
-        [<CompiledName("ToString")>]
-        let inline string (value: 'T) = 
-             anyToString "" value
+        let inline defaultString (value : 'T) =
+            anyToString "" value
 
-             when 'T : string =
+            when 'T : string =
                 if value = unsafeDefault<'T> then ""
                 else (# "" value : string #)     // force no-op
 
@@ -5181,10 +5183,9 @@ namespace Microsoft.FSharp.Core
              when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
              when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
 
-             // Integral types can be enum:
-             // It is not possible to distinguish statically between Enum and (any type of) int. For signed types we have 
-             // to use IFormattable::ToString, as the minus sign can be overridden. Using boxing we'll print their symbolic
-             // value if it's an enum, e.g.: 'ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             // These rules for signed integer types will no longer be used when built with a compiler version that
+             // supports `when 'T : Enum`, but we must keep them to remain compatible with compiler versions that do not.
+             // Once all compiler versions that do not understand `when 'T : Enum` are out of support, these four rules can be removed.
              when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
@@ -5196,7 +5197,6 @@ namespace Microsoft.FSharp.Core
              when 'T : uint16     = let x = (# "" value : 'T #) in x.ToString()
              when 'T : uint32     = let x = (# "" value : 'T #) in x.ToString()
              when 'T : uint64     = let x = (# "" value : 'T #) in x.ToString()
-
 
              // other common mscorlib System struct types
              when 'T : DateTime       = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
@@ -5216,6 +5216,38 @@ namespace Microsoft.FSharp.Core
              when 'T : IFormattable =
                 if value = unsafeDefault<'T> then ""
                 else let x = (# "" value : IFormattable #) in defaultIfNull "" (x.ToString(null, CultureInfo.InvariantCulture))
+
+        [<CompiledName("ToString")>]
+        let inline string (value: 'T) = 
+             defaultString value
+
+             // Only compilers that understand `when 'T : SupportsWhenTEnum` will understand `when 'T : Enum`.
+             when 'T : CompilerServices.SupportsWhenTEnum =
+                (
+                    let inline string (value : 'T) =
+                        defaultString value
+
+                        // Special handling is required for enums, since:
+                        //
+                        // - The runtime value may be outside the defined members of the enum.
+                        // - Their underlying type may be a signed integral type.
+                        // - The negative sign may be overridden.
+                        //
+                        // For example:
+                        //
+                        //     string DayOfWeek.Wednesday   →  "Wednesday"
+                        //     string (enum<DayOfWeek> -3)  →  "-3" // The negative sign is culture-dependent.
+                        //     string (enum<DayOfWeek> -3)  →  "⁒3" // E.g., the negative sign for the current culture could be overridden to "⁒".
+                        when 'T : Enum  = let x = (# "" value : 'T #) in x.ToString() // Use 'T to constrain the call to the specific enum type.
+
+                        // For compilers that understand `when 'T : Enum`, we can safely make a constrained call on the integral type itself here.
+                        when 'T : sbyte = let x = (# "" value : sbyte #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int16 = let x = (# "" value : int16 #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int32 = let x = (# "" value : int32 #) in x.ToString(null, CultureInfo.InvariantCulture)
+                        when 'T : int64 = let x = (# "" value : int64 #) in x.ToString(null, CultureInfo.InvariantCulture)
+
+                    string value
+                )
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
@@ -5524,23 +5556,11 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("Hash")>]
             let inline hash x = GenericHash x
 
-            #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_LIB_SUPPORT
-
             [<CompiledName("NonNull")>]
             let inline nonNull (x: 'T | null when 'T : not null and 'T : not struct) : 'T = (# "" x : 'T #)
 
             [<CompiledName("NonNullQuickPattern")>]
             let inline (|NonNullQuick|) (value : 'T | null when 'T : not null and 'T : not struct) = nonNull value
-
-            #else
-
-            [<CompiledName("NonNull")>]
-            let inline nonNull (x: 'T ) : 'T = x
-
-            [<CompiledName("NonNullQuickPattern")>]
-            let inline (|NonNullQuick|) (value) = nonNull value
-
-            #endif
 
         module Checked = 
         

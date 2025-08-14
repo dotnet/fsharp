@@ -30,6 +30,7 @@ module ComputationExpressions =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> typecheck
         |> verifyILBaseline
 
     [<Theory; FileInlineData("ComputationExpr01.fs", Realsig=BooleanOptions.Both)>]
@@ -73,3 +74,17 @@ module ComputationExpressions =
         compilation
         |> getCompilation
         |> verifyCompilation 
+
+    [<Theory; FileInlineData("CustomCollectionBuilderComputationExpr.fs", Optimize=BooleanOptions.Both)>]
+    let ``CustomCollectionBuilderComputationExpr_fs_OptimizeOff`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> withReferences [
+            FsFromPath (Path.Combine (__SOURCE_DIRECTORY__,  "CustomCollectionBuilderComputationExprLibrary.fs"))
+            |> withName "CustomCollectionBuilderComputationExprLibrary"
+        ]
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> typecheck
+        |> verifyILBaseline

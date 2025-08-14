@@ -3504,24 +3504,3 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     printfn "actual:\n\n%A" actual
     actual
       |> shouldEqual expected
-
-module internal ProjectForNoWarnHashDirective =
-
-    let fileSource1 = """
-module N.M
-#nowarn "40"
-let rec f = new System.EventHandler(fun _ _ -> f.Invoke(null,null))
-"""
-    
-    let createOptions() = createProjectOptions [fileSource1] []
-    
-[<Fact>]
-let ``Test NoWarn HashDirective`` () =
-    let options = ProjectForNoWarnHashDirective.createOptions()
-    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
-
-    for e in wholeProjectResults.Diagnostics do
-        printfn "ProjectForNoWarnHashDirective error: <<<%s>>>" e.Message
-
-    wholeProjectResults.Diagnostics.Length |> shouldEqual 0

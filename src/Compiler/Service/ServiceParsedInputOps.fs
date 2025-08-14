@@ -118,7 +118,8 @@ type CompletionContext =
         enclosingTypeNameRange: range *
         spacesBeforeOverrideKeyword: int *
         hasThis: bool *
-        isStatic: bool
+        isStatic: bool *
+        spacesBeforeEnclosingDefinition: int
 
 type ShortIdent = string
 
@@ -318,6 +319,13 @@ module ParsedInput =
                         else
                             let _, r = CheckLongIdent longIdent
                             Some r
+
+                    | SynExpr.DotLambda(SynExpr.LongIdent _, range, _) -> Some range
+                    | SynExpr.DotLambda(synExpr, range, _) ->
+                        let result = traverseSynExpr synExpr
+
+                        result
+                        |> Option.map (fun r -> if posEq r.Start synExpr.Range.Start then range else r)
 
                     | SynExpr.DotGet(synExpr, _dotm, lid, _) ->
                         let (SynLongIdent(longIdent, _, _)) = lid
@@ -839,15 +847,6 @@ module ParsedInput =
                     | Some e -> walkExprWithKind parentKind e)
 
             | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some(EntityKind.FunctionOrValue false))
-
-            | SynExpr.LetOrUseBang(rhs = e1; andBangs = es; body = e2) ->
-                [
-                    yield e1
-                    for SynExprAndBang(body = eAndBang) in es do
-                        yield eAndBang
-                    yield e2
-                ]
-                |> List.tryPick (walkExprWithKind parentKind)
 
             | SynExpr.TraitCall(TypesForTypar ts, sign, e, _) ->
                 List.tryPick walkType ts
@@ -1519,11 +1518,8 @@ module ParsedInput =
                     | _ -> None
 
                 member _.VisitBinding
-                    (
-                        path,
-                        defaultTraverse,
-                        (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding)
-                    ) =
+                    (path, defaultTraverse, (SynBinding(headPat = headPat; trivia = trivia; returnInfo = returnInfo) as synBinding))
+                    =
 
                     let isOverrideOrMember leadingKeyword =
                         match leadingKeyword with
@@ -1543,7 +1539,8 @@ module ParsedInput =
 
                     let overrideContext path (mOverride: range) hasThis isStatic isMember =
                         match path with
-                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ when
+                        | _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                            typeInfo = SynComponentInfo(longId = [ enclosingType ]); trivia = { LeadingKeyword = keyword })) :: _ when
                             not isMember
                             ->
                             Some(
@@ -1552,12 +1549,13 @@ module ParsedInput =
                                     enclosingType.idRange,
                                     mOverride.StartColumn,
                                     hasThis,
-                                    isStatic
+                                    isStatic,
+                                    keyword.Range.StartColumn
                                 )
                             )
-                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty) as enclosingDefn) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
                             typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _
-                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
+                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty) as enclosingDefn) :: SyntaxNode.SynTypeDefn(SynTypeDefn(
                             typeInfo = SynComponentInfo(longId = [ enclosingType ]))) :: _ ->
                             let ty =
                                 match ty with
@@ -1570,11 +1568,12 @@ module ParsedInput =
                                     enclosingType.idRange,
                                     mOverride.StartColumn,
                                     hasThis,
-                                    isStatic
+                                    isStatic,
+                                    enclosingDefn.Range.StartColumn
                                 )
                             )
-                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: (SyntaxNode.SynExpr(SynExpr.ObjExpr _) as expr) :: _
-                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty)) :: (SyntaxNode.SynExpr(SynExpr.ObjExpr _) as expr) :: _ ->
+                        | SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty) as enclosingDefn) :: (SyntaxNode.SynExpr(SynExpr.ObjExpr _) as expr) :: _
+                        | _ :: SyntaxNode.SynMemberDefn(SynMemberDefn.Interface(interfaceType = ty) as enclosingDefn) :: (SyntaxNode.SynExpr(SynExpr.ObjExpr _) as expr) :: _ ->
                             let ty =
                                 match ty with
                                 | SynType.App(typeName = ty) -> ty
@@ -1586,10 +1585,11 @@ module ParsedInput =
                                     ty.Range,
                                     mOverride.StartColumn,
                                     hasThis,
-                                    isStatic
+                                    isStatic,
+                                    enclosingDefn.Range.StartColumn
                                 )
                             )
-                        | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty)) as expr :: _ ->
+                        | SyntaxNode.SynExpr(SynExpr.ObjExpr(objType = ty; newExprRange = newExprRange)) as expr :: _ ->
                             let ty =
                                 match ty with
                                 | SynType.App(typeName = ty) -> ty
@@ -1601,7 +1601,8 @@ module ParsedInput =
                                     ty.Range,
                                     mOverride.StartColumn,
                                     hasThis,
-                                    isStatic
+                                    isStatic,
+                                    newExprRange.StartColumn
                                 )
                             )
                         | _ -> Some CompletionContext.Invalid
@@ -2144,16 +2145,6 @@ module ParsedInput =
                 walkExpr e1
                 walkExpr e2
                 walkExpr e3
-
-            | SynExpr.LetOrUseBang(pat = pat; rhs = e1; andBangs = es; body = e2) ->
-                walkPat pat
-                walkExpr e1
-
-                for SynExprAndBang(pat = patAndBang; body = eAndBang) in es do
-                    walkPat patAndBang
-                    walkExpr eAndBang
-
-                walkExpr e2
 
             | SynExpr.TraitCall(TypesForTypar ts, sign, e, _) ->
                 List.iter walkType ts

@@ -7,7 +7,7 @@ open System.Diagnostics
 open System.IO
 open System.Text
 open Internal.Utilities.Library
-
+open System.Collections.Generic
 
 module ActivityNames =
     [<Literal>]
@@ -89,7 +89,7 @@ module internal Activity =
 
     let private activitySource = new ActivitySource(ActivityNames.FscSourceName)
 
-    let start (name: string) (tags: (string * string) seq) : IDisposable =
+    let start (name: string) (tags: (string * string) seq) : System.IDisposable | null =
         let activity = activitySource.CreateActivity(name, ActivityKind.Internal)
 
         match activity with
@@ -100,13 +100,18 @@ module internal Activity =
 
             activity.Start()
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity name
+    let startNoTags (name: string) : System.IDisposable | null = activitySource.StartActivity name
 
-    let addEvent name =
+    let addEventWithTags name (tags: (string * objnull) seq) =
         match Activity.Current with
         | null -> ()
-        | activity when activity.Source = activitySource -> activity.AddEvent(ActivityEvent name) |> ignore
+        | activity when activity.Source = activitySource ->
+            let collection = tags |> Seq.map KeyValuePair |> ActivityTagsCollection
+            let event = new ActivityEvent(name, tags = collection)
+            activity.AddEvent event |> ignore
         | _ -> ()
+
+    let addEvent name = addEventWithTags name Seq.empty
 
     module Profiling =
 
@@ -122,7 +127,7 @@ module internal Activity =
 
         let private profiledSource = new ActivitySource(ActivityNames.ProfiledSourceName)
 
-        let startAndMeasureEnvironmentStats (name: string) : IDisposable = profiledSource.StartActivity(name)
+        let startAndMeasureEnvironmentStats (name: string) : System.IDisposable | null = profiledSource.StartActivity(name)
 
         type private GCStats = int[]
 
@@ -204,7 +209,11 @@ module internal Activity =
             match o with
             | null -> ""
             | o ->
-                let mutable txtVal = match o.ToString() with | null -> "" | s -> s
+                let mutable txtVal =
+                    match o.ToString() with
+                    | null -> ""
+                    | s -> s
+
                 let hasComma = txtVal.IndexOf(',') > -1
                 let hasQuote = txtVal.IndexOf('"') > -1
 
@@ -237,7 +246,7 @@ module internal Activity =
 
             sb.ToString()
 
-        let addCsvFileListener (pathToFile:string) =
+        let addCsvFileListener (pathToFile: string) =
             if pathToFile |> File.Exists |> not then
                 File.WriteAllLines(
                     pathToFile,
@@ -259,7 +268,7 @@ module internal Activity =
 
             let l =
                 new ActivityListener(
-                    ShouldListenTo = (fun a ->ActivityNames.AllRelevantNames |> Array.contains a.Name),
+                    ShouldListenTo = (fun a -> ActivityNames.AllRelevantNames |> Array.contains a.Name),
                     Sample = (fun _ -> ActivitySamplingResult.AllData),
                     ActivityStopped = (fun a -> msgQueue.Post(createCsvRow a))
                 )

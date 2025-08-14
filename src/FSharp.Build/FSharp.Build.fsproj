@@ -9,11 +9,13 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <CheckNulls>true</CheckNulls>
+	<Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>$(NoWarn);NU1701;FS0075</NoWarn>
+	<!-- 3261: Nullness warning - not equivalent - currently triggers when proto builds source files like Fscomp.fs -->
+	<OtherFlags Condition="'$(Configuration)' == 'Proto'">$(OtherFlags) --nowarn:3261</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <LangVersion>7.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <LangVersion>9</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
     <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
@@ -44,6 +46,7 @@
     <Compile Include="CreateFSharpManifestResourceName.fs" />
     <Compile Include="SubstituteText.fs" />
     <Compile Include="MapSourceRoots.fs" />
+    <Compile Include="GenerateILLinkSubstitutions.fs" />
     <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
@@ -64,6 +67,12 @@
       <SubDir>Shipping\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSCorePackageVersionValue)-$(VersionSuffix)</Replacement1>
+    </NoneSubstituteText>
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest" Condition="'$(Configuration)' != 'Proto'">
+      <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
+      <SubDir>PreRelease\</SubDir>
+      <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
+      <Replacement1>$(FSCorePackageVersionValue)-$(_PreReleaseLabel).final</Replacement1>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

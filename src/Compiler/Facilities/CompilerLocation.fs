@@ -14,9 +14,7 @@ open Internal.Utilities.Library
 
 module internal FSharpEnvironment =
 
-    type private TypeInThisAssembly =
-        class
-        end
+    type private TypeInThisAssembly = class end
 
     /// The F# version reported in the banner
     let FSharpBannerVersion =
@@ -32,6 +30,7 @@ module internal FSharpEnvironment =
     let FSharpCoreLibRunningVersion =
         try
             match versionOf<Unit> with
+            | null -> None
             | s when String.IsNullOrEmpty(s) -> None
             | s -> Some(s)
         with _ ->
@@ -89,7 +88,7 @@ module internal FSharpEnvironment =
                     let fallback () =
                         let d = Assembly.GetExecutingAssembly()
 
-                        Some(!! Path.GetDirectoryName(d.Location))
+                        Some(!!Path.GetDirectoryName(d.Location))
 
                     match tryCurrentDomain () with
                     | None -> fallback ()
@@ -124,6 +123,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net10.0"
                 "net9.0"
                 "net8.0"
                 "net7.0"
@@ -170,12 +170,8 @@ module internal FSharpEnvironment =
         }
 
     let getTypeProviderAssembly
-        (
-            runTimeAssemblyFileName: string,
-            designTimeAssemblyName: string,
-            compilerToolPaths: string list,
-            raiseError
-        ) =
+        (runTimeAssemblyFileName: string, designTimeAssemblyName: string, compilerToolPaths: string list, raiseError)
+        =
         // Find and load the designer assembly for the type provider component.
         // We look in the directories stepping up from the location of the runtime assembly.
         let loadFromLocation designTimeAssemblyPath =
@@ -212,7 +208,7 @@ module internal FSharpEnvironment =
                 | Some res -> loadFromLocation res
                 | None ->
                     // The search failed, just load from the first location and report an error
-                    let runTimeAssemblyPath = !! Path.GetDirectoryName(runTimeAssemblyFileName)
+                    let runTimeAssemblyPath = !!Path.GetDirectoryName(runTimeAssemblyFileName)
                     loadFromLocation (Path.Combine(runTimeAssemblyPath, designTimeAssemblyName))
 
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
@@ -223,7 +219,7 @@ module internal FSharpEnvironment =
             // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
             // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
             // and will always succeed.
-            let name = AssemblyName(!! Path.GetFileNameWithoutExtension(designTimeAssemblyName))
+            let name = AssemblyName(!!Path.GetFileNameWithoutExtension(designTimeAssemblyName))
 
             if name.FullName.Equals(name.Name, StringComparison.OrdinalIgnoreCase) then
                 let designTimeFileName = designTimeAssemblyName + ".dll"
@@ -275,7 +271,7 @@ module internal FSharpEnvironment =
 
     // Must be alongside the location of FSharp.CompilerService.dll
     let getDefaultFsiLibraryLocation () =
-        Path.Combine(!! Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
+        Path.Combine(!!Path.GetDirectoryName(getFSharpCompilerLocation ()), fsiLibraryName + ".dll")
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -309,7 +305,7 @@ module internal FSharpEnvironment =
         // How to find dotnet.exe --- woe is me; probing rules make me sad.
         // Algorithm:
         // 1. Look for DOTNET_HOST_PATH environment variable
-        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
+        //    this is the main user programmable override .. provided by user to find a specific dotnet.exe
         // 2. Probe for are we part of an .NetSDK install
         //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
         //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
@@ -354,12 +350,12 @@ module internal FSharpEnvironment =
         [|
             match getDotnetHostPath (), getDotnetGlobalHostPath () with
             | Some hostPath, Some globalHostPath ->
-                yield !! Path.GetDirectoryName(hostPath)
+                yield !!Path.GetDirectoryName(hostPath)
 
                 if isDotnetMultilevelLookup && hostPath <> globalHostPath then
-                    yield !! Path.GetDirectoryName(globalHostPath)
-            | Some hostPath, None -> yield !! Path.GetDirectoryName(hostPath)
-            | None, Some globalHostPath -> yield !! Path.GetDirectoryName(globalHostPath)
+                    yield !!Path.GetDirectoryName(globalHostPath)
+            | Some hostPath, None -> yield !!Path.GetDirectoryName(hostPath)
+            | None, Some globalHostPath -> yield !!Path.GetDirectoryName(globalHostPath)
             | None, None -> ()
         |]
 

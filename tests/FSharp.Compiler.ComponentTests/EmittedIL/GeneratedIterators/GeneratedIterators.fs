@@ -14,6 +14,7 @@ module GeneratedIterators =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline
 
     // SOURCE=GenIter01.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GenIter01.exe"	# GenIter01.fs -

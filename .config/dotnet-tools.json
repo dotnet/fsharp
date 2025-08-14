@@ -44,19 +44,19 @@
       ],
       "rollForward": true
     },
-    "dotnet-ilverify": {
-      "version": "9.0.0-rc.2.24473.5",
-      "commands": [
-        "ilverify"
-      ],
-      "rollForward": true
-    },
     "fantomas": {
-      "version": "6.2.3",
+      "version": "7.0.1",
       "commands": [
         "fantomas"
       ],
       "rollForward": true
+    },
+    "dotnet-ilverify": {
+      "version": "9.0.0",
+      "commands": [
+        "ilverify"
+      ],
+      "rollForward": false
     }
   }
 }

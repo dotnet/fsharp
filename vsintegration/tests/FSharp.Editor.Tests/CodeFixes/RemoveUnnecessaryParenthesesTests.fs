@@ -398,7 +398,7 @@ let _ =
             ",
             "
             match () with
-            | () when box x :? int
+            | () when (box x :? int)
                 -> ()
             | _ -> ()
             "
@@ -1390,6 +1390,27 @@ in x
             $"{3 + LanguagePrimitives.GenericZero<int> :N0}"
             """
 
+            """
+            $"{({ A = 3 })}"
+            """,
+            """
+            $"{({ A = 3 })}"
+            """
+
+            """
+            $"{({| A = 3 |})}"
+            """,
+            """
+            $"{({| A = 3 |})}"
+            """
+
+            """
+            $"{({ 1..10 })}"
+            """,
+            """
+            $"{({ 1..10 })}"
+            """
+
             // LibraryOnlyILAssembly
             """(# "ldlen.multi 2 0" array : int #)""", """(# "ldlen.multi 2 0" array : int #)"""
 
@@ -1830,6 +1851,8 @@ in x
                 f ((+) x y) z
                 "
 
+                "(Gen.map f << Gen.map g) (Gen.constant x)", "(Gen.map f << Gen.map g) (Gen.constant x)"
+
                 // TypeApp
                 "id (id<int>)", "id id<int>"
 
@@ -1890,6 +1913,7 @@ in x
                 """(id "x").Length""", """(id "x").Length"""
                 """(3L.ToString("x")).Length""", """(3L.ToString "x").Length"""
                 "~~TypedResults.Ok<string>(maybe.Value)", "~~TypedResults.Ok<string>(maybe.Value)"
+                "bg.lighten(0.2).hexa ()", "bg.lighten(0.2).hexa ()"
 
                 // DotLambda
                 "[{| A = x |}] |> List.map (_.A)", "[{| A = x |}] |> List.map _.A"

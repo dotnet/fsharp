@@ -103,6 +103,8 @@ let rec pushUnaryArg expr arg =
         SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m)
     | SynExpr.ArbitraryAfterError(_, m) when m.Start = m.End ->
         SynExpr.DiscardAfterMissingQualificationAfterDot(SynExpr.Ident arg, m.StartRange, unionRanges arg.idRange m)
+    | SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, dotRange, m) ->
+        SynExpr.DiscardAfterMissingQualificationAfterDot(pushUnaryArg synExpr arg, dotRange, unionRanges arg.idRange m)
     | _ ->
         errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
         expr
@@ -207,7 +209,6 @@ let rec IsControlFlowExpression e =
     // Treat "ident { ... }" as a control flow expression
     | SynExpr.App(_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
     | SynExpr.IfThenElse _
-    | SynExpr.LetOrUseBang _
     | SynExpr.Match _
     | SynExpr.TryWith _
     | SynExpr.TryFinally _
@@ -979,15 +980,6 @@ let rec synExprContainsError inpExpr =
 
         | SynExpr.DotNamedIndexedPropertySet(e1, _, e2, e3, _) -> walkExpr e1 || walkExpr e2 || walkExpr e3
 
-        | SynExpr.LetOrUseBang(rhs = e1; body = e2; andBangs = es) ->
-            walkExpr e1
-            || walkExprs
-                [
-                    for SynExprAndBang(body = e) in es do
-                        yield e
-                ]
-            || walkExpr e2
-
         | SynExpr.InterpolatedString(parts, _, _m) ->
             parts
             |> List.choose (function
@@ -1024,9 +1016,9 @@ let parsedHashDirectiveArgumentsNoCheck (input: ParsedHashDirectiveArgument list
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v
-        | ParsedHashDirectiveArgument.Int32(n, m) -> string n
-        | ParsedHashDirectiveArgument.Ident(ident, m) -> ident.idText
-        | ParsedHashDirectiveArgument.LongIdent(ident, m) -> longIdentToString ident)
+        | ParsedHashDirectiveArgument.Int32(n, _) -> string n
+        | ParsedHashDirectiveArgument.Ident(ident, _) -> ident.idText
+        | ParsedHashDirectiveArgument.LongIdent(ident, _) -> longIdentToString ident)
         input
 
 let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list) (_langVersion: LanguageVersion) =

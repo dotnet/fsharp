@@ -10,12 +10,11 @@
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <NoWarn>$(NoWarn);NU5125</NoWarn>
-    <NoWarn>$(NoWarn);64;1182;1204</NoWarn>         <!--Temporary fix for sourcebuild -->
-    <OtherFlags>$(OtherFlags) --warnaserror-:1182</OtherFlags>         <!--Temporary fix for sourcebuild -->
+    <NoWarn>$(NoWarn);64;1204</NoWarn>         <!--Temporary fix for sourcebuild -->
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <CheckNulls>true</CheckNulls>
+	<Nullable>enable</Nullable>
 	<!-- Nullness checking against ns20 base class libraries is very weak, the APIs were not updated with annotations.
 	     Therefore we want to use the latest BCL APIs from NetCurrent.
 		 We are still not building the actual product in NetCurrent, so for official builds we remain as ns2.0.
@@ -23,18 +22,16 @@
 
      OSX and Linux has problems with Xliff targets for net9, skipping via SKIP_NETCURRENT_FSC_BUILD until resolved ( The target "UpdateXlf" does not exist in the project.)
 	-->
-    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductDefaultTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductDefaultTargetFramework);$(TargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(OfficialBuildId)' == '' AND '$(FSharpNetCoreProductTargetFramework)' != '' AND '$(Configuration)' != 'Proto' AND '$(SKIP_NETCURRENT_FSC_BUILD)' != 'true' ">$(FSharpNetCoreProductTargetFramework);$(TargetFrameworks)</TargetFrameworks>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
-
-    <!-- TODO: This needs to be re-enabled once we merge/release the new SDK with noward and line fixes. -->
-    <!-- 1182: Unused variables -->
-    <OtherFlags>$(OtherFlags) --nowarn:1182</OtherFlags>
-
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+	<!-- 3261: Nullness warning - not equivalent - currently triggers when proto builds source files like Fscomp.fs -->
+	<OtherFlags Condition="'$(Configuration)' == 'Proto'">$(OtherFlags) --nowarn:3261</OtherFlags>
+	  
 	<!-- generate IL filter blocks in order to prevent StackOverFlowException in TcExpr guarded with |RecoverableException| active pattern-->
     <OtherFlags>$(OtherFlags) --generate-filter-blocks</OtherFlags>
 	<Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
@@ -58,7 +55,6 @@
     <PackageDescription>The F# Compiler Services package for F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/docs/release-notes/.FSharp.Compiler.Service/$(FSharpLibrariesChangelogVersion).md</PackageReleaseNotes>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
-    <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
   </PropertyGroup>
 
@@ -100,6 +96,8 @@
     <InternalsVisibleTo Include="HistoricalBenchmark" />
     <InternalsVisibleTo Include="FSharp.Test.Utilities" />
     <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.Compiler.LanguageServer" />
+    <InternalsVisibleTo Include="FSharp.VisualStudio.Extension" />
   </ItemGroup>
 
   <ItemGroup>
@@ -149,6 +147,8 @@
     <Compile Include="Utilities\lib.fsi" />
     <Compile Include="Utilities\lib.fs" />
     <Compile Include="Utilities\DependencyGraph.fs" />
+    <Compile Include="Utilities\Caches.fsi" />
+    <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\LruCache.fsi" />
     <Compile Include="Utilities\LruCache.fs" />
     <Compile Include="Utilities\ImmutableArray.fsi" />
@@ -281,6 +281,8 @@
     <Compile Include="SyntaxTree\SyntaxTree.fs" />
     <Compile Include="SyntaxTree\SyntaxTreeOps.fsi" />
     <Compile Include="SyntaxTree\SyntaxTreeOps.fs" />
+    <Compile Include="SyntaxTree\WarnScopes.fsi" />
+    <Compile Include="SyntaxTree\WarnScopes.fs" />
     <Compile Include="SyntaxTree\LexerStore.fsi" />
     <Compile Include="SyntaxTree\LexerStore.fs" />
     <Compile Include="SyntaxTree\ParseHelpers.fsi" />
@@ -597,7 +599,7 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />

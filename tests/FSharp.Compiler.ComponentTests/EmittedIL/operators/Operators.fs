@@ -13,4 +13,5 @@ module Operators =
         |> getCompilation
         |> asExe
         |> ignoreWarnings
+        |> compile
         |> verifyILBaseline

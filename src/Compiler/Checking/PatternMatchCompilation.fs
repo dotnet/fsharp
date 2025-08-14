@@ -197,11 +197,11 @@ exception CannotRefute
 
 [<Struct>]
 [<RequireQualifiedAccess>]
-type CounterExampleType = 
+type CounterExampleType =
     /// Maps to EnumMatchIncomplete exn
-    | EnumCoversKnown 
+    | EnumCoversKnown
     /// Maps to MatchIncomplete exn
-    | WithoutEnum 
+    | WithoutEnum
     with member x.Combine(other) = match other with EnumCoversKnown -> other | _ -> x
 
 let RefuteDiscrimSet g m path discrims : Expr * CounterExampleType =
@@ -366,7 +366,7 @@ let ShowCounterExample g denv m refuted =
             | [] -> raise CannotRefute
             | (r, eck) :: t ->
                 ((r, eck), t) ||> List.fold (fun (rAcc, eckAcc) (r, eck) ->
-                    CombineRefutations g rAcc r, eckAcc.Combine(eck)) 
+                    CombineRefutations g rAcc r, eckAcc.Combine(eck))
         let text = LayoutRender.showL (NicePrint.dataExprL denv counterExample)
         let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
         Some(text, failingWhenClause, enumCoversKnown)
@@ -400,7 +400,7 @@ let rec isMemOfActives p1 actives =
     | [] -> false
     | Active(p2, _, _) :: rest -> pathEq p1 p2 || isMemOfActives p1 rest
 
-// Find the information about the active investigation 
+// Find the information about the active investigation
 let rec lookupActive x l =
     match l with
     | [] -> raise (KeyNotFoundException())
@@ -423,13 +423,13 @@ type Implication =
 /// Work out what a successful type test (against tgtTy1) implies about a null test for the same input value.
 ///
 /// Example:
-///     match x with 
+///     match x with
 ///     | :? string when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
 ///     | null -> ...
 /// For any inputs where ':? string' succeeds, 'null' will fail
 ///
 /// Example:
-///     match x with 
+///     match x with
 ///     | :? (int option) when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
 ///     | null -> ...
 /// Nothing can be learned.  If ':? (int option)' succeeds, 'null' may still have to be run.
@@ -442,7 +442,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
 /// Work out what a failing type test (against tgtTy1) implies about a null test for the same input value.
 ///
 /// Example:
-///     match x with 
+///     match x with
 ///     | :? (int option) -> ...
 ///     | null -> ...
 /// If ':? (int option)' fails then 'null' will fail
@@ -455,13 +455,13 @@ let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
 /// Work out what one successful null test implies about a type test (against tgtTy2) for the same input value.
 ///
 /// Example:
-///     match x with 
+///     match x with
 ///     | null when false -> ...  // note: "when false" used so null test succeeds but proceed to next type test
 ///     | :? string -> ...
 /// For any inputs where 'null' succeeds, ':? string' will fail
 ///
 /// Example:
-///     match x with 
+///     match x with
 ///     | null when false -> ... // note: "when false" used so null test succeeds but proceed to next type test
 ///     | :? (int option) -> ...
 /// For any inputs where 'null' succeeds, ':? (int option)' will succeed
@@ -487,12 +487,12 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // supertypes (tgtTy2) always succeed.
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? string when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? IComparable -> ...
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? string when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? string -> ...
     //
@@ -503,7 +503,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // type tests of the same object against a unrelated target type (tgtTy2) fails.
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? int when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? string -> ...
     //
@@ -511,7 +511,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     //
     //
     // This only applies if tgtTy2 is not potentially related to the sealed type tgtTy1:
-    //     match x with 
+    //     match x with
     //     | :? int when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? IComparable -> ...
     //
@@ -520,7 +520,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     //
     //
     // This rule also doesn't apply to unsealed types:
-    //     match x with 
+    //     match x with
     //     | :? SomeUnsealedClass when false -> ... // note: "when false" used so type test succeeds but proceed to next type test
     //     | :? SomeInterface -> ...
     // because the input may be some subtype of SomeUnsealedClass and that type could implement SomeInterface even if
@@ -528,7 +528,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     //
     //
     // This rule also doesn't apply to types with null as true value:
-    //     match x with 
+    //     match x with
     //     | :? (int option) when false -> ... // "when false" means type test succeeds but proceed to next type test
     //     | :? (string option) -> ...
     //
@@ -542,7 +542,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // a type test of the same input value against an unrelated non-interface type (tgtTy2) always fails
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? SomeUnsealedClass when false -> ... // "when false" used so type test succeeds but proceed to next type test
     //     | :? SomeUnrelatedClass -> ...
     //
@@ -562,7 +562,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // always fails.
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? IComparable when false -> ... // "when false" used so type test succeeds but proceed to next type test
     //     | :? SomeOtherSealedClass -> ...
     //
@@ -586,12 +586,12 @@ let computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // testing the same input value against an equivalent or subtype type (tgtTy2) always fails.
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? IComparable -> ...
     //     | :? string -> ...
     //
     // Example:
-    //     match x with 
+    //     match x with
     //     | :? string -> ...
     //     | :? string -> ...
     if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy1 tgtTy2 then
@@ -696,7 +696,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
 
     | DecisionTreeTest.IsNull, _ ->
         // Check that each previous test in the set, if successful, gives some information about this test
-        prev |> List.forall (fun edge -> 
+        prev |> List.forall (fun edge ->
             match edge with
             | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 <> Implication.Nothing
@@ -704,7 +704,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
 
     | DecisionTreeTest.IsInst (_, tgtTy2), _ ->
         // Check that each previous test in the set, if successful, gives some information about this test
-        prev |> List.forall (fun edge -> 
+        prev |> List.forall (fun edge ->
             match edge with
             | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
@@ -885,8 +885,8 @@ let rec investigationPoints inpPat =
     match inpPat with
     | TPat_query((_, _, _, _, _, apinfo), subPat, _) ->
         Array.prepend (not apinfo.IsTotal) (investigationPoints subPat)
-    | TPat_isinst(_, _tgtTy, subPatOpt, _) -> 
-        match subPatOpt with 
+    | TPat_isinst(_, _tgtTy, subPatOpt, _) ->
+        match subPatOpt with
         | None -> singleFalseInvestigationPoint
         | Some subPat -> Array.prepend false (investigationPoints subPat)
     | TPat_as(subPat, _, _) -> investigationPoints subPat
@@ -904,7 +904,7 @@ let rec investigationPoints inpPat =
         |> Seq.collect investigationPoints
         |> Seq.toArray
         |> Array.prepend false
-    | TPat_null _ 
+    | TPat_null _
     | TPat_const _ -> singleFalseInvestigationPoint
     | TPat_wild _
     | TPat_error _ -> [||]
@@ -930,7 +930,7 @@ let rec erasePartialPatterns inpPat =
 
 and erasePartials inps =
     List.map erasePartialPatterns inps
-    
+
 let ReportUnusedTargets (clauses: MatchClause list) dtree =
     match dtree, clauses with
     | TDSuccess _, [ _ ] -> ()
@@ -948,7 +948,7 @@ let ReportUnusedTargets (clauses: MatchClause list) dtree =
                         | [ head ] -> head.Id.idRange
                         | _ -> c.Pattern.Range
                     | _, Some guard -> guard.Range
-                    
+
                 withStartEnd c.Range.Start m.End m
                 |> RuleNeverMatched
                 |> warning)
@@ -994,10 +994,10 @@ let CompilePatternBasic
     let mutable firstIncompleteMatchClauseWithThrowExpr = None
     let warningsGenerated = new ResizeArray<CounterExampleType>(2)
     let getIncompleteMatchClause refuted =
-        // Emit the incomplete match warning. 
+        // Emit the incomplete match warning.
         if warnOnIncomplete then
             match actionOnFailure with
-            | ThrowIncompleteMatchException 
+            | ThrowIncompleteMatchException
             | IgnoreWithWarning ->
                 let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
                 let counterExample = ShowCounterExample g denv mMatch refuted
@@ -1069,11 +1069,12 @@ let CompilePatternBasic
                     mkCompGenSequential mMatch e (mkDefault (mMatch, resultTy))
 
             | ThrowIncompleteMatchException ->
+                let mmMatch = mMatch.ApplyLineDirectives()
                 mkThrow mMatch resultTy
-                    (mkExnExpr(g.MatchFailureException_tcr, 
-                                [ mkString g mMatch mMatch.FileName
-                                  mkInt g mMatch mMatch.StartLine
-                                  mkInt g mMatch mMatch.StartColumn], mMatch))
+                    (mkExnExpr(g.MatchFailureException_tcr,
+                                [ mkString g mMatch mmMatch.FileName
+                                  mkInt g mMatch mmMatch.StartLine
+                                  mkInt g mMatch mmMatch.StartColumn], mMatch))
 
             | IgnoreWithWarning ->
                 mkUnit g mMatch
@@ -1259,7 +1260,7 @@ let CompilePatternBasic
                 | ActivePatternReturnKind.Boolean -> false
              let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g mustTakeAddress false NeverMutates appExpr None mMatch
              match vOpt with
-             | None -> 
+             | None ->
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
                 if origInputVal.IsMemberOrModuleBinding then
                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
@@ -1316,7 +1317,7 @@ let CompilePatternBasic
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
 
-                         if not total then 
+                         if not total then
                             match retKind with
                             | ActivePatternReturnKind.Boolean -> DecisionTreeTest.Const(Const.Bool true)
                             | ActivePatternReturnKind.RefTypeWrapper -> DecisionTreeTest.UnionCase(mkAnySomeCase g false, resTys)
@@ -1497,7 +1498,7 @@ let CompilePatternBasic
                 match discrim with
                 | DecisionTreeTest.IsInst (_srcTy, tgtTy2) ->
                     match computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy2 tgtTy1 with
-                    | Implication.Succeeds -> 
+                    | Implication.Succeeds ->
                         match pbindOpt with
                         | Some pbind ->
                             let subAccess tpinst exprIn =
@@ -1534,7 +1535,7 @@ let CompilePatternBasic
                 match discrim with
                 | DecisionTreeTest.IsNull ->
                     [Frontier (i, newActives, valMap)]
-                | DecisionTreeTest.IsInst (_, tgtTy) -> 
+                | DecisionTreeTest.IsInst (_, tgtTy) ->
                     match computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
@@ -1637,7 +1638,7 @@ let CompilePatternBasic
 //   - Partial active patterns
 //   - Disjunctive patterns
 //   - Pattern clauses with 'when'
-//   - isinst patterns 
+//   - isinst patterns
 //
 // Partial active patterns that are not the "last" thing in a clause,
 // combined with subsequent clauses, can cause significant code expansion
@@ -1666,13 +1667,13 @@ let CompilePatternBasic
 // a partial pattern.  This can lead to sub-standard code generation
 // but has long been the technique we use to avoid blow-up of pattern matching.
 //
-// Disjunctive patterns combined with 'when' clauses can also cause signficant code
+// Disjunctive patterns combined with 'when' clauses can also cause significant code
 // expansion. In particular this leads to multiple copies of 'when' expressions (even for one clause)
 // and each failure path of those 'when' will then continue on the expand any remaining
 // pattern logic in subsequent clauses. So when generating code we take clauses up
 // until the first one containing a disjunctive pattern with a 'when' clause.
 //
-// Disjunction will still cause significant expansion, e.g. 
+// Disjunction will still cause significant expansion, e.g.
 //    (A | B), (C | D) ->
 // is immediately expanded out to four frontiers each with two investigation points.
 //    A, C -> ...
@@ -1682,7 +1683,7 @@ let CompilePatternBasic
 //
 // Of course, some decision-logic expansion here is expected. Further, for unions, integers, characters, enums etc.
 // the column-based matching on A/B and C/D eliminates these relatively efficiently, e.g. to
-//    one-switch-on-A/B 
+//    one-switch-on-A/B
 //    on each path, one switch on C/D
 // So disjunction alone isn't considered problematic, but in combination with 'when' patterns
 
@@ -1702,7 +1703,7 @@ let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused a
         // First make sure we generate at least some of the obvious incomplete match warnings.
         let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
         let warnOnIncomplete = true
-        let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)]) 
+        let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)])
         let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
         let warnOnIncomplete = false
 

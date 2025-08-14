@@ -1,6 +1,9 @@
 ﻿module FSharp.Compiler.Service.Tests.ProjectAnalysisTests
 
+open System.Threading.Tasks
+
 #nowarn "57" // Experimental stuff
+#nowarn "1182" //Lot of unused results are stored in a binding, since those tests are checking how internal caching works when changes are being applied
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
@@ -128,8 +131,20 @@ module ClearLanguageServiceRootCachesTest =
         let weakTcImports = test ()
         checker.InvalidateConfiguration Project1.options
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        GC.Collect()
-        System.Threading.SpinWait.SpinUntil(fun () -> not weakTcImports.IsAlive)
+
+        task {
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+            // Try collecting many times, because GC has some problems, especially on Linux.
+            // See for example: https://github.com/dotnet/runtime/discussions/108081
+            let mutable attempt = 1
+            while weakTcImports.IsAlive && attempt < 10 do
+                GC.Collect()
+                GC.WaitForPendingFinalizers()
+                attempt <- attempt + 1
+                do! Task.Delay(attempt * 1000)
+            Assert.False weakTcImports.IsAlive
+        }
 
 [<Fact>]
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
@@ -4347,7 +4362,7 @@ let ``Test Project32 should be able to find impl symbols`` () =
         checker.GetBackgroundCheckResultsForFileInProject(Project32.fileName1, Project32.options)
         |> Async.RunImmediate
 
-    let implSymbolUseOpt = implBackgroundTypedParse1.GetSymbolUseAtLocation(3,5,"",["func"])
+    let implSymbolUseOpt = implBackgroundTypedParse1.GetSymbolUseAtLocation(3,5,"let func x = x + 1",["func"])
     let implSymbol = implSymbolUseOpt.Value.Symbol
 
     let usesOfImplSymbol =
@@ -5355,28 +5370,25 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives active`` () =
 
-    // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunImmediate
-    for e in wholeProjectResults.Diagnostics do
-        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in wholeProjectResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
+    [ for e in wholeProjectResults.Diagnostics ->
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
+    |> shouldEqual [10, 10, "Test.fsy"]
 
     let checkResults =
         checker.ParseAndCheckFileInProject(ProjectLineDirectives.fileName1, 0, ProjectLineDirectives.fileSource1, ProjectLineDirectives.options)
         |> Async.RunImmediate
         |> function _,FSharpCheckFileAnswer.Succeeded x ->  x | _ -> failwith "unexpected aborted"
 
-    for e in checkResults.Diagnostics do
-        printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.Range.FileName
+    [ for e in checkResults.Diagnostics ->
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
+    |> shouldEqual [10, 10, "Test.fsy"]
 
-    // No diagnostics for logical location "Test.fsy" are reported when checking the source since the filenames don't match. You need to pass --ignorelinedirectives to get them
-    [ for e in checkResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [ ]
-
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
@@ -5384,10 +5396,9 @@ let ``Test diagnostics with line directives ignored`` () =
     let options = { ProjectLineDirectives.options with OtherOptions = (Array.append ProjectLineDirectives.options.OtherOptions [| "--ignorelinedirectives" |]) }
 
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
-    for e in wholeProjectResults.Diagnostics do
-        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.Range.FileName
-
-    [ for e in wholeProjectResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+    [ for e in wholeProjectResults.Diagnostics ->
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
+    |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
     let checkResults =
         checker.ParseAndCheckFileInProject(ProjectLineDirectives.fileName1, 0, ProjectLineDirectives.fileSource1, options)
@@ -5397,7 +5408,9 @@ let ``Test diagnostics with line directives ignored`` () =
     for e in checkResults.Diagnostics do
         printfn "ProjectLineDirectives checkResults error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in checkResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+    [ for e in checkResults.Diagnostics ->
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
+    |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
 
@@ -5446,7 +5459,7 @@ type A(i:int) =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 1`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [||]
+    let fileName, options = mkTestFileAndOptions [||]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [||]
@@ -5454,7 +5467,7 @@ let ``#4030, Incremental builder creation warnings 1`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 2`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times" |]
+    let fileName, options = mkTestFileAndOptions [| "--times" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [| false |]
@@ -5462,7 +5475,7 @@ let ``#4030, Incremental builder creation warnings 2`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 3`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--nowarn:75" |]
+    let fileName, options = mkTestFileAndOptions [| "--times"; "--nowarn:75" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [||]
@@ -5470,7 +5483,7 @@ let ``#4030, Incremental builder creation warnings 3`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 4`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror:75" |]
+    let fileName, options = mkTestFileAndOptions [| "--times"; "--warnaserror:75" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [| true |]
@@ -5478,7 +5491,7 @@ let ``#4030, Incremental builder creation warnings 4`` () =
 [<Fact>]
 let ``#4030, Incremental builder creation warnings 5`` () =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror-:75"; "--warnaserror" |]
+    let fileName, options = mkTestFileAndOptions [| "--times"; "--warnaserror-:75"; "--warnaserror" |]
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Diagnostics |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual [| false |]
@@ -5792,7 +5805,8 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Succeeded r -> r
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
-module ScriptClosureCacheUse =
+module ScriptClosureCacheUse =    
+
     [<Fact>]
     let ``References from #r nuget are included in script project options`` () =
         let checkResults = checkContentAsScript """

@@ -7,7 +7,6 @@
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <NoWarn>$(NoWarn);FS3511</NoWarn> <!-- This state machine is not statically compilable. -->
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
@@ -17,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\XunitSetup.fs">
+      <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="Helpers\RoslynHelpers.fs" />
     <Compile Include="Helpers\ProjectOptionsBuilder.fs" />
     <Compile Include="Helpers\AssemblyResolver.fs" />

@@ -139,7 +139,8 @@ type XmlDocCollector() =
             let xmlDocBlock =
                 struct (savedLines.Count - currentGrabPointCommentsCount, savedLines.Count - 1, false)
 
-            savedGrabPoints.Add(pos, xmlDocBlock)
+            // silently override duplicate grab points (which happen only when preceded by nonsensical line directives)
+            savedGrabPoints[pos] <- xmlDocBlock
             currentGrabPointCommentsCount <- 0
             delayedGrabPoint <- ValueNone
 
@@ -237,7 +238,7 @@ type PreXmlDoc =
             if part1.IsEmpty then part2.Range
             elif part2.IsEmpty then part1.Range
             else unionRanges part1.Range part2.Range
-        | PreXmlDocEmpty -> Range.Zero
+        | PreXmlDocEmpty -> range0
         | PreXmlDoc(pos, collector) -> collector.LinesRange pos
 
     member x.IsEmpty =

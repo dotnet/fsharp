@@ -261,9 +261,22 @@ module FileIndex =
     let startupFileName = "startup"
     let commandLineArgsFileName = "commandLineArgs"
 
+[<RequireQualifiedAccess>]
+module internal LineDirectives =
+
+    // For use in this module and in range.ApplyLineDirectives only.
+    // The key is the index of the original file. Each line directive is represented
+    // by the line number of the directive and the file index and line number of the target.
+    let mutable store: Map<FileIndex, (int * (FileIndex * int)) list> = Map.empty
+    let storeLock = obj ()
+
+    let add fileIndex lineDirectives =
+        lock storeLock <| fun () -> store <- store.Add(fileIndex, lineDirectives)
+
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type Range(code1: int64, code2: int64) =
+    [<Obsolete("Use Range.range0 instead")>]
     static member Zero = range (0L, 0L)
 
     new(fIdx, bl, bc, el, ec) =
@@ -316,7 +329,25 @@ type Range(code1: int64, code2: int64) =
 
     member m.FileName = fileOfFileIndex m.FileIndex
 
-    member m.ShortFileName = Path.GetFileName(fileOfFileIndex m.FileIndex)
+    member m.ApplyLineDirectives() =
+        match LineDirectives.store.TryFind m.FileIndex with
+        | None -> m
+        | Some((directiveLine, _) :: _ as directives) when m.StartLine > directiveLine ->
+            let mStartLine = m.StartLine
+
+            let directiveLine, (fileIndex, directiveTargetLine) =
+                directives
+                |> List.findBack (fun (directiveLine, _) -> mStartLine > directiveLine)
+
+            let xOffset = directiveTargetLine - (directiveLine + 1)
+
+            let r =
+                range (fileIndex, mStartLine + xOffset, m.StartColumn, m.EndLine + xOffset, m.EndColumn)
+
+            let r = if m.IsSynthetic then r.MakeSynthetic() else r
+            let r = r.NoteSourceConstruct m.NotedSourceConstruct
+            r
+        | Some _ -> m
 
     member _.MakeSynthetic() =
         range (code1, code2 ||| isSyntheticMask)
@@ -448,10 +479,22 @@ module Range =
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
     let posOrder =
-        Order.orderOn (fun (p: pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
+        let pairOrder = Pair.order (Int32.order, Int32.order)
+        let lineAndColumn = fun (p: pos) -> struct (p.Line, p.Column)
+
+        { new IComparer<pos> with
+            member _.Compare(x, xx) =
+                pairOrder.Compare(lineAndColumn x, lineAndColumn xx)
+        }
 
     let rangeOrder =
-        Order.orderOn (fun (r: range) -> r.FileName, (r.Start, r.End)) (Pair.order (String.order, Pair.order (posOrder, posOrder)))
+        let tripleOrder = Pair.order (String.order, Pair.order (posOrder, posOrder))
+        let fileLineColumn = fun (r: range) -> struct (r.FileName, struct (r.Start, r.End))
+
+        { new IComparer<range> with
+            member _.Compare(x, xx) =
+                tripleOrder.Compare(fileLineColumn x, fileLineColumn xx)
+        }
 
     let outputRange (os: TextWriter) (m: range) =
         fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
@@ -535,7 +578,8 @@ module Range =
             let endL, endC = startL + 1, 0
             range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r: range) =
+    let stringOfRange (m: range) =
+        let r = m.ApplyLineDirectives()
         sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
     let toZ (m: range) = toZ m.Start, toZ m.End

@@ -1,13 +1,13 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/LeadingKeyword/UseRecKeyword.fs", false,
-      QualifiedNameOfFile UseRecKeyword, [], [],
+      QualifiedNameOfFile UseRecKeyword, [],
       [SynModuleOrNamespace
          ([UseRecKeyword], false, AnonModule,
           [Expr
              (Do
                 (LetOrUse
-                   (true, true,
+                   (true, true, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -24,7 +24,10 @@ ImplFile
                           EqualsRange = Some (3,14--3,15) })],
                     Const (Unit, (4,4--4,6)), (3,4--4,6),
                     { LetOrUseKeyword = (3,4--3,11)
-                      InKeyword = None }), (2,0--4,6)), (2,0--4,6))],
-          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      CodeComments = [] }, set []))
+                      InKeyword = None
+                      EqualsRange = Some (3,14--3,15) }), (2,0--4,6)),
+              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

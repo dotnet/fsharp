@@ -108,7 +108,7 @@ exception LibraryUseOnly of range: range
 
 exception Deprecated of message: string * range: range
 
-exception Experimental of message: string * range: range
+exception Experimental of message: string option * diagnosticId: string option * urlFormat: string option * range: range
 
 exception PossibleUnverifiableCode of range: range
 
@@ -132,6 +132,14 @@ exception DiagnosticWithSuggestions of number: int * message: string * range: ra
 
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
 exception DiagnosticEnabledWithLanguageFeature of number: int * message: string * range: range * enabledByLangFeature: bool
+
+/// A diagnostic that is raised when a diagnostic is obsolete
+exception ObsoleteDiagnostic of
+    isError: bool *
+    diagnosticId: string option *
+    message: string option *
+    urlFormat: string option *
+    range: range
 
 /// The F# compiler code currently uses 'Error(...)' in many places to create
 /// an DiagnosticWithText as an exception even if it's a warning.
@@ -427,8 +435,7 @@ module DiagnosticsLoggerExtensions =
         try
             if not tryAndDetectDev15 then
                 let preserveStackTrace =
-                    !!typeof<Exception>
-                        .GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    !!typeof<Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
 
                 preserveStackTrace.Invoke(exn, null) |> ignore
         with _ ->
@@ -795,8 +802,7 @@ let NewlineifyErrorString (message: string) =
 /// fixes given string by replacing all control chars with spaces.
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'),
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
-let NormalizeErrorString (text: string MaybeNull) =
-    let text = nullArgCheck "text" text
+let NormalizeErrorString (text: string) =
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()
@@ -875,17 +881,17 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
-        use _ =
-            Activity.start
-                "DiagnosticsLogger.StackGuard.Guard"
-                [|
-                    Activity.Tags.stackGuardName, name
-                    Activity.Tags.stackGuardCurrentDepth, string depth
-                    Activity.Tags.stackGuardMaxDepth, string maxDepth
-                    Activity.Tags.callerMemberName, memberName
-                    Activity.Tags.callerFilePath, path
-                    Activity.Tags.callerLineNumber, string line
-                |]
+
+        Activity.addEventWithTags
+            "DiagnosticsLogger.StackGuard.Guard"
+            (seq {
+                Activity.Tags.stackGuardName, box name
+                Activity.Tags.stackGuardCurrentDepth, depth
+                Activity.Tags.stackGuardMaxDepth, maxDepth
+                Activity.Tags.callerMemberName, memberName
+                Activity.Tags.callerFilePath, path
+                Activity.Tags.callerLineNumber, line
+            })
 
         depth <- depth + 1
 

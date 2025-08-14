@@ -192,7 +192,7 @@ module SourceTextNew =
 
             member _.GetChecksum() =
                 // TODO: something better...
-                !! sourceText.ToString()
+                !!sourceText.ToString()
                 |> Md5Hasher.hashString
                 |> fun byteArray -> ImmutableArray.Create<byte>(byteArray, 0, byteArray.Length)
         }
@@ -211,40 +211,35 @@ open System.Collections.Generic
 type internal Position =
     val FileIndex: int
     val Line: int
-    val OriginalLine: int
     val AbsoluteOffset: int
     val StartOfLineAbsoluteOffset: int
     member x.Column = x.AbsoluteOffset - x.StartOfLineAbsoluteOffset
 
-    new(fileIndex: int, line: int, originalLine: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
+    new(fileIndex: int, line: int, startOfLineAbsoluteOffset: int, absoluteOffset: int) =
         {
             FileIndex = fileIndex
             Line = line
-            OriginalLine = originalLine
             AbsoluteOffset = absoluteOffset
             StartOfLineAbsoluteOffset = startOfLineAbsoluteOffset
         }
 
     member x.NextLine =
-        Position(x.FileIndex, x.Line + 1, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(x.FileIndex, x.Line + 1, x.AbsoluteOffset, x.AbsoluteOffset)
 
     member x.EndOfToken n =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + n)
+        Position(x.FileIndex, x.Line, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + n)
 
     member x.ShiftColumnBy by =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + by)
+        Position(x.FileIndex, x.Line, x.StartOfLineAbsoluteOffset, x.AbsoluteOffset + by)
 
     member x.ColumnMinusOne =
-        Position(x.FileIndex, x.Line, x.OriginalLine, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
-
-    member x.ApplyLineDirective(fileIdx, line) =
-        Position(fileIdx, line, x.OriginalLine + 1, x.AbsoluteOffset, x.AbsoluteOffset)
+        Position(x.FileIndex, x.Line, x.StartOfLineAbsoluteOffset, x.StartOfLineAbsoluteOffset - 1)
 
     override p.ToString() = $"({p.Line},{p.Column})"
 
     static member Empty = Position()
 
-    static member FirstLine fileIdx = Position(fileIdx, 1, 1, 0, 0)
+    static member FirstLine fileIdx = Position(fileIdx, 1, 0, 0)
 
 type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 
@@ -356,12 +351,8 @@ and [<Sealed>] internal LexBuffer<'Char>
         FSharp.Compiler.DiagnosticsLogger.checkLanguageFeatureAndRecover langVersion featureId range
 
     static member FromFunction
-        (
-            reportLibraryOnlyFeatures,
-            langVersion,
-            strictIndentation,
-            f: 'Char[] * int * int -> int
-        ) : LexBuffer<'Char> =
+        (reportLibraryOnlyFeatures, langVersion, strictIndentation, f: 'Char[] * int * int -> int)
+        : LexBuffer<'Char> =
         let extension = Array.zeroCreate 4096
 
         let filler (lexBuffer: LexBuffer<'Char>) =
@@ -385,8 +376,7 @@ and [<Sealed>] internal LexBuffer<'Char>
     static member FromArray(reportLibraryOnlyFeatures, langVersion, strictIndentation, s: 'Char[]) : LexBuffer<'Char> =
         let buffer = Array.copy s
 
-        LexBuffer<'Char>
-            .FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, buffer)
+        LexBuffer<'Char>.FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, strictIndentation, buffer)
 
     // Important: This method takes ownership of the array
     static member FromChars(reportLibraryOnlyFeatures, langVersion, strictIndentation, arr: char[]) =

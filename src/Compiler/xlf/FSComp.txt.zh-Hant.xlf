@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
+      <trans-unit id="FieldNotContainedTypesDifferNullness">
+        <source>Nullness warning: The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ in their nullness annotations</source>
+        <target state="new">Nullness warning: The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ in their nullness annotations</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueNotContainedMutabilityTypesDifferNullness">
+        <source>Nullness warning: Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe types differ in their nullness annotations</source>
+        <target state="new">Nullness warning: Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe types differ in their nullness annotations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="alwaysUseTypedStringInterpolation">
         <source>Interpolated string contains untyped identifiers. Adding typed format specifiers is recommended.</source>
         <target state="translated">差補字串包含不具類型的識別項。建議新增具類型的格式規範。</target>
@@ -162,6 +172,11 @@
         <target state="translated">可用的多載:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csComparisonDelegateConstraintInconsistent">
+        <source>The constraints 'comparison' and 'delegate' are inconsistent</source>
+        <target state="new">The constraints 'comparison' and 'delegate' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csFunctionDoesNotSupportType">
         <source>'{0}' does not support the type '{1}', because the latter lacks the required (real or built-in) member '{2}'</source>
         <target state="translated">'{0}' 不支援類型 '{1}'，因為後者缺少必要的 (實際或內建) 成員 '{2}'</target>
@@ -200,6 +215,11 @@
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNullStructConstraintInconsistent">
+        <source>The constraints 'struct' and 'null' are inconsistent</source>
+        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
@@ -267,6 +287,11 @@
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowLetOrUseBangTypeAnnotationWithoutParens">
+        <source>Allow let! and use! type annotations without requiring parentheses</source>
+        <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>
@@ -285,6 +310,11 @@
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">'module' 關鍵字右邊的屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureBetterAnonymousRecordParsing">
+        <source>Support for better anonymous record parsing</source>
+        <target state="new">Support for better anonymous record parsing</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBetterExceptionPrinting">
@@ -572,9 +602,19 @@
         <target state="translated">可繼續的狀態機器</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReturnFromFinal">
+        <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
+        <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
         <target state="translated">只要 [&lt;Struct&gt;] 具有相同名稱和類型，就以強制聯集共用基礎欄位</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureScopedNowarn">
+        <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
+        <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
@@ -617,6 +657,11 @@
         <target state="new">Support ValueOption as valid type for optional member parameters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureSupportWarnWhenUnitPassedToObjArg">
+        <source>Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</source>
+        <target state="new">Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
         <source>Union case test properties</source>
         <target state="translated">聯集案例測試屬性</target>
@@ -630,6 +675,11 @@
       <trans-unit id="featureUnmanagedConstraintCsharpInterop">
         <source>Interop between C#'s and F#'s unmanaged generic constraint (emit additional modreq)</source>
         <target state="translated">C# 與 F# 的非受控泛型條件約束之間的 Interop (發出額外的 modreq)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureUseBangBindingValueDiscard">
+        <source>Allows use! _ = ... in computation expressions</source>
+        <target state="new">Allows use! _ = ... in computation expressions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUseTypeSubsumptionCache">
@@ -807,6 +857,11 @@
         <target state="new">This is not a valid byte character literal. The value must be less than or equal to '\127'B.\nNote: In a future F# version this warning will be promoted to an error.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexLineDirectiveMappingIsNotUnique">
+        <source>The file '{0}' was also pointed to in a line directive in '{1}'. Proper warn directive application may not be possible.</source>
+        <target state="new">The file '{0}' was also pointed to in a line directive in '{1}'. Proper warn directive application may not be possible.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
         <target state="translated">在插補字串中，必須將 '}}' 字元逸出 (重複一次)。</target>
@@ -835,6 +890,21 @@
       <trans-unit id="lexUnmatchedRBracesInTripleQuote">
         <source>The interpolated string contains unmatched closing braces.</source>
         <target state="translated">差補字串包含不成對的右大括弧。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustBeFirst">
+        <source>#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</source>
+        <target state="new">#nowarn/#warnon directives must appear as the first non-whitespace characters on a line</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexWarnDirectiveMustHaveArgs">
+        <source>Warn directives must have warning number(s) as argument(s)</source>
+        <target state="new">Warn directives must have warning number(s) as argument(s)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexWarnDirectivesMustMatch">
+        <source>There is another {0} for this warning already in line {1}.</source>
+        <target state="new">There is another {0} for this warning already in line {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -990,6 +1060,11 @@
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">支援的語言版本:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsTypecheckOnly">
+        <source>Perform type checking only, do not execute code</source>
+        <target state="new">Perform type checking only, do not execute code</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
@@ -1332,6 +1407,11 @@
         <target state="translated">欄位 '{0}' 在這個匿名記錄類型中出現多次。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAttributeIsNotValidForUnionCaseWithFields">
+        <source>This attribute is not valid for use on union cases with fields.</source>
+        <target state="new">This attribute is not valid for use on union cases with fields.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">屬性無法套用到類型延伸模組。</target>
@@ -1360,6 +1440,11 @@
       <trans-unit id="tcEmptyBodyRequiresBuilderZeroMethod">
         <source>An empty body may only be used if the computation expression builder defines a 'Zero' method.</source>
         <target state="new">An empty body may only be used if the computation expression builder defines a 'Zero' method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExpectedTypeParamMarkedWithUnitOfMeasureAttribute">
+        <source>Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</source>
+        <target state="new">Expected unit-of-measure type parameter must be marked with the [&lt;Measure&gt;] attribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
@@ -1695,6 +1780,11 @@
       <trans-unit id="tcUnexpectedFunTypeInUnionCaseField">
         <source>Unexpected function type in union case field definition. If you intend the field to be a function, consider wrapping the function signature with parens, e.g. | Case of a -&gt; b into | Case of (a -&gt; b).</source>
         <target state="translated">聯集案例欄位定義中有未預期的函式類型。如果您想要讓欄位成為函式，請考慮使用括弧括住函式簽章，例如將 | Case of a -&gt; b 變更為 | Case of (a -&gt; b)。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnitToObjSubsumption">
+        <source>This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime. This warning may be disabled using '#nowarn \"3397\".</source>
+        <target state="new">This expression uses 'unit' for an 'obj'-typed argument. This will lead to passing 'null' at runtime. This warning may be disabled using '#nowarn \"3397\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
@@ -5062,11 +5152,6 @@
         <target state="translated">這個屬性不能用在這個語言項目上。組件屬性應該附加到 'do ()' 宣告 (如果 F# 模組中需要的話)。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAttributeIsNotValidForLanguageElement">
-        <source>This attribute is not valid for use on this language element</source>
-        <target state="translated">這個屬性不能用在這個語言項目上</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOptionalArgumentsCannotBeUsedInCustomAttribute">
         <source>Optional arguments cannot be used in custom attributes</source>
         <target state="translated">選擇性的引數不能用在自訂屬性中</target>
@@ -5075,6 +5160,11 @@
       <trans-unit id="tcPropertyCannotBeSet0">
         <source>This property cannot be set</source>
         <target state="translated">無法設定這個屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcPropertyCannotBeSetPrivateSetter">
+        <source>Property '{0}' cannot be set because the setter is private</source>
+        <target state="new">Property '{0}' cannot be set because the setter is private</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyOrFieldNotFoundInAttribute">

@@ -1963,6 +1963,24 @@ type ArrayModule() =
 
 
     [<Fact>]
+    member _.``Slicing creates new non-empty arrays`` () =
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.False(Object.ReferenceEquals(arr[1..3], arr[1..3]))
+        Assert.False(Object.ReferenceEquals(arr[0..], arr[0..]))
+        Assert.False(Object.ReferenceEquals(arr[..^1], arr[..^1]))
+        
+    [<Fact>]
+    member _.``Empty slices are referentially equivalent`` () =
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr[1..-1].Length, 0)
+        Assert.True(Object.ReferenceEquals(arr[1..-1], arr[1..-1]))
+        
+        Assert.True(Object.ReferenceEquals(arr[1..-1], ([||]: int array)))
+
+
+    [<Fact>]
     member _.RandomShuffle() =
         let arr = [| 1..20 |]
 
@@ -2227,6 +2245,14 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomChoices negativeChoicesLength arr |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomChoices 0
+
+        Assert.AreEqual([||], choice)
+
+    [<Fact>]
     member _.RandomChoicesWith() =
         let arr = [| 1..50 |]
         let rand1 = Random(123)
@@ -2292,6 +2318,14 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomChoicesBy randomizer negativeChoicesLength arr |> ignore)
 
     [<Fact>]
+    member _.RandomChoicesByEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomChoicesBy (fun () -> 1.0) 0
+
+        Assert.AreEqual([||], choice)
+
+    [<Fact>]
     member _.RandomSample() =
         let arr = [| 1..50 |]
 
@@ -2318,6 +2352,14 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomSample sampleLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSample negativeSampleLength arr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSample tooBigSampleLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomSample 0
+
+        Assert.AreEqual([||], choice)
 
     [<Fact>]
     member _.RandomSampleWith() =
@@ -2395,3 +2437,11 @@ type ArrayModule() =
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer sampleLength emptyArr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer negativeSampleLength arr |> ignore)
         CheckThrowsArgumentException (fun () -> Array.randomSampleBy randomizer tooBigSampleLength arr |> ignore)
+
+    [<Fact>]
+    member _.RandomSampleByEmpty() =
+        let emptyArr = [||]
+
+        let choice = emptyArr |> Array.randomSampleBy (fun () -> 1.0) 0
+
+        Assert.AreEqual([||], choice)

@@ -1,13 +1,13 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/Try with - Missing expr 04.fs", false,
-      QualifiedNameOfFile Module, [], [],
+      QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
           [Expr
              (TryWith
                 (LetOrUse
-                   (false, false,
+                   (false, false, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
@@ -20,15 +20,17 @@ ImplFile
                           EqualsRange = Some (5,6--5,7) })],
                     ArbitraryAfterError ("seqExpr", (5,10--5,10)), (5,0--5,10),
                     { LetOrUseKeyword = (5,0--5,3)
-                      InKeyword = None }), [], (3,0--5,10), Yes (3,0--3,3),
-                 Yes (5,10--5,10), { TryKeyword = (3,0--3,3)
-                                     TryToWithRange = (3,0--5,10)
-                                     WithKeyword = (5,10--5,10)
-                                     WithToEndRange = (3,0--5,10) }),
-              (3,0--5,10))],
+                      InKeyword = None
+                      EqualsRange = Some (5,6--5,7) }), [], (3,0--5,10),
+                 Yes (3,0--3,3), Yes (5,10--5,10),
+                 { TryKeyword = (3,0--3,3)
+                   TryToWithRange = (3,0--5,10)
+                   WithKeyword = (5,10--5,10)
+                   WithToEndRange = (3,0--5,10) }), (3,0--5,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))
 
 (5,0)-(5,3) parse error The block following this 'let' is unfinished. Every code block is an expression and must have a result. 'let' cannot be the final code element in a block. Consider giving this block an explicit result.

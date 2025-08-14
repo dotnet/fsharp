@@ -627,8 +627,6 @@ type SynExpr =
         typeArgsRange: range *
         range: range
 
-    | LetOrUse of isRecursive: bool * isUse: bool * bindings: SynBinding list * body: SynExpr * range: range * trivia: SynExprLetOrUseTrivia
-
     | TryWith of
         tryExpr: SynExpr *
         withCases: SynMatchClause list *
@@ -720,16 +718,15 @@ type SynExpr =
 
     | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
-    | LetOrUseBang of
-        bindDebugPoint: DebugPointAtBinding *
+    | LetOrUse of
+        isRecursive: bool *
         isUse: bool *
         isFromSource: bool *
-        pat: SynPat *
-        rhs: SynExpr *
-        andBangs: SynExprAndBang list *
+        isBang: bool *
+        bindings: SynBinding list *
         body: SynExpr *
         range: range *
-        trivia: SynExprLetOrUseBangTrivia
+        trivia: SynExprLetOrUseTrivia
 
     | MatchBang of
         matchDebugPoint: DebugPointAtBinding *
@@ -775,10 +772,7 @@ type SynExpr =
 
     member e.Range =
         match e with
-        | SynExpr.Paren(_, leftParenRange, rightParenRange, r) ->
-            match rightParenRange with
-            | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
-            | _ -> r
+        | SynExpr.Paren(range = m)
         | SynExpr.Quote(range = m)
         | SynExpr.Const(range = m)
         | SynExpr.Typed(range = m)
@@ -838,7 +832,6 @@ type SynExpr =
         | SynExpr.ImplicitZero(range = m)
         | SynExpr.YieldOrReturn(range = m)
         | SynExpr.YieldOrReturnFrom(range = m)
-        | SynExpr.LetOrUseBang(range = m)
         | SynExpr.MatchBang(range = m)
         | SynExpr.DoBang(range = m)
         | SynExpr.WhileBang(range = m)
@@ -872,30 +865,12 @@ type SynExpr =
         | _ -> false
 
 [<NoEquality; NoComparison>]
-type SynExprAndBang =
-    | SynExprAndBang of
-        debugPoint: DebugPointAtBinding *
-        isUse: bool *
-        isFromSource: bool *
-        pat: SynPat *
-        body: SynExpr *
-        range: range *
-        trivia: SynExprAndBangTrivia
-
-    member x.Range =
-        match x with
-        | SynExprAndBang(range = range) -> range
-
-    member this.Trivia =
-        match this with
-        | SynExprAndBang(trivia = trivia) -> trivia
-
-[<NoEquality; NoComparison>]
 type SynExprRecordField =
     | SynExprRecordField of
         fieldName: RecordFieldName *
         equalsRange: range option *
         expr: SynExpr option *
+        range: range *
         blockSeparator: BlockSeparator option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1124,6 +1099,8 @@ type SynBinding =
         let (SynBinding(expr = e; range = m)) = x in unionRanges e.Range m
 
     member x.RangeOfHeadPattern = let (SynBinding(headPat = headPat)) = x in headPat.Range
+
+    member x.Trivia = let (SynBinding(trivia = trivia)) = x in trivia
 
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfo =
@@ -1759,9 +1736,6 @@ type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list
 [<NoEquality; NoComparison>]
 type ParsedSigFile = ParsedSigFile of hashDirectives: ParsedHashDirective list * fragments: ParsedSigFileFragment list
 
-[<RequireQualifiedAccess>]
-type ScopedPragma = WarningOff of range: range * warningNumber: int
-
 [<NoEquality; NoComparison>]
 type QualifiedNameOfFile =
     | QualifiedNameOfFile of Ident
@@ -1778,18 +1752,14 @@ type ParsedImplFileInput =
         fileName: string *
         isScript: bool *
         qualifiedNameOfFile: QualifiedNameOfFile *
-        scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia *
+        trivia: ParsedInputTrivia *
         identifiers: Set<string>
 
     member x.QualifiedName =
         (let (ParsedImplFileInput(qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
-
-    member x.ScopedPragmas =
-        (let (ParsedImplFileInput(scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
     member x.HashDirectives =
         (let (ParsedImplFileInput(hashDirectives = hashDirectives)) = x in hashDirectives)
@@ -1812,17 +1782,13 @@ type ParsedSigFileInput =
     | ParsedSigFileInput of
         fileName: string *
         qualifiedNameOfFile: QualifiedNameOfFile *
-        scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia *
+        trivia: ParsedInputTrivia *
         identifiers: Set<string>
 
     member x.QualifiedName =
         (let (ParsedSigFileInput(qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
-
-    member x.ScopedPragmas =
-        (let (ParsedSigFileInput(scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
     member x.HashDirectives =
         (let (ParsedSigFileInput(hashDirectives = hashDirectives)) = x in hashDirectives)
@@ -1843,11 +1809,6 @@ type ParsedInput =
         match inp with
         | ParsedInput.ImplFile file -> file.FileName
         | ParsedInput.SigFile file -> file.FileName
-
-    member inp.ScopedPragmas =
-        match inp with
-        | ParsedInput.ImplFile file -> file.ScopedPragmas
-        | ParsedInput.SigFile file -> file.ScopedPragmas
 
     member inp.QualifiedName =
         match inp with

@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Expression/DotLambda_TopLevelLet.fs", false,
-      QualifiedNameOfFile DotLambda_TopLevelLet, [], [],
+      QualifiedNameOfFile DotLambda_TopLevelLet, [],
       [SynModuleOrNamespace
          ([DotLambda_TopLevelLet], false, AnonModule,
           [Let
@@ -34,4 +34,5 @@ ImplFile
               (1,0--1,25))], PreXmlDocEmpty, [], None, (1,0--1,25),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [] }, set []))

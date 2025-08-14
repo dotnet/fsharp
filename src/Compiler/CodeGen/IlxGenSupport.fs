@@ -7,6 +7,7 @@ open System.Reflection
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTree
 
@@ -83,12 +84,8 @@ let getFieldMemberAccess =
     | EncapsulatedProperties -> ILMemberAccess.Private
 
 let mkLocalPrivateAttributeWithPropertyConstructors
-    (
-        g: TcGlobals,
-        name: string,
-        attrProperties: (string * ILType) list option,
-        codegenStyle: AttrDataGenerationStyle
-    ) =
+    (g: TcGlobals, name: string, attrProperties: (string * ILType) list option, codegenStyle: AttrDataGenerationStyle)
+    =
     let ilTypeRef = mkILTyRef (ILScopeRef.Local, name)
     let ilTy = mkILFormalNamedTy ILBoxity.AsObject ilTypeRef []
 
@@ -227,8 +224,7 @@ let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * in
         |> Array.map (fun (name, value) -> mkILStaticLiteralField (name, ilType, ILFieldInit.Int32 value, None, ILMemberAccess.Public))
         |> Array.append
             [|
-                (mkILInstanceField ("value__", g.ilg.typ_Int32, None, ILMemberAccess.Public))
-                    .WithSpecialName(true)
+                (mkILInstanceField ("value__", g.ilg.typ_Int32, None, ILMemberAccess.Public)).WithSpecialName(true)
             |]
         |> Array.toList
 
@@ -290,9 +286,7 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
                         ("Interfaces", 8192)
                     |]
 
-                (mkLocalPrivateInt32Enum (g, tref, values))
-                    .WithSerializable(true)
-                    .WithSealed(true))
+                (mkLocalPrivateInt32Enum (g, tref, values)).WithSerializable(true).WithSealed(true))
         )
 
     ILType.Value(mkILNonGenericTySpec (tref))
@@ -411,10 +405,7 @@ let rec GetNullnessFromTType (g: TcGlobals) ty =
                 else if isValueType then
                     // Generic value type: 0, followed by the representation of the type arguments in order including containing types
                     yield NullnessInfo.AmbivalentToNull
-                else if
-                    IsUnionTypeWithNullAsTrueValue g tcref.Deref
-                    || TypeHasAllowNull tcref g FSharp.Compiler.Text.Range.Zero
-                then
+                else if IsUnionTypeWithNullAsTrueValue g tcref.Deref || TypeHasAllowNull tcref g range0 then
                     yield NullnessInfo.WithNull
                 else
                     // Reference type: the nullability (0, 1, or 2), followed by the representation of the type arguments in order including containing types

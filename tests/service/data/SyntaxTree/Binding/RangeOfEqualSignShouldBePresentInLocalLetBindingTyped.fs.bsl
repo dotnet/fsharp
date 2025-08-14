@@ -3,14 +3,14 @@ ImplFile
      ("/root/Binding/RangeOfEqualSignShouldBePresentInLocalLetBindingTyped.fs",
       false,
       QualifiedNameOfFile RangeOfEqualSignShouldBePresentInLocalLetBindingTyped,
-      [], [],
+      [],
       [SynModuleOrNamespace
          ([RangeOfEqualSignShouldBePresentInLocalLetBindingTyped], false,
           AnonModule,
           [Expr
              (Do
                 (LetOrUse
-                   (false, false,
+                   (false, false, true, false,
                     [SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -32,7 +32,10 @@ ImplFile
                           EqualsRange = Some (3,15--3,16) })],
                     Const (Unit, (4,4--4,6)), (3,4--4,6),
                     { LetOrUseKeyword = (3,4--3,7)
-                      InKeyword = None }), (2,0--4,6)), (2,0--4,6))],
-          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      CodeComments = [] }, set []))
+                      InKeyword = None
+                      EqualsRange = Some (3,15--3,16) }), (2,0--4,6)),
+              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

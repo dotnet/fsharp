@@ -248,7 +248,7 @@ module ResponseFile =
             let data =
                 seq {
                     while not reader.EndOfStream do
-                        !! reader.ReadLine()
+                        !!reader.ReadLine()
                 }
                 |> Seq.choose parseLine
                 |> List.ofSeq
@@ -701,7 +701,7 @@ let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch =
         tcConfigB.embedAllSource <- false
 
 let setOutFileName tcConfigB (path: string) =
-    let outputDir = !! Path.GetDirectoryName(path)
+    let outputDir = !!Path.GetDirectoryName(path)
     tcConfigB.outputDir <- Some outputDir
     tcConfigB.outputFile <- Some path
 
@@ -1307,6 +1307,13 @@ let advancedFlagsFsi tcConfigB =
             OptionUnit(fun () -> tcConfigB.clearResultsCache <- true),
             None,
             Some(FSComp.SR.optsClearResultsCache ())
+        )
+        CompilerOption(
+            "typecheck-only",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.typeCheckOnly <- true),
+            None,
+            Some(FSComp.SR.optsTypecheckOnly ())
         )
     ]
 

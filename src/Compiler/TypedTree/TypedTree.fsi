@@ -3149,7 +3149,7 @@ type TType =
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/dotnet/fsharp/issues/2561
-    member GetAssemblyName: unit -> string MaybeNull
+    member GetAssemblyName: unit -> string
 
     override ToString: unit -> string
 
@@ -4050,8 +4050,6 @@ type NamedDebugPointKey =
 
     interface IComparable
 
-    override Equals: yobj: obj -> bool
-
     override GetHashCode: unit -> int
 
 /// Represents a complete typechecked implementation file, including its inferred or explicit signature.
@@ -4061,7 +4059,6 @@ type NamedDebugPointKey =
 type CheckedImplFile =
     | CheckedImplFile of
         qualifiedNameOfFile: Syntax.QualifiedNameOfFile *
-        pragmas: Syntax.ScopedPragma list *
         signature: ModuleOrNamespaceType *
         contents: ModuleOrNamespaceContents *
         hasExplicitEntryPoint: bool *
@@ -4079,8 +4076,6 @@ type CheckedImplFile =
     member HasExplicitEntryPoint: bool
 
     member IsScript: bool
-
-    member Pragmas: Syntax.ScopedPragma list
 
     member QualifiedNameOfFile: Syntax.QualifiedNameOfFile
 

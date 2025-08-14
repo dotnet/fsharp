@@ -343,6 +343,7 @@ module SynExpr =
         | PrefixApp prec -> ValueSome(prec, Non)
         | InfixApp(prec, side) -> ValueSome(prec, side)
         | SynExpr.App(argExpr = SynExpr.ComputationExpr _) -> ValueSome(UnaryPrefix, Left)
+        | SynExpr.App(argExpr = SynExpr.Paren(expr = SynExpr.App _ & Is inner)) -> ValueSome(Apply, Right)
         | SynExpr.App(funcExpr = SynExpr.Paren(expr = SynExpr.App _)) -> ValueSome(Apply, Left)
         | SynExpr.App(flag = ExprAtomicFlag.Atomic) -> ValueSome(Dot, Non)
         | SynExpr.App _ -> ValueSome(Apply, Non)
@@ -396,6 +397,7 @@ module SynExpr =
         | SynExpr.DotIndexedSet _
         | SynExpr.DotNamedIndexedPropertySet _
         | SynExpr.DotSet _ -> ValueSome Set
+        | SynExpr.TypeTest _ -> ValueSome TypeTest
         | _ -> ValueNone
 
     module Dangling =
@@ -442,8 +444,7 @@ module SynExpr =
         [<return: Struct>]
         let (|LetOrUse|_|) =
             dangling (function
-                | SynExpr.LetOrUse _
-                | SynExpr.LetOrUseBang _ as expr -> Some expr
+                | SynExpr.LetOrUse _ as expr -> Some expr
                 | _ -> None)
 
         /// Matches a dangling sequential expression.
@@ -540,7 +541,7 @@ module SynExpr =
 
                         if i >= 0 && i < offsidesCol then
                             let slice = line.AsSpan(i, min (offsidesCol - i) (line.Length - i))
-                            let j = slice.IndexOfAnyExcept("*/%-+:^@><=!|0$.?".AsSpan())
+                            let j = slice.IndexOfAnyExcept("*/%-+:^@><=!|$.?".AsSpan())
 
                             let lo = i + (if j >= 0 && slice[j] = ' ' then j else 0)
 
@@ -695,7 +696,6 @@ module SynExpr =
         | _, SyntaxNode.SynExpr(SynExpr.Lazy _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.App(argExpr = SynExpr.Paren(expr = Is expr)) as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.LetOrUse _ as outer) :: _
-        | _, SyntaxNode.SynExpr(SynExpr.LetOrUseBang _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.TryWith _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.TryFinally _ as outer) :: _
         | _, SyntaxNode.SynExpr(SynExpr.For _ as outer) :: _
@@ -845,22 +845,6 @@ module SynExpr =
         // precedence than regular function application.
         | _, SyntaxNode.SynExpr(SynExpr.App _) :: SyntaxNode.SynExpr(PrefixApp High) :: _ -> true
 
-        // Parens are never required around suffixed or infixed numeric literals, e.g.,
-        //
-        //     (1l).ToString()
-        //     (1uy).ToString()
-        //     (0b1).ToString()
-        //     (1e10).ToString()
-        //     (1.0).ToString()
-        | DotSafeNumericLiteral, _ -> false
-
-        // Parens are required around bare decimal ints or doubles ending
-        // in dots when being dotted into, e.g.,
-        //
-        //     (1).ToString()
-        //     (1.).ToString()
-        | SynExpr.Const(constant = SynConst.Int32 _ | SynConst.Double _), SyntaxNode.SynExpr(SynExpr.DotGet _) :: _ -> true
-
         // Parens are required around join conditions:
         //
         //     join … on (… = …)
@@ -907,6 +891,22 @@ module SynExpr =
             ->
             true
 
+        // Parens are never required around suffixed or infixed numeric literals, e.g.,
+        //
+        //     (1l).ToString()
+        //     (1uy).ToString()
+        //     (0b1).ToString()
+        //     (1e10).ToString()
+        //     (1.0).ToString()
+        | DotSafeNumericLiteral, _ -> false
+
+        // Parens are required around bare decimal ints or doubles ending
+        // in dots when being dotted into, e.g.,
+        //
+        //     (1).ToString()
+        //     (1.).ToString()
+        | SynExpr.Const(constant = SynConst.Int32 _ | SynConst.Double _), SyntaxNode.SynExpr(SynExpr.DotGet _) :: _ -> true
+
         // The :: operator is parsed differently from other symbolic infix operators,
         // so we need to give it special treatment.
 
@@ -952,6 +952,7 @@ module SynExpr =
                 let rec loop =
                     function
                     | [] -> false
+                    | SynMatchClause(whenExpr = Some(SynExpr.Paren(expr = Dangling.ArrowSensitive _ & Is inner))) :: _ -> true
                     | SynMatchClause(trivia = trivia) :: clauses ->
                         trivia.BarRange |> Option.exists (problematic matchOrTryRange)
                         || trivia.ArrowRange |> Option.exists (problematic matchOrTryRange)
@@ -1075,6 +1076,14 @@ module SynExpr =
             | SynExpr.Sequential(expr1 = SynExpr.Paren(expr = Is inner); expr2 = expr2), _ when innerBindingsWouldShadowOuter inner expr2 ->
                 true
 
+            // $"{({ A = 3 })}"
+            // $"{({| A = 3 |})}"
+            // $"{({1..10})}"
+            // $"{(();1)}"
+            // $"{(1,2)}"
+            | SynExpr.InterpolatedString _, SynExpr.Record _
+            | SynExpr.InterpolatedString _, SynExpr.AnonRecd _
+            | SynExpr.InterpolatedString _, SynExpr.ComputationExpr _
             | SynExpr.InterpolatedString _, SynExpr.Sequential _
             | SynExpr.InterpolatedString _, SynExpr.Tuple(isStruct = false) -> true
 
@@ -1148,6 +1157,7 @@ module SynExpr =
                                | _, MulDivMod(Mod, _)
                                | _, AddSub(Sub, _) -> true
                                | Relational _, Relational _ -> true
+                               | Apply, Apply -> true
                                | _ -> false
 
                     | c -> c > 0
@@ -1199,7 +1209,6 @@ module SynExpr =
             | SynExpr.Match _, _
             | SynExpr.MatchBang _, _
             | SynExpr.LetOrUse _, _
-            | SynExpr.LetOrUseBang _, _
             | SynExpr.Sequential _, _
             | SynExpr.Do _, _
             | SynExpr.DoBang _, _

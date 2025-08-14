@@ -1,7 +1,7 @@
 ImplFile
   (ParsedImplFileInput
      ("/root/Type/SynTypeFunHasRangeOfArrow.fs", false,
-      QualifiedNameOfFile SynTypeFunHasRangeOfArrow, [], [],
+      QualifiedNameOfFile SynTypeFunHasRangeOfArrow, [],
       [SynModuleOrNamespace
          ([SynTypeFunHasRangeOfArrow], false, AnonModule,
           [Types
@@ -23,4 +23,5 @@ ImplFile
                     WithKeyword = None })], (2,0--3,20))], PreXmlDocEmpty, [],
           None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
+        WarnDirectives = []
         CodeComments = [LineComment (2,19--2,59)] }, set []))

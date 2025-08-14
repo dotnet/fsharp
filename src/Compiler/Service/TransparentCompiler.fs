@@ -299,7 +299,9 @@ type CacheSizes =
 
         {
             ParseFileKeepStrongly = 50 * sizeFactor
-            ParseFileKeepWeakly = 20 * sizeFactor
+            // Since ParseFile version is just a content hash, we keep only one version
+            // in order to ensure that we re-parse after undo for the sake of WarnScopes
+            ParseFileKeepWeakly = 0 // 20 * sizeFactor
             ParseFileWithoutProjectKeepStrongly = 5 * sizeFactor
             ParseFileWithoutProjectKeepWeakly = 2 * sizeFactor
             ParseAndCheckFileInProjectKeepStrongly = sizeFactor
@@ -341,7 +343,9 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member _.CacheSizes = cs
 
-    member val ParseFile = AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
+    member val ParseFile =
+        AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
+        : AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
 
     member val ParseFileWithoutProject =
         AsyncMemoize<string, string, FSharpParseFileResults>(
@@ -496,6 +500,7 @@ type internal TransparentCompiler
                 defaultFSharpBinariesDir,
                 fileName,
                 source,
+                None,
                 CodeContext.Editing,
                 useSimpleResolution,
                 useFsiAuxLib,
@@ -766,8 +771,8 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            async {
-                                let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> Cancellable.toAsync
+                            cancellable {
+                                let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
                                 | Some ilReader ->
@@ -779,6 +784,7 @@ type internal TransparentCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
+                            |> Cancellable.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -906,7 +912,7 @@ type internal TransparentCompiler
                 { new IXmlDocumentationInfoLoader with
                     /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
                     member _.TryLoad(assemblyFileName) =
-                        let xmlFileName = !! Path.ChangeExtension(assemblyFileName, ".xml")
+                        let xmlFileName = !!Path.ChangeExtension(assemblyFileName, ".xml")
 
                         // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
                         XmlDocumentationInfo.TryCreateFromFile(xmlFileName)
@@ -1122,7 +1128,7 @@ type internal TransparentCompiler
                             |> Option.map (fun bootstrapInfo -> bootstrapInfo.TcConfig.flatErrors)
                             |> Option.defaultValue false // TODO: do we need to figure this out?
 
-                        FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
+                        FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
             }
@@ -1376,8 +1382,6 @@ type internal TransparentCompiler
                 let tcImports = bootstrapInfo.TcImports
 
                 let mainInputFileName = file.FileName
-                let sourceText = file.SourceText
-                let parsedMainInput = file.ParsedInput
 
                 // Initialize the error handler
                 let errHandler =
@@ -1385,19 +1389,14 @@ type internal TransparentCompiler
                         true,
                         mainInputFileName,
                         tcConfig.diagnosticsOptions,
-                        sourceText,
                         suggestNamesForErrors,
                         tcConfig.flatErrors
                     )
 
-                // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                let tcConfig =
-                    ApplyNoWarnsToTcConfig(tcConfig, parsedMainInput, !! Path.GetDirectoryName(mainInputFileName))
-
                 let diagnosticsLogger = errHandler.DiagnosticsLogger
 
                 let diagnosticsLogger =
-                    GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, diagnosticsLogger)
+                    GetDiagnosticsLoggerFilteringByScopedNowarn(tcConfig.diagnosticsOptions, diagnosticsLogger)
 
                 use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
@@ -1609,6 +1608,8 @@ type internal TransparentCompiler
         caches.ParseAndCheckFileInProject.Get(
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             async {
+                use! _holder = Cancellable.UseToken()
+
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
@@ -1640,9 +1641,7 @@ type internal TransparentCompiler
                     let extraLogger = CapturingDiagnosticsLogger("DiagnosticsWhileCreatingDiagnostics")
                     use _ = new CompilationGlobalsScope(extraLogger, BuildPhase.TypeCheck)
 
-                    // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
-                    let tcConfig =
-                        ApplyNoWarnsToTcConfig(bootstrapInfo.TcConfig, parseResults.ParseTree, Path.GetDirectoryName fileName |> (!!))
+                    let tcConfig = bootstrapInfo.TcConfig
 
                     let diagnosticsOptions = tcConfig.diagnosticsOptions
 
@@ -1695,7 +1694,7 @@ type internal TransparentCompiler
                             bootstrapInfo.TcGlobals,
                             projectSnapshot.IsIncompleteTypeCheckEnvironment,
                             None,
-                            projectSnapshot.ToOptions(),
+                            None,
                             Array.ofList tcInfo.tcDependencyFiles,
                             creationDiags,
                             parseResults.Diagnostics,
@@ -1730,22 +1729,26 @@ type internal TransparentCompiler
 
                 let! projectSnapshot = parseSourceFiles projectSnapshot bootstrapInfo.TcConfig
 
+                let parseDiagnostics =
+                    projectSnapshot.SourceFiles
+                    |> Seq.collect (fun f -> f.ParseDiagnostics)
+                    |> Seq.toArray
+
                 let! graph, dependencyFiles = ComputeDependencyGraphForProject bootstrapInfo.TcConfig projectSnapshot
 
-                return!
+                let! results, tcInfo =
                     processTypeCheckingGraph
                         graph
                         (processGraphNode projectSnapshot bootstrapInfo dependencyFiles true)
                         bootstrapInfo.InitialTcInfo
+
+                return results, tcInfo, parseDiagnostics
             }
         )
 
     let TryGetRecentCheckResultsForFile
-        (
-            fileName: string,
-            projectSnapshot: FSharpProjectSnapshot,
-            userOpName: string
-        ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
+        (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+        : (FSharpParseFileResults * FSharpCheckFileResults) option =
         ignore userOpName
 
         let cacheKey =
@@ -1767,8 +1770,14 @@ type internal TransparentCompiler
         caches.ProjectExtras.Get(
             projectSnapshot.SignatureKey,
             async {
+                use _ =
+                    Activity.start
+                        "ComputeProjectExtras"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
 
-                let! results, finalInfo = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+                let! results, finalInfo, parseDiagnostics = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1852,7 +1861,7 @@ type internal TransparentCompiler
                         errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true
 
-                return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles
+                return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics
             }
         )
 
@@ -1860,6 +1869,14 @@ type internal TransparentCompiler
         caches.AssemblyData.Get(
             projectSnapshot.SignatureKey,
             async {
+                use _ =
+                    Activity.start
+                        "ComputeAssemblyData"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
+
+                use! _holder = Cancellable.UseToken()
 
                 try
 
@@ -1893,7 +1910,7 @@ type internal TransparentCompiler
 
                             let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                            let! _, _, assemblyDataResult, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                            let! _, _, assemblyDataResult, _, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
                             Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                             return assemblyDataResult
@@ -1907,6 +1924,7 @@ type internal TransparentCompiler
         caches.ParseAndCheckProject.Get(
             projectSnapshot.FullKey,
             async {
+                use! _holder = Cancellable.UseToken()
 
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
@@ -1914,7 +1932,8 @@ type internal TransparentCompiler
                 | Some bootstrapInfo, creationDiags ->
                     let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                    let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                    let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics =
+                        ComputeProjectExtras bootstrapInfo snapshotWithSources
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
                     let fileName = DummyFileNameForRangesWithoutASpecificLocation
@@ -1929,18 +1948,18 @@ type internal TransparentCompiler
                         SymbolEnv(bootstrapInfo.TcGlobals, tcInfo.tcState.Ccu, Some tcInfo.tcState.CcuSig, bootstrapInfo.TcImports)
                         |> Some
 
-                    let tcDiagnostics =
+                    let diagnostics =
                         DiagnosticHelpers.CreateDiagnostics(
                             diagnosticsOptions,
                             true,
                             fileName,
-                            tcDiagnostics,
+                            Array.concat [| parseDiagnostics; tcDiagnostics |],
                             suggestNamesForErrors,
                             bootstrapInfo.TcConfig.flatErrors,
                             symbolEnv
                         )
 
-                    let diagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+                    let diagnostics = [| yield! creationDiags; yield! diagnostics |]
 
                     let getAssemblyData () =
                         match assemblyDataResult with
@@ -1962,7 +1981,7 @@ type internal TransparentCompiler
                          tcEnvAtEnd.AccessRights,
                          Some checkedImplFiles,
                          Array.ofList tcDependencyFiles,
-                         projectSnapshot.ToOptions())
+                         None)
 
                     let results =
                         FSharpCheckProjectResults(
@@ -1979,6 +1998,8 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         async {
+            use! _holder = Cancellable.UseToken()
+
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
@@ -2064,33 +2085,25 @@ type internal TransparentCompiler
 
             // TODO: might need to deal with exceptions here:
             use _ = new CompilationGlobalsScope(DiscardErrorsLogger, BuildPhase.Parse)
-            let! tcConfigB, sourceFileNames, _ = ComputeTcConfigBuilder projectSnapshot
 
-            let tcConfig = TcConfig.Create(tcConfigB, validate = true)
+            match! ComputeBootstrapInfo projectSnapshot with
+            | None, creationDiags -> return emptyParseResult fileName creationDiags
+            | Some bootstrapInfo, _ ->
+                let tcConfig = bootstrapInfo.TcConfig
 
-            let _index, fileSnapshot =
-                projectSnapshot.SourceFiles
-                |> Seq.mapi pair
-                |> Seq.tryFind (fun (_, f) -> f.FileName = fileName)
-                |> Option.defaultWith (fun () -> failwith $"File not found: {fileName}")
+                let fileSnapshot =
+                    projectSnapshot.SourceFiles |> List.find (fun f -> f.FileName = fileName)
 
-            let isExe = tcConfig.target.IsExe
-            let isLastCompiland = fileName = (sourceFileNames |> List.last)
-
-            let! file = LoadSource fileSnapshot isExe isLastCompiland
-            let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
-            return parseResult
+                let isExe = tcConfig.target.IsExe
+                let isLastCompiland = fileName = List.last projectSnapshot.SourceFileNames
+                let! file = LoadSource fileSnapshot isExe isLastCompiland
+                let! parseResult = getParseResult projectSnapshot Seq.empty file tcConfig
+                return parseResult
         }
 
     member _.ParseFileWithoutProject
-        (
-            fileName: string,
-            sourceText: ISourceText,
-            options: FSharpParsingOptions,
-            cache: bool,
-            flatErrors: bool,
-            userOpName: string
-        ) : Async<FSharpParseFileResults> =
+        (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
+        : Async<FSharpParseFileResults> =
         let parseFileAsync =
             async {
                 let! ct = Async.CancellationToken
@@ -2244,13 +2257,8 @@ type internal TransparentCompiler
         member _.ProjectChecked = projectChecked.Publish
 
         member this.FindReferencesInFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                symbol: FSharpSymbol,
-                canInvalidateProject: bool,
-                userOpName: string
-            ) : Async<seq<range>> =
+            (fileName: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string)
+            : Async<seq<range>> =
             async {
                 ignore canInvalidateProject
 
@@ -2273,19 +2281,13 @@ type internal TransparentCompiler
             }
 
         member this.GetAssemblyData
-            (
-                projectSnapshot: FSharpProjectSnapshot,
-                fileName,
-                userOpName: string
-            ) : Async<ProjectAssemblyDataResult> =
+            (projectSnapshot: FSharpProjectSnapshot, fileName, userOpName: string)
+            : Async<ProjectAssemblyDataResult> =
             this.GetAssemblyData(projectSnapshot.ProjectSnapshot, fileName, userOpName)
 
         member this.GetBackgroundCheckResultsForFileInProject
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileResults> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileResults> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
@@ -2295,11 +2297,8 @@ type internal TransparentCompiler
             }
 
         member this.GetBackgroundParseResultsForFileInProject
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
 
@@ -2307,12 +2306,8 @@ type internal TransparentCompiler
             }
 
         member this.GetCachedCheckFileResult
-            (
-                builder: IncrementalBuilder,
-                fileName: string,
-                sourceText: ISourceText,
-                options: FSharpProjectOptions
-            ) : Async<(FSharpParseFileResults * FSharpCheckFileResults) option> =
+            (builder: IncrementalBuilder, fileName: string, sourceText: ISourceText, options: FSharpProjectOptions)
+            : Async<(FSharpParseFileResults * FSharpCheckFileResults) option> =
             async {
                 ignore builder
 
@@ -2327,6 +2322,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceText,
+                caret: Position option,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
                 otherFlags: string array option,
@@ -2344,6 +2340,7 @@ type internal TransparentCompiler
                     bc.GetProjectSnapshotFromScript(
                         fileName,
                         SourceTextNew.ofISourceText sourceText,
+                        caret,
                         DocumentSource.FileSystem,
                         previewEnabled,
                         loadedTimeStamp,
@@ -2364,6 +2361,7 @@ type internal TransparentCompiler
             (
                 fileName: string,
                 sourceText: ISourceTextNew,
+                _caret: Position option,
                 documentSource: DocumentSource,
                 previewEnabled: bool option,
                 loadedTimeStamp: DateTime option,
@@ -2425,14 +2423,7 @@ type internal TransparentCompiler
                         assumeDotNetFramework
                         otherFlags
 
-                let otherFlags =
-                    [
-                        yield "--noframework"
-                        yield "--warn:3"
-                        yield! otherFlags
-                        for code, _ in loadClosure.NoWarns do
-                            yield "--nowarn:" + code
-                    ]
+                let otherFlags = [ yield "--noframework"; yield "--warn:3"; yield! otherFlags ]
 
                 // Once we do have the script closure, we can populate the cache to re-use can later.
                 let loadClosureKey =
@@ -2486,16 +2477,10 @@ type internal TransparentCompiler
                     )
 
                 let diags =
+                    let flaterrors = otherFlags |> List.contains "--flaterrors"
+
                     loadClosure.LoadClosureRootFileDiagnostics
-                    |> List.map (fun (exn, isError) ->
-                        FSharpDiagnostic.CreateFromException(
-                            exn,
-                            isError,
-                            range.Zero,
-                            false,
-                            otherFlags |> List.contains "--flaterrors",
-                            None
-                        ))
+                    |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, false, flaterrors, None))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
             }
@@ -2507,11 +2492,8 @@ type internal TransparentCompiler
             }
 
         member this.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
+            (fileName: string, options: FSharpProjectOptions, userOpName: string)
+            : Async<EditorServices.SemanticClassificationView option> =
             async {
                 ignore userOpName
 
@@ -2533,13 +2515,8 @@ type internal TransparentCompiler
             backgroundCompiler.NotifyProjectCleaned(options, userOpName)
 
         member this.ParseAndCheckFileInProject
-            (
-                fileName: string,
-                fileVersion: int,
-                sourceText: ISourceText,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
+            (fileName: string, fileVersion: int, sourceText: ISourceText, options: FSharpProjectOptions, userOpName: string)
+            : Async<FSharpParseFileResults * FSharpCheckFileAnswer> =
             async {
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, fileName, fileVersion, sourceText, documentSource)
 
@@ -2568,29 +2545,16 @@ type internal TransparentCompiler
             this.ParseFile(fileName, projectSnapshot.ProjectSnapshot, userOpName)
 
         member this.ParseFile
-            (
-                fileName: string,
-                sourceText: ISourceText,
-                options: FSharpParsingOptions,
-                cache: bool,
-                flatErrors: bool,
-                userOpName: string
-            ) : Async<FSharpParseFileResults> =
+            (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
+            : Async<FSharpParseFileResults> =
             this.ParseFileWithoutProject(fileName, sourceText, options, cache, flatErrors, userOpName)
 
         member this.TryGetRecentCheckResultsForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                sourceText: ISourceText option,
-                userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
+            (fileName: string, options: FSharpProjectOptions, sourceText: ISourceText option, userOpName: string)
+            : (FSharpParseFileResults * FSharpCheckFileResults * SourceTextHash) option =
             backgroundCompiler.TryGetRecentCheckResultsForFile(fileName, options, sourceText, userOpName)
 
         member this.TryGetRecentCheckResultsForFile
-            (
-                fileName: string,
-                projectSnapshot: FSharpProjectSnapshot,
-                userOpName: string
-            ) : (FSharpParseFileResults * FSharpCheckFileResults) option =
+            (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
+            : (FSharpParseFileResults * FSharpCheckFileResults) option =
             TryGetRecentCheckResultsForFile(fileName, projectSnapshot, userOpName)

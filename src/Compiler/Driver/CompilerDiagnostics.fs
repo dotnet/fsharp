@@ -14,7 +14,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckIncrementalClasses
@@ -148,19 +147,19 @@ type Exception with
         | IntfImplInExtrinsicAugmentation m
         | ValueRestriction(_, _, _, _, m)
         | LetRecUnsound(_, _, m)
-        | ObsoleteError(_, m)
-        | ObsoleteWarning(_, m)
-        | Experimental(_, m)
+        | ObsoleteDiagnostic(_, _, _, _, m)
+        | Experimental(range = m)
         | PossibleUnverifiableCode m
         | UserCompilerMessage(_, _, m)
         | Deprecated(_, m)
         | LibraryUseOnly m
         | FieldsFromDifferentTypes(_, _, _, m)
         | IndeterminateType m
+        | InvalidAttributeTargetForLanguageElement(_, _, m)
         | TyconBadArgs(_, _, _, m) -> Some m
 
-        | FieldNotContained(_, _, _, _, arf, _, _) -> Some arf.Range
-        | ValueNotContained(_, _, _, aval, _, _) -> Some aval.Range
+        | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
+        | ValueNotContained(_, _, _, _, aval, _, _) -> Some aval.Range
         | UnionCaseNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
         | FSharpExceptionNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
@@ -256,6 +255,8 @@ type Exception with
         | LetRecUnsound _ -> 31
         | FieldsFromDifferentTypes _ -> 32
         | TyconBadArgs _ -> 33
+        | FieldNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
+        | ValueNotContained(kind = TypeMismatchSource.NullnessOnlyMismatch) -> 3261
         | ValueNotContained _ -> 34
         | Deprecated _ -> 35
         | UnionCaseNotContained _ -> 36
@@ -266,7 +267,7 @@ type Exception with
         | UnresolvedOverloading _ -> 41
         | LibraryUseOnly _ -> 42
         | ErrorFromAddingConstraint _ -> 43
-        | ObsoleteWarning _ -> 44
+        | ObsoleteDiagnostic(isError = false) -> 44
         | ReservedKeyword _ -> 46
         | SelfRefObjCtor _ -> 47
         | VirtualAugmentationOnNullValuedType _ -> 48
@@ -327,7 +328,7 @@ type Exception with
         | UnresolvedConversionOperator _ -> 93
 
         // avoid 94-100 for safety
-        | ObsoleteError _ -> 101
+        | ObsoleteDiagnostic(isError = true) -> 101
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange _
         | TypeProviders.ProvidedTypeResolution _ -> 103
@@ -353,6 +354,7 @@ type Exception with
         | ConstraintSolverNullnessWarningWithTypes _ -> 3261
         | ConstraintSolverNullnessWarningWithType _ -> 3261
         | ConstraintSolverNullnessWarning _ -> 3261
+        | InvalidAttributeTargetForLanguageElement _ -> 842
         | _ -> 193
 
 type PhasedDiagnostic with
@@ -379,7 +381,7 @@ type PhasedDiagnostic with
         // Level 2
         | _ -> 2
 
-    member x.IsEnabled(severity, options) =
+    member private x.IsEnabled(severity, options) =
         let level = options.WarnLevel
         let specificWarnOn = options.WarnOn
         let n = x.Number
@@ -402,6 +404,7 @@ type PhasedDiagnostic with
         | 3579 -> false // alwaysUseTypedStringInterpolation - off by default
         | 3582 -> false // infoIfFunctionShadowsUnionCase - off by default
         | 3570 -> false // tcAmbiguousDiscardDotLambda - off by default
+        | 3878 -> false // tcAttributeIsNotValidForUnionCaseWithFields - off by default
         | _ ->
             match x.Exception with
             | DiagnosticEnabledWithLanguageFeature(_, _, _, enabled) -> enabled
@@ -412,19 +415,25 @@ type PhasedDiagnostic with
     member x.AdjustSeverity(options, severity) =
         let n = x.Number
 
-        let warnOff () = List.contains n options.WarnOff
+        let localWarnon () = WarnScopes.IsWarnon options n x.Range
+
+        let localNowarn () = WarnScopes.IsNowarn options n x.Range
+
+        let warnOff () =
+            List.contains n options.WarnOff && not (localWarnon ()) || localNowarn ()
 
         match severity with
         | FSharpDiagnosticSeverity.Error -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when
             x.IsEnabled(severity, options)
             && ((options.GlobalWarnAsError && not (warnOff ()))
-                || List.contains n options.WarnAsError)
+                || List.contains n options.WarnAsError && not (localNowarn ()))
             && not (List.contains n options.WarnAsWarn)
             ->
             FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError && not (localNowarn ()) -> FSharpDiagnosticSeverity.Error
         | FSharpDiagnosticSeverity.Warning when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
-        | FSharpDiagnosticSeverity.Info when List.contains n options.WarnAsError -> FSharpDiagnosticSeverity.Error
+        | FSharpDiagnosticSeverity.Warning when localWarnon () -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when List.contains n options.WarnOn && not (warnOff ()) -> FSharpDiagnosticSeverity.Warning
         | FSharpDiagnosticSeverity.Info when x.IsEnabled(severity, options) && not (warnOff ()) -> FSharpDiagnosticSeverity.Info
         | _ -> FSharpDiagnosticSeverity.Hidden
@@ -567,7 +576,9 @@ module OldStyleMessages =
     let ValNotLocalE () = Message("ValNotLocal", "")
     let Obsolete1E () = Message("Obsolete1", "")
     let Obsolete2E () = Message("Obsolete2", "%s")
-    let ExperimentalE () = Message("Experimental", "%s")
+    let Experimental1E () = Message("Experimental1", "")
+    let Experimental2E () = Message("Experimental2", "%s")
+    let Experimental3E () = Message("Experimental3", "")
     let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
     let DeprecatedE () = Message("Deprecated", "%s")
     let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
@@ -601,6 +612,9 @@ module OldStyleMessages =
 
     let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
         Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
+
+    let InvalidAttributeTargetForLanguageElement1E () = Message("InvalidAttributeTargetForLanguageElement1", "%s%s")
+    let InvalidAttributeTargetForLanguageElement2E () = Message("InvalidAttributeTargetForLanguageElement2", "")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -676,7 +690,7 @@ type Exception with
                     showNullnessAnnotations = Some true
                 }
 
-            let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let t1, _t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
             os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1) |> ignore
 
@@ -719,10 +733,7 @@ type Exception with
                 os.AppendString(SeeAlsoE().Format(stringOfRange m2))
 
         | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
-            os.AppendString(
-                ConstraintSolverMissingConstraintE()
-                    .Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc))
-            )
+            os.AppendString(ConstraintSolverMissingConstraintE().Format(NicePrint.stringOfTyparConstraint denv (tpr, tpc)))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
@@ -883,7 +894,7 @@ type Exception with
                     |> List.map (fun (name, tTy) ->
                         tTy,
                         {
-                            ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero))
+                            ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range0))
                             ArgReprInfo.Attribs = []
                             ArgReprInfo.OtherRange = None
                         })
@@ -1136,6 +1147,7 @@ type Exception with
                 | Parser.TOKEN_COLON_EQUALS -> SR.GetString("Parser.TOKEN.COLON.EQUALS")
                 | Parser.TOKEN_LARROW -> SR.GetString("Parser.TOKEN.LARROW")
                 | Parser.TOKEN_EQUALS -> SR.GetString("Parser.TOKEN.EQUALS")
+                | Parser.TOKEN_GREATER_BAR_RBRACE -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACE")
                 | Parser.TOKEN_GREATER_BAR_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACK")
                 | Parser.TOKEN_MINUS -> SR.GetString("Parser.TOKEN.MINUS")
                 | Parser.TOKEN_ADJACENT_PREFIX_OP -> SR.GetString("Parser.TOKEN.ADJACENT.PREFIX.OP")
@@ -1162,6 +1174,7 @@ type Exception with
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
                 | Parser.TOKEN_RQUOTE_DOT
                 | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
+                | Parser.TOKEN_RQUOTE_BAR_RBRACE -> SR.GetString("Parser.TOKEN.RQUOTE.BAR.RBRACE")
                 | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
                 | Parser.TOKEN_RBRACE_COMING_SOON
@@ -1523,10 +1536,7 @@ type Exception with
                 foundInContext |> ignore // suppress unused variable warning in RELEASE
 #endif
                 let fix (s: string) =
-                    s
-                        .Replace(SR.GetString("FixKeyword"), "")
-                        .Replace(SR.GetString("FixSymbol"), "")
-                        .Replace(SR.GetString("FixReplace"), "")
+                    s.Replace(SR.GetString("FixKeyword"), "").Replace(SR.GetString("FixSymbol"), "").Replace(SR.GetString("FixReplace"), "")
 
                 let tokenNames =
                     ctxt.ShiftTokens
@@ -1617,7 +1627,7 @@ type Exception with
 
         | UnionPatternsBindDifferentNames _ -> os.AppendString(UnionPatternsBindDifferentNamesE().Format)
 
-        | ValueNotContained(denv, infoReader, mref, implVal, sigVal, f) ->
+        | ValueNotContained(_, denv, infoReader, mref, implVal, sigVal, f) ->
             let text1, text2 =
                 NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
 
@@ -1641,7 +1651,7 @@ type Exception with
                 )
             )
 
-        | FieldNotContained(denv, infoReader, enclosingTycon, _, v1, v2, f) ->
+        | FieldNotContained(_, denv, infoReader, enclosingTycon, _, v1, v2, f) ->
             let enclosingTcref = mkLocalEntityRef enclosingTycon
 
             os.AppendString(
@@ -1790,15 +1800,21 @@ type Exception with
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
-        | ObsoleteError(s, _)
-
-        | ObsoleteWarning(s, _) ->
+        | ObsoleteDiagnostic(message = message) ->
             os.AppendString(Obsolete1E().Format)
 
-            if s <> "" then
-                os.AppendString(Obsolete2E().Format s)
+            match message with
+            | Some message when message <> "" -> os.AppendString(Obsolete2E().Format message)
+            | _ -> ()
 
-        | Experimental(s, _) -> os.AppendString(ExperimentalE().Format s)
+        | Experimental(message = message) ->
+            os.AppendString(Experimental1E().Format)
+
+            match message with
+            | Some message when message <> "" -> os.AppendString(Experimental2E().Format message)
+            | _ -> ()
+
+            os.AppendString(Experimental3E().Format)
 
         | PossibleUnverifiableCode _ -> os.AppendString(PossibleUnverifiableCodeE().Format)
 
@@ -1921,6 +1937,14 @@ type Exception with
                     s2
             )
 
+        | InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, _m) ->
+            if Array.isEmpty elementTargets then
+                os.AppendString(InvalidAttributeTargetForLanguageElement2E().Format)
+            else
+                let elementTargets = String.concat ", " elementTargets
+                let allowedTargets = allowedTargets |> String.concat ", "
+                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
+
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
 
@@ -2039,6 +2063,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnost
             File = ""
         }
     else
+        let m = m.ApplyLineDirectives()
         let file = m.FileName
 
         let file =
@@ -2170,6 +2195,8 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Rich ->
                     match diagnostic.Range with
                     | Some m ->
+                        let m = m.ApplyLineDirectives()
+
                         let content =
                             m.FileName
                             |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
@@ -2255,6 +2282,7 @@ type PhasedDiagnostic with
         match diagnostic.Range with
         | None -> ()
         | Some m ->
+            let m = m.ApplyLineDirectives()
             let fileName = m.FileName
             let lineA = m.StartLine
             let lineB = m.EndLine
@@ -2272,51 +2300,25 @@ type PhasedDiagnostic with
             diagnostic.OutputContext(buf, prefix, fileLineFunction)
             diagnostic.Output(buf, tcConfig, severity))
 
-//----------------------------------------------------------------------------
-// Scoped #nowarn pragmas
-
-/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
-//
-// NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
-// #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
-// because we install a filtering error handler on a file-by-file basis for parsing and type-checking.
-// However this is indicative of a more systematic problem where source-line
-// sensitive operations (lexfilter and warning filtering) do not always
-// interact well with #line directives.
-type DiagnosticsLoggerFilteringByScopedPragmas
-    (checkFile, scopedPragmas, diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
-    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
+/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings
+type DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions: FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedNowarn")
 
     let mutable realErrorPresent = false
 
     override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
+
         if severity = FSharpDiagnosticSeverity.Error then
             realErrorPresent <- true
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
-            let report =
-                let warningNum = diagnostic.Number
-
-                match diagnostic.Range with
-                | Some m ->
-                    scopedPragmas
-                    |> List.exists (fun pragma ->
-                        let (ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma)) = pragma
-
-                        warningNum = warningNumFromPragma
-                        && (not checkFile || m.FileIndex = pragmaRange.FileIndex)
-                        && posGeq m.Start pragmaRange.Start)
-                    |> not
-                | None -> true
-
-            if report then
-                match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
-                | FSharpDiagnosticSeverity.Hidden -> ()
-                | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
+            match diagnostic.AdjustSeverity(diagnosticOptions, severity) with
+            | FSharpDiagnosticSeverity.Hidden -> ()
+            | s -> diagnosticsLogger.DiagnosticSink(diagnostic, s)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount
 
     override _.CheckForRealErrorsIgnoringWarnings = realErrorPresent
 
-let GetDiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) =
-    DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger
+let GetDiagnosticsLoggerFilteringByScopedNowarn (diagnosticOptions, diagnosticsLogger) =
+    DiagnosticsLoggerFilteringByScopedNowarn(diagnosticOptions, diagnosticsLogger) :> DiagnosticsLogger

@@ -2,7 +2,6 @@
 
 open System
 open System.IO
-open FluentAssertions
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test
 open Xunit
@@ -575,7 +574,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<int[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is an array of a built-in reference type``() =
@@ -584,7 +583,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<string[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is an array of a custom value type``() =
@@ -593,7 +592,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomStruct[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is an array of a custom reference type``() =
@@ -602,7 +601,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", arr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomType2[]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(arr, "") |> ignore
+        Assert.shouldBe arr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a built-in value type``() =
@@ -611,7 +610,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<int[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a built-in reference type``() =
@@ -620,7 +619,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<string[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a custom value type``() =
@@ -629,7 +628,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomStruct[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a multidimensional array of a custom reference type``() =
@@ -638,7 +637,7 @@ module FsiTests =
         fsiSession.AddBoundValue("boundMdArray", mdArr)
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomType2[,]> boundValue.Value.ReflectionType
-        boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+        Assert.shouldBe mdArr boundValue.Value.ReflectionValue
 
     [<TheoryForNETCOREAPP>]
     [<InlineData(true)>]

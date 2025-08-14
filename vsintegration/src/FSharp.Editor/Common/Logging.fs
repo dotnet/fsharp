@@ -7,6 +7,8 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Editor
 
+open FSharp.Compiler.Diagnostics
+
 [<RequireQualifiedAccess>]
 type LogType =
     | Info
@@ -28,6 +30,8 @@ module Config =
     let fsharpOutputGuid = Guid fsharpOutputGuidString
 
 open Config
+open System.Diagnostics.Metrics
+open System.Text
 
 [<Export>]
 type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
@@ -116,7 +120,9 @@ module Logging =
     let logExceptionWithContext (ex: Exception, context) =
         logErrorf "Context: %s\nException Message: %s\nStack Trace: %s" context ex.Message ex.StackTrace
 
-module Activity =
+module FSharpServiceTelemetry =
+    open FSharp.Compiler.Caches
+
     let listen filter =
         let indent (activity: Activity) =
             let rec loop (activity: Activity) n =
@@ -128,16 +134,15 @@ module Activity =
             String.replicate (loop activity 0) "    "
 
         let collectTags (activity: Activity) =
-            [ for tag in activity.Tags -> $"{tag.Key}: %A{tag.Value}" ]
-            |> String.concat ", "
+            [ for tag in activity.Tags -> $"{tag.Key}: {tag.Value}" ] |> String.concat ", "
 
         let listener =
             new ActivityListener(
-                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                ShouldListenTo = (fun source -> source.Name = ActivityNames.FscSourceName),
                 Sample =
                     (fun context ->
                         if context.Name.Contains(filter) then
-                            ActivitySamplingResult.AllDataAndRecorded
+                            ActivitySamplingResult.AllData
                         else
                             ActivitySamplingResult.None),
                 ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
@@ -145,4 +150,44 @@ module Activity =
 
         ActivitySource.AddActivityListener(listener)
 
+#if DEBUG
+    open OpenTelemetry.Resources
+    open OpenTelemetry.Trace
+    open OpenTelemetry.Metrics
+
+    let otelExport () =
+        // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
+        let otlpEndpoint = Uri("http://127.0.0.1:4317")
+
+        let meterProvider =
+            // Configure OpenTelemetry metrics. Metrics can be viewed in Prometheus or other compatible tools.
+            OpenTelemetry.Sdk
+                .CreateMeterProviderBuilder()
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddMeter(CacheMetrics.Meter.Name)
+                .AddMeter("System.Runtime")
+                .AddOtlpExporter(fun e m ->
+                    e.Endpoint <- otlpEndpoint
+                    m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
+                    m.TemporalityPreference <- MetricReaderTemporalityPreference.Cumulative)
+                .Build()
+
+        let tracerProvider =
+            // Configure OpenTelemetry export. Traces can be viewed in Jaeger or other compatible tools.
+            OpenTelemetry.Sdk
+                .CreateTracerProviderBuilder()
+                .AddSource(ActivityNames.FscSourceName)
+                .ConfigureResource(fun r -> r.AddService("F#") |> ignore)
+                .AddOtlpExporter(fun e -> e.Endpoint <- otlpEndpoint)
+                .Build()
+
+        let a = Activity.startNoTags "FSharpPackage"
+
+        fun () ->
+            a.Dispose()
+            tracerProvider.ForceFlush(5000) |> ignore
+            tracerProvider.Dispose()
+            meterProvider.Dispose()
+
     let listenToAll () = listen ""
+#endif
