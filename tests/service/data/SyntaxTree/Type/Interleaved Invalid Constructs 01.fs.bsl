@@ -75,6 +75,6 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,55)] }, set []))
 
-(6,4)-(6,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(6,4)-(6,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
 (8,4)-(8,10) parse error Unexpected keyword 'member' in definition. Expected incomplete structured construct at or before this point or other token.
-(9,4)-(9,13) parse warning Exceptions must be defined at module level, not inside types.
+(9,4)-(9,13) parse error Exceptions must be defined at module level, not inside types.

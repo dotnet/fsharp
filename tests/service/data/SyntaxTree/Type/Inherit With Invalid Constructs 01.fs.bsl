@@ -103,5 +103,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,45)] }, set []))
 
-(10,4)-(10,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(10,4)-(10,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
 (13,4)-(13,12) parse error Unexpected keyword 'override' in definition. Expected incomplete structured construct at or before this point or other token.

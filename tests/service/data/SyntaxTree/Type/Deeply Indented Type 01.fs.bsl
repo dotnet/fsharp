@@ -106,6 +106,6 @@ ImplFile
          [LineComment (1,0--1,60); LineComment (9,35--9,49);
           LineComment (10,35--10,49); LineComment (12,43--12,57)] }, set []))
 
-(9,12)-(9,16) parse warning Nested type definitions are not allowed. Types must be defined at module or namespace level.
-(10,12)-(10,18) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
-(12,12)-(12,21) parse warning Exceptions must be defined at module level, not inside types.
+(9,12)-(9,16) parse error Nested type definitions are not allowed. Types must be defined at module or namespace level.
+(10,12)-(10,18) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
+(12,12)-(12,21) parse error Exceptions must be defined at module level, not inside types.

@@ -73,7 +73,7 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,68)] }, set []))
 
-(7,4)-(7,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
-(8,4)-(8,8) parse warning Nested type definitions are not allowed. Types must be defined at module or namespace level.
-(9,4)-(9,13) parse warning Exceptions must be defined at module level, not inside types.
-(10,4)-(10,8) parse warning 'open' declarations must appear at module level, not inside types.
+(7,4)-(7,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
+(8,4)-(8,8) parse error Nested type definitions are not allowed. Types must be defined at module or namespace level.
+(9,4)-(9,13) parse error Exceptions must be defined at module level, not inside types.
+(10,4)-(10,8) parse error 'open' declarations must appear at module level, not inside types.

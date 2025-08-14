@@ -9,5 +9,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,41)] }, set []))
 
-(6,4)-(6,8) parse warning 'open' declarations must appear at module level, not inside types.
+(6,4)-(6,8) parse error 'open' declarations must appear at module level, not inside types.
 (6,4)-(6,8) parse error Unexpected keyword 'open' in member definition

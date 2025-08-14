@@ -101,5 +101,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,52)] }, set []))
 
-(8,4)-(8,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(8,4)-(8,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
 (11,4)-(11,10) parse error Unexpected keyword 'static' in definition. Expected incomplete structured construct at or before this point or other token.

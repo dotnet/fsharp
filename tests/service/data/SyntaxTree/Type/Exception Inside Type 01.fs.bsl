@@ -9,5 +9,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,46)] }, set []))
 
-(6,4)-(6,13) parse warning Exceptions must be defined at module level, not inside types.
+(6,4)-(6,13) parse error Exceptions must be defined at module level, not inside types.
 (6,4)-(6,13) parse error Unexpected keyword 'exception' in member definition

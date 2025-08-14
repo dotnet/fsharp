@@ -96,6 +96,6 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,50)] }, set []))
 
-(8,4)-(8,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
-(11,4)-(11,8) parse warning Nested type definitions are not allowed. Types must be defined at module or namespace level.
+(8,4)-(8,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
+(11,4)-(11,8) parse error Nested type definitions are not allowed. Types must be defined at module or namespace level.
 (13,4)-(13,11) parse error Unexpected keyword 'default' in definition. Expected incomplete structured construct at or before this point or other token.

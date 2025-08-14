@@ -66,4 +66,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,50)] }, set []))
 
-(8,12)-(8,18) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(8,12)-(8,18) parse error Modules cannot be nested inside types. Define modules at module or namespace level.

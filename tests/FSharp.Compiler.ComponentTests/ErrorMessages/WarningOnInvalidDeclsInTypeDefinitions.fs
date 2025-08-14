@@ -20,7 +20,7 @@ type IFace =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -52,7 +52,7 @@ type C () =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -86,7 +86,7 @@ type MyClass(x: int) =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
 
         [<Fact>]
@@ -120,7 +120,7 @@ type U =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
 
         [<Fact>]
@@ -153,7 +153,7 @@ type R =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -187,7 +187,7 @@ type MyStruct =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -220,7 +220,7 @@ type MyDelegate = delegate of int * int -> int
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 5, Col 5, Line 5, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 5, Col 5, Line 5, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -253,7 +253,7 @@ type ClassWithMembers() =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
 
         [<Fact>]
@@ -288,7 +288,7 @@ type ClassWithStatic() =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -319,7 +319,7 @@ type A =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 14, "Exceptions must be defined at module level, not inside types.");
+                (Error 58, Line 6, Col 5, Line 6, Col 14, "Exceptions must be defined at module level, not inside types.");
                 (Error 10, Line 6, Col 5, Line 6, Col 14, "Unexpected keyword 'exception' in member definition")
             ]
             
@@ -353,7 +353,7 @@ type A =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 9, "'open' declarations must appear at module level, not inside types.")
+                (Error 58, Line 6, Col 5, Line 6, Col 9, "'open' declarations must appear at module level, not inside types.")
                 (Error 10, Line 6, Col 5, Line 6, Col 9, "Unexpected keyword 'open' in member definition")
             ]
             
@@ -388,7 +388,7 @@ type OuterType =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 7, Col 5, Line 7, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
             ]
     
         [<Fact>]
@@ -423,10 +423,10 @@ type MultiTest =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
-                (Warning 58, Line 8, Col 5, Line 8, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
-                (Warning 58, Line 9, Col 5, Line 9, Col 14, "Exceptions must be defined at module level, not inside types.")
-                (Warning 58, Line 10, Col 5, Line 10, Col 9, "'open' declarations must appear at module level, not inside types.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
+                (Error 58, Line 9, Col 5, Line 9, Col 14, "Exceptions must be defined at module level, not inside types.")
+                (Error 58, Line 10, Col 5, Line 10, Col 9, "'open' declarations must appear at module level, not inside types.")
             ]
             
         [<Fact>]
@@ -462,9 +462,9 @@ type B =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
-                (Warning 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 6, Col 5, Line 6, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -502,9 +502,9 @@ module InnerModule =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 9, Col 13, Line 9, Col 17, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
-                (Warning 58, Line 10, Col 13, Line 10, Col 19, "Modules cannot be nested inside types. Define modules at module or namespace level.")
-                (Warning 58, Line 12, Col 13, Line 12, Col 22, "Exceptions must be defined at module level, not inside types.")
+                (Error 58, Line 9, Col 13, Line 9, Col 17, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
+                (Error 58, Line 10, Col 13, Line 10, Col 19, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 12, Col 13, Line 12, Col 22, "Exceptions must be defined at module level, not inside types.")
             ]
             
         [<Fact>]
@@ -542,8 +542,8 @@ type AbstractBase() =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
-                (Warning 58, Line 8, Col 5, Line 8, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
             ]
             
         [<Fact>]
@@ -578,7 +578,7 @@ type Original with
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
                 (Error 10, Line 8, Col 5, Line 8, Col 11, "Unexpected keyword 'module' in type definition. Expected incomplete structured construct at or before this point, 'end' or other token.")
                 (Error 10, Line 10, Col 1, Line 10, Col 13, "Incomplete structured construct at or before this point in implementation file")
             ]
@@ -619,9 +619,9 @@ type TypeWithDo() =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 6, Col 5, Line 6, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
-                (Warning 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
-                (Warning 58, Line 8, Col 5, Line 8, Col 9, "'open' declarations must appear at module level, not inside types.")
+                (Error 58, Line 6, Col 5, Line 6, Col 9, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
+                (Error 58, Line 7, Col 5, Line 7, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 9, "'open' declarations must appear at module level, not inside types.")
             ]
     
     
@@ -656,7 +656,7 @@ type Derived() =
             |> typecheck
             |> shouldFail
             |> withDiagnostics [
-                (Warning 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
+                (Error 58, Line 8, Col 5, Line 8, Col 11, "Modules cannot be nested inside types. Define modules at module or namespace level.")
             ]
             
         [<Fact>]
@@ -676,7 +676,7 @@ type Derived() =
     
     module ``Valid module placement`` =
         [<Fact>]
-        let ``No warning for modules at correct level``() =
+        let ``No Error for modules at correct level``() =
             Fsx """
 module TestModule
 
@@ -695,7 +695,7 @@ module ValidModule3 =
             |> shouldSucceed
             
         [<Fact>]
-        let ``No warning for modules at correct level 2``() =
+        let ``No Error for modules at correct level 2``() =
             Fsx """
 module TestModule
 
@@ -714,7 +714,7 @@ module ValidModule3 =
             |> shouldSucceed
 
         [<Fact>]
-        let ``No warning for let bindings inside class``() =
+        let ``No Error for let bindings inside class``() =
             Fsx """
 module TestModule
 
@@ -728,7 +728,7 @@ type ClassWithLet() =
             |> shouldSucceed
             
         [<Fact>]
-        let ``No warning for let bindings inside class 2``() =
+        let ``No Error for let bindings inside class 2``() =
             Fsx """
 module TestModule
 
@@ -742,7 +742,7 @@ type ClassWithLet() =
             |> shouldSucceed
 
         [<Fact>]
-        let ``No warning for modules at same indentation as type``() =
+        let ``No Error for modules at same indentation as type``() =
             Fsx """
 module TestModule
 
@@ -754,7 +754,7 @@ module B = begin end  // Same column as type, not nested
             |> shouldSucceed
             
         [<Fact>]
-        let ``No warning for modules at same indentation as type 2``() =
+        let ``No Error for modules at same indentation as type 2``() =
             Fsx """
 module TestModule
 

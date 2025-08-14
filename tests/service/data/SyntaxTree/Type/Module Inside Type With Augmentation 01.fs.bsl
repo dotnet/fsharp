@@ -27,6 +27,6 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,52)] }, set []))
 
-(7,8)-(7,14) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(7,8)-(7,14) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
 (7,8)-(7,14) parse error Unexpected keyword 'module' in type definition. Expected incomplete structured construct at or before this point, 'end' or other token.
 (8,0)-(8,0) parse error Incomplete structured construct at or before this point in implementation file

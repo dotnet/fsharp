@@ -1220,7 +1220,7 @@ type TestType () =
         |> typecheck
         |> withDiagnostics [
             (Error 10, Line 4, Col 12, Line 4, Col 13, "Unexpected symbol ':' in member definition");
-            (Warning 58, Line 5, Col 9, Line 5, Col 13, "Nested type definitions are not allowed. Types must be defined at module or namespace level.");
+            (Error 58, Line 5, Col 9, Line 5, Col 13, "Nested type definitions are not allowed. Types must be defined at module or namespace level.");
             (Error 3567, Line 6, Col 23, Line 6, Col 25, "Expecting member body");
             (Error 3567, Line 7, Col 1, Line 7, Col 53, "Expecting member body")
         ]

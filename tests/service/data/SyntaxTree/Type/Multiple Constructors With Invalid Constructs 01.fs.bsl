@@ -110,5 +110,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [LineComment (1,0--1,52)] }, set []))
 
-(9,4)-(9,10) parse warning Modules cannot be nested inside types. Define modules at module or namespace level.
+(9,4)-(9,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
 (12,4)-(12,7) parse error Unexpected keyword 'new' in definition. Expected incomplete structured construct at or before this point or other token.
