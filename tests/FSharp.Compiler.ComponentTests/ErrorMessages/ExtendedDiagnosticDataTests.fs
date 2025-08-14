@@ -172,6 +172,21 @@ let x: string = 1
         Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
         Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
 
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 10`` () =
+    FSharp """
+let f1 (x: outref<'T>) = 1
+let f2 (x: inref<'T>) = f1 &x
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (1, "Type mismatch. Expecting a\n    'outref<'T>'    \nbut given a\n    'inref<'T>'    \nThe type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+        let displayContext = typeMismatch.DisplayContext
+        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+        Assert.Equal("outref<'T>", typeMismatch.ExpectedType.Format(displayContext))
+        Assert.Equal("inref<'T>", typeMismatch.ActualType.Format(displayContext)))
+
 [<Theory>]
 [<InlineData true>]
 [<InlineData false>]
