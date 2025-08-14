@@ -1380,11 +1380,8 @@ type LexFilterImpl (
         //
         // Note: We don't check 'let' bindings as they can be valid in classes with constructors
         // Note: Constructs at the same column level are NOT nested (e.g., type A = A type B = B on same line)
-        let (|InvalidDeclsInTypeDefn|_|) keyword =
-            // Only perform validation if the language feature is enabled
-            if not (lexbuf.SupportsFeature LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions) then
-                None
-            else
+        let checkForInvalidDeclsInTypeDefn keyword =
+            if lexbuf.SupportsFeature LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions then
                 // Skip validation if we're inside a parenthesis context
                 // This avoids false positives with inline IL: (# "unbox.any !0" type ('T) x : 'T #)
                 let rec hasParenContext stack =
@@ -1396,9 +1393,7 @@ type LexFilterImpl (
                     | _ -> false
                 
                 // Don't validate if we're in a paren context (could be inline IL or other valid syntax)
-                if hasParenContext offsideStack then
-                    None
-                else
+                if not (hasParenContext offsideStack) then
                     // Find the nearest type definition context and check if we're inappropriately nested
                     let rec checkNesting stack typeDefnsSeen =
                         match stack with
@@ -1463,9 +1458,7 @@ type LexFilterImpl (
                             | _ -> 
                                 FSComp.SR.lexfltInvalidNestedConstruct(keyword)
                         
-                        Some errorMessage
-                    else
-                        None
+                        error tokenTup errorMessage
 
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
         let relaxWhitespace2OffsideRule =
@@ -2121,9 +2114,7 @@ type LexFilterImpl (
         //  Check for inappropriate nesting within type definitions
         | MODULE, _ :: _ ->
             // Check if this module definition is inappropriately nested in a type
-            match "MODULE" with
-            | InvalidDeclsInTypeDefn errorMsg -> error tokenTup errorMsg
-            | _ -> ()
+            checkForInvalidDeclsInTypeDefn "MODULE"
                 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
@@ -2135,9 +2126,7 @@ type LexFilterImpl (
         // exception ... ~~~> CtxtException
         | EXCEPTION, _ :: _ ->
             // Check if this exception definition is inappropriately nested in a type
-            match "EXCEPTION" with
-            | InvalidDeclsInTypeDefn errorMsg -> error tokenTup errorMsg
-            | _ -> ()
+            checkForInvalidDeclsInTypeDefn "EXCEPTION"
             if debug then dprintf "EXCEPTION: entering CtxtException(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtException tokenStartPos)
             returnToken tokenLexbufState token
@@ -2580,9 +2569,7 @@ type LexFilterImpl (
 
         | TYPE, _ ->
             // Check if this type definition is inappropriately nested in another type
-            match "TYPE" with
-            | InvalidDeclsInTypeDefn errorMsg -> error tokenTup errorMsg
-            | _ -> ()
+            checkForInvalidDeclsInTypeDefn "TYPE"
                 
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
             if debug then dprintf "TYPE, pushing CtxtTypeDefns(%a)\n" outputPos tokenStartPos
@@ -2606,9 +2593,7 @@ type LexFilterImpl (
 
         | OPEN, _ :: _ ->
             // Check if this open declaration is inappropriately nested in a type
-            match "OPEN" with
-            | InvalidDeclsInTypeDefn errorMsg -> error tokenTup errorMsg
-            | _ -> ()
+            checkForInvalidDeclsInTypeDefn "OPEN"
             returnToken tokenLexbufState token
 
         | ODUMMY _, _ ->
