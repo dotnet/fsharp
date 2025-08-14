@@ -104,8 +104,8 @@ exception ConstraintSolverInfiniteTypes of
 
 exception ConstraintSolverTypesNotInEqualityRelation of
     displayEnv: DisplayEnv *
-    TType *
-    TType *
+    expectedTy: TType *
+    actualTy: TType *
     range *
     range *
     ContextInfo

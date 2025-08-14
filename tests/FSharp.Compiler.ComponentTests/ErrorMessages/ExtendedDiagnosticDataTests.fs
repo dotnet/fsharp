@@ -145,6 +145,25 @@ if true then 1 else "a"
         Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
 
 [<Theory>]
+[<InlineData("""
+type R = { Field1: int }
+let f (x: R) = "" + x.Field1
+""")>]
+[<InlineData("""
+let x: string = 1
+""")>]
+let ``TypeMismatchDiagnosticExtendedData 08`` code =
+    FSharp code
+    |> typecheckResults
+    |> checkDiagnostic
+       (1, "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+        let displayContext = typeMismatch.DisplayContext
+        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+        Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
+[<Theory>]
 [<InlineData true>]
 [<InlineData false>]
 let ``ArgumentsInSigAndImplMismatchExtendedData 01`` useTransparentCompiler =
