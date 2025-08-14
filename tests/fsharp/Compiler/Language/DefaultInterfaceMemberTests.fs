@@ -134,7 +134,7 @@ let main _ =
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "FSharp-Method1-FSharp-Method2-FSharp-Method3-FSharp-Method4")
 
-    [<Fact>]
+    [<FSharp.Test.FactForNETCOREAPP>]
     let ``C# simple - Errors with lang version not supported`` () =
         let csharpSource =
             """
