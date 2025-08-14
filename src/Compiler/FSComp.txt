@@ -1807,7 +1807,7 @@ featureSupportWarnWhenUnitPassedToObjArg,"Warn when unit is passed to a member a
 featureUseBangBindingValueDiscard,"Allows use! _ = ... in computation expressions"
 featureBetterAnonymousRecordParsing,"Support for better anonymous record parsing"
 featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules"
-featureWarnOnInvalidDeclsInTypeDefinitions,"Warn when invalid declarations are used in type definitions."
+featureErrorOnInvalidDeclsInTypeDefinitions,"Error when invalid declarations are used in type definitions."
 featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type annotations without requiring parentheses"
 3874,lexWarnDirectiveMustBeFirst,"#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
 3875,lexWarnDirectiveMustHaveArgs,"Warn directives must have warning number(s) as argument(s)"

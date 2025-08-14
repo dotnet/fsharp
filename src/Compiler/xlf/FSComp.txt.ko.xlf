@@ -397,6 +397,11 @@
         <target state="translated">RequireQualifiedAccess 특성을 사용하여 사용되지 않는 구문 액세스에 대한 오류 제공</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnInvalidDeclsInTypeDefinitions">
+        <source>Error when invalid declarations are used in type definitions.</source>
+        <target state="new">Error when invalid declarations are used in type definitions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorReportingOnStaticClasses">
         <source>Error reporting on static classes</source>
         <target state="translated">정적 클래스에 대한 오류 보고</target>
@@ -685,11 +690,6 @@
       <trans-unit id="featureUseTypeSubsumptionCache">
         <source>Use type conversion cache during compilation</source>
         <target state="new">Use type conversion cache during compilation</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWarnOnInvalidDeclsInTypeDefinitions">
-        <source>Warn when invalid declarations are used in type definitions.</source>
-        <target state="new">Warn when invalid declarations are used in type definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">

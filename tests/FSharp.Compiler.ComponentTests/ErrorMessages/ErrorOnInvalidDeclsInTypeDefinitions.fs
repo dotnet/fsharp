@@ -4,10 +4,10 @@ namespace ErrorMessages
 open Xunit
 open FSharp.Test.Compiler
 
-module WarningOnInvalidDeclsInTypeDefinitions =
+module ErrorOnInvalidDeclsInTypeDefinitions =
     module ``Module inside interface`` =
         [<Fact>]
-        let ``Warn when module is inside interface``() =
+        let ``Error when module is inside interface``() =
             Fsx """
 module TestModule
 
@@ -24,7 +24,7 @@ type IFace =
             ]
             
         [<Fact>]
-        let ``No Warn when module is inside interface``() =
+        let ``No Error when module is inside interface``() =
             Fsx """
 module TestModule
 
@@ -39,7 +39,7 @@ type IFace =
 
     module ``Module inside class`` =
         [<Fact>]
-        let ``Warn when module is inside class``() =
+        let ``Error when module is inside class``() =
             Fsx """
 module TestModule
 
@@ -56,7 +56,7 @@ type C () =
             ]
             
         [<Fact>]
-        let ``No Warn when module is inside class``() =
+        let ``No Error when module is inside class``() =
             Fsx """
 module TestModule
 
@@ -72,7 +72,7 @@ type C () =
 
     module ``Module inside class with constructor`` =
         [<Fact>]
-        let ``Warn when module is inside class with constructor``() =
+        let ``Error when module is inside class with constructor``() =
             Fsx """
 module TestModule
 
@@ -90,7 +90,7 @@ type MyClass(x: int) =
             ]
 
         [<Fact>]
-        let ``No Warn when module is inside class with constructor``() =
+        let ``No Error when module is inside class with constructor``() =
             Fsx """
 module TestModule
 
@@ -106,7 +106,7 @@ type MyClass(x: int) =
 
     module ``Module inside union`` =
         [<Fact>]
-        let ``Warn when module is inside discriminated union``() =
+        let ``Error when module is inside discriminated union``() =
             Fsx """
 module TestModule
 
@@ -124,7 +124,7 @@ type U =
             ]
 
         [<Fact>]
-        let ``No Warn when module is inside discriminated union``() =
+        let ``No Error when module is inside discriminated union``() =
             Fsx """
 module TestModule
 
@@ -140,7 +140,7 @@ type U =
 
     module ``Module inside record`` =
         [<Fact>]
-        let ``Warn when module is inside record``() =
+        let ``Error when module is inside record``() =
             Fsx """
 module TestModule
 
@@ -157,7 +157,7 @@ type R =
             ]
             
         [<Fact>]
-        let ``No Warn when module is inside record``() =
+        let ``No Error when module is inside record``() =
             Fsx """
 module TestModule
 
@@ -172,7 +172,7 @@ type R =
 
     module ``Module inside struct`` =
         [<Fact>]
-        let ``Warn when module is inside struct``() =
+        let ``Error when module is inside struct``() =
             Fsx """
 module TestModule
 
@@ -191,7 +191,7 @@ type MyStruct =
             ]
             
         [<Fact>]
-        let ``No Warn when module is inside struct``() =
+        let ``No Error when module is inside struct``() =
             Fsx """
 module TestModule
 
@@ -208,7 +208,7 @@ type MyStruct =
 
     module ``Module after delegate`` =
         [<Fact>]
-        let ``Warn when module appears after delegate``() =
+        let ``Error when module appears after delegate``() =
             Fsx """
 module TestModule
 
@@ -224,7 +224,7 @@ type MyDelegate = delegate of int * int -> int
             ]
             
         [<Fact>]
-        let ``No Warn when module appears after delegate``() =
+        let ``No Error when module appears after delegate``() =
             Fsx """
 module TestModule
 
@@ -238,7 +238,7 @@ type MyDelegate = delegate of int * int -> int
 
     module ``Module after type members`` =
         [<Fact>]
-        let ``Warn when module appears after type members``() =
+        let ``Error when module appears after type members``() =
             Fsx """
 module TestModule
 
@@ -257,7 +257,7 @@ type ClassWithMembers() =
             ]
 
         [<Fact>]
-        let ``No Warn when module appears after type members``() =
+        let ``No Error when module appears after type members``() =
             Fsx """
 module TestModule
 
@@ -274,7 +274,7 @@ type ClassWithMembers() =
 
     module ``Module after static members`` =
         [<Fact>]
-        let ``Warn when module appears after static members``() =
+        let ``Error when module appears after static members``() =
             Fsx """
 module TestModule
 
@@ -292,7 +292,7 @@ type ClassWithStatic() =
             ]
             
         [<Fact>]
-        let ``No Warn when module appears after static members``() =
+        let ``No Error when module appears after static members``() =
             Fsx """
 module TestModule
 
@@ -307,7 +307,7 @@ type ClassWithStatic() =
             |> shouldSucceed
     module ``Exception inside type`` =
         [<Fact>]
-        let ``Warn when exception is inside type``() =
+        let ``Error when exception is inside type``() =
             Fsx """
 module TestModule
 
@@ -324,7 +324,7 @@ type A =
             ]
             
         [<Fact>]
-        let ``No Warn when exception is inside type``() =
+        let ``No Error when exception is inside type``() =
             Fsx """
 module TestModule
 
@@ -341,7 +341,7 @@ type A =
     
     module ``Open inside type`` =
         [<Fact>]
-        let ``Warn when open declaration is inside type``() =
+        let ``Error when open declaration is inside type``() =
             Fsx """
 module TestModule
 
@@ -358,7 +358,7 @@ type A =
             ]
             
         [<Fact>]
-        let ``No Warn when open declaration is inside type``() =
+        let ``No Error when open declaration is inside type``() =
             Fsx """
 module TestModule
 
@@ -375,7 +375,7 @@ type A =
     
     module ``Type inside type`` =
         [<Fact>]
-        let ``Warn when type is nested inside another type``() =
+        let ``Error when type is nested inside another type``() =
             Fsx """
 module TestModule
 
@@ -392,7 +392,7 @@ type OuterType =
             ]
     
         [<Fact>]
-        let ``No Warn when type is nested inside another type``() =
+        let ``No Error when type is nested inside another type``() =
             Fsx """
 module TestModule
 
@@ -407,7 +407,7 @@ type OuterType =
     
     module ``Multiple invalid constructs`` =
         [<Fact>]
-        let ``Warn for all invalid nested constructs in single type``() =
+        let ``Error for all invalid nested constructs in single type``() =
             Fsx """
 module TestModule
 
@@ -430,7 +430,7 @@ type MultiTest =
             ]
             
         [<Fact>]
-        let ``No Warn for all invalid nested constructs in single type``() =
+        let ``No Error for all invalid nested constructs in single type``() =
             Fsx """
 module TestModule
 
@@ -448,7 +448,7 @@ type MultiTest =
 
     module ``Multiple modules in single type`` =
         [<Fact>]
-        let ``Warn for each module inside type``() =
+        let ``Error for each module inside type``() =
             Fsx """
 module TestModule
 
@@ -468,7 +468,7 @@ type B =
             ]
             
         [<Fact>]
-        let ``No Warn for each module inside type``() =
+        let ``No Error for each module inside type``() =
             Fsx """
 module TestModule
 
@@ -484,7 +484,7 @@ type B =
     
     module ``Deeply nested invalid constructs`` =
         [<Fact>]
-        let ``Warn for invalid constructs in deeply nested context``() =
+        let ``Error for invalid constructs in deeply nested context``() =
             Fsx """
 module OuterModule
 
@@ -508,7 +508,7 @@ module InnerModule =
             ]
             
         [<Fact>]
-        let ``No Warn for invalid constructs in deeply nested context``() =
+        let ``No Error for invalid constructs in deeply nested context``() =
             Fsx """
 module OuterModule
 
@@ -528,7 +528,7 @@ module InnerModule =
     
     module ``Abstract class with invalid constructs`` =
         [<Fact>]
-        let ``Warn for invalid constructs in abstract class``() =
+        let ``Error for invalid constructs in abstract class``() =
             Fsx """
 module TestModule
 
@@ -547,7 +547,7 @@ type AbstractBase() =
             ]
             
         [<Fact>]
-        let ``No Warn for invalid constructs in abstract class``() =
+        let ``No Error for invalid constructs in abstract class``() =
             Fsx """
 module TestModule
 
@@ -563,7 +563,7 @@ type AbstractBase() =
     
     module ``Type augmentation with invalid constructs`` =
         [<Fact>]
-        let ``Warn for module in type augmentation``() =
+        let ``Error for module in type augmentation``() =
             Fsx """
 module TestModule
 
@@ -584,7 +584,7 @@ type Original with
             ]
             
         [<Fact>]
-        let ``No Warn for module in type augmentation``() =
+        let ``No Error for module in type augmentation``() =
             Fsx """
 module TestModule
 
@@ -605,7 +605,7 @@ type Original with
     
     module ``Do binding with invalid constructs`` =
         [<Fact>]
-        let ``Warn for invalid constructs after do binding``() =
+        let ``Error for invalid constructs after do binding``() =
             Fsx """
 module TestModule
 
@@ -626,7 +626,7 @@ type TypeWithDo() =
     
     
         [<Fact>]
-        let ``No Warn for invalid constructs after do binding``() =
+        let ``No Error for invalid constructs after do binding``() =
             Fsx """
 module TestModule
 
@@ -642,7 +642,7 @@ type TypeWithDo() =
     
     module ``Inherit with invalid constructs`` =
         [<Fact>]
-        let ``Warn for invalid constructs after inherit``() =
+        let ``Error for invalid constructs after inherit``() =
             Fsx """
 module TestModule
 
@@ -660,7 +660,7 @@ type Derived() =
             ]
             
         [<Fact>]
-        let ``No Warn for invalid constructs after inherit``() =
+        let ``No Error for invalid constructs after inherit``() =
             Fsx """
 module TestModule
 

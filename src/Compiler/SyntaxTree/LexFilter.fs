@@ -1382,7 +1382,7 @@ type LexFilterImpl (
         // Note: Constructs at the same column level are NOT nested (e.g., type A = A type B = B on same line)
         let (|InvalidDeclsInTypeDefn|_|) keyword =
             // Only perform validation if the language feature is enabled
-            if not (lexbuf.SupportsFeature LanguageFeature.WarnOnInvalidDeclsInTypeDefinitions) then
+            if not (lexbuf.SupportsFeature LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions) then
                 None
             else
                 // Skip validation if we're inside a parenthesis context

@@ -397,6 +397,11 @@
         <target state="translated">Beim veralteten Zugriff auf das Konstrukt mit dem RequireQualifiedAccess-Attribut wird ein Fehler ausgegeben.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnInvalidDeclsInTypeDefinitions">
+        <source>Error when invalid declarations are used in type definitions.</source>
+        <target state="new">Error when invalid declarations are used in type definitions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorReportingOnStaticClasses">
         <source>Error reporting on static classes</source>
         <target state="translated">Fehlerberichterstattung für statische Klassen</target>
@@ -685,11 +690,6 @@
       <trans-unit id="featureUseTypeSubsumptionCache">
         <source>Use type conversion cache during compilation</source>
         <target state="new">Use type conversion cache during compilation</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWarnOnInvalidDeclsInTypeDefinitions">
-        <source>Warn when invalid declarations are used in type definitions.</source>
-        <target state="new">Warn when invalid declarations are used in type definitions.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
