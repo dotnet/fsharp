@@ -5344,7 +5344,7 @@ type TOp =
         | Label n -> "Label(" + string n + ")"
         | TraitCall info -> "TraitCall(" + info.MemberLogicalName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
-        | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
+        | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + nonNull (ilMethRef.ToString()) + ",..)"
 
 /// Represents the kind of record construction operation.
 type RecordConstructionInfo = 

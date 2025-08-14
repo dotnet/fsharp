@@ -88,7 +88,7 @@ exception DiagnosticWithText of number: int * message: string * range: range wit
 exception InternalError of message: string * range: range with
     override this.Message =
         match this :> exn with
-        | InternalError(msg, m) -> msg + m.ToString()
+        | InternalError(msg, m) -> msg + nonNull (m.ToString())
         | _ -> "impossible"
 
 exception InternalException of exn: Exception * msg: string * range: range with

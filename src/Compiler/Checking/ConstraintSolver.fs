@@ -337,7 +337,7 @@ type ConstraintSolverEnv =
 
     member csenv.amap = csenv.SolverState.amap
     
-    override csenv.ToString() = "<ConstraintSolverEnv> @ " + csenv.m.ToString()
+    override csenv.ToString() = "<ConstraintSolverEnv> @ " + nonNull (csenv.m.ToString())
 
 let MakeConstraintSolverEnv contextInfo css m denv = 
     { SolverState = css
