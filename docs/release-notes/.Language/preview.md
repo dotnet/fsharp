@@ -10,6 +10,7 @@
 * Scoped Nowarn: added the #warnon compiler directive ([Language suggestion #278](https://github.com/fsharp/fslang-suggestions/issues/278), [RFC FS-1146 PR](https://github.com/fsharp/fslang-design/pull/782), [PR #18049](https://github.com/dotnet/fsharp/pull/18049))
 * Allow `let!`, `use!`, `and!` type annotations without requiring parentheses (([PR #18508](https://github.com/dotnet/fsharp/pull/18508) and [PR #18682](https://github.com/dotnet/fsharp/pull/18682)))
 * Exception names are now validated for illegal characters using the same mechanism as types/modules/namespaces ([Issue #18763](https://github.com/dotnet/fsharp/issues/18763))
+* Support tail calls in computation expressions ([PR #18804](https://github.com/dotnet/fsharp/pull/18804))
 
 ### Fixed
 

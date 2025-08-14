@@ -268,10 +268,10 @@ module internal LineDirectives =
     // The key is the index of the original file. Each line directive is represented
     // by the line number of the directive and the file index and line number of the target.
     let mutable store: Map<FileIndex, (int * (FileIndex * int)) list> = Map.empty
+    let storeLock = obj ()
 
-    let add originalFileIndex lineDirectives =
-        lock lineDirectives
-        <| fun () -> store <- store.Add(originalFileIndex, lineDirectives)
+    let add fileIndex lineDirectives =
+        lock storeLock <| fun () -> store <- store.Add(fileIndex, lineDirectives)
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
