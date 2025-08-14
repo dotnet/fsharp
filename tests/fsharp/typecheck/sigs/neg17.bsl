@@ -1,4 +1,6 @@
 
+neg17.fs(70,5,70,9): parse error FS0058: Nested type definitions are not allowed. Types must be defined at module or namespace level.
+
 neg17.fs(84,17,84,33): typecheck error FS0292: The type definitions for type 'PrivateUnionType' in the signature and implementation are not compatible because the accessibility specified in the signature is more than that specified in the implementation
 
 neg17b.fs(7,17,7,31): typecheck error FS1094: The value 'privateValue' is not accessible from this code location
