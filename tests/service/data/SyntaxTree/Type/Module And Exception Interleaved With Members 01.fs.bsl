@@ -1,6 +1,6 @@
 ImplFile
   (ParsedImplFileInput
-     ("/root/Type/Interleaved Invalid Constructs 01.fs", false,
+     ("/root/Type/Module And Exception Interleaved With Members 01.fs", false,
       QualifiedNameOfFile Module, [],
       [SynModuleOrNamespace
          ([Module], false, NamedModule,
@@ -12,11 +12,7 @@ ImplFile
                      false, None, (4,5--4,16)),
                   ObjectModel
                     (Unspecified,
-                     [ImplicitCtor
-                        (None, [], Const (Unit, (4,16--4,18)), None,
-                         PreXmlDoc ((4,16), FSharp.Compiler.Xml.XmlDocCollector),
-                         (4,5--4,16), { AsKeyword = None });
-                      Member
+                     [Member
                         (SynBinding
                            (None, Normal, false, false, [],
                             PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
@@ -39,14 +35,9 @@ ImplFile
                             { LeadingKeyword = Member (5,4--5,10)
                               InlineKeyword = None
                               EqualsRange = Some (5,15--5,16) }), (5,4--5,18))],
-                     (5,4--5,18)), [],
-                  Some
-                    (ImplicitCtor
-                       (None, [], Const (Unit, (4,16--4,18)), None,
-                        PreXmlDoc ((4,16), FSharp.Compiler.Xml.XmlDocCollector),
-                        (4,5--4,16), { AsKeyword = None })), (4,5--5,18),
+                     (5,4--5,18)), [], None, (4,5--5,18),
                   { LeadingKeyword = Type (4,0--4,4)
-                    EqualsRange = Some (4,19--4,20)
+                    EqualsRange = Some (4,17--4,18)
                     WithKeyword = None })], (4,0--5,18));
            NestedModule
              (SynComponentInfo
@@ -73,7 +64,7 @@ ImplFile
           (2,0--7,17), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
-        CodeComments = [LineComment (1,0--1,55)] }, set []))
+        CodeComments = [LineComment (1,0--1,57)] }, set []))
 
 (6,4)-(6,10) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
 (8,4)-(8,10) parse error Unexpected keyword 'member' in definition. Expected incomplete structured construct at or before this point or other token.

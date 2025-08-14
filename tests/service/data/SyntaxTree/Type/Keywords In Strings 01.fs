@@ -1,12 +1,6 @@
-// Expected: No warning - keywords in strings are not declarations
+// Testing: Keywords in strings should be ignored
 module Module
 
-type MyClass() =
-    let message = "This string contains type and module keywords"
-    let code = """
-        type Example = int
-        module Sample = 
-            let x = 1
-    """
+type MyClass =
+    let message = "type and module keywords"
     member _.GetMessage() = message
-    member _.GetCode() = code

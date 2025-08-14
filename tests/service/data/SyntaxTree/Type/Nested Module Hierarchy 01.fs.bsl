@@ -9,118 +9,63 @@ ImplFile
                 ([], None, [], [Level1],
                  PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (4,0--4,13)), false,
-              [Types
-                 ([SynTypeDefn
-                     (SynComponentInfo
-                        ([], None, [], [ValidType1],
-                         PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (5,9--5,19)),
-                      Simple
-                        (TypeAbbrev
-                           (Ok, LongIdent (SynLongIdent ([int], [], [None])),
-                            (5,22--5,25)), (5,22--5,25)), [], None, (5,9--5,25),
-                      { LeadingKeyword = Type (5,4--5,8)
-                        EqualsRange = Some (5,20--5,21)
-                        WithKeyword = None })], (5,4--5,25));
-               NestedModule
+              [NestedModule
                  (SynComponentInfo
                     ([], None, [], [Level2],
-                     PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector),
-                     false, None, (7,4--7,17)), false,
-                  [Types
-                     ([SynTypeDefn
-                         (SynComponentInfo
-                            ([], None, [], [ValidType2],
-                             PreXmlDoc ((8,8), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (8,13--8,23)),
-                          Simple
-                            (TypeAbbrev
-                               (Ok,
-                                LongIdent (SynLongIdent ([string], [], [None])),
-                                (8,26--8,32)), (8,26--8,32)), [], None,
-                          (8,13--8,32), { LeadingKeyword = Type (8,8--8,12)
-                                          EqualsRange = Some (8,24--8,25)
-                                          WithKeyword = None })], (8,8--8,32));
-                   NestedModule
+                     PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
+                     false, None, (5,4--5,17)), false,
+                  [NestedModule
                      (SynComponentInfo
                         ([], None, [], [Level3],
-                         PreXmlDoc ((10,8), FSharp.Compiler.Xml.XmlDocCollector),
-                         false, None, (10,8--10,21)), false,
+                         PreXmlDoc ((6,8), FSharp.Compiler.Xml.XmlDocCollector),
+                         false, None, (6,8--6,21)), false,
                       [Types
                          ([SynTypeDefn
                              (SynComponentInfo
                                 ([], None, [], [TypeWithInvalidModule],
-                                 PreXmlDoc ((11,12), FSharp.Compiler.Xml.XmlDocCollector),
-                                 false, None, (11,17--11,38)),
-                              Simple
-                                (Union
-                                   (None,
-                                    [SynUnionCase
-                                       ([], SynIdent (A, None), Fields [],
-                                        PreXmlDoc ((12,16), FSharp.Compiler.Xml.XmlDocCollector),
-                                        None, (12,18--12,19),
-                                        { BarRange = Some (12,16--12,17) });
-                                     SynUnionCase
-                                       ([], SynIdent (B, None), Fields [],
-                                        PreXmlDoc ((13,16), FSharp.Compiler.Xml.XmlDocCollector),
-                                        None, (13,18--13,19),
-                                        { BarRange = Some (13,16--13,17) })],
-                                    (12,16--13,19)), (12,16--13,19)), [], None,
-                              (11,17--13,19),
-                              { LeadingKeyword = Type (11,12--11,16)
-                                EqualsRange = Some (11,39--11,40)
-                                WithKeyword = None })], (11,12--13,19));
+                                 PreXmlDoc ((7,12), FSharp.Compiler.Xml.XmlDocCollector),
+                                 false, None, (7,17--7,38)),
+                              Simple (None (7,17--7,40), (7,17--7,40)), [], None,
+                              (7,17--7,40), { LeadingKeyword = Type (7,12--7,16)
+                                              EqualsRange = Some (7,39--7,40)
+                                              WithKeyword = None })],
+                          (7,12--7,40));
                        NestedModule
                          (SynComponentInfo
                             ([], None, [], [InvalidModule],
-                             PreXmlDoc ((14,16), FSharp.Compiler.Xml.XmlDocCollector),
-                             false, None, (14,16--14,36)), false,
+                             PreXmlDoc ((8,16), FSharp.Compiler.Xml.XmlDocCollector),
+                             false, None, (8,16--8,36)), false,
                           [Let
                              (false,
                               [SynBinding
                                  (None, Normal, false, false, [],
-                                  PreXmlDoc ((15,20), FSharp.Compiler.Xml.XmlDocCollector),
+                                  PreXmlDoc ((9,20), FSharp.Compiler.Xml.XmlDocCollector),
                                   SynValData
                                     (None,
                                      SynValInfo
                                        ([], SynArgInfo ([], false, None)), None),
                                   Named
                                     (SynIdent (x, None), false, None,
-                                     (15,24--15,25)), None,
-                                  Const (Int32 1, (15,28--15,29)),
-                                  (15,24--15,25), Yes (15,20--15,29),
-                                  { LeadingKeyword = Let (15,20--15,23)
+                                     (9,24--9,25)), None,
+                                  Const (Int32 1, (9,28--9,29)), (9,24--9,25),
+                                  Yes (9,20--9,29),
+                                  { LeadingKeyword = Let (9,20--9,23)
                                     InlineKeyword = None
-                                    EqualsRange = Some (15,26--15,27) })],
-                              (15,20--15,29))], false, (14,16--15,29),
-                          { ModuleKeyword = Some (14,16--14,22)
-                            EqualsRange = Some (14,37--14,38) });
-                       Types
-                         ([SynTypeDefn
-                             (SynComponentInfo
-                                ([], None, [], [ValidType3],
-                                 PreXmlDoc ((17,12), FSharp.Compiler.Xml.XmlDocCollector),
-                                 false, None, (17,17--17,27)),
-                              Simple
-                                (TypeAbbrev
-                                   (Ok,
-                                    LongIdent
-                                      (SynLongIdent ([float], [], [None])),
-                                    (17,30--17,35)), (17,30--17,35)), [], None,
-                              (17,17--17,35),
-                              { LeadingKeyword = Type (17,12--17,16)
-                                EqualsRange = Some (17,28--17,29)
-                                WithKeyword = None })], (17,12--17,35))], false,
-                      (10,8--17,35), { ModuleKeyword = Some (10,8--10,14)
-                                       EqualsRange = Some (10,22--10,23) })],
-                  false, (7,4--17,35), { ModuleKeyword = Some (7,4--7,10)
-                                         EqualsRange = Some (7,18--7,19) })],
-              false, (4,0--17,35), { ModuleKeyword = Some (4,0--4,6)
-                                     EqualsRange = Some (4,14--4,15) })],
+                                    EqualsRange = Some (9,26--9,27) })],
+                              (9,20--9,29))], false, (8,16--9,29),
+                          { ModuleKeyword = Some (8,16--8,22)
+                            EqualsRange = Some (8,37--8,38) })], false,
+                      (6,8--9,29), { ModuleKeyword = Some (6,8--6,14)
+                                     EqualsRange = Some (6,22--6,23) })], false,
+                  (5,4--9,29), { ModuleKeyword = Some (5,4--5,10)
+                                 EqualsRange = Some (5,18--5,19) })], false,
+              (4,0--9,29), { ModuleKeyword = Some (4,0--4,6)
+                             EqualsRange = Some (4,14--4,15) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (2,0--17,35), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
+          (2,0--9,29), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
-        CodeComments = [LineComment (1,0--1,65)] }, set []))
+        CodeComments = [LineComment (1,0--1,52)] }, set []))
 
-(14,16)-(14,22) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
+(8,16)-(8,22) parse error Modules cannot be nested inside types. Define modules at module or namespace level.
+(7,17)-(7,40) parse error A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.

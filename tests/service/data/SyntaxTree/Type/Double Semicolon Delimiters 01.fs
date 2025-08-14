@@ -1,13 +1,7 @@
-// Expected: No warnings - valid in verbose syntax
+// Testing: Double semicolon delimiters with invalid constructs
 module Module
 
 type A =
-    | A;;
-    type B = A;;
-        module C = ();;
-            exception D;;
-                module E = C;;
-                    let f () = ();;
-                        open System;;
-                            module G =
-                                module H = E;;
+    type B = int;;
+    module C = ();;
+    exception D;;

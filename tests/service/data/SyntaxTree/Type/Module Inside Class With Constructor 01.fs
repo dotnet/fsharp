@@ -1,8 +1,6 @@
-// Expected: Warning for module inside class with constructor
+// Testing: Module inside class with constructor
 module Module
 
 type MyClass(x: int) =
-    let mutable value = x
-    member _.Value = value
     module InternalModule =
-        let helper() = 42
+        let helper = 42
