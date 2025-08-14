@@ -349,7 +349,7 @@
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs"/>
+    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
   </ItemGroup>
 
   <ItemGroup>
