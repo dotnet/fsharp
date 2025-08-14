@@ -216,7 +216,7 @@ exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * contextIn
 
 exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 
-exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * expectedTy: TType * actualTy: TType * range * range * ContextInfo
+exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
 
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 
@@ -1756,7 +1756,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                             (minfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                                 (   IsAddSubModType nm g argTy1 && IsBinaryOpOtherArgType g permitWeakResolution argTy2
                                 || IsAddSubModType nm g argTy2 && IsBinaryOpOtherArgType g permitWeakResolution argTy1)) -> 
-                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy1 argTy2
+                        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
                         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
                         return TTraitBuiltIn
 
@@ -3184,8 +3184,6 @@ and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxs
         (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln expectedTy actualTy)
         (function
         | AbortForFailedMemberConstraintResolution as err -> ErrorD err
-        | ConstraintSolverTypesNotInEqualityRelation(_, expectedTy, actualTy, _, _, _) as err ->
-            ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, expectedTy, actualTy, err, m))
         | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, expectedTy, actualTy, res, m)))
   
 and ArgsMustSubsumeOrConvert 

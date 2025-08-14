@@ -4,7 +4,6 @@
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Diagnostics.ExtendedData
-open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
@@ -144,16 +143,26 @@ if true then 1 else "a"
         Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
         Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
 
-[<Theory>]
-[<InlineData("""
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 08`` () =
+    FSharp """
 type R = { Field1: int }
 let f (x: R) = "" + x.Field1
-""")>]
-[<InlineData("""
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (1, "The type 'int' does not match the type 'string'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+        let displayContext = typeMismatch.DisplayContext
+        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+        Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 09`` () =
+    FSharp """
 let x: string = 1
-""")>]
-let ``TypeMismatchDiagnosticExtendedData 08`` code =
-    FSharp code
+"""
     |> typecheckResults
     |> checkDiagnostic
        (1, "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
