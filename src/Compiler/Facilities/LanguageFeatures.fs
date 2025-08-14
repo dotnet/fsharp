@@ -102,7 +102,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | WarnOnUnexpectedModuleDefinitionsInsideTypes
+    | WarnOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
 
@@ -241,10 +241,10 @@ type LanguageVersion(versionText) =
                 LanguageFeature.UnmanagedConstraintCsharpInterop, languageVersion100
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
+                LanguageFeature.WarnOnInvalidDeclsInTypeDefinitions, languageVersion100
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -412,7 +412,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
-        | LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes -> FSComp.SR.featureWarnOnUnexpectedModuleDefinitionsInsideTypes ()
+        | LanguageFeature.WarnOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureWarnOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
 

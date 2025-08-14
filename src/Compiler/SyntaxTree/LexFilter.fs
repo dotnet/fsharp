@@ -1380,9 +1380,9 @@ type LexFilterImpl (
         //
         // Note: We don't check 'let' bindings as they can be valid in classes with constructors
         // Note: Constructs at the same column level are NOT nested (e.g., type A = A type B = B on same line)
-        let (|InvalidConstructInTypeDefinition|_|) keyword =
+        let (|InvalidDeclsInTypeDefn|_|) keyword =
             // Only perform validation if the language feature is enabled
-            if not (lexbuf.SupportsFeature LanguageFeature.WarnOnUnexpectedModuleDefinitionsInsideTypes) then
+            if not (lexbuf.SupportsFeature LanguageFeature.WarnOnInvalidDeclsInTypeDefinitions) then
                 None
             else
                 // Skip validation if we're inside a parenthesis context
@@ -2122,7 +2122,7 @@ type LexFilterImpl (
         | MODULE, _ :: _ ->
             // Check if this module definition is inappropriately nested in a type
             match "MODULE" with
-            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | InvalidDeclsInTypeDefn warningMsg -> warn tokenTup warningMsg
             | _ -> ()
                 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
@@ -2136,7 +2136,7 @@ type LexFilterImpl (
         | EXCEPTION, _ :: _ ->
             // Check if this exception definition is inappropriately nested in a type
             match "EXCEPTION" with
-            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | InvalidDeclsInTypeDefn warningMsg -> warn tokenTup warningMsg
             | _ -> ()
             if debug then dprintf "EXCEPTION: entering CtxtException(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtException tokenStartPos)
@@ -2581,7 +2581,7 @@ type LexFilterImpl (
         | TYPE, _ ->
             // Check if this type definition is inappropriately nested in another type
             match "TYPE" with
-            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | InvalidDeclsInTypeDefn warningMsg -> warn tokenTup warningMsg
             | _ -> ()
                 
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
@@ -2607,7 +2607,7 @@ type LexFilterImpl (
         | OPEN, _ :: _ ->
             // Check if this open declaration is inappropriately nested in a type
             match "OPEN" with
-            | InvalidConstructInTypeDefinition warningMsg -> warn tokenTup warningMsg
+            | InvalidDeclsInTypeDefn warningMsg -> warn tokenTup warningMsg
             | _ -> ()
             returnToken tokenLexbufState token
 
