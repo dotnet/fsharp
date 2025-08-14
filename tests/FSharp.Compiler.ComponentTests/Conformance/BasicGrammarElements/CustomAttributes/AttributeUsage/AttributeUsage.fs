@@ -234,6 +234,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
+            (Warning 58, Line 50, Col 4, Line 50, Col 8, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
             (Warning 842, Line 12, Col 6, Line 12, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
             (Warning 842, Line 15, Col 6, Line 15, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
             (Warning 842, Line 18, Col 6, Line 18, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
