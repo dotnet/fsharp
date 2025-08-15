@@ -202,9 +202,6 @@ let YieldFree (cenv: TcFileState) expr =
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
-
-            | SynExpr.LetOrUseBang(body = body) -> YieldFree body
-
             | SynExpr.YieldOrReturn(flags = (true, _)) -> false
 
             | _ -> true
@@ -232,7 +229,7 @@ let YieldFree (cenv: TcFileState) expr =
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
 
-            | SynExpr.LetOrUseBang _
+            | SynExpr.LetOrUse(isBang = true)
             | SynExpr.YieldOrReturnFrom _
             | SynExpr.YieldOrReturn _
             | SynExpr.ImplicitZero _
@@ -256,7 +253,6 @@ let inline IsSimpleSemicolonSequenceElement expr cenv acceptDeprecated =
     | SynExpr.LetOrUse _
     | SynExpr.Do _
     | SynExpr.MatchBang _
-    | SynExpr.LetOrUseBang _
     | SynExpr.While _
     | SynExpr.WhileBang _ -> false
     | _ -> true
