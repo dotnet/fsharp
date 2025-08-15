@@ -1368,6 +1368,98 @@ type LexFilterImpl (
             if debug then dprintf "inserting %+A\n" tok
             returnToken (lexbufStateForInsertedDummyTokens (startPosOfTokenTup tokenTup, tokenTup.LexbufState.EndPos)) tok
 
+        // Check if we're inappropriately inside a type definition for constructs that shouldn't be there
+        // This validates that TYPE, MODULE, EXCEPTION, and OPEN declarations are not nested within type definitions
+        // The check works as follows:
+        // 1. Only check if the language feature WarnOnUnexpectedModuleDefinitionsInsideTypes is enabled
+        // 2. Skip validation inside parentheses (to avoid false positives with inline IL)
+        // 3. Traverse the context stack looking for a CtxtTypeDefns
+        // 4. If found, check if the current token is indented INSIDE it (greater column, not equal)
+        // 5. Verify we're not in a legitimate nested context (members, augmentations, or escaped to module/namespace)
+        // 6. If all conditions match, issue an error message
+        //
+        // Note: We don't check 'let' bindings as they can be valid in classes with constructors
+        // Note: Constructs at the same column level are NOT nested (e.g., type A = A type B = B on same line)
+        let checkForInvalidDeclsInTypeDefn keyword =
+            if lexbuf.SupportsFeature LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions then
+                // Skip validation if we're inside a parenthesis context
+                // This avoids false positives with inline IL: (# "unbox.any !0" type ('T) x : 'T #)
+                let rec hasParenContext stack =
+                    match stack with
+                    | [] -> false
+                    | CtxtParen _ :: _ -> true
+                    | CtxtSeqBlock _ :: rest 
+                    | CtxtVanilla _ :: rest -> hasParenContext rest
+                    | _ -> false
+                
+                // Don't validate if we're in a paren context (could be inline IL or other valid syntax)
+                if not (hasParenContext offsideStack) then
+                    // Find the nearest type definition context and check if we're inappropriately nested
+                    let rec checkNesting stack typeDefnsSeen =
+                        match stack with
+                        | [] -> 
+                            // We've traversed the whole stack without finding issues
+                            false
+                            
+                        | CtxtModuleBody _ :: _ 
+                        | CtxtNamespaceBody _ :: _ -> 
+                            // We've escaped to module/namespace level - constructs here are OK
+                            false
+                            
+                        | CtxtTypeDefns(typePos, _) :: rest ->
+                            // Found a type definition - check if we're inappropriately inside it
+                            // IMPORTANT: Same-line declarations are sequential, not nested
+                            // Example: type A = A type B = B (all on same line, B is not nested in A)
+                            // Only warn if on a DIFFERENT line with GREATER indentation
+                            if tokenStartPos.Line > typePos.Line && tokenStartCol > typePos.Column then
+                                // We're indented inside the type - this might be invalid
+                                // But first check if we're in a valid member/augmentation context
+                                let rec isInMemberContext s =
+                                    match s with
+                                    | [] -> false
+                                    | CtxtMemberHead _ :: _ 
+                                    | CtxtMemberBody _ :: _ -> true
+                                    | CtxtWithAsAugment _ :: _ -> true  // Type augmentation with 'with'
+                                    | CtxtSeqBlock _ :: tail 
+                                    | CtxtVanilla _ :: tail -> isInMemberContext tail
+                                    | _ -> false
+                                
+                                not (isInMemberContext stack)
+                            else
+                                // Not indented inside this type (same column or less), check deeper in the stack
+                                checkNesting rest true
+                                
+                        | CtxtSeqBlock _ :: rest 
+                        | CtxtVanilla _ :: rest 
+                        | CtxtParen _ :: rest ->
+                            // Transparent contexts - continue checking
+                            checkNesting rest typeDefnsSeen
+                            
+                        | CtxtMemberHead _ :: _ 
+                        | CtxtMemberBody _ :: _ when typeDefnsSeen ->
+                            // We're in a member context after seeing a type - this is OK
+                            false
+                            
+                        | _ :: rest ->
+                            // Other contexts - continue checking
+                            checkNesting rest typeDefnsSeen
+                    
+                    if checkNesting offsideStack false then
+                        let errorMessage = 
+                            match keyword with
+                            | "TYPE" -> 
+                                FSComp.SR.lexfltInvalidNestedTypeDefinition()
+                            | "MODULE" -> 
+                                FSComp.SR.lexfltInvalidNestedModule()
+                            | "EXCEPTION" -> 
+                                FSComp.SR.lexfltInvalidNestedExceptionDefinition()
+                            | "OPEN" -> 
+                                FSComp.SR.lexfltInvalidNestedOpenDeclaration()
+                            | _ -> 
+                                FSComp.SR.lexfltInvalidNestedConstruct(keyword)
+                        
+                        error tokenTup errorMessage
+
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
         let relaxWhitespace2OffsideRule =
             // Offside rule for CtxtLetDecl (in types or modules) / CtxtMemberHead / CtxtTypeDefns... (given RelaxWhitespace2)
@@ -2019,7 +2111,11 @@ type LexFilterImpl (
             returnToken tokenLexbufState token
 
         //  module ... ~~~> CtxtModuleHead
+        //  Check for inappropriate nesting within type definitions
         | MODULE, _ :: _ ->
+            // Check if this module definition is inappropriately nested in a type
+            checkForInvalidDeclsInTypeDefn "MODULE"
+                
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             let isNested = match offsideStack with | [ CtxtSeqBlock _ ] -> false | _ -> true
@@ -2029,6 +2125,8 @@ type LexFilterImpl (
 
         // exception ... ~~~> CtxtException
         | EXCEPTION, _ :: _ ->
+            // Check if this exception definition is inappropriately nested in a type
+            checkForInvalidDeclsInTypeDefn "EXCEPTION"
             if debug then dprintf "EXCEPTION: entering CtxtException(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtException tokenStartPos)
             returnToken tokenLexbufState token
@@ -2470,6 +2568,9 @@ type LexFilterImpl (
             returnToken tokenLexbufState token
 
         | TYPE, _ ->
+            // Check if this type definition is inappropriately nested in another type
+            checkForInvalidDeclsInTypeDefn "TYPE"
+                
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
             if debug then dprintf "TYPE, pushing CtxtTypeDefns(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtTypeDefns(tokenStartPos, None))
@@ -2488,6 +2589,11 @@ type LexFilterImpl (
             returnToken tokenLexbufState token
 
         | OBLOCKBEGIN, _ ->
+            returnToken tokenLexbufState token
+
+        | OPEN, _ :: _ ->
+            // Check if this open declaration is inappropriately nested in a type
+            checkForInvalidDeclsInTypeDefn "OPEN"
             returnToken tokenLexbufState token
 
         | ODUMMY _, _ ->
