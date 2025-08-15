@@ -8,16 +8,15 @@ open FSharp.Test.Compiler
 
 module NamedPatPairs =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs01.fs"|])>]
-    let ``Preview: NamedPatPairs - NamedPatPairs01_fs - --test:ErrorRanges`` compilation =
+    let ``Preview: NamedPatPairs - NamedPatPairs01_fs`` compilation =
         compilation
         |> ignoreWarnings
         |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
-        
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs01.fs"|])>]
-    let ``Version9 NamedPatPairs - NamedPatPairs01_fs - --test:ErrorRanges`` compilation =
+    let ``Version9 NamedPatPairs - NamedPatPairs01_fs`` compilation =
         compilation
         |> ignoreWarnings
         |> withLangVersion90
