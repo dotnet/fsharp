@@ -780,20 +780,22 @@ let stripTyEqns g ty = stripTyEqnsA g false ty
 
 /// Try to refine a type by removing 'null' from its top-level nullness, preserving any type abbreviations.
 /// - Strip type equations/abbreviations only for the purpose of deciding if we can remove 'null'.
-/// - If applicable, apply the refinement to the original 'ty' by constructing a refined type that preserves aliases.
-/// - Only refine reference-like heads (including type variables) that can have nullness.
+/// - If applicable, apply the refinement to the original 'ty' using replaceNullnessOfTy, so aliases are not discarded.
+/// - Only refine reference-like heads (including type variables).
 let tryRefineToNonNullPreservingAbbrev (g: TcGlobals) (ty: TType) : TType option =
+    // Use stripTyEqns to decide if we can refine, but apply to original type
     let stripped = stripTyEqns g ty
     match stripped with
     | TType_app (tcref, _, _) when not tcref.Deref.IsStructOrEnumTycon ->
-        // Apply refinement to original type, preserving structure
+        // Apply refinement to original type structure to preserve aliases
         match ty with
-        | TType_app (tcref2, tinst2, _) -> Some (TType_app (tcref2, tinst2, KnownWithoutNull))
-        | TType_var (tp, _) -> Some (TType_var (tp, KnownWithoutNull))
+        | TType_app (tcrefOrig, tinstOrig, _) -> Some (TType_app (tcrefOrig, tinstOrig, KnownWithoutNull))
+        | TType_var (tpOrig, _) -> Some (TType_var (tpOrig, KnownWithoutNull))
+        | TType_fun (dOrig, rOrig, _) -> Some (TType_fun (dOrig, rOrig, KnownWithoutNull))
         | _ -> Some (replaceNullnessOfTy KnownWithoutNull ty)
     | TType_var _ ->
         match ty with
-        | TType_var (tp, _) -> Some (TType_var (tp, KnownWithoutNull))
+        | TType_var (tpOrig, _) -> Some (TType_var (tpOrig, KnownWithoutNull))
         | _ -> Some (replaceNullnessOfTy KnownWithoutNull ty)
     | _ -> None
 
