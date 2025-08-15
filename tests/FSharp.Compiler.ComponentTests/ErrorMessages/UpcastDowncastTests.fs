@@ -17,7 +17,7 @@ let c = orig :> Dictionary<obj,obj>
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 193, Line 5, Col 9, Line 5, Col 36,
+        |> withSingleDiagnostic (Error 193, Line 5, Col 9, Line 5, Col 13,
                                  "Type constraint mismatch. The type \n    'IDictionary<obj,obj>'    \nis not compatible with type\n    'Dictionary<obj,obj>'    \n")
 
     [<Fact>]

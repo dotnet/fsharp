@@ -3004,20 +3004,19 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
                 warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfTypeWithNullness denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
 
 ///  Checks, warnings and constraint assertions for upcasts
-let TcStaticUpcast (cenv: cenv) denv m tgtTy srcTy =
+let TcStaticUpcast (cenv: cenv) denv mSourceExpr mUpcastExpr tgtTy srcTy =
     let g = cenv.g
     if isTyparTy g tgtTy then
         if not (destTyparTy g tgtTy).IsCompatFlex then
-            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, m))
-            //else warning(UpcastUnnecessary m)
+            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, mUpcastExpr))
 
     if isSealedTy g tgtTy && not (isTyparTy g tgtTy) then
-        warning(CoercionTargetSealed(denv, tgtTy, m))
+        warning(CoercionTargetSealed(denv, tgtTy, mUpcastExpr))
 
     if typeEquiv g srcTy tgtTy then
-        warning(UpcastUnnecessary m)
+        warning(UpcastUnnecessary mUpcastExpr)
 
-    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace tgtTy srcTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css mSourceExpr NoTrace tgtTy srcTy
 
 let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
 
@@ -6139,7 +6138,7 @@ and TcExprUpcast (cenv: cenv) overallTy env tpenv (synExpr, synInnerExpr, m) =
         | SynExpr.InferredUpcast _ ->
             overallTy.Commit, tpenv
         | _ -> failwith "upcast"
-    TcStaticUpcast cenv env.DisplayEnv m tgtTy srcTy
+    TcStaticUpcast cenv env.DisplayEnv synInnerExpr.Range m tgtTy srcTy
     let expr = mkCoerceExpr(innerExpr, tgtTy, m, srcTy)
     expr, tpenv
 
