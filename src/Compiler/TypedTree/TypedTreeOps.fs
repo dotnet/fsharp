@@ -778,6 +778,18 @@ let rec stripTyEqnsA g canShortcut ty =
 
 let stripTyEqns g ty = stripTyEqnsA g false ty
 
+/// Try to refine a type by removing 'null' from its top-level nullness, preserving any type abbreviations.
+/// - Strip type equations/abbreviations only for the purpose of deciding if we can remove 'null'.
+/// - If applicable, apply the refinement to the original 'ty' using replaceNullnessOfTy, so aliases are not discarded.
+/// - Only refine reference-like heads (including type variables).
+let tryRefineToNonNullPreservingAbbrev (g: TcGlobals) (ty: TType) : TType option =
+    match stripTyEqns g ty with
+    | TType_app (tcref, _, _) when not tcref.Deref.IsStructOrEnumTycon ->
+        Some (replaceNullnessOfTy KnownWithoutNull ty)
+    | TType_var _ ->
+        Some (replaceNullnessOfTy KnownWithoutNull ty)
+    | _ -> None
+
 let evalTupInfoIsStruct aexpr = 
     match aexpr with 
     | TupInfo.Const b -> b

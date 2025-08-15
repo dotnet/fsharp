@@ -10742,8 +10742,7 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
 
     let inputTypeForNextPatterns=
         let removeNull t =
-            let stripped = stripTyEqns cenv.g t
-            replaceNullnessOfTy KnownWithoutNull stripped
+            tryRefineToNonNullPreservingAbbrev cenv.g t |> Option.defaultValue t
         let rec isWild (p:Pattern) =
             match p with
             | TPat_wild _ -> true

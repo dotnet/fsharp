@@ -641,6 +641,12 @@ val stripTyEqnsA: TcGlobals -> canShortcut: bool -> TType -> TType
 /// </remarks>
 val stripTyEqns: TcGlobals -> TType -> TType
 
+/// Try to refine a type by removing 'null' from its top-level nullness, preserving any type abbreviations.
+/// - Strip type equations/abbreviations only for the purpose of deciding if we can remove 'null'.
+/// - If applicable, apply the refinement to the original 'ty' using replaceNullnessOfTy, so aliases are not discarded.
+/// - Only refine reference-like heads (including type variables).
+val tryRefineToNonNullPreservingAbbrev: TcGlobals -> TType -> TType option
+
 val stripTyEqnsAndMeasureEqns: TcGlobals -> TType -> TType
 
 val tryNormalizeMeasureInType: TcGlobals -> TType -> TType
