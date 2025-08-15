@@ -3718,17 +3718,6 @@ constrPattern:
         let m = unionRanges (rhs2 parseState 1 2) argsM
         SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
 
-  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairsWithCommas
-      { let vis, lid = $1
-        let args, argsM = $4
-        let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
-
-  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairsWithCommas
-      { let vis, lid = $1
-        let args, argsM = $4
-        let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent atomicPatsOrNamePatPairsWithCommas %prec pat_app
       { let vis, lid = $1
