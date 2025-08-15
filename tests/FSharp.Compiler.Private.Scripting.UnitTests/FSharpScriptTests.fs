@@ -331,6 +331,42 @@ printfn "{@"%A"}" result
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))
 
     [<Fact>]
+    member _.``FsharpPlus - report errors``() =
+        let code = """
+#i "nuget:https://api.nuget.org/v3/index.json"
+#r "nuget: FSharpPlus, 1.6.1"
+
+open FSharpPlus
+open FSharpPlus.Data
+
+let printTable x =
+    let lines (lst: 'Record list) = 
+        let fields = Reflection.FSharpType.GetRecordFields typeof<'Record>
+        let headers = fields |> Seq.map _.Name
+        let asList (x:'record) = fields |> Seq.map (fun field -> string (Reflection.FSharpValue.GetRecordField(x, field)))
+        let rows = Seq.map asList lst
+        let table = seq { yield headers; yield! rows }
+        let maxs = table |> (Seq.traverse ZipList >> ZipList.run) |>> Seq.map length |>> maxBy id
+        let rowSep = String.replicate (sum maxs + length maxs - 1) "-"
+        let fill (i, s) = s + String.replicate (i - length s) " "
+        let printRow r = "|" + (r |> zip maxs |>> fill |> intercalate "|") + "|"
+        seq {
+            yield "." + rowSep + "."
+            yield printRow headers
+            yield "|" + rowSep + "|"
+            yield! (rows |>> printRow)
+            yield "'" + rowSep + "'" }
+    x |> lines |> iter (printfn "%s")
+    x |> List.length
+
+printTable [{|Age = 15; Weight = 88; Name = "Blahboolahboogaloo"|}]
+"""
+        use script = new FSharpScript(additionalArgs=[| |])
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.Equal(1, downcast value.ReflectionValue)
+
+    [<Fact>]
     member _.``ML - use assembly with ref dependencies``() =
         let code = """
 #r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
