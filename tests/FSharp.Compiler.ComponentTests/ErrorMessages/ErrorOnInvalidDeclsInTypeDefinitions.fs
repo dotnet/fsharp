@@ -24,6 +24,48 @@ type IFace =
             ]
             
         [<Fact>]
+        let ``Version10: Error when module is inside interface verbose syntax``() =
+            Fsx """
+module TestModule
+
+type IFace =
+    interface
+        abstract F : int -> int
+        module M =
+            let f () = f ()
+    end
+            """
+            |> withLangVersion10
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 546, Line 5, Col 5, Line 5, Col 14, "Unmatched 'class', 'interface' or 'struct'");
+                (Error 10, Line 7, Col 9, Line 7, Col 15, "Unexpected keyword 'module' in member definition");
+                (Error 10, Line 9, Col 5, Line 9, Col 8, "Incomplete structured construct at or before this point in definition. Expected incomplete structured construct at or before this point or other token.")
+            ]
+            
+        [<Fact>]
+        let ``Error when module is inside interface verbose syntax``() =
+            Fsx """
+module TestModule
+
+type IFace =
+    interface
+        abstract F : int -> int
+        module M =
+            let f () = f ()
+    end
+            """
+            |> withLangVersion90
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 546, Line 5, Col 5, Line 5, Col 14, "Unmatched 'class', 'interface' or 'struct'");
+                (Error 10, Line 7, Col 9, Line 7, Col 15, "Unexpected keyword 'module' in member definition");
+                (Error 10, Line 9, Col 5, Line 9, Col 8, "Incomplete structured construct at or before this point in definition. Expected incomplete structured construct at or before this point or other token.")
+            ]
+            
+        [<Fact>]
         let ``No Error when module is inside interface``() =
             Fsx """
 module TestModule
