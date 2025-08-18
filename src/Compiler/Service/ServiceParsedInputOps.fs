@@ -1301,7 +1301,7 @@ module ParsedInput =
                     let context =
                         Some(PatternContext.NamedUnionCaseField(field.FieldName.idText, caseId.Range))
 
-                    TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
+                    TryGetCompletionContextInPattern suppressIdentifierCompletions field.Pattern context pos)
             |> Option.orElseWith (fun () ->
                 // Last resort - check for fun (Case (item1 = a; | )) ->
                 // That is, pos is after the last pair and still within parentheses
