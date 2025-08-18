@@ -781,3 +781,20 @@ module Map =
     /// </example>
     [<CompiledName("MaxKeyValue")>]
     val maxKeyValue: table: Map<'Key, 'T> -> 'Key * 'T
+
+    /// <summary>Returns a 3-tuple of the item with the closest key below the map, if any;
+    /// the matching item, if any; and the closest key above the map, if any.</summary>
+    ///
+    /// <param name="key">The key to search.</param>
+    /// <param name="table">The input map.</param>
+    ///
+    /// <example>
+    /// <code lang="fsharp">
+    /// let sample = Map [ (10, "a"); (12, "b"); (20, "c"); (22, "d"); (25, "e"); (28, "f")
+    ///                    (30, "g"); (36, "h"); (38, "i"); (40, "j"); (48, "k") ]
+    ///
+    /// sample |> Map.binarySearch 20 // evaluates to Some (12, "b"), Some (20, "c"), Some (25, "e")
+    /// </code>
+    /// </example>
+    [<CompiledName("BinarySearch")>]
+    val binarySearch: key: 'Key -> table: Map<'Key, 'T> -> ('Key * 'T) option * ('Key * 'T) option * ('Key * 'T) option
