@@ -650,8 +650,8 @@ let visitSynArgPats (argPat: SynArgPats) =
     | SynArgPats.Pats args -> List.collect visitPat args
     | SynArgPats.NamePatPairs(pats = pats) ->
         [
-            for _, _, p in pats do
-                yield! visitPat p
+            for p in pats do
+                yield! visitPat p.Pattern
         ]
 
 let visitSynSimplePat (pat: SynSimplePat) =

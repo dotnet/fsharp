@@ -503,7 +503,9 @@ and CheckNoArgsForLiteral args m =
 and GetSynArgPatterns args =
     match args with
     | SynArgPats.Pats args -> args
-    | SynArgPats.NamePatPairs (pats = pairs) -> List.map (fun (_, _, pat) -> pat) pairs
+    | SynArgPats.NamePatPairs (pats = pairs) ->
+        pairs
+        |> List.map _.Pattern
 
 and TcArgPats warnOnUpper (cenv: cenv) env vFlags patEnv args =
     let g = cenv.g
@@ -657,7 +659,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             let result = Array.zeroCreate numArgTys
             let extraPatterns = List ()
 
-            for id, _, pat in pairs do
+            for NamePatPairField(fieldName = id; pat = pat) in pairs do
                 match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.Id.idText) with
                 | None ->
                     extraPatterns.Add pat

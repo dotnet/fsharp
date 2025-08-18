@@ -1046,12 +1046,36 @@ type SynSimplePats =
 
     member Range: range
 
+/// Represents a single named argument pattern a pair of the form `name = pattern`.
+[<NoEquality; NoComparison>]
+type NamePatPairField =
+    | NamePatPairField of
+        /// The identifier of the named field/parameter.
+        fieldName: Ident *
+        /// The range of the equals sign in `name = pattern`, if present.
+        equalsRange: range option *
+        /// The overall range of this name–pattern pair.
+        range: range option *
+        /// The pattern associated with the named field.
+        pat: SynPat *
+        /// The separator trivia that follows this pair (e.g., semicolon or block separator), if any.
+        blockSeparator: BlockSeparator option
+
+    /// Gets the identifier of the named field/parameter.
+    member FieldName: Ident
+
+    /// Gets the overall range of this name–pattern pair, if available.
+    member Range: range option
+
+    /// Gets the pattern associated with the named field.
+    member Pattern: SynPat
+
 /// Represents a syntax tree for arguments patterns
 [<RequireQualifiedAccess>]
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: NamePatPairField list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
