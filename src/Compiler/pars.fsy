@@ -3774,13 +3774,6 @@ atomicPatsOrNamePatPairsWithCommas:
         let trivia = { ParenRange = mParen }
         SynArgPats.NamePatPairs($2, rhs parseState 2, trivia), mParen }
 
-  | LPAREN namePatPairsWithCommas namePatSepsWithCommas atomicPattern rparen
-      { let mParen = rhs2 parseState 1 5
-        let trivia = { ParenRange = mParen }
-        let namedPats = $2
-        let wildPat = $4
-        SynArgPats.NamePatPairs(namedPats, rhs parseState 2, trivia), mParen }
-
   | atomicPatterns
       { let mParsed = rhs parseState 1
         let mAll = (mParsed.StartRange, $1) ||> unionRangeWithListBy (fun p -> p.Range)
