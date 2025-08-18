@@ -5658,6 +5658,119 @@ type UseTheThings(i:int) =
            (((37, 10), (37, 21)), "open type FSharpEnum2 // Unused, should appear.")]
     unusedOpensData |> shouldEqual expected
 
+[<Theory>]
+[<InlineData("""// 1. Auto-open type extension.
+// https://github.com/dotnet/fsharp/issues/17629
+module Module
+
+type T =
+    static member A = 99
+
+[<AutoOpen>]
+module M =
+    type T with
+        static member Lol = 3
+
+// Shows as unused; the unused opens analyzer will suggest removing it…
+open type T
+
+// …Even though it's used.
+let lol = Lol
+""")>]
+[<InlineData("""// 2. Open type on fully-qualified union type.
+// https://github.com/dotnet/fsharp/issues/17629
+module M =
+    type E = A | B
+
+open type M.E // Considered unused, even though it is.
+
+let f x =
+    match x with
+    | A -> ()
+    | B -> ()
+""")>]
+[<InlineData("""// 3. Open namespace with auto-opened type.
+// https://github.com/dotnet/fsharp/issues/17929
+namespace SomeOtherNamespace
+
+[<AutoOpen>]
+type SomeUnusedType =
+    static member y = 1
+
+namespace Test
+
+open SomeOtherNamespace
+
+type UseTheThings(i:int) =
+    member x.UseSomeOtherNamespaceTypeMember() = y
+""")>]
+let ``Unused opens misc`` fileSource1Text =
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = SourceText.ofString fileSource1Text
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
+
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
+
+    let fileCheckResults =
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate
+        |> function
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
+    unusedOpensData |> shouldEqual []
+
+[<Fact>]
+let ``Unused opens shadowing`` () =
+    let fileSource1Text =
+        """
+// https://github.com/dotnet/fsharp/issues/16226
+namespace Case2
+
+module RecordA =
+    type Record = { Foo: string }
+
+module RecordB =
+    type Record = { Bar: string }
+
+module Use =
+    open RecordB // Not required.
+    open RecordA // Required.
+    open RecordB // Required.
+
+    let convertBToA (recordB: Record) =
+        { Foo = recordB.Bar }
+        """
+
+    let fileName1 = Path.ChangeExtension(getTemporaryFileName (), ".fs")
+    let base2 = getTemporaryFileName ()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = SourceText.ofString fileSource1Text
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1Text)
+
+    let fileNames = [|fileName1|]
+    let args = mkProjectCommandLineArgs (dllName, [])
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+    let options = { keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
+
+    let fileCheckResults =
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunImmediate
+        |> function
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
+    unusedOpensData |> shouldEqual [(((12, 9), (12, 16)), "    open RecordB // Not required.")]
+
 [<Fact>]
 let ``Unused opens smoke test auto open`` () =
 
