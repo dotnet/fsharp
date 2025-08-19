@@ -143,7 +143,7 @@ type EvictionQueueMessage<'Key, 'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headroom, comparer, name, listen) =
+type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headroom, comparer, name, listen, noEviction) =
 
     let metrics = new CacheMetrics(name)
 
@@ -162,9 +162,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     let evicted = Event<_>()
     let evictionFailed = Event<_>()
 
-    let cts = new CancellationTokenSource()
-
-    let evictionProcessor =
+    let startEvictionProcessor ct =
         MailboxProcessor.Start(
             (fun mb ->
                 let rec processNext () =
@@ -199,8 +197,18 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
                     }
 
                 processNext ()),
-            cts.Token
+            ct
         )
+
+    let post, disposeEvictionProcessor =
+        if noEviction then ignore, ignore else          
+            let cts = new CancellationTokenSource()
+            let evictionProcessor = startEvictionProcessor cts.Token
+            (fun message -> evictionProcessor.Post(message)),
+            (fun () ->
+                cts.Cancel()
+                cts.Dispose()
+                evictionProcessor.Dispose())
 
     member val Evicted = evicted.Publish
     member val EvictionFailed = evictionFailed.Publish
@@ -209,7 +217,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         match store.TryGetValue(key) with
         | true, entity ->
             metrics.Hits.Add 1L
-            evictionProcessor.Post(EvictionQueueMessage.Update entity)
+            post (EvictionQueueMessage.Update entity)
             value <- entity.Value
             true
         | _ ->
@@ -224,7 +232,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         if added then
             metrics.Adds.Add 1L
-            evictionProcessor.Post(EvictionQueueMessage.Add entity)
+            post (EvictionQueueMessage.Add entity)
 
         added
 
@@ -234,7 +242,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let makeEntity key =
             wasMiss <- true
             let entity = CachedEntity.Create(key, valueFactory key)
-            evictionProcessor.Post(EvictionQueueMessage.Add entity)
+            post (EvictionQueueMessage.Add entity)
             entity
 
         let result = store.GetOrAdd(key, makeEntity)
@@ -245,7 +253,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         else
             metrics.Hits.Add 1L
 
-        evictionProcessor.Post(EvictionQueueMessage.Update result)
+        post (EvictionQueueMessage.Update result)
         result.Value
 
     member _.AddOrUpdate(key, value) =
@@ -260,22 +268,20 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         // Returned value tells us if the entity was added or updated.
         if Object.ReferenceEquals(addValue, result) then
             metrics.Adds.Add 1L
-            evictionProcessor.Post(EvictionQueueMessage.Add addValue)
+            post (EvictionQueueMessage.Add addValue)
         else
             metrics.Updates.Add 1L
-            evictionProcessor.Post(EvictionQueueMessage.Update result)
+            post (EvictionQueueMessage.Update result)
 
     interface IDisposable with
         member this.Dispose() =
-            cts.Cancel()
-            cts.Dispose()
-            evictionProcessor.Dispose()
+            disposeEvictionProcessor()
             store.Clear()
             metrics.Dispose()
 
     member this.Dispose() = (this :> IDisposable).Dispose()
 
-    static member Create<'Key, 'Value>(options: CacheOptions, ?comparer: IEqualityComparer<'Key>, ?name, ?observeMetrics) =
+    static member Create<'Key, 'Value>(options: CacheOptions, ?comparer: IEqualityComparer<'Key>, ?name, ?observeMetrics, ?noEviction) =
         if options.TotalCapacity < 0 then
             invalidArg "Capacity" "Capacity must be positive"
 
@@ -290,8 +296,9 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let name = defaultArg name (Guid.NewGuid().ToString())
         let observeMetrics = defaultArg observeMetrics false
         let comparer = defaultArg comparer EqualityComparer<'Key>.Default
+        let noEviction = defaultArg noEviction false
 
         let cache =
-            new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics)
+            new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics, noEviction)
 
         cache
