@@ -1469,11 +1469,11 @@ type internal TypeCheckInfo
                 // Exclude already referenced fields regardless of the source above
                 |> List.filter (fun item ->
                     match item with
-                    | Item.RecdField rf ->
-                        referencedFields |> List.exists (fun (name, _) -> name = rf.DisplayName) |> not
+                    | Item.RecdField rf -> referencedFields |> List.exists (fun (name, _) -> name = rf.DisplayName) |> not
                     | _ -> true)
 
-            let fields = availableFieldItems |> List.map (ItemWithNoInst >> DefaultCompletionItem)
+            let fields =
+                availableFieldItems |> List.map (ItemWithNoInst >> DefaultCompletionItem)
 
             let items =
                 items
