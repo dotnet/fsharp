@@ -1450,8 +1450,7 @@ type internal TypeCheckInfo
     let GetCompletionsForRecordField pos referencedFields declaredItems =
         declaredItems
         |> Option.map (fun (items: CompletionItem list, denv, range) ->
-            // Build the list of available record fields, preferring those from the resolved record type if possible.
-            let availableFieldItems: Item list =
+            let fields =
                 // Try to find a name resolution for any of the referenced fields, and through it access all available fields of the record
                 referencedFields
                 |> List.tryPick (fun (_, fieldRange) ->
@@ -1460,29 +1459,28 @@ type internal TypeCheckInfo
                         match cnr.Item with
                         | Item.RecdField info when equals cnr.Range fieldRange ->
                             info.TyconRef.AllFieldAsRefList
-                            |> List.map (fun field -> FreshenRecdFieldRef ncenv field.Range field |> Item.RecdField)
+                            |> List.choose (fun field ->
+                                if
+                                    referencedFields
+                                    |> List.exists (fun (fieldName, _) -> fieldName = field.DisplayName)
+                                then
+                                    None
+                                else
+                                    FreshenRecdFieldRef ncenv field.Range field |> Item.RecdField |> Some)
                             |> Some
                         | _ -> None))
                 |> Option.defaultWith (fun () ->
                     // Fall back to showing all record field names in scope
                     let (nenv, _), _ = GetBestEnvForPos pos
                     getRecordFieldsInScope nenv)
-                // Exclude already referenced fields regardless of the source above
-                |> List.filter (fun item ->
-                    match item with
-                    | Item.RecdField rf -> referencedFields |> List.exists (fun (name, _) -> name = rf.DisplayName) |> not
-                    | _ -> true)
-
-            let fields =
-                availableFieldItems |> List.map (ItemWithNoInst >> DefaultCompletionItem)
+                |> List.map (ItemWithNoInst >> DefaultCompletionItem)
 
             let items =
                 items
                 |> List.filter (fun item ->
                     match item.Item with
                     | Item.ModuleOrNamespaces _ -> true
-                    | Item.UnionCase _ -> true
-                    | Item.Types(_, ty :: _) -> isRecdTy g ty || isUnionTy g ty
+                    | Item.Types(_, ty :: _) -> isRecdTy g ty
                     | _ -> false)
                 |> List.append fields
 
