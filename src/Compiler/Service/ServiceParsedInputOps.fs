@@ -1340,8 +1340,11 @@ module ParsedInput =
             |> List.tryPick (fun f ->
                 let fieldId = f.FieldName
                 let pat = f.Pattern
+
                 if rangeContainsPos fieldId.idRange pos then
-                    let referencedFields = pats |> List.map (fun f -> f.FieldName.idText, f.FieldName.idRange)
+                    let referencedFields =
+                        pats |> List.map (fun f -> f.FieldName.idText, f.FieldName.idRange)
+
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 elif rangeContainsPos pat.Range pos then
                     TryGetCompletionContextInPattern false pat None pos
@@ -1356,12 +1359,15 @@ module ParsedInput =
                         let mEqualsOpt =
                             match f with
                             | NamePatPairField(equalsRange = m) -> m
+
                         match mEqualsOpt, f.Pattern with
                         | Some mEquals, SynPat.Wild mPat -> rangeBeforePos mEquals pos && mPat.StartColumn <> mPat.EndColumn
                         | Some mEquals, _ -> rangeBeforePos mEquals pos
                         | _ -> false)
                 then
-                    let referencedFields = pats |> List.map (fun f -> f.FieldName.idText, f.FieldName.idRange)
+                    let referencedFields =
+                        pats |> List.map (fun f -> f.FieldName.idText, f.FieldName.idRange)
+
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 else
                     Some(CompletionContext.Pattern PatternContext.Other))
