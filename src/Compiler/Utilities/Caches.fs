@@ -59,11 +59,13 @@ type CacheMetrics(cacheId: string) =
     static let meter = new Meter("FSharp.Compiler.Cache")
     static let observedCaches = ConcurrentDictionary<string, CacheMetrics>()
 
+    let adds = meter.CreateCounter<int64>("adds", "count", cacheId)
+    let updates = meter.CreateCounter<int64>("updates", "count", cacheId)
     let hits = meter.CreateCounter<int64>("hits", "count", cacheId)
     let misses = meter.CreateCounter<int64>("misses", "count", cacheId)
     let evictions = meter.CreateCounter<int64>("evictions", "count", cacheId)
     let evictionFails = meter.CreateCounter<int64>("eviction-fails", "count", cacheId)
-    let allCounters = [ hits; misses; evictions; evictionFails ]
+    let allCounters = [ adds; updates; hits; misses; evictions; evictionFails ]
 
     let totals = Map [ for counter in allCounters -> counter.Name, ref 0L ]
 
@@ -91,6 +93,8 @@ type CacheMetrics(cacheId: string) =
 
         listener.Start()
 
+    member val Adds = adds
+    member val Updates = updates
     member val Hits = hits
     member val Misses = misses
     member val Evictions = evictions
@@ -219,6 +223,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let added = store.TryAdd(key, entity)
 
         if added then
+            metrics.Adds.Add 1L
             evictionProcessor.Post(EvictionQueueMessage.Add entity)
 
         added
@@ -235,6 +240,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let result = store.GetOrAdd(key, makeEntity)
 
         if wasMiss then
+            metrics.Adds.Add 1L
             metrics.Misses.Add 1L
         else
             metrics.Hits.Add 1L
@@ -253,8 +259,10 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         // Returned value tells us if the entity was added or updated.
         if Object.ReferenceEquals(addValue, result) then
+            metrics.Adds.Add 1L
             evictionProcessor.Post(EvictionQueueMessage.Add addValue)
         else
+            metrics.Updates.Add 1L
             evictionProcessor.Post(EvictionQueueMessage.Update result)
 
     interface IDisposable with
