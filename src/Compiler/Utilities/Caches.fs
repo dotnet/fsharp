@@ -21,7 +21,7 @@ type CacheOptions =
 
     static member Default =
         {
-            TotalCapacity = 1024
+            TotalCapacity = 128
             HeadroomPercentage = 50
         }
 
@@ -131,7 +131,7 @@ module Cache =
 
     /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
     let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
+        Environment.SetEnvironmentVariable(overrideVariable, "1024", EnvironmentVariableTarget.Process)
 
     let applyOverride (capacity: int) =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
