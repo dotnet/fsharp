@@ -34,7 +34,8 @@ let ``Create and dispose many named`` () =
 
 [<Fact>]
 let ``Basic add and retrieve`` () =
-    use cache = Cache.Create<string, int>(CacheOptions.Default, observeMetrics = true)
+    let name = "Basic_add_and_retrieve"
+    use cache = Cache.Create<string, int>(CacheOptions.Default, name = name, observeMetrics = true)
 
     cache.TryAdd("key1", 1) |> shouldBeTrue
     cache.TryAdd("key2", 2) |> shouldBeTrue
@@ -49,9 +50,14 @@ let ``Basic add and retrieve`` () =
 
     cache.TryGetValue("key3", &value) |> shouldBeFalse
 
+    // Metrics assertions
+    let totals = CacheMetrics.GetTotals name
+    totals.["adds"] |> shouldEqual 2L
+
 [<Fact>]
 let ``Eviction of least recently used`` () =
-    use cache = Cache.Create<string, int>({ TotalCapacity = 2; HeadroomPercentage = 0 }, observeMetrics = true)
+    let name = "Eviction_of_least_recently_used"
+    use cache = Cache.Create<string, int>({ TotalCapacity = 2; HeadroomPercentage = 0 }, name = name, observeMetrics = true)
 
     cache.TryAdd("key1", 1) |> shouldBeTrue
     cache.TryAdd("key2", 2) |> shouldBeTrue
@@ -73,6 +79,10 @@ let ``Eviction of least recently used`` () =
 
     cache.TryGetValue("key3", &value) |> shouldBeTrue
     value |> shouldEqual 3
+
+    // Metrics assertions
+    let totals = CacheMetrics.GetTotals name
+    totals.["adds"] |> shouldEqual 3L
 
 [<Fact>]
 let ``Stress test evictions`` () =
@@ -107,6 +117,10 @@ let ``Stress test evictions`` () =
     cache.TryGetValue($"key{iterations}", &value) |> shouldBeTrue
     value |> shouldEqual iterations
 
+    // Metrics assertions
+    let totals = CacheMetrics.GetTotals name
+    totals.["adds"] |> shouldEqual (int64 iterations)
+
 [<Fact>]
 let ``Metrics can be retrieved`` () =
     use cache = Cache.Create<string, int>({ TotalCapacity = 2; HeadroomPercentage = 0 }, name = "test_metrics", observeMetrics = true)
@@ -129,6 +143,7 @@ let ``Metrics can be retrieved`` () =
 
     stats.["hit-ratio"] |> shouldEqual 1.0
     totals.["evictions"] |> shouldEqual 1L
+    totals.["adds"] |> shouldEqual 3L
 
 [<Fact>]
 let ``GetOrAdd basic usage`` () =
@@ -150,6 +165,7 @@ let ``GetOrAdd basic usage`` () =
     totals.["hits"] |> shouldEqual 1L
     totals.["misses"] |> shouldEqual 2L
     stats.["hit-ratio"] |> shouldEqual (1.0/3.0)
+    totals.["adds"] |> shouldEqual 2L
 
 [<Fact>]
 let ``AddOrUpdate basic usage`` () =
@@ -171,6 +187,8 @@ let ``AddOrUpdate basic usage`` () =
     totals.["hits"] |> shouldEqual 3L // 3 cache hits
     totals.["misses"] |> shouldEqual 0L // 0 cache misses
     stats.["hit-ratio"] |> shouldEqual 1.0
+    totals.["adds"] |> shouldEqual 2L // "x" and "y" added
+    totals.["updates"] |> shouldEqual 1L // "x" updated
 
 [<Fact>]
 let ``GetOrAdd with reference identity`` () =
@@ -207,6 +225,7 @@ let ``GetOrAdd with reference identity`` () =
     totals.["hits"] |> shouldEqual 4L
     totals.["misses"] |> shouldEqual 3L
     stats.["hit-ratio"] |> shouldEqual (4.0 / 7.0)
+    totals.["adds"] |> shouldEqual 2L
 
 [<Fact>]
 let ``AddOrUpdate with reference identity`` () =
@@ -225,9 +244,16 @@ let ``AddOrUpdate with reference identity`` () =
     value2 |> shouldEqual 8
     // t1 and t2 are different keys under reference equality
     obj.ReferenceEquals(t1, t2) |> shouldBeFalse
+    // Now update t1 and check value and metrics
+    cache.AddOrUpdate(t1, 9)
+    let mutable value1Updated = 0
+    cache.TryGetValue(t1, &value1Updated) |> shouldBeTrue
+    value1Updated |> shouldEqual 9
     // Metrics assertions
     let stats = CacheMetrics.GetStats(cacheName)
     let totals = CacheMetrics.GetTotals(cacheName)
-    totals.["hits"] |> shouldEqual 2L // 2 cache hits
+    totals.["hits"] |> shouldEqual 3L // 3 cache hits
     totals.["misses"] |> shouldEqual 0L // 0 cache misses
     stats.["hit-ratio"] |> shouldEqual 1.0
+    totals.["adds"] |> shouldEqual 2L // t1 and t2 added
+    totals.["updates"] |> shouldEqual 1L // t1 updated once
