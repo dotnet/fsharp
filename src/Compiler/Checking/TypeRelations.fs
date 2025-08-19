@@ -137,13 +137,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
 
     if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         let key = TTypeCacheKey.FromStrippedTypes (ty1, ty2, canCoerce)
-
-        match amap.TypeSubsumptionCache.TryGetValue(key) with
-        | true, subsumes -> subsumes
-        | false, _ ->
-            let subsumes = checkSubsumes ty1 ty2
-            amap.TypeSubsumptionCache.TryAdd(key, subsumes) |> ignore
-            subsumes
+        amap.TypeSubsumptionCache.GetOrAdd(key, fun key -> checkSubsumes key.ty1 key.ty2)
     else
         checkSubsumes ty1 ty2
 
