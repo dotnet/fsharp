@@ -4054,7 +4054,7 @@ type ImplicitlyBoundTyparsAllowed =
 
 // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
 // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
-let CachedImplicitYieldExpressions = lazy Caches.Cache<SynExpr, _>.Create({ Caches.CacheOptions.Default with TotalCapacity = 1024 }, HashIdentity.Reference, "implicitYieldExpressions")
+let CachedImplicitYieldExpressions = lazy Caches.Cache<SynExpr, _>.Create(Caches.CacheOptions.Default, HashIdentity.Reference, "implicitYieldExpressions")
 
 //-------------------------------------------------------------------------
 // Checking types and type constraints

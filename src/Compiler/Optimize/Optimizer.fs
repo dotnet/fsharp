@@ -57,7 +57,7 @@ let [<Literal>] closureTotalSize = 10
 let [<Literal>] methodDefnTotalSize = 1
 
 let memoizedFreeLocals =
-    let cache = lazy Caches.Cache.Create<Expr, _>(Caches.CacheOptions.Default, HashIdentity.Reference, "memoizedFreeLocals")
+    let cache = lazy Caches.Cache.Create<Expr, _>({ Caches.CacheOptions.Default with TotalCapacity = 65536 }, HashIdentity.Reference, "memoizedFreeLocals")
     fun expr -> fun () -> cache.Value.GetOrAdd(expr, fun _ -> freeInExpr (CollectLocalsWithStackGuard()) expr |> _.FreeLocals)
 
 type TypeValueInfo =

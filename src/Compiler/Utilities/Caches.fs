@@ -7,7 +7,6 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
-open System.Collections.Immutable
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -123,6 +122,12 @@ type CacheMetrics(cacheId: string) =
     static member GetStats(cacheId) =
         observedCaches[cacheId].GetInstanceStats()
 
+[<RequireQualifiedAccess>]
+type EvictionMechanism =
+    | NoEviction
+    | Immediate
+    | MailboxProcessor
+
 module Cache =
     // During testing a lot of compilations are started in app domains and subprocesses.
     // This is a reliable way to pass the override to all of them.
@@ -133,10 +138,11 @@ module Cache =
     let OverrideCapacityForTesting () =
         Environment.SetEnvironmentVariable(overrideVariable, "1024", EnvironmentVariableTarget.Process)
 
-    let applyOverride (capacity: int) =
+    let applyOverride capacity mechanism =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
-        | true, n when capacity > n -> n
-        | _ -> capacity
+        | true, n when capacity > n -> n, EvictionMechanism.Immediate
+        | true, _ -> capacity, EvictionMechanism.Immediate
+        | _ -> capacity, mechanism
 
 [<Struct>]
 type EvictionQueueMessage<'Key, 'Value> =
@@ -145,7 +151,7 @@ type EvictionQueueMessage<'Key, 'Value> =
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headroom, comparer, name, listen, noEviction) =
+type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headroom, comparer, name, listen, mechanism) =
 
     let metrics = new CacheMetrics(name)
 
@@ -164,37 +170,39 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     let evicted = Event<_>()
     let evictionFailed = Event<_>()
 
+    let processEvictionMessage = function
+        | EvictionQueueMessage.Add entity ->
+            evictionQueue.AddLast(entity.Node)
+
+            // Evict one immediately if necessary.
+            if evictionQueue.Count > capacity then
+                let first = nonNull evictionQueue.First
+
+                match store.TryRemove(first.Value.Key) with
+                | true, _ ->
+                    evictionQueue.Remove(first)
+                    metrics.Eviction()
+                    evicted.Trigger()
+                | _ ->
+                    // This should not be possible to happen, but if it does, we want to know.
+                    metrics.EvictionFail()
+                    evictionFailed.Trigger()
+
+        // Store updates are not synchronized. It is possible the entity is no longer in the queue.
+        | EvictionQueueMessage.Update entity when isNull entity.Node.List -> ()
+
+        | EvictionQueueMessage.Update entity ->
+            // Just move this node to the end of the list.
+            evictionQueue.Remove(entity.Node)
+            evictionQueue.AddLast(entity.Node)
+
     let startEvictionProcessor ct =
         MailboxProcessor.Start(
             (fun mb ->
                 let rec processNext () =
                     async {
-                        match! mb.Receive() with
-                        | EvictionQueueMessage.Add entity ->
-                            evictionQueue.AddLast(entity.Node)
-
-                            // Evict one immediately if necessary.
-                            if evictionQueue.Count > capacity then
-                                let first = nonNull evictionQueue.First
-
-                                match store.TryRemove(first.Value.Key) with
-                                | true, _ ->
-                                    evictionQueue.Remove(first)
-                                    metrics.Eviction()
-                                    evicted.Trigger()
-                                | _ ->
-                                    // This should not be possible to happen, but if it does, we want to know.
-                                    metrics.EvictionFail()
-                                    evictionFailed.Trigger()
-
-                        // Store updates are not synchronized. It is possible the entity is no longer in the queue.
-                        | EvictionQueueMessage.Update entity when isNull entity.Node.List -> ()
-
-                        | EvictionQueueMessage.Update entity ->
-                            // Just move this node to the end of the list.
-                            evictionQueue.Remove(entity.Node)
-                            evictionQueue.AddLast(entity.Node)
-
+                        let! message = mb.Receive()
+                        processEvictionMessage message
                         return! processNext ()
                     }
 
@@ -202,18 +210,21 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
             ct
         )
 
+    let immediate msg = lock evictionQueue <| fun () -> processEvictionMessage msg
+
     let post, disposeEvictionProcessor =
-        if noEviction then
-            ignore, ignore
-        else
+        match mechanism with
+        | EvictionMechanism.NoEviction -> ignore, ignore
+        | EvictionMechanism.Immediate -> immediate, ignore
+        | EvictionMechanism.MailboxProcessor ->
             let cts = new CancellationTokenSource()
             let evictionProcessor = startEvictionProcessor cts.Token
-
-            (fun message -> evictionProcessor.Post(message)),
-            (fun () ->
+            let post = evictionProcessor.Post
+            let dispose () =
                 cts.Cancel()
                 cts.Dispose()
-                evictionProcessor.Dispose())
+                evictionProcessor.Dispose()
+            post, dispose
 
     member val Evicted = evicted.Publish
     member val EvictionFailed = evictionFailed.Publish
@@ -293,7 +304,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-        let totalCapacity = Cache.applyOverride options.TotalCapacity
+        let mechanism = match noEviction with Some true -> EvictionMechanism.NoEviction | _ -> EvictionMechanism.Immediate
+        let totalCapacity, mechanism = Cache.applyOverride options.TotalCapacity mechanism
         // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
         let headroom =
             int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
@@ -301,9 +313,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let name = defaultArg name (Guid.NewGuid().ToString())
         let observeMetrics = defaultArg observeMetrics false
         let comparer = defaultArg comparer EqualityComparer<'Key>.Default
-        let noEviction = defaultArg noEviction false
 
         let cache =
-            new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics, noEviction)
+            new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics, mechanism)
 
         cache
