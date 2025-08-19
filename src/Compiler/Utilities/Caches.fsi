@@ -1,8 +1,8 @@
 namespace FSharp.Compiler.Caches
 
 open System
+open System.Collections.Generic
 open System.Diagnostics.Metrics
-open System.Threading
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal CacheOptions =
@@ -20,9 +20,11 @@ module internal Cache =
     val OverrideCapacityForTesting: unit -> unit
 
 [<Sealed; NoComparison; NoEquality>]
-type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
+type internal Cache<'Key, 'Value when 'Key: not null> =
     member TryGetValue: key: 'Key * value: outref<'Value> -> bool
     member TryAdd: key: 'Key * value: 'Value -> bool
+    member GetOrAdd: key: 'Key * valueFactory: ('Key -> 'Value) -> 'Value
+    member AddOrUpdate: key: 'Key * value: 'Value -> unit
     /// Cancels the background eviction task.
     member Dispose: unit -> unit
 
@@ -33,7 +35,8 @@ type internal Cache<'Key, 'Value when 'Key: not null and 'Key: equality> =
     member EvictionFailed: IEvent<unit>
 
     static member Create<'Key, 'Value> :
-        options: CacheOptions * ?name: string * ?observeMetrics: bool -> Cache<'Key, 'Value>
+        options: CacheOptions * ?comparer: IEqualityComparer<'Key> * ?name: string * ?observeMetrics: bool ->
+            Cache<'Key, 'Value>
 
 [<Class>]
 type internal CacheMetrics =

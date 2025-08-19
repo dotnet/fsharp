@@ -5,6 +5,7 @@ open Xunit
 open FSharp.Test.Assert
 open System.Threading.Tasks
 open System.Diagnostics
+open Microsoft.FSharp.Collections
 
 #if DEBUG
 let shouldNeverTimeout = 15_000
@@ -128,3 +129,105 @@ let ``Metrics can be retrieved`` () =
 
     stats.["hit-ratio"] |> shouldEqual 1.0
     totals.["evictions"] |> shouldEqual 1L
+
+[<Fact>]
+let ``GetOrAdd basic usage`` () =
+    let cacheName = "GetOrAdd_basic_usage"
+    use cache = Cache.Create<string, int>(CacheOptions.Default, name = cacheName, observeMetrics = true)
+    let mutable factoryCalls = 0
+    let factory k = factoryCalls <- factoryCalls + 1; String.length k
+    let v1 = cache.GetOrAdd("abc", factory)
+    v1 |> shouldEqual 3
+    let v2 = cache.GetOrAdd("abc", factory)
+    v2 |> shouldEqual 3
+    factoryCalls |> shouldEqual 1
+    let v3 = cache.GetOrAdd("defg", factory)
+    v3 |> shouldEqual 4
+    factoryCalls |> shouldEqual 2
+    // Metrics assertions
+    let stats = CacheMetrics.GetStats(cacheName)
+    let totals = CacheMetrics.GetTotals(cacheName)
+    totals.["hits"] |> shouldEqual 1L
+    totals.["misses"] |> shouldEqual 2L
+    stats.["hit-ratio"] |> shouldEqual (1.0/3.0)
+
+[<Fact>]
+let ``AddOrUpdate basic usage`` () =
+    let cacheName = "AddOrUpdate_basic_usage"
+    use cache = Cache.Create<string, int>(CacheOptions.Default, name = cacheName, observeMetrics = true)
+    cache.AddOrUpdate("x", 1)
+    let mutable value = 0
+    cache.TryGetValue("x", &value) |> shouldBeTrue
+    value |> shouldEqual 1
+    cache.AddOrUpdate("x", 42)
+    cache.TryGetValue("x", &value) |> shouldBeTrue
+    value |> shouldEqual 42
+    cache.AddOrUpdate("y", 99)
+    cache.TryGetValue("y", &value) |> shouldBeTrue
+    value |> shouldEqual 99
+    // Metrics assertions
+    let stats = CacheMetrics.GetStats(cacheName)
+    let totals = CacheMetrics.GetTotals(cacheName)
+    totals.["hits"] |> shouldEqual 3L // 3 cache hits
+    totals.["misses"] |> shouldEqual 0L // 0 cache misses
+    stats.["hit-ratio"] |> shouldEqual 1.0
+
+[<Fact>]
+let ``GetOrAdd with reference identity`` () =
+    let cacheName = "GetOrAdd_with_Reference"
+    use cache = Cache.Create<int * int, int>(CacheOptions.Default, HashIdentity.Reference, cacheName, observeMetrics = true)
+    let t1 = box (1, 2)
+    let t2 = box (1, 2)
+    let t3 = box (1, 2)
+    let mutable createdCOunter = 0
+    let factory _ = 
+            createdCOunter <- createdCOunter + 1
+            createdCOunter
+
+    let v1 = cache.GetOrAdd(t1, factory) // miss
+    let v2 = cache.GetOrAdd(t2, factory) // miss (different reference)
+    v1 |> shouldEqual 1
+    v2 |> shouldEqual 2
+    // Reference comparer: t1 and t2 are different keys
+    t1 = t2 |> shouldBeTrue // value equality
+    obj.ReferenceEquals(t1, t2) |> shouldBeFalse // reference inequality
+    let mutable v1' = 0
+    let mutable v2' = 0
+    let mutable v3' = 0
+    cache.TryGetValue(t1, &v1') |> shouldBeTrue // hit
+    cache.TryGetValue(t2, &v2') |> shouldBeTrue // hit
+    cache.TryGetValue(t3, &v3') |> shouldBeFalse // miss
+    let v1'' = cache.GetOrAdd(t1, factory) // hit
+    let v2'' = cache.GetOrAdd(t2, factory) // hit
+    v1'' |> shouldEqual v1'
+    v2'' |> shouldEqual v2'
+    // Metrics assertions
+    let stats = CacheMetrics.GetStats(cacheName)
+    let totals = CacheMetrics.GetTotals(cacheName)
+    totals.["hits"] |> shouldEqual 4L
+    totals.["misses"] |> shouldEqual 3L
+    stats.["hit-ratio"] |> shouldEqual (4.0 / 7.0)
+
+[<Fact>]
+let ``AddOrUpdate with reference identity`` () =
+    let cacheName = "AddOrUpdate_with_Reference"
+    let comparer = HashIdentity.Reference<obj>
+    use cache = Cache.Create<obj, int>(CacheOptions.Default, comparer = comparer, name = cacheName, observeMetrics = true)
+    let t1 = box (3, 4)
+    let t2 = box (3, 4)
+    cache.AddOrUpdate(t1, 7)
+    let mutable value1 = 0
+    cache.TryGetValue(t1, &value1) |> shouldBeTrue
+    value1 |> shouldEqual 7
+    cache.AddOrUpdate(t2, 8)
+    let mutable value2 = 0
+    cache.TryGetValue(t2, &value2) |> shouldBeTrue
+    value2 |> shouldEqual 8
+    // t1 and t2 are different keys under reference equality
+    obj.ReferenceEquals(t1, t2) |> shouldBeFalse
+    // Metrics assertions
+    let stats = CacheMetrics.GetStats(cacheName)
+    let totals = CacheMetrics.GetTotals(cacheName)
+    totals.["hits"] |> shouldEqual 2L // 2 cache hits
+    totals.["misses"] |> shouldEqual 0L // 0 cache misses
+    stats.["hit-ratio"] |> shouldEqual 1.0
