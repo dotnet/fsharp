@@ -3,6 +3,10 @@ neg01a.fsi(24,15,24,19): parse error FS0058: Nested type definitions are not all
 
 neg01a.fs(22,15,22,19): parse error FS0058: Nested type definitions are not allowed. Types must be defined at module or namespace level.
 
+neg01a.fsi(24,15,24,19): parse error FS0058: Nested type definitions are not allowed. Types must be defined at module or namespace level.
+
+neg01a.fs(22,15,22,19): parse error FS0058: Nested type definitions are not allowed. Types must be defined at module or namespace level.
+
 neg01a.fsi(24,8,25,7): typecheck error FS0913: Types cannot contain nested type definitions
 
 neg01a.fs(22,8,23,7): typecheck error FS0913: Types cannot contain nested type definitions
