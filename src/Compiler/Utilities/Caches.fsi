@@ -35,7 +35,11 @@ type internal Cache<'Key, 'Value when 'Key: not null> =
     member EvictionFailed: IEvent<unit>
 
     static member Create<'Key, 'Value> :
-        options: CacheOptions * ?comparer: IEqualityComparer<'Key> * ?name: string * ?observeMetrics: bool * ?noEviction: bool ->
+        options: CacheOptions *
+        ?comparer: IEqualityComparer<'Key> *
+        ?name: string *
+        ?observeMetrics: bool *
+        ?noEviction: bool ->
             Cache<'Key, 'Value>
 
 [<Class>]

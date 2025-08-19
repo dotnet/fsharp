@@ -21,7 +21,7 @@ type CacheOptions =
 
     static member Default =
         {
-            TotalCapacity = 128
+            TotalCapacity = 1024
             HeadroomPercentage = 50
         }
 
@@ -93,12 +93,14 @@ type CacheMetrics(cacheId: string) =
 
         listener.Start()
 
-    member val Adds = adds
-    member val Updates = updates
-    member val Hits = hits
-    member val Misses = misses
-    member val Evictions = evictions
-    member val EvictionFails = evictionFails
+    let tag = KeyValuePair<_, obj>("cacheId", cacheId)
+
+    member _.Add() = adds.Add(1L, tag)
+    member _.Update() = updates.Add(1L, tag)
+    member _.Hit() = hits.Add(1L, tag)
+    member _.Miss() = misses.Add(1L, tag)
+    member _.Eviction() = evictions.Add(1L, tag)
+    member _.EvictionFail() = evictionFails.Add(1L, tag)
 
     member this.ObserveMetrics() =
         observedCaches[cacheId] <- this
@@ -178,11 +180,11 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
                                 match store.TryRemove(first.Value.Key) with
                                 | true, _ ->
                                     evictionQueue.Remove(first)
-                                    metrics.Evictions.Add 1L
+                                    metrics.Eviction()
                                     evicted.Trigger()
                                 | _ ->
                                     // This should not be possible to happen, but if it does, we want to know.
-                                    metrics.EvictionFails.Add 1L
+                                    metrics.EvictionFail()
                                     evictionFailed.Trigger()
 
                         // Store updates are not synchronized. It is possible the entity is no longer in the queue.
@@ -201,9 +203,12 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         )
 
     let post, disposeEvictionProcessor =
-        if noEviction then ignore, ignore else          
+        if noEviction then
+            ignore, ignore
+        else
             let cts = new CancellationTokenSource()
             let evictionProcessor = startEvictionProcessor cts.Token
+
             (fun message -> evictionProcessor.Post(message)),
             (fun () ->
                 cts.Cancel()
@@ -216,12 +221,12 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     member _.TryGetValue(key: 'Key, value: outref<'Value>) =
         match store.TryGetValue(key) with
         | true, entity ->
-            metrics.Hits.Add 1L
+            metrics.Hit()
             post (EvictionQueueMessage.Update entity)
             value <- entity.Value
             true
         | _ ->
-            metrics.Misses.Add 1L
+            metrics.Miss()
             value <- Unchecked.defaultof<'Value>
             false
 
@@ -231,7 +236,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let added = store.TryAdd(key, entity)
 
         if added then
-            metrics.Adds.Add 1L
+            metrics.Add()
             post (EvictionQueueMessage.Add entity)
 
         added
@@ -248,10 +253,10 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let result = store.GetOrAdd(key, makeEntity)
 
         if wasMiss then
-            metrics.Adds.Add 1L
-            metrics.Misses.Add 1L
+            metrics.Add()
+            metrics.Miss()
         else
-            metrics.Hits.Add 1L
+            metrics.Hit()
 
         post (EvictionQueueMessage.Update result)
         result.Value
@@ -267,15 +272,15 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         // Returned value tells us if the entity was added or updated.
         if Object.ReferenceEquals(addValue, result) then
-            metrics.Adds.Add 1L
+            metrics.Add()
             post (EvictionQueueMessage.Add addValue)
         else
-            metrics.Updates.Add 1L
+            metrics.Update()
             post (EvictionQueueMessage.Update result)
 
     interface IDisposable with
         member this.Dispose() =
-            disposeEvictionProcessor()
+            disposeEvictionProcessor ()
             store.Clear()
             metrics.Dispose()
 
