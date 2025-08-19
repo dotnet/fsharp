@@ -4052,6 +4052,10 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+// In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
+// This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
+let CachedImplicitYieldExpressions = Caches.Cache<SynExpr, _>.Create(Caches.CacheOptions.Default, HashIdentity.Reference)
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -5504,18 +5508,11 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let g = cenv.g
 
-    let cachedExpression =
-        env.eCachedImplicitYieldExpressions.FindAll synExpr.Range
-        |> List.tryPick (fun (se, ty, e) ->
-            if obj.ReferenceEquals(se, synExpr) then Some (ty, e) else None
-        )
-
-    match cachedExpression with
-    | Some (ty, expr) ->
+    match CachedImplicitYieldExpressions.TryGetValue(synExpr) with
+    | true, (ty, expr) ->
         UnifyOverallType cenv env synExpr.Range overallTy ty
         expr, tpenv
     | _ ->
-
 
         match synExpr with
 
@@ -6379,9 +6376,8 @@ and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExp
             | Expr.DebugPoint(_,e) -> e
             | _ -> expr1
 
-        env.eCachedImplicitYieldExpressions.Add(synExpr1.Range, (synExpr1, expr1Ty, cachedExpr))
-        try TcExpr cenv overallTy env tpenv otherExpr
-        finally env.eCachedImplicitYieldExpressions.Remove synExpr1.Range
+        CachedImplicitYieldExpressions.AddOrUpdate(synExpr1, (expr1Ty, cachedExpr))
+        TcExpr cenv overallTy env tpenv otherExpr
 
 and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synExpr2, expr3, m) =
     let constraintsR, tpenv = List.mapFold (TcStaticOptimizationConstraint cenv env) tpenv constraints
