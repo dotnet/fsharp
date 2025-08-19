@@ -20,14 +20,19 @@ ImplFile
                            Paren
                              (Typed
                                 (Record
-                                   ([(([], Name), Some (4,17--4,18),
-                                      Named
-                                        (SynIdent (name, None), false, None,
-                                         (4,19--4,23)));
-                                     (([], Age), Some (4,29--4,30),
-                                      Named
-                                        (SynIdent (age, None), false, None,
-                                         (4,31--4,34)))], (4,10--4,36)),
+                                   ([NamePatPairField
+                                       (Name, Some (4,17--4,18),
+                                        Some (4,12--4,23),
+                                        Named
+                                          (SynIdent (name, None), false, None,
+                                           (4,19--4,23)),
+                                        Some ((4,23--4,24), Some (4,24)));
+                                     NamePatPairField
+                                       (Age, Some (4,29--4,30),
+                                        Some (4,25--4,34),
+                                        Named
+                                          (SynIdent (age, None), false, None,
+                                           (4,31--4,34)), None)], (4,10--4,36)),
                                  LongIdent (SynLongIdent ([Person], [], [None])),
                                  (4,10--4,44)), (4,9--4,45)), None,
                            App
@@ -46,10 +51,11 @@ ImplFile
                            Paren
                              (Typed
                                 (Record
-                                   ([(([], Id), Some (5,15--5,16),
-                                      Named
-                                        (SynIdent (id, None), false, None,
-                                         (5,17--5,19)))], (5,10--5,21)),
+                                   ([NamePatPairField
+                                       (Id, Some (5,15--5,16), Some (5,12--5,19),
+                                        Named
+                                          (SynIdent (id, None), false, None,
+                                           (5,17--5,19)), None)], (5,10--5,21)),
                                  LongIdent (SynLongIdent ([User], [], [None])),
                                  (5,10--5,27)), (5,9--5,28)), None,
                            App
