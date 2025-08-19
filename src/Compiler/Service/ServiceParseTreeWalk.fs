@@ -772,7 +772,7 @@ module SyntaxTraversal =
                 | SynPat.Ands(ps, _)
                 | SynPat.Tuple(elementPats = ps)
                 | SynPat.ArrayOrList(_, ps, _) -> ps |> List.tryPick (traversePat path)
-                | SynPat.Record(fieldPats = fieldPats) -> fieldPats |> List.tryPick (fun (_, _, p) -> traversePat path p)
+                | SynPat.Record(fieldPats = fieldPats) -> fieldPats |> List.map _.Pattern |> List.tryPick (traversePat path)
                 | SynPat.Attrib(p, attributes, m) ->
                     match traversePat path p with
                     | None -> attributeApplicationDives path attributes |> pick m attributes
