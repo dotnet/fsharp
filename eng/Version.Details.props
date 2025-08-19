@@ -7,10 +7,10 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet/msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>17.15.0-preview-25415-06</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>17.15.0-preview-25415-06</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>17.15.0-preview-25415-06</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>17.15.0-preview-25415-06</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildPackageVersion>17.15.0-preview-25418-10</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>17.15.0-preview-25418-10</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>17.15.0-preview-25418-10</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>17.15.0-preview-25418-10</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet/runtime dependencies -->
     <SystemCollectionsImmutablePackageVersion>9.0.0</SystemCollectionsImmutablePackageVersion>
     <SystemComponentModelCompositionPackageVersion>9.0.0</SystemComponentModelCompositionPackageVersion>
