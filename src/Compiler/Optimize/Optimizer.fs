@@ -54,11 +54,7 @@ let [<Literal>] tryFinallySize = 5
 let [<Literal>] closureTotalSize = 10 
 
 /// Total cost of a method definition
-let [<Literal>] methodDefnTotalSize = 1
-
-let memoizedFreeLocals =
-    let cache = lazy Caches.Cache.Create<Expr, _>({ Caches.CacheOptions.Default with TotalCapacity = 65536 }, HashIdentity.Reference, "memoizedFreeLocals")
-    fun expr -> fun () -> cache.Value.GetOrAdd(expr, fun _ -> freeInExpr (CollectLocalsWithStackGuard()) expr |> _.FreeLocals)
+let [<Literal>] methodDefnTotalSize = 1  
 
 type TypeValueInfo =
   | UnknownTypeValue 
@@ -2905,8 +2901,7 @@ and OptimizeLinearExpr cenv env expr contf =
       OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
         // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
         // Is it quadratic or quasi-quadratic?
-
-        if ValueIsUsedOrHasEffect cenv (memoizedFreeLocals bodyR) (bindR, bindingInfo) then
+        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
             exprR, 
