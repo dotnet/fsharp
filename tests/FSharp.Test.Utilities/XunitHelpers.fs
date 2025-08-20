@@ -166,10 +166,12 @@ type OpenTelemetryExport(testRunName, enable) =
                 .AddOtlpExporter(fun o ->
                     o.Endpoint <- otlpEndpoint
                     o.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
-                    // Empirical values to ensure no traces are lost and no significant delay at the end of test run.
-                    o.TimeoutMilliseconds <- 200
-                    o.BatchExportProcessorOptions.MaxQueueSize <- 16384
-                    o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 100
+                    // Increased timeouts and batch settings to ensure no traces are lost
+                    o.TimeoutMilliseconds <- 5000  // Increased from 200ms to 5s
+                    o.BatchExportProcessorOptions.MaxQueueSize <- 32768  // Increased from 16384
+                    o.BatchExportProcessorOptions.ScheduledDelayMilliseconds <- 50  // Reduced from 100ms for more frequent exports
+                    o.BatchExportProcessorOptions.ExporterTimeoutMilliseconds <- 5000  // Explicit exporter timeout
+                    o.BatchExportProcessorOptions.MaxExportBatchSize <- 512  // Default is 512, making it explicit
                 )
                 .Build()
 
@@ -181,14 +183,32 @@ type OpenTelemetryExport(testRunName, enable) =
                 .AddOtlpExporter(fun e m ->
                     e.Endpoint <- otlpEndpoint
                     e.Protocol <- OpenTelemetry.Exporter.OtlpExportProtocol.Grpc
+                    e.TimeoutMilliseconds <- 5000  // Increased timeout for metrics too
                     m.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds <- 1000
+                    m.PeriodicExportingMetricReaderOptions.ExportTimeoutMilliseconds <- 5000  // Added explicit timeout
                 )
                 .Build()
             ]
 
+    member _.ForceFlush() =
+        // Force flush all providers to ensure data is exported before disposal
+        for provider in providers do
+            match provider with
+            | :? OpenTelemetry.Trace.TracerProvider as tp -> 
+                tp.ForceFlush(10000) |> ignore  // 10 seconds in milliseconds
+            | :? OpenTelemetry.Metrics.MeterProvider as mp -> 
+                mp.ForceFlush(10000) |> ignore  // 10 seconds in milliseconds
+            | _ -> ()
+
     interface IDisposable with
         member this.Dispose() =
+            // Force flush before disposing to ensure all telemetry is exported
+            this.ForceFlush()
+            // Add a small delay to allow final export operations to complete
+            System.Threading.Thread.Sleep(100)
             for p in providers do p.Dispose()
+
+    member this.Dispose() = (this :> IDisposable).Dispose()
 
 // In some situations, VS can invoke CreateExecutor and RunTestCases many times during testhost lifetime.
 // For example when executing "run until failure" command in Test Explorer.
@@ -227,14 +247,17 @@ type FSharpXunitFramework(sink: IMessageSink) =
 
                 let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 
-                use _ = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)                 
-  
-                begin
+                let otelExport = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)
+                
+                try
                     use _ = Activity.startNoTags testRunName
                     // We can't just call base.RunTestCases here, because it's implementation is async void.
                     use runner = new XunitTestAssemblyRunner (x.TestAssembly, testCases, x.DiagnosticMessageSink, executionMessageSink, executionOptions)
                     runner.RunAsync().Wait()
-                end
+                finally
+                    // Ensure proper shutdown with explicit flush before disposal
+                    otelExport.ForceFlush()
+                    otelExport.Dispose()
 
                 cleanUpTemporaryDirectoryOfThisTestRun ()
         }

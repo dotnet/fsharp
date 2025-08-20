@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
+open System.Runtime.CompilerServices
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -20,7 +21,7 @@ type CacheOptions =
 
     static member Default =
         {
-            TotalCapacity = 128
+            TotalCapacity = 1024
             HeadroomPercentage = 50
         }
 
@@ -136,7 +137,7 @@ module Cache =
 
     /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
     let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "1024", EnvironmentVariableTarget.Process)
+        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
 
     let applyOverride capacity mechanism =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
@@ -170,31 +171,44 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     let evicted = Event<_>()
     let evictionFailed = Event<_>()
 
-    let processEvictionMessage = function
-        | EvictionQueueMessage.Add entity ->
+    // Track disposal state
+    let mutable disposed = false
+
+    let processEvictionMessage =
+        function
+        | EvictionQueueMessage.Add entity when isNull entity.Node.List ->
             evictionQueue.AddLast(entity.Node)
 
             // Evict one immediately if necessary.
             if evictionQueue.Count > capacity then
                 let first = nonNull evictionQueue.First
+                evictionQueue.Remove(first)
 
-                match store.TryRemove(first.Value.Key) with
-                | true, _ ->
-                    evictionQueue.Remove(first)
+                let removed = 
+                    match store.TryRemove(first.Value.Key) with
+                    | true, _ -> true
+                    | _ ->
+                        // TODO: report the bad key somewhere.
+                        // Search for the unstable key and remove it from the store.
+                        match store.ToArray() |> Seq.tryFind (fun e -> e.Value.Node = first) with
+                        | Some kvp -> (store :> ICollection<_>).Remove kvp
+                        | _ -> false
+
+                if removed then
                     metrics.Eviction()
                     evicted.Trigger()
-                | _ ->
+                else
                     // This should not be possible to happen, but if it does, we want to know.
                     metrics.EvictionFail()
                     evictionFailed.Trigger()
 
-        // Store updates are not synchronized. It is possible the entity is no longer in the queue.
-        | EvictionQueueMessage.Update entity when isNull entity.Node.List -> ()
-
-        | EvictionQueueMessage.Update entity ->
+        | EvictionQueueMessage.Update entity when entity.Node.List = evictionQueue ->
             // Just move this node to the end of the list.
             evictionQueue.Remove(entity.Node)
             evictionQueue.AddLast(entity.Node)
+
+        // Store updates are not synchronized with evictionQueue. It is possible the entity is no longer in the queue or already added.
+        | _ -> ()
 
     let startEvictionProcessor ct =
         MailboxProcessor.Start(
@@ -258,24 +272,24 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let makeEntity key =
             wasMiss <- true
             let entity = CachedEntity.Create(key, valueFactory key)
-            post (EvictionQueueMessage.Add entity)
             entity
 
         let result = store.GetOrAdd(key, makeEntity)
 
         if wasMiss then
+            post (EvictionQueueMessage.Add result)
             metrics.Add()
             metrics.Miss()
         else
+            post (EvictionQueueMessage.Update result)
             metrics.Hit()
 
-        post (EvictionQueueMessage.Update result)
         result.Value
 
     member _.AddOrUpdate(key, value) =
         let addValue = CachedEntity.Create(key, value)
 
-        let updateValue _ (oldEntity: CachedEntity<_, _>) =
+        let updateValue (_ : 'Key) (oldEntity: CachedEntity<_, _>) =
             oldEntity.UpdateValue(value)
             oldEntity
 
@@ -289,13 +303,25 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
             metrics.Update()
             post (EvictionQueueMessage.Update result)
 
+    // Private dispose method to handle cleanup
+    member private this.Dispose(disposing: bool) =
+        if not disposed then
+            if disposing then
+                // Dispose managed resources
+                disposeEvictionProcessor ()
+                metrics.Dispose()
+            // No unmanaged resources to clean up in this case
+            disposed <- true
+
     interface IDisposable with
         member this.Dispose() =
-            disposeEvictionProcessor ()
-            store.Clear()
-            metrics.Dispose()
+            this.Dispose(true)
+            GC.SuppressFinalize(this)
 
-    member this.Dispose() = (this :> IDisposable).Dispose()
+    member this.Dispose() = this.Dispose(true)
+
+    // Finalizer to ensure cleanup if Dispose is not called
+    override this.Finalize() = this.Dispose(false)
 
     static member Create<'Key, 'Value>(options: CacheOptions, ?comparer: IEqualityComparer<'Key>, ?name, ?observeMetrics, ?noEviction) =
         if options.TotalCapacity < 0 then
@@ -304,7 +330,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-        let mechanism = match noEviction with Some true -> EvictionMechanism.NoEviction | _ -> EvictionMechanism.Immediate
+        let mechanism = match noEviction with Some true -> EvictionMechanism.NoEviction | _ -> EvictionMechanism.MailboxProcessor
         let totalCapacity, mechanism = Cache.applyOverride options.TotalCapacity mechanism
         // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
         let headroom =
@@ -314,7 +340,10 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let observeMetrics = defaultArg observeMetrics false
         let comparer = defaultArg comparer EqualityComparer<'Key>.Default
 
-        let cache =
-            new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics, mechanism)
+        new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics, mechanism)
 
-        cache
+module LifetimeAssociation =
+    let attach createValue =
+        let weakTable = new ConditionalWeakTable<_, _>()
+        let valueFactory = ConditionalWeakTable.CreateValueCallback(fun _ -> createValue ())
+        fun (key: 'b when 'b: not null) -> weakTable.GetValue(key, valueFactory)

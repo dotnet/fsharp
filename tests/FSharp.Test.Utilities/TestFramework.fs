@@ -571,7 +571,7 @@ module Command =
                 fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some (outFile.Post) }
 
         let exec cmdArgs =
-            log "%s" (logExec dir path args redirect)
+            printfn "%s" (logExec dir path args redirect)
             Process.exec cmdArgs dir envVars path args
 
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }

@@ -7,6 +7,7 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.TypeHashing
 
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
@@ -18,6 +19,51 @@ open FSharp.Compiler.TypeHierarchy
 open Import
 
 #nowarn "3391"
+
+[<Struct; NoComparison>]
+type CanCoerce =
+    | CanCoerce
+    | NoCoerce
+
+[<Struct; NoComparison; CustomEquality; System.Diagnostics.DebuggerDisplay("{ToString()}")>]
+type TTypeCacheKey =
+
+    val ty1: TType
+    val ty2: TType
+    val canCoerce: CanCoerce
+
+    private new (ty1, ty2, canCoerce) =
+        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
+
+    static member FromStrippedTypes (ty1, ty2, canCoerce) =
+        TTypeCacheKey(ty1, ty2, canCoerce)
+
+    interface System.IEquatable<TTypeCacheKey> with
+        member this.Equals other =
+            if this.canCoerce <> other.canCoerce then
+                false
+            elif this.ty1 === other.ty1 && this.ty2 === other.ty2 then
+                true
+            else
+                HashStamps.stampEquals this.ty1 other.ty1
+                && HashStamps.stampEquals this.ty2 other.ty2
+
+    override this.Equals(other:objnull) =
+        match other with
+        | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
+        | _ -> false
+
+    override this.GetHashCode () : int =
+        HashStamps.hashTType this.ty1
+        |> pipeToHash (HashStamps.hashTType this.ty2)
+        |> pipeToHash (hash this.canCoerce)
+
+    override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
+
+let mkTypeSubsumptionCache() =
+    Caches.Cache.Create<TTypeCacheKey, bool>({ TotalCapacity = 131072; HeadroomPercentage = 75 }, name = "typeSubsumptionCache")
+
+let getTypeSubsumptionCache g = Caches.LifetimeAssociation.attach mkTypeSubsumptionCache g
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -137,7 +183,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
 
     if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         let key = TTypeCacheKey.FromStrippedTypes (ty1, ty2, canCoerce)
-        amap.TypeSubsumptionCache.GetOrAdd(key, fun key -> checkSubsumes key.ty1 key.ty2)
+        getTypeSubsumptionCache g |> _.GetOrAdd(key, fun key -> checkSubsumes key.ty1 key.ty2)
     else
         checkSubsumes ty1 ty2
 
