@@ -11,10 +11,10 @@ ImplFile
                        (SynLongIdent ([A], [], [None]), None, None,
                         NamePatPairs
                           ([NamePatPairField
-                              (a, Some (4,6--4,7), Some (4,4--4,9),
+                              (None, a, Some (4,6--4,7), Some (4,4--4,9),
                                Wild (4,8--4,9), Some ((4,9--4,10), Some (4,10)));
                             NamePatPairField
-                              (c, Some (4,15--4,16), Some (4,13--4,18),
+                              (None, c, Some (4,15--4,16), Some (4,13--4,18),
                                Wild (4,17--4,18), None)], (4,4--4,19),
                            { ParenRange = (4,3--4,19) }), None, (4,2--4,19)),
                      None, Const (Int32 2, (4,23--4,24)), (4,2--4,24), Yes,

@@ -923,11 +923,16 @@ type SynSimplePats =
 [<NoEquality; NoComparison>]
 type NamePatPairField =
     | NamePatPairField of
+        fieldPath: Ident list option *
         fieldName: Ident *
         equalsRange: range option *
         range: range option *
         pat: SynPat *
         blockSeparator: BlockSeparator option
+
+    member this.FieldPath =
+        match this with
+        | NamePatPairField(fieldPath = p) -> p
 
     member this.FieldName =
         match this with

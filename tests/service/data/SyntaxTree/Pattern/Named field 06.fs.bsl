@@ -11,17 +11,17 @@ ImplFile
                        (SynLongIdent ([A], [], [None]), None, None,
                         NamePatPairs
                           ([NamePatPairField
-                              (a, Some (4,6--4,7), Some (4,4--4,9),
+                              (None, a, Some (4,6--4,7), Some (4,4--4,9),
                                Named
                                  (SynIdent (a, None), false, None, (4,8--4,9)),
                                Some ((4,9--4,10), Some (4,10)));
                             NamePatPairField
-                              (b, Some (4,13--4,14), Some (4,11--4,16),
+                              (None, b, Some (4,13--4,14), Some (4,11--4,16),
                                Named
                                  (SynIdent (b, None), false, None, (4,15--4,16)),
                                Some ((4,16--4,17), Some (4,17)));
                             NamePatPairField
-                              (c, Some (4,20--4,21), Some (4,18--4,23),
+                              (None, c, Some (4,20--4,21), Some (4,18--4,23),
                                Named
                                  (SynIdent (c, None), false, None, (4,22--4,23)),
                                None)], (4,4--4,24), { ParenRange = (4,3--4,24) }),

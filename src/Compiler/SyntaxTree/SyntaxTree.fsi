@@ -1050,6 +1050,8 @@ type SynSimplePats =
 [<NoEquality; NoComparison>]
 type NamePatPairField =
     | NamePatPairField of
+        /// The full path to the field (for record patterns), if any.
+        fieldPath: Ident list option *
         /// The identifier of the named field/parameter.
         fieldName: Ident *
         /// The range of the equals sign in `name = pattern`, if present.
@@ -1060,6 +1062,9 @@ type NamePatPairField =
         pat: SynPat *
         /// The separator trivia that follows this pair (e.g., semicolon or block separator), if any.
         blockSeparator: BlockSeparator option
+
+    /// Gets the full path to the field, if available.
+    member FieldPath: Ident list option
 
     /// Gets the identifier of the named field/parameter.
     member FieldName: Ident

@@ -21,14 +21,14 @@ ImplFile
                              (Typed
                                 (Record
                                    ([NamePatPairField
-                                       (Name, Some (4,17--4,18),
+                                       (None, Name, Some (4,17--4,18),
                                         Some (4,12--4,23),
                                         Named
                                           (SynIdent (name, None), false, None,
                                            (4,19--4,23)),
                                         Some ((4,23--4,24), Some (4,24)));
                                      NamePatPairField
-                                       (Age, Some (4,29--4,30),
+                                       (None, Age, Some (4,29--4,30),
                                         Some (4,25--4,34),
                                         Named
                                           (SynIdent (age, None), false, None,
@@ -51,7 +51,8 @@ ImplFile
                            Typed
                              (Record
                                 ([NamePatPairField
-                                    (Id, Some (5,14--5,15), Some (5,11--5,18),
+                                    (None, Id, Some (5,14--5,15),
+                                     Some (5,11--5,18),
                                      Named
                                        (SynIdent (id, None), false, None,
                                         (5,16--5,18)), None)], (5,9--5,20)),

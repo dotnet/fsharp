@@ -12,7 +12,7 @@ ImplFile
                        (SynLongIdent ([OnePartData], [], [None]), None, None,
                         NamePatPairs
                           ([NamePatPairField
-                              (part1, Some (4,10--4,11), Some (4,4--4,14),
+                              (None, part1, Some (4,10--4,11), Some (4,4--4,14),
                                Named
                                  (SynIdent (p1, None), false, None, (4,12--4,14)),
                                None)], (4,4--5,13),

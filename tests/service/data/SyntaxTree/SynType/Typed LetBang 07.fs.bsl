@@ -20,7 +20,7 @@ ImplFile
                              (Typed
                                 (Record
                                    ([NamePatPairField
-                                       (Name, Some (3,17--3,18),
+                                       (None, Name, Some (3,17--3,18),
                                         Some (3,12--3,23),
                                         Named
                                           (SynIdent (name, None), false, None,

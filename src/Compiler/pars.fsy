@@ -3658,18 +3658,18 @@ namePatPairs:
    | namePatPair opt_seps_block
      { let (id: Ident), mEq, (pat: SynPat) = $1
        let m = unionRanges id.idRange pat.Range
-       [ NamePatPairField(id, mEq, Some m, pat, $2) ] }
+       [ NamePatPairField(None, id, mEq, Some m, pat, $2) ] }
 
    | namePatPair seps_block namePatPairs
      { let (id: Ident), mEq, (pat: SynPat) = $1
        let m = unionRanges id.idRange pat.Range
-       NamePatPairField(id, mEq, Some m, pat, Some $2) :: $3 }
+       NamePatPairField(None, id, mEq, Some m, pat, Some $2) :: $3 }
 
    | namePatPair seps_block seps_block namePatPairs
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
         let (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
-        NamePatPairField(id, mEq, Some m, pat, Some $2) :: $4 }
+        NamePatPairField(None, id, mEq, Some m, pat, Some $2) :: $4 }
 
 namePatPair:
    | ident EQUALS parenPattern
@@ -4003,38 +4003,38 @@ conjParenPatternElements:
 
 recordPatternElementsAux:
   | recordPatternElement opt_seps_block
-      { let (id: Ident), mEq, (pat: SynPat) = $1
+      { let fullPath, (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
-        [ NamePatPairField(id, mEq, Some m, pat, $2) ] }
+        [ NamePatPairField(fullPath, id, mEq, Some m, pat, $2) ] }
 
   | recordPatternElement seps_block recordPatternElementsAux
-      { let (id: Ident), mEq, (pat: SynPat) = $1
+      { let fullPath, (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
-        NamePatPairField(id, mEq, Some m, pat, Some $2) :: $3 }
+        NamePatPairField(fullPath, id, mEq, Some m, pat, Some $2) :: $3 }
 
   | recordPatternElement seps_block seps_block recordPatternElementsAux
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        let (id: Ident), mEq, (pat: SynPat) = $1
+        let fullPath, (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
-        NamePatPairField(id, mEq, Some m, pat, Some $2) :: $4 }
+        NamePatPairField(fullPath, id, mEq, Some m, pat, Some $2) :: $4 }
 
 recordPatternElement:
   | path EQUALS parenPattern
     { let mEquals = rhs parseState 2
-      let lid = $1.LongIdent
-      let id = List.last lid
-      id, Some mEquals, $3 }
+      let path, id = List.frontAndBack $1.LongIdent
+      let fullPath = if List.isEmpty path then None else Some path
+      fullPath, id, Some mEquals, $3 }
 
   | path EQUALS recover
     { let mEquals = rhs parseState 2
-      let lid = $1.LongIdent
-      let id = List.last lid
-      id, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange) }
+      let path, id = List.frontAndBack $1.LongIdent
+      let fullPath = if List.isEmpty path then None else Some path
+      fullPath, id, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange) }
 
   | path recover
-    { let lid = $1.LongIdent
-      let id = List.last lid
-      id, None, patFromParseError (SynPat.Wild $1.Range.EndRange) }
+    { let path, id = List.frontAndBack $1.LongIdent
+      let fullPath = if List.isEmpty path then None else Some path
+      fullPath, id, None, patFromParseError (SynPat.Wild $1.Range.EndRange) }
 
 listPatternElements:
   | /* EMPTY */

@@ -457,7 +457,14 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let fieldPats = fieldPats |> List.map (fun (field: NamePatPairField) -> ([], field.FieldName), field.Pattern)
+    let fieldPats = 
+        fieldPats 
+        |> List.map (fun (field: NamePatPairField) -> 
+            let fieldId = 
+                match field.FieldPath with
+                | Some path -> (path, field.FieldName)  
+                | None -> ([], field.FieldName)
+            fieldId, field.Pattern)
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
