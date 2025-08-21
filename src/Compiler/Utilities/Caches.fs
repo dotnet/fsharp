@@ -137,13 +137,12 @@ module Cache =
 
     /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
     let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
+        Environment.SetEnvironmentVariable(overrideVariable, "256", EnvironmentVariableTarget.Process)
 
-    let applyOverride capacity mechanism =
+    let applyOverride capacity =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
-        | true, n when capacity > n -> n, EvictionMechanism.Immediate
-        | true, _ -> capacity, EvictionMechanism.Immediate
-        | _ -> capacity, mechanism
+        | true, n when capacity > n -> n
+        | _ -> capacity
 
 [<Struct>]
 type EvictionQueueMessage<'Key, 'Value> =
@@ -160,7 +159,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         if listen then
             metrics.ObserveMetrics()
 
-    let store =
+    let mutable store =
         ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity, comparer)
 
     let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
@@ -174,6 +173,21 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     // Track disposal state
     let mutable disposed = false
 
+    let mutable deadKeysCount = 0
+    let rebuildLock = new ReaderWriterLockSlim()
+
+    // Keys with unreliable identity can prevent eviction, taking up space in the cache.
+    // In such case we rebuild the store to remove dead keys.
+    let rebuildStore () =
+        rebuildLock.EnterReadLock()
+        try
+            let newStore = ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity, comparer)
+            for entity in evictionQueue do newStore.TryAdd(entity.Key, entity) |> ignore
+            Interlocked.Exchange(&store, newStore) |> ignore
+
+        finally
+            rebuildLock.ExitReadLock()
+
     let processEvictionMessage =
         function
         | EvictionQueueMessage.Add entity when isNull entity.Node.List ->
@@ -184,23 +198,15 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
                 let first = nonNull evictionQueue.First
                 evictionQueue.Remove(first)
 
-                let removed = 
-                    match store.TryRemove(first.Value.Key) with
-                    | true, _ -> true
-                    | _ ->
-                        // TODO: report the bad key somewhere.
-                        // Search for the unstable key and remove it from the store.
-                        match store.ToArray() |> Seq.tryFind (fun e -> e.Value.Node = first) with
-                        | Some kvp -> (store :> ICollection<_>).Remove kvp
-                        | _ -> false
-
-                if removed then
+                match store.TryRemove(first.Value.Key) with
+                | true, _ ->
                     metrics.Eviction()
                     evicted.Trigger()
-                else
-                    // This should not be possible to happen, but if it does, we want to know.
+                | _ ->
                     metrics.EvictionFail()
                     evictionFailed.Trigger()
+                    deadKeysCount <- deadKeysCount + 1
+                    if deadKeysCount > headroom / 2 then rebuildStore ()
 
         | EvictionQueueMessage.Update entity when entity.Node.List = evictionQueue ->
             // Just move this node to the end of the list.
@@ -331,7 +337,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
         let mechanism = match noEviction with Some true -> EvictionMechanism.NoEviction | _ -> EvictionMechanism.MailboxProcessor
-        let totalCapacity, mechanism = Cache.applyOverride options.TotalCapacity mechanism
+        let totalCapacity = Cache.applyOverride options.TotalCapacity
         // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
         let headroom =
             int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
