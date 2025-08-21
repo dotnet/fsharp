@@ -8,6 +8,7 @@ open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices.ComTypes
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
 type CacheOptions =
@@ -145,9 +146,9 @@ module Cache =
         | _ -> capacity
 
 [<Struct>]
-type EvictionQueueMessage<'Key, 'Value> =
-    | Add of CachedEntity<'Key, 'Value>
-    | Update of CachedEntity<'Key, 'Value>
+type EvictionQueueMessage<'Entity, 'Target> =
+    | Add of 'Entity * 'Target
+    | Update of 'Entity
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{GetStats()}")>]
@@ -184,8 +185,10 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
     let processEvictionMessage =
         function
-        | EvictionQueueMessage.Add entity when isNull entity.Node.List ->
+        | EvictionQueueMessage.Add (entity: CachedEntity<_, _> , target) when isNull entity.Node.List ->
             evictionQueue.AddLast(entity.Node)
+            // store has been rebuilt while this message was in the queue.
+            if store <> target then store.TryAdd(entity.Key, entity) |> ignore
 
             // Evict one immediately if necessary.
             if evictionQueue.Count > capacity then
@@ -262,7 +265,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         if added then
             metrics.Add()
-            post (EvictionQueueMessage.Add entity)
+            post (EvictionQueueMessage.Add (entity, store))
 
         added
 
@@ -277,7 +280,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let result = store.GetOrAdd(key, makeEntity)
 
         if wasMiss then
-            post (EvictionQueueMessage.Add result)
+            post (EvictionQueueMessage.Add (result, store))
             metrics.Add()
             metrics.Miss()
         else
@@ -298,7 +301,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         // Returned value tells us if the entity was added or updated.
         if Object.ReferenceEquals(addValue, result) then
             metrics.Add()
-            post (EvictionQueueMessage.Add addValue)
+            post (EvictionQueueMessage.Add (addValue, store))
         else
             metrics.Update()
             post (EvictionQueueMessage.Update result)
