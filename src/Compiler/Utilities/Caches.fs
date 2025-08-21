@@ -174,19 +174,13 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     let mutable disposed = false
 
     let mutable deadKeysCount = 0
-    let rebuildLock = new ReaderWriterLockSlim()
 
     // Keys with unreliable identity can prevent eviction, taking up space in the cache.
     // In such case we rebuild the store to remove dead keys.
     let rebuildStore () =
-        rebuildLock.EnterReadLock()
-        try
-            let newStore = ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity, comparer)
-            for entity in evictionQueue do newStore.TryAdd(entity.Key, entity) |> ignore
-            Interlocked.Exchange(&store, newStore) |> ignore
-
-        finally
-            rebuildLock.ExitReadLock()
+        let newStore = ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity, comparer)
+        for entity in evictionQueue do newStore.TryAdd(entity.Key, entity) |> ignore
+        Interlocked.Exchange(&store, newStore) |> ignore
 
     let processEvictionMessage =
         function
