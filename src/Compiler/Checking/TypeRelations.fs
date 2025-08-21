@@ -60,10 +60,9 @@ type TTypeCacheKey =
 
     override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
 
-let mkTypeSubsumptionCache() =
+let typeSubsumptionCache =
     Caches.Cache.Create<TTypeCacheKey, bool>({ TotalCapacity = 131072; HeadroomPercentage = 75 }, name = "typeSubsumptionCache")
 
-let getTypeSubsumptionCache g = Caches.LifetimeAssociation.attach mkTypeSubsumptionCache g
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -183,7 +182,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
 
     if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
         let key = TTypeCacheKey.FromStrippedTypes (ty1, ty2, canCoerce)
-        getTypeSubsumptionCache g |> _.GetOrAdd(key, fun key -> checkSubsumes key.ty1 key.ty2)
+        typeSubsumptionCache.GetOrAdd(key, fun key -> checkSubsumes key.ty1 key.ty2)
     else
         checkSubsumes ty1 ty2
 

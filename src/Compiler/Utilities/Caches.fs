@@ -137,7 +137,7 @@ module Cache =
 
     /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
     let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "256", EnvironmentVariableTarget.Process)
+        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
 
     let applyOverride capacity =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
