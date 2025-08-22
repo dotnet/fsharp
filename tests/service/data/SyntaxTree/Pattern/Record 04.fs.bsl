@@ -9,7 +9,8 @@ ImplFile
                  [SynMatchClause
                     (Record
                        ([NamePatPairField
-                           (None, A, None, Some (4,4--4,5),
+                           (SynLongIdent ([A], [], [None]), None,
+                            Some (4,4--4,5),
                             FromParseError (Wild (4,5--4,5), (4,5--4,5)), None)],
                         (4,2--4,7)), None, Const (Unit, (4,11--4,13)),
                      (4,2--4,13), Yes, { ArrowRange = Some (4,8--4,10)

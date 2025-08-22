@@ -15,7 +15,8 @@ ImplFile
                     [SynMatchClause
                        (Record
                           ([NamePatPairField
-                              (None, X, Some (2,8--2,9), Some (2,6--2,11),
+                              (SynLongIdent ([X], [], [None]), Some (2,8--2,9),
+                               Some (2,6--2,11),
                                Named
                                  (SynIdent (x, None), false, None, (2,10--2,11)),
                                None)], (2,4--2,13)), None,
@@ -37,7 +38,8 @@ ImplFile
                  Some
                    ([Record
                        ([NamePatPairField
-                           (None, X, Some (2,8--2,9), Some (2,6--2,11),
+                           (SynLongIdent ([X], [], [None]), Some (2,8--2,9),
+                            Some (2,6--2,11),
                             Named
                               (SynIdent (x, None), false, None, (2,10--2,11)),
                             None)], (2,4--2,13))],
@@ -46,7 +48,8 @@ ImplFile
                        [SynMatchClause
                           (Record
                              ([NamePatPairField
-                                 (None, X, Some (2,8--2,9), Some (2,6--2,11),
+                                 (SynLongIdent ([X], [], [None]),
+                                  Some (2,8--2,9), Some (2,6--2,11),
                                   Named
                                     (SynIdent (x, None), false, None,
                                      (2,10--2,11)), None)], (2,4--2,13)), None,

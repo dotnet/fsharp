@@ -1120,6 +1120,8 @@ module ParsedInput =
         let last = List.last lid.LongIdent
         last.idRange.End
 
+    let lastIdentOfSynLongIdent (lid: SynLongIdent) = List.last lid.LongIdent
+
     let endOfClosingTokenOrLastIdent (mClosing: range option) (lid: SynLongIdent) =
         match mClosing with
         | Some m -> m.End
@@ -1294,19 +1296,23 @@ module ParsedInput =
             ->
             pats
             |> List.tryPick (fun field ->
-                if rangeContainsPos field.FieldName.idRange pos then
-                    let referencedFields = pats |> List.map _.FieldName.idText
+                if rangeContainsPos field.FieldName.Range pos then
+                    let referencedFields =
+                        pats |> List.map (fun f -> (lastIdentOfSynLongIdent f.FieldName).idText)
+
                     Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
                 else
-                    let context =
-                        Some(PatternContext.NamedUnionCaseField(field.FieldName.idText, caseId.Range))
+                    let lastId = lastIdentOfSynLongIdent field.FieldName
+                    let context = Some(PatternContext.NamedUnionCaseField(lastId.idText, caseId.Range))
 
                     TryGetCompletionContextInPattern suppressIdentifierCompletions field.Pattern context pos)
             |> Option.orElseWith (fun () ->
                 // Last resort - check for fun (Case (item1 = a; | )) ->
                 // That is, pos is after the last pair and still within parentheses
                 if rangeBeforePos mPairs pos then
-                    let referencedFields = pats |> List.map _.FieldName.idText
+                    let referencedFields =
+                        pats |> List.map (fun f -> (lastIdentOfSynLongIdent f.FieldName).idText)
+
                     Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
                 else
                     None)
@@ -1341,9 +1347,12 @@ module ParsedInput =
                 let fieldId = f.FieldName
                 let pat = f.Pattern
 
-                if rangeContainsPos fieldId.idRange pos then
+                if rangeContainsPos fieldId.Range pos then
                     let referencedFields =
-                        pats |> List.map (fun f -> f.FieldName.idText, f.FieldName.idRange)
+                        pats
+                        |> List.map (fun f ->
+                            let lastId = lastIdentOfSynLongIdent f.FieldName
+                            lastId.idText, lastId.idRange)
 
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 elif rangeContainsPos pat.Range pos then
@@ -1366,7 +1375,10 @@ module ParsedInput =
                         | _ -> false)
                 then
                     let referencedFields =
-                        pats |> List.map (fun f -> f.FieldName.idText, f.FieldName.idRange)
+                        pats
+                        |> List.map (fun f ->
+                            let lastId = lastIdentOfSynLongIdent f.FieldName
+                            lastId.idText, lastId.idRange)
 
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 else

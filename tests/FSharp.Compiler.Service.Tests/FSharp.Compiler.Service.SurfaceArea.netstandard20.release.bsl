@@ -6158,11 +6158,11 @@ FSharp.Compiler.Syntax.Ident: System.String ToString()
 FSharp.Compiler.Syntax.Ident: System.String get_idText()
 FSharp.Compiler.Syntax.Ident: System.String idText
 FSharp.Compiler.Syntax.Ident: Void .ctor(System.String, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.Ident FieldName
-FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.Ident fieldName
-FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.Ident get_FieldName()
-FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.Ident get_fieldName()
-FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.NamePatPairField NewNamePatPairField(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]], FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.NamePatPairField NewNamePatPairField(FSharp.Compiler.Syntax.SynLongIdent, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynLongIdent FieldName
+FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynLongIdent fieldName
+FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynLongIdent get_FieldName()
+FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynLongIdent get_fieldName()
 FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynPat Pattern
 FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynPat get_Pattern()
 FSharp.Compiler.Syntax.NamePatPairField: FSharp.Compiler.Syntax.SynPat get_pat()
@@ -6175,10 +6175,6 @@ FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[FS
 FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
 FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_range()
 FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] range
-FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] FieldPath
-FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] fieldPath
-FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] get_FieldPath()
-FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident]] get_fieldPath()
 FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]] blockSeparator
 FSharp.Compiler.Syntax.NamePatPairField: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]] get_blockSeparator()
 FSharp.Compiler.Syntax.NamePatPairField: System.String ToString()

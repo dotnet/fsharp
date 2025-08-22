@@ -9,17 +9,18 @@ ImplFile
                  [SynMatchClause
                     (Record
                        ([NamePatPairField
-                           (None, A, Some (4,6--4,7), Some (4,4--4,9),
-                            Const (Int32 1, (4,8--4,9)),
+                           (SynLongIdent ([A], [], [None]), Some (4,6--4,7),
+                            Some (4,4--4,9), Const (Int32 1, (4,8--4,9)),
                             Some ((4,9--4,10), Some (4,10)));
                          NamePatPairField
-                           (None, B, Some (4,13--4,14), Some (4,11--4,16),
-                            Const (Int32 2, (4,15--4,16)),
+                           (SynLongIdent ([B], [], [None]), Some (4,13--4,14),
+                            Some (4,11--4,16), Const (Int32 2, (4,15--4,16)),
                             Some ((4,16--4,17), Some (4,17)));
                          NamePatPairField
-                           (None, C, Some (4,20--4,21), Some (4,18--4,23),
-                            Const (Int32 3, (4,22--4,23)), None)], (4,2--4,25)),
-                     None, Const (Unit, (4,29--4,31)), (4,2--4,31), Yes,
+                           (SynLongIdent ([C], [], [None]), Some (4,20--4,21),
+                            Some (4,18--4,23), Const (Int32 3, (4,22--4,23)),
+                            None)], (4,2--4,25)), None,
+                     Const (Unit, (4,29--4,31)), (4,2--4,31), Yes,
                      { ArrowRange = Some (4,26--4,28)
                        BarRange = Some (4,0--4,1) })], (3,0--4,31),
                  { MatchKeyword = (3,0--3,5)

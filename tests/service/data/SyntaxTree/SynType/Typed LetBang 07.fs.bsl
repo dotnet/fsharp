@@ -20,8 +20,8 @@ ImplFile
                              (Typed
                                 (Record
                                    ([NamePatPairField
-                                       (None, Name, Some (3,17--3,18),
-                                        Some (3,12--3,23),
+                                       (SynLongIdent ([Name], [], [None]),
+                                        Some (3,17--3,18), Some (3,12--3,23),
                                         Named
                                           (SynIdent (name, None), false, None,
                                            (3,19--3,23)), None)], (3,10--3,25)),

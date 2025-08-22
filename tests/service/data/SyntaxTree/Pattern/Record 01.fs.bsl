@@ -9,13 +9,13 @@ ImplFile
                  [SynMatchClause
                     (Record
                        ([NamePatPairField
-                           (None, A, Some (4,6--4,7), Some (4,4--4,9),
-                            Wild (4,8--4,9), None)], (4,2--4,11)), None,
-                     Const (Unit, (4,15--4,17)), (4,2--4,17), Yes,
-                     { ArrowRange = Some (4,12--4,14)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,17),
-                 { MatchKeyword = (3,0--3,5)
-                   WithKeyword = (3,9--3,13) }), (3,0--4,17))],
+                           (SynLongIdent ([A], [], [None]), Some (4,6--4,7),
+                            Some (4,4--4,9), Wild (4,8--4,9), None)],
+                        (4,2--4,11)), None, Const (Unit, (4,15--4,17)),
+                     (4,2--4,17), Yes, { ArrowRange = Some (4,12--4,14)
+                                         BarRange = Some (4,0--4,1) })],
+                 (3,0--4,17), { MatchKeyword = (3,0--3,5)
+                                WithKeyword = (3,9--3,13) }), (3,0--4,17))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,17), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

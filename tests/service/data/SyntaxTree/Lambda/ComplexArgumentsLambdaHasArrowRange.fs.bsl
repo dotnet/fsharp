@@ -26,7 +26,8 @@ ImplFile
                           [SynMatchClause
                              (Record
                                 ([NamePatPairField
-                                    (None, Y, Some (3,9--3,10), Some (3,7--3,15),
+                                    (SynLongIdent ([Y], [], [None]),
+                                     Some (3,9--3,10), Some (3,7--3,15),
                                      ListCons
                                        (Named
                                           (SynIdent (h, None), false, None,
@@ -90,7 +91,8 @@ ImplFile
                      Paren
                        (Record
                           ([NamePatPairField
-                              (None, Y, Some (3,9--3,10), Some (3,7--3,15),
+                              (SynLongIdent ([Y], [], [None]), Some (3,9--3,10),
+                               Some (3,7--3,15),
                                ListCons
                                  (Named
                                     (SynIdent (h, None), false, None,
@@ -112,7 +114,8 @@ ImplFile
                        [SynMatchClause
                           (Record
                              ([NamePatPairField
-                                 (None, Y, Some (3,9--3,10), Some (3,7--3,15),
+                                 (SynLongIdent ([Y], [], [None]),
+                                  Some (3,9--3,10), Some (3,7--3,15),
                                   ListCons
                                     (Named
                                        (SynIdent (h, None), false, None,
