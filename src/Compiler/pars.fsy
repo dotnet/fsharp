@@ -3655,13 +3655,16 @@ conjPatternElements:
      { $3 :: $1 :: [] }
 
 namePatPairs:
-   | namePatPair opt_seps
+   | namePatPair opt_namePatSep
      { [$1] }
 
-   | namePatPair seps namePatPairs
+   | namePatPair namePatSep namePatPairs
      { $1 :: $3 }
 
-   | namePatPair seps seps namePatPairs
+   | namePatPair namePatSep UNDERSCORE
+     { [$1] }
+
+   | namePatPair namePatSep namePatSep namePatPairs
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
         ($1 :: $4) }
 
@@ -3699,6 +3702,7 @@ constrPattern:
         let args, argsM = $4
         let m = unionRanges (rhs2 parseState 1 2) argsM
         SynPat.LongIdent(lid, None, Some $2, args, vis, m) }
+
 
   | atomicPatternLongIdent atomicPatsOrNamePatPairs %prec pat_app
       { let vis, lid = $1
@@ -6986,6 +6990,20 @@ seps:
   | SEMICOLON { Some (rhs parseState 1) }
   | OBLOCKSEP SEMICOLON { Some (rhs parseState 2) }
   | SEMICOLON OBLOCKSEP { Some (rhs parseState 1) }
+
+/* Unified separator for name pattern pairs that handles both semicolon and comma */
+namePatSep:
+  | OBLOCKSEP { None }
+  | SEMICOLON { Some (rhs parseState 1) }
+  | COMMA { Some (rhs parseState 1) }
+  | OBLOCKSEP SEMICOLON { Some (rhs parseState 2) }
+  | OBLOCKSEP COMMA { Some (rhs parseState 2) }
+  | SEMICOLON OBLOCKSEP { Some (rhs parseState 1) }
+  | COMMA OBLOCKSEP { Some (rhs parseState 1) }
+
+opt_namePatSep:
+  | namePatSep { }
+  | /* EMPTY */ { }
 
 /* An 'end' that's optional only in #light, where an ODECLEND gets inserted, and explicit 'end's get converted to OEND */
 declEnd:
