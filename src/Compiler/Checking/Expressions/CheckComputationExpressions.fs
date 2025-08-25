@@ -958,12 +958,8 @@ let requireBuilderMethod methodName ceenv m1 m2 =
     if not (hasBuilderMethod ceenv m1 methodName) then
         error (Error(FSComp.SR.tcRequireBuilderMethod methodName, m2))
 
-/// Checks if a builder method exists (without reporting an error)
-let hasBuilderMethod methodName cenv env ad builderTy m =
-    not (isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad methodName builderTy))
-
 /// <summary>
-/// Try translate the syntax sugar
+/// Try to translate the syntax sugar
 /// </summary>
 /// <param name="ceenv">Computation expression context (carrying caches, environments, ranges, etc)</param>
 /// <param name="firstTry">Flag if it's initial check</param>
@@ -1636,9 +1632,9 @@ let rec TryTranslateComputationExpression
                 && containsRangeExpressions
             then
                 let builderSupportsMixedRanges ceenv m =
-                    hasBuilderMethod "Yield" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m
-                    && hasBuilderMethod "Combine" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m
-                    && hasBuilderMethod "Delay" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m
+                    hasBuilderMethod ceenv m "Yield"
+                    && hasBuilderMethod ceenv m "Combine"
+                    && hasBuilderMethod ceenv m "Delay"
 
                 if builderSupportsMixedRanges ceenv m then
                     let transformSequenceWithRanges ceenv expr =
@@ -2854,7 +2850,7 @@ and TransformExprToYieldOrYieldFrom ceenv expr =
     // create a YieldOrReturn expression and let the CE machinery handle it.
     match RewriteRangeExpr expr with
     | Some rewrittenRange ->
-        if hasBuilderMethod "YieldFrom" ceenv.cenv ceenv.env ceenv.ad ceenv.builderTy m then
+        if hasBuilderMethod ceenv m "YieldFrom" then
             ``yield!`` rewrittenRange
         else
             ``yield`` rewrittenRange
