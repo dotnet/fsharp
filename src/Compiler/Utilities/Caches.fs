@@ -179,16 +179,21 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     // Keys with unreliable identity can prevent eviction, taking up space in the cache.
     // In such case we rebuild the store to remove dead keys.
     let rebuildStore () =
-        let newStore = ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity, comparer)
-        for entity in evictionQueue do newStore.TryAdd(entity.Key, entity) |> ignore
+        let newStore =
+            ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity, comparer)
+
+        for entity in evictionQueue do
+            newStore.TryAdd(entity.Key, entity) |> ignore
+
         Interlocked.Exchange(&store, newStore) |> ignore
 
     let processEvictionMessage =
         function
-        | EvictionQueueMessage.Add (entity: CachedEntity<_, _> , target) when isNull entity.Node.List ->
+        | EvictionQueueMessage.Add(entity: CachedEntity<_, _>, target) when isNull entity.Node.List ->
             evictionQueue.AddLast(entity.Node)
             // store has been rebuilt while this message was in the queue.
-            if store <> target then store.TryAdd(entity.Key, entity) |> ignore
+            if store <> target then
+                store.TryAdd(entity.Key, entity) |> ignore
 
             // Evict one immediately if necessary.
             if evictionQueue.Count > capacity then
@@ -203,7 +208,9 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
                     metrics.EvictionFail()
                     evictionFailed.Trigger()
                     deadKeysCount <- deadKeysCount + 1
-                    if deadKeysCount > headroom / 2 then rebuildStore ()
+
+                    if deadKeysCount > headroom / 2 then
+                        rebuildStore ()
 
         | EvictionQueueMessage.Update entity when entity.Node.List = evictionQueue ->
             // Just move this node to the end of the list.
@@ -227,7 +234,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
             ct
         )
 
-    let immediate msg = lock evictionQueue <| fun () -> processEvictionMessage msg
+    let immediate msg =
+        lock evictionQueue <| fun () -> processEvictionMessage msg
 
     let post, disposeEvictionProcessor =
         match mechanism with
@@ -237,10 +245,12 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
             let cts = new CancellationTokenSource()
             let evictionProcessor = startEvictionProcessor cts.Token
             let post = evictionProcessor.Post
+
             let dispose () =
                 cts.Cancel()
                 cts.Dispose()
                 evictionProcessor.Dispose()
+
             post, dispose
 
     member val Evicted = evicted.Publish
@@ -265,7 +275,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         if added then
             metrics.Add()
-            post (EvictionQueueMessage.Add (entity, store))
+            post (EvictionQueueMessage.Add(entity, store))
 
         added
 
@@ -280,7 +290,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let result = store.GetOrAdd(key, makeEntity)
 
         if wasMiss then
-            post (EvictionQueueMessage.Add (result, store))
+            post (EvictionQueueMessage.Add(result, store))
             metrics.Add()
             metrics.Miss()
         else
@@ -292,7 +302,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     member _.AddOrUpdate(key, value) =
         let addValue = CachedEntity.Create(key, value)
 
-        let updateValue (_ : 'Key) (oldEntity: CachedEntity<_, _>) =
+        let updateValue (_: 'Key) (oldEntity: CachedEntity<_, _>) =
             oldEntity.UpdateValue(value)
             oldEntity
 
@@ -301,7 +311,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         // Returned value tells us if the entity was added or updated.
         if Object.ReferenceEquals(addValue, result) then
             metrics.Add()
-            post (EvictionQueueMessage.Add (addValue, store))
+            post (EvictionQueueMessage.Add(addValue, store))
         else
             metrics.Update()
             post (EvictionQueueMessage.Update result)
@@ -333,7 +343,11 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-        let mechanism = match noEviction with Some true -> EvictionMechanism.NoEviction | _ -> EvictionMechanism.MailboxProcessor
+        let mechanism =
+            match noEviction with
+            | Some true -> EvictionMechanism.NoEviction
+            | _ -> EvictionMechanism.MailboxProcessor
+
         let totalCapacity = Cache.applyOverride options.TotalCapacity
         // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
         let headroom =
