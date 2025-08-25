@@ -365,28 +365,18 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
         | SynExpr.YieldOrReturnFrom(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnFromKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
 
-            let isRangeExpr =
-                match synYieldExpr with
-                | SynExpr.IndexRange _ -> true
-                | _ -> false
-
-            if
-                isRangeExpr
-                && not (cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions)
-            then
-                checkLanguageFeatureAndRecover
-                    cenv.g.langVersion
-                    LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
-                    synYieldExpr.Range
-
-            // Rewrite range expressions in yield! to their sequence form
             let synYieldExpr =
-                if isRangeExpr then
+                match synYieldExpr with
+                | SynExpr.IndexRange _ ->
+                    checkLanguageFeatureAndRecover
+                        g.langVersion
+                        LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                        synYieldExpr.Range
+
                     match RewriteRangeExpr synYieldExpr with
                     | Some rewrittenExpr -> rewrittenExpr
                     | None -> synYieldExpr
-                else
-                    synYieldExpr
+                | _ -> synYieldExpr
 
             let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 
@@ -416,11 +406,10 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let synYieldExpr =
                 match synYieldExpr with
                 | SynExpr.IndexRange _ ->
-                    if not (cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions) then
-                        checkLanguageFeatureAndRecover
-                            cenv.g.langVersion
-                            LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
-                            synYieldExpr.Range
+                    checkLanguageFeatureAndRecover
+                        cenv.g.langVersion
+                        LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                        synYieldExpr.Range
 
                     match RewriteRangeExpr synYieldExpr with
                     | Some rewrittenExpr -> rewrittenExpr
@@ -519,8 +508,24 @@ let TcSequenceExpressionEntry (cenv: TcFileState) env (overallTy: OverallTy) tpe
             else
                 // Check if ranges are present but feature is disabled
                 if containsRanges then
-                    // Report error for mixed ranges when feature is disabled
-                    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+                    // Report language feature error for each range expression in a sequence
+                    let reportRangeExpressionsNotSupported expr =
+                        let rec loop exprs =
+                            match exprs with
+                            | [] -> ()
+                            | SynExpr.IndexRange(_, _, _, _, _, m) :: exprs ->
+                                checkLanguageFeatureAndRecover
+                                    cenv.g.langVersion
+                                    LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                                    m
+
+                                loop exprs
+                            | SynExpr.Sequential(_, true, e1, e2, _, _) :: exprs -> loop (e1 :: e2 :: exprs)
+                            | _ :: exprs -> loop exprs
+
+                        loop [ expr ]
+
+                    reportRangeExpressionsNotSupported comp
 
                 // No ranges, use regular handling
                 TcSequenceExpression cenv env tpenv comp overallTy m

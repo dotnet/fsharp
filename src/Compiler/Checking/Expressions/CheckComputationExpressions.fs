@@ -2309,28 +2309,19 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt callExpr)
 
         | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, _, { YieldOrReturnFromKeyword = m }) ->
-            let isRangeExpr =
-                match synYieldExpr with
-                | SynExpr.IndexRange _ -> true
-                | _ -> false
 
-            if
-                isRangeExpr
-                && not (ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions)
-            then
-                checkLanguageFeatureAndRecover
-                    ceenv.cenv.g.langVersion
-                    LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
-                    synYieldExpr.Range
-
-            // Rewrite range expressions in yield! to their sequence form
             let synYieldExpr =
-                if isRangeExpr then
+                match synYieldExpr with
+                | SynExpr.IndexRange _ ->
+                    checkLanguageFeatureAndRecover
+                        ceenv.cenv.g.langVersion
+                        LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                        synYieldExpr.Range
+
                     match RewriteRangeExpr synYieldExpr with
                     | Some rewrittenExpr -> rewrittenExpr
                     | None -> synYieldExpr
-                else
-                    synYieldExpr
+                | _ -> synYieldExpr
 
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
@@ -2395,11 +2386,10 @@ let rec TryTranslateComputationExpression
             let synYieldOrReturnExpr =
                 match synYieldOrReturnExpr with
                 | SynExpr.IndexRange _ when isYield ->
-                    if not (ceenv.cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions) then
-                        checkLanguageFeatureAndRecover
-                            ceenv.cenv.g.langVersion
-                            LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
-                            synYieldOrReturnExpr.Range
+                    checkLanguageFeatureAndRecover
+                        ceenv.cenv.g.langVersion
+                        LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+                        synYieldOrReturnExpr.Range
 
                     match RewriteRangeExpr synYieldOrReturnExpr with
                     | Some rewrittenExpr -> rewrittenExpr

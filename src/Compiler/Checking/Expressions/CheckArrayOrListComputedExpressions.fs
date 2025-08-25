@@ -99,20 +99,22 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                 errorR (Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis (), m))
             | _ -> ()
 
-            let containsRangeExpressions =
-                elems
-                |> List.exists (function
-                    | SynExpr.IndexRange _ -> true
-                    | _ -> false)
-
-            if
-                containsRangeExpressions
-                && g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
-            then
+            if g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions then
                 tcMixedSequencesWithRanges cenv env overallTy tpenv isArray elems m
             else
-                if containsRangeExpressions then
-                    checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+                let reportRangeExpressionsNotSupported expr =
+                    let rec loop exprs =
+                        match exprs with
+                        | [] -> ()
+                        | SynExpr.IndexRange(_, _, _, _, _, m) :: exprs ->
+                            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+                            loop exprs
+                        | SynExpr.Sequential(_, true, e1, e2, _, _) :: exprs -> loop (e1 :: e2 :: exprs)
+                        | _ :: exprs -> loop exprs
+
+                    loop [ expr ]
+
+                reportRangeExpressionsNotSupported comp
 
                 let replacementExpr =
                     // These are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
@@ -201,10 +203,22 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
                         let elems = getElems comp []
                         insertImplicitYieldsAndYieldBangs elems m
                     | _ -> comp
-                else if containsRangeMixedWithYields then
-                    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
-                    comp
                 else
+                    // Report language feature error for each range expression in a sequence
+                    let reportRangeExpressionsNotSupported expr =
+                        let rec loop exprs =
+                            match exprs with
+                            | [] -> ()
+                            | SynExpr.IndexRange(_, _, _, _, _, m) :: exprs ->
+                                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions m
+                                loop exprs
+                            | SynExpr.Sequential(_, true, e1, e2, _, _) :: exprs -> loop (e1 :: e2 :: exprs)
+                            | _ :: exprs -> loop exprs
+
+                        loop [ expr ]
+
+                    reportRangeExpressionsNotSupported comp
+
                     comp
 
             let genCollElemTy = NewInferenceType g
