@@ -351,7 +351,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
         let totalCapacity = Cache.applyOverride options.TotalCapacity
         // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
         let headroom =
-            int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
+            int (float totalCapacity * float options.HeadroomPercentage / 100.0)
 
         let name = defaultArg name (Guid.NewGuid().ToString())
         let observeMetrics = defaultArg observeMetrics false
