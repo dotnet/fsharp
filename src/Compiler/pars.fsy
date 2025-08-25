@@ -1271,6 +1271,9 @@ moduleDefnsOrExpr:
 
 /* A sequence of definitions in a namespace or module */
 moduleDefns:
+  | moduleDefnOrDirective moduleDefnOrDirective
+      { $1 @ $2 }
+
   | moduleDefnOrDirective moduleDefns
       { $1 @ $2 }
 
