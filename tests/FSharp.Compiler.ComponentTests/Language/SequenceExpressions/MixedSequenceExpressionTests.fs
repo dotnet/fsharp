@@ -632,8 +632,8 @@ but here has type
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 751, Line 15, Col 23, Line 15, Col 28, "Incomplete expression or invalid use of indexer syntax");
-            (Error 751, Line 18, Col 27, Line 18, Col 32, "Incomplete expression or invalid use of indexer syntax");
-            (Error 751, Line 41, Col 18, Line 41, Col 23, "Incomplete expression or invalid use of indexer syntax");
-            (Error 751, Line 49, Col 24, Line 49, Col 29, "Incomplete expression or invalid use of indexer syntax")
+            (Error 3350, Line 15, Col 30, Line 15, Col 35, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 18, Col 34, Line 18, Col 39, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 41, Col 25, Line 41, Col 30, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 49, Col 31, Line 49, Col 36, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
         ]
