@@ -170,8 +170,18 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 
             match diagnostic.Exception with
             | ErrorFromAddingTypeEquation(_, displayEnv, expectedType, actualType, ConstraintSolverTupleDiffLengths(contextInfo = contextInfo), _)
-            | ErrorFromAddingTypeEquation(_, displayEnv, expectedType, actualType, ConstraintSolverTypesNotInEqualityRelation(_, _, _, _, _, contextInfo), _)
             | ErrorsFromAddingSubsumptionConstraint(_, displayEnv, expectedType, actualType, _, contextInfo, _) ->
+               let context = DiagnosticContextInfo.From(contextInfo)
+               Some(TypeMismatchDiagnosticExtendedData(symbolEnv, displayEnv, expectedType, actualType, context))
+
+            | ErrorFromAddingTypeEquation(g, displayEnv, ty1, ty2, ConstraintSolverTypesNotInEqualityRelation(_, ty1b, ty2b, _, _, contextInfo), _) ->
+               let expectedType, actualType =
+                   if typeEquiv g ty1 ty1b && typeEquiv g ty2 ty2b then
+                       ty1, ty2
+                   elif not (typeEquiv g ty1 ty2) then
+                       ty1, ty2
+                   else ty2b, ty1b
+
                let context = DiagnosticContextInfo.From(contextInfo)
                Some(TypeMismatchDiagnosticExtendedData(symbolEnv, displayEnv, expectedType, actualType, context))
 
