@@ -955,8 +955,10 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
     | _ ->
         sigMD
 
+let argInfoCache =
+    Caches.Cache.Create<_, ArgReprInfo>({Caches.CacheOptions.Default with TotalCapacity = 65536}, name = "argInfoCache")
 
-let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
+let TranslateTopArgSynInfo _cenv isArg m tcAttributes (SynArgInfo(Attributes attrs, isOpt, nm)) =
     // Synthesize an artificial "OptionalArgument" attribute for the parameter
     let optAttrs =
         if isOpt then
@@ -977,20 +979,14 @@ let TranslateTopArgSynInfo (cenv: cenv) isArg m tcAttributes (SynArgInfo(Attribu
     // Call the attribute checking function
     let attribs = tcAttributes (optAttrs@attrs)
 
-    let key = nm |> Option.map (fun id -> id.idText, id.idRange)
+    let key = nm |> Option.map (fun id -> (id.idText, id.idRange))
+
+    let mkDefaultArgInfo _ : ArgReprInfo = { Attribs = attribs; Name = nm; OtherRange = None }
 
     let argInfo =
-        key
-        |> Option.map cenv.argInfoCache.TryGetValue
-        |> Option.bind (fun (found, info) ->
-            if found then
-                Some info
-            else None)
-        |> Option.defaultValue ({ Attribs = attribs; Name = nm; OtherRange = None }: ArgReprInfo)
-
-    match key with
-    | Some k -> cenv.argInfoCache.[k] <- argInfo
-    | None -> ()
+        match key with
+        | Some key -> argInfoCache.GetOrAdd(key, mkDefaultArgInfo)
+        | _ -> mkDefaultArgInfo ()
 
     // Set freshly computed attribs in case they are different in the cache
     argInfo.Attribs <- attribs
@@ -4051,6 +4047,14 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+// In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
+// This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
+let cachedImplicitYieldExpressions =
+    let identity = HashIdentity.FromFunctions
+                        (fun (expr: SynExpr) -> hash expr.Range)
+                        (fun expr1 expr2 -> expr1 === expr2 && expr1.Range = expr2.Range)
+    Caches.Cache.Create<SynExpr, _>(Caches.CacheOptions.Default, identity, "implicitYieldExpressions")
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -5503,18 +5507,11 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let g = cenv.g
 
-    let cachedExpression =
-        env.eCachedImplicitYieldExpressions.FindAll synExpr.Range
-        |> List.tryPick (fun (se, ty, e) ->
-            if obj.ReferenceEquals(se, synExpr) then Some (ty, e) else None
-        )
-
-    match cachedExpression with
-    | Some (ty, expr) ->
+    match cachedImplicitYieldExpressions.TryGetValue synExpr with
+    | true, (ty, expr) ->
         UnifyOverallType cenv env synExpr.Range overallTy ty
         expr, tpenv
     | _ ->
-
 
         match synExpr with
 
@@ -6378,9 +6375,8 @@ and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExp
             | Expr.DebugPoint(_,e) -> e
             | _ -> expr1
 
-        env.eCachedImplicitYieldExpressions.Add(synExpr1.Range, (synExpr1, expr1Ty, cachedExpr))
-        try TcExpr cenv overallTy env tpenv otherExpr
-        finally env.eCachedImplicitYieldExpressions.Remove synExpr1.Range
+        cachedImplicitYieldExpressions.AddOrUpdate(synExpr1, (expr1Ty, cachedExpr))
+        TcExpr cenv overallTy env tpenv otherExpr
 
 and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synExpr2, expr3, m) =
     let constraintsR, tpenv = List.mapFold (TcStaticOptimizationConstraint cenv env) tpenv constraints

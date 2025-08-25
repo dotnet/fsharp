@@ -9,6 +9,24 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
+[<Struct; NoComparison>]
+type CanCoerce =
+    | CanCoerce
+    | NoCoerce
+
+[<Struct; NoComparison; CustomEquality>]
+type TTypeCacheKey =
+    interface System.IEquatable<TTypeCacheKey>
+    private new: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
+
+    static member FromStrippedTypes: ty1: TType * ty2: TType * canCoerce: CanCoerce -> TTypeCacheKey
+
+    val ty1: TType
+    val ty2: TType
+    val canCoerce: CanCoerce
+
+    override GetHashCode: unit -> int
+
 /// Implements a :> b without coercion based on finalized (no type variable) types
 val TypeDefinitelySubsumesTypeNoCoercion:
     ndeep: int -> g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> bool
