@@ -20,19 +20,10 @@ module  MixedSequenceExpressionTests =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
         
-    [<Fact>]
-    let ``Version 90: Mixed ranges and values require preview language version``() =
-        FSharp """
-module MixedRangeVersionTest
-        
-let a = seq { yield! seq { 1..10 }; 19 }
-let b = [-3; yield! [1..10]]
-let c = [|-3; yield! [|1..10|]; 19|]
-
-let d = seq { 1..10; 19 }
-let e = [-3; 1..10]
-let f = [|-3; 1..10; 19|]
-        """
+    // SOURCE=SequenceExpressions00.fs     # SequenceExpressions00.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions00.fs"|])>]
+    let ``Version 9: Mixed ranges and values without preview should fail (baseline comparison)`` compilation =
+        compilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
@@ -45,45 +36,90 @@ let f = [|-3; 1..10; 19|]
             (Error 751, Line 10, Col 15, Line 10, Col 20, "Incomplete expression or invalid use of indexer syntax")
         ]
         
-    [<Fact>]
-    let ``Preview: Mixed ranges and values require preview language version``() =
-        FSharp """
-module MixedRangeVersionTest
-
-let a = seq { yield! seq { 1..10 }; 19 }
-let b = [-3; yield! [1..10]]
-let c = [|-3; yield! [|1..10|]; 19|]
-
-let d = seq { 1..10; 19 }
-let e = [-3; 1..10]
-let f = [|-3; 1..10; 19|]
-        """
+    // SOURCE=SequenceExpressions00.fs     # SequenceExpressions00.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions00.fs"|])>]
+    let ``Preview: Mixed ranges and values compile in all collection forms (baseline comparison)`` compilation =
+        compilation
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldSucceed
         
-    // SOURCE=SequenceExpressions02.fs 	# SequenceExpressions02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02.fs"|])>]
-    let ``Version 9: SequenceExpressions02 fs`` compilation =
+    // SOURCE=SequenceExpressions02a.fs	# SequenceExpressions02a.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02a.fs"|])>]
+    let ``Version 9: List literal mixing a single ascending range with a leading value (02a)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 3, Col 13, Line 3, Col 24, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 751, Line 3, Col 18, Line 3, Col 23, "Incomplete expression or invalid use of indexer syntax")
-            (Error 3350, Line 7, Col 13, Line 7, Col 28, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 751, Line 7, Col 18, Line 7, Col 23, "Incomplete expression or invalid use of indexer syntax")
-            (Error 3350, Line 11, Col 13, Line 11, Col 29, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 751, Line 11, Col 14, Line 11, Col 18, "Incomplete expression or invalid use of indexer syntax")
-            (Error 751, Line 11, Col 20, Line 11, Col 24, "Incomplete expression or invalid use of indexer syntax")
-            (Error 3350, Line 15, Col 13, Line 15, Col 30, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
-            (Error 751, Line 15, Col 17, Line 15, Col 25, "Incomplete expression or invalid use of indexer syntax")
+            (Error 3350, Line 3, Col 12, Line 3, Col 23, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 3, Col 17, Line 3, Col 22, "Incomplete expression or invalid use of indexer syntax")
         ]
 
-    // SOURCE=SequenceExpressions02.fs 	# SequenceExpressions02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02.fs"|])>]
-    let ``Preview: SequenceExpressions02 fs`` compilation =
+    // SOURCE=SequenceExpressions02a.fs	# SequenceExpressions02a.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02a.fs"|])>]
+    let ``Preview: List literal mixing a single ascending range with a leading value (02a)`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions02b.fs	# SequenceExpressions02b.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02b.fs"|])>]
+    let ``Version 9: List literal mixing a range in the middle of values (02b)`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 12, Line 3, Col 27, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 3, Col 17, Line 3, Col 22, "Incomplete expression or invalid use of indexer syntax")
+        ]
+
+    // SOURCE=SequenceExpressions02b.fs	# SequenceExpressions02b.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02b.fs"|])>]
+    let ``Preview: List literal mixing a range in the middle of values (02b)`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions02c.fs	# SequenceExpressions02c.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02c.fs"|])>]
+    let ``Version 9: List literal with multiple ranges and trailing value (02c)`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 12, Line 3, Col 28, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 3, Col 13, Line 3, Col 17, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 3, Col 19, Line 3, Col 23, "Incomplete expression or invalid use of indexer syntax")
+        ]
+
+    // SOURCE=SequenceExpressions02c.fs	# SequenceExpressions02c.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02c.fs"|])>]
+    let ``Preview: List literal with multiple ranges and trailing value (02c)`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions02d.fs	# SequenceExpressions02d.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02d.fs"|])>]
+    let ``Version 9: List literal with stepped range between values (02d)`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 12, Line 3, Col 29, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 751, Line 3, Col 16, Line 3, Col 24, "Incomplete expression or invalid use of indexer syntax")
+        ]
+
+    // SOURCE=SequenceExpressions02d.fs	# SequenceExpressions02d.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions02d.fs"|])>]
+    let ``Preview: List literal with stepped range between values (02d)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -91,7 +127,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions03.fs 	# SequenceExpressions03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions03.fs"|])>]
-    let ``Preview: SequenceExpressions03 fs`` compilation =
+    let ``Preview: seq builder: ranges as splices are accepted (03)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -99,7 +135,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions03.fs 	# SequenceExpressions03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions03.fs"|])>]
-    let ``Version 9: SequenceExpressions03 fs`` compilation =
+    let ``Version 9: seq builder: ranges without preview should fail (03)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -122,7 +158,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions04.fs 	# SequenceExpressions04.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions04.fs"|])>]
-    let ``Preview: SequenceExpressions04 fs`` compilation =
+    let ``Preview: seq builder: ranges in branches etc. accepted (04)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -130,7 +166,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions04.fs 	# SequenceExpressions04.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions04.fs"|])>]
-    let ``Version 9: SequenceExpressions04 fs`` compilation =
+    let ``Version 9: seq builder: ranges without preview should fail (04)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -147,7 +183,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions05.fs 	# SequenceExpressions05.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions05.fs"|])>]
-    let ``Preview: SequenceExpressions05 fs`` compilation =
+    let ``Preview: seq builder: mixing ranges with values compiles and runs (05)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -155,7 +191,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions05.fs 	# SequenceExpressions05.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions05.fs"|])>]
-    let ``Version 9: SequenceExpressions05 fs`` compilation =
+    let ``Version 9: seq builder: mixing ranges with values requires preview (05)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -169,7 +205,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions06.fs 	# SequenceExpressions06.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions06.fs"|])>]
-    let ``Preview: SequenceExpressions06 fs`` compilation =
+    let ``Preview: Type inference across list/array/seq with mixed ranges (06)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -177,7 +213,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions06.fs 	# SequenceExpressions06.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions06.fs"|])>]
-    let ``Version 9: SequenceExpressions06 fs`` compilation =
+    let ``Version 9: Type inference with mixed ranges requires preview (06)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -195,7 +231,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions07.fs 	# SequenceExpressions07.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions07.fs"|])>]
-    let ``Preview: SequenceExpressions07 fs`` compilation =
+    let ``Preview: Custom CE builder splices built-in ranges via YieldFrom (07)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -204,7 +240,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions07.fs 	# SequenceExpressions07.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions07.fs"|])>]
-    let ``Version 9: SequenceExpressions07 fs`` compilation =
+    let ``Version 9: Custom CE with mixed ranges requires preview (07)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -222,23 +258,23 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions08.fs 	# SequenceExpressions08.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions08.fs"|])>]
-    let ``Version 9: SequenceExpressions08 fs`` compilation =
+    let ``Version 9: Equivalence examples require preview (08)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3350, Line 7, Col 13, Line 7, Col 26, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
-            (Error 751, Line 7, Col 15, Line 7, Col 20, "Incomplete expression or invalid use of indexer syntax");
-            (Error 3350, Line 8, Col 9, Line 8, Col 20, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
-            (Error 751, Line 8, Col 14, Line 8, Col 19, "Incomplete expression or invalid use of indexer syntax");
-            (Error 3350, Line 9, Col 9, Line 9, Col 26, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 7, Col 13, Line 7, Col 26, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 7, Col 15, Line 7, Col 20, "Incomplete expression or invalid use of indexer syntax")
+            (Error 3350, Line 8, Col 9, Line 8, Col 20, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 8, Col 14, Line 8, Col 19, "Incomplete expression or invalid use of indexer syntax")
+            (Error 3350, Line 9, Col 9, Line 9, Col 26, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
             (Error 751, Line 9, Col 15, Line 9, Col 20, "Incomplete expression or invalid use of indexer syntax")
         ]
         
     // SOURCE=SequenceExpressions08.fs 	# SequenceExpressions08.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions08.fs"|])>]
-    let ``Preview: SequenceExpressions08 fs`` compilation =
+    let ``Preview: Equivalence: direct ranges equal explicit yield! in seq/list/array (08)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -246,7 +282,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions09.fs 	# SequenceExpressions09.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions09.fs"|])>]
-    let ``Preview: SequenceExpressions09 fs`` compilation =
+    let ``Preview: Non-interference: custom (..) operator is not treated as range (09)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -254,7 +290,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions09.fs 	# SequenceExpressions09.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions09.fs"|])>]
-    let ``Version 9: SequenceExpressions09 fs`` compilation =
+    let ``Version 9: Non-interference: custom (..) operator is not treated as range (09)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompileAndRun
@@ -262,7 +298,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions10.fs 	# SequenceExpressions10.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions10.fs"|])>]
-    let ``Version 9: SequenceExpressions10 fs`` compilation =
+    let ``Version 9: Mixed ranges and values across seq/list/array blocks require preview (10)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -284,7 +320,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions10.fs 	# SequenceExpressions10.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions10.fs"|])>]
-    let ``Preview: SequenceExpressions10 fs`` compilation =
+    let ``Preview: Mixed ranges and values across seq/list/array blocks compile and match explicit yield! (10)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -292,7 +328,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions11.fs 	# SequenceExpressions11.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions11.fs"|])>]
-    let ``Version 9: SequenceExpressions11 fs`` compilation =
+    let ``Version 9: Stepped ranges mixed with values require preview (11)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -314,7 +350,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions11.fs 	# SequenceExpressions11.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions11.fs"|])>]
-    let ``Preview: SequenceExpressions11 fs`` compilation =
+    let ``Preview: Stepped ranges mixed with values compile and match explicit yield! (11)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -322,7 +358,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions12.fs 	# SequenceExpressions12.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions12.fs"|])>]
-    let ``Version 9: SequenceExpressions12 fs`` compilation =
+    let ``Version 9: Single direct range in list/seq/array requires preview (12)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -333,7 +369,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions12.fs 	# SequenceExpressions12.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions12.fs"|])>]
-    let ``Preview: SequenceExpressions12 fs`` compilation =
+    let ``Preview: Single direct range in list/seq/array equals explicit yield! (12)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -341,7 +377,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions13.fs 	# SequenceExpressions13.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions13.fs"|])>]
-    let ``Version 9: SequenceExpressions13 fs`` compilation =
+    let ``Version 9: Interleaving ranges and values requires preview (13)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -360,7 +396,7 @@ let f = [|-3; 1..10; 19|]
         
     // SOURCE=SequenceExpressions13.fs 	# SequenceExpressions13.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions13.fs"|])>]
-    let ``Preview: SequenceExpressions13 fs`` compilation =
+    let ``Preview: Interleaving ranges and values equals explicit forms (13)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -368,7 +404,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions14.fs 	# SequenceExpressions14.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions14.fs"|])>]
-    let ``Version 9: SequenceExpressions14 fs`` compilation =
+    let ``Version 9: No ranges: existing yield/yield! behavior unchanged (14)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompileAndRun
@@ -376,7 +412,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=SequenceExpressions13.fs 	# SequenceExpressions13.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions14.fs"|])>]
-    let ``Preview: SequenceExpressions14 fs`` compilation =
+    let ``Preview: No ranges: existing yield/yield! behavior unchanged (14)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -384,7 +420,7 @@ let f = [|-3; 1..10; 19|]
 
     // SOURCE=E_SequenceExpressions02.fs 	# E_SequenceExpressions02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions02.fs"|])>]
-    let ``Version 9: E_SequenceExpressions01 fs`` compilation =
+    let ``Version 9: Invalid 'yield range' vs 'yield! range' typing diagnostics (E_02)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -482,7 +518,7 @@ but here has type
 
     // SOURCE=E_SequenceExpressions02.fs 	# E_SequenceExpressions02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SequenceExpressions02.fs"|])>]
-    let ``Preview: E_SequenceExpressions02 fs`` compilation =
+    let ``Preview: Invalid 'yield range' vs 'yield! range' typing diagnostics (E_02)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompile
@@ -572,7 +608,7 @@ but here has type
 
     // SOURCE=SequenceExpressions15.fs 	# SequenceExpressions15.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions15.fs"|])>]
-    let ``Preview: SequenceExpressions15 fs`` compilation =
+    let ``Preview: yield vs yield! ranges baseline (15)`` compilation =
         compilation
         |> withLangVersionPreview
         |> verifyCompileAndRun
@@ -580,7 +616,7 @@ but here has type
     
     // SOURCE=SequenceExpressions15.fs 	# SequenceExpressions15.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions15.fs"|])>]
-    let ``Version 9: SequenceExpressions15 fs`` compilation =
+    let ``Version 9: yield vs yield! baseline compilation behavior (15)`` compilation =
         compilation
         |> withLangVersion90
         |> verifyCompile
@@ -636,4 +672,66 @@ but here has type
             (Error 3350, Line 18, Col 34, Line 18, Col 39, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
             (Error 3350, Line 41, Col 25, Line 41, Col 30, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
             (Error 3350, Line 49, Col 31, Line 49, Col 36, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    // SOURCE=SequenceExpressions18.fs  	# SequenceExpressions18.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions18.fs"|])>]
+    let ``Preview: char ranges mixed with values compile and run`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    // SOURCE=SequenceExpressions18.fs  	# SequenceExpressions18.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions18.fs"|])>]
+    let ``Version 9: char ranges mixed with values require preview`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 16, Line 3, Col 33, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 3, Col 18, Line 3, Col 26, "Incomplete expression or invalid use of indexer syntax")
+        ]
+
+    // SOURCE=SequenceExpressions19.fs  	# SequenceExpressions19.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions19.fs"|])>]
+    let ``Preview: bigint ranges mixed with values compile and run`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions19.fs  	# SequenceExpressions19.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions19.fs"|])>]
+    let ``Version 9: bigint ranges mixed with values require preview`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 12, Line 4, Col 31, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 4, Col 14, Line 4, Col 24, "Incomplete expression or invalid use of indexer syntax")
+        ]
+
+    // SOURCE=SequenceExpressions20.fs  	# SequenceExpressions20.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions20.fs"|])>]
+    let ``Preview: empty and singleton ranges preserve order`` compilation =
+        compilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // SOURCE=SequenceExpressions20.fs  	# SequenceExpressions20.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SequenceExpressions20.fs"|])>]
+    let ``Version 9: empty and singleton ranges inside list literals require preview`` compilation =
+        compilation
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 3, Col 12, Line 3, Col 38, "Feature 'Allow mixed ranges and values in sequence expressions, e.g. seq { 1..10; 20 }' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+            (Error 751, Line 3, Col 17, Line 3, Col 21, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 3, Col 23, Line 3, Col 27, "Incomplete expression or invalid use of indexer syntax")
+            (Error 751, Line 3, Col 29, Line 3, Col 33, "Incomplete expression or invalid use of indexer syntax")
         ]
