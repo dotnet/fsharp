@@ -8,7 +8,7 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
-let inline checkDiagnostic
+let inline checkDiagnosticData
     (diagnosticNumber, message)
     (check: 'a -> unit)
     (checkResults: 'b when 'b: (member Diagnostics: FSharpDiagnostic[])) =
@@ -28,7 +28,7 @@ let ``TypeMismatchDiagnosticExtendedData 01`` () =
 let x, y, z = 1, 2
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "Type mismatch. Expecting a tuple of length 3 of type\n    'a * 'b * 'c    \nbut given a tuple of length 2 of type\n    int * int    \n")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
@@ -42,7 +42,7 @@ let ``TypeMismatchDiagnosticExtendedData 02`` () =
 let x, y = 1
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "This expression was expected to have type\n    ''a * 'b'    \nbut here has type\n    'int'    ")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -56,7 +56,7 @@ let ``TypeMismatchDiagnosticExtendedData 03`` () =
 if true then 5
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'int'.")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -70,7 +70,7 @@ let ``TypeMismatchDiagnosticExtendedData 04`` () =
 1 :> string
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (193, "Type constraint mismatch. The type \n    'int'    \nis not compatible with type\n    'string'    \n")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -86,7 +86,7 @@ match 0 with
 | 1 -> "a"
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'int'. This branch returns a value of type 'string'.")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -107,7 +107,7 @@ match 0 with
     1
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -122,7 +122,7 @@ let _: bool =
     if true then "a" else "b"
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "The 'if' expression needs to have type 'bool' to satisfy context type requirements. It currently has type 'string'.")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -136,7 +136,7 @@ let ``TypeMismatchDiagnosticExtendedData 07`` () =
 if true then 1 else "a"
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (1, "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'int'. This branch returns a value of type 'string'.")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
@@ -161,7 +161,7 @@ let f (y: int) = ()
     encodeFsi
     |> withAdditionalSourceFile encodeFs
     |> typecheckProject true useTransparentCompiler
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (3218, "The argument names in the signature 'x' and implementation 'y' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.")
        (fun (argsMismatch: ArgumentsInSigAndImplMismatchExtendedData) ->
         Assert.Equal("x", argsMismatch.SignatureName)
@@ -188,7 +188,7 @@ type A =
     encodeFsi
     |> withAdditionalSourceFile encodeFs
     |> typecheckProject true useTransparentCompiler
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (193, "The module contains the field\n    myStatic: int    \nbut its signature specifies\n    myStatic: int    \nthe accessibility specified in the signature is more than that specified in the implementation")
        (fun (fieldsData: FieldNotContainedDiagnosticExtendedData) ->
         Assert.True(fieldsData.SignatureField.Accessibility.IsPublic)
@@ -202,7 +202,7 @@ module Test
 id
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (193, "This expression is a function value, i.e. is missing arguments. Its type is 'a -> 'a.")
        (fun (wrongType: ExpressionIsAFunctionExtendedData) ->
         Assert.Equal("type 'a -> 'a", wrongType.ActualType.ToString()))
@@ -236,7 +236,7 @@ type  Foo = {| bar: int; x: int |}
     signature
     |> withAdditionalSourceFile implementation
     |> typecheckProject true useTransparentCompiler
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (318, "The type definitions for type 'Foo' in the signature and implementation are not compatible because the abbreviations differ:\n    {| bar: int; x: int |}\nversus\n    {| bar: int |}")
        (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
         assertRange (4,5) (4,8) fieldsData.SignatureRange
@@ -253,7 +253,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -269,7 +269,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -285,7 +285,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -301,7 +301,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -333,7 +333,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Use something else")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -364,7 +364,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Use something else")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -395,7 +395,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Use something else")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -426,7 +426,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -442,7 +442,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -473,7 +473,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -489,7 +489,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -505,7 +505,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -521,7 +521,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -537,7 +537,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -569,7 +569,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (57, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal(Some "FS222", experimental.DiagnosticId)
@@ -602,7 +602,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (57, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal(Some "FS222", experimental.DiagnosticId)
@@ -620,7 +620,7 @@ type Class1() =
 let text = Class1.Test();
     """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (57, """This construct is experimental. Use with caution. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal(None, experimental.DiagnosticId)
