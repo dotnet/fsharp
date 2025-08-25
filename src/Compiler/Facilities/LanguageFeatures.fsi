@@ -95,6 +95,7 @@ type LanguageFeature =
     | ScopedNowarn
     | AllowMixedRangesAndValuesInSeqExpressions
     | AllowTypedLetUseAndBang
+    | ReturnFromFinal
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -1137,7 +1137,7 @@ module rec Compiler =
 
 
     let private evalFSharp (fs: FSharpCompilationSource) (script:FSharpScript) : CompilationResult =
-        let source = fs.Source.GetSourceText |> Option.defaultValue ""
+        let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
         use capture = new TestConsole.ExecutionCapture()
         let result = script.Eval(source)
         let outputWritten, errorsWritten = capture.OutText, capture.ErrorText
@@ -1191,7 +1191,7 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs ->
-            let source = fs.Source.GetSourceText |> Option.defaultValue ""
+            let source = fs.Source.GetSourceText |> Option.defaultWith fs.Source.LoadSourceText
             let name = fs.Name |> Option.defaultValue "unnamed"
             let options = fs.Options |> Array.ofList
             let outputDirectory =
@@ -1470,6 +1470,15 @@ Actual:
                 if not(actual.Contains(item)) then
                     failwith $"""Output does not match expected:{Environment.NewLine}{item}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
             cResult
+
+    let verifyNotInOutput (expected: string) (cResult: CompilationResult) : CompilationResult =
+        match getOutput cResult with
+        | None -> cResult
+        | Some actual ->
+            if actual.Contains(expected) then
+                failwith $"""Output should not contain:{Environment.NewLine}{expected}{Environment.NewLine}Actual:{Environment.NewLine}{actual}{Environment.NewLine}"""
+            else
+                cResult
 
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 

@@ -627,8 +627,6 @@ type SynExpr =
         typeArgsRange: range *
         range: range
 
-    | LetOrUse of isRecursive: bool * isUse: bool * bindings: SynBinding list * body: SynExpr * range: range * trivia: SynExprLetOrUseTrivia
-
     | TryWith of
         tryExpr: SynExpr *
         withCases: SynMatchClause list *
@@ -720,16 +718,15 @@ type SynExpr =
 
     | YieldOrReturnFrom of flags: (bool * bool) * expr: SynExpr * range: range * trivia: SynExprYieldOrReturnFromTrivia
 
-    | LetOrUseBang of
-        bindDebugPoint: DebugPointAtBinding *
+    | LetOrUse of
+        isRecursive: bool *
         isUse: bool *
         isFromSource: bool *
-        pat: SynPat *
-        rhs: SynExpr *
-        andBangs: SynExprAndBang list *
+        isBang: bool *
+        bindings: SynBinding list *
         body: SynExpr *
         range: range *
-        trivia: SynExprLetOrUseBangTrivia
+        trivia: SynExprLetOrUseTrivia
 
     | MatchBang of
         matchDebugPoint: DebugPointAtBinding *
@@ -775,10 +772,7 @@ type SynExpr =
 
     member e.Range =
         match e with
-        | SynExpr.Paren(_, leftParenRange, rightParenRange, r) ->
-            match rightParenRange with
-            | Some rightParenRange when leftParenRange.FileIndex <> rightParenRange.FileIndex -> leftParenRange
-            | _ -> r
+        | SynExpr.Paren(range = m)
         | SynExpr.Quote(range = m)
         | SynExpr.Const(range = m)
         | SynExpr.Typed(range = m)
@@ -838,7 +832,6 @@ type SynExpr =
         | SynExpr.ImplicitZero(range = m)
         | SynExpr.YieldOrReturn(range = m)
         | SynExpr.YieldOrReturnFrom(range = m)
-        | SynExpr.LetOrUseBang(range = m)
         | SynExpr.MatchBang(range = m)
         | SynExpr.DoBang(range = m)
         | SynExpr.WhileBang(range = m)
@@ -870,25 +863,6 @@ type SynExpr =
         match this with
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
-
-[<NoEquality; NoComparison>]
-type SynExprAndBang =
-    | SynExprAndBang of
-        debugPoint: DebugPointAtBinding *
-        isUse: bool *
-        isFromSource: bool *
-        pat: SynPat *
-        body: SynExpr *
-        range: range *
-        trivia: SynExprAndBangTrivia
-
-    member x.Range =
-        match x with
-        | SynExprAndBang(range = range) -> range
-
-    member this.Trivia =
-        match this with
-        | SynExprAndBang(trivia = trivia) -> trivia
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
@@ -1125,6 +1099,8 @@ type SynBinding =
         let (SynBinding(expr = e; range = m)) = x in unionRanges e.Range m
 
     member x.RangeOfHeadPattern = let (SynBinding(headPat = headPat)) = x in headPat.Range
+
+    member x.Trivia = let (SynBinding(trivia = trivia)) = x in trivia
 
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfo =
