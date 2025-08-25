@@ -4055,8 +4055,7 @@ type ImplicitlyBoundTyparsAllowed =
 // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
 // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
 let cachedImplicitYieldExpressions =
-    Caches.Cache.Create<SynExpr, _>(Caches.CacheOptions.Default, HashIdentity.Reference, "implicitYieldExpressions")
-
+    Caches.LifetimeAssociation.attach (fun () -> Caches.Cache.Create<SynExpr, _>(Caches.CacheOptions.Default, HashIdentity.Reference, "implicitYieldExpressions"))
 
 //-------------------------------------------------------------------------
 // Checking types and type constraints
@@ -5510,7 +5509,7 @@ and CheckForAdjacentListExpression (cenv: cenv) synExpr hpa isInfix delayed (arg
 and TcExprThen (cenv: cenv) overallTy env tpenv isArg synExpr delayed =
     let g = cenv.g
 
-    match cachedImplicitYieldExpressions.TryGetValue(synExpr) with
+    match (cachedImplicitYieldExpressions cenv).TryGetValue(synExpr) with
     | true, (ty, expr) ->
         UnifyOverallType cenv env synExpr.Range overallTy ty
         expr, tpenv
@@ -6378,7 +6377,7 @@ and TcExprSequentialOrImplicitYield (cenv: cenv) overallTy env tpenv (sp, synExp
             | Expr.DebugPoint(_,e) -> e
             | _ -> expr1
 
-        cachedImplicitYieldExpressions.AddOrUpdate(synExpr1, (expr1Ty, cachedExpr))
+        (cachedImplicitYieldExpressions cenv).AddOrUpdate(synExpr1, (expr1Ty, cachedExpr))
         TcExpr cenv overallTy env tpenv otherExpr
 
 and TcExprStaticOptimization (cenv: cenv) overallTy env tpenv (constraints, synExpr2, expr3, m) =
