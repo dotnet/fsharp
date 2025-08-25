@@ -2,11 +2,11 @@
 // Negative tests on :>
 // Cast to an interface not implemented
 
-//<Expects id="FS0193" span="(25,12-25,20)" status="error">Type constraint mismatch\. The type</Expects>
+//<Expects id="FS0193" span="(25,19-25,20)" status="error">Type constraint mismatch\. The type</Expects>
 
-//<Expects id="FS0193" span="(26,12-26,18)" status="error">Type constraint mismatch\. The type</Expects>
+//<Expects id="FS0193" span="(26,12-26,13)" status="error">Type constraint mismatch\. The type</Expects>
 
-//<Expects id="FS0193" span="(27,12-27,18)" status="error">Type constraint mismatch\. The type</Expects>
+//<Expects id="FS0193" span="(27,12-27,13)" status="error">Type constraint mismatch\. The type</Expects>
 
 
 
