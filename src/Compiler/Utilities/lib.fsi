@@ -295,3 +295,9 @@ module ListParallel =
 [<RequireQualifiedAccess>]
 module Async =
     val map: ('T -> 'U) -> Async<'T> -> Async<'U>
+
+module internal LifetimeAssociation =
+    /// Attach a value to arbitrary keys using a ConditionalWeakTable.
+    /// Each distinct key gets its own value produced by createValue().
+    /// The value is lazily created and stays alive only as long as the key is strongly referenced elsewhere.
+    val internal attach: createValue: (unit -> 'Value) -> ('Key -> 'Value) when 'Key: not struct and 'Key: not null and 'Value: not struct

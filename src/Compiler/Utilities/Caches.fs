@@ -138,7 +138,7 @@ module Cache =
 
     /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
     let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
+        Environment.SetEnvironmentVariable(overrideVariable, "512", EnvironmentVariableTarget.Process)
 
     let applyOverride capacity =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
@@ -171,8 +171,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
     let evicted = Event<_>()
     let evictionFailed = Event<_>()
 
-    // Track disposal state
-    let mutable disposed = false
+    // Track disposal state (0 = not disposed, 1 = disposed)
+    let mutable disposed = 0
 
     let mutable deadKeysCount = 0
 
@@ -187,8 +187,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         Interlocked.Exchange(&store, newStore) |> ignore
 
-    let processEvictionMessage =
-        function
+    let processEvictionMessage msg =
+        match msg with
         | EvictionQueueMessage.Add(entity: CachedEntity<_, _>, target) when isNull entity.Node.List ->
             evictionQueue.AddLast(entity.Node)
             // store has been rebuilt while this message was in the queue.
@@ -316,15 +316,12 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
             metrics.Update()
             post (EvictionQueueMessage.Update result)
 
-    // Private dispose method to handle cleanup
+    // Private dispose method to handle cleanup (thread-safe)
     member private this.Dispose(disposing: bool) =
-        if not disposed then
-            if disposing then
-                // Dispose managed resources
+        if Interlocked.Exchange(&disposed, 1) = 0 then
+            if Interlocked.Exchange(&disposed, 1) = 0 && disposing then
                 disposeEvictionProcessor ()
                 metrics.Dispose()
-            // No unmanaged resources to clean up in this case
-            disposed <- true
 
     interface IDisposable with
         member this.Dispose() =
@@ -358,8 +355,3 @@ type Cache<'Key, 'Value when 'Key: not null> internal (totalCapacity: int, headr
 
         new Cache<'Key, 'Value>(totalCapacity, headroom, comparer, name, observeMetrics, mechanism)
 
-module LifetimeAssociation =
-    let attach createValue =
-        let weakTable = new ConditionalWeakTable<_, _>()
-        let valueFactory = ConditionalWeakTable.CreateValueCallback(fun _ -> createValue ())
-        fun (key: 'b when 'b: not null) -> weakTable.GetValue(key, valueFactory)

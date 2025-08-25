@@ -47,6 +47,3 @@ type internal CacheMetrics =
     static member Meter: Meter
     static member GetStats: cacheId: string -> Map<string, float>
     static member GetTotals: cacheId: string -> Map<string, int64>
-
-module internal LifetimeAssociation =
-    val attach<'a, 'b when 'a: not struct and 'b: not struct and 'b: not null> : (unit -> 'a) -> ('b -> 'a)

@@ -9,6 +9,7 @@ open System.Text
 open System.Threading.Tasks
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open System.Runtime.CompilerServices
 
 let debug = false
 
@@ -458,3 +459,13 @@ module Async =
             let! a = a
             return f a
         }
+
+module LifetimeAssociation =
+    /// Attach a value to arbitrary keys using a ConditionalWeakTable.
+    /// Each distinct key gets its own value produced by createValue().
+    /// The value is lazily created and stays alive only as long as the key is strongly referenced elsewhere.
+    let attach createValue =
+        let table = ConditionalWeakTable<_, _>()
+        // Use a cached factory to avoid allocating a lambda per lookup.
+        let factory = ConditionalWeakTable.CreateValueCallback(fun _ -> createValue ())
+        fun (key: 'Key when 'Key: not null) -> table.GetValue(key, factory)
