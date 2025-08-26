@@ -1054,7 +1054,7 @@ type NamePatPairField =
         fieldName: SynLongIdent *
         /// The range of the equals sign in `name = pattern`, if present.
         equalsRange: range option *
-        /// The overall range of this name–pattern pair.
+        /// The overall range of this name–pattern pair. Starts with `fieldName`'s range and ends with `pat`s range.
         range: range *
         /// The pattern associated with the named field.
         pat: SynPat *
