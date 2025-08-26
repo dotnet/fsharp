@@ -1101,12 +1101,12 @@ module PrintTypes =
             attrsLayout ^^
             LeftL.questionMark ^^ 
             (idL |> addColonL) ^^
-            layoutTypeWithInfoAndPrec denv env 2 ty
+            layoutTypeWithInfoAndPrec denv env 2 ty 
 
         // Layout an unnamed argument
         // Cannot have any attributes
         | None, _, _ -> 
-            layoutTypeWithInfoAndPrec denv env 2 ty
+            layoutTypeWithInfoAndPrec denv env 4 ty
 
         // Layout a named argument 
         | Some id, _, _ -> 

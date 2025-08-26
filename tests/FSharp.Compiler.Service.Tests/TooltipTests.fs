@@ -457,7 +457,7 @@ let exists() = myFu{caret}nc(null)
             | FSharpXmlDoc.FromXmlText t ->
                  t.UnprocessedLines |> Assert.shouldBeEquivalentTo [|" This is a xml doc above myFunc"|]
             | _ -> failwith $"xml was %A{xml}"
-            text |> Assert.shouldBeEquivalentTo "val myFunc: x: string | null -> string | null"            
+            text |> Assert.shouldBeEquivalentTo "val myFunc: x: (string | null) -> string | null"            
             remarks |> Assert.shouldBeEquivalentTo (Some "Full name: Foo.myFunc")
 
 
