@@ -503,6 +503,31 @@ let f2 b1 b2 b3 b4 b5 =
                 | _ -> ()
             | _ -> ()
 
+    [<Theory>]
+    [<InlineData("(string | null) list", "(string | null) list")>]
+    [<InlineData("(string | null)", "string | null")>]
+    [<InlineData("string | null * int", "(string | null) * int")>]
+    [<InlineData("int * string | null", "int * (string | null)")>]
+    [<InlineData("int * string | null * int", "int * (string | null) * int")>]
+    [<InlineData("(int -> int) | null", "(int -> int) | null")>]
+    [<InlineData("((int -> int) | null) list", "((int -> int) | null) list")>]
+    [<InlineData("((int -> int) | null -> int) | null", "((int -> int) | null -> int) | null")>]
+    [<InlineData("int -> string | null", "int -> string | null")>]
+    [<InlineData("string | null -> int", "string | null -> int")>]
+    [<InlineData("int -> int * string | null", "int -> int * (string | null)")>]
+    [<InlineData("int -> string | null -> int", "int -> string | null -> int")>]
+    [<InlineData("('a | null) list", "('a | null) list")>]
+    [<InlineData("('a | null)", "'a | null")>]
+    let ``Nullable types`` declaredType formattedType =
+        let _, checkResults = getParseAndCheckResults $"""
+let f (x: {declaredType}) = ()
+"""
+        let symbolUse = findSymbolUseByName "x" checkResults
+        let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        let typeArg = symbol.FullType
+        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual formattedType
+
+
 module FSharpMemberOrFunctionOrValue =
     let private chooseMemberOrFunctionOrValue (su: FSharpSymbolUse) =
         match su.Symbol with :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv | _ -> None
