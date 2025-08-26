@@ -3659,20 +3659,35 @@ conjPatternElements:
 
 namePatPairs:
    | namePatPair opt_seps_block
-     { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
-       let m = unionRanges lid.Range pat.Range
+     { let (id: Ident), mEq, (pat: SynPat) = $1
+       let m = unionRanges id.idRange pat.Range
+       let lid = SynLongIdent([id], [], [None])
        [ NamePatPairField(lid, mEq, m, pat, $2) ] }
 
    | namePatPair seps_block namePatPairs
-     { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
-       let m = unionRanges lid.Range pat.Range
+     { let (id: Ident), mEq, (pat: SynPat) = $1
+       let m = unionRanges id.idRange pat.Range
+       let lid = SynLongIdent([id], [], [None])
        NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
 
    | namePatPair seps_block seps_block namePatPairs
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
-        let m = unionRanges lid.Range pat.Range
+        let (id: Ident), mEq, (pat: SynPat) = $1
+        let m = unionRanges id.idRange pat.Range
+        let lid = SynLongIdent([id], [], [None])
         NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
+
+namePatPair:
+   | ident EQUALS parenPattern
+     { let mEquals = rhs parseState 2
+       $1, Some mEquals, $3 }
+
+   | ident EQUALS recover
+     { let mEquals = rhs parseState 2
+       $1, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange) }
+
+   | ident recover
+     { $1, None, patFromParseError (SynPat.Wild $1.idRange.EndRange) }
 
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
@@ -3766,7 +3781,7 @@ atomicPattern:
   | quoteExpr
       { SynPat.QuoteExpr($1, lhs parseState) }
 
-  | LBRACE namePatPairAux rbrace
+  | LBRACE recordPatternElementsAux rbrace
       { SynPat.Record($2, rhs2 parseState 1 3) }
 
   | LBRACE error rbrace
@@ -3992,24 +4007,24 @@ conjParenPatternElements:
   | parenPattern AMP parenPattern
       { $3 :: $1 :: [] }
 
-namePatPairAux:
-  | namePatPair opt_seps_block
+recordPatternElementsAux:
+  | recordPatternElement opt_seps_block
       { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
         [ NamePatPairField(lid, mEq, m, pat, $2) ] }
 
-  | namePatPair seps_block namePatPairAux
+  | recordPatternElement seps_block recordPatternElementsAux
       { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
         NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
 
-  | namePatPair seps_block seps_block namePatPairAux
+  | recordPatternElement seps_block seps_block recordPatternElementsAux
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
         let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
         NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
 
-namePatPair:
+recordPatternElement:
   | path EQUALS parenPattern
     { let mEquals = rhs parseState 2
       $1, Some mEquals, $3 }
