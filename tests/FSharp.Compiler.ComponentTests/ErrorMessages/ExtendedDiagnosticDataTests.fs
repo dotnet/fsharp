@@ -4,7 +4,6 @@
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Diagnostics.ExtendedData
-open FSharp.Test
 open FSharp.Test.Compiler
 open Xunit
 
@@ -143,6 +142,50 @@ if true then 1 else "a"
         Assert.Equal(DiagnosticContextInfo.ElseBranchResult, typeMismatch.ContextInfo)
         Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
         Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 08`` () =
+    FSharp """
+type R = { Field1: int }
+let f (x: R) = "" + x.Field1
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (1, "The type 'int' does not match the type 'string'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+        let displayContext = typeMismatch.DisplayContext
+        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+        Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 09`` () =
+    FSharp """
+let x: string = 1
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (1, "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+        let displayContext = typeMismatch.DisplayContext
+        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+        Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 10`` () =
+    FSharp """
+let f1 (x: outref<'T>) = 1
+let f2 (x: inref<'T>) = f1 &x
+"""
+    |> typecheckResults
+    |> checkDiagnostic
+       (1, "Type mismatch. Expecting a\n    'outref<'T>'    \nbut given a\n    'inref<'T>'    \nThe type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+        let displayContext = typeMismatch.DisplayContext
+        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+        Assert.Equal("outref<'T>", typeMismatch.ExpectedType.Format(displayContext))
+        Assert.Equal("inref<'T>", typeMismatch.ActualType.Format(displayContext)))
 
 [<Theory>]
 [<InlineData true>]
