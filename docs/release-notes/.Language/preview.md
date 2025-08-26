@@ -15,5 +15,6 @@
 ### Fixed
 
 * Warn on uppercase identifiers in patterns. ([PR #15816](https://github.com/dotnet/fsharp/pull/15816))
+* Error on invalid declarations in type definitions.([Issue #10066](https://github.com/dotnet/fsharp/issues/10066), [PR #18813](https://github.com/dotnet/fsharp/pull/18813))
 
 ### Changed
