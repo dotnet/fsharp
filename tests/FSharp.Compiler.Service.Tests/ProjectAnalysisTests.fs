@@ -5805,7 +5805,8 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Succeeded r -> r
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
-module ScriptClosureCacheUse =
+module ScriptClosureCacheUse =    
+
     [<Fact>]
     let ``References from #r nuget are included in script project options`` () =
         let checkResults = checkContentAsScript """
