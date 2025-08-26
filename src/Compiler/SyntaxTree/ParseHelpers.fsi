@@ -7,6 +7,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
