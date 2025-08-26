@@ -1112,7 +1112,7 @@ module PrintTypes =
         | Some id, _, _ -> 
             let idL = ConvertValLogicalNameToDisplayLayout false (tagParameter >> wordL) id.idText
             let prefix = layoutAttribsOneline denv argInfo.Attribs ^^ idL
-            (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 5 ty
+            (prefix |> addColonL) ^^ layoutTypeWithInfoAndPrec denv env 2 ty
 
     let layoutCurriedArgInfos denv env argInfos =
         argInfos 
