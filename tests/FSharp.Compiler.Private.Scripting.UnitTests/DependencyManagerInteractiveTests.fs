@@ -89,7 +89,7 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(1, result.SourceFiles |> Seq.length)
             Assert.Equal(2, result.Roots |> Seq.length)
 
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net9.0")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net10.0")
         Assert.Equal(true, result.Success)
         Assert.Equal(1, result.Resolutions |> Seq.length)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
@@ -111,7 +111,7 @@ type DependencyManagerInteractiveTests() =
 
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
-        let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite, 3.1.8"|], reportError, "net9.0")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite, 3.1.8"|], reportError, "net10.0")
         Assert.Equal(true, result.Success)
         Assert.True((result.Resolutions |> Seq.length) > 1)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
@@ -141,7 +141,7 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(0, result.SourceFiles |> Seq.length)
             Assert.Equal(0, result.Roots |> Seq.length)
 
-        let result = dp.Resolve(idm, ".fsx", [|"r", "System.Collections.Immutable.DoesNotExist"|], reportError, "net9.0")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "System.Collections.Immutable.DoesNotExist"|], reportError, "net10.0")
         Assert.Equal(false, result.Success)
         Assert.Equal(0, result.Resolutions |> Seq.length)
         Assert.Equal(0, result.SourceFiles |> Seq.length)
@@ -171,7 +171,7 @@ type DependencyManagerInteractiveTests() =
             Assert.True((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
             Assert.True((result1.Roots |> Seq.last).EndsWith("/microsoft.netframework.referenceassemblies/1.0.0/"))
 
-        let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net9.0")
+        let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net10.0")
         Assert.Equal(true, result2.Success)
         Assert.Equal(1, result2.Resolutions |> Seq.length)
         let expected2 = "/netstandard2.0/"
@@ -192,7 +192,7 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(1, result3.SourceFiles |> Seq.length)
             Assert.True((result3.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
 
-        let result4 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "net9.0")
+        let result4 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "net10.0")
         Assert.Equal(true, result4.Success)
         Assert.Equal(1, result4.Resolutions |> Seq.length)
         let expected4 = "/netstandard2.0/"
@@ -228,7 +228,7 @@ type DependencyManagerInteractiveTests() =
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
         // Those assemblies must be delivered by nuget for desktop apps
-        let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net9.0")
+        let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net10.0")
         Assert.Equal(true, result2.Success)
         Assert.Equal(2, result2.Resolutions |> Seq.length)
         let expected = "/netcoreapp3.1/"
@@ -288,7 +288,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
         let result =
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net10.0")
 
         Assert.True(result.Success, "resolve failed")
 
@@ -386,7 +386,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net10.0")
 
         Assert.True(result.Success, "resolve failed")
 
@@ -471,7 +471,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net10.0")
 
         Assert.True(result.Success, "resolve failed")
 
@@ -525,7 +525,7 @@ x |> Seq.iter(fun r ->
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net9.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net10.0")
 
         // Expected: error FS3217: PackageManager cannot reference the System Package 'FSharp.Core'
         Assert.False(result.Success, "resolve succeeded but should have failed")
@@ -548,7 +548,7 @@ x |> Seq.iter(fun r ->
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "net9.0")
+            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "net10.0")
 
         Assert.True(result.Success, "resolve failed but should have succeeded")
 
@@ -591,7 +591,7 @@ x |> Seq.iter(fun r ->
             Assert.Equal(1, result.SourceFiles |> Seq.length)
             Assert.Equal(2, result.Roots |> Seq.length)
 
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net9.0")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net10.0")
         Assert.Equal(true, result.Success)
         Assert.Equal(1, result.Resolutions |> Seq.length)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
@@ -698,7 +698,7 @@ x |> Seq.iter(fun r ->
             let mutable currentPath:string = null
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "net9.0")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "net10.0")
             Assert.Equal(true, result.Success)
             currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
         finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
@@ -786,7 +786,7 @@ x |> Seq.iter(fun r ->
             ResolvingErrorReport (report)
 
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net9.0", timeout=0)           // Fail in 0 milliseconds
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net10.0", timeout=0)           // Fail in 0 milliseconds
         Assert.Equal(false, result.Success)
         Assert.Equal(foundCorrectError, true)
         Assert.Equal(foundWrongError, false)
@@ -809,7 +809,7 @@ x |> Seq.iter(fun r ->
             ResolvingErrorReport (report)
 
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=0"|], reportError, "net9.0", null, "", "", "", -1)           // Wait forever
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=0"|], reportError, "net10.0", null, "", "", "", -1)           // Wait forever
         Assert.Equal(false, result.Success)
         Assert.Equal(foundCorrectError, true)
         Assert.Equal(foundWrongError, false)
@@ -832,7 +832,7 @@ x |> Seq.iter(fun r ->
             ResolvingErrorReport (report)
 
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=none"|], reportError, "net9.0", null, "", "", "", -1)           // Wait forever
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=none"|], reportError, "net10.0", null, "", "", "", -1)           // Wait forever
         Assert.Equal(true, result.Success)
         Assert.Equal(foundCorrectError, false)
         Assert.Equal(foundWrongError, false)
@@ -858,7 +858,7 @@ x |> Seq.iter(fun r ->
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         // Resolve and cache the results won't time out
-        let _result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=10000"|], reportError, "net9.0", null, "", "", "", -1)           // Wait forever
+        let _result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=10000"|], reportError, "net10.0", null, "", "", "", -1)           // Wait forever
 
         // Clear the results
         foundCorrectError <- false
@@ -867,7 +867,7 @@ x |> Seq.iter(fun r ->
         // Now clear the cache --- this will ensure that resolving produces a timeout error.  If we read from the cache the test will fail
         dp.ClearResultsCache(Seq.empty, "", reportError)
 
-        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=0"|], reportError, "net9.0", null, "", "", "", -1)           // Wait forever
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=0"|], reportError, "net10.0", null, "", "", "", -1)           // Wait forever
         Assert.Equal(false, result.Success)
         Assert.Equal(foundCorrectError, true)
         Assert.Equal(foundWrongError, false)
