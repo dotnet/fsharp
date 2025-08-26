@@ -1055,7 +1055,7 @@ type NamePatPairField =
         /// The range of the equals sign in `name = pattern`, if present.
         equalsRange: range option *
         /// The overall range of this name–pattern pair.
-        range: range option *
+        range: range *
         /// The pattern associated with the named field.
         pat: SynPat *
         /// The separator trivia that follows this pair (e.g., semicolon or block separator), if any.
@@ -1065,7 +1065,7 @@ type NamePatPairField =
     member FieldName: SynLongIdent
 
     /// Gets the overall range of this name–pattern pair, if available.
-    member Range: range option
+    member Range: range
 
     /// Gets the pattern associated with the named field.
     member Pattern: SynPat

@@ -16,7 +16,7 @@ ImplFile
                         NamePatPairs
                           ([NamePatPairField
                               (SynLongIdent ([Y], [], [None]), Some (3,7--3,8),
-                               Some (3,4--3,10),
+                               (3,4--3,10),
                                Named
                                  (SynIdent (y, None), false, None, (3,9--3,10)),
                                None)], (3,4--3,11), { ParenRange = (3,3--3,11) }),

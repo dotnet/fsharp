@@ -3659,20 +3659,20 @@ namePatPairs:
      { let (id: Ident), mEq, (pat: SynPat) = $1
        let m = unionRanges id.idRange pat.Range
        let lid = SynLongIdent([id], [], [None])
-       [ NamePatPairField(lid, mEq, Some m, pat, $2) ] }
+       [ NamePatPairField(lid, mEq, m, pat, $2) ] }
 
    | namePatPair seps_block namePatPairs
      { let (id: Ident), mEq, (pat: SynPat) = $1
        let m = unionRanges id.idRange pat.Range
        let lid = SynLongIdent([id], [], [None])
-       NamePatPairField(lid, mEq, Some m, pat, Some $2) :: $3 }
+       NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
 
    | namePatPair seps_block seps_block namePatPairs
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
         let (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
         let lid = SynLongIdent([id], [], [None])
-        NamePatPairField(lid, mEq, Some m, pat, Some $2) :: $4 }
+        NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
 
 namePatPair:
    | ident EQUALS parenPattern
@@ -4008,18 +4008,18 @@ recordPatternElementsAux:
   | recordPatternElement opt_seps_block
       { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
-        [ NamePatPairField(lid, mEq, Some m, pat, $2) ] }
+        [ NamePatPairField(lid, mEq, m, pat, $2) ] }
 
   | recordPatternElement seps_block recordPatternElementsAux
       { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
-        NamePatPairField(lid, mEq, Some m, pat, Some $2) :: $3 }
+        NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
 
   | recordPatternElement seps_block seps_block recordPatternElementsAux
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
         let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
-        NamePatPairField(lid, mEq, Some m, pat, Some $2) :: $4 }
+        NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
 
 recordPatternElement:
   | path EQUALS parenPattern

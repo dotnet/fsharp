@@ -27,7 +27,7 @@ ImplFile
                              (Record
                                 ([NamePatPairField
                                     (SynLongIdent ([Y], [], [None]),
-                                     Some (3,9--3,10), Some (3,7--3,15),
+                                     Some (3,9--3,10), (3,7--3,15),
                                      ListCons
                                        (Named
                                           (SynIdent (h, None), false, None,
@@ -92,7 +92,7 @@ ImplFile
                        (Record
                           ([NamePatPairField
                               (SynLongIdent ([Y], [], [None]), Some (3,9--3,10),
-                               Some (3,7--3,15),
+                               (3,7--3,15),
                                ListCons
                                  (Named
                                     (SynIdent (h, None), false, None,
@@ -115,7 +115,7 @@ ImplFile
                           (Record
                              ([NamePatPairField
                                  (SynLongIdent ([Y], [], [None]),
-                                  Some (3,9--3,10), Some (3,7--3,15),
+                                  Some (3,9--3,10), (3,7--3,15),
                                   ListCons
                                     (Named
                                        (SynIdent (h, None), false, None,

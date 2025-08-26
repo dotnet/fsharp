@@ -925,7 +925,7 @@ type NamePatPairField =
     | NamePatPairField of
         fieldName: SynLongIdent *
         equalsRange: range option *
-        range: range option *
+        range: range *
         pat: SynPat *
         blockSeparator: BlockSeparator option
 
