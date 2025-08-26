@@ -102,6 +102,7 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
+    | AllowMixedRangesAndValuesInSeqExpressions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
 
@@ -243,6 +244,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -410,6 +412,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.UseBangBindingValueDiscard -> FSComp.SR.featureUseBangBindingValueDiscard ()
         | LanguageFeature.BetterAnonymousRecordParsing -> FSComp.SR.featureBetterAnonymousRecordParsing ()
         | LanguageFeature.ScopedNowarn -> FSComp.SR.featureScopedNowarn ()
+        | LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions -> FSComp.SR.featureAllowMixedRangesAndValuesInSeqExpressions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
 
