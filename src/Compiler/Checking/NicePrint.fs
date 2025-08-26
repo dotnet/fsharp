@@ -1105,8 +1105,13 @@ module PrintTypes =
 
         // Layout an unnamed argument
         // Cannot have any attributes
-        | None, _, _ -> 
-            layoutTypeWithInfoAndPrec denv env 4 ty
+        | None, _, _ ->
+            let prec =
+                match ty with
+                | TType_tuple _ -> 2
+                | _ -> 4
+
+            layoutTypeWithInfoAndPrec denv env prec ty
 
         // Layout a named argument 
         | Some id, _, _ -> 
