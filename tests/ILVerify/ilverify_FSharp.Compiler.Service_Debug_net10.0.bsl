@@ -59,7 +59,7 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.IL::parseILVersion(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.IL::parseILVersion(string)][offset 0x00000021][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharp.Compiler.DiagnosticsLogger::.cctor()][offset 0x000000CD][found Char] Unexpected type on the stack.
-[IL]: Error [CallVirtOnValueType]: : FSharp.Compiler.Text.RangeModule+comparer@589::System.Collections.Generic.IEqualityComparer<FSharp.Compiler.Text.Range>.GetHashCode([FSharp.Compiler.Service]FSharp.Compiler.Text.Range)][offset 0x00000002] Callvirt on a value type method.
+[IL]: Error [CallVirtOnValueType]: : FSharp.Compiler.Text.RangeModule+comparer@590::System.Collections.Generic.IEqualityComparer<FSharp.Compiler.Text.Range>.GetHashCode([FSharp.Compiler.Service]FSharp.Compiler.Text.Range)][offset 0x00000002] Callvirt on a value type method.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.PathMapModule::applyDir([FSharp.Compiler.Service]Internal.Utilities.PathMap, string)][offset 0x00000037][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.PathMapModule::applyDir([FSharp.Compiler.Service]Internal.Utilities.PathMap, string)][offset 0x00000043][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$Internal.Utilities.XmlAdapters::.cctor()][offset 0x0000000A][found Char] Unexpected type on the stack.
