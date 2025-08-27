@@ -23,7 +23,7 @@ hash id |> ignore
             FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 8)
-            "The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type"
+            "The type ''a -> 'a' does not support the 'equality' constraint because it is a function type"
 
     [<Fact>]
     let ``Unchecked hash of function values``() =
