@@ -7,7 +7,6 @@ open FSharp.Test.Compiler
 open FSharp.Test
 
 module CustomAttributes_CallerArgumentExpression =
-
     [<FactForNETCOREAPP>]
     let ``Can consume CallerArgumentExpression in BCL methods`` () =
       let path = __SOURCE_DIRECTORY__ ++ "test script.fsx"
@@ -238,7 +237,7 @@ module A =
         |> ignore
         
     [<FactForNETCOREAPP>]
-    let ``Can use with Computation Expression`` =
+    let ``Can use in Computation Expression`` =
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
@@ -272,6 +271,34 @@ b {
         |> shouldSucceed
         |> ignore
       
+    [<Fact>]
+    let ``Can use in Computation Expression 2`` () =
+      FSharp """namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false, Inherited=false)>]
+type CallerArgumentExpressionAttribute(parameterName: string) =
+  inherit Attribute()
+
+  member val ParameterName = parameterName
+  
+namespace global
+module A =
+  let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+  open System.Runtime.CompilerServices
+
+  type A() =
+    static member B (``ab c``, [<CallerArgumentExpression "ab c">]?n) =
+      defaultArg n "no value"
+
+  async { return assertEqual(A.B "abc") "\"abc\"" } |> Async.RunSynchronously
+      """
+      |> withLangVersionPreview
+      |> asExe
+      |> compileAndRun
+      |> shouldSucceed
+      |> ignore
    
     [<FactForNETCOREAPP>]
     let ``Can use with Delegate and Quotation`` =
@@ -322,7 +349,7 @@ type Interface1 =
         |> ignore
       
     [<FactForNETCOREAPP>]
-    let ``Should not apply argument expr to indirected method invoke`` () =
+    let ``Only method calls with direct arguments will get the argument expression`` () =
         FSharp """module Lib
 let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
