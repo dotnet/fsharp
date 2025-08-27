@@ -1217,21 +1217,11 @@ type TestType () =
         static member HiddenMethod() = ()"""))
         |> asLibrary
         |> withRealInternalSignature realSig
-        |> compile
-        |> verifyILContains [
-            if realSig then
-                ".method public static void  PublicMethod() cil managed"
-                ".method assembly static void  InternalMethod() cil managed"
-                ".method assembly static void  PrivateMethod() cil managed"
-                ".method assembly static void  DefaultMethod() cil managed"
-                ".method assembly static void  HiddenMethod() cil managed"
-            else
-                ".method public static void  PublicMethod() cil managed"
-                ".method assembly static void  InternalMethod() cil managed"
-                ".method assembly static void  PrivateMethod() cil managed"
-                ".method assembly static void  DefaultMethod() cil managed"
-                ".method assembly static void  HiddenMethod() cil managed"
-
-            ]
-        |> shouldSucceed
+        |> typecheck
+        |> withDiagnostics [
+            (Error 10, Line 4, Col 12, Line 4, Col 13, "Unexpected symbol ':' in member definition");
+            (Error 58, Line 5, Col 9, Line 5, Col 13, "Nested type definitions are not allowed. Types must be defined at module or namespace level.");
+            (Error 3567, Line 6, Col 23, Line 6, Col 25, "Expecting member body");
+            (Error 3567, Line 7, Col 1, Line 7, Col 53, "Expecting member body")
+        ]
 

@@ -1046,12 +1046,36 @@ type SynSimplePats =
 
     member Range: range
 
+/// Represents a single named argument pattern a pair of the form `name = pattern`.
+[<NoEquality; NoComparison>]
+type NamePatPairField =
+    | NamePatPairField of
+        /// The identifier of the named field/parameter.
+        fieldName: SynLongIdent *
+        /// The range of the equals sign in `name = pattern`, if present.
+        equalsRange: range option *
+        /// The overall range of this name–pattern pair. Starts with `fieldName`'s range and ends with `pat`s range.
+        range: range *
+        /// The pattern associated with the named field.
+        pat: SynPat *
+        /// The separator trivia that follows this pair (e.g., semicolon or block separator), if any.
+        blockSeparator: BlockSeparator option
+
+    /// Gets the identifier of the named field/parameter.
+    member FieldName: SynLongIdent
+
+    /// Gets the overall range of this name–pattern pair, if available.
+    member Range: range
+
+    /// Gets the pattern associated with the named field.
+    member Pattern: SynPat
+
 /// Represents a syntax tree for arguments patterns
 [<RequireQualifiedAccess>]
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: NamePatPairField list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1105,7 +1129,7 @@ type SynPat =
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
     /// A record pattern
-    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
+    | Record of fieldPats: NamePatPairField list * range: range
 
     /// The 'null' pattern
     | Null of range: range

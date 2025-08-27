@@ -190,33 +190,45 @@ type OpenTelemetryExport(testRunName, enable) =
         member this.Dispose() =
             for p in providers do p.Dispose()
 
+// In some situations, VS can invoke CreateExecutor and RunTestCases many times during testhost lifetime.
+// For example when executing "run until failure" command in Test Explorer.
+// However, we want to ensure that OneTimeSetup is called only once per test run.
+module OneTimeSetup =
+
+    let init =
+        lazy
+    #if !NETCOREAPP
+        // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
+        log "Adding AssemblyResolver"
+        AssemblyResolver.addResolver ()
+    #endif
+        log "Overriding cache capacity"
+        Cache.OverrideCapacityForTesting()
+        log "Installing TestConsole redirection"
+        TestConsole.install()
+
+        logConfig initialConfig
+
+    let EnsureInitialized() =
+        // Ensure that the initialization is done only once per test run.
+        init.Force()
+
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
+
+    do OneTimeSetup.EnsureInitialized()
             
     override this.CreateExecutor (assemblyName) =
         { new XunitTestFrameworkExecutor(assemblyName, this.SourceInformationProvider, this.DiagnosticMessageSink) with
             
             // Because xUnit v2 lacks assembly fixture, this is a good place to ensure things get called right at the start of the test run.
-            // This gets executed once per test assembly.
             override x.RunTestCases(testCases, executionMessageSink, executionOptions) =
-
-            #if !NETCOREAPP
-                // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
-                AssemblyResolver.addResolver ()
-            #endif
-
-                // Override cache capacity to reduce memory usage in CI.
-                Cache.OverrideCapacityForTesting()
 
                 let testRunName = $"RunTests_{assemblyName.Name} {Runtime.InteropServices.RuntimeInformation.FrameworkDescription}"
 
-                use _ = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)   
-                
-                logConfig initialConfig
-                log "Installing TestConsole redirection"
-                TestConsole.install()
-              
+                use _ = new OpenTelemetryExport(testRunName, Environment.GetEnvironmentVariable("FSHARP_OTEL_EXPORT") <> null)                 
+  
                 begin
                     use _ = Activity.startNoTags testRunName
                     // We can't just call base.RunTestCases here, because it's implementation is async void.

@@ -403,6 +403,19 @@ type Bar() =
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "property Bar.Foo: string with get, set"
 
+[<Theory>]
+[<InlineData("(string | null) list", "val x: (string | null) list")>]
+[<InlineData("(int -> int) | null", "val x: (int -> int) | null")>]
+[<InlineData("(string | null) * int", "val x: (string | null) * int")>]
+let ``Should display correct nullable types`` declaredType tooltip =
+    Checker.getTooltip $"""
+module Foo
+
+let f (x{{caret}}: {declaredType}) = ()
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo tooltip
+
 [<FactForNETCOREAPP>]
 let ``Should display nullable Csharp code analysis annotations on method argument`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
@@ -444,7 +457,7 @@ let exists() = myFu{caret}nc(null)
             | FSharpXmlDoc.FromXmlText t ->
                  t.UnprocessedLines |> Assert.shouldBeEquivalentTo [|" This is a xml doc above myFunc"|]
             | _ -> failwith $"xml was %A{xml}"
-            text |> Assert.shouldBeEquivalentTo "val myFunc: x: string | null -> string | null"            
+            text |> Assert.shouldBeEquivalentTo "val myFunc: x: (string | null) -> string | null"            
             remarks |> Assert.shouldBeEquivalentTo (Some "Full name: Foo.myFunc")
 
 

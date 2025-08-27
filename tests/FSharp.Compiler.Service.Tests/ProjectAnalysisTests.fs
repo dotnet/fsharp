@@ -5370,7 +5370,7 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives active`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunImmediate
@@ -5388,7 +5388,7 @@ let ``Test diagnostics with line directives active`` () =
         let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [10, 10, "Test.fsy"]
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
@@ -5397,7 +5397,7 @@ let ``Test diagnostics with line directives ignored`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     [ for e in wholeProjectResults.Diagnostics ->
-        let m = e.Range.ApplyLineDirectives() in m.StartLine, m.EndLine, m.FileName ]
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
     let checkResults =
@@ -5409,7 +5409,7 @@ let ``Test diagnostics with line directives ignored`` () =
         printfn "ProjectLineDirectives checkResults error file: <<<%s>>>" e.Range.FileName
 
     [ for e in checkResults.Diagnostics ->
-        let m = e.Range.ApplyLineDirectives() in m.StartLine, m.EndLine, m.FileName ]
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
@@ -5805,7 +5805,8 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Succeeded r -> r
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
-module ScriptClosureCacheUse =
+module ScriptClosureCacheUse =    
+
     [<Fact>]
     let ``References from #r nuget are included in script project options`` () =
         let checkResults = checkContentAsScript """
