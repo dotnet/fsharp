@@ -31,5 +31,3 @@ SigFile
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
-
-(3,11)-(3,15) parse error Nested type definitions are not allowed. Types must be defined at module or namespace level.

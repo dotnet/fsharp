@@ -93,7 +93,6 @@ type LanguageFeature =
     | UseBangBindingValueDiscard
     | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
 
