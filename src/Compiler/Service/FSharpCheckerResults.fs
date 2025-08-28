@@ -88,7 +88,7 @@ type DelayedILModuleReader =
         match box this.result with
         | null ->
             async2 {
-                let! ct = Cancellable.token ()
+                let ct = Async2.Token
 
                 return
                     lock this.gate (fun () ->
@@ -118,7 +118,7 @@ type DelayedILModuleReader =
                                 None
                         | _ -> Some this.result)
             }
-        | _ -> cancellable.Return(Some this.result)
+        | _ -> async2 { return Some this.result }
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -3931,7 +3931,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
             let parsingOptions =
                 FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
 
-            let! ct = Cancellable.token ()
+            let ct = Async2.Token
 
             let parseErrors, parsedInput, anyErrors =
                 ParseAndCheckFile.parseFile (

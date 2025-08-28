@@ -784,7 +784,7 @@ type internal TransparentCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
-                            |> Cancellable.toAsync
+                            |> Async2.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -799,7 +799,7 @@ type internal TransparentCompiler
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Cancellable.toAsync
+                            |> Async2.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -1431,7 +1431,7 @@ type internal TransparentCompiler
                              prevTcInfo.tcState,
                              input,
                              true)
-                        |> Cancellable.toAsync
+                        |> Async2.toAsync
 
                     //fileChecked.Trigger fileName
 

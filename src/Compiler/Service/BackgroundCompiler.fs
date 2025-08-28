@@ -343,7 +343,7 @@ type internal BackgroundCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
-                            |> Cancellable.toAsync
+                            |> Async2.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -358,7 +358,7 @@ type internal BackgroundCompiler
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Cancellable.toAsync
+                            |> Async2.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -745,7 +745,7 @@ type internal BackgroundCompiler
                     keepAssemblyContents,
                     suggestNamesForErrors
                 )
-                |> Cancellable.toAsync
+                |> Async2.toAsync
 
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
             return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.ProjectTimeStamp)
@@ -1377,7 +1377,7 @@ type internal BackgroundCompiler
 
             return options, (diags @ diagnostics.Diagnostics)
         }
-        |> Cancellable.toAsync
+        |> Async2.toAsync
 
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         use _ =
