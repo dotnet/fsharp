@@ -1355,7 +1355,7 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
 
         return! CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input)
     }
-    |> Cancellable.runWithoutCancellation
+    |> Async2.runWithoutCancellation
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let CheckMultipleInputsFinish (results, tcState: TcState) =
@@ -1833,7 +1833,7 @@ let CheckMultipleInputsUsingGraphMode
                         node
                         (checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, currentTcState, input, false)
             }
-            |> Cancellable.runWithoutCancellation
+            |> Async2.runWithoutCancellation
 
         Finisher(
             node,
