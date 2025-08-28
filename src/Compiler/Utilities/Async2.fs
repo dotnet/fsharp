@@ -116,8 +116,8 @@ module internal Async2Implementation =
     [<Struct; NoComparison>]
     type internal Async2<'T> (start: bool -> Task<'T>) =
     
-        member _.Start() = start false
-        member _.GetAwaiter() =
+        member inline _.Start() = start false
+        member inline _.GetAwaiter() =
             let hijack = BindContext.IncrementBindCount()
             (start hijack).GetAwaiter()
     
@@ -196,7 +196,7 @@ module internal Async2Implementation =
             ResumableCode.While(condition, throwIfCancellationRequested body)
     
         member inline _.TryWith
-            (body: Async2Code<'TOverall, 'T>, catch: exn -> Async2Code<'TOverall, 'T>)
+            (body: Async2Code<'TOverall, 'T>, [<InlineIfLambda>] catch: exn -> Async2Code<'TOverall, 'T>)
             : Async2Code<'TOverall, 'T> =
             ResumableCode.TryWith(body, filterCancellation catch)
     
@@ -215,11 +215,11 @@ module internal Async2Implementation =
             : Async2Code<'TOverall, 'T> =
             ResumableCode.Using(resource, body)
     
-        member inline _.For(sequence: seq<'T>, body: 'T -> Async2Code<'TOverall, unit>) : Async2Code<'TOverall, unit> =
+        member inline _.For(sequence: seq<'T>, [<InlineIfLambda>] body: 'T -> Async2Code<'TOverall, unit>) : Async2Code<'TOverall, unit> =
             ResumableCode.For(sequence, fun x -> body x |> throwIfCancellationRequested)
     
         [<NoEagerConstraintApplication>]
-        static member inline BindDynamic(sm: byref<Async2StateMachine<_>>, awaiter, continuation: _ -> Async2Code<_, _>) =
+        static member inline BindDynamic(sm: byref<Async2StateMachine<_>>, awaiter, [<InlineIfLambda>] continuation: _ -> Async2Code<_, _>) =
             if Awaiter.isCompleted awaiter then
                 (Awaiter.getResult awaiter |> continuation).Invoke(&sm)
             else
@@ -232,7 +232,7 @@ module internal Async2Implementation =
     
         [<NoEagerConstraintApplication>]
         member inline _.Bind
-            (awaiter, continuation: 'U -> Async2Code<'Data, 'T>)
+            (awaiter, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>)
             : Async2Code<'Data, 'T> =
                 Async2Code(fun sm ->
                     if __useResumableCode then
@@ -375,3 +375,5 @@ module internal Async2 =
     let startAsTask (code: Async2<'t>) = code.Start()
 
     let runWithoutCancellation code = run CancellationToken.None code
+
+    let toAsync (code: Async2<_>) = startAsTask code |> Async.AwaitTask
