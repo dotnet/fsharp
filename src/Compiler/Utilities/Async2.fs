@@ -4,6 +4,8 @@ open System
 open System.Threading
 open System.Threading.Tasks
 
+#nowarn 3513
+
 module internal Async2Implementation =
 
     open FSharp.Core.CompilerServices.StateMachineHelpers
@@ -274,7 +276,9 @@ module internal Async2Implementation =
                                     state  <- SetResult
                                     continuation <-  hijackCheck
                                 else
-                                    continuation <- Await (info.ResumptionData :?> ICriticalNotifyCompletion)
+                                    match info.ResumptionData with
+                                    | :? ICriticalNotifyCompletion as awaiter -> continuation <- Await awaiter
+                                    | _ -> failwith "invalid awaiter"
                             with exn ->
                                 state <- SetException (ExceptionCache.CaptureOrRetrieve exn)
                                 continuation <-  hijackCheck
@@ -308,7 +312,7 @@ module internal Async2Implementation =
     
                     (MoveNextMethodImpl<_>(fun sm ->
                         __resumeAt sm.ResumptionPoint
-                        let mutable error = null
+                        let mutable error = ValueNone
     
                         let __stack_go1 = yieldOnBindLimit().Invoke(&sm)
                         if __stack_go1 then
@@ -319,12 +323,12 @@ module internal Async2Implementation =
                                     if __stack_go2 then
                                         sm.Data.MethodBuilder.SetResult(sm.Data.Result)
                             with exn ->
-                                error  <- ExceptionCache.CaptureOrRetrieve exn
+                                error  <- ValueSome (ExceptionCache.CaptureOrRetrieve exn)
     
-                            if error <> null then
+                            if error.IsSome then
                                 let __stack_go2 =  yieldOnBindLimit().Invoke(&sm)
                                 if __stack_go2 then
-                                    sm.Data.MethodBuilder.SetException(error.SourceException)
+                                    sm.Data.MethodBuilder.SetException(error.Value.SourceException)
                     ))
     
                     (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine state))
