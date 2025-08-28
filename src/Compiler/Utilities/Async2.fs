@@ -59,6 +59,9 @@ module internal Async2Implementation =
                 awaiter.UnsafeOnCompleted continuation
 
     type Trampoline private () =
+
+        let failIfNot condition message =
+            if not condition then failwith message
     
         let ownerThreadId = Thread.CurrentThread.ManagedThreadId
         
@@ -79,8 +82,8 @@ module internal Async2Implementation =
                 running <- false
     
         let set action =
-            assert (Thread.CurrentThread.ManagedThreadId = ownerThreadId)
-            assert pending.IsNone
+            failIfNot (Thread.CurrentThread.ManagedThreadId = ownerThreadId) "Trampoline used from wrong thread"
+            failIfNot pending.IsNone "Trampoline used while already pending"
             if running then
                 pending <- ValueSome action
             else
@@ -96,7 +99,7 @@ module internal Async2Implementation =
     
     module BindContext =
         [<Literal>]
-        let bindLimit = 50
+        let bindLimit = 25
     
         let bindCount = new ThreadLocal<int>()
       
@@ -127,7 +130,10 @@ module internal Async2Implementation =
     [<Struct; NoComparison>]
     type internal Async2<'T> (start: bool -> Task<'T>) =
     
-        member inline _.Start() = start false
+        member inline _.Start() =
+            BindContext.IncrementBindCount() |> ignore
+            start false
+
         member inline _.GetAwaiter() =
             let hijack = BindContext.IncrementBindCount()
             (start hijack).GetAwaiter()
