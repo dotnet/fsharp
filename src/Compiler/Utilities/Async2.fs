@@ -89,12 +89,10 @@ module internal Async2Implementation =
         interface ICriticalNotifyCompletion with
             member _.OnCompleted(continuation) = set continuation
             member _.UnsafeOnCompleted(continuation) = set continuation
+
+        member this.Ref : ICriticalNotifyCompletion ref = ref this
     
         static member Current = holder.Value
-    
-    module Trampoline =
-        let Awaiter : ICriticalNotifyCompletion = Trampoline.Current
-        let AwaiterRef = ref Awaiter
     
     module BindContext =
         [<Literal>]
@@ -175,6 +173,7 @@ module internal Async2Implementation =
         type DynamicContinuation =
             | Stop
             | Immediate
+            | Bounce
             | Await of ICriticalNotifyCompletion
     
         let inline yieldOnBindLimit () =
@@ -182,7 +181,7 @@ module internal Async2Implementation =
                 if sm.Data.Hijack then
                     let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
                     if not __stack_yield_fin then
-                        sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(Trampoline.AwaiterRef, &sm)
+                        sm.Data.MethodBuilder.AwaitOnCompleted(Trampoline.Current.Ref, &sm)
                     __stack_yield_fin
                 else
                     true
@@ -269,32 +268,31 @@ module internal Async2Implementation =
         static member inline RunDynamic(code: Async2Code<'T, 'T>) : Async2<'T> =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
     
-            let resumptionInfo () =
+            let resumptionInfo hijack =
                 let mutable state = InitialYield
+                let bounceOrImmediate = if hijack then Bounce else Immediate
                 { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
                         let mutable continuation = Stop
-    
-                        let hijackCheck = if sm.Data.Hijack then Await Trampoline.Awaiter else Immediate
     
                         let current = state
                         match current with
                         | InitialYield ->
                             state <- Running
-                            continuation <- hijackCheck
+                            continuation <- bounceOrImmediate
                         | Running ->
                             try
                                 let step =  info.ResumptionFunc.Invoke(&sm)
                                 if step then
                                     state  <- SetResult
-                                    continuation <-  hijackCheck
+                                    continuation <-  bounceOrImmediate
                                 else
                                     match info.ResumptionData with
                                     | :? ICriticalNotifyCompletion as awaiter -> continuation <- Await awaiter
                                     | _ -> failwith "invalid awaiter"
                             with exn ->
                                 state <- SetException (ExceptionCache.CaptureOrRetrieve exn)
-                                continuation <-  hijackCheck
+                                continuation <-  bounceOrImmediate
                         | SetResult -> sm.Data.MethodBuilder.SetResult sm.Data.Result
                         | SetException edi -> sm.Data.MethodBuilder.SetException(edi.SourceException)
     
@@ -303,6 +301,11 @@ module internal Async2Implementation =
                             sm.ResumptionDynamicInfo.ResumptionData <- null
                             let mutable awaiter = awaiter
                             sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
+                        | Bounce ->
+                            sm.Data.MethodBuilder.AwaitOnCompleted(
+                                Trampoline.Current.Ref,
+                                &sm
+                            )
                         | Immediate -> info.MoveNext &sm
                         | Stop -> ()
     
@@ -312,9 +315,8 @@ module internal Async2Implementation =
 
             Async2(fun hijack ->
                 let mutable copy = Async2StateMachine()
-                copy.ResumptionDynamicInfo <- resumptionInfo ()
+                copy.ResumptionDynamicInfo <- resumptionInfo hijack
                 copy.Data <- Async2Data()
-                copy.Data.Hijack <- hijack
                 copy.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                 copy.Data.MethodBuilder.Start(&copy)
                 copy.Data.MethodBuilder.Task)
