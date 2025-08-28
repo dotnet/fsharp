@@ -1,10 +1,28 @@
-﻿namespace Internal.Utilities.Async2
+﻿namespace Internal.Utilities
 
-module internal Implementation =
+open System
+open System.Threading
+open System.Threading.Tasks
 
-    open System
-    open System.Threading
-    open System.Threading.Tasks
+[<Struct; NoComparison>]
+type internal Async2<'T> (start: bool -> Task<'T>) =
+
+    member _.Start() = start false
+    member _.StartBound() = start true
+
+module internal Async2 =
+
+    let run (code: Async2<'t>) =
+        if isNull SynchronizationContext.Current && TaskScheduler.Current = TaskScheduler.Default then
+            code.Start().GetAwaiter().GetResult()
+        else       
+            Task.Run<'t>(code.Start).GetAwaiter().GetResult()
+
+    let startAsTask (code: Async2<'t>) = code.Start()
+
+    let runWithoutCancellation code = run code
+
+module internal Async2Implementation =
 
     open FSharp.Core.CompilerServices.StateMachineHelpers
 
@@ -127,13 +145,6 @@ module internal Implementation =
     type Async2ResumptionFunc<'TOverall> = ResumptionFunc<Async2Data<'TOverall>>
     type Async2ResumptionDynamicInfo<'TOverall> = ResumptionDynamicInfo<Async2Data<'TOverall>>
     type Async2Code<'TOverall, 'T> = ResumableCode<Async2Data<'TOverall>, 'T>  
-    
-    [<Struct; NoComparison>]
-    type Async2<'T>(start: bool -> Task<'T>) =
-
-        member internal _.Start() = start false
-    
-        member internal _.StartBound() = start true
     
     [<AutoOpen>]
     module Async2Code =
@@ -341,33 +352,17 @@ module internal Implementation =
                 Async2Builder.RunDynamic(code)
     
             member inline _.Source(code: Async2<_>) = code.StartBound() |> _.GetAwaiter()
-    
-    [<AutoOpen>]
-    module Async2AutoOpens =
-    
-        let async2 = Async2Builder()
-    
+
     [<AutoOpen>]
     module SourceExtensions =
         type Async2Builder with      
             member inline _.Source(awaitable: Awaitable<_, _, _>) = awaitable.GetAwaiter()
             member inline _.Source(task: Task) = task.GetAwaiter()
-            member inline _.Source(items: #seq<_>) : seq<_> = upcast items         
+            member inline _.Source(items: #seq<_>) : seq<_> = upcast items  
     
-    module Async2 =
     
-        let run (code: Async2<'t>) =
-            if isNull SynchronizationContext.Current && TaskScheduler.Current = TaskScheduler.Default then
-                code.Start().GetAwaiter().GetResult()
-            else       
-                Task.Run<'t>(code.Start).GetAwaiter().GetResult()
-    
-        let startAsTask (code: Async2<'t>) = code.Start()
-    
-        let runWithoutCancellation code = run code
+[<AutoOpen>]
+module internal Async2AutoOpens =
+    open Async2Implementation
 
-
-
-
-
-
+    let async2 = Async2Builder()
