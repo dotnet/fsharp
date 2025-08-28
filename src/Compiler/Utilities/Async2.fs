@@ -6,6 +6,11 @@ open System.Threading.Tasks
 
 #nowarn 3513
 
+type Async2 =
+    static let token = AsyncLocal<CancellationToken>()
+    static member UseToken ct = token.Value <- ct
+    static member val Token = token.Value
+
 module internal Async2Implementation =
 
     open FSharp.Core.CompilerServices.StateMachineHelpers
@@ -107,11 +112,6 @@ module internal Async2Implementation =
             Unchecked.defaultof<_>
     
         let inline GetResultOrThrow awaiter = try Awaiter.getResult awaiter with exn -> Throw exn
-    
-    type Async2 =
-        static let token = AsyncLocal<CancellationToken>()
-        static member UseToken ct = token.Value <- ct
-        static member val Token = token.Value
 
     [<Struct; NoComparison>]
     type internal Async2<'T> (start: bool -> Task<'T>) =
@@ -362,7 +362,8 @@ module internal Async2AutoOpens =
 module internal Async2 =
     open Async2Implementation
 
-    let run (code: Async2<'t>) =
+    let run ct (code: Async2<'t>) =
+        Async2.UseToken ct
         if isNull SynchronizationContext.Current && TaskScheduler.Current = TaskScheduler.Default then
             code.Start().GetAwaiter().GetResult()
         else       
@@ -370,4 +371,4 @@ module internal Async2 =
 
     let startAsTask (code: Async2<'t>) = code.Start()
 
-    let runWithoutCancellation code = run code
+    let runWithoutCancellation code = run CancellationToken.None code
