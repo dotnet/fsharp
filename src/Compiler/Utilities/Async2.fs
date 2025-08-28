@@ -6,9 +6,22 @@ open System.Threading.Tasks
 
 #nowarn 3513
 
-type Async2 =
+type internal Async2 =
     static let token = AsyncLocal<CancellationToken>()
-    static member UseToken ct = token.Value <- ct
+    static member UseToken ct =
+        let old = token.Value
+        token.Value <- ct
+        { new IDisposable with
+            member _.Dispose() = token.Value <- old }
+
+    
+    static member UseTokenAsync () = 
+        async {
+            let! ct = Async.CancellationToken
+            let old = token.Value
+            token.Value <- ct
+            return { new IDisposable with member _.Dispose() = token.Value <- old }
+        }
     static member val Token = token.Value
 
 module internal Async2Implementation =
@@ -85,7 +98,7 @@ module internal Async2Implementation =
     
     module BindContext =
         [<Literal>]
-        let bindLimit = 100
+        let bindLimit = 50
     
         let bindCount = new ThreadLocal<int>()
       
@@ -366,7 +379,7 @@ module internal Async2 =
     open Async2Implementation
 
     let run ct (code: Async2<'t>) =
-        Async2.UseToken ct
+        use _ = Async2.UseToken ct
         if isNull SynchronizationContext.Current && TaskScheduler.Current = TaskScheduler.Default then
             code.Start().GetAwaiter().GetResult()
         else       

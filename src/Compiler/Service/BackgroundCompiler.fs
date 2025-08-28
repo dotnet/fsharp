@@ -503,7 +503,7 @@ type internal BackgroundCompiler
 
     let getOrCreateBuilder (options, userOpName) : Async<IncrementalBuilder option * FSharpDiagnostic[]> =
         async {
-            use! _holder = Cancellable.UseToken()
+            use! _holder = Async2.UseTokenAsync ()
 
             match tryGetBuilder options with
             | Some getBuilder ->

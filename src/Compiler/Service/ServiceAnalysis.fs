@@ -302,7 +302,7 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
-            use! _holder = Cancellable.UseToken()
+            use! _holder = Async2.UseTokenAsync ()
 
             if checkFileResults.OpenDeclarations.Length = 0 then
                 return []

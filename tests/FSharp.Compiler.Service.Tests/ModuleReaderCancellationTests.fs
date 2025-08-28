@@ -150,7 +150,7 @@ let parseAndCheck path source options =
             | _, FSharpCheckFileAnswer.Aborted -> None
             | _, FSharpCheckFileAnswer.Succeeded results -> Some results
 
-        Cancellable.HasCancellationToken |> shouldEqual false
+        Async2.Token |> shouldEqual CancellationToken.None
         result
 
     with :? OperationCanceledException ->
