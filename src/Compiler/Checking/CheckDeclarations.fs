@@ -4871,8 +4871,8 @@ module TcDeclarations =
 // Bind module types
 //------------------------------------------------------------------------- 
 
-let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcEnv) synSigDecl: Cancellable<TcEnv> =
-  cancellable {
+let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcEnv) synSigDecl: Async2<TcEnv> =
+  async2 {
     let g = cenv.g
     try 
         match synSigDecl with 
@@ -5028,7 +5028,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
 
 and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs = 
-    cancellable {
+    async2 {
         // Ensure the .Deref call in UpdateAccModuleOrNamespaceType succeeds 
         if cenv.compilingCanonicalFslibModuleType then
             let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -5047,7 +5047,7 @@ and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs =
     Cancellable.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
 
 and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
-    cancellable {
+    async2 {
         let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
         let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
@@ -5102,7 +5102,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
 
 and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, moduleKind, defs, m: range, xml) =
 
-  cancellable {
+  async2 {
     let endm = m.EndRange // use end of range for errors 
 
     // Create the module type that will hold the results of type checking.... 
@@ -5260,7 +5260,7 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
 
 /// The non-mutually recursive case for a declaration
 let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl =   
-  cancellable {
+  async2 {
     let g = cenv.g
     cenv.synArgNameGenerator.Reset()
     let tpenv = emptyUnscopedTyparEnv
@@ -5525,7 +5525,7 @@ and [<TailCall>] TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm
 
 
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
-  cancellable {
+  async2 {
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
     if cenv.compilingCanonicalFslibModuleType then
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
@@ -5773,7 +5773,7 @@ let CheckOneImplFile
     let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
-    cancellable {
+    async2 {
         use _ =
             Activity.start "CheckDeclarations.CheckOneImplFile"
                 [|
@@ -5918,7 +5918,7 @@ let CheckOneImplFile
 
 /// Check an entire signature file
 let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) =
- cancellable {     
+ async2 {     
     use _ =
         Activity.start "CheckDeclarations.CheckOneSigFile"
             [|

@@ -910,7 +910,7 @@ type StackGuard(maxDepth: int, name: string) =
             depth <- depth - 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member x.GuardCancellable(original: Cancellable<'T>) =
+    member x.GuardCancellable(original: Async2<'T>) =
         Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
 
     static member val DefaultDepth =

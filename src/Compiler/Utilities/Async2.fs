@@ -1,4 +1,4 @@
-﻿namespace Internal.Utilities
+﻿namespace Internal.Utilities.Library
 
 open System
 open System.Threading
@@ -344,6 +344,8 @@ module internal Async2Implementation =
                     ))
             else
                 Async2Builder.RunDynamic(code)
+
+        member inline _.Source(code: Async2<_>) = code.GetAwaiter()
     
     [<AutoOpen>]
     module SourceExtensions =
@@ -352,12 +354,13 @@ module internal Async2Implementation =
             member inline _.Source(task: Task) = task.GetAwaiter()
             member inline _.Source(items: #seq<_>) : seq<_> = upcast items  
     
-    
 [<AutoOpen>]
 module internal Async2AutoOpens =
     open Async2Implementation
 
     let async2 = Async2Builder()
+
+type Async2<'t> = Async2Implementation.Async2<'t>
 
 module internal Async2 =
     open Async2Implementation

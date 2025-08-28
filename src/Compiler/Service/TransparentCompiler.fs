@@ -771,7 +771,7 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async2 {
                                 let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
@@ -793,7 +793,7 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.ILModuleReference(nm, getStamp, getReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async2 {
                                 let ilReader = getReader ()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
