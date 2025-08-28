@@ -4,24 +4,6 @@ open System
 open System.Threading
 open System.Threading.Tasks
 
-[<Struct; NoComparison>]
-type internal Async2<'T> (start: bool -> Task<'T>) =
-
-    member _.Start() = start false
-    member _.StartBound() = start true
-
-module internal Async2 =
-
-    let run (code: Async2<'t>) =
-        if isNull SynchronizationContext.Current && TaskScheduler.Current = TaskScheduler.Default then
-            code.Start().GetAwaiter().GetResult()
-        else       
-            Task.Run<'t>(code.Start).GetAwaiter().GetResult()
-
-    let startAsTask (code: Async2<'t>) = code.Start()
-
-    let runWithoutCancellation code = run code
-
 module internal Async2Implementation =
 
     open FSharp.Core.CompilerServices.StateMachineHelpers
@@ -128,6 +110,14 @@ module internal Async2Implementation =
         static let token = AsyncLocal<CancellationToken>()
         static member UseToken ct = token.Value <- ct
         static member val Token = token.Value
+
+    [<Struct; NoComparison>]
+    type internal Async2<'T> (start: bool -> Task<'T>) =
+    
+        member _.Start() = start false
+        member _.GetAwaiter() =
+            let hijack = BindContext.IncrementBindCount()
+            (start hijack).GetAwaiter()
     
     [<Struct>]
     type Async2Data<'t> =
@@ -303,11 +293,11 @@ module internal Async2Implementation =
                         sm.Data.MethodBuilder.SetStateMachine(state)
                 }
 
-            Async2(fun bound ->
+            Async2(fun hijack ->
                 let mutable copy = Async2StateMachine()
                 copy.ResumptionDynamicInfo <- resumptionInfo ()
                 copy.Data <- Async2Data()
-                copy.Data.Hijack <- bound && BindContext.IncrementBindCount()
+                copy.Data.Hijack <- hijack
                 copy.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                 copy.Data.MethodBuilder.Start(&copy)
                 copy.Data.MethodBuilder.Task)
@@ -341,9 +331,9 @@ module internal Async2Implementation =
     
                     (AfterCode<_, _>(fun sm ->
                         let mutable copy = sm
-                        Async2(fun bound ->
+                        Async2(fun hijack ->
                             copy.Data <- Async2Data()
-                            copy.Data.Hijack <- bound && BindContext.IncrementBindCount()
+                            copy.Data.Hijack <- hijack
                             copy.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                             copy.Data.MethodBuilder.Start(&copy)
                             copy.Data.MethodBuilder.Task)
@@ -351,8 +341,6 @@ module internal Async2Implementation =
             else
                 Async2Builder.RunDynamic(code)
     
-            member inline _.Source(code: Async2<_>) = code.StartBound() |> _.GetAwaiter()
-
     [<AutoOpen>]
     module SourceExtensions =
         type Async2Builder with      
@@ -366,3 +354,16 @@ module internal Async2AutoOpens =
     open Async2Implementation
 
     let async2 = Async2Builder()
+
+module internal Async2 =
+    open Async2Implementation
+
+    let run (code: Async2<'t>) =
+        if isNull SynchronizationContext.Current && TaskScheduler.Current = TaskScheduler.Default then
+            code.Start().GetAwaiter().GetResult()
+        else       
+            Task.Run<'t>(code.Start).GetAwaiter().GetResult()
+
+    let startAsTask (code: Async2<'t>) = code.Start()
+
+    let runWithoutCancellation code = run code
