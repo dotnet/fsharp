@@ -128,10 +128,10 @@ module Cache =
     let OverrideCapacityForTesting () =
         Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
 
-    let applyOverride capacity =
+    let applyOverride (options: CacheOptions<_>) =
         match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
-        | true, n when capacity > n -> n
-        | _ -> capacity
+        | true, n when options.TotalCapacity > n -> { options with TotalCapacity = n }
+        | _ -> options
 
 // It is important that this is not a struct, because LinkedListNode holds a reference to it,
 // and it holds the reference to that Node, in a circular way.
@@ -176,10 +176,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-    let options =
-        { options with
-            TotalCapacity = Cache.applyOverride options.TotalCapacity
-        }
+    let options = Cache.applyOverride options
 
     let name = defaultArg name (Guid.NewGuid().ToString())
 
@@ -187,13 +184,13 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     let headroom =
         int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
 
-    let mutable store =
-        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, options.TotalCapacity, options.Comparer)
-
-    let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
-
     // Non-evictable capacity.
     let capacity = options.TotalCapacity - headroom
+
+    let mutable store =
+        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+
+    let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
 
     let evicted = Event<_>()
     let evictionFailed = Event<_>()
@@ -209,7 +206,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     // In such case we rebuild the store to remove dead keys.
     let rebuildStore () =
         let newStore =
-            ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, options.TotalCapacity, options.Comparer)
+            ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
 
         for entity in evictionQueue do
             newStore.TryAdd(entity.Key, entity) |> ignore
