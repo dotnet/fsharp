@@ -60,6 +60,7 @@ module ImportDeclarations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
+            (Error 58, Line 7, Col 5, Line 7, Col 9, "'open' declarations must appear at module level, not inside types.")
             (Error 10, Line 7, Col 5, Line 7, Col 9, "Unexpected keyword 'open' in member definition")
         ]
 
@@ -72,6 +73,7 @@ module ImportDeclarations =
         |> withDiagnostics [
             (Error 10, Line 9, Col 5, Line 9, Col 9, "Unexpected keyword 'open' in binding. Expected incomplete structured construct at or before this point or other token.")
             (Error 10, Line 17, Col 9, Line 17, Col 13, "Unexpected keyword 'open' in binding")
+            (Error 58, Line 23, Col 9, Line 23, Col 13, "'open' declarations must appear at module level, not inside types.")
             (Error 10, Line 23, Col 9, Line 23, Col 13, "Unexpected keyword 'open' in expression")
             (Error 3567, Line 23, Col 9, Line 23, Col 13, "Expecting member body")
         ]
