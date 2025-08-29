@@ -613,7 +613,7 @@ module ParsedInput =
         let (|ConstructorPats|) pats =
             match pats with
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs(pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
+            | SynArgPats.NamePatPairs(pats = xs) -> xs |> List.map _.Pattern
 
         let inline isPosInRange range = rangeContainsPos range pos
 
@@ -1120,6 +1120,8 @@ module ParsedInput =
         let last = List.last lid.LongIdent
         last.idRange.End
 
+    let lastIdentOfSynLongIdent (lid: SynLongIdent) = List.last lid.LongIdent
+
     let endOfClosingTokenOrLastIdent (mClosing: range option) (lid: SynLongIdent) =
         match mClosing with
         | Some m -> m.End
@@ -1293,18 +1295,24 @@ module ParsedInput =
             rangeContainsPos m pos
             ->
             pats
-            |> List.tryPick (fun (fieldId, _, pat) ->
-                if rangeContainsPos fieldId.idRange pos then
-                    let referencedFields = pats |> List.map (fun (id, _, _) -> id.idText)
+            |> List.tryPick (fun field ->
+                if rangeContainsPos field.FieldName.Range pos then
+                    let referencedFields =
+                        pats |> List.map (fun f -> (lastIdentOfSynLongIdent f.FieldName).idText)
+
                     Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
                 else
-                    let context = Some(PatternContext.NamedUnionCaseField(fieldId.idText, caseId.Range))
-                    TryGetCompletionContextInPattern suppressIdentifierCompletions pat context pos)
+                    let lastId = lastIdentOfSynLongIdent field.FieldName
+                    let context = Some(PatternContext.NamedUnionCaseField(lastId.idText, caseId.Range))
+
+                    TryGetCompletionContextInPattern suppressIdentifierCompletions field.Pattern context pos)
             |> Option.orElseWith (fun () ->
                 // Last resort - check for fun (Case (item1 = a; | )) ->
                 // That is, pos is after the last pair and still within parentheses
                 if rangeBeforePos mPairs pos then
-                    let referencedFields = pats |> List.map (fun (id, _, _) -> id.idText)
+                    let referencedFields =
+                        pats |> List.map (fun f -> (lastIdentOfSynLongIdent f.FieldName).idText)
+
                     Some(CompletionContext.Pattern(PatternContext.UnionCaseFieldIdentifier(referencedFields, caseId.Range)))
                 else
                     None)
@@ -1335,9 +1343,17 @@ module ParsedInput =
                 |> List.tryPick (fun pat -> TryGetCompletionContextInPattern false pat None pos)
         | SynPat.Record(fieldPats = pats; range = m) when rangeContainsPos m pos ->
             pats
-            |> List.tryPick (fun ((_, fieldId), _, pat) ->
-                if rangeContainsPos fieldId.idRange pos then
-                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x.idText, x.idRange)
+            |> List.tryPick (fun f ->
+                let fieldId = f.FieldName
+                let pat = f.Pattern
+
+                if rangeContainsPos fieldId.Range pos then
+                    let referencedFields =
+                        pats
+                        |> List.map (fun f ->
+                            let lastId = lastIdentOfSynLongIdent f.FieldName
+                            lastId.idText, lastId.idRange)
+
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 elif rangeContainsPos pat.Range pos then
                     TryGetCompletionContextInPattern false pat None pos
@@ -1348,13 +1364,22 @@ module ParsedInput =
                 // That is, pos is after the last field and still within braces
                 if
                     pats
-                    |> List.forall (fun (_, mEquals, pat) ->
-                        match mEquals, pat with
+                    |> List.forall (fun f ->
+                        let mEqualsOpt =
+                            match f with
+                            | NamePatPairField(equalsRange = m) -> m
+
+                        match mEqualsOpt, f.Pattern with
                         | Some mEquals, SynPat.Wild mPat -> rangeBeforePos mEquals pos && mPat.StartColumn <> mPat.EndColumn
                         | Some mEquals, _ -> rangeBeforePos mEquals pos
                         | _ -> false)
                 then
-                    let referencedFields = pats |> List.map (fun ((_, x), _, _) -> x.idText, x.idRange)
+                    let referencedFields =
+                        pats
+                        |> List.map (fun f ->
+                            let lastId = lastIdentOfSynLongIdent f.FieldName
+                            lastId.idText, lastId.idRange)
+
                     Some(CompletionContext.Pattern(PatternContext.RecordFieldIdentifier referencedFields))
                 else
                     Some(CompletionContext.Pattern PatternContext.Other))
@@ -1870,7 +1895,7 @@ module ParsedInput =
     let (|ConstructorPats|) pats =
         match pats with
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs(pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
+        | SynArgPats.NamePatPairs(pats = xs) -> xs |> List.map _.Pattern
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =

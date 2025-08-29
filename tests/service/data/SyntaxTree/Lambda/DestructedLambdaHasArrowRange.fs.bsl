@@ -14,10 +14,12 @@ ImplFile
                    (NoneAtInvisible, Ident _arg1,
                     [SynMatchClause
                        (Record
-                          ([(([], X), Some (2,8--2,9),
-                             Named
-                               (SynIdent (x, None), false, None, (2,10--2,11)))],
-                           (2,4--2,13)), None,
+                          ([NamePatPairField
+                              (SynLongIdent ([X], [], [None]), Some (2,8--2,9),
+                               (2,6--2,11),
+                               Named
+                                 (SynIdent (x, None), false, None, (2,10--2,11)),
+                               None)], (2,4--2,13)), None,
                         App
                           (NonAtomic, false,
                            App
@@ -35,17 +37,22 @@ ImplFile
                       WithKeyword = (2,4--2,22) }),
                  Some
                    ([Record
-                       ([(([], X), Some (2,8--2,9),
-                          Named (SynIdent (x, None), false, None, (2,10--2,11)))],
-                        (2,4--2,13))],
+                       ([NamePatPairField
+                           (SynLongIdent ([X], [], [None]), Some (2,8--2,9),
+                            (2,6--2,11),
+                            Named
+                              (SynIdent (x, None), false, None, (2,10--2,11)),
+                            None)], (2,4--2,13))],
                     Match
                       (NoneAtInvisible, Ident _arg1,
                        [SynMatchClause
                           (Record
-                             ([(([], X), Some (2,8--2,9),
-                                Named
-                                  (SynIdent (x, None), false, None, (2,10--2,11)))],
-                              (2,4--2,13)), None,
+                             ([NamePatPairField
+                                 (SynLongIdent ([X], [], [None]),
+                                  Some (2,8--2,9), (2,6--2,11),
+                                  Named
+                                    (SynIdent (x, None), false, None,
+                                     (2,10--2,11)), None)], (2,4--2,13)), None,
                            App
                              (NonAtomic, false,
                               App
