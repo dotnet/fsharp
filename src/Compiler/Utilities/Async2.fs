@@ -100,9 +100,23 @@ module internal Async2Implementation =
 
         static member Current = holder.Value
 
+    [<Struct>]
+    type DynamicContinuation =
+        | Stop
+        | Immediate
+        | Bounce
+        | Await of ICriticalNotifyCompletion
+
+    [<Struct>]
+    type DynamicState =
+        | InitialYield
+        | Running
+        | SetResult
+        | SetException of ExceptionDispatchInfo
+
     module BindContext =
         [<Literal>]
-        let bindLimit = 200
+        let bindLimit = 100
 
         let bindCount = new ThreadLocal<int>()
 
@@ -111,6 +125,9 @@ module internal Async2Implementation =
         let inline IncrementBindCount () =
             bindCount.Value <- bindCount.Value + 1
             bindCount.Value % bindLimit = 0
+
+        let inline IncrementBindCountDynamic () =
+            if IncrementBindCount() then Bounce else Immediate
 
     module ExceptionCache =
         let store = ConditionalWeakTable<exn, ExceptionDispatchInfo>()
@@ -173,20 +190,6 @@ module internal Async2Implementation =
             Async2Code(fun sm ->
                 Async2.Token.ThrowIfCancellationRequested()
                 code.Invoke(&sm))
-
-        [<Struct>]
-        type DynamicState =
-            | InitialYield
-            | Running
-            | SetResult
-            | SetException of ExceptionDispatchInfo
-
-        [<Struct>]
-        type DynamicContinuation =
-            | Stop
-            | Immediate
-            | Bounce
-            | Await of ICriticalNotifyCompletion
 
         let inline yieldOnBindLimit () =
             Async2Code<_, _>(fun sm ->
@@ -285,12 +288,6 @@ module internal Async2Implementation =
             let resumptionInfo () =
                 let mutable state = InitialYield
 
-                let bounceOrImmediate () =
-                    if BindContext.IncrementBindCount() then
-                        Bounce
-                    else
-                        Immediate
-
                 { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
                         let mutable continuation = Stop
@@ -300,23 +297,25 @@ module internal Async2Implementation =
                         match current with
                         | InitialYield ->
                             state <- Running
-                            continuation <- bounceOrImmediate ()
+                            continuation <- BindContext.IncrementBindCountDynamic()
                         | Running ->
                             try
                                 let step = info.ResumptionFunc.Invoke(&sm)
 
                                 if step then
                                     state <- SetResult
-                                    continuation <- bounceOrImmediate ()
+                                    continuation <- BindContext.IncrementBindCountDynamic()
                                 else
                                     match info.ResumptionData with
                                     | :? ICriticalNotifyCompletion as awaiter -> continuation <- Await awaiter
                                     | _ -> failwith "invalid awaiter"
                             with exn ->
                                 state <- SetException(ExceptionCache.CaptureOrRetrieve exn)
-                                continuation <- bounceOrImmediate ()
+                                continuation <- BindContext.IncrementBindCountDynamic()
                         | SetResult -> sm.Data.MethodBuilder.SetResult sm.Data.Result
                         | SetException edi -> sm.Data.MethodBuilder.SetException(edi.SourceException)
+
+                        let continuation = continuation
 
                         match continuation with
                         | Await awaiter ->
