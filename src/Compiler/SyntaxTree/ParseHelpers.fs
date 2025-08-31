@@ -1065,9 +1065,71 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
 
-/// Unified helper for creating let/let!/use/use! expressions
-/// Creates SynExpr.LetOrUse based on isBang parameter
-/// Handles all four cases: 'let', 'let!', 'use', and 'use!'
+let mkNamePatPairFieldFromId (id: Ident) (mEq: range option) (pat: SynPat) (sep: BlockSeparator option) : NamePatPairField =
+    let m = unionRanges id.idRange pat.Range
+    let lid = SynLongIdent([ id ], [], [ None ])
+    NamePatPairField(lid, mEq, m, pat, sep)
+
+let mkNamePatPairFieldFromLid (lid: SynLongIdent) (mEq: range option) (pat: SynPat) (sep: BlockSeparator option) : NamePatPairField =
+    let m = unionRanges lid.Range pat.Range
+    NamePatPairField(lid, mEq, m, pat, sep)
+
+let mkMissingNamePatPairFieldFromId (id: Ident) (sep: BlockSeparator option) : NamePatPairField =
+    let m = id.idRange
+    let lid = SynLongIdent([ id ], [], [ None ])
+    // Bind the identifier but mark it as coming from parse recovery to avoid accepting the syntax
+    let bindPat = SynPat.Named(SynIdent(id, None), false, None, m)
+    let patErr = patFromParseError bindPat
+    NamePatPairField(lid, None, m, patErr, sep)
+
+let private mkVarPatFromIdent (id: Ident) =
+    SynPat.Named(SynIdent(id, None), false, None, id.idRange)
+
+let mkTuplePatFromTrailingIdents (leadingPat: SynPat) (pairs: (BlockSeparator * Ident) list) : SynPat * range =
+    match List.tryFrontAndBack pairs with
+    | None -> leadingPat, leadingPat.Range
+    | Some(front, (lastSep, lastId)) ->
+        let trailingPats = front |> List.map (fun (_, id) -> mkVarPatFromIdent id)
+        let lastPat = mkVarPatFromIdent lastId
+        let pats = leadingPat :: (trailingPats @ [ lastPat ])
+
+        let commaRanges =
+            (front |> List.map (fun (sep, _) -> sep.Range)) @ [ lastSep.Range ]
+
+        let mTuple = unionRanges leadingPat.Range lastId.idRange
+        SynPat.Tuple(false, pats, commaRanges, mTuple), mTuple
+
+let mkTuplePatFromTrailingPatterns (leadingPat: SynPat) (pairs: (BlockSeparator * SynPat) list) : SynPat * range =
+    match List.tryFrontAndBack pairs with
+    | None -> leadingPat, leadingPat.Range
+    | Some(front, (lastSep, lastPat)) ->
+        let trailingPats = front |> List.map (fun (_, p) -> p)
+        let pats = leadingPat :: (trailingPats @ [ lastPat ])
+
+        let commaRanges =
+            (front |> List.map (fun (sep, _) -> sep.Range)) @ [ lastSep.Range ]
+
+        let mTuple = unionRanges leadingPat.Range lastPat.Range
+        SynPat.Tuple(false, pats, commaRanges, mTuple), mTuple
+
+let tryFoldTuplePat (mEq1: range option) (pat1: SynPat) (pairsAsPatterns: (BlockSeparator * SynPat) list) : (SynPat * range) option =
+    match mEq1, pat1, pairsAsPatterns with
+    | Some _, SynPat.FromParseError _, _ -> None
+    | Some _, _, [] -> None
+    | Some _, _, _ -> Some(mkTuplePatFromTrailingPatterns pat1 pairsAsPatterns)
+    | None, _, _ -> None
+
+let tryFoldTuplePatFromTrailingIdents
+    (mEq1: range option)
+    (pat1: SynPat)
+    (pairsAsIdents: (BlockSeparator * Ident) list)
+    : (SynPat * range) option =
+    match mEq1, pat1, pairsAsIdents with
+    | Some _, SynPat.FromParseError _, _ -> None
+    | Some _, _, [] -> None
+    | Some _, _, _ -> Some(mkTuplePatFromTrailingIdents pat1 pairsAsIdents)
+    | None, _, _ -> None
+
 let mkLetExpression
     (
         isBang: bool,

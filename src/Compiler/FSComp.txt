@@ -1814,4 +1814,6 @@ featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type an
 3876,lexWarnDirectivesMustMatch,"There is another %s for this warning already in line %d."
 3877,lexLineDirectiveMappingIsNotUnique,"The file '%s' was also pointed to in a line directive in '%s'. Proper warn directive application may not be possible."
 3878,tcAttributeIsNotValidForUnionCaseWithFields,"This attribute is not valid for use on union cases with fields."
+3879,parsInconsistentSeparators,"Inconsistent separators in pattern. Use either all commas or all semicolons, but not both."
 featureReturnFromFinal,"Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder."
+featureAllowCommaAsUnionCaseNamedFieldSeparator,"Allow comma as union case name field separator."

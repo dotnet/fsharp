@@ -445,8 +445,10 @@ module SyntaxTraversal =
                 | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
                     [
                         match copyOpt with
-                        | Some(expr, (withRange, _)) ->
+                        | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
+
+                            let withRange = blockSep.Range
 
                             yield
                                 dive () withRange (fun () ->
@@ -498,9 +500,12 @@ module SyntaxTraversal =
                                         traverseSynExpr expr)
 
                             match sepOpt with
-                            | Some(sep, scPosOpt) ->
+                            | Some sep ->
+                                let scPosOpt = sep.Position
+                                let sepRange = sep.Range
+
                                 yield
-                                    dive () sep (fun () ->
+                                    dive () sepRange (fun () ->
                                         // special case: caret is below 'inherit' + one or more fields are already defined
                                         // inherit A()
                                         // $
@@ -510,8 +515,10 @@ module SyntaxTraversal =
                         | _ -> ()
 
                         match copyOpt with
-                        | Some(expr, (withRange, _)) ->
+                        | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
+
+                            let withRange = blockSep.Range
 
                             yield
                                 dive () withRange (fun () ->
@@ -556,9 +563,12 @@ module SyntaxTraversal =
                             | None -> ()
 
                             match sepOpt with
-                            | Some(sep, scPosOpt) ->
+                            | Some sep ->
+                                let scPosOpt = sep.Position
+                                let sepRange = sep.Range
+
                                 yield
-                                    dive () sep (fun () ->
+                                    dive () sepRange (fun () ->
                                         // special case: caret is between field bindings
                                         // field1 = 5
                                         // $
