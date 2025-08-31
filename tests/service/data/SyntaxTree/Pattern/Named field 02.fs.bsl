@@ -13,7 +13,7 @@ ImplFile
                           ([NamePatPairField
                               (SynLongIdent ([a], [], [None]), Some (4,6--4,7),
                                (4,4--4,9), Wild (4,8--4,9),
-                               Some ((4,9--4,10), Some (4,10)));
+                               Some (Semicolon ((4,9--4,10), Some (4,10))));
                             NamePatPairField
                               (SynLongIdent ([b], [], [None]), Some (4,13--4,14),
                                (4,11--4,14),
@@ -30,4 +30,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(4,15)-(4,16) parse error Unexpected symbol ')' in pattern
+(4,13)-(4,14) parse error Expecting pattern

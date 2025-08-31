@@ -269,4 +269,32 @@ val mkSynField:
     leadingKeyword: SynLeadingKeyword option ->
         SynField
 
+val mkNamePatPairFieldFromId:
+    id: Ident -> mEq: range option -> pat: SynPat -> sep: BlockSeparator option -> NamePatPairField
+
+val mkNamePatPairFieldFromLid:
+    lid: SynLongIdent -> mEq: range option -> pat: SynPat -> sep: BlockSeparator option -> NamePatPairField
+
+val mkMissingNamePatPairFieldFromId: id: Ident -> sep: BlockSeparator option -> NamePatPairField
+
+/// Build a tuple pattern by folding trailing identifiers (with their comma separators)
+/// into a leading pattern. No Paren node is added; the commas are captured via commaRanges.
+/// Returns the synthesized tuple pattern and its overall range.
+val mkTuplePatFromTrailingIdents: leadingPat: SynPat -> pairs: (BlockSeparator * Ident) list -> SynPat * range
+
+/// Build a tuple pattern by folding trailing patterns (with their comma separators)
+/// into a leading pattern. No Paren node is added; the commas are captured via commaRanges.
+/// Returns the synthesized tuple pattern and its overall range.
+val mkTuplePatFromTrailingPatterns: leadingPat: SynPat -> pairs: (BlockSeparator * SynPat) list -> SynPat * range
+
+/// Try to fold trailing patterns into a tuple for a named field under recovery.
+/// Returns Some(tuplePat, mTuple) when mEq is present, pat1 is not FromParseError, and there is at least one trailing element.
+val tryFoldTuplePat:
+    mEq1: range option -> pat1: SynPat -> pairsAsPatterns: (BlockSeparator * SynPat) list -> (SynPat * range) option
+
+/// Try to fold trailing identifiers into a tuple for a named field under recovery.
+/// Returns Some(tuplePat, mTuple) when mEq is present, pat1 is not FromParseError, and there is at least one trailing ident.
+val tryFoldTuplePatFromTrailingIdents:
+    mEq1: range option -> pat1: SynPat -> pairsAsIdents: (BlockSeparator * Ident) list -> (SynPat * range) option
+
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool

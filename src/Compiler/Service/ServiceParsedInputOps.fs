@@ -1504,7 +1504,7 @@ module ParsedInput =
                         | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
                             let isFirstField =
                                 match field, fields with
-                                | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
+                                | Some contextLid, SynExprRecordField(fieldName = (lid, _)) :: _ -> contextLid.Range = lid.Range
                                 | _ -> false
 
                             RecordContext.New(completionPath, isFirstField)
