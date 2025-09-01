@@ -381,18 +381,16 @@ module internal Async2Implementation =
 
         member inline _.Source(code: Async2<_>) = code.Start().GetAwaiter()
 
-    [<AutoOpen>]
-    module SourceExtensions =
-        type Async2Builder with
-            member inline _.Source(awaitable: Awaitable<_, _, _>) = awaitable.GetAwaiter()
-            member inline _.Source(task: Task) = task.GetAwaiter()
-            member inline _.Source(items: #seq<_>) : seq<_> = upcast items
-
 [<AutoOpen>]
 module internal Async2AutoOpens =
     open Async2Implementation
 
     let async2 = Async2Builder()
+
+    type Async2Builder with
+        member inline _.Source(awaitable: Awaitable<_, _, _>) = awaitable.GetAwaiter()
+        member inline _.Source(task: Task) = task.GetAwaiter()
+        member inline _.Source(items: #seq<_>) : seq<_> = upcast items
 
 type Async2<'t> = Async2Implementation.Async2<'t>
 
