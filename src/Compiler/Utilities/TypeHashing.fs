@@ -387,6 +387,7 @@ module StructuralUtilities =
             override _.Equals _ = false
             override _.GetHashCode() = 0
         end
+
         static member Singleton = NeverEqual()
 
     [<Struct; NoComparison; RequireQualifiedAccess>]
