@@ -358,7 +358,25 @@ module HashTastMemberOrVals =
             hashNonMemberVal (g, obs) (tps, vref.Deref, tau, cxs)
         | Some _ -> hashMember (g, obs) emptyTyparInst vref.Deref
 
-/// Lossless accumulation of TType structure
+/// <summary>
+/// StructuralUtilities: produce a conservative structural fingerprint of <c>TType</c>.
+///
+/// Current (sole) usage:
+///   Key in the typeSubsumptionCache. The key must never give a false positive
+///   (two non-subsuming types producing identical token sequences). False negatives
+///   are acceptable and simply reduce cache hit rate.
+///
+/// Properties:
+///   * Uses per-compilation stamps (entities, typars, anon records, measures).
+///   * Emits shape for union cases (declaring type stamp + case name), tuple structness,
+///     function arrows, forall binders, nullness, measures, generic arguments.
+///   * Unknown/variable nullness => NeverEqual token to force inequality (avoid unsound hits).
+///
+/// Non-goals:
+///   * Cross-compilation stability.
+///   * Perfect canonicalisation or alpha-equivalence collapsing.
+///
+/// </summary>
 module StructuralUtilities =
     [<Struct; CustomEquality; NoComparison>]
     type NeverEqual =
@@ -369,35 +387,28 @@ module StructuralUtilities =
             override _.Equals _ = false
             override _.GetHashCode() = 0
         end
-
-    [<Struct; NoComparison; RequireQualifiedAccess>]
-    type NullnessToken =
-        | Known of info: NullnessInfo
-        | Variable of never: NeverEqual
-        | Absent
+        static member Singleton = NeverEqual()
 
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
         | Stamp of stamp: Stamp
         | UCase of name: string
-        | Nullness of nullness: NullnessToken
+        | Nullness of nullness: NullnessInfo
         | TupInfo of b: bool
         | MeasureOne
         | MeasureRational of rational: Rational
+        | NeverEqual of never: NeverEqual
 
     type TypeStructure = TypeToken[]
 
     [<Literal>]
     let private initialTokenCapacity = 4
 
-    // Single reusable token for Nullness.Variable
-    let private neverEqual = NullnessToken.Variable(NeverEqual())
-
     let inline toNullnessToken (n: Nullness) =
         match n with
-        | Nullness.Known k -> NullnessToken.Known k
+        | Nullness.Known k -> TypeToken.Nullness k
         // If nullness is not known we must treat the types as not equal for caching purposes.
-        | Nullness.Variable _ -> neverEqual
+        | Nullness.Variable _ -> TypeToken.NeverEqual NeverEqual.Singleton
 
     let rec private accumulateMeasure (tokens: ResizeArray<TypeToken>) (m: Measure) =
         match m with
@@ -415,13 +426,14 @@ module StructuralUtilities =
     let rec private accumulateTType (tokens: ResizeArray<TypeToken>) (ty: TType) =
         match ty with
         | TType_ucase(u, tinst) ->
+            tokens.Add(TypeToken.Stamp u.TyconRef.Stamp)
             tokens.Add(TypeToken.UCase u.CaseName)
 
             for arg in tinst do
                 accumulateTType tokens arg
         | TType_app(tcref, tinst, n) ->
             tokens.Add(TypeToken.Stamp tcref.Stamp)
-            tokens.Add(TypeToken.Nullness(toNullnessToken n))
+            tokens.Add(toNullnessToken n)
 
             for arg in tinst do
                 accumulateTType tokens arg
@@ -443,10 +455,10 @@ module StructuralUtilities =
         | TType_fun(d, r, n) ->
             accumulateTType tokens d
             accumulateTType tokens r
-            tokens.Add(TypeToken.Nullness(toNullnessToken n))
+            tokens.Add(toNullnessToken n)
         | TType_var(r, n) ->
             tokens.Add(TypeToken.Stamp r.Stamp)
-            tokens.Add(TypeToken.Nullness(toNullnessToken n))
+            tokens.Add(toNullnessToken n)
         | TType_measure m -> accumulateMeasure tokens m
 
     /// Get the full structure of a type as a sequence of tokens, suitable for equality
