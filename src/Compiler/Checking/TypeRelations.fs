@@ -28,7 +28,7 @@ type CanCoerce =
 [<Struct; NoComparison>]
 type TTypeCacheKey =
     | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
-    static member Create(ty1, ty2, canCoerce) =
+    static member FromStrippedTypes(ty1, ty2, canCoerce) =
         TTypeCacheKey(getTypeStructure ty1, getTypeStructure ty2, canCoerce)
 
 let getTypeSubsumptionCache =
@@ -157,7 +157,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
                     List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
     if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
-        let key = TTypeCacheKey.Create(ty1, ty2, canCoerce)
+        let key = TTypeCacheKey.FromStrippedTypes(ty1, ty2, canCoerce)
         (getTypeSubsumptionCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
     else
         checkSubsumes ty1 ty2

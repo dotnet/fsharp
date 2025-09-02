@@ -406,10 +406,9 @@ module StructuralUtilities =
     let private initialTokenCapacity = 4
 
     let inline toNullnessToken (n: Nullness) =
-        match n with
-        | Nullness.Known k -> TypeToken.Nullness k
-        // If nullness is not known we must treat the types as not equal for caching purposes.
-        | Nullness.Variable _ -> TypeToken.NeverEqual NeverEqual.Singleton
+        match n.TryEvaluate() with
+        | ValueSome k -> TypeToken.Nullness k
+        | _ -> TypeToken.NeverEqual NeverEqual.Singleton
 
     let rec private accumulateMeasure (tokens: ResizeArray<TypeToken>) (m: Measure) =
         match m with
