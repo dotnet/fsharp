@@ -387,15 +387,27 @@ module internal Async2AutoOpens =
 
     let async2 = Async2Builder()
 
+[<AutoOpen>]
+module internal Async2LowPriority =
+    open Async2Implementation
+
     type Async2Builder with
         member inline _.Source(awaitable: Awaitable<_, _, _>) = awaitable.GetAwaiter()
-        member inline _.Source(task: Task) = task.GetAwaiter()
+        member inline _.Source(expr: Async<_>) = Async.StartAsTask(expr, cancellationToken = Async2.Token).GetAwaiter() 
         member inline _.Source(items: #seq<_>) : seq<_> = upcast items
 
-type Async2<'t> = Async2Implementation.Async2<'t>
+[<AutoOpen>]
+module internal Async2MediumPriority =
+    open Async2Implementation
+    type Async2Builder with
+        member inline _.Source(task: Task) = task.GetAwaiter() 
+        member inline _.Source(task: Task<_>) = task.GetAwaiter()
+
+open Async2Implementation
+
+type internal Async2<'t> = Async2Implementation.Async2<'t>
 
 module internal Async2 =
-    open Async2Implementation
 
     let run ct (code: Async2<'t>) =
         use _ = Async2.UseToken ct
