@@ -297,4 +297,7 @@ val tryFoldTuplePat:
 val tryFoldTuplePatFromTrailingIdents:
     mEq1: range option -> pat1: SynPat -> pairsAsIdents: (BlockSeparator * Ident) list -> (SynPat * range) option
 
+/// Reports an error when named-field patterns mix separators within the same list.
+val reportInconsistentSeparatorsForNamePatPairs: fields: NamePatPairField list -> unit
+
 val leadingKeywordIsAbstract: SynLeadingKeyword -> bool

@@ -1130,6 +1130,39 @@ let tryFoldTuplePatFromTrailingIdents
     | Some _, _, _ -> Some(mkTuplePatFromTrailingIdents pat1 pairsAsIdents)
     | None, _, _ -> None
 
+let reportInconsistentSeparatorsForNamePatPairs (fields: NamePatPairField list) =
+    // Map BlockSeparator to a kind: semicolon=0, comma=1, offside=None
+    let kindOf sep =
+        match sep with
+        | BlockSeparator.Semicolon _ -> Some 0
+        | BlockSeparator.Comma _ -> Some 1
+        | BlockSeparator.Offside _ -> None
+
+    // Find the first concrete kind (semicolon/comma) and return it together with the remaining fields to scan
+    let rec firstKind rest =
+        match rest with
+        | [] -> None
+        | NamePatPairField(blockSeparator = Some sep) :: tail ->
+            match kindOf sep with
+            | Some k -> Some(k, tail)
+            | None -> firstKind tail
+        | _ :: tail -> firstKind tail
+
+    match firstKind fields with
+    | None -> ()
+    | Some (k0, rest) ->
+        // Scan for the first conflicting separator and report once
+        let rec scan xs =
+            match xs with
+            | [] -> ()
+            | NamePatPairField(blockSeparator = Some sep) :: tail ->
+                match kindOf sep with
+                | Some k when k <> k0 ->
+                    reportParseErrorAt sep.Range (FSComp.SR.parsInconsistentSeparators())
+                | _ -> scan tail
+            | _ :: tail -> scan tail
+        scan rest
+
 let mkLetExpression
     (
         isBang: bool,

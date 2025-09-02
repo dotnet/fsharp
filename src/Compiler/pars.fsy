@@ -3657,6 +3657,10 @@ conjPatternElements:
   | headBindingPattern AMP headBindingPattern
      { $3 :: $1 :: [] }
 
+// | A(a = x)
+// | A(a = x; b = y
+// | A(a = x, b = y)
+// | A(a = p1, p2)
 namePatPairs:
    // Single named field with optional trailing separator.
    // Examples:
@@ -3671,7 +3675,11 @@ namePatPairs:
    // Example: A(a = x; b = y)
    | namePatPair pairs_seps_block_semicolon namePatPairsContSemicolon
      { let (id: Ident), mEq, (pat: SynPat) = $1
-       mkNamePatPairFieldFromId id mEq pat (Some $2) :: $3 }
+       let first = mkNamePatPairFieldFromId id mEq pat (Some $2)
+       let fields = first :: $3
+       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+         reportInconsistentSeparatorsForNamePatPairs fields
+       fields }
 
    // Comma-separated continuation (preview feature): add another named field.
    // Example: A(a = x, b = y)
@@ -3684,7 +3692,11 @@ namePatPairs:
        match pat with
        | SynPat.FromParseError _ -> ()
        | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
-       mkNamePatPairFieldFromId id mEq pat (Some $2) :: $3 }
+       let first = mkNamePatPairFieldFromId id mEq pat (Some $2)
+       let fields = first :: $3
+       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+         reportInconsistentSeparatorsForNamePatPairs fields
+       fields }
 
    // Recovery: fold trailing comma-separated patterns into a tuple for the previous named field.
    // Conditions: only when the first field has '=' and the initial pattern is not FromParseError.
@@ -3732,7 +3744,10 @@ namePatPairs:
          | None -> pat1
        let lid1 = SynLongIdent([id1], [], [None])
        let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       first :: $4 }
+       let fields = first :: $4
+       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+         reportInconsistentSeparatorsForNamePatPairs fields
+       fields }
 
    // Recovery + continuation: fold trailing arbitrary patterns into tuple, then continue with a semicolon-separated field list
    // Example: A(a = p1, _; b = z) => first field is a = Tuple(p1, _) with blockSeparator=';', then continue at b
@@ -3745,7 +3760,10 @@ namePatPairs:
          | None -> pat1
        let lid1 = SynLongIdent([id1], [], [None])
        let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       first :: $4 }
+       let fields = first :: $4
+       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+         reportInconsistentSeparatorsForNamePatPairs fields
+       fields }
 
    // Recovery + continuation: fold trailing identifiers into tuple, then continue with a comma-separated field list
    // Example: A(a = x, y, b = z) => first field is a = Tuple(x, y) with blockSeparator=',' (feature-gated), then continue at b
@@ -3763,7 +3781,10 @@ namePatPairs:
        | SynPat.FromParseError _ -> ()
        | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
        let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       first :: $4 }
+       let fields = first :: $4
+       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+         reportInconsistentSeparatorsForNamePatPairs fields
+       fields }
 
    // Recovery + continuation: fold trailing arbitrary patterns into tuple, then continue with a comma-separated field list
    // Example: A(a = p1, _, b = z) => first field is a = Tuple(p1, _) with blockSeparator=',' (feature-gated), then continue at b
@@ -3780,7 +3801,10 @@ namePatPairs:
        | SynPat.FromParseError _ -> ()
        | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
        let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       first :: $4 }
+       let fields = first :: $4
+       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+         reportInconsistentSeparatorsForNamePatPairs fields
+       fields }
 
    // Recovery: semicolon followed by bare identifier — synthesize a missing field for the trailing ident.
    // Example: A(a = x; b)
@@ -3816,12 +3840,7 @@ namePatPairs:
         | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
         mkNamePatPairFieldFromLid lid mEq pat (Some $2) :: $4 }
 
-// Collector for trailing comma-separated identifiers after a named field.
-// Builds a list of (separator, ident) pairs in reverse using cons for O(n) accumulation.
-// Usage:
-//   In recovery folding: "| namePatPair namePatPairCommaIdents" then reverse once to restore source order.
-// Example:
-//   CaseA(a = x, y, z)  => collects [(comma@x,y, y); (comma@y,z, z)] in reverse; consumer List.rev restores [ (x,y,y); (y,z,z) ].
+// | A(a = x, y, z)   // collects identifiers y and z for tuple folding
 namePatPairCommaIdents:
   | pairs_seps_block_comma ident
     { let sep : BlockSeparator = $1
@@ -3833,13 +3852,9 @@ namePatPairCommaIdents:
       let id : Ident = $3
       (sep, id) :: acc }
 
-// Collector for trailing comma-separated patterns after a named field (used in recovery folding).
-// Builds a list of (separator, pattern) pairs in reverse using cons for O(n) accumulation.
-// Usage:
-//   In recovery folding: "| namePatPair namePatPairCommaPatterns" then reverse once to restore source order.
-// Examples:
-//   CaseA(a = pat1, _)      => collects [ (comma@pat1,_,   _) ] (reversed); rev -> [ (comma@pat1,_,   _) ]
-//   CaseA(a = p1, p2, p3)   => collects [ (,@p2,p3, p3); (,@p1,p2, p2) ] (reversed); rev -> [ (,@p1,p2,p2); (,@p2,p3,p3) ]
+// | A(a = p1, _)
+// | A(a = p1, (p2))
+// | A(a = p1, { X = 1 })
 namePatPairCommaPatterns:
   // Accept trailing underscore without parentheses
   | pairs_seps_block_comma UNDERSCORE
@@ -3863,23 +3878,35 @@ namePatPairCommaPatterns:
       let sep: BlockSeparator = $2
       let pat: SynPat = $3
       (sep, pat) :: acc }
+  // Accept record patterns without parentheses; '{' cannot begin a named field, so this is unambiguous
+  | pairs_seps_block_comma LBRACE recordPatternElementsAux rbrace
+    { let sep: BlockSeparator = $1
+      let pat: SynPat = SynPat.Record($3, rhs2 parseState 2 4)
+      [ (sep, pat) ] }
+  | namePatPairCommaPatterns pairs_seps_block_comma LBRACE recordPatternElementsAux rbrace
+    { let acc = $1
+      let sep: BlockSeparator = $2
+      let pat: SynPat = SynPat.Record($4, rhs2 parseState 3 5)
+      (sep, pat) :: acc }
 
-// Continuation after a semicolon when parsing namePatPairs.
-// - namePatPairs: continue parsing more named fields.
-// - UNDERSCORE: allow a trailing '_' to terminate the list (recovery) and produce no further fields.
+// | A(a = x; b = y)
+// | A(a = x; _)
 namePatPairsContSemicolon:
   | namePatPairs
     { $1 }
   | UNDERSCORE
     { [] }
 
-// Continuation after a comma when parsing namePatPairs.
-// We only continue with namePatPairs here. A trailing '_' after a comma is handled by recovery folding
-// into a tuple in the pattern-based recovery rule, so we intentionally do not accept ', _' as a separate field here.
+
+// | A(a = x, b = y)    // continuation with comma (preview)
 namePatPairsContComma:
   | namePatPairs
     { $1 }
 
+// | A(a = p)
+// | A(a = (p1, p2))
+// | A(a = [p])
+// | A(a = { X = 1 })
 namePatPair:
    | ident EQUALS parenPattern
      { let mEquals = rhs parseState 2
@@ -3900,8 +3927,6 @@ namePatPair:
 // Constructor-like patterns, including support for named field pairs.
 // - Prefer the explicit "( namePatPairs )" form to reduce ambiguity with tuple patterns and commas.
 // - When present, named field pairs are wrapped as SynArgPats.NamePatPairs with Paren trivia recorded.
-// - Feature-gating for comma as a name-field separator is handled inside namePatPairs, not here; here we only
-//   select the appropriate argument form.
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
       { let vis, lid = $1
