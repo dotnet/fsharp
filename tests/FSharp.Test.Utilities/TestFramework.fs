@@ -71,11 +71,15 @@ module Commands =
         let outputlock = obj()
         let outputDataReceived (message: string) =
             if not (isNull message) then
-                lock outputlock (fun () -> outputList.Add(message))
+                lock outputlock (fun () -> 
+                    printfn "%s" message
+                    outputList.Add(message))
 
         let errorDataReceived (message: string) =
             if not (isNull message) then
-                lock errorslock (fun () -> errorsList.Add(message))
+                lock errorslock (fun () ->
+                    eprintfn "%s" message
+                    errorsList.Add(message))
 
         commandLine.Add $"cd {workingDir}"
         commandLine.Add $"{pathToExe} {arguments} /bl"
@@ -571,7 +575,7 @@ module Command =
                 fCont { cmdArgs with RedirectOutput = Some ignore; RedirectError = Some (outFile.Post) }
 
         let exec cmdArgs =
-            log "%s" (logExec dir path args redirect)
+            printfn "%s" (logExec dir path args redirect)
             Process.exec cmdArgs dir envVars path args
 
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }
