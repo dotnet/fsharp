@@ -2041,7 +2041,7 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
     member scope.TryGetCapturedType(range) =
-        sResolutions.CapturedExpressionTypings 
+        sResolutions.CapturedExpressionTypings
         |> Seq.tryFindBack (fun (_, _, _, m) -> equals m range)
         |> Option.map (fun (ty, _, _, _) -> FSharpType(cenv, ty))
 
