@@ -1150,17 +1150,17 @@ let reportInconsistentSeparatorsForNamePatPairs (fields: NamePatPairField list) 
 
     match firstKind fields with
     | None -> ()
-    | Some (k0, rest) ->
+    | Some(k0, rest) ->
         // Scan for the first conflicting separator and report once
         let rec scan xs =
             match xs with
             | [] -> ()
             | NamePatPairField(blockSeparator = Some sep) :: tail ->
                 match kindOf sep with
-                | Some k when k <> k0 ->
-                    reportParseErrorAt sep.Range (FSComp.SR.parsInconsistentSeparators())
+                | Some k when k <> k0 -> reportParseErrorAt sep.Range (FSComp.SR.parsInconsistentSeparators ())
                 | _ -> scan tail
             | _ :: tail -> scan tail
+
         scan rest
 
 let mkLetExpression
