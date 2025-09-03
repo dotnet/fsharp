@@ -7,6 +7,7 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
@@ -18,6 +19,26 @@ open FSharp.Compiler.TypeHierarchy
 open Import
 
 #nowarn "3391"
+
+[<Struct; NoComparison>]
+type CanCoerce =
+    | CanCoerce
+    | NoCoerce
+
+[<Struct; NoComparison>]
+type TTypeCacheKey =
+    | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
+    static member FromStrippedTypes(ty1, ty2, canCoerce) =
+        TTypeCacheKey(getTypeStructure ty1, getTypeStructure ty2, canCoerce)
+
+let getTypeSubsumptionCache =
+    let factory (g: TcGlobals) =
+        let options =
+            match g.compilationMode with
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault() |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault() with TotalCapacity = 65536; HeadroomPercentage = 75 }
+        new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
+    Extras.WeakMap.getOrCreate factory     
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -136,14 +157,8 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
                     List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
     if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
-        let key = TTypeCacheKey.FromStrippedTypes (ty1, ty2, canCoerce)
-
-        match amap.TypeSubsumptionCache.TryGetValue(key) with
-        | true, subsumes -> subsumes
-        | false, _ ->
-            let subsumes = checkSubsumes ty1 ty2
-            amap.TypeSubsumptionCache.TryAdd(key, subsumes) |> ignore
-            subsumes
+        let key = TTypeCacheKey.FromStrippedTypes(ty1, ty2, canCoerce)
+        (getTypeSubsumptionCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
     else
         checkSubsumes ty1 ty2
 
