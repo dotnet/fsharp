@@ -1,6 +1,6 @@
 # Overview
 
-Arcade provides templates for public (`/templates`) and 1ES pipeline templates (`/templates-official`) scenarios.  Pipelines which are required to be managed by 1ES pipeline templates should reference `/templates-offical`, all other pipelines may reference `/templates`.
+Arcade provides templates for public (`/templates`) and 1ES pipeline templates (`/templates-official`) scenarios.  Pipelines which are required to be managed by 1ES pipeline templates should reference `/templates-official`, all other pipelines may reference `/templates`.
 
 ## How to use
 
@@ -10,7 +10,7 @@ Basic guidance is:
 
 - All other runs should reference `eng/common/templates`.
 
-See [azure-pipelines.yml](../../azure-pipelines.yml) (templates-official example) or [azure-pipelines-pr.yml](../../azure-pipelines-pr.yml) (templates example) for examples.
+See [azure-pipelines.yml](../../azure-pipelines.yml) (templates-official example) or [azure-pipelines-PR.yml](../../azure-pipelines-PR.yml) (templates example) for examples.
 
 #### The `templateIs1ESManaged` parameter
 
