@@ -6198,6 +6198,7 @@ and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
         let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, mkAnyTupledTy g tupInfo argTys, env.eAccessRights)
         expr, tpenv
     )
 
@@ -10651,6 +10652,8 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
 
             if not isRecovery && Option.isNone synElseExprOpt then
                 UnifyTypes cenv env m g.unit_ty overallTy.Commit
+
+            CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
 
             TcExprThatCanBeCtorBody cenv overallTy env tpenv synThenExpr
 
