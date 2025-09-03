@@ -194,3 +194,40 @@ module NamedPatPairs =
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs11.fs"|])>]
+    let ``Version9 NamedPatPairs - NamedPatPairs11_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 17, Line 4, Col 18, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 14, Col 24, Line 14, Col 25, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 14, Col 17, Line 14, Col 18, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs11.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs11_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs12.fs"|])>]
+    let ``Version9 NamedPatPairs - NamedPatPairs12_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs12.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs12_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
