@@ -9,6 +9,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
+open FSharp.Compiler.Caches
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
@@ -35,6 +36,10 @@ open System.Collections.Generic
 open System.Collections.ObjectModel
 
 let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
+
+let getFreeLocalsCache =
+    let options = CacheOptions.getReferenceIdentity() |> CacheOptions.withNoEviction
+    WeakMap.getOrCreate <| fun _ -> new Cache<_, _>(options,  "freeLocalsCache")
 
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4) ] 
 
@@ -2898,10 +2903,11 @@ and OptimizeLinearExpr cenv env expr contf =
 
       let (bindR, bindingInfo), env = OptimizeBinding cenv false env bind 
 
-      OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
+      OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) -> 
         // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
         // Is it quadratic or quasi-quadratic?
-        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
+        let collect expr = (freeInExpr (CollectLocalsWithStackGuard()) expr).FreeLocals
+        if ValueIsUsedOrHasEffect cenv (fun () -> (getFreeLocalsCache cenv).GetOrAdd(bodyR, collect)) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
             exprR, 
