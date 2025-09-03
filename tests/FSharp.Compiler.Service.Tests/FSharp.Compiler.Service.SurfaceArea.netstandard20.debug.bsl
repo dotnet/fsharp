@@ -2849,6 +2849,10 @@ FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microso
 FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] UrlFormat
 FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_DiagnosticId()
 FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_UrlFormat()
+FSharp.Compiler.Diagnostics.ExtendedData+TypeExtendedData: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
+FSharp.Compiler.Diagnostics.ExtendedData+TypeExtendedData: FSharp.Compiler.Symbols.FSharpDisplayContext get_DisplayContext()
+FSharp.Compiler.Diagnostics.ExtendedData+TypeExtendedData: FSharp.Compiler.Symbols.FSharpType Type
+FSharp.Compiler.Diagnostics.ExtendedData+TypeExtendedData: FSharp.Compiler.Symbols.FSharpType get_Type()
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: DiagnosticContextInfo ContextInfo
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: DiagnosticContextInfo get_ContextInfo()
 FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
@@ -2869,6 +2873,7 @@ FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedDa
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+FieldNotContainedDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+IFSharpDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ObsoleteDiagnosticExtendedData
+FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+TypeExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+TypeMismatchDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.ExtendedData: FSharp.Compiler.Diagnostics.ExtendedData+ValueNotContainedDiagnosticExtendedData
 FSharp.Compiler.Diagnostics.FSharpDiagnostic: FSharp.Compiler.Diagnostics.FSharpDiagnostic Create(FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity, System.String, Int32, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
