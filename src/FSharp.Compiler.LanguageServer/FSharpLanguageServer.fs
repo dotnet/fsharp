@@ -1,10 +1,12 @@
 namespace FSharp.Compiler.LanguageServer
 
+open System
+open System.Diagnostics
 open System.Runtime.CompilerServices
+
 open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer.Handlers
 
-open System
 open Microsoft.CommonLanguageServerProtocol.Framework.Handlers
 open Microsoft.CommonLanguageServerProtocol.Framework
 open Microsoft.Extensions.DependencyInjection
@@ -12,7 +14,6 @@ open Microsoft.VisualStudio.LanguageServer.Protocol
 
 open StreamJsonRpc
 open Nerdbank.Streams
-open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis.Workspace
 
 #nowarn "57"
