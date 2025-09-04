@@ -6,6 +6,9 @@ open System.Threading.Tasks
 
 #nowarn 3513
 
+type internal IAsync2<'t> =
+    abstract Start: unit -> Task<'t> 
+
 module internal Async2Implementation =
 
     open FSharp.Core.CompilerServices.StateMachineHelpers
@@ -26,6 +29,9 @@ module internal Async2Implementation =
         }
 
     let currentContext = AsyncLocal<Context>()
+
+    type Invokable<'Async2, 'TResult
+        when 'Async2: (member Start: unit -> Task<'TResult>)> = 'Async2
 
     /// A structure that looks like an Awaiter
     type Awaiter<'Awaiter, 'TResult
@@ -148,21 +154,11 @@ module internal Async2Implementation =
     [<Struct; NoComparison>]
     type Async2<'T>(start: unit -> Task<'T>) =
 
+        interface IAsync2<'T> with
+
+            member _.Start() = start ()
+
         //static let tailCallSource = AsyncLocal<TaskCompletionSource<'T> voption>()
-
-        member _.startWithContext context =
-            let old = currentContext.Value
-            currentContext.Value <- context
-
-            try
-                BindContext.ResetBindCount()
-                start ()
-            finally
-                currentContext.Value <- old
-
-        member _.StartBound() =
-            failIfNot currentContext.Value.IsNested "StartBound requires a nested context"
-            start ()
 
     [<Struct>]
     type Async2Data<'t> =
@@ -183,11 +179,13 @@ module internal Async2Implementation =
         let inline filterCancellation (catch: exn -> Async2Code<_, _>) (exn: exn) =
             Async2Code(fun sm ->
                 match exn with
-                | :? OperationCanceledException as oce when oce.CancellationToken = currentContext.Value.Token -> raise exn
+                | :? OperationCanceledException as oce when oce.CancellationToken = currentContext.Value.Token ->
+                    raise exn
                 | _ -> (catch exn).Invoke(&sm))
 
         let inline throwIfCancellationRequested (code: Async2Code<_, _>) =
             Async2Code(fun sm ->
+                if currentContext.Value.Token.IsCancellationRequested then printfn "throwing cancellation"
                 currentContext.Value.Token.ThrowIfCancellationRequested()
                 code.Invoke(&sm))
 
@@ -283,7 +281,7 @@ module internal Async2Implementation =
         [<NoEagerConstraintApplication>]
         member inline this.ReturnFrom(awaiter) : Async2Code<'T, 'T> = this.Bind(awaiter, this.Return)
 
-        static member inline RunDynamic(code: Async2Code<'T, 'T>) : Async2<'T> =
+        static member inline RunDynamic(code: Async2Code<'T, 'T>) : IAsync2<'T> =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
 
             let resumptionInfo () =
@@ -339,7 +337,7 @@ module internal Async2Implementation =
                 copy.Data.MethodBuilder.Start(&copy)
                 copy.Data.MethodBuilder.Task)
 
-        member inline _.Run(code: Async2Code<'T, 'T>) : Async2<'T> =
+        member inline _.Run(code: Async2Code<'T, 'T>) : IAsync2<'T> =
             if __useResumableCode then
                 __stateMachine<Async2Data<_>, _>
 
@@ -380,7 +378,7 @@ module internal Async2Implementation =
             else
                 Async2Builder.RunDynamic(code)
 
-        member inline _.Source(code: Async2<_>) = code.StartBound().GetAwaiter()
+        member inline _.Source(code: IAsync2<_>) = code.Start().GetAwaiter()
 
 [<AutoOpen>]
 module internal Async2AutoOpens =
@@ -410,8 +408,6 @@ module internal Async2MediumPriority =
 
 open Async2Implementation
 
-type internal Async2<'t> = Async2Implementation.Async2<'t>
-
 type internal Async2 =
     static member CancellationToken = currentContext.Value.Token
 
@@ -433,30 +429,39 @@ type internal Async2 =
 
 module internal Async2 =
 
-    let run ct (code: Async2<'t>) =
+    let inline start (code: IAsync2<_>) = code.Start()
+
+    let inline startWithContext context code =
+        let old = currentContext.Value
+        currentContext.Value <- context
+
+        try
+            BindContext.ResetBindCount()
+            start code
+        finally
+            currentContext.Value <- old
+
+    let run ct (code: IAsync2<'t>) =
         let context = { Token = ct; IsNested = true }
 
         if
             isNull SynchronizationContext.Current
             && TaskScheduler.Current = TaskScheduler.Default
         then
-            code.startWithContext(context).GetAwaiter().GetResult()
+            (code |> startWithContext context).GetAwaiter().GetResult()
         else
-            Task.Run<'t>(fun () -> code.startWithContext (context)).GetAwaiter().GetResult()
-
-    let startAsTask (code: Async2<'t>) =
-        let context =
-            {
-                Token = CancellationToken.None
-                IsNested = true
-            }
-
-        code.startWithContext context
+            Task.Run<'t>(fun () -> code |> startWithContext context).GetAwaiter().GetResult()
 
     let runWithoutCancellation code = run CancellationToken.None code
 
-    let toAsync (code: Async2<'t>) =
+    let toAsync (code: IAsync2<'t>) =
+
         async {
             let! ct = Async.CancellationToken
-            return run ct code
+            return! Async.FromContinuations <| fun (cont, econt, ccont) ->
+                try
+                    cont (run ct code)
+                with
+                | :? OperationCanceledException as oce when oce.CancellationToken = ct -> ccont oce
+                | exn -> econt exn
         }

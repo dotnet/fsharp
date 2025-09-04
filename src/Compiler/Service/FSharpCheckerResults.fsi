@@ -46,7 +46,7 @@ type DelayedILModuleReader =
 
     /// Will lazily create the ILModuleReader.
     /// Is only evaluated once and can be called by multiple threads.
-    member internal TryGetILModuleReader: unit -> Async2<ILModuleReader option>
+    member internal TryGetILModuleReader: unit -> IAsync2<ILModuleReader option>
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
@@ -501,7 +501,7 @@ type public FSharpCheckFileResults =
         parseErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool *
         suggestNamesForErrors: bool ->
-            Async2<FSharpCheckFileResults>
+            IAsync2<FSharpCheckFileResults>
 
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
@@ -618,7 +618,7 @@ type internal FsiInteractiveChecker =
 
     member internal ParseAndCheckInteraction:
         sourceText: ISourceText * ?userOpName: string ->
-            Async2<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
+            IAsync2<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 module internal FSharpCheckerResultsSettings =
     val defaultFSharpBinariesDir: string

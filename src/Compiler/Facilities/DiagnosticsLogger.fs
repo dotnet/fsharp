@@ -984,3 +984,6 @@ module MultipleDiagnosticsLoggers =
 
             return results.ToArray()
         }
+
+    let Sequential2 computations = computations |> Seq.map Async2.toAsync |> Sequential
+    let Parallel2 computations = computations |> Seq.map Async2.toAsync |> Parallel

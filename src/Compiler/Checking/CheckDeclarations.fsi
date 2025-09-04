@@ -60,7 +60,7 @@ val CheckOneImplFile:
     ModuleOrNamespaceType option *
     ParsedImplFileInput *
     FSharpDiagnosticOptions ->
-        Async2<TopAttribs * CheckedImplFile * TcEnv * bool>
+        IAsync2<TopAttribs * CheckedImplFile * TcEnv * bool>
 
 val CheckOneSigFile:
     TcGlobals *
@@ -73,7 +73,7 @@ val CheckOneSigFile:
     FSharpDiagnosticOptions ->
         TcEnv ->
         ParsedSigFileInput ->
-            Async2<TcEnv * ModuleOrNamespaceType * bool>
+            IAsync2<TcEnv * ModuleOrNamespaceType * bool>
 
 exception NotUpperCaseConstructor of range: range
 
