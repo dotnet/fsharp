@@ -726,3 +726,63 @@ type MapModule() =
         CheckThrowsKeyNotFoundException (fun () -> Map.maxKeyValue eptMap |> ignore)
                
         ()
+        
+    [<Fact>]
+    member _.BinarySearch() =
+        let map = Map [ (10, "a"); (12, "b"); (20, "c"); (22, "d"); (25, "e"); (28, "f")
+                        (30, "g"); (36, "h"); (38, "i"); (40, "j"); (48, "k") ]
+        // Produces the following tree at tolerance 2:
+        // 22
+        // |- 12
+        //    |- 10
+        //    |- 20
+        // |- 28
+        //    |- 25
+        //    |- 36
+        //       |- 30
+        //       |- 40
+        //          |- 38
+        //          |- 48
+        
+        // Matches exact and either side at middle of tree
+        let result = Map.binarySearch 12 map
+        let expected = Some (10, "a"), Some (12, "b"), Some (20, "c")
+        Assert.Equal(expected, result)
+        
+        // Matches exact and either side at bottom of tree
+        let result = Map.binarySearch 20 map
+        let expected = Some (12, "b"), Some (20, "c"), Some (22, "d")
+        Assert.Equal(expected, result)
+        
+        // Matches exact and either side at top of tree
+        let result = Map.binarySearch 22 map
+        let expected = Some (20, "c"), Some (22, "d"), Some (25, "e")
+        Assert.Equal(expected, result)
+        
+        // Matches on either side
+        let result = Map.binarySearch 11 map
+        let expected = Some (10, "a"), None, Some (12, "b")
+        Assert.Equal(expected, result)
+        
+        // Only matches to left
+        let result = Map.binarySearch 50 map
+        let expected = Some (48, "k"), None, None
+        Assert.Equal(expected, result)
+        
+        // Only matches to right
+        let result = Map.binarySearch 1 map
+        let expected = None, None, Some (10, "a")
+        Assert.Equal(expected, result)
+        
+        // One-element Map
+        let map = Map [ (1, "a") ]
+        let result = Map.binarySearch 1 map
+        let expected = None, Some (1, "a"), None
+        Assert.Equal(expected, result)
+        
+        // Empty Map
+        let result = Map.binarySearch 1 (Map [])
+        let expected = None, None, None
+        Assert.Equal(expected, result)
+        
+        ()
