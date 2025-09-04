@@ -11,6 +11,7 @@ open System
 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.SignatureConformance
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -85,6 +86,12 @@ module ExtendedData =
         member x.ActualType = FSharpType(symbolEnv, actualType)
         member x.ContextInfo = context
         member x.DisplayContext = FSharpDisplayContext(fun _ -> dispEnv)
+
+    type TypeExtendedData internal (symbolEnv: SymbolEnv, displayEnv: DisplayEnv, actualType: TType) =
+        interface IFSharpDiagnosticExtendedData
+
+        member x.Type = FSharpType(symbolEnv, actualType)
+        member x.DisplayContext = FSharpDisplayContext(fun _ -> displayEnv)
 
     type ExpressionIsAFunctionExtendedData internal (symbolEnv: SymbolEnv, actualType: TType) =
         interface IFSharpDiagnosticExtendedData
@@ -203,11 +210,15 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
             | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer(implTycon = implTycon; sigTycon = sigTycon) ->
                 Some(DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData(sigTycon, implTycon))
 
-            | ObsoleteDiagnostic(diagnosticId= diagnosticId; urlFormat= urlFormat) ->
+            | ObsoleteDiagnostic(diagnosticId = diagnosticId; urlFormat = urlFormat) ->
                 Some(ObsoleteDiagnosticExtendedData(diagnosticId, urlFormat))
                 
-            | Experimental(diagnosticId= diagnosticId; urlFormat= urlFormat) ->
+            | Experimental(diagnosticId = diagnosticId; urlFormat = urlFormat) ->
                 Some(ExperimentalExtendedData(diagnosticId, urlFormat))
+
+            | NoConstructorsAvailableForType(ttype, displayEnv, _) ->
+                Some(TypeExtendedData(symbolEnv, displayEnv, ttype))
+
             | _ -> None
 
         let msg =
