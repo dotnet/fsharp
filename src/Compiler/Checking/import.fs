@@ -50,51 +50,6 @@ type AssemblyLoader =
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
 #endif
 
-[<Struct; NoComparison>]
-type CanCoerce =
-    | CanCoerce
-    | NoCoerce
-
-[<Struct; NoComparison; CustomEquality; DebuggerDisplay("{ToString()}")>]
-type TTypeCacheKey =
-
-    val ty1: TType
-    val ty2: TType
-    val canCoerce: CanCoerce
-
-    private new (ty1, ty2, canCoerce) =
-        { ty1 = ty1; ty2 = ty2; canCoerce = canCoerce }
-
-    static member FromStrippedTypes (ty1, ty2, canCoerce) =
-        TTypeCacheKey(ty1, ty2, canCoerce)
-
-    interface System.IEquatable<TTypeCacheKey> with
-        member this.Equals other =
-            if this.canCoerce <> other.canCoerce then
-                false
-            elif this.ty1 === other.ty1 && this.ty2 === other.ty2 then
-                true
-            else
-                HashStamps.stampEquals this.ty1 other.ty1
-                && HashStamps.stampEquals this.ty2 other.ty2
-
-    override this.Equals(other:objnull) =
-        match other with
-        | :? TTypeCacheKey as p -> (this :> System.IEquatable<TTypeCacheKey>).Equals p
-        | _ -> false
-
-    override this.GetHashCode () : int =
-        HashStamps.hashTType this.ty1
-        |> pipeToHash (HashStamps.hashTType this.ty2)
-        |> pipeToHash (hash this.canCoerce)
-
-    override this.ToString () = $"{this.ty1.DebugText}-{this.ty2.DebugText}"
-
-let typeSubsumptionCache =
-    // Leave most of the capacity in reserve for bursts.
-    let options = { CacheOptions.getDefault() with TotalCapacity = 131072; HeadroomPercentage = 75 }
-    lazy new Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
-
 //-------------------------------------------------------------------------
 // Import an IL types as F# types.
 //-------------------------------------------------------------------------
@@ -116,8 +71,6 @@ type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     member _.assemblyLoader = assemblyLoader
 
     member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
-
-    member val TypeSubsumptionCache: Cache<TTypeCacheKey, bool> = typeSubsumptionCache.Value
 
 let CanImportILScopeRef (env: ImportMap) m scoref =
 

@@ -49,10 +49,6 @@ module internal CacheOptions =
     /// Set eviction mode to NoEviction.
     val withNoEviction: CacheOptions<'Key> -> CacheOptions<'Key>
 
-module internal Cache =
-    /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
-    val OverrideCapacityForTesting: unit -> unit
-
 [<Sealed; NoComparison; NoEquality>]
 type internal Cache<'Key, 'Value when 'Key: not null> =
     new: options: CacheOptions<'Key> * ?name: string -> Cache<'Key, 'Value>
