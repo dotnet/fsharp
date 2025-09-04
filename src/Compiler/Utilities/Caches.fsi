@@ -9,8 +9,8 @@ module internal CacheMetrics =
     /// Set FSHARP_OTEL_EXPORT environment variable to enable OpenTelemetry export to external collectors in tests.
     val Meter: Meter
 
-[<Class>]
 /// A local listener that can be created for a specific Cache instance to get its metrics. For testing purposes only.
+[<Class>]
 type internal CacheMetricsListener =
     member GetStats: unit -> Map<string, float>
     member GetTotals: unit -> Map<string, int64>
