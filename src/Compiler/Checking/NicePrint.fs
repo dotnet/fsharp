@@ -978,6 +978,12 @@ module PrintTypes =
             let prefix = usePrefix denv tc
             layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefImpl false denv tc None) prec prefix args
         | TType_app (tc, args, nullness) ->
+            let tc =
+                if tyconRefEq denv.g tc denv.g.tcref_System_Collections_Generic_IEnumerable then
+                    denv.g.seq_tcr
+                else
+                    tc
+
             let prefix = usePrefix denv tc
             let demangledCompilationPathOpt, args =
                 if not denv.includeStaticParametersInTypeNames then
