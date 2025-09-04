@@ -195,12 +195,20 @@ type OpenTelemetryExport(testRunName, enable) =
 // However, we want to ensure that OneTimeSetup is called only once per test run.
 module OneTimeSetup =
 
+    open System.Threading
+
     let init =
         lazy
     #if !NETCOREAPP
         // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
+
+        // Increase worker threads to mitigate temporary starvation from many caches with MailboxProcessors
+        let workers, iocp = ThreadPool.GetMinThreads()
+        let target = max workers (Environment.ProcessorCount * 4)
+        if target > workers then
+            ThreadPool.SetMinThreads(target, iocp) |> ignore
     #endif
         log "Installing TestConsole redirection"
         TestConsole.install()
