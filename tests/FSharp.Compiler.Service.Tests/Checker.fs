@@ -4,17 +4,20 @@ open System
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Tokenization
 
 type SourceContext =
     { Source: string
       LineText: string
-      CaretPos: pos }
+      CaretPos: pos
+      SelectedRange: range option }
 
 type ResolveContext =
     { SourceContext: SourceContext
       Pos: pos
-      Names: string list }
+      Names: string list
+      SelectedRange: range option }
 
     member this.Source = this.SourceContext.Source
     member this.LineText = this.SourceContext.LineText
@@ -29,16 +32,82 @@ type CodeCompletionContext =
 
 [<RequireQualifiedAccess>]
 module SourceContext =
-    let fromMarkedSource (markedSource: string) : SourceContext =
-        let lines = markedSource.Split([|"\r\n"; "\n"|], StringSplitOptions.None)
-        let line = lines |> Seq.findIndex _.Contains("{caret}")
-        let lineText = lines[line]
-        let column = lineText.IndexOf("{caret}")
+    let private markers = ["{caret}"; "{selstart}"; "{selend}"]
 
-        let source = markedSource.Replace("{caret}", "")
-        let pos = Position.mkPos (line + 1) (column - 1)
-        let lineText = lineText.Replace("{caret}", "")
-        { Source = source; CaretPos = pos; LineText = lineText }
+    let getLines (source: string) =
+        source.Split([|"\r\n"; "\n"|], StringSplitOptions.None)
+
+    let rec private extractMarkersOnLine markersAcc (line, lineText: string) =
+        let markersOnLine =
+            markers
+            |> List.choose (fun (marker: string) ->
+                match lineText.IndexOf(marker) with
+                | -1 -> None
+                | column -> Some(marker, column)
+            )
+
+        if markersOnLine.IsEmpty then
+            markersAcc
+        else
+            let marker, column = List.minBy snd markersOnLine
+
+            let markerPos =
+                let column =
+                    match marker with
+                    | "{caret}" -> column - 1
+                    | _ -> column
+
+                Position.mkPos (line + 1) column
+
+            if markersAcc |> List.map fst |> List.contains marker then
+                failwith $"Duplicate marker: {marker}"
+
+            let markersAcc = (marker, markerPos) :: markersAcc
+            let lineText = lineText.Replace(marker, "")
+
+            extractMarkersOnLine markersAcc (line, lineText)
+
+    let fromMarkedSource (markedSource: string) : SourceContext =
+        let markerPositions =
+            getLines markedSource
+            |> Seq.indexed
+            |> Seq.fold extractMarkersOnLine []
+
+        let source =
+            markerPositions
+            |> List.map fst
+            |> List.fold (fun (source: string) marker -> source.Replace(marker, "")) markedSource
+
+        let markerPositions = markerPositions |> dict
+
+        let tryGetPos marker =
+            match markerPositions.TryGetValue(marker) with
+            | true, pos -> Some pos
+            | _ -> None
+
+        let caretPos, selectedRange =
+            match tryGetPos "{caret}", tryGetPos "{selstart}", tryGetPos "{selend}" with
+            | Some caretPos, None, None ->
+                caretPos, None
+
+            | Some caretPos, Some startPos, Some endPos ->
+                let selectedRange = mkRange "Test.fsx" startPos endPos
+                caretPos, Some selectedRange
+
+            | None, Some startPos, Some endPos ->
+                let selectedRange = mkRange "Test.fsx" startPos endPos
+                let caretPos = Position.mkPos endPos.Line (endPos.Column - 1)
+                caretPos, Some selectedRange
+
+            | _, None, Some _ -> failwith "Missing selected range start"
+            | _, Some _, None -> failwith "Missing selected range end"
+
+            | None, None, None -> failwith "Missing caret marker"
+
+        let lines = getLines source
+        let lineText = Array.get lines (caretPos.Line - 1)
+
+        { Source = source; CaretPos = caretPos; LineText = lineText; SelectedRange = selectedRange }
 
 
 [<AutoOpen>]
@@ -70,7 +139,7 @@ module Checker =
 
         let plid = QuickParse.GetPartialLongNameEx(context.LineText, pos.Column - 1)
         let names = plid.QualifyingIdents @ [plid.PartialIdent]
-        { SourceContext = context; Pos = pos; Names = names }
+        { SourceContext = context; Pos = pos; Names = names; SelectedRange = context.SelectedRange }
 
     let getCompletionContext (markedSource: string) =
         let context = SourceContext.fromMarkedSource markedSource

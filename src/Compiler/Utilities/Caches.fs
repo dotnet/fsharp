@@ -118,21 +118,6 @@ module CacheOptions =
             CacheOptions.EvictionMode = EvictionMode.NoEviction
         }
 
-module Cache =
-    // During testing a lot of compilations are started in app domains and subprocesses.
-    // This is a reliable way to pass the override to all of them.
-    [<Literal>]
-    let private overrideVariable = "FSHARP_CACHE_OVERRIDE"
-
-    /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
-    let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
-
-    let applyOverride (options: CacheOptions<_>) =
-        match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
-        | true, n when options.TotalCapacity > n -> { options with TotalCapacity = n }
-        | _ -> options
-
 // It is important that this is not a struct, because LinkedListNode holds a reference to it,
 // and it holds the reference to that Node, in a circular way.
 [<Sealed; NoComparison; NoEquality>]
@@ -175,8 +160,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
-
-    let options = Cache.applyOverride options
 
     let name = defaultArg name (Guid.NewGuid().ToString())
 

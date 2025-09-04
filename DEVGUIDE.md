@@ -166,6 +166,12 @@ If your changes involve modifying the list of language keywords in any way, (e.g
 ```shell
 dotnet build src\Compiler /t:UpdateXlf
 ```
+or
+```shell
+cd src/Compiler
+dotnet build -t:UpdateXlf
+```
+
 If you are on a Mac, you can run this command from the root of the repository:
 
 ```shell
