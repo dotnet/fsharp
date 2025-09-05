@@ -97,10 +97,17 @@ type CacheOptions<'Key> =
     }
 
 module CacheOptions =
-    let forceImmediate = try Environment.GetEnvironmentVariable("FSharp_CacheEvictionImmediate") <> null with _ -> false
+    let forceImmediate =
+        try
+            Environment.GetEnvironmentVariable("FSharp_CacheEvictionImmediate") <> null
+        with _ ->
+            false
 
     let defaultEvictionMode =
-        if forceImmediate then EvictionMode.Immediate else EvictionMode.MailboxProcessor
+        if forceImmediate then
+            EvictionMode.Immediate
+        else
+            EvictionMode.MailboxProcessor
 
     let getDefault () =
         {
