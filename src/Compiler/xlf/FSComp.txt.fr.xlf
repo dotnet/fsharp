@@ -287,6 +287,11 @@
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAllowCommaAsUnionCaseNamedFieldSeparator">
+        <source>Allow comma as union case name field separator.</source>
+        <target state="new">Allow comma as union case name field separator.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAllowLetOrUseBangTypeAnnotationWithoutParens">
         <source>Allow let! and use! type annotations without requiring parentheses</source>
         <target state="new">Allow let! and use! type annotations without requiring parentheses</target>
@@ -1195,6 +1200,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">Expression d’opérateur incomplète (exemple a^b) ou appel de type qualifié (exemple : ^T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInconsistentSeparators">
+        <source>Inconsistent separators in pattern. Use either all commas or all semicolons, but not both.</source>
+        <target state="new">Inconsistent separators in pattern. Use either all commas or all semicolons, but not both.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMissingKeyword">

@@ -13,13 +13,16 @@ ImplFile
                           ([NamePatPairField
                               (SynLongIdent ([a], [], [None]), Some (4,6--4,7),
                                (4,4--4,9), Wild (4,8--4,9),
-                               Some ((4,9--4,10), Some (4,10)));
+                               Some (Semicolon ((4,9--4,10), Some (4,10))));
                             NamePatPairField
                               (SynLongIdent ([b], [], [None]), None,
                                (4,11--4,12),
-                               FromParseError (Wild (4,12--4,12), (4,12--4,12)),
-                               None)], (4,4--4,13), { ParenRange = (4,3--4,13) }),
-                        None, (4,2--4,13)), None, Const (Int32 2, (4,17--4,18)),
+                               FromParseError
+                                 (Named
+                                    (SynIdent (b, None), false, None,
+                                     (4,11--4,12)), (4,11--4,12)), None)],
+                           (4,4--4,12), { ParenRange = (4,3--4,13) }), None,
+                        (4,2--4,13)), None, Const (Int32 2, (4,17--4,18)),
                      (4,2--4,18), Yes, { ArrowRange = Some (4,14--4,16)
                                          BarRange = Some (4,0--4,1) })],
                  (3,0--4,18), { MatchKeyword = (3,0--3,5)
@@ -29,5 +32,3 @@ ImplFile
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
-
-(4,12)-(4,13) parse error Unexpected symbol ')' in pattern. Expected '=' or other token.

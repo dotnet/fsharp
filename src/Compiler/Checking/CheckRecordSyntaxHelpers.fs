@@ -59,7 +59,14 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
 /// Expands a long identifier into nested copy-and-update expressions.
 ///
 /// `{ x with A.B = 0; A.C = "" }` becomes `{ x with A = { x.A with B = 0 }; A = { x.A with C = "" } }`
-let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid: LongIdent) exprBeingAssigned withExpr =
+let TransformAstForNestedUpdates
+    (cenv: TcFileState)
+    (env: TcEnv)
+    overallTy
+    (lid: LongIdent)
+    exprBeingAssigned
+    (withExpr: SynExpr * BlockSeparator)
+    =
     let recdExprCopyInfo ids withExpr id =
         let upToId origSepRng id lidwd =
             let rec buildLid res (id: Ident) =
@@ -100,9 +107,14 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             withStartEnd blockSeparatorStartPos blockSeparatorEndPos id.idRange
 
         match withExpr with
-        | SynExpr.Ident origId, (sepRange, _) ->
+        | SynExpr.Ident origId, (blockSep: BlockSeparator) ->
+            let sepRange = blockSep.Range
             let lid, rng = upToId sepRange id (origId :: ids)
-            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeparator id, None))
+            // We need a neutral, “offside” separator for the AST that does not claim there was a concrete token like a semicolon or a comma
+            Some(
+                SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id),
+                BlockSeparator.Offside(rangeOfBlockSeparator id, None)
+            )
         | _ -> None
 
     let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
