@@ -319,3 +319,83 @@ but here has type
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs17.fs"|])>]
+    let ``Version9: NamedPatPairs - NamedPatPairs17_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 10, Col 21, Line 10, Col 22, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs17.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs17_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 9, Col 17, Line 9, Col 21, "This expression was expected to have type
+'int' 
+but here has type
+''a * 'b' ");
+            (Error 1, Line 10, Col 17, Line 10, Col 21, "This expression was expected to have type
+'float' 
+but here has type
+''a * 'b' ");
+            (Error 1, Line 10, Col 27, Line 10, Col 31, "This expression was expected to have type
+'bool' 
+but here has type
+''a * 'b' ");
+            (Warning 25, Line 7, Col 11, Line 7, Col 16, "Incomplete pattern matches on this expression.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs18.fs"|])>]
+    let ``Version9: NamedPatPairs - NamedPatPairs18_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 9, Col 17, Line 9, Col 21, "This expression was expected to have type
+'int' 
+but here has type
+''a * 'b' ");
+            (Error 1, Line 10, Col 17, Line 10, Col 21, "This expression was expected to have type
+'float' 
+but here has type
+''a * 'b' ");
+            (Error 1, Line 10, Col 27, Line 10, Col 31, "This expression was expected to have type
+'bool' 
+but here has type
+''a * 'b' ");
+            (Warning 25, Line 7, Col 11, Line 7, Col 16, "Incomplete pattern matches on this expression.")
+        ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs18.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs18_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 1, Line 9, Col 17, Line 9, Col 21, "This expression was expected to have type
+'int' 
+but here has type
+''a * 'b' ");
+            (Error 1, Line 10, Col 17, Line 10, Col 21, "This expression was expected to have type
+'float' 
+but here has type
+''a * 'b' ");
+            (Error 1, Line 10, Col 27, Line 10, Col 31, "This expression was expected to have type
+'bool' 
+but here has type
+''a * 'b' ");
+            (Warning 25, Line 7, Col 11, Line 7, Col 16, "Incomplete pattern matches on this expression.")
+        ]
