@@ -208,6 +208,7 @@ module OneTimeSetup =
         let workers, iocp = ThreadPool.GetMinThreads()
         let target = max workers (Environment.ProcessorCount * 4)
         if target > workers then
+            log $"Increasing ThreadPool minimum worker threads to {target}"
             ThreadPool.SetMinThreads(target, iocp) |> ignore
     #endif
         log "Installing TestConsole redirection"
