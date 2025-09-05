@@ -101,7 +101,7 @@ module CacheOptions =
         {
             CacheOptions.TotalCapacity = 1024
             CacheOptions.HeadroomPercentage = 50
-            CacheOptions.EvictionMode = EvictionMode.Immediate // EvictionMode.MailboxProcessor
+            CacheOptions.EvictionMode = EvictionMode.MailboxProcessor
             CacheOptions.Comparer = HashIdentity.Structural
         }
 

@@ -205,10 +205,10 @@ module OneTimeSetup =
         AssemblyResolver.addResolver ()
 
         // Increase worker threads to mitigate temporary starvation from many caches with MailboxProcessors
-        //let workers, iocp = ThreadPool.GetMinThreads()
-        //let target = max workers (Environment.ProcessorCount * 4)
-        //if target > workers then
-        //    ThreadPool.SetMinThreads(target, iocp) |> ignore
+        let workers, iocp = ThreadPool.GetMinThreads()
+        let target = max workers (Environment.ProcessorCount * 4)
+        if target > workers then
+            ThreadPool.SetMinThreads(target, iocp) |> ignore
     #endif
         log "Installing TestConsole redirection"
         TestConsole.install()
