@@ -683,7 +683,6 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             env:
-              FSharp_CacheEvictionImmediate: true
               COMPlus_DefaultStackSize: 1000000
             displayName: Build / Test
           - task: PublishTestResults@2

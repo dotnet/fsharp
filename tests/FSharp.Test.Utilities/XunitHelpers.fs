@@ -203,6 +203,13 @@ module OneTimeSetup =
         // We need AssemblyResolver already here, because OpenTelemetry loads some assemblies dynamically.
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
+
+        // Increase worker threads to mitigate temporary starvation from many caches with MailboxProcessors
+        let workers, iocp = ThreadPool.GetMinThreads()
+        let target = max workers (Environment.ProcessorCount * 2)
+        if target > workers then
+            log $"Increasing ThreadPool minimum worker threads to {target}"
+            ThreadPool.SetMinThreads(target, iocp) |> ignore
     #endif
         log "Installing TestConsole redirection"
         TestConsole.install()
