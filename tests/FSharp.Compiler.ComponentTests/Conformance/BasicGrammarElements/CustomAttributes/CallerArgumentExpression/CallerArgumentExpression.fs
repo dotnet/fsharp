@@ -182,7 +182,7 @@ type A() =
           (Warning 3880,Line 7, Col 65 , Line 7, Col 66, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's self-referential.")
         ]
         
-        [<FactForNETCOREAPP>]
+    [<FactForNETCOREAPP>]
     let ``test Warns when overridden by other caller infos`` () =
       FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
 open System.Runtime.CompilerServices
