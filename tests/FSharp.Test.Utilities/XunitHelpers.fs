@@ -206,7 +206,7 @@ module OneTimeSetup =
 
         // Increase worker threads to mitigate temporary starvation from many caches with MailboxProcessors
         let workers, iocp = ThreadPool.GetMinThreads()
-        let target = max workers (Environment.ProcessorCount * 4)
+        let target = max workers (Environment.ProcessorCount * 2)
         if target > workers then
             log $"Increasing ThreadPool minimum worker threads to {target}"
             ThreadPool.SetMinThreads(target, iocp) |> ignore
