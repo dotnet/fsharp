@@ -1816,5 +1816,6 @@ featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type an
 3878,tcAttributeIsNotValidForUnionCaseWithFields,"This attribute is not valid for use on union cases with fields."
 featureReturnFromFinal,"Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder."
 featureSupportCallerArgumentExpression,"Support `CallerArgumentExpression`"
-3880,tcCallerArgumentExpressionSelfReferential,"The CallerArgumentExpression on this parameter will have no effect because it's self-referential."
-3880,tcCallerArgumentExpressionHasInvalidParameterName,"The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name."
+3880,tcCallerArgumentExpressionSelfReferential,"The [<CallerArgumentExpression>] on this parameter will have no effect because it's self-referential."
+3881,tcCallerArgumentExpressionHasInvalidParameterName,"The [<CallerArgumentExpression>] on this parameter will have no effect because it's applied with an invalid parameter name."
+3882,tcCallerArgumentExpressionWillNotBeApplied,"This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'."

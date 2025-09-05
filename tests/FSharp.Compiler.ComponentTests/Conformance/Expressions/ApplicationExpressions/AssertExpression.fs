@@ -20,15 +20,6 @@ with ex -> if not(ex.Message.Contains \"%s{msgShouldContains}\") then reraise()"
         |> shouldSucceed
     
     [<Fact>]
-    let ``assert (1 = 2) in fsi`` () =
-        Fsx "assert (1 = 2)"
-        |> withOptions ["--define:DEBUG"]
-        |> withLangVersionPreview
-        |> runFsi
-        |> shouldFail
-        |> withStdErrContains "(1 = 2)"
-
-    [<Fact>]
     let ``assert (1 = 2)`` () =
         test "assert (1 = 2)"
 

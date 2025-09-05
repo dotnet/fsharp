@@ -178,8 +178,8 @@ type A() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-          (Warning 3880,Line 5, Col 65, Line 5, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.")
-          (Warning 3880,Line 7, Col 65 , Line 7, Col 66, "The CallerArgumentExpression on this parameter will have no effect because it's self-referential.")
+          (Warning 3881,Line 5, Col 65, Line 5, Col 66, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's applied with an invalid parameter name.")
+          (Warning 3880,Line 7, Col 65 , Line 7, Col 66, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's self-referential.")
         ]
 
     [<FactForNETCOREAPP>]
@@ -349,6 +349,36 @@ type Interface1 =
         |> ignore
       
     [<FactForNETCOREAPP>]
+    let ``Only method calls with direct arguments will get the argument expression - test the warning`` () =
+        FSharp """module Lib
+let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+
+type A() =
+  static member B (``ab c``, [<CallerArgumentExpression "ab c"; Optional; DefaultParameterValue "no value">]n: string) =
+    n
+    
+A.B "abc" |> assertEqual "\"abc\""
+
+(A.B) "abc" |> assertEqual "no value"
+"abc" |> A.B |> assertEqual "no value"
+A.B <| "abc" |> assertEqual "no value"
+let f = A.B
+f "abc" |> assertEqual "no value"
+        """ 
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+          (Information 3882, Line 12, Col 2, Line 12, Col 5, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
+          (Information 3882, Line 13, Col 10, Line 13, Col 13, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
+          (Information 3882, Line 14, Col 1, Line 14, Col 4, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
+          (Information 3882, Line 15, Col 9, Line 15, Col 12, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
+        ]
+        |> ignore
+        
+    [<FactForNETCOREAPP>]
     let ``Only method calls with direct arguments will get the argument expression`` () =
         FSharp """module Lib
 let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
@@ -367,7 +397,8 @@ A.B <| "abc" |> assertEqual "no value"
 let f = A.B
 f "abc" |> assertEqual "no value"
         """ 
-          |> withLangVersionPreview
+        |> withLangVersionPreview
+        |> withOptions ["/nowarn:3882"]
         |> asExe
         |> compileAndRun
         |> shouldSucceed

@@ -1453,13 +1453,18 @@
         <note />
       </trans-unit>
       <trans-unit id="tcCallerArgumentExpressionHasInvalidParameterName">
-        <source>The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.</source>
-        <target state="new">The CallerArgumentExpression on this parameter will have no effect because it's applied with an invalid parameter name.</target>
+        <source>The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's applied with an invalid parameter name.</source>
+        <target state="new">The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's applied with an invalid parameter name.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCallerArgumentExpressionSelfReferential">
-        <source>The CallerArgumentExpression on this parameter will have no effect because it's self-referential.</source>
-        <target state="new">The CallerArgumentExpression on this parameter will have no effect because it's self-referential.</target>
+        <source>The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's self-referential.</source>
+        <target state="new">The [&lt;CallerArgumentExpression&gt;] on this parameter will have no effect because it's self-referential.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCallerArgumentExpressionWillNotBeApplied">
+        <source>This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.</source>
+        <target state="new">This usage blocks passing string representations of arguments to parameters annotated with [&lt;CallerArgumentExpression&gt;]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

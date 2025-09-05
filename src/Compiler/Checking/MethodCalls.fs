@@ -1695,6 +1695,9 @@ let AdjustCallerArgsForOptionals tcVal tcFieldInit (infoReader: InfoReader) ad (
             assignedArgs = assignedNamedArgs @ unnamedArgs
             canApplyCallerArgumentExpression = canApplyCallerArgumentExpression
         }
+        
+    if not canApplyCallerArgumentExpression && calledMeth.UnnamedCalledOptArgs |> List.exists (fun i -> i.CallerInfo.IsCallerArgumentExpression) then
+        informationalWarning(Error(FSComp.SR.tcCallerArgumentExpressionWillNotBeApplied(), mMethExpr))
 
     // Adjust all the optional arguments that require a default value to be inserted into the call,
     // i.e. there is no corresponding caller arg.
