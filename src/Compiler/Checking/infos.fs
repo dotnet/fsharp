@@ -240,6 +240,7 @@ type CallerInfo =
     | CallerLineNumber
     | CallerMemberName
     | CallerFilePath
+    | CallerArgumentExpression of paramName: string
 
     override x.ToString() = sprintf "%+A" x
 
@@ -317,20 +318,34 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
     let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
     let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
     let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
+    let callerArgumentExpressionArg = 
+        TryFindFSharpAttributeOpt g g.attrib_CallerArgumentExpressionAttribute argInfo.Attribs
+        |> Option.orElseWith (fun () -> TryFindFSharpAttributeByName "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" argInfo.Attribs)
 
     let callerInfo =
-        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-        | false, false, false -> NoCallerInfo
-        | true, false, false -> CallerLineNumber
-        | false, true, false -> CallerFilePath
-        | false, false, true -> CallerMemberName
-        | false, true, true -> 
+        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, callerArgumentExpressionArg with
+        | false, false, false, None -> NoCallerInfo
+        | true, false, false, None -> CallerLineNumber
+        | false, true, false, None -> CallerFilePath
+        | false, false, true, None -> CallerMemberName
+        | false, false, false, Some(Attrib(_, _, (AttribStringArg x :: _), _, _, _, _)) ->
+            CallerArgumentExpression(x)
+            
+        // The caller info precedence: CallerFilePath > CallerMemberName > CallerArgumentExpression
+        | false, true, false, Some _
+        | false, false, true, Some _ ->
+            let info = if isCallerFilePathArg then CallerFilePath else CallerMemberName
+            warning(Error(FSComp.SR.tcCallerArgumentExpressionIsOverridden(string info), argInfo.Name.Value.idRange))
+            info
+        | false, true, true, _ -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                if callerArgumentExpressionArg.IsSome then
+                    warning(Error(FSComp.SR.tcCallerArgumentExpressionIsOverridden(nameof CallerFilePath), argInfo.Name.Value.idRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
-        | _, _, _ ->
+        | _, _, _, _ ->
             // if multiple caller info attributes are specified, pick the "wrong" one here
             // so that we get an error later
             match tryDestOptionTy g ty with
@@ -1280,14 +1295,20 @@ type MethInfo =
                  let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
                  let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
                  let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
+                 let isCallerArgumentExpressionArg =
+                     g.attrib_CallerArgumentExpressionAttribute
+                     |> Option.bind (fun (AttribInfo(tref, _)) -> TryDecodeILAttribute tref attrs)
+                     |> Option.orElseWith (fun () -> TryDecodeILAttributeByName "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" attrs)
 
                  let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | _, _, _ ->
+                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg, isCallerArgumentExpressionArg with
+                    | false, false, false, None -> NoCallerInfo
+                    | true, false, false, None -> CallerLineNumber
+                    | false, true, false, None -> CallerFilePath
+                    | false, false, true, None -> CallerMemberName            
+                    | false, false, false, Some ([ILAttribElem.String (Some name) ], _) -> CallerArgumentExpression(name)
+                    | false, false, false, _ -> NoCallerInfo
+                    | _, _, _, _ ->
                         // if multiple caller info attributes are specified, pick the "wrong" one here
                         // so that we get an error later
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath

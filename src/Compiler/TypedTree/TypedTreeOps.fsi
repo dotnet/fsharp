@@ -2317,6 +2317,8 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
+val TryDecodeILAttributeByName: nm: string -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+
 val IsILAttrib: BuiltinAttribInfo -> ILAttribute -> bool
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
@@ -2330,6 +2332,8 @@ val IsMatchingFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attri
 val HasFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
 
 val HasFSharpAttributeOpt: TcGlobals -> BuiltinAttribInfo option -> Attribs -> bool
+
+val TryFindFSharpAttributeByName: nm: string -> Attribs -> Attrib option
 
 val TryFindFSharpAttribute: TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
 
