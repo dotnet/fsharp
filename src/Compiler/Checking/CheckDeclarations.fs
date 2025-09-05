@@ -1370,7 +1370,8 @@ module MutRecBindingChecking =
                                 try
                                    let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
                                    let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
-                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
+                                   let mTcNew = unionRanges synBaseTy.Range arg.Range
+                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
                                 with RecoverableException e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
