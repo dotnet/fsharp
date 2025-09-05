@@ -181,6 +181,49 @@ type A() =
           (Warning 3881,Line 5, Col 65, Line 5, Col 66, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's applied with an invalid parameter name.")
           (Warning 3880,Line 7, Col 65 , Line 7, Col 66, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's self-referential.")
         ]
+        
+        [<FactForNETCOREAPP>]
+    let ``test Warns when overridden by other caller infos`` () =
+      FSharp """let assertEqual a b = if a <> b then failwithf "not equal: %A and %A" a b
+open System.Runtime.CompilerServices
+
+type A() =
+  static member B (a, [<CallerArgumentExpression "a"; CallerMemberName>] ?n) =
+    defaultArg n "no value"
+  static member C (a, [<CallerArgumentExpression "a"; CallerFilePath>] ?n) =
+    defaultArg n "no value"
+  static member D (a, [<CallerArgumentExpression "a"; CallerMemberName; CallerFilePath>] ?n) =
+    defaultArg n "no value"
+    
+let f () =
+  let filename = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "test.fs")
+  #line 1 "test.fs"
+  A.B(1) |> assertEqual "f"
+  A.C(1) |> assertEqual filename
+  A.D(1) |> assertEqual filename
+f()
+        """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+          (Warning 3882, Line 5, Col 75, Line 5, Col 76, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerMemberName>].")
+          (Warning 3882, Line 5, Col 75, Line 5, Col 76, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerMemberName>].")
+          (Warning 3882, Line 5, Col 75, Line 5, Col 76, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerMemberName>].")
+          (Warning 3882, Line 7, Col 73, Line 7, Col 74, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3882, Line 7, Col 73, Line 7, Col 74, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3882, Line 7, Col 73, Line 7, Col 74, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3206, Line 9, Col 55, Line 9, Col 71, "The CallerMemberNameAttribute applied to parameter 'n' will have no effect. It is overridden by the CallerFilePathAttribute.")
+          (Warning 3882, Line 9, Col 91, Line 9, Col 92, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3206, Line 9, Col 55, Line 9, Col 71, "The CallerMemberNameAttribute applied to parameter 'n' will have no effect. It is overridden by the CallerFilePathAttribute.")
+          (Warning 3882, Line 9, Col 91, Line 9, Col 92, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3206, Line 9, Col 55, Line 9, Col 71, "The CallerMemberNameAttribute applied to parameter 'n' will have no effect. It is overridden by the CallerFilePathAttribute.")
+          (Warning 3882, Line 9, Col 91, Line 9, Col 92, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3882, Line 5, Col 75, Line 5, Col 76, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerMemberName>].")
+          (Warning 3882, Line 7, Col 73, Line 7, Col 74, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+          (Warning 3206, Line 9, Col 55, Line 9, Col 71, "The CallerMemberNameAttribute applied to parameter 'n' will have no effect. It is overridden by the CallerFilePathAttribute.")
+          (Warning 3882, Line 9, Col 91, Line 9, Col 92, "The [<CallerArgumentExpression>] on this parameter will have no effect because it's overridden by the [<CallerFilePath>].")
+        ]
 
     [<FactForNETCOREAPP>]
     let ``test Errors`` () =
@@ -371,10 +414,10 @@ f "abc" |> assertEqual "no value"
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-          (Information 3882, Line 12, Col 2, Line 12, Col 5, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
-          (Information 3882, Line 13, Col 10, Line 13, Col 13, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
-          (Information 3882, Line 14, Col 1, Line 14, Col 4, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
-          (Information 3882, Line 15, Col 9, Line 15, Col 12, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3882\"' or '--nowarn:3882'.")
+          (Information 3883, Line 12, Col 2, Line 12, Col 5, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3883\"' or '--nowarn:3883'.")
+          (Information 3883, Line 13, Col 10, Line 13, Col 13, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3883\"' or '--nowarn:3883'.")
+          (Information 3883, Line 14, Col 1, Line 14, Col 4, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3883\"' or '--nowarn:3883'.")
+          (Information 3883, Line 15, Col 9, Line 15, Col 12, "This usage blocks passing string representations of arguments to parameters annotated with [<CallerArgumentExpression>]. The default values of these parameters will be passed. Only the usages like `Method(arguments)` can capture the string representation of arguments. You can disable this warning by using '#nowarn \"3883\"' or '--nowarn:3883'.")
         ]
         |> ignore
         
@@ -398,7 +441,7 @@ let f = A.B
 f "abc" |> assertEqual "no value"
         """ 
         |> withLangVersionPreview
-        |> withOptions ["/nowarn:3882"]
+        |> withOptions ["/nowarn:3883"]
         |> asExe
         |> compileAndRun
         |> shouldSucceed

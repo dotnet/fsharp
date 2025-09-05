@@ -330,10 +330,19 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
         | false, false, true, None -> CallerMemberName
         | false, false, false, Some(Attrib(_, _, (AttribStringArg x :: _), _, _, _, _)) ->
             CallerArgumentExpression(x)
+            
+        // The caller info precedence: CallerFilePath > CallerMemberName > CallerArgumentExpression
+        | false, true, false, Some _
+        | false, false, true, Some _ ->
+            let info = if isCallerFilePathArg then CallerFilePath else CallerMemberName
+            warning(Error(FSComp.SR.tcCallerArgumentExpressionIsOverridden(string info), argInfo.Name.Value.idRange))
+            info
         | false, true, true, _ -> 
             match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
             | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
                 warning(Error(FSComp.SR.CallerMemberNameIsOverridden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                if callerArgumentExpressionArg.IsSome then
+                    warning(Error(FSComp.SR.tcCallerArgumentExpressionIsOverridden(nameof CallerFilePath), argInfo.Name.Value.idRange))
                 CallerFilePath
             | _ -> failwith "Impossible"
         | _, _, _, _ ->
