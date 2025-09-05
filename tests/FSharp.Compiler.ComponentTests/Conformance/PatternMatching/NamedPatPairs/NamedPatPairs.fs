@@ -277,3 +277,45 @@ but here has type
         |> withLangVersionPreview
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs15.fs"|])>]
+    let ``Version9 NamedPatPairs - NamedPatPairs15_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 17, Line 4, Col 18, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs15.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs15_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+           (Error 1, Line 4, Col 23, Line 4, Col 27, "This expression was expected to have type
+'string' 
+but here has type
+''a * 'b' ");
+           (Warning 25, Line 4, Col 5, Line 4, Col 29, "Incomplete pattern matches on this expression.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs16.fs"|])>]
+    let ``Version9 NamedPatPairs - NamedPatPairs16_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> verifyCompileAndRun
+        |> shouldSucceed
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs16.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs16_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
