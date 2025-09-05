@@ -456,11 +456,13 @@ stages:
               fsharpqa_release:
                 _configuration: Release
                 _testKind: testFSharpQA
+                FSharp_CacheEvictionImmediate: true
                 transparentCompiler:
               vs_release:
                 _configuration: Release
                 _testKind: testVs
                 setupVsHive: true
+                FSharp_CacheEvictionImmediate: true
                 transparentCompiler:
               transparent_compiler_release:
                 _configuration: Release
@@ -681,6 +683,7 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
             env:
+              FSharp_CacheEvictionImmediate: true
               COMPlus_DefaultStackSize: 1000000
             displayName: Build / Test
           - task: PublishTestResults@2
