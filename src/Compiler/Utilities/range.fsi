@@ -100,9 +100,13 @@ type Range =
     /// The file index for the range
     member internal FileIndex: int
 
+    member internal DebugCode: string
+
     /// The file name for the file of the range
     member FileName: string
-    
+
+    member internal ShortFileName: string
+
     /// Apply the line directives to the range.
     member ApplyLineDirectives: unit -> range
 
@@ -271,6 +275,8 @@ module Range =
 
     /// Equality comparer for range.
     val comparer: IEqualityComparer<range>
+
+    val internal setTestSource: path: string -> source: string -> unit
 
 /// Functions related to converting between lines indexed at 0 and 1
 module Line =
