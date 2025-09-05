@@ -195,6 +195,8 @@ type OpenTelemetryExport(testRunName, enable) =
 // However, we want to ensure that OneTimeSetup is called only once per test run.
 module OneTimeSetup =
 
+    open System.Threading
+
     let init =
         lazy
     #if !NETCOREAPP
