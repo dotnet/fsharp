@@ -263,7 +263,6 @@ module internal Async2Implementation =
                         let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
 
                         if __stack_yield_fin then
-                            BindContext.ResetBindCount()
                             continuation(ExceptionCache.GetResultOrThrow awaiter).Invoke(&sm)
                         else
                             let mutable __stack_awaiter = awaiter
