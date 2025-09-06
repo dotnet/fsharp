@@ -435,6 +435,9 @@ module internal Async2 =
         currentContext.Value <- context
 
         try
+            // Only bound computations can participate in trampolining, otherwise we risk sync over async deadlocks.
+            // To prevent this, we reset the bind count here.
+            // This computation will not initially bounce, even if it is nested inside another async2 computation.
             BindContext.ResetBindCount()
             code.Start()
         finally
