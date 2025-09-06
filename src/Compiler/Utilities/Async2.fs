@@ -23,11 +23,7 @@ module internal Async2Implementation =
             failwith message
 
     [<Struct>]
-    type Context =
-        {
-            Token: CancellationToken
-            IsNested: bool
-        }
+    type Context = { Token: CancellationToken }
 
     let currentContext = AsyncLocal<Context>()
 
@@ -444,7 +440,7 @@ module internal Async2 =
             currentContext.Value <- old
 
     let run ct (code: Async2<'t>) =
-        let context = { Token = ct; IsNested = true }
+        let context = { Token = ct }
 
         if
             isNull SynchronizationContext.Current
@@ -457,15 +453,9 @@ module internal Async2 =
     let runWithoutCancellation code = run CancellationToken.None code
 
     let startAsTaskWithoutCancellation code =
-        startWithContext
-            {
-                Token = CancellationToken.None
-                IsNested = true
-            }
-            code
+        startWithContext { Token = CancellationToken.None } code
 
-    let startAsTask ct code =
-        startWithContext { Token = ct; IsNested = false } code
+    let startAsTask ct code = startWithContext { Token = ct } code
 
     let toAsync (code: Async2<'t>) =
         async {
