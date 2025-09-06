@@ -536,3 +536,105 @@ let doIt(myAction : Action<int>) = myAc{caret}tion.Invoke(42)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo ("""val myAction: Action<int>""" |> normalize)
+    
+// Tests for direct interfaces in tooltips
+[<Fact>]
+let ``Tooltip for class with multiple direct interfaces shows all direct interfaces`` () =
+    let source = """
+module DirectInterfaces
+
+// Define multiple interfaces
+type IA =
+    abstract DoA: unit -> unit
+
+type IB =
+    abstract DoB: unit -> unit
+
+// Class implementing multiple interfaces
+type ClassWithMultipleInterfaces() =
+    interface IA with
+        member _.DoA() = ()
+    interface IB with
+        member _.DoB() = ()
+
+// Create an instance
+let obj = ClassWithMultipleInterfaces()
+"""
+    let checkResults = getCheckResults source Array.empty
+    let tooltip = checkResults.GetToolTip(12, 30, "type ClassWithMultipleInterfaces() =", [ "ClassWithMultipleInterfaces" ], FSharpTokenTag.Identifier)
+    let tooltipText = tooltip |> assertAndGetSingleToolTipText
+    
+    // Verify both direct interfaces are shown
+    Assert.contains "inherit IA" tooltipText
+    Assert.contains "inherit IB" tooltipText
+
+[<Fact>]
+let ``Tooltip for class implementing interface chain shows only direct interface`` () =
+    let source = """
+module InterfaceChain
+
+// Define chained interfaces
+type IX =
+    abstract DoX: unit -> unit
+
+type IY =
+    inherit IX
+    abstract DoY: unit -> unit
+
+// Class implementing the most derived interface
+type ClassWithChainedInterface() =
+    interface IY with
+        member _.DoY() = ()
+        member _.DoX() = ()
+
+// Create an instance
+let obj = ClassWithChainedInterface()
+"""
+    let checkResults = getCheckResults source Array.empty
+    let tooltip = checkResults.GetToolTip(12, 31, "type ClassWithChainedInterface() =", [ "ClassWithChainedInterface" ], FSharpTokenTag.Identifier)
+    let tooltipText = tooltip |> assertAndGetSingleToolTipText
+    
+    // Verify only direct interface is shown
+    Assert.contains "inherit IY" tooltipText
+    Assert.doesNotContain "inherit IX" tooltipText
+
+[<Fact>]
+let ``Tooltip for class with combined interface hierarchy shows only direct interfaces`` () =
+    let source = """
+module CombinedHierarchy
+
+// Base interfaces
+type IBase1 =
+    abstract DoBase1: unit -> unit
+
+type IBase2 =
+    abstract DoBase2: unit -> unit
+
+// Derived interfaces
+type IDerived1 =
+    inherit IBase1
+    abstract DoDerived1: unit -> unit
+
+type IDerived2 =
+    inherit IBase2
+    abstract DoDerived2: unit -> unit
+
+// Class implementing multiple interfaces, some in a chain
+type ComplexClass() =
+    interface IDerived1 with
+        member _.DoDerived1() = ()
+        member _.DoBase1() = ()
+    interface IBase2 with
+        member _.DoBase2() = ()
+
+// Create an instance
+let obj = ComplexClass()
+"""
+    let checkResults = getCheckResults source Array.empty
+    let tooltip = checkResults.GetToolTip(21, 19, "type ComplexClass() =", [ "ComplexClass" ], FSharpTokenTag.Identifier)
+    let tooltipText = tooltip |> assertAndGetSingleToolTipText
+    
+    // Verify only direct interfaces are shown
+    Assert.contains "inherit IDerived1" tooltipText
+    Assert.contains "inherit IBase2" tooltipText
+    Assert.doesNotContain "inherit IBase1" tooltipText
