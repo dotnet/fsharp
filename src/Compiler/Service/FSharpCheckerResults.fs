@@ -87,8 +87,8 @@ type DelayedILModuleReader =
         // fast path
         match box this.result with
         | null ->
-            cancellable {
-                let! ct = Cancellable.token ()
+            async2 {
+                let ct = Async2.CancellationToken
 
                 return
                     lock this.gate (fun () ->
@@ -118,7 +118,7 @@ type DelayedILModuleReader =
                                 None
                         | _ -> Some this.result)
             }
-        | _ -> cancellable.Return(Some this.result)
+        | _ -> async2 { return Some this.result }
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -3209,7 +3209,7 @@ module internal ParseAndCheckFile =
             suggestNamesForErrors: bool
         ) =
 
-        cancellable {
+        async2 {
             use _ =
                 Activity.start
                     "ParseAndCheckFile.CheckOneFile"
@@ -3235,7 +3235,7 @@ module internal ParseAndCheckFile =
             let sink = TcResultsSinkImpl(tcGlobals, sourceText = sourceText)
 
             let! resOpt =
-                cancellable {
+                async2 {
                     try
                         let checkForErrors () =
                             (parseResults.ParseHadErrors || errHandler.ErrorCount > 0)
@@ -3683,7 +3683,7 @@ type FSharpCheckFileResults
             keepAssemblyContents: bool,
             suggestNamesForErrors: bool
         ) =
-        cancellable {
+        async2 {
             let! tcErrors, tcFileInfo =
                 ParseAndCheckFile.CheckOneFile(
                     parseResults,
@@ -3923,7 +3923,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
     let keepAssemblyContents = false
 
     member _.ParseAndCheckInteraction(sourceText: ISourceText, ?userOpName: string) =
-        cancellable {
+        async2 {
             let userOpName = defaultArg userOpName "Unknown"
             let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
@@ -3931,7 +3931,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
             let parsingOptions =
                 FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
 
-            let! ct = Cancellable.token ()
+            let ct = Async2.CancellationToken
 
             let parseErrors, parsedInput, anyErrors =
                 ParseAndCheckFile.parseFile (

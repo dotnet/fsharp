@@ -9,6 +9,8 @@ open FSharp.Compiler.Text
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
+open Internal.Utilities.Library
+
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type DiagnosticStyle =
@@ -470,8 +472,6 @@ type StackGuard =
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
             'T
 
-    member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
-
     static member GetDepthOption: string -> int
 
 /// This represents the global state established as each task function runs as part of the build.
@@ -495,6 +495,8 @@ module MultipleDiagnosticsLoggers =
     /// Captures the diagnostics from each computation and commits them to the caller's logger preserving their order.
     /// When done, restores caller's build phase and diagnostics logger.
     val Parallel: computations: Async<'T> seq -> Async<'T array>
+    val Parallel2: computations: #Async2<'T> seq -> Async<'T array>
 
     /// Run computations sequentially starting immediately on the current thread.
     val Sequential: computations: Async<'T> seq -> Async<'T array>
+    val Sequential2: computations: #Async2<'T> seq -> Async<'T array>

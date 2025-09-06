@@ -2,6 +2,8 @@
 
 module internal FSharp.Compiler.BuildGraph
 
+open Internal.Utilities.Library
+
 /// Contains helpers related to the build graph
 [<RequireQualifiedAccess>]
 module internal GraphNode =
@@ -18,7 +20,7 @@ module internal GraphNode =
 type internal GraphNode<'T> =
 
     /// - computation - The computation code to run.
-    new: computation: Async<'T> -> GraphNode<'T>
+    new: computation: Async2<'T> -> GraphNode<'T>
 
     /// Creates a GraphNode with given result already cached.
     static member FromResult: 'T -> GraphNode<'T>
@@ -26,7 +28,7 @@ type internal GraphNode<'T> =
     /// Return NodeCode which, when executed, will get the value of the computation if already computed, or
     /// await an existing in-progress computation for the node if one exists, or else will synchronously
     /// start the computation on the current thread.
-    member GetOrComputeValue: unit -> Async<'T>
+    member GetOrComputeValue: unit -> Async2<'T>
 
     /// Return 'Some' if the computation has already been computed, else None if
     /// the computation is in-progress or has not yet been started.

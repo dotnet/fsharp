@@ -17,14 +17,31 @@ module BuildGraphTests =
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let private createNode () =
         let o = obj ()
-        GraphNode(async { 
+        GraphNode(async2 { 
             Assert.shouldBeTrue (o <> null)
             return 1 
         }), WeakReference(o)
 
+        // Robust GC helpers for .NET 10 timing differences
+    let private forceFullGc () =
+        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
+        GC.WaitForPendingFinalizers()
+        GC.Collect(2, GCCollectionMode.Forced, blocking = true)
+
+    let private timeoutMs = 10_000
+
+    let private assertEventuallyCollected (wr: WeakReference) =
+        let sw = Diagnostics.Stopwatch.StartNew()
+        let mutable alive = true
+        while alive && sw.ElapsedMilliseconds < int64 timeoutMs do
+            forceFullGc ()
+            alive <- wr.IsAlive
+            if alive then Thread.Sleep 10
+        Assert.shouldBeFalse wr.IsAlive
+
     [<Fact>]
     let ``Initialization of graph node should not have a computed value``() =
-        let node = GraphNode(async { return 1 })
+        let node = GraphNode(async2 { return 1 })
         Assert.shouldBeTrue(node.TryPeekValue().IsNone)
         Assert.shouldBeFalse(node.HasValue)
 
@@ -34,29 +51,24 @@ module BuildGraphTests =
         let resetEventInAsync = new ManualResetEvent(false)
 
         let graphNode = 
-            GraphNode(async { 
+            GraphNode(async2 { 
                 resetEventInAsync.Set() |> ignore
                 let! _ = Async.AwaitWaitHandle(resetEvent)
                 return 1 
             })
 
         let task1 =
-            async {
-                let! _ = graphNode.GetOrComputeValue()
-                ()
-            } |> Async.StartAsTask
+            graphNode.GetOrComputeValue() |> Async2.startAsTaskWithoutCancellation
+
 
         let task2 =
-            async {
-                let! _ = graphNode.GetOrComputeValue()
-                ()
-            } |> Async.StartAsTask
+            graphNode.GetOrComputeValue() |> Async2.startAsTaskWithoutCancellation
 
         resetEventInAsync.WaitOne() |> ignore
         resetEvent.Set() |> ignore
         try
             task1.Wait(1000) |> ignore
-            task2.Wait() |> ignore
+            task2.Wait(1000) |> ignore
         with
         | :? TimeoutException -> reraise()
         | _ -> ()
@@ -67,12 +79,12 @@ module BuildGraphTests =
         let mutable computationCount = 0
 
         let graphNode = 
-            GraphNode(async { 
+            GraphNode(async2 { 
                 computationCount <- computationCount + 1
                 return 1 
             })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async2.toAsync ))
 
         Async.RunImmediate(work)
         |> ignore
@@ -83,9 +95,9 @@ module BuildGraphTests =
     let ``Many requests to get a value asynchronously should get the correct value``() =
         let requests = 10000
 
-        let graphNode = GraphNode(async { return 1 })
+        let graphNode = GraphNode(async2 { return 1 })
 
-        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
+        let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async2.toAsync ))
 
         let result = Async.RunImmediate(work)
 
@@ -102,12 +114,12 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(graphNode.GetOrComputeValue())
+        Async2.runWithoutCancellation(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
 
-        Assert.shouldBeFalse weak.IsAlive
+        assertEventuallyCollected weak
 
     [<Fact>]
     let ``Many requests to get a value asynchronously should have its computation cleaned up by the GC``() =
@@ -119,31 +131,31 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
+        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async2.toAsync )))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
 
-        Assert.shouldBeFalse weak.IsAlive
+        assertEventuallyCollected weak
 
     [<Fact>]
     let ``A request can cancel``() =
         let graphNode = 
-            GraphNode(async { 
+            GraphNode(async2 { 
                 return 1 
             })
 
         use cts = new CancellationTokenSource()
 
         let work =
-            async {
+            async2 {
                 cts.Cancel()
                 return! graphNode.GetOrComputeValue()
             }
 
         let ex =
             try
-                Async.RunImmediate(work, cancellationToken = cts.Token)
+                Async2.run cts.Token work
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -157,7 +169,7 @@ module BuildGraphTests =
         let resetEvent = new ManualResetEvent(false)
 
         let graphNode = 
-            GraphNode(async { 
+            GraphNode(async2 { 
                 let! _ = Async.AwaitWaitHandle(resetEvent)
                 return 1 
             })
@@ -173,7 +185,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                Async.RunImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
+                Async2.run cts.Token <| graphNode.GetOrComputeValue()
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -191,7 +203,7 @@ module BuildGraphTests =
         let mutable computationCount = 0
 
         let graphNode = 
-            GraphNode(async { 
+            GraphNode(async2 { 
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
                 let! _ = Async.AwaitWaitHandle(resetEvent)
                 computationCount <- computationCount + 1
@@ -202,7 +214,7 @@ module BuildGraphTests =
 
         let work = 
             async { 
-                let! _ = graphNode.GetOrComputeValue()
+                let! _ = graphNode.GetOrComputeValue() |> Async2.toAsync
                 ()
             }
 

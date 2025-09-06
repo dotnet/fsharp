@@ -771,7 +771,7 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.PEReference(getStamp, delayedReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async2 {
                                 let! ilReaderOpt = delayedReader.TryGetILModuleReader()
 
                                 match ilReaderOpt with
@@ -784,7 +784,7 @@ type internal TransparentCompiler
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                             }
-                            |> Cancellable.toAsync
+                            |> Async2.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = delayedReader.OutputFile
@@ -793,13 +793,13 @@ type internal TransparentCompiler
                 | FSharpReferencedProjectSnapshot.ILModuleReference(nm, getStamp, getReader) ->
                     { new IProjectReference with
                         member x.EvaluateRawContents() =
-                            cancellable {
+                            async2 {
                                 let ilReader = getReader ()
                                 let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
                                 let data = RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData
                                 return ProjectAssemblyDataResult.Available data
                             }
-                            |> Cancellable.toAsync
+                            |> Async2.toAsync
 
                         member x.TryGetLogicalTimeStamp _ = getStamp () |> Some
                         member x.FileName = nm
@@ -1431,7 +1431,7 @@ type internal TransparentCompiler
                              prevTcInfo.tcState,
                              input,
                              true)
-                        |> Cancellable.toAsync
+                        |> Async2.toAsync
 
                     //fileChecked.Trigger fileName
 
@@ -1608,7 +1608,7 @@ type internal TransparentCompiler
         caches.ParseAndCheckFileInProject.Get(
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             async {
-                use! _holder = Cancellable.UseToken()
+                use! _holder = Async2.UseTokenAsync()
 
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
@@ -1876,7 +1876,7 @@ type internal TransparentCompiler
                             Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                         |]
 
-                use! _holder = Cancellable.UseToken()
+                use! _holder = Async2.UseTokenAsync()
 
                 try
 
@@ -1924,7 +1924,7 @@ type internal TransparentCompiler
         caches.ParseAndCheckProject.Get(
             projectSnapshot.FullKey,
             async {
-                use! _holder = Cancellable.UseToken()
+                use! _holder = Async2.UseTokenAsync()
 
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
@@ -1998,7 +1998,7 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         async {
-            use! _holder = Cancellable.UseToken()
+            use! _holder = Async2.UseTokenAsync()
 
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
