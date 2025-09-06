@@ -4871,7 +4871,7 @@ module TcDeclarations =
 // Bind module types
 //------------------------------------------------------------------------- 
 #nowarn 3511
-let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcEnv) synSigDecl: IAsync2<TcEnv> =
+let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcEnv) synSigDecl: Async2<TcEnv> =
   async2 {
     let g = cenv.g
     try 

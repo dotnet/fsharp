@@ -22,42 +22,51 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T> private (computation: IAsync2<'T>, cachedResult: ValueOption<'T>) =
+type internal GraphNode<'T> private (computation: Async2<'T>, cachedResult: ValueOption<'T>, cachedResultNode: Async2<'T>) =
+
+    let mutable computation = computation
     let mutable requestCount = 0
 
     let mutable cachedResult = cachedResult
+    let mutable cachedResultNode: Async2<'T> = cachedResultNode
+
+    let isCachedResultNodeNotNull () =
+        not (obj.ReferenceEquals(cachedResultNode, null))
 
     let semaphore = new SemaphoreSlim(1, 1)
 
     member _.GetOrComputeValue() =
-        async2 {
-        if cachedResult.IsSome then
-            return cachedResult.Value
+        // fast path
+        if isCachedResultNodeNotNull () then
+            cachedResultNode
         else
-            let! ct = Async.CancellationToken
-            Interlocked.Increment(&requestCount) |> ignore
-            let enter = semaphore.WaitAsync(ct)
+            async2 {
+                let ct = Async2.CancellationToken
+                Interlocked.Increment(&requestCount) |> ignore
 
-            try
-                do! enter |> Async.AwaitTask
+                let mutable acquired = false
 
-                match cachedResult with
-                | ValueSome value -> return value
-                | _ ->
-                    Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
-                    let! result = computation
-                    cachedResult <- ValueSome result
-                    return result
-            finally
-                // At this point, the semaphore awaiter is either already completed or about to get canceled.
-                // If calling Wait() does not throw an exception it means the semaphore was successfully taken and needs to be released.
                 try
-                    enter.Wait()
-                    semaphore.Release() |> ignore
-                with _ ->
-                    ()
+                    do! semaphore.WaitAsync(ct)
+                    acquired <- true
 
-                Interlocked.Decrement(&requestCount) |> ignore
+                    match cachedResult with
+                    | ValueSome value -> return value
+                    | _ ->
+                        Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
+                        let! result = computation
+                        cachedResult <- ValueSome result
+                        cachedResultNode <- Async2.fromValue result
+                        computation <- Unchecked.defaultof<_>
+                        return result
+                finally
+                    if acquired then
+                        try
+                            semaphore.Release() |> ignore
+                        with _ ->
+                            ()
+
+                    Interlocked.Decrement(&requestCount) |> ignore
             }
 
     member _.TryPeekValue() = cachedResult
@@ -67,6 +76,7 @@ type GraphNode<'T> private (computation: IAsync2<'T>, cachedResult: ValueOption<
     member _.IsComputing = requestCount > 0
 
     static member FromResult(result: 'T) =
-        GraphNode(async2 { return result }, ValueSome result)
+        let nodeResult = Async2.fromValue result
+        GraphNode(nodeResult, ValueSome result, nodeResult)
 
-    new(computation) = GraphNode(computation, ValueNone)
+    new(computation) = GraphNode(computation, ValueNone, Unchecked.defaultof<_>)

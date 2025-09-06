@@ -1225,7 +1225,7 @@ let CheckOneInput
         tcSink: TcResultsSink,
         tcState: TcState,
         input: ParsedInput
-    ) : IAsync2<PartialResult * TcState> =
+    ) : Async2<PartialResult * TcState> =
     async2 {
         try
             use _ =
@@ -1445,7 +1445,7 @@ let CheckOneInputWithCallback
          _skipImplIfSigExists: bool):
             (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool
     )
-    : IAsync2<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
+    : Async2<Finisher<NodeToTypeCheck, TcState, PartialResult>> =
     async2 {
         try
             CheckSimulateException tcConfig

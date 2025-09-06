@@ -247,7 +247,7 @@ type BoundModel private (
         ?tcStateOpt: GraphNode<TcInfo> * GraphNode<TcInfoExtras>
     ) =
 
-    let getTypeCheck (syntaxTree: SyntaxTree) : IAsync2<TypeCheck> =
+    let getTypeCheck (syntaxTree: SyntaxTree) : Async2<TypeCheck> =
         async2 {
             let! input, _sourceRange, fileName, parseErrors = syntaxTree.ParseNode.GetOrComputeValue()
             use _ = Activity.start "BoundModel.TypeCheck" [|Activity.Tags.fileName, fileName|]
