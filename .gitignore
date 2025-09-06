@@ -74,6 +74,7 @@ launchSettings.json
 *.jrs
 *.chk
 *.bak
+*.out
 *.vserr
 *.err
 *.orig
