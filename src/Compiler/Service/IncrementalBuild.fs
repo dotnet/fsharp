@@ -272,7 +272,6 @@ type BoundModel private (
                         None,
                         TcResultsSink.WithSink sink,
                         prevTcInfo.tcState, input )
-                |> Async2.toAsync
 
             fileChecked.Trigger fileName
 
@@ -386,7 +385,7 @@ type BoundModel private (
                 GraphNode.FromResult tcInfo, tcInfoExtras
             | _ ->
                 // start computing extras, so that typeCheckNode can be GC'd quickly 
-                startComputingFullTypeCheck |> Async2.toAsync |> Async.Catch |> Async.Ignore |> Async.Start
+                startComputingFullTypeCheck |> Async2.Catch |> Async2.Ignore |> Async2.Start
                 getTcInfo typeCheckNode, tcInfoExtras
 
     member val Diagnostics = diagnostics
@@ -685,14 +684,14 @@ module IncrementalBuilderHelpers =
 #if !NO_TYPEPROVIDERS
         ,importsInvalidatedByTypeProvider: Event<unit>
 #endif
-        ) : Async<BoundModel * SingleFileDiagnostics> =
+        ) : Async2<BoundModel * SingleFileDiagnostics> =
 
-      async {
+      async2 {
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
         let! tcImports =
-          async {
+          async2  {
             try
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
 #if !NO_TYPEPROVIDERS
@@ -1676,4 +1675,3 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
         return builderOpt, diagnostics
       }
-      |> Async2.toAsync

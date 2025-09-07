@@ -12383,6 +12383,8 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+Internal.Utilities.Library.Async2`1[t]: System.Runtime.CompilerServices.TaskAwaiter`1[t] GetAwaiter()
+Internal.Utilities.Library.Async2`1[t]: System.Threading.Tasks.Task`1[t] Start()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()

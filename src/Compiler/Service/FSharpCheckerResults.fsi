@@ -3,10 +3,8 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Threading
-open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader

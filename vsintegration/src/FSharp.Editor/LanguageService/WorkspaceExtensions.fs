@@ -11,7 +11,6 @@ open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.BuildGraph
 
 open CancellableTasks
 
@@ -20,7 +19,6 @@ open System.IO
 open Internal.Utilities.Collections
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
-open System.Text.Json.Nodes
 
 #nowarn "57" // Experimental stuff
 
@@ -377,7 +375,7 @@ module private CheckerExtensions =
                 member _.GetLabel() = project.FilePath
             }
 
-        snapshotCache.Get(
+        snapshotCache.GetAsync(
             key,
             async {
                 let! ct = Async.CancellationToken

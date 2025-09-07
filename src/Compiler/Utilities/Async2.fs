@@ -7,7 +7,7 @@ open System.Runtime.CompilerServices
 
 #nowarn 3513
 
-type internal Async2<'t> =
+type Async2<'t> =
     abstract Start: unit -> Task<'t>
     abstract GetAwaiter: unit -> TaskAwaiter<'t>
 
@@ -466,3 +466,63 @@ module internal Async2 =
     let fromValue (value: 't) : Async2<'t> =
         let task = Task.FromResult value
         Async2Impl(fun () -> task)
+
+type internal Async2 with
+    static member Ignore (computation: Async2<_>) : Async2<unit> =
+        async2 {
+            let! _ = computation
+            return ()
+        }
+
+    static member Start (computation: Async2<_>, ?cancellationToken: CancellationToken) : unit =
+        let ct = defaultArg cancellationToken CancellationToken.None
+        Async2.startAsTask ct computation |> ignore
+
+    static member StartAsTask (computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
+        let ct = defaultArg cancellationToken CancellationToken.None
+        Async2.startAsTask ct computation
+
+    static member RunImmediate (computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
+        let ct = defaultArg cancellationToken CancellationToken.None
+        Async2.run ct computation
+
+    static member Parallel (computations: Async2<_> seq) =
+        async2 {
+            use lcts = CancellationTokenSource.CreateLinkedTokenSource Async2.CancellationToken
+            let tasks =
+                seq {
+                    for c in computations do
+                        c |> Async2.startAsTask lcts.Token
+                }
+
+            return! Task.WhenAll tasks
+        }
+
+    static member Sequential (computations: Async2<_> seq) =
+        async2 {
+            let results = ResizeArray()
+            for c in computations do
+                let! r = c
+                results.Add r
+            return results.ToArray()
+        }
+
+    static member Catch (computation: Async2<'T>) : Async2<Choice<'T, exn>> =
+        async2 {
+            try
+                let! res = computation
+                return Choice1Of2 res
+            with exn ->
+                return Choice2Of2 exn
+        }
+
+    static member TryCancelled(computation: Async2<'T>, compensation) =
+        async2 {
+            let ct = Async2.CancellationToken
+            let task = computation |> Async2.startAsTask ct
+            try 
+                return! task
+            finally
+                if task.IsCanceled then
+                    compensation ()
+        }
