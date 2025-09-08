@@ -1,0 +1,856 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="aa9b583f-520f-4fc7-8645-5c5d621ec50d" name="@pkrvm7jw40e0xgp 2025-09-08 16:20:38" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-09-08T16:20:38.5251080+00:00" queuing="2025-09-08T16:20:38.5251080+00:00" start="2025-09-08T16:20:31.1609684+00:00" finish="2025-09-08T16:20:48.2222954+00:00" />
+  <TestSettings name="default" id="3be61b52-7f95-4996-a5a4-8a8958f26bac">
+    <Deployment runDeploymentRoot="_pkrvm7jw40e0xgp_2025-09-08_16_20_38" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="dbb47bb0-d22c-47f1-b9f5-9ab2581febcc" testId="b59e9265-347f-efb9-fdff-c8f537b851e3" testName="ErrorMessages.TailCall Attribute.Warn for rec call in if-else branch in try-with" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4511513" startTime="2025-09-08T16:20:42.4770707+00:00" endTime="2025-09-08T16:20:42.4770708+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dbb47bb0-d22c-47f1-b9f5-9ab2581febcc" />
+    <UnitTestResult executionId="5f6cf26d-8592-4c56-a70f-c789d0910002" testId="a488c302-a557-f198-7708-f35c9fbf743a" testName="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in list of continuations" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5864208" startTime="2025-09-08T16:20:44.0665038+00:00" endTime="2025-09-08T16:20:44.0665040+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5f6cf26d-8592-4c56-a70f-c789d0910002" />
+    <UnitTestResult executionId="72d1bca5-bd1f-4b89-9a15-fb8079992dac" testId="728d7ca8-43bc-ddff-34b2-91f1cd754afb" testName="ErrorMessages.TailCall Attribute.Warn for rec call in Sequential in use scope" computerName="pkrvm7jw40e0xgp" duration="00:00:00.7193053" startTime="2025-09-08T16:20:39.2170338+00:00" endTime="2025-09-08T16:20:39.2170340+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="72d1bca5-bd1f-4b89-9a15-fb8079992dac" />
+    <UnitTestResult executionId="4f0e99cb-949d-4e45-b39f-b6c93712fc4f" testId="3a7fde04-42f0-fa25-7865-508c94836168" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcall in type method" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3805806" startTime="2025-09-08T16:20:40.8126039+00:00" endTime="2025-09-08T16:20:40.8126044+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4f0e99cb-949d-4e45-b39f-b6c93712fc4f" />
+    <UnitTestResult executionId="7a88390f-32d2-4d46-b946-88130c433557" testId="c8943d3d-3c07-5abb-0588-a975d682c4ef" testName="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func not using [&lt;TailCall&gt;] func in continuation lambda" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5755331" startTime="2025-09-08T16:20:43.7004193+00:00" endTime="2025-09-08T16:20:43.7004194+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7a88390f-32d2-4d46-b946-88130c433557" />
+    <UnitTestResult executionId="d92002f9-03f3-46bf-90c6-4f43890bfe39" testId="77564a1d-c2b6-3f9e-f2da-e91f0ad63472" testName="ErrorMessages.TailCall Attribute.Warn for yield! call of rec func in list comprehension" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5093940" startTime="2025-09-08T16:20:44.4530692+00:00" endTime="2025-09-08T16:20:44.4530693+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d92002f9-03f3-46bf-90c6-4f43890bfe39" />
+    <UnitTestResult executionId="89feadcd-0a24-4bd7-968b-07b3554cccdd" testId="25cca450-bbad-a035-b07c-f3f497c553ae" testName="ErrorMessages.TailCall Attribute.Warn for ColonColon with inner let-bound value to rec call" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4219814" startTime="2025-09-08T16:20:44.8754279+00:00" endTime="2025-09-08T16:20:44.8754279+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="89feadcd-0a24-4bd7-968b-07b3554cccdd" />
+    <UnitTestResult executionId="2b6102e2-b875-412d-946e-14e3753a1e46" testId="0185c0df-c520-b94b-6c8c-b3513a2df4d5" testName="ErrorMessages.TailCall Attribute.Don't warn for rec call of async func that evaluates an async parameter in a let!" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5682576" startTime="2025-09-08T16:20:42.3242372+00:00" endTime="2025-09-08T16:20:42.3242374+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2b6102e2-b875-412d-946e-14e3753a1e46" />
+    <UnitTestResult executionId="7c27d913-c116-4181-ab6c-e80707469288" testId="14b20b06-8647-c2cb-2119-7f1cee370edd" testName="ErrorMessages.TailCall Attribute.Don't warn for ColonColon as arg of valid tail call" computerName="pkrvm7jw40e0xgp" duration="00:00:00.2934421" startTime="2025-09-08T16:20:40.5951709+00:00" endTime="2025-09-08T16:20:40.5951711+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7c27d913-c116-4181-ab6c-e80707469288" />
+    <UnitTestResult executionId="4b9629b5-f043-41c2-8b34-ce33652a65b3" testId="74787e1c-a6dc-f8e0-95c0-dc04ac0ba63b" testName="ErrorMessages.TailCall Attribute.Don't warn for piped arg in tailrec call" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3496092" startTime="2025-09-08T16:20:42.6746783+00:00" endTime="2025-09-08T16:20:42.6746785+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4b9629b5-f043-41c2-8b34-ce33652a65b3" />
+    <UnitTestResult executionId="a2b53a35-ec63-4a6b-a977-5eb23c0a9121" testId="66a9b9d6-913f-de04-1d95-0e4e249b1d4b" testName="ErrorMessages.TailCall Attribute.Warn for rec call inside of match lambda with closure over local function using pipe" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3794911" startTime="2025-09-08T16:20:45.4484689+00:00" endTime="2025-09-08T16:20:45.4484690+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a2b53a35-ec63-4a6b-a977-5eb23c0a9121" />
+    <UnitTestResult executionId="d20d4dde-c5b6-4233-8bfb-959e90c62906" testId="6873a0f0-b5c7-da2d-08e8-5ddd33d68c53" testName="ErrorMessages.TailCall Attribute.Warn successfully for invalid tailcall in type method" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3819993" startTime="2025-09-08T16:20:46.6782221+00:00" endTime="2025-09-08T16:20:46.6782222+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d20d4dde-c5b6-4233-8bfb-959e90c62906" />
+    <UnitTestResult executionId="ba55618f-8241-4000-ad53-8363b90a4566" testId="d6bfc42f-b1fc-0fa4-7b50-843b01ffab09" testName="EmittedIL.Tail Calls.TailCall 02" computerName="pkrvm7jw40e0xgp" duration="00:00:00.2840512" startTime="2025-09-08T16:20:41.7565219+00:00" endTime="2025-09-08T16:20:41.7565220+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ba55618f-8241-4000-ad53-8363b90a4566" />
+    <UnitTestResult executionId="5b6a7397-895a-4e7c-8f03-206800a71fc3" testId="b6083789-3c93-7617-8b00-37951134e792" testName="ErrorMessages.TailCall Attribute.Don't warn for yield! in tail position" computerName="pkrvm7jw40e0xgp" duration="00:00:00.8551965" startTime="2025-09-08T16:20:39.3470860+00:00" endTime="2025-09-08T16:20:39.3470862+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5b6a7397-895a-4e7c-8f03-206800a71fc3" />
+    <UnitTestResult executionId="178f8974-7a0e-45cb-9c26-f234f3170843" testId="1de4bd26-bfea-daff-f64f-58e547a36f4d" testName="ErrorMessages.TailCall Attribute.Warn about attribute on non-rec function" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4164525" startTime="2025-09-08T16:20:41.0120244+00:00" endTime="2025-09-08T16:20:41.0120246+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="178f8974-7a0e-45cb-9c26-f234f3170843" />
+    <UnitTestResult executionId="c275d820-cd23-49ca-a284-160718afb17b" testId="8b5474b1-f126-820a-423d-0e1d55afea17" testName="ErrorMessages.TailCall Attribute.Warn for simple rec call in try-with" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4703697" startTime="2025-09-08T16:20:43.4786563+00:00" endTime="2025-09-08T16:20:43.4786565+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c275d820-cd23-49ca-a284-160718afb17b" />
+    <UnitTestResult executionId="75ab40b1-46b4-418e-8441-9224a0e9a88e" testId="96af492f-10db-9ba2-a1e1-2d4d8581da64" testName="ErrorMessages.TailCall Attribute.Warn for invalid calls in inner bindings of conditional" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4890704" startTime="2025-09-08T16:20:47.7158622+00:00" endTime="2025-09-08T16:20:47.7158624+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75ab40b1-46b4-418e-8441-9224a0e9a88e" />
+    <UnitTestResult executionId="085ff289-d891-4a96-8231-ee296411a738" testId="9d1080cb-5c7a-e027-4f9e-1097da80a7ca" testName="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in continuation lambda" computerName="pkrvm7jw40e0xgp" duration="00:00:01.3654317" startTime="2025-09-08T16:20:43.1244383+00:00" endTime="2025-09-08T16:20:43.1244392+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="085ff289-d891-4a96-8231-ee296411a738" />
+    <UnitTestResult executionId="ed39de8d-714a-4e46-afa2-52439752baec" testId="35032a10-18e8-39e8-8d7c-c0c038f43667" testName="ErrorMessages.TailCall Attribute.Warn successfully in Seq-mapped recursive call" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4626649" startTime="2025-09-08T16:20:46.8632150+00:00" endTime="2025-09-08T16:20:46.8632152+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ed39de8d-714a-4e46-afa2-52439752baec" />
+    <UnitTestResult executionId="411d3f97-09f4-43ce-a41d-cd7056ec98fd" testId="d4bcd9c7-d440-68c3-1697-84e43275e5d6" testName="EmittedIL.Tail Calls.TailCall 01" computerName="pkrvm7jw40e0xgp" duration="00:00:06.2391545" startTime="2025-09-08T16:20:39.1213374+00:00" endTime="2025-09-08T16:20:39.1213376+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="411d3f97-09f4-43ce-a41d-cd7056ec98fd">
+      <Output>
+        <StdOut>Determining projects to restore...
+  Restored /home/runner/work/fsharp/fsharp/artifacts/Temp/eb25d901-6cea-4057-b4dc-c64a6f55ed2c.tmp/ProjectFile.fsproj (in 83 ms).
+/usr/share/dotnet/sdk/10.0.100-rc.1.25411.109/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/home/runner/work/fsharp/fsharp/artifacts/Temp/eb25d901-6cea-4057-b4dc-c64a6f55ed2c.tmp/ProjectFile.fsproj]
+  ProjectFile -&gt; /home/runner/work/fsharp/fsharp/artifacts/Temp/eb25d901-6cea-4057-b4dc-c64a6f55ed2c.tmp/bin/Debug/net10.0/ProjectFile.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.47</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="b47fa4b5-6b82-4809-969a-549024f1f279" testId="e33b932e-7ed8-e230-2f2e-ad77133fc919" testName="ErrorMessages.TailCall Attribute.Warn successfully for rec call in binding" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3617473" startTime="2025-09-08T16:20:45.9326661+00:00" endTime="2025-09-08T16:20:45.9326663+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b47fa4b5-6b82-4809-969a-549024f1f279" />
+    <UnitTestResult executionId="ad38719f-0e73-4994-909d-0fb75b7fcd5d" testId="bc756d22-cb17-474e-a02f-6ac9397349b9" testName="ErrorMessages.TailCall Attribute.Warn for rec call in match branch in try-with" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3389428" startTime="2025-09-08T16:20:41.5562885+00:00" endTime="2025-09-08T16:20:41.5562887+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ad38719f-0e73-4994-909d-0fb75b7fcd5d" />
+    <UnitTestResult executionId="5e004f5c-6d1c-48b3-985a-529f392894ff" testId="6aa64bf0-69e4-57ea-313d-22ee1fb4a813" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in rec module" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4434098" startTime="2025-09-08T16:20:47.8781778+00:00" endTime="2025-09-08T16:20:47.8781780+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5e004f5c-6d1c-48b3-985a-529f392894ff" />
+    <UnitTestResult executionId="470ec91e-7242-4d44-b1c1-b0454edf2733" testId="8b8e01af-b1c3-147b-1ec2-bbc975f83a1c" testName="ErrorMessages.TailCall Attribute.Don't warn for partial application but for calls in map and total applications" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4834756" startTime="2025-09-08T16:20:44.5503634+00:00" endTime="2025-09-08T16:20:44.5503635+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="470ec91e-7242-4d44-b1c1-b0454edf2733" />
+    <UnitTestResult executionId="77dc176b-2cbc-4c97-a786-6b1d8c5eaca2" testId="97ba0c19-25d4-24f5-b9b9-0084d1150343" testName="Miscellaneous.FsharpSuiteMigrated_CoreTests.controlMailbox --tailcalls" computerName="pkrvm7jw40e0xgp" duration="00:00:00.0011272" startTime="2025-09-08T16:20:40.4336689+00:00" endTime="2025-09-08T16:20:40.4336692+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="77dc176b-2cbc-4c97-a786-6b1d8c5eaca2" />
+    <UnitTestResult executionId="648c8091-cffa-4894-87d2-23cad4b2c478" testId="66c529ba-6845-60f4-70e3-83d366ddea1a" testName="ErrorMessages.TailCall Attribute.Warn for rec call in finally" computerName="pkrvm7jw40e0xgp" duration="00:00:04.6916681" startTime="2025-09-08T16:20:38.4912922+00:00" endTime="2025-09-08T16:20:38.4912923+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="648c8091-cffa-4894-87d2-23cad4b2c478" />
+    <UnitTestResult executionId="6f2ab19b-b257-4c70-adad-600df2af9ac7" testId="b230f545-bbaf-92b0-b7fe-63945bd1860b" testName="ErrorMessages.TailCall Attribute.Don't warn for yield! call of rec func in seq" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5653922" startTime="2025-09-08T16:20:40.4305055+00:00" endTime="2025-09-08T16:20:40.4305058+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6f2ab19b-b257-4c70-adad-600df2af9ac7" />
+    <UnitTestResult executionId="11936ce2-76e9-4d91-b558-0939783dc451" testId="f5841a4f-a406-8d2b-29a5-2ee549a0e3a4" testName="ErrorMessages.TailCall Attribute.Warn for byref parameters" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5165421" startTime="2025-09-08T16:20:39.8644410+00:00" endTime="2025-09-08T16:20:39.8644412+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="11936ce2-76e9-4d91-b558-0939783dc451" />
+    <UnitTestResult executionId="540fbc52-ccd9-46a0-b979-4ed269bbb1ad" testId="63797907-9f3e-f622-0188-9330ac7cf14f" testName="ErrorMessages.TailCall Attribute.Error about attribute on recursive let-bound value" computerName="pkrvm7jw40e0xgp" duration="00:00:00.2905076" startTime="2025-09-08T16:20:48.1127196+00:00" endTime="2025-09-08T16:20:48.1127198+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="540fbc52-ccd9-46a0-b979-4ed269bbb1ad" />
+    <UnitTestResult executionId="60523ebf-bd1b-42eb-b824-818209e9bf39" testId="c01a7ee7-e787-0487-2f1b-714865246f8c" testName="ErrorMessages.TailCall Attribute.Warn for ColonColon with rec call" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3606596" startTime="2025-09-08T16:20:45.5706841+00:00" endTime="2025-09-08T16:20:45.5706843+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="60523ebf-bd1b-42eb-b824-818209e9bf39" />
+    <UnitTestResult executionId="b6867470-851b-43b4-bb42-fa2b431d4e23" testId="15c40399-a416-396c-43e3-c53da0a31089" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in type methods" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3333888" startTime="2025-09-08T16:20:45.2092658+00:00" endTime="2025-09-08T16:20:45.2092660+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b6867470-851b-43b4-bb42-fa2b431d4e23" />
+    <UnitTestResult executionId="852a9e0f-f07e-4eaa-a30e-5a7734721d6b" testId="312b4f15-fc23-4b9f-8fb4-eb93bace8504" testName="ErrorMessages.TailCall Attribute.Warn about self-defined attribute" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6636079" startTime="2025-09-08T16:20:43.9355440+00:00" endTime="2025-09-08T16:20:43.9355441+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="852a9e0f-f07e-4eaa-a30e-5a7734721d6b" />
+    <UnitTestResult executionId="db3ce7f6-15a0-4878-a359-1804b42c653f" testId="2c09e37a-927d-d7c5-9e44-47378c58f2ad" testName="ErrorMessages.TailCall Attribute.Don't warn for tail rec call returning unit" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4179671" startTime="2025-09-08T16:20:42.8954819+00:00" endTime="2025-09-08T16:20:42.8954822+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="db3ce7f6-15a0-4878-a359-1804b42c653f" />
+    <UnitTestResult executionId="a38f7f10-b7d7-4b7e-97d6-afd98cc5e767" testId="36ebdd16-6dc3-d33b-b8aa-0088d48cc520" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in async expression" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4685735" startTime="2025-09-08T16:20:42.0255195+00:00" endTime="2025-09-08T16:20:42.0255197+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a38f7f10-b7d7-4b7e-97d6-afd98cc5e767" />
+    <UnitTestResult executionId="4ce55ff8-b256-4c79-95ba-0cc181e6d733" testId="46cf0cb0-ade9-d851-e055-58017491a678" testName="ErrorMessages.TailCall Attribute.Warn for non tail-rec traversal with List.collect" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3024642" startTime="2025-09-08T16:20:45.9791012+00:00" endTime="2025-09-08T16:20:45.9791016+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4ce55ff8-b256-4c79-95ba-0cc181e6d733" />
+    <UnitTestResult executionId="3675de41-6e9c-49e7-bf6c-3a05fdc44035" testId="a8c7e659-e0da-7101-783b-78f4ac1e7030" testName="EmittedIL.SeqExpressionTailCalls.SeqExpressionTailCalls01_fs(compilation: File: SeqExpressionTailCalls01.fs)" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6433836" startTime="2025-09-08T16:20:47.2260408+00:00" endTime="2025-09-08T16:20:47.2260410+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3675de41-6e9c-49e7-bf6c-3a05fdc44035" />
+    <UnitTestResult executionId="a6bffbbe-62d2-434a-9c82-946c8c7727e8" testId="08521184-6ca6-32ac-9bb5-c3a868b77833" testName="ErrorMessages.TailCall Attribute.Warn for yield! call of rec func in custom CE" computerName="pkrvm7jw40e0xgp" duration="00:00:05.6182255" startTime="2025-09-08T16:20:38.4928487+00:00" endTime="2025-09-08T16:20:38.4928488+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a6bffbbe-62d2-434a-9c82-946c8c7727e8" />
+    <UnitTestResult executionId="1f4af93d-9ce7-4f8c-9e34-98a7acc94960" testId="9b2e4318-8341-1a24-1481-37078f865ecd" testName="ErrorMessages.TailCall Attribute.Warn successfully in Array-mapped recursive call" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3934306" startTime="2025-09-08T16:20:41.0616767+00:00" endTime="2025-09-08T16:20:41.0616779+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1f4af93d-9ce7-4f8c-9e34-98a7acc94960" />
+    <UnitTestResult executionId="82170268-a672-43df-b07a-67679c0087cd" testId="3c7ec6d4-5327-f710-0cf7-ad9e5d66c0b5" testName="EmittedIL.Tail Calls.TailCall 04" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6146838" startTime="2025-09-08T16:20:39.1224874+00:00" endTime="2025-09-08T16:20:39.1224875+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="82170268-a672-43df-b07a-67679c0087cd" />
+    <UnitTestResult executionId="91d459da-6ab7-4f70-ae09-db579f1159ae" testId="df31f642-eca7-7748-8275-a5785161f781" testName="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in async expression" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4154151" startTime="2025-09-08T16:20:41.8305548+00:00" endTime="2025-09-08T16:20:41.8305549+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="91d459da-6ab7-4f70-ae09-db579f1159ae" />
+    <UnitTestResult executionId="bc087562-2519-49bb-9379-dbcc228f8c54" testId="863996a8-6010-4f52-eca3-9f3c18ff4144" testName="ErrorMessages.TailCall Attribute.Error about attribute on non-recursive let-bound value" computerName="pkrvm7jw40e0xgp" duration="00:00:00.3746932" startTime="2025-09-08T16:20:48.0913055+00:00" endTime="2025-09-08T16:20:48.0913057+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bc087562-2519-49bb-9379-dbcc228f8c54" />
+    <UnitTestResult executionId="d218b8fc-1e49-49dd-b339-77509a111f83" testId="3ed65555-60a4-25bd-233c-bd791c859438" testName="ErrorMessages.TailCall Attribute.Warn for return! rec call in task" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4671212" startTime="2025-09-08T16:20:46.4001878+00:00" endTime="2025-09-08T16:20:46.4001880+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d218b8fc-1e49-49dd-b339-77509a111f83" />
+    <UnitTestResult executionId="7dbc92c2-63fe-439c-b2ef-4f0fc35a56fb" testId="1c03aa5d-6495-51df-b2f0-66c0b6926ee7" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcall and bind from toplevel" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4351135" startTime="2025-09-08T16:20:44.3710669+00:00" endTime="2025-09-08T16:20:44.3710671+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7dbc92c2-63fe-439c-b2ef-4f0fc35a56fb" />
+    <UnitTestResult executionId="edf5eb1b-1a13-4572-bd66-5644042b1590" testId="e199018e-8b93-1d1b-3b7f-c78e1434cdfe" testName="Diagnostics.General.General - W_Keyword_tailcall01_fs - --test:ErrorRanges(compilation: W_Keyword_tailcall01.fs)" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6906436" startTime="2025-09-08T16:20:45.0684071+00:00" endTime="2025-09-08T16:20:45.0684074+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="edf5eb1b-1a13-4572-bd66-5644042b1590" />
+    <UnitTestResult executionId="0ff22cd2-0da8-4644-bbd5-920fa7576db8" testId="97711743-a7ba-42fd-80e7-9ad16186aa9b" testName="ErrorMessages.TailCall Attribute.Warn for non tail-rec traversal" computerName="pkrvm7jw40e0xgp" duration="00:00:00.8472022" startTime="2025-09-08T16:20:46.2959938+00:00" endTime="2025-09-08T16:20:46.2959939+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0ff22cd2-0da8-4644-bbd5-920fa7576db8" />
+    <UnitTestResult executionId="c2f1e26e-cbf6-48f4-90ac-5d964469703b" testId="0e2a5abe-6aec-4037-9e3b-a9de60680a89" testName="ErrorMessages.TailCall Attribute.Warn successfully in match clause" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4113789" startTime="2025-09-08T16:20:41.4711895+00:00" endTime="2025-09-08T16:20:41.4711898+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c2f1e26e-cbf6-48f4-90ac-5d964469703b" />
+    <UnitTestResult executionId="d0feed70-e34e-4ef6-9b0f-b225fe41108a" testId="c5f08819-1c6e-7a5a-8eec-82cad816f9d9" testName="ErrorMessages.TailCall Attribute.Warn successfully in if-else" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6693417" startTime="2025-09-08T16:20:39.7789501+00:00" endTime="2025-09-08T16:20:39.7789504+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d0feed70-e34e-4ef6-9b0f-b225fe41108a" />
+    <UnitTestResult executionId="2c8c8ada-2a76-48bb-b3a0-3c7e0a7c786f" testId="c3df20c6-2c01-2dd8-477d-f2c60f4716bc" testName="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in continuation lambda 2" computerName="pkrvm7jw40e0xgp" duration="00:00:01.9755145" startTime="2025-09-08T16:20:45.6763064+00:00" endTime="2025-09-08T16:20:45.6763065+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2c8c8ada-2a76-48bb-b3a0-3c7e0a7c786f" />
+    <UnitTestResult executionId="02f0244e-b571-4a96-814f-7f99d157f719" testId="9dcdfaba-85f6-301e-db8b-fe3dfad76cdd" testName="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in rec module" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5960208" startTime="2025-09-08T16:20:43.2715150+00:00" endTime="2025-09-08T16:20:43.2715152+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="02f0244e-b571-4a96-814f-7f99d157f719" />
+    <UnitTestResult executionId="84bea0e3-b1de-46f7-b26a-ff92002840bb" testId="5205c03c-3fcc-0916-9655-a49dbb17ca19" testName="ErrorMessages.TailCall Attribute.Warn for recursive call in list comprehension" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5836230" startTime="2025-09-08T16:20:43.4800466+00:00" endTime="2025-09-08T16:20:43.4800467+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="84bea0e3-b1de-46f7-b26a-ff92002840bb" />
+    <UnitTestResult executionId="e243d802-f7f1-4cf1-909a-9e5d3b91e01f" testId="78b9ea4d-0937-bee7-2f47-d031f38515a9" testName="EmittedIL.SeqExpressionTailCalls.SeqExpressionTailCalls02_fs(compilation: File: SeqExpressionTailCalls02.fs)" computerName="pkrvm7jw40e0xgp" duration="00:00:02.0318269" startTime="2025-09-08T16:20:46.6138933+00:00" endTime="2025-09-08T16:20:46.6138934+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e243d802-f7f1-4cf1-909a-9e5d3b91e01f" />
+    <UnitTestResult executionId="210a521a-2ee5-4ff3-8815-265727c447d1" testId="ca884314-c7ec-f91d-ecd3-f6f004bc4c30" testName="Miscellaneous.FsharpSuiteMigrated_CoreTests+CoreControl.control --tailcalls" computerName="pkrvm7jw40e0xgp" duration="00:00:00.0001095" startTime="2025-09-08T16:20:48.1132618+00:00" endTime="2025-09-08T16:20:48.1132618+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="210a521a-2ee5-4ff3-8815-265727c447d1" />
+    <UnitTestResult executionId="045c8cb4-69a3-4b47-a063-77e147623651" testId="adadfb2c-3c64-4acc-8e42-f0f16ca8f944" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcall and bind from nested bind" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4436031" startTime="2025-09-08T16:20:48.0093938+00:00" endTime="2025-09-08T16:20:48.0093940+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="045c8cb4-69a3-4b47-a063-77e147623651" />
+    <UnitTestResult executionId="7eefec8d-5ec9-40a1-8437-ff8f4f732c93" testId="3c96ea49-d63f-4775-4f30-b4afa9135777" testName="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in seq expression" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4023042" startTime="2025-09-08T16:20:41.4147474+00:00" endTime="2025-09-08T16:20:41.4147475+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7eefec8d-5ec9-40a1-8437-ff8f4f732c93" />
+    <UnitTestResult executionId="05063cae-2cea-4712-ab77-ce1f5c29c13b" testId="ba20cc8f-924c-0e38-9b24-6bc7603451d8" testName="ErrorMessages.TailCall Attribute.Warn successfully for mutually recursive functions" computerName="pkrvm7jw40e0xgp" duration="00:00:00.2891667" startTime="2025-09-08T16:20:46.2684077+00:00" endTime="2025-09-08T16:20:46.2684078+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="05063cae-2cea-4712-ab77-ce1f5c29c13b" />
+    <UnitTestResult executionId="84e8a7ed-8ece-4e0e-a5b0-2a36106af028" testId="2bf2829e-ef1b-2848-e0f9-a78af46e018a" testName="Conformance.InferenceProcedures.ByrefSafetyAnalysis.NoTailcallToByrefsWithModReq(compilation: File: NoTailcallToByrefsWithModReq.fs)" computerName="pkrvm7jw40e0xgp" duration="00:00:01.4499154" startTime="2025-09-08T16:20:40.6668062+00:00" endTime="2025-09-08T16:20:40.6668065+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="84e8a7ed-8ece-4e0e-a5b0-2a36106af028" />
+    <UnitTestResult executionId="c5192119-1a60-47cc-8657-3c07017f3ba5" testId="ce99c303-fcf4-2a4d-fba5-cbd3013c9e60" testName="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in seq expression because of bind" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6126902" startTime="2025-09-08T16:20:39.7225116+00:00" endTime="2025-09-08T16:20:39.7225118+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c5192119-1a60-47cc-8657-3c07017f3ba5" />
+    <UnitTestResult executionId="f12dff3d-f9c3-4622-b042-f41dd33f4d70" testId="83b8c96b-3fa1-572a-7746-d3bf54dbac19" testName="ErrorMessages.TailCall Attribute.Don't warn for rec call of async func that evaluates an async parameter in a match!" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4632556" startTime="2025-09-08T16:20:43.9434409+00:00" endTime="2025-09-08T16:20:43.9434410+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f12dff3d-f9c3-4622-b042-f41dd33f4d70" />
+    <UnitTestResult executionId="b87c3b56-739c-4e8e-a380-887d031729b3" testId="490839eb-f81d-260a-e018-5a4e5b86ec44" testName="EmittedIL.Tail Calls.TailCall 03" computerName="pkrvm7jw40e0xgp" duration="00:00:02.0325946" startTime="2025-09-08T16:20:41.7555581+00:00" endTime="2025-09-08T16:20:41.7555582+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b87c3b56-739c-4e8e-a380-887d031729b3" />
+    <UnitTestResult executionId="489d3d1c-90df-4fc1-a4c9-95b0ce485e0e" testId="f3e9eb6b-d97d-32da-6246-96a7297071be" testName="ErrorMessages.TailCall Attribute.Warn for rec call in with" computerName="pkrvm7jw40e0xgp" duration="00:00:05.6125050" startTime="2025-09-08T16:20:38.4875014+00:00" endTime="2025-09-08T16:20:38.4875358+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="489d3d1c-90df-4fc1-a4c9-95b0ce485e0e" />
+    <UnitTestResult executionId="cff9dd61-d6d1-44a1-92b3-b07d6fca462d" testId="f021c821-b4ad-3c0e-1493-f09c51083c1f" testName="ErrorMessages.TailCall Attribute.Warn for return! rec call in async try-with" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4038348" startTime="2025-09-08T16:20:41.2167933+00:00" endTime="2025-09-08T16:20:41.2167934+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cff9dd61-d6d1-44a1-92b3-b07d6fca462d" />
+    <UnitTestResult executionId="be5cbc95-e072-447f-a35b-8c9d86e5e3e5" testId="9227f6b3-8770-21c7-d697-1c364495ba39" testName="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in seq expression because of pipe" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5157132" startTime="2025-09-08T16:20:47.8218587+00:00" endTime="2025-09-08T16:20:47.8218588+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="be5cbc95-e072-447f-a35b-8c9d86e5e3e5" />
+    <UnitTestResult executionId="ce2b1477-985b-4267-990f-720e4fc77e62" testId="87cab25a-feea-c1f9-6da4-c355df8b11b3" testName="ErrorMessages.TailCall Attribute.Warn for rec call inside of match lambda with closure over local function" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4370826" startTime="2025-09-08T16:20:47.5651404+00:00" endTime="2025-09-08T16:20:47.5651405+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ce2b1477-985b-4267-990f-720e4fc77e62" />
+    <UnitTestResult executionId="451a06e9-74eb-4ac1-a326-715add9c4d9d" testId="9ceac089-94de-347f-4eaa-3a55ad47cc03" testName="EmittedIL.Tail Calls.TailCall 05" computerName="pkrvm7jw40e0xgp" duration="00:00:00.4410684" startTime="2025-09-08T16:20:47.3049244+00:00" endTime="2025-09-08T16:20:47.3049246+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="451a06e9-74eb-4ac1-a326-715add9c4d9d" />
+    <UnitTestResult executionId="023dfd98-1063-4b44-8bb4-50ecac910061" testId="c1f22a72-1aa8-6009-aad2-325916656ed0" testName="ErrorMessages.TailCall Attribute.Warn for rec call in match branch in try-finally" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5220558" startTime="2025-09-08T16:20:40.3013350+00:00" endTime="2025-09-08T16:20:40.3013351+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="023dfd98-1063-4b44-8bb4-50ecac910061" />
+    <UnitTestResult executionId="8d682e22-a6a6-4587-b9ca-b1205cc7e027" testId="563d248c-94d0-7002-73a0-96fa515831a3" testName="EmittedIL.Tail Calls.TailCall 06 - No tail call with pinned locals" computerName="pkrvm7jw40e0xgp" duration="00:00:00.2905356" startTime="2025-09-08T16:20:46.6104381+00:00" endTime="2025-09-08T16:20:46.6104383+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8d682e22-a6a6-4587-b9ca-b1205cc7e027">
+      <Output>
+        <ErrorInfo>
+          <Message>
+==
+Name: '.method public static void  run() cil managed'
+
+Expected:	 IL_0040:  ldc.i4.s   42
+Actual:		 IL_0000:  ldc.i4.3
+==
+
+==
+Name: '.method public static void  run() cil managed'
+
+Expected:	 IL_0042:  ldc.i4.5
+Actual:		 IL_0001:  newarr     [runtime]System.Int32
+==
+
+==
+Name: '.method public static void  run() cil managed'
+
+Expected:	 IL_0043:  call       void TailCall06::foo&lt;int32&gt;(int32,
+Actual:		 IL_0006:  dup
+==
+
+==
+Name: '.method public static void  run() cil managed'
+
+Expected:	 !!0)
+Actual:		 IL_0007:  ldc.i4.0
+==
+
+\Expected:
+.method public static void  run() cil managed
+  {
+
+    .maxstack  6
+    .locals init (native int V_0,
+             int32[] V_1,
+             int32&amp; pinned V_2)
+    IL_0040:  ldc.i4.s   42
+    IL_0042:  ldc.i4.5
+    IL_0043:  call       void TailCall06::foo&lt;int32&gt;(int32,
+                                                     !!0)
+
+
+
+Actual:
+.method public static void  run() cil managed
+  {
+    
+    .maxstack  6
+    .locals init (native int V_0,
+             int32[] V_1,
+             int32&amp; pinned V_2)
+    IL_0000:  ldc.i4.3
+    IL_0001:  newarr     [runtime]System.Int32
+    IL_0006:  dup
+    IL_0007:  ldc.i4.0
+
+
+Entire actual:
+
+
+
+
+
+.assembly extern runtime { }
+.assembly extern FSharp.Core { }
+.assembly assembly
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
+                                                                                                      int32,
+                                                                                                      int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+
+  
+  
+
+  .hash algorithm 0x00008004
+  .ver 0:0:0:0
+}
+.module assembly.dll
+
+.imagebase {value}
+.file alignment 0x00000200
+.stackreserve 0x00100000
+.subsystem 0x0003       
+.corflags 0x00000001    
+
+
+
+
+
+.class public abstract auto ansi sealed TailCall06
+       extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .method public static void  foo&lt;a&gt;(int32 x,
+                                     !!a y) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldstr      "%d"
+    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5&lt;class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2&lt;int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32&gt;::.ctor(string)
+    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine&lt;class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2&lt;int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;&gt;(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4&lt;!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;)
+    IL_000f:  ldarg.0
+    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2&lt;int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;::Invoke(!0)
+    IL_0015:  pop
+    IL_0016:  ret
+  } 
+
+  .method public static void  run() cil managed
+  {
+    
+    .maxstack  6
+    .locals init (native int V_0,
+             int32[] V_1,
+             int32&amp; pinned V_2)
+    IL_0000:  ldc.i4.3
+    IL_0001:  newarr     [runtime]System.Int32
+    IL_0006:  dup
+    IL_0007:  ldc.i4.0
+    IL_0008:  ldc.i4.1
+    IL_0009:  stelem     [runtime]System.Int32
+    IL_000e:  dup
+    IL_000f:  ldc.i4.1
+    IL_0010:  ldc.i4.2
+    IL_0011:  stelem     [runtime]System.Int32
+    IL_0016:  dup
+    IL_0017:  ldc.i4.2
+    IL_0018:  ldc.i4.3
+    IL_0019:  stelem     [runtime]System.Int32
+    IL_001e:  stloc.1
+    IL_001f:  ldloc.1
+    IL_0020:  brfalse.s  IL_003c
+
+    IL_0022:  ldloc.1
+    IL_0023:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Length&lt;int32&gt;(!!0[])
+    IL_0028:  brfalse.s  IL_0037
+
+    IL_002a:  ldloc.1
+    IL_002b:  ldc.i4.0
+    IL_002c:  ldelema    [runtime]System.Int32
+    IL_0031:  stloc.2
+    IL_0032:  ldloc.2
+    IL_0033:  conv.i
+    IL_0034:  nop
+    IL_0035:  br.s       IL_003f
+
+    IL_0037:  ldc.i4.0
+    IL_0038:  conv.i
+    IL_0039:  nop
+    IL_003a:  br.s       IL_003f
+
+    IL_003c:  ldc.i4.0
+    IL_003d:  conv.i
+    IL_003e:  nop
+    IL_003f:  stloc.0
+    IL_0040:  ldc.i4.s   42
+    IL_0042:  ldc.i4.5
+    IL_0043:  tail.
+    IL_0045:  call       void TailCall06::foo&lt;int32&gt;(int32,
+                                                     !!0)
+    IL_004a:  ret
+  } 
+
+} 
+
+.class private abstract auto ansi sealed '&lt;StartupCode$assembly&gt;'.$TailCall06
+       extends [runtime]System.Object
+{
+} 
+
+
+
+
+
+</Message>
+          <StackTrace>   at FSharp.Test.ILChecker.checkILAux(IEnumerable`1 ildasmArgs, String dllFilePath, FSharpList`1 expectedIL) in /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/ILChecker.fs:line 184
+   at FSharp.Test.ILChecker.checkIL(String dllFilePath, FSharpList`1 expectedIL) in /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/ILChecker.fs:line 192
+   at FSharp.Test.Compiler.verifyIL@1374.Invoke(String dllFilePath, FSharpList`1 expectedIL)
+   at EmittedIL.Tail Calls.TailCall 06 - No tail call with pinned locals() in /home/runner/work/fsharp/fsharp/tests/FSharp.Compiler.ComponentTests/EmittedIL/TailCalls.fs:line 249
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="75422ee1-2330-429f-9574-91d7bf443fb7" testId="d9744f19-2f06-c10e-bbad-17727f243253" testName="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in object interface expression" computerName="pkrvm7jw40e0xgp" duration="00:00:00.6347922" startTime="2025-09-08T16:20:43.0075532+00:00" endTime="2025-09-08T16:20:43.0075533+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75422ee1-2330-429f-9574-91d7bf443fb7" />
+    <UnitTestResult executionId="19078cd2-2e77-4984-9cf5-463e6d048349" testId="28b0353f-c18c-2199-83de-907e465b3f48" testName="ErrorMessages.TailCall Attribute.Warn for rec call in use scope" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5584033" startTime="2025-09-08T16:20:47.1276741+00:00" endTime="2025-09-08T16:20:47.1276742+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="19078cd2-2e77-4984-9cf5-463e6d048349" />
+    <UnitTestResult executionId="c04d4e37-222c-4174-a643-7fffaac02a73" testId="86da542c-44e3-4178-7671-5682db7e2d3f" testName="ErrorMessages.TailCall Attribute.Warn for calls in for and iter" computerName="pkrvm7jw40e0xgp" duration="00:00:00.7558149" startTime="2025-09-08T16:20:47.4343712+00:00" endTime="2025-09-08T16:20:47.4343713+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c04d4e37-222c-4174-a643-7fffaac02a73" />
+    <UnitTestResult executionId="c0ff1a18-26bc-4a76-9d99-b74858038172" testId="9c4d88f2-5398-cea6-edd8-c6ab4ab7f4d8" testName="ErrorMessages.TailCall Attribute.Warn successfully for invalid tailcalls in type methods" computerName="pkrvm7jw40e0xgp" duration="00:00:00.5413561" startTime="2025-09-08T16:20:42.3723481+00:00" endTime="2025-09-08T16:20:42.3723482+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c0ff1a18-26bc-4a76-9d99-b74858038172" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="EmittedIL.Tail Calls.TailCall 05" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="9ceac089-94de-347f-4eaa-3a55ad47cc03">
+      <Execution id="451a06e9-74eb-4ac1-a326-715add9c4d9d" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.Tail Calls" name="TailCall 05" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully for rec call in binding" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="e33b932e-7ed8-e230-2f2e-ad77133fc919">
+      <Execution id="b47fa4b5-6b82-4809-969a-549024f1f279" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully for rec call in binding" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Error about attribute on recursive let-bound value" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="63797907-9f3e-f622-0188-9330ac7cf14f">
+      <Execution id="540fbc52-ccd9-46a0-b979-4ed269bbb1ad" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Error about attribute on recursive let-bound value" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcall and bind from toplevel" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="1c03aa5d-6495-51df-b2f0-66c0b6926ee7">
+      <Execution id="7dbc92c2-63fe-439c-b2ef-4f0fc35a56fb" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcall and bind from toplevel" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in continuation lambda" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="9d1080cb-5c7a-e027-4f9e-1097da80a7ca">
+      <Execution id="085ff289-d891-4a96-8231-ee296411a738" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in continuation lambda" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for yield! call of rec func in custom CE" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="08521184-6ca6-32ac-9bb5-c3a868b77833">
+      <Execution id="a6bffbbe-62d2-434a-9c82-946c8c7727e8" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for yield! call of rec func in custom CE" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for ColonColon as arg of valid tail call" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="14b20b06-8647-c2cb-2119-7f1cee370edd">
+      <Execution id="7c27d913-c116-4181-ab6c-e80707469288" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for ColonColon as arg of valid tail call" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully in match clause" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="0e2a5abe-6aec-4037-9e3b-a9de60680a89">
+      <Execution id="c2f1e26e-cbf6-48f4-90ac-5d964469703b" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully in match clause" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for return! rec call in task" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="3ed65555-60a4-25bd-233c-bd791c859438">
+      <Execution id="d218b8fc-1e49-49dd-b339-77509a111f83" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for return! rec call in task" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in match branch in try-finally" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="c1f22a72-1aa8-6009-aad2-325916656ed0">
+      <Execution id="023dfd98-1063-4b44-8bb4-50ecac910061" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in match branch in try-finally" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.Tail Calls.TailCall 01" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="d4bcd9c7-d440-68c3-1697-84e43275e5d6">
+      <Execution id="411d3f97-09f4-43ce-a41d-cd7056ec98fd" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.Tail Calls" name="TailCall 01" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for calls in for and iter" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="86da542c-44e3-4178-7671-5682db7e2d3f">
+      <Execution id="c04d4e37-222c-4174-a643-7fffaac02a73" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for calls in for and iter" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.Tail Calls.TailCall 02" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="d6bfc42f-b1fc-0fa4-7b50-843b01ffab09">
+      <Execution id="ba55618f-8241-4000-ad53-8363b90a4566" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.Tail Calls" name="TailCall 02" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in if-else branch in try-with" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="b59e9265-347f-efb9-fdff-c8f537b851e3">
+      <Execution id="dbb47bb0-d22c-47f1-b9f5-9ab2581febcc" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in if-else branch in try-with" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for byref parameters" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="f5841a4f-a406-8d2b-29a5-2ee549a0e3a4">
+      <Execution id="11936ce2-76e9-4d91-b558-0939783dc451" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for byref parameters" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.Tail Calls.TailCall 03" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="490839eb-f81d-260a-e018-5a4e5b86ec44">
+      <Execution id="b87c3b56-739c-4e8e-a380-887d031729b3" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.Tail Calls" name="TailCall 03" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for yield! in tail position" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="b6083789-3c93-7617-8b00-37951134e792">
+      <Execution id="5b6a7397-895a-4e7c-8f03-206800a71fc3" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for yield! in tail position" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for ColonColon with inner let-bound value to rec call" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="25cca450-bbad-a035-b07c-f3f497c553ae">
+      <Execution id="89feadcd-0a24-4bd7-968b-07b3554cccdd" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for ColonColon with inner let-bound value to rec call" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for recursive call in list comprehension" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="5205c03c-3fcc-0916-9655-a49dbb17ca19">
+      <Execution id="84bea0e3-b1de-46f7-b26a-ff92002840bb" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for recursive call in list comprehension" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.SeqExpressionTailCalls.SeqExpressionTailCalls01_fs(compilation: File: SeqExpressionTailCalls01.fs)" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="a8c7e659-e0da-7101-783b-78f4ac1e7030">
+      <Execution id="3675de41-6e9c-49e7-bf6c-3a05fdc44035" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.SeqExpressionTailCalls" name="SeqExpressionTailCalls01_fs" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for return! rec call in async try-with" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="f021c821-b4ad-3c0e-1493-f09c51083c1f">
+      <Execution id="cff9dd61-d6d1-44a1-92b3-b07d6fca462d" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for return! rec call in async try-with" />
+    </UnitTest>
+    <UnitTest name="Miscellaneous.FsharpSuiteMigrated_CoreTests.controlMailbox --tailcalls" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="97ba0c19-25d4-24f5-b9b9-0084d1150343">
+      <Execution id="77dc176b-2cbc-4c97-a786-6b1d8c5eaca2" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Miscellaneous.FsharpSuiteMigrated_CoreTests" name="controlMailbox --tailcalls" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.Tail Calls.TailCall 04" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="3c7ec6d4-5327-f710-0cf7-ad9e5d66c0b5">
+      <Execution id="82170268-a672-43df-b07a-67679c0087cd" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.Tail Calls" name="TailCall 04" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for non tail-rec traversal" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="97711743-a7ba-42fd-80e7-9ad16186aa9b">
+      <Execution id="0ff22cd2-0da8-4644-bbd5-920fa7576db8" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for non tail-rec traversal" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in async expression" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="df31f642-eca7-7748-8275-a5785161f781">
+      <Execution id="91d459da-6ab7-4f70-ae09-db579f1159ae" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for invalid tailcalls in async expression" />
+    </UnitTest>
+    <UnitTest name="Miscellaneous.FsharpSuiteMigrated_CoreTests+CoreControl.control --tailcalls" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="ca884314-c7ec-f91d-ecd3-f6f004bc4c30">
+      <Execution id="210a521a-2ee5-4ff3-8815-265727c447d1" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Miscellaneous.FsharpSuiteMigrated_CoreTests+CoreControl" name="control --tailcalls" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call inside of match lambda with closure over local function using pipe" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="66a9b9d6-913f-de04-1d95-0e4e249b1d4b">
+      <Execution id="a2b53a35-ec63-4a6b-a977-5eb23c0a9121" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call inside of match lambda with closure over local function using pipe" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in type methods" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="15c40399-a416-396c-43e3-c53da0a31089">
+      <Execution id="b6867470-851b-43b4-bb42-fa2b431d4e23" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcalls in type methods" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in rec module" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="6aa64bf0-69e4-57ea-313d-22ee1fb4a813">
+      <Execution id="5e004f5c-6d1c-48b3-985a-529f392894ff" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcalls in rec module" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in finally" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="66c529ba-6845-60f4-70e3-83d366ddea1a">
+      <Execution id="648c8091-cffa-4894-87d2-23cad4b2c478" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in finally" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for tail rec call returning unit" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="2c09e37a-927d-d7c5-9e44-47378c58f2ad">
+      <Execution id="db3ce7f6-15a0-4878-a359-1804b42c653f" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for tail rec call returning unit" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for partial application but for calls in map and total applications" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="8b8e01af-b1c3-147b-1ec2-bbc975f83a1c">
+      <Execution id="470ec91e-7242-4d44-b1c1-b0454edf2733" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for partial application but for calls in map and total applications" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcall in type method" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="3a7fde04-42f0-fa25-7865-508c94836168">
+      <Execution id="4f0e99cb-949d-4e45-b39f-b6c93712fc4f" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcall in type method" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for yield! call of rec func in seq" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="b230f545-bbaf-92b0-b7fe-63945bd1860b">
+      <Execution id="6f2ab19b-b257-4c70-adad-600df2af9ac7" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for yield! call of rec func in seq" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn about attribute on non-rec function" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="1de4bd26-bfea-daff-f64f-58e547a36f4d">
+      <Execution id="178f8974-7a0e-45cb-9c26-f234f3170843" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn about attribute on non-rec function" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully for mutually recursive functions" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="ba20cc8f-924c-0e38-9b24-6bc7603451d8">
+      <Execution id="05063cae-2cea-4712-ab77-ce1f5c29c13b" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully for mutually recursive functions" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in seq expression because of bind" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="ce99c303-fcf4-2a4d-fba5-cbd3013c9e60">
+      <Execution id="c5192119-1a60-47cc-8657-3c07017f3ba5" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for invalid tailcalls in seq expression because of bind" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn about self-defined attribute" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="312b4f15-fc23-4b9f-8fb4-eb93bace8504">
+      <Execution id="852a9e0f-f07e-4eaa-a30e-5a7734721d6b" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn about self-defined attribute" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in rec module" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="9dcdfaba-85f6-301e-db8b-fe3dfad76cdd">
+      <Execution id="02f0244e-b571-4a96-814f-7f99d157f719" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for invalid tailcalls in rec module" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in Sequential in use scope" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="728d7ca8-43bc-ddff-34b2-91f1cd754afb">
+      <Execution id="72d1bca5-bd1f-4b89-9a15-fb8079992dac" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in Sequential in use scope" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully in Seq-mapped recursive call" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="35032a10-18e8-39e8-8d7c-c0c038f43667">
+      <Execution id="ed39de8d-714a-4e46-afa2-52439752baec" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully in Seq-mapped recursive call" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.SeqExpressionTailCalls.SeqExpressionTailCalls02_fs(compilation: File: SeqExpressionTailCalls02.fs)" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="78b9ea4d-0937-bee7-2f47-d031f38515a9">
+      <Execution id="e243d802-f7f1-4cf1-909a-9e5d3b91e01f" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.SeqExpressionTailCalls" name="SeqExpressionTailCalls02_fs" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call inside of match lambda with closure over local function" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="87cab25a-feea-c1f9-6da4-c355df8b11b3">
+      <Execution id="ce2b1477-985b-4267-990f-720e4fc77e62" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call inside of match lambda with closure over local function" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for ColonColon with rec call" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="c01a7ee7-e787-0487-2f1b-714865246f8c">
+      <Execution id="60523ebf-bd1b-42eb-b824-818209e9bf39" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for ColonColon with rec call" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcall and bind from nested bind" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="adadfb2c-3c64-4acc-8e42-f0f16ca8f944">
+      <Execution id="045c8cb4-69a3-4b47-a063-77e147623651" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcall and bind from nested bind" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully for invalid tailcall in type method" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="6873a0f0-b5c7-da2d-08e8-5ddd33d68c53">
+      <Execution id="d20d4dde-c5b6-4233-8bfb-959e90c62906" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully for invalid tailcall in type method" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for non tail-rec traversal with List.collect" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="46cf0cb0-ade9-d851-e055-58017491a678">
+      <Execution id="4ce55ff8-b256-4c79-95ba-0cc181e6d733" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute.Warn for non tail-rec traversal with List" name="collect" />
+    </UnitTest>
+    <UnitTest name="EmittedIL.Tail Calls.TailCall 06 - No tail call with pinned locals" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="563d248c-94d0-7002-73a0-96fa515831a3">
+      <Execution id="8d682e22-a6a6-4587-b9ca-b1205cc7e027" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="EmittedIL.Tail Calls" name="TailCall 06 - No tail call with pinned locals" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for yield! call of rec func in list comprehension" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="77564a1d-c2b6-3f9e-f2da-e91f0ad63472">
+      <Execution id="d92002f9-03f3-46bf-90c6-4f43890bfe39" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for yield! call of rec func in list comprehension" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for rec call of async func that evaluates an async parameter in a let!" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="0185c0df-c520-b94b-6c8c-b3513a2df4d5">
+      <Execution id="2b6102e2-b875-412d-946e-14e3753a1e46" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for rec call of async func that evaluates an async parameter in a let!" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for simple rec call in try-with" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="8b5474b1-f126-820a-423d-0e1d55afea17">
+      <Execution id="c275d820-cd23-49ca-a284-160718afb17b" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for simple rec call in try-with" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for piped arg in tailrec call" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="74787e1c-a6dc-f8e0-95c0-dc04ac0ba63b">
+      <Execution id="4b9629b5-f043-41c2-8b34-ce33652a65b3" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for piped arg in tailrec call" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for rec call of async func that evaluates an async parameter in a match!" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="83b8c96b-3fa1-572a-7746-d3bf54dbac19">
+      <Execution id="f12dff3d-f9c3-4622-b042-f41dd33f4d70" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for rec call of async func that evaluates an async parameter in a match!" />
+    </UnitTest>
+    <UnitTest name="Diagnostics.General.General - W_Keyword_tailcall01_fs - --test:ErrorRanges" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="e199018e-8b93-1d1b-3b7f-c78e1434cdfe">
+      <Execution id="edf5eb1b-1a13-4572-bd66-5644042b1590" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Diagnostics.General" name="General - W_Keyword_tailcall01_fs - --test:ErrorRanges" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in use scope" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="28b0353f-c18c-2199-83de-907e465b3f48">
+      <Execution id="19078cd2-2e77-4984-9cf5-463e6d048349" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in use scope" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for invalid calls in inner bindings of conditional" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="96af492f-10db-9ba2-a1e1-2d4d8581da64">
+      <Execution id="75ab40b1-46b4-418e-8441-9224a0e9a88e" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for invalid calls in inner bindings of conditional" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully in if-else" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="c5f08819-1c6e-7a5a-8eec-82cad816f9d9">
+      <Execution id="d0feed70-e34e-4ef6-9b0f-b225fe41108a" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully in if-else" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in with" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="f3e9eb6b-d97d-32da-6246-96a7297071be">
+      <Execution id="489d3d1c-90df-4fc1-a4c9-95b0ce485e0e" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in with" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in continuation lambda 2" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="c3df20c6-2c01-2dd8-477d-f2c60f4716bc">
+      <Execution id="2c8c8ada-2a76-48bb-b3a0-3c7e0a7c786f" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in continuation lambda 2" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully in Array-mapped recursive call" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="9b2e4318-8341-1a24-1481-37078f865ecd">
+      <Execution id="1f4af93d-9ce7-4f8c-9e34-98a7acc94960" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully in Array-mapped recursive call" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in seq expression" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="3c96ea49-d63f-4775-4f30-b4afa9135777">
+      <Execution id="7eefec8d-5ec9-40a1-8437-ff8f4f732c93" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcalls in seq expression" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for rec call in match branch in try-with" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="bc756d22-cb17-474e-a02f-6ac9397349b9">
+      <Execution id="ad38719f-0e73-4994-909d-0fb75b7fcd5d" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for rec call in match branch in try-with" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in list of continuations" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="a488c302-a557-f198-7708-f35c9fbf743a">
+      <Execution id="5f6cf26d-8592-4c56-a70f-c789d0910002" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in list of continuations" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Error about attribute on non-recursive let-bound value" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="863996a8-6010-4f52-eca3-9f3c18ff4144">
+      <Execution id="bc087562-2519-49bb-9379-dbcc228f8c54" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Error about attribute on non-recursive let-bound value" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in object interface expression" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="d9744f19-2f06-c10e-bbad-17727f243253">
+      <Execution id="75422ee1-2330-429f-9574-91d7bf443fb7" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for Continuation Passing Style func using [&lt;TailCall&gt;] func in object interface expression" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn successfully for invalid tailcalls in type methods" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="9c4d88f2-5398-cea6-edd8-c6ab4ab7f4d8">
+      <Execution id="c0ff1a18-26bc-4a76-9d99-b74858038172" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn successfully for invalid tailcalls in type methods" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Warn for invalid tailcalls in seq expression because of pipe" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="9227f6b3-8770-21c7-d697-1c364495ba39">
+      <Execution id="be5cbc95-e072-447f-a35b-8c9d86e5e3e5" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Warn for invalid tailcalls in seq expression because of pipe" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for Continuation Passing Style func not using [&lt;TailCall&gt;] func in continuation lambda" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="c8943d3d-3c07-5abb-0588-a975d682c4ef">
+      <Execution id="7a88390f-32d2-4d46-b946-88130c433557" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for Continuation Passing Style func not using [&lt;TailCall&gt;] func in continuation lambda" />
+    </UnitTest>
+    <UnitTest name="Conformance.InferenceProcedures.ByrefSafetyAnalysis.NoTailcallToByrefsWithModReq(compilation: File: NoTailcallToByrefsWithModReq.fs)" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="2bf2829e-ef1b-2848-e0f9-a78af46e018a">
+      <Execution id="84e8a7ed-8ece-4e0e-a5b0-2a36106af028" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Conformance.InferenceProcedures.ByrefSafetyAnalysis" name="NoTailcallToByrefsWithModReq" />
+    </UnitTest>
+    <UnitTest name="ErrorMessages.TailCall Attribute.Don't warn for valid tailcalls in async expression" storage="/home/runner/work/fsharp/fsharp/artifacts/bin/fsharp.compiler.componenttests/release/net10.0/fsharp.compiler.componenttests.dll" id="36ebdd16-6dc3-d33b-b8aa-0088d48cc520">
+      <Execution id="a38f7f10-b7d7-4b7e-97d6-afd98cc5e767" />
+      <TestMethod codeBase="/home/runner/work/fsharp/fsharp/artifacts/bin/FSharp.Compiler.ComponentTests/Release/net10.0/FSharp.Compiler.ComponentTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="ErrorMessages.TailCall Attribute" name="Don't warn for valid tailcalls in async expression" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="b59e9265-347f-efb9-fdff-c8f537b851e3" executionId="dbb47bb0-d22c-47f1-b9f5-9ab2581febcc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a488c302-a557-f198-7708-f35c9fbf743a" executionId="5f6cf26d-8592-4c56-a70f-c789d0910002" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="728d7ca8-43bc-ddff-34b2-91f1cd754afb" executionId="72d1bca5-bd1f-4b89-9a15-fb8079992dac" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3a7fde04-42f0-fa25-7865-508c94836168" executionId="4f0e99cb-949d-4e45-b39f-b6c93712fc4f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c8943d3d-3c07-5abb-0588-a975d682c4ef" executionId="7a88390f-32d2-4d46-b946-88130c433557" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="77564a1d-c2b6-3f9e-f2da-e91f0ad63472" executionId="d92002f9-03f3-46bf-90c6-4f43890bfe39" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="25cca450-bbad-a035-b07c-f3f497c553ae" executionId="89feadcd-0a24-4bd7-968b-07b3554cccdd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0185c0df-c520-b94b-6c8c-b3513a2df4d5" executionId="2b6102e2-b875-412d-946e-14e3753a1e46" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="14b20b06-8647-c2cb-2119-7f1cee370edd" executionId="7c27d913-c116-4181-ab6c-e80707469288" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="74787e1c-a6dc-f8e0-95c0-dc04ac0ba63b" executionId="4b9629b5-f043-41c2-8b34-ce33652a65b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="66a9b9d6-913f-de04-1d95-0e4e249b1d4b" executionId="a2b53a35-ec63-4a6b-a977-5eb23c0a9121" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6873a0f0-b5c7-da2d-08e8-5ddd33d68c53" executionId="d20d4dde-c5b6-4233-8bfb-959e90c62906" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d6bfc42f-b1fc-0fa4-7b50-843b01ffab09" executionId="ba55618f-8241-4000-ad53-8363b90a4566" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b6083789-3c93-7617-8b00-37951134e792" executionId="5b6a7397-895a-4e7c-8f03-206800a71fc3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1de4bd26-bfea-daff-f64f-58e547a36f4d" executionId="178f8974-7a0e-45cb-9c26-f234f3170843" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8b5474b1-f126-820a-423d-0e1d55afea17" executionId="c275d820-cd23-49ca-a284-160718afb17b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="96af492f-10db-9ba2-a1e1-2d4d8581da64" executionId="75ab40b1-46b4-418e-8441-9224a0e9a88e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d1080cb-5c7a-e027-4f9e-1097da80a7ca" executionId="085ff289-d891-4a96-8231-ee296411a738" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="35032a10-18e8-39e8-8d7c-c0c038f43667" executionId="ed39de8d-714a-4e46-afa2-52439752baec" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d4bcd9c7-d440-68c3-1697-84e43275e5d6" executionId="411d3f97-09f4-43ce-a41d-cd7056ec98fd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e33b932e-7ed8-e230-2f2e-ad77133fc919" executionId="b47fa4b5-6b82-4809-969a-549024f1f279" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bc756d22-cb17-474e-a02f-6ac9397349b9" executionId="ad38719f-0e73-4994-909d-0fb75b7fcd5d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6aa64bf0-69e4-57ea-313d-22ee1fb4a813" executionId="5e004f5c-6d1c-48b3-985a-529f392894ff" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8b8e01af-b1c3-147b-1ec2-bbc975f83a1c" executionId="470ec91e-7242-4d44-b1c1-b0454edf2733" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="97ba0c19-25d4-24f5-b9b9-0084d1150343" executionId="77dc176b-2cbc-4c97-a786-6b1d8c5eaca2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="66c529ba-6845-60f4-70e3-83d366ddea1a" executionId="648c8091-cffa-4894-87d2-23cad4b2c478" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b230f545-bbaf-92b0-b7fe-63945bd1860b" executionId="6f2ab19b-b257-4c70-adad-600df2af9ac7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f5841a4f-a406-8d2b-29a5-2ee549a0e3a4" executionId="11936ce2-76e9-4d91-b558-0939783dc451" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="63797907-9f3e-f622-0188-9330ac7cf14f" executionId="540fbc52-ccd9-46a0-b979-4ed269bbb1ad" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c01a7ee7-e787-0487-2f1b-714865246f8c" executionId="60523ebf-bd1b-42eb-b824-818209e9bf39" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15c40399-a416-396c-43e3-c53da0a31089" executionId="b6867470-851b-43b4-bb42-fa2b431d4e23" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="312b4f15-fc23-4b9f-8fb4-eb93bace8504" executionId="852a9e0f-f07e-4eaa-a30e-5a7734721d6b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2c09e37a-927d-d7c5-9e44-47378c58f2ad" executionId="db3ce7f6-15a0-4878-a359-1804b42c653f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="36ebdd16-6dc3-d33b-b8aa-0088d48cc520" executionId="a38f7f10-b7d7-4b7e-97d6-afd98cc5e767" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="46cf0cb0-ade9-d851-e055-58017491a678" executionId="4ce55ff8-b256-4c79-95ba-0cc181e6d733" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a8c7e659-e0da-7101-783b-78f4ac1e7030" executionId="3675de41-6e9c-49e7-bf6c-3a05fdc44035" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="08521184-6ca6-32ac-9bb5-c3a868b77833" executionId="a6bffbbe-62d2-434a-9c82-946c8c7727e8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9b2e4318-8341-1a24-1481-37078f865ecd" executionId="1f4af93d-9ce7-4f8c-9e34-98a7acc94960" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3c7ec6d4-5327-f710-0cf7-ad9e5d66c0b5" executionId="82170268-a672-43df-b07a-67679c0087cd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="df31f642-eca7-7748-8275-a5785161f781" executionId="91d459da-6ab7-4f70-ae09-db579f1159ae" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="863996a8-6010-4f52-eca3-9f3c18ff4144" executionId="bc087562-2519-49bb-9379-dbcc228f8c54" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3ed65555-60a4-25bd-233c-bd791c859438" executionId="d218b8fc-1e49-49dd-b339-77509a111f83" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1c03aa5d-6495-51df-b2f0-66c0b6926ee7" executionId="7dbc92c2-63fe-439c-b2ef-4f0fc35a56fb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e199018e-8b93-1d1b-3b7f-c78e1434cdfe" executionId="edf5eb1b-1a13-4572-bd66-5644042b1590" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="97711743-a7ba-42fd-80e7-9ad16186aa9b" executionId="0ff22cd2-0da8-4644-bbd5-920fa7576db8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0e2a5abe-6aec-4037-9e3b-a9de60680a89" executionId="c2f1e26e-cbf6-48f4-90ac-5d964469703b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c5f08819-1c6e-7a5a-8eec-82cad816f9d9" executionId="d0feed70-e34e-4ef6-9b0f-b225fe41108a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c3df20c6-2c01-2dd8-477d-f2c60f4716bc" executionId="2c8c8ada-2a76-48bb-b3a0-3c7e0a7c786f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9dcdfaba-85f6-301e-db8b-fe3dfad76cdd" executionId="02f0244e-b571-4a96-814f-7f99d157f719" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5205c03c-3fcc-0916-9655-a49dbb17ca19" executionId="84bea0e3-b1de-46f7-b26a-ff92002840bb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="78b9ea4d-0937-bee7-2f47-d031f38515a9" executionId="e243d802-f7f1-4cf1-909a-9e5d3b91e01f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ca884314-c7ec-f91d-ecd3-f6f004bc4c30" executionId="210a521a-2ee5-4ff3-8815-265727c447d1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="adadfb2c-3c64-4acc-8e42-f0f16ca8f944" executionId="045c8cb4-69a3-4b47-a063-77e147623651" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3c96ea49-d63f-4775-4f30-b4afa9135777" executionId="7eefec8d-5ec9-40a1-8437-ff8f4f732c93" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ba20cc8f-924c-0e38-9b24-6bc7603451d8" executionId="05063cae-2cea-4712-ab77-ce1f5c29c13b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2bf2829e-ef1b-2848-e0f9-a78af46e018a" executionId="84e8a7ed-8ece-4e0e-a5b0-2a36106af028" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ce99c303-fcf4-2a4d-fba5-cbd3013c9e60" executionId="c5192119-1a60-47cc-8657-3c07017f3ba5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="83b8c96b-3fa1-572a-7746-d3bf54dbac19" executionId="f12dff3d-f9c3-4622-b042-f41dd33f4d70" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="490839eb-f81d-260a-e018-5a4e5b86ec44" executionId="b87c3b56-739c-4e8e-a380-887d031729b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f3e9eb6b-d97d-32da-6246-96a7297071be" executionId="489d3d1c-90df-4fc1-a4c9-95b0ce485e0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f021c821-b4ad-3c0e-1493-f09c51083c1f" executionId="cff9dd61-d6d1-44a1-92b3-b07d6fca462d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9227f6b3-8770-21c7-d697-1c364495ba39" executionId="be5cbc95-e072-447f-a35b-8c9d86e5e3e5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87cab25a-feea-c1f9-6da4-c355df8b11b3" executionId="ce2b1477-985b-4267-990f-720e4fc77e62" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9ceac089-94de-347f-4eaa-3a55ad47cc03" executionId="451a06e9-74eb-4ac1-a326-715add9c4d9d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c1f22a72-1aa8-6009-aad2-325916656ed0" executionId="023dfd98-1063-4b44-8bb4-50ecac910061" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="563d248c-94d0-7002-73a0-96fa515831a3" executionId="8d682e22-a6a6-4587-b9ca-b1205cc7e027" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d9744f19-2f06-c10e-bbad-17727f243253" executionId="75422ee1-2330-429f-9574-91d7bf443fb7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="28b0353f-c18c-2199-83de-907e465b3f48" executionId="19078cd2-2e77-4984-9cf5-463e6d048349" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="86da542c-44e3-4178-7671-5682db7e2d3f" executionId="c04d4e37-222c-4174-a643-7fffaac02a73" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9c4d88f2-5398-cea6-edd8-c6ab4ab7f4d8" executionId="c0ff1a18-26bc-4a76-9d99-b74858038172" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="70" executed="70" passed="69" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.0-rc.1.25411.109)
+Installing TestConsole redirection
+---------------------------------------------------------------
+Executables
+CSC                      = /home/runner/.nuget/packages/microsoft.net.compilers/4.3.0-1.22220.8/tools/csc.exe
+BUILD_CONFIG             = Release
+csc_flags                = /nologo
+FSC                      = /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/../../artifacts/bin/fsc/Release/net10.0/fsc.dll
+fsc_flags                = -r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US
+FSCOREDLLPATH            = /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/../../artifacts/bin/FSharp.Core/Release/netstandard2.0/FSharp.Core.dll
+FSI                      = /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/../../artifacts/bin/fsi/Release/net10.0/fsi.dll
+DotNetExe                = dotnet
+DOTNET_MULTILEVEL_LOOKUP = 0
+DOTNET_ROOT              = /usr/share/dotnet
+FSI_FOR_SCRIPTS          = /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/../../artifacts/bin/fsi/Release/net10.0/fsi.dll
+fsi_flags                = -r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror --preferreduilang:en-US
+ILDASM                   = /home/runner/.nuget/packages/runtime.linux-x64.microsoft.netcore.ildasm/5.0.0-preview.7.20364.11/runtimes/linux-x64/native/ildasm
+PEVERIFY                 = ilverify
+---------------------------------------------------------------
+[xUnit.net 00:00:00.16]   Discovering: FSharp.Compiler.ComponentTests
+[xUnit.net 00:00:01.20]   Discovered:  FSharp.Compiler.ComponentTests
+[xUnit.net 00:00:01.21]   Starting:    FSharp.Compiler.ComponentTests
+[xUnit.net 00:00:14.97]       
+[xUnit.net 00:00:14.97]       ==
+[xUnit.net 00:00:14.97]       Name: '.method public static void  run() cil managed'
+[xUnit.net 00:00:14.97]       
+[xUnit.net 00:00:14.97]       Expected:	 IL_0040:  ldc.i4.s   42
+[xUnit.net 00:00:14.97]       Actual:		 IL_0000:  ldc.i4.3
+[xUnit.net 00:00:14.97]       ==
+[xUnit.net 00:00:14.97]       
+[xUnit.net 00:00:14.97]       ==
+[xUnit.net 00:00:14.97]       Name: '.method public static void  run() cil managed'
+[xUnit.net 00:00:14.97]       
+[xUnit.net 00:00:14.97]       Expected:	 IL_0042:  ldc.i4.5
+[xUnit.net 00:00:14.97]       Actual:		 IL_0001:  newarr     [runtime]System.Int32
+[xUnit.net 00:00:14.97]       ==
+[xUnit.net 00:00:14.97]       
+[xUnit.net 00:00:14.98]       ==
+[xUnit.net 00:00:14.98]       Name: '.method public static void  run() cil managed'
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       Expected:	 IL_0043:  call       void TailCall06::foo&lt;int32&gt;(int32,
+[xUnit.net 00:00:14.98]       Actual:		 IL_0006:  dup
+[xUnit.net 00:00:14.98]       ==
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       ==
+[xUnit.net 00:00:14.98]       Name: '.method public static void  run() cil managed'
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       Expected:	 !!0)
+[xUnit.net 00:00:14.98]       Actual:		 IL_0007:  ldc.i4.0
+[xUnit.net 00:00:14.98]       ==
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       \Expected:
+[xUnit.net 00:00:14.98]       .method public static void  run() cil managed
+[xUnit.net 00:00:14.98]         {
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]           .maxstack  6
+[xUnit.net 00:00:14.98]           .locals init (native int V_0,
+[xUnit.net 00:00:14.98]                    int32[] V_1,
+[xUnit.net 00:00:14.98]                    int32&amp; pinned V_2)
+[xUnit.net 00:00:14.98]           IL_0040:  ldc.i4.s   42
+[xUnit.net 00:00:14.98]           IL_0042:  ldc.i4.5
+[xUnit.net 00:00:14.98]           IL_0043:  call       void TailCall06::foo&lt;int32&gt;(int32,
+[xUnit.net 00:00:14.98]                                                            !!0)
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       Actual:
+[xUnit.net 00:00:14.98]       .method public static void  run() cil managed
+[xUnit.net 00:00:14.98]         {
+[xUnit.net 00:00:14.98]           
+[xUnit.net 00:00:14.98]           .maxstack  6
+[xUnit.net 00:00:14.98]           .locals init (native int V_0,
+[xUnit.net 00:00:14.98]                    int32[] V_1,
+[xUnit.net 00:00:14.98]                    int32&amp; pinned V_2)
+[xUnit.net 00:00:14.98]           IL_0000:  ldc.i4.3
+[xUnit.net 00:00:14.98]           IL_0001:  newarr     [runtime]System.Int32
+[xUnit.net 00:00:14.98]           IL_0006:  dup
+[xUnit.net 00:00:14.98]           IL_0007:  ldc.i4.0
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       Entire actual:
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       .assembly extern runtime { }
+[xUnit.net 00:00:14.98]       .assembly extern FSharp.Core { }
+[xUnit.net 00:00:14.98]       .assembly assembly
+[xUnit.net 00:00:14.98]       {
+[xUnit.net 00:00:14.98]         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
+[xUnit.net 00:00:14.98]                                                                                                             int32,
+[xUnit.net 00:00:14.98]                                                                                                             int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]         
+[xUnit.net 00:00:14.98]         
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]         .hash algorithm 0x00008004
+[xUnit.net 00:00:14.98]         .ver 0:0:0:0
+[xUnit.net 00:00:14.98]       }
+[xUnit.net 00:00:14.98]       .module assembly.dll
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       .imagebase {value}
+[xUnit.net 00:00:14.98]       .file alignment 0x00000200
+[xUnit.net 00:00:14.98]       .stackreserve 0x00100000
+[xUnit.net 00:00:14.98]       .subsystem 0x0003       
+[xUnit.net 00:00:14.98]       .corflags 0x00000001    
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       
+[xUnit.net 00:00:14.98]       .class public abstract auto ansi sealed TailCall06
+[xUnit.net 00:00:14.98]              extends [runtime]System.Object
+[xUnit.net 00:00:14.98]       {
+[xUnit.net 00:00:14.98]         .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+[xUnit.net 00:00:14.98]         .method public static void  foo&lt;a&gt;(int32 x,
+[xUnit.net 00:00:14.98]                                            !!a y) cil managed
+[xUnit.net 00:00:14.99]         {
+[xUnit.net 00:00:14.99]           
+[xUnit.net 00:00:14.99]           .maxstack  8
+[xUnit.net 00:00:14.99]           IL_0000:  ldstr      "%d"
+[xUnit.net 00:00:14.99]           IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5&lt;class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2&lt;int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32&gt;::.ctor(string)
+[xUnit.net 00:00:14.99]           IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine&lt;class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2&lt;int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;&gt;(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4&lt;!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;)
+[xUnit.net 00:00:14.99]           IL_000f:  ldarg.0
+[xUnit.net 00:00:14.99]           IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2&lt;int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit&gt;::Invoke(!0)
+[xUnit.net 00:00:14.99]           IL_0015:  pop
+[xUnit.net 00:00:14.99]           IL_0016:  ret
+[xUnit.net 00:00:14.99]         } 
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]         .method public static void  run() cil managed
+[xUnit.net 00:00:14.99]         {
+[xUnit.net 00:00:14.99]           
+[xUnit.net 00:00:14.99]           .maxstack  6
+[xUnit.net 00:00:14.99]           .locals init (native int V_0,
+[xUnit.net 00:00:14.99]                    int32[] V_1,
+[xUnit.net 00:00:14.99]                    int32&amp; pinned V_2)
+[xUnit.net 00:00:14.99]           IL_0000:  ldc.i4.3
+[xUnit.net 00:00:14.99]           IL_0001:  newarr     [runtime]System.Int32
+[xUnit.net 00:00:14.99]           IL_0006:  dup
+[xUnit.net 00:00:14.99]           IL_0007:  ldc.i4.0
+[xUnit.net 00:00:14.99]           IL_0008:  ldc.i4.1
+[xUnit.net 00:00:14.99]           IL_0009:  stelem     [runtime]System.Int32
+[xUnit.net 00:00:14.99]           IL_000e:  dup
+[xUnit.net 00:00:14.99]           IL_000f:  ldc.i4.1
+[xUnit.net 00:00:14.99]           IL_0010:  ldc.i4.2
+[xUnit.net 00:00:14.99]           IL_0011:  stelem     [runtime]System.Int32
+[xUnit.net 00:00:14.99]           IL_0016:  dup
+[xUnit.net 00:00:14.99]           IL_0017:  ldc.i4.2
+[xUnit.net 00:00:14.99]           IL_0018:  ldc.i4.3
+[xUnit.net 00:00:14.99]           IL_0019:  stelem     [runtime]System.Int32
+[xUnit.net 00:00:14.99]           IL_001e:  stloc.1
+[xUnit.net 00:00:14.99]           IL_001f:  ldloc.1
+[xUnit.net 00:00:14.99]           IL_0020:  brfalse.s  IL_003c
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]           IL_0022:  ldloc.1
+[xUnit.net 00:00:14.99]           IL_0023:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Length&lt;int32&gt;(!!0[])
+[xUnit.net 00:00:14.99]           IL_0028:  brfalse.s  IL_0037
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]           IL_002a:  ldloc.1
+[xUnit.net 00:00:14.99]           IL_002b:  ldc.i4.0
+[xUnit.net 00:00:14.99]           IL_002c:  ldelema    [runtime]System.Int32
+[xUnit.net 00:00:14.99]           IL_0031:  stloc.2
+[xUnit.net 00:00:14.99]           IL_0032:  ldloc.2
+[xUnit.net 00:00:14.99]           IL_0033:  conv.i
+[xUnit.net 00:00:14.99]           IL_0034:  nop
+[xUnit.net 00:00:14.99]           IL_0035:  br.s       IL_003f
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]           IL_0037:  ldc.i4.0
+[xUnit.net 00:00:14.99]           IL_0038:  conv.i
+[xUnit.net 00:00:14.99]           IL_0039:  nop
+[xUnit.net 00:00:14.99]           IL_003a:  br.s       IL_003f
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]           IL_003c:  ldc.i4.0
+[xUnit.net 00:00:14.99]           IL_003d:  conv.i
+[xUnit.net 00:00:14.99]           IL_003e:  nop
+[xUnit.net 00:00:14.99]           IL_003f:  stloc.0
+[xUnit.net 00:00:14.99]           IL_0040:  ldc.i4.s   42
+[xUnit.net 00:00:14.99]           IL_0042:  ldc.i4.5
+[xUnit.net 00:00:14.99]           IL_0043:  tail.
+[xUnit.net 00:00:14.99]           IL_0045:  call       void TailCall06::foo&lt;int32&gt;(int32,
+[xUnit.net 00:00:14.99]                                                            !!0)
+[xUnit.net 00:00:14.99]           IL_004a:  ret
+[xUnit.net 00:00:14.99]         } 
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       } 
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       .class private abstract auto ansi sealed '&lt;StartupCode$assembly&gt;'.$TailCall06
+[xUnit.net 00:00:14.99]              extends [runtime]System.Object
+[xUnit.net 00:00:14.99]       {
+[xUnit.net 00:00:14.99]       } 
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       
+[xUnit.net 00:00:14.99]       Stack Trace:
+[xUnit.net 00:00:14.99]         /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/ILChecker.fs(184,0): at FSharp.Test.ILChecker.checkILAux(IEnumerable`1 ildasmArgs, String dllFilePath, FSharpList`1 expectedIL)
+[xUnit.net 00:00:14.99]         /home/runner/work/fsharp/fsharp/tests/FSharp.Test.Utilities/ILChecker.fs(192,0): at FSharp.Test.ILChecker.checkIL(String dllFilePath, FSharpList`1 expectedIL)
+[xUnit.net 00:00:14.99]            at FSharp.Test.Compiler.verifyIL@1374.Invoke(String dllFilePath, FSharpList`1 expectedIL)
+[xUnit.net 00:00:14.99]         /home/runner/work/fsharp/fsharp/tests/FSharp.Compiler.ComponentTests/EmittedIL/TailCalls.fs(249,0): at EmittedIL.Tail Calls.TailCall 06 - No tail call with pinned locals()
+[xUnit.net 00:00:14.99]            at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+[xUnit.net 00:00:14.99]            at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+[xUnit.net 00:00:14.99]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:14.99]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:16.50]   Finished:    FSharp.Compiler.ComponentTests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="pkrvm7jw40e0xgp" outcome="Error" timestamp="2025-09-08T16:20:46.5789923+00:00">
+        <Text>[xUnit.net 00:00:14.96]     EmittedIL.Tail Calls.TailCall 06 - No tail call with pinned locals [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
