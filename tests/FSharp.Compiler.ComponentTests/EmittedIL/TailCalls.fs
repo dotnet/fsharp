@@ -248,17 +248,12 @@ let run() =
         |> shouldSucceed
         |> verifyIL [
             """
-  .method public static void  run() cil managed
-  {
-
-    .maxstack  6
-    .locals init (native int V_0,
-             int32[] V_1,
-             int32& pinned V_2)
     IL_0040:  ldc.i4.s   42
     IL_0042:  ldc.i4.5
     IL_0043:  call       void TailCall06::foo<int32>(int32,
                                                      !!0)
+    IL_0048:  nop
+    IL_0049:  ldc.i4.0
             """
             ]
 
