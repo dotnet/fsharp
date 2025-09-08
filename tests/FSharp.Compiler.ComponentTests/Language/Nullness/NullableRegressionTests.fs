@@ -44,7 +44,7 @@ let ``Signature conformance`` langVersion checknulls =
     |> withDiagnostics
         [Warning 3262, Line 18, Col 48, Line 18, Col 60, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
          (Warning 3261, Line 4, Col 5, Line 4, Col 10, "Nullness warning: Module 'M' contains
-            val test2: x: string | null -> unit    
+            val test2: x: (string | null) -> unit    
         but its signature specifies
             val test2: string -> unit    
         The types differ in their nullness annotations");
@@ -54,7 +54,7 @@ let ``Signature conformance`` langVersion checknulls =
             val test1: string | null -> unit    
         The types differ in their nullness annotations");
         (Warning 3261, Line 6, Col 5, Line 6, Col 17, "Nullness warning: Module 'M' contains
-            val iRejectNulls: x: string | null -> string    
+            val iRejectNulls: x: (string | null) -> string    
         but its signature specifies
             val iRejectNulls: string -> string    
         The types differ in their nullness annotations");
@@ -73,66 +73,77 @@ let ``Signature conformance`` langVersion checknulls =
 let ``Existing positive v8 disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("8.0",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"existing-positive.fs"|])>]
 let ``Existing positive vPreview disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"existing-positive.fs"|])>]
 let ``Existing positive vPreview enabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",true)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"existing-negative.fs"|])>]
 let ``Existing negative v8 disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("8.0",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"existing-negative.fs"|])>]
 let ``Existing negative vPreview disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"existing-negative.fs"|])>]
 let ``Existing negative vPreview enabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",true)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"library-functions.fs"|])>]
 let ``Library functions nullness disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"library-functions.fs"|])>]
 let ``Library functions nullness enabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",true)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"using-nullness-syntax-positive.fs"|])>]
 let ``With new nullness syntax nullness disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".nullness_disabled", Includes=[|"positive-defaultValue-bug.fs"|])>]
 let ``DefaultValueBug when checknulls is disabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",false)   
+    |> typecheck
     |> verifyBaseline
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".checknulls_on", Includes=[|"using-nullness-syntax-positive.fs"|])>]
 let ``With new nullness syntax nullness enabled`` compilation =
     compilation
     |> withVersionAndCheckNulls ("preview",true)
+    |> typecheck
     |> verifyBaseline
 
 // https://github.com/dotnet/fsharp/issues/18288
@@ -159,8 +170,6 @@ let ``Inference problem limit regression v8`` compilation =
     |> withNoWarn 475 // The constraints 'struct' and 'null' are inconsistent
     |> typecheck
     |> shouldSucceed
-
-
 
 [<Theory>]
 [<InlineData("preview",true,true)>]

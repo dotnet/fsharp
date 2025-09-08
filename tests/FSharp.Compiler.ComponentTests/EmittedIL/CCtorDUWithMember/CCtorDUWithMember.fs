@@ -9,11 +9,13 @@ module CCtorDUWithMember =
     let verifyCompilation compilation =
         compilation
         |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> withNoWarn 988
         |> asExe
         |> withNoOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> compile
         |> verifyBaseline
         |> verifyILBaseline
 
@@ -71,7 +73,7 @@ type ILArrayShape =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             """
   .method public hidebysig instance bool 
           Equals(class RealInternalSignature.ILArrayShape obj,
@@ -97,7 +99,7 @@ type ILArrayShape =
         |> asLibrary
         |> withRealInternalSignature realSig
         |> compile
-        |> withILContains [
+        |> verifyILContains [
             """
   .method public hidebysig instance bool 
           Equals(class RealInternalSignature.ILArrayShape obj,
@@ -125,7 +127,7 @@ Module.publicFunction () |> printfn "%b"
         |> asExe
         |> withRealInternalSignature realSig
         |> compileAndRun
-        |> withILContains [
+        |> verifyILContains [
             $$"""
       .method {{expected}} hidebysig instance bool Equals(class RealInternalSignature/Module/DU obj, class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {

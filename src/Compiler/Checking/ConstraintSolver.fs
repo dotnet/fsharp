@@ -1024,7 +1024,8 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
         | TyparConstraint.SimpleChoice(tys, m2)          -> SolveTypeChoice                     csenv ndeep m2 trace ty tys
         | TyparConstraint.CoercesTo(ty2, m2)             -> SolveTypeSubsumesTypeKeepAbbrevs    csenv ndeep m2 trace None ty2 ty
         | TyparConstraint.MayResolveMember(traitInfo, m2) -> 
-            SolveMemberConstraint csenv false PermitWeakResolution.No ndeep m2 trace traitInfo |> OperationResult.ignore
+            SolveMemberConstraint csenv false PermitWeakResolution.No ndeep m2 trace traitInfo 
+            |> OperationResult.ignore
     }
 
 and shouldWarnUselessNullCheck (csenv:ConstraintSolverEnv) =
@@ -1407,11 +1408,17 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, csenv.eContextInfo, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
 
-and SolveTypeEqualsTypeWithContravarianceEqns (csenv:ConstraintSolverEnv) ndeep m2 trace cxsln origl1 origl2 typars =
+and SolveTypeEqualsTypeWithContravarianceEqns (csenv:ConstraintSolverEnv) ndeep m2 trace cxsln origl1 origl2 typars tyconRef =
    let isContravariant (t:Typar) = 
         t.typar_opt_data 
         |> Option.map (fun d -> d.typar_is_contravariant) 
         |> Option.defaultValue(false)
+   
+   // Special case for IEquatable<T>: treat its type parameter as contravariant for nullness purposes
+   // This matches C# behavior where IEquatable<T> is treated as contravariant for nullness, even though
+   // it's not formally marked as contravariant in IL.
+   // See: https://github.com/dotnet/fsharp/issues/18759 and https://github.com/dotnet/roslyn/issues/37187
+   let isIEquatableContravariantForNullness = tyconRefEq csenv.g tyconRef csenv.g.system_GenericIEquatable_tcref
 
    match origl1, origl2, typars with
    | [], [], [] -> CompleteD
@@ -1425,7 +1432,8 @@ and SolveTypeEqualsTypeWithContravarianceEqns (csenv:ConstraintSolverEnv) ndeep 
                     let h1 =
                         // For contravariant typars (`<in T> in C#'), if the required type is WithNull, the actual type can have any nullness it wants
                         // Without this added logic, their nullness would be forced to be equal.
-                        if isContravariant hTp && (nullnessOfTy csenv.g h2).TryEvaluate() = ValueSome NullnessInfo.WithNull  then                            
+                        // Special case: IEquatable<T> is treated as contravariant for nullness purposes to match C# behavior
+                        if (isContravariant hTp || isIEquatableContravariantForNullness) && (nullnessOfTy csenv.g h2).TryEvaluate() = ValueSome NullnessInfo.WithNull  then                            
                             replaceNullnessOfTy csenv.g.knownWithNull h1
                         else
                             h1
@@ -1534,11 +1542,11 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
                             (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> ()
                 | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
                 }
-            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange
+            | _ -> SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
 
         | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
             trackErrors {            
-                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange
+                do! SolveTypeEqualsTypeWithContravarianceEqns csenv ndeep m2 trace cxsln l1 l2 tc1.TyparsNoRange tc1
                 do! SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
@@ -2652,17 +2660,27 @@ and SolveTypeUseSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                     if not g.checkNullness && not (TypeNullIsExtraValue g m ty) then
                         return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
         else
-            if TypeNullIsExtraValue g m ty then
-                ()
-            elif isNullableTy g ty then
-                return! ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
-            else
-                match tryDestTyparTy g ty with
-                | ValueSome tp ->
-                    do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
-                | ValueNone ->
-                    return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+            // Use legacy F# nullness rules when langFeatureNullness is disabled
+            do! SolveLegacyTypeUseSupportsNullLiteral csenv ndeep m2 trace ty
         }
+
+// Common logic for legacy F# nullness rules - used for both non-langFeatureNullness path and AmbivalentToNull types
+and SolveLegacyTypeUseSupportsNullLiteral (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty =
+    trackErrors {
+        let g = csenv.g
+        let m = csenv.m
+        let denv = csenv.DisplayEnv
+        if TypeNullIsExtraValue g m ty then
+            ()
+        elif isNullableTy g ty then
+            return! ErrorD (ConstraintSolverError(FSComp.SR.csNullableTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+        else
+            match tryDestTyparTy g ty with
+            | ValueSome tp ->
+                do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.SupportsNull m)
+            | ValueNone ->
+                return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotHaveNull(NicePrint.minimalStringOfType denv ty), m, m2))
+    }
 
 and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness =
     trackErrors {
@@ -2677,7 +2695,9 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
                 trace.Exec (fun () -> nv.Set KnownWithNull) (fun () -> nv.Unset())
         | Nullness.Known n1 -> 
             match n1 with 
-            | NullnessInfo.AmbivalentToNull -> ()
+            | NullnessInfo.AmbivalentToNull ->
+                // For AmbivalentToNull types (imported from older assemblies), use legacy F# nullness rules
+                do! SolveLegacyTypeUseSupportsNullLiteral csenv ndeep m2 trace ty
             | NullnessInfo.WithNull -> ()
             | NullnessInfo.WithoutNull ->   
                 if g.checkNullness then

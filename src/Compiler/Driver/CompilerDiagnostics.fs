@@ -44,34 +44,24 @@ open FSharp.Compiler.TypedTreeOps
 let showAssertForUnexpectedException = ref true
 #endif
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashReferenceNotAllowedInNonScript of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedSourceHasIssues of informationals: exn list * warnings: exn list * errors: exn list * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedScriptConsideredSource of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashDirectiveNotAllowedInNonScript of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionFull of string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionForHtmlDoc of string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionSuggestAlternative of string * string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionNoDescription of string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
 type Exception with
@@ -155,6 +145,7 @@ type Exception with
         | LibraryUseOnly m
         | FieldsFromDifferentTypes(_, _, _, m)
         | IndeterminateType m
+        | InvalidAttributeTargetForLanguageElement(_, _, m)
         | TyconBadArgs(_, _, _, m) -> Some m
 
         | FieldNotContained(_, _, _, _, _, arf, _, _) -> Some arf.Range
@@ -206,7 +197,9 @@ type Exception with
         | MSBuildReferenceResolutionError(_, _, m)
         | AssemblyNotResolved(_, m)
         | HashLoadedSourceHasIssues(_, _, _, m)
-        | HashLoadedScriptConsideredSource m -> Some m
+        | HashLoadedScriptConsideredSource m
+        | NoConstructorsAvailableForType(_, _, m) -> Some m
+
         // Strip TargetInvocationException wrappers
         | :? System.Reflection.TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticRange
 #if !NO_TYPEPROVIDERS
@@ -335,6 +328,7 @@ type Exception with
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
         | Failure _ -> 192
         | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer _ -> 318
+        | NoConstructorsAvailableForType _ -> 1133
         | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
@@ -353,6 +347,7 @@ type Exception with
         | ConstraintSolverNullnessWarningWithTypes _ -> 3261
         | ConstraintSolverNullnessWarningWithType _ -> 3261
         | ConstraintSolverNullnessWarning _ -> 3261
+        | InvalidAttributeTargetForLanguageElement _ -> 842
         | _ -> 193
 
 type PhasedDiagnostic with
@@ -610,6 +605,11 @@ module OldStyleMessages =
 
     let DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferE () =
         Message("DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer", "%s%s%s%s")
+
+    let InvalidAttributeTargetForLanguageElement1E () = Message("InvalidAttributeTargetForLanguageElement1", "%s%s")
+    let InvalidAttributeTargetForLanguageElement2E () = Message("InvalidAttributeTargetForLanguageElement2", "")
+
+    let NoConstructorsAvailableForTypeE () = Message("NoConstructorsAvailableForType", "%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
@@ -1932,6 +1932,17 @@ type Exception with
                     s2
             )
 
+        | InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, _m) ->
+            if Array.isEmpty elementTargets then
+                os.AppendString(InvalidAttributeTargetForLanguageElement2E().Format)
+            else
+                let elementTargets = String.concat ", " elementTargets
+                let allowedTargets = allowedTargets |> String.concat ", "
+                os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
+
+        | NoConstructorsAvailableForType(t, denv, _) ->
+            os.AppendString(NoConstructorsAvailableForTypeE().Format(NicePrint.minimalStringOfType denv t))
+
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)
 
@@ -2050,6 +2061,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) (m: Range) : FormattedDiagnost
             File = ""
         }
     else
+        let m = m.ApplyLineDirectives()
         let file = m.FileName
 
         let file =
@@ -2181,6 +2193,8 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                 | DiagnosticStyle.Rich ->
                     match diagnostic.Range with
                     | Some m ->
+                        let m = m.ApplyLineDirectives()
+
                         let content =
                             m.FileName
                             |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
@@ -2266,6 +2280,7 @@ type PhasedDiagnostic with
         match diagnostic.Range with
         | None -> ()
         | Some m ->
+            let m = m.ApplyLineDirectives()
             let fileName = m.FileName
             let lineA = m.StartLine
             let lineB = m.EndLine

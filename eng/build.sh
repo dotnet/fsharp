@@ -37,6 +37,7 @@ usage()
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild                  Build the repository in source-only mode."
   echo "  --productBuild                 Build the repository in product-build mode."
+  echo "  --fromVMR                      Set when building from within the VMR"
   echo "  --buildnorealsig               Build product with realsig- (default use realsig+ where necessary)"
   echo "  --tfm                          Override the default target framework"
   echo ""
@@ -75,14 +76,14 @@ skip_build=false
 prepare_machine=false
 source_build=false
 product_build=false
+from_vmr=false
 buildnorealsig=true
 testbatch=""
 properties=""
-
 docker=false
 args=""
 
-tfm="net9.0" # This needs to be changed every time it's bumped by arcade/us.
+tfm="net10.0" # This needs to be changed every time it's bumped by arcade/us.
 
 BuildCategory=""
 BuildMessage=""
@@ -176,6 +177,9 @@ while [[ $# > 0 ]]; do
     --productbuild|--product-build|-pb)
       product_build=true
       ;;
+    --fromvmr|--from-vmr)
+      from_vmr=true
+      ;;
     --buildnorealsig)
       buildnorealsig=true
       ;;
@@ -184,7 +188,7 @@ while [[ $# > 0 ]]; do
       shift
       ;;
     /p:*)
-      properties="$properties $1"
+      properties+=("$1")
       ;;
     *)
       echo "Invalid argument: $1"
@@ -303,14 +307,15 @@ function BuildSolution {
     fi
 
     BuildMessage="Error building tools"
-    local args=" publish $repo_root/proto.proj $blrestore $bltools /p:Configuration=Proto /p:DotNetBuildRepo=$product_build /p:DotNetBuildSourceOnly=$source_build $properties"
+    local args=("publish" "$repo_root/proto.proj" "$blrestore" "$bltools" "/p:Configuration=Proto" "/p:DotNetBuild=$product_build" "/p:DotNetBuildSourceOnly=$source_build" "/p:DotNetBuildFromVMR=$from_vmr" ${properties[@]+"${properties[@]}"})
     echo $args
-    "$DOTNET_INSTALL_DIR/dotnet" $args  #$args || exit $?
+    "$DOTNET_INSTALL_DIR/dotnet" "${args[@]}"  #$args || exit $?
   fi
 
   if [[ "$skip_build" != true ]]; then
     # do real build
     BuildMessage="Error building solution"
+
     MSBuild $toolset_build_proj \
       $bl \
       /p:Configuration=$configuration \
@@ -327,9 +332,10 @@ function BuildSolution {
       /p:QuietRestore=$quiet_restore \
       /p:QuietRestoreBinaryLog="$binary_log" \
       /p:BuildNoRealsig=$buildnorealsig \
-      /p:DotNetBuildRepo=$product_build \
+      /p:DotNetBuild=$product_build \
       /p:DotNetBuildSourceOnly=$source_build \
-      $properties
+      /p:DotNetBuildFromVMR=$from_vmr \
+      ${properties[@]+"${properties[@]}"}
   fi
 }
 

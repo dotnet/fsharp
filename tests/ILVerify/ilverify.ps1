@@ -24,7 +24,7 @@ Write-Host "Repository path: $repo_path"
 # List projects to verify, with TFMs
 $projects = @{
     "FSharp.Core" = @($default_tfm, "netstandard2.1")
-    "FSharp.Compiler.Service" = @($default_tfm, "net9.0")
+    "FSharp.Compiler.Service" = @($default_tfm, "net10.0")
 }
 
 # Check ilverify can run
@@ -38,7 +38,11 @@ if ($LASTEXITCODE -ne 0) {
 # Run build script for each configuration (NOTE: We don't build Proto)
 foreach ($configuration in $configurations) {
     Write-Host "Building $configuration configuration..."
-    & $script -c $configuration $additional_arguments
+    if ($additional_arguments) {
+        & $script -c $configuration $additional_arguments
+    } else {
+        & $script -c $configuration
+    }
     if ($LASTEXITCODE -ne 0 -And $LASTEXITCODE -ne '') {
         Write-Host "Build failed for $configuration configuration (last exit code: $LASTEXITCODE)."
         exit 1
@@ -107,7 +111,7 @@ foreach ($project in $projects.Keys) {
             $ilverify_output = @(Invoke-Expression "& $ilverify_cmd" -ErrorAction SilentlyContinue)
 
             # Normalize output, get rid of paths in log like
-            #  [IL]: Error [StackUnexpected]: [/Users/u/code/fsharp3/artifacts/bin/FSharp.Compiler.Service/Release/net9.0/FSharp.Core.dll : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
+            #  [IL]: Error [StackUnexpected]: [/Users/u/code/fsharp3/artifacts/bin/FSharp.Compiler.Service/Release/net10.0/FSharp.Core.dll : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
             # This is a quick and dirty way to do it, but it works for now.
             $ilverify_output = $ilverify_output | ForEach-Object {
                 if ($_ -match "\[IL\]: Error \[") {

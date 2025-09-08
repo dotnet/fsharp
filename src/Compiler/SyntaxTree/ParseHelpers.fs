@@ -867,40 +867,31 @@ let mkClassMemberLocalBindings
 
     SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole)
 
-let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _), mIn, body: SynExpr) =
-    let ignoredFreeAttrs, decls = declsPreAttrs [] None
+/// Creates a SynExprAndBang node for and! bindings in computation expressions
+let mkAndBang (mKeyword: range, pat: SynPat, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option) =
+    let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
-    let mWhole =
-        match decls with
-        | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
-        | _ -> mWhole
-
-    if not (isNil ignoredFreeAttrs) then
-        warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole))
-
-    let mIn =
-        mIn
-        |> Option.bind (fun (mIn: range) ->
-            if Position.posEq mIn.Start body.Range.Start then
-                None
-            else
-                Some mIn)
-
-    let mLetOrUse =
-        match decls with
-        | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
-        | _ -> range0
-
-    SynExpr.LetOrUse(
-        isRec,
-        isUse,
-        decls,
-        body,
-        mWhole,
+    let trivia: SynBindingTrivia =
         {
-            LetOrUseKeyword = mLetOrUse
-            InKeyword = mIn
+            LeadingKeyword = SynLeadingKeyword.And mKeyword
+            InlineKeyword = mIn
+            EqualsRange = Some mEquals
         }
+
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = pat,
+        returnInfo = None,
+        expr = rhs,
+        range = mWhole,
+        debugPoint = spBind,
+        trivia = trivia
     )
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) =
@@ -1073,3 +1064,113 @@ let leadingKeywordIsAbstract =
     | SynLeadingKeyword.StaticAbstract _
     | SynLeadingKeyword.StaticAbstractMember _ -> true
     | _ -> false
+
+/// Unified helper for creating let/let!/use/use! expressions
+/// Creates SynExpr.LetOrUse based on isBang parameter
+/// Handles all four cases: 'let', 'let!', 'use', and 'use!'
+let mkLetExpression
+    (
+        isBang: bool,
+        mIn: range option,
+        mWhole: range,
+        body: SynExpr,
+        bindingInfo: BindingSet option,
+        bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option
+    ) =
+    if isBang then
+        match bangInfo with
+        | Some(pat, rhs, andBangs, mKeyword, mEquals, isUse) ->
+            let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
+
+            let trivia: SynBindingTrivia =
+                {
+                    LeadingKeyword =
+                        if isUse then
+                            SynLeadingKeyword.Use mKeyword
+                        else
+                            SynLeadingKeyword.Let mKeyword
+                    InlineKeyword = mIn
+                    EqualsRange = mEquals
+                }
+
+            let binding =
+                SynBinding(
+                    accessibility = None,
+                    kind = SynBindingKind.Normal,
+                    isInline = false,
+                    isMutable = false,
+                    attributes = [],
+                    xmlDoc = PreXmlDoc.Empty,
+                    valData = SynInfo.emptySynValData,
+                    headPat = pat,
+                    returnInfo = None,
+                    expr = rhs,
+                    range = mWhole,
+                    debugPoint = spBind,
+                    trivia = trivia
+                )
+
+            SynExpr.LetOrUse(
+                isRecursive = false,
+                isUse = isUse,
+                isFromSource = true,
+                isBang = true,
+                bindings = binding :: andBangs,
+                body = body,
+                range = mWhole,
+                trivia =
+                    {
+                        LetOrUseKeyword = mKeyword
+                        InKeyword = mIn
+                        EqualsRange = mEquals
+                    }
+            )
+
+        | None -> SynExpr.FromParseError(body, mWhole)
+    else
+        match bindingInfo with
+        | Some(BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _)) ->
+            let ignoredFreeAttrs, decls = declsPreAttrs [] None
+
+            let mWhole =
+                match decls with
+                | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
+                | _ -> mWhole
+
+            if not (isNil ignoredFreeAttrs) then
+                warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole))
+
+            let mIn' =
+                mIn
+                |> Option.bind (fun (mIn: range) ->
+                    if Position.posEq mIn.Start body.Range.Start then
+                        None
+                    else
+                        Some mIn)
+
+            let mLetOrUse =
+                match decls with
+                | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
+                | _ -> range0
+
+            let mEquals =
+                match decls with
+                | SynBinding(trivia = trivia) :: _ -> trivia.EqualsRange
+                | _ -> None
+
+            SynExpr.LetOrUse(
+                isRecursive = isRec,
+                isUse = isUse,
+                isFromSource = true,
+                isBang = false,
+                bindings = decls,
+                body = body,
+                range = mWhole,
+                trivia =
+                    {
+                        LetOrUseKeyword = mLetOrUse
+                        InKeyword = mIn'
+                        EqualsRange = mEquals
+                    }
+            )
+        | None -> SynExpr.FromParseError(body, mWhole)

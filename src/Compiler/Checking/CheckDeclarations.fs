@@ -1370,7 +1370,8 @@ module MutRecBindingChecking =
                                 try
                                    let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurrence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
                                    let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
-                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
+                                   let mTcNew = unionRanges synBaseTy.Range arg.Range
+                                   TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg mTcNew
                                 with RecoverableException e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
@@ -2406,6 +2407,7 @@ module TcExceptionDeclarations =
     let TcExnDefnCore_Phase1A g cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor id.idRange)
+        CheckNamespaceModuleOrTypeName g id
         let vis, cpath = ComputeAccessAndCompPath g env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
