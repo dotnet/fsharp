@@ -987,10 +987,11 @@ type TcGlobals(
         sysGenerics, "IEnumerable`1", v_seq_tcr |]
             |> Array.map (fun (sysLib, nm, tcr) ->
                 let ty = mkNonGenericTy tcr
-                nm, findSysTyconRef sysLib nm, (fun _ nullness ->
-                    match nullness with
-                    | Nullness.Known NullnessInfo.WithoutNull -> ty
-                    | _ -> mkNonGenericTyWithNullness tcr nullness))
+                nm, findSysTyconRef sysLib nm, (fun typars nullness ->
+                    match typars, nullness with
+                    | [], Nullness.Known NullnessInfo.WithoutNull -> ty
+                    | [], nullness -> mkNonGenericTyWithNullness tcr nullness
+                    | _ -> TType_app(tcr, typars, nullness)))
 
   let decompileTyconEntries =
         [|
