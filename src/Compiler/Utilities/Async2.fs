@@ -456,6 +456,9 @@ module internal Async2 =
 
     let startAsTask ct code = startWithContext { Token = ct } code
 
+    let queueTask ct code =
+        Task.Run<'t>(fun () -> startWithContext { Token = ct } code)
+
     let toAsync (code: Async2<'t>) =
         async {
             let! ct = Async.CancellationToken
@@ -492,7 +495,15 @@ type internal Async2 with
             let tasks =
                 seq {
                     for c in computations do
-                        c |> Async2.startAsTask lcts.Token
+                        async2 {
+                            try
+                                return! c
+                            with
+                            exn ->
+                                lcts.Cancel()
+                                return raise exn
+                        }
+                        |> Async2.queueTask lcts.Token
                 }
 
             return! Task.WhenAll tasks
