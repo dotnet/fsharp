@@ -99,6 +99,13 @@ module ExtendedData =
         /// Represents the information needed to format types
         member DisplayContext: FSharpDisplayContext
 
+    [<Class>]
+    type TypeExtendedData =
+        interface IFSharpDiagnosticExtendedData
+
+        member Type: FSharpType
+        member DisplayContext: FSharpDisplayContext
+
     /// Additional data for 'This expression is a function value, i.e. is missing arguments' diagnostic
     [<Class>]
     type ExpressionIsAFunctionExtendedData =
