@@ -180,4 +180,13 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
              None,
              SynBindingTrivia.Zero)
 
-    SynExpr.LetOrUse(false, false, [ binding ], mkRecdExpr (Some withExpr), mOrigExprSynth, SynExprLetOrUseTrivia.Zero)
+    SynExpr.LetOrUse(
+        isRecursive = false,
+        isUse = false,
+        isFromSource = false, // compiler generated during desugaring
+        isBang = false,
+        bindings = [ binding ],
+        body = mkRecdExpr (Some withExpr),
+        range = mOrigExprSynth,
+        trivia = SynExprLetOrUseTrivia.Zero
+    )
