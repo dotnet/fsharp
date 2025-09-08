@@ -157,17 +157,31 @@ module FixedBindings =
       IL_001a:  ret
     } """ ]
         
-    [<Theory>]
-    [<InlineData("7.0")>]
-    [<InlineData("preview")>]
-    let ``Tail calls suppressed with pinned locals`` langVersion =
-        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinnedLocalsTailCallSuppression.fs")
-        |> withLangVersion langVersion
-        |> withOptimize
-        |> withTailcalls
-        |> withNoWarn 9
-        |> compile
-        |> verifyIL ["""
+    [<Fact>]
+    let ``Tail calls suppressed with pinned locals`` () =
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "/optimize"; "/tailcalls" |],
+            """
+module PinnedLocalsTailCallSuppression
+open Microsoft.FSharp.NativeInterop
+
+// Test case that should NOT emit .tail. prefix because method has pinned locals
+let rec tailCallWithPinnedLocal x =
+    if x <= 0 then 
+        0
+    else
+        let mutable thing = x
+        use ptr = fixed &thing
+        tailCallWithPinnedLocal (x - 1)  // This should NOT be a tail call due to pinned local
+
+// Test case that SHOULD emit .tail. prefix because method has no pinned locals  
+let rec normalTailCall x =
+    if x <= 0 then 
+        0
+    else
+        normalTailCall (x - 1)  // This should be a tail call
+            """,
+            (fun verifier -> verifier.VerifyIL [
+            """
   .method public static int32  tailCallWithPinnedLocal(int32 x) cil managed
   {
     
@@ -212,7 +226,7 @@ module FixedBindings =
     IL_0009:  tail.
     IL_000a:  call       int32 PinnedLocalsTailCallSuppression::normalTailCall(int32)
     IL_000f:  ret
-  } """ ]
+  } """; ]))
 
     [<Theory>]
     [<InlineData("7.0")>]

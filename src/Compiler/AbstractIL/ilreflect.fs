@@ -1658,15 +1658,16 @@ let emitLocal cenv emEnv (ilG: ILGenerator) (local: ILLocal) =
 let emitILMethodBody cenv modB emEnv (ilG: ILGenerator) (ilmbody: ILMethodBody) =
     let localBs = Array.map (emitLocal cenv emEnv ilG) (List.toArray ilmbody.Locals)
     let emEnv = envSetLocals emEnv localBs
-    
+
     // Check if any local is pinned, and if so, suppress tail calls to prevent runtime crashes
     let hasPinnedLocals = ilmbody.Locals |> List.exists (fun local -> local.IsPinned)
-    let cenvForEmission = 
-        if hasPinnedLocals then 
+
+    let cenvForEmission =
+        if hasPinnedLocals then
             { cenv with emitTailcalls = false }
-        else 
+        else
             cenv
-            
+
     emitCode cenvForEmission modB emEnv ilG ilmbody.Code
 
 let emitMethodBody cenv modB emEnv ilG _name (mbody: MethodBody) =
