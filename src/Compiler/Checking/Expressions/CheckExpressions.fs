@@ -10742,18 +10742,15 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
 
     let inputTypeForNextPatterns=
         let removeNull t =
-            // Preserve original type structure while refining nullness  
-            match stripTyEqns cenv.g t with
-            | TType_app (tcref, _, _) when not tcref.Deref.IsStructOrEnumTycon ->
-                // Apply to original type to preserve aliases
-                match t with
-                | TType_app (tcrefOrig, tinstOrig, _) -> TType_app (tcrefOrig, tinstOrig, KnownWithoutNull)
-                | _ -> replaceNullnessOfTy KnownWithoutNull t
-            | TType_var _ ->
-                match t with  
-                | TType_var (tpOrig, _) -> TType_var (tpOrig, KnownWithoutNull)
-                | _ -> replaceNullnessOfTy KnownWithoutNull t
-            | _ -> t
+            // Check if this is a type abbreviation that we should preserve
+            match t with
+            | TType_app (tcref, tinst, _) when tcref.Deref.IsTypeAbbrev ->
+                // Preserve the type abbreviation structure while refining nullness
+                TType_app (tcref, tinst, KnownWithoutNull)
+            | _ ->
+                // Use existing logic for non-abbreviation types
+                let stripped = stripTyEqns cenv.g t
+                replaceNullnessOfTy KnownWithoutNull stripped
         let rec isWild (p:Pattern) =
             match p with
             | TPat_wild _ -> true
