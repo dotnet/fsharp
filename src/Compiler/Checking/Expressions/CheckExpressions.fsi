@@ -121,6 +121,11 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
+exception InvalidAttributeTargetForLanguageElement of
+    elementTargets: string array *
+    allowedTargets: string array *
+    range: range
+
 val TcFieldInit: range -> ILFieldInit -> Const
 
 /// Indicates whether a syntactic type is allowed to include new type variables
@@ -955,6 +960,8 @@ module AttributeTargets =
     val FieldDeclRestricted: AttributeTargets
 
     /// The allowed attribute targets for an F# union case declaration
+    /// - AttributeTargets.Method: union case with fields
+    /// - AttributeTargets.Property: union case with no fields
     val UnionCaseDecl: AttributeTargets
 
     /// The allowed attribute targets for an F# type declaration

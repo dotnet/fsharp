@@ -91,8 +91,11 @@ type LanguageFeature =
     | SupportValueOptionsAsOptionalParameters
     | WarnWhenUnitPassedToObjArg
     | UseBangBindingValueDiscard
+    | BetterAnonymousRecordParsing
     | ScopedNowarn
-    | AllowTypedLetOrUseBang
+    | ErrorOnInvalidDeclsInTypeDefinitions
+    | AllowTypedLetUseAndBang
+    | ReturnFromFinal
 
 /// LanguageVersion management
 type LanguageVersion =

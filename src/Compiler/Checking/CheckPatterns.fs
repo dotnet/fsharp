@@ -457,7 +457,13 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let fieldPats = fieldPats |> List.map (fun (fieldId, _, fieldPat) -> fieldId, fieldPat)
+    let fieldPats = 
+        fieldPats 
+        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
+            match fieldLid.LongIdent with
+            | [id] -> ([], id), pat
+            | lid -> List.frontAndBack lid, pat)
+    
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
@@ -503,7 +509,9 @@ and CheckNoArgsForLiteral args m =
 and GetSynArgPatterns args =
     match args with
     | SynArgPats.Pats args -> args
-    | SynArgPats.NamePatPairs (pats = pairs) -> List.map (fun (_, _, pat) -> pat) pairs
+    | SynArgPats.NamePatPairs (pats = pairs) ->
+        pairs
+        |> List.map _.Pattern
 
 and TcArgPats warnOnUpper (cenv: cenv) env vFlags patEnv args =
     let g = cenv.g
@@ -657,7 +665,11 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             let result = Array.zeroCreate numArgTys
             let extraPatterns = List ()
 
-            for id, _, pat in pairs do
+            for NamePatPairField(fieldName = fieldLid; pat = pat) in pairs do
+                let id = 
+                    match fieldLid.LongIdent with
+                    | [id] -> id
+                    | lid -> snd (List.frontAndBack lid)
                 match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.Id.idText) with
                 | None ->
                     extraPatterns.Add pat

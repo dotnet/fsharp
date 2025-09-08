@@ -143,6 +143,8 @@ exception StandardOperatorRedefinitionWarning of string * range
 
 exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
+exception InvalidAttributeTargetForLanguageElement of elementTargets: string array * allowedTargets: string array * range: range
+
 //----------------------------------------------------------------------------------------------
 // Helpers for determining if/what specifiers a string has.
 // Used to decide if interpolated string can be lowered to a concat call.
@@ -811,10 +813,10 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             Measure.Prod(tcMeasure ms1, tcMeasure ms2, m)
         | SynMeasure.Divide(ms1, _, (SynMeasure.Seq (_ :: _ :: _, _) as ms2), m) ->
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(), m))
-            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One range0)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Divide(measure1 = ms1; measure2 = ms2) ->
-            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One Range.Zero)
+            let factor1 = ms1 |> Option.defaultValue (SynMeasure.One range0)
             Measure.Prod(tcMeasure factor1, Measure.Inv (tcMeasure ms2), ms.Range)
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
@@ -2037,7 +2039,7 @@ let TcUnionCaseOrExnField (cenv: cenv) (env: TcEnv) ty1 m longId fieldNum funcs 
         | _ -> error(Error(FSComp.SR.tcUnknownUnion(), m))
 
     if fieldNum >= argTys.Length then
-        error (UnionCaseWrongNumberOfArgs(env.DisplayEnv, argTys.Length, fieldNum, m))
+        errorR (UnionCaseWrongNumberOfArgs(env.DisplayEnv, argTys.Length, fieldNum, m))
 
     let ty2 = List.item fieldNum argTys
     mkf, ty2
@@ -2307,7 +2309,7 @@ module GeneralizationHelpers =
                         declaredTypars 
                         |> List.map(fun typar ->  typar.Range)
                             
-                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range.Zero
+                    let m = declaredTyparsRange |> List.fold (fun r a -> unionRanges r a) range0
                         
                     errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
@@ -3002,20 +3004,19 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
                 warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfTypeWithNullness denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
 
 ///  Checks, warnings and constraint assertions for upcasts
-let TcStaticUpcast (cenv: cenv) denv m tgtTy srcTy =
+let TcStaticUpcast (cenv: cenv) denv mSourceExpr mUpcastExpr tgtTy srcTy =
     let g = cenv.g
     if isTyparTy g tgtTy then
         if not (destTyparTy g tgtTy).IsCompatFlex then
-            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, m))
-            //else warning(UpcastUnnecessary m)
+            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, mUpcastExpr))
 
     if isSealedTy g tgtTy && not (isTyparTy g tgtTy) then
-        warning(CoercionTargetSealed(denv, tgtTy, m))
+        warning(CoercionTargetSealed(denv, tgtTy, mUpcastExpr))
 
     if typeEquiv g srcTy tgtTy then
-        warning(UpcastUnnecessary m)
+        warning(UpcastUnnecessary mUpcastExpr)
 
-    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace tgtTy srcTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css mSourceExpr NoTrace tgtTy srcTy
 
 let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
 
@@ -5259,6 +5260,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                 | _, _ -> FSComp.SR.tcActivePatternArgsCountNotMatchArgsAndPat(paramCount, caseName, fmtExprArgs paramCount)
             error(Error(msg, m))
 
+        let isUnsolvedTyparTy g ty = tryDestTyparTy g ty |> ValueOption.exists (fun typar -> not typar.IsSolved)
+
         // partial active pattern (returning bool) doesn't have output arg
         if (not apinfo.IsTotal && isBoolTy g retTy) then
             checkLanguageFeatureError g.langVersion LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern m
@@ -5281,7 +5284,8 @@ and TcPatLongIdentActivePatternCase warnOnUpper (cenv: cenv) (env: TcEnv) vFlags
                  showErrMsg 1
 
         // active pattern in function param (e.g. let f (|P|_|) = ...)
-        elif tryDestTyparTy g vExprTy |> ValueOption.exists (fun typar -> not typar.IsSolved) then
+        // or in mutual recursion with a lambda: `and (|P|) x = fun y -> …`
+        elif isUnsolvedTyparTy g vExprTy || tryDestFunTy g vExprTy |> ValueOption.exists (fun (_, rangeTy) -> isUnsolvedTyparTy g rangeTy) then
             List.frontAndBack args
 
         // args count should equal to AP function params count
@@ -6067,7 +6071,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.DoBang (trivia = { DoBangKeyword = m })
     | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
+    | SynExpr.LetOrUse (isBang = true; trivia = { LetOrUseKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
@@ -6134,7 +6138,7 @@ and TcExprUpcast (cenv: cenv) overallTy env tpenv (synExpr, synInnerExpr, m) =
         | SynExpr.InferredUpcast _ ->
             overallTy.Commit, tpenv
         | _ -> failwith "upcast"
-    TcStaticUpcast cenv env.DisplayEnv m tgtTy srcTy
+    TcStaticUpcast cenv env.DisplayEnv synInnerExpr.Range m tgtTy srcTy
     let expr = mkCoerceExpr(innerExpr, tgtTy, m, srcTy)
     expr, tpenv
 
@@ -9194,7 +9198,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.YieldOrReturn _
         | SynExpr.YieldOrReturnFrom _
         | SynExpr.MatchBang _
-        | SynExpr.LetOrUseBang _
+        | SynExpr.LetOrUse (isBang = true)
         | SynExpr.DoBang _
         | SynExpr.WhileBang _
         | SynExpr.TraitCall _
@@ -10609,7 +10613,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         TcLinearExprs bodyChecker cenv env2 overallTy tpenv isCompExpr expr2 (fun (expr2R, tpenv) ->
             cont (Expr.Sequential (expr1R, expr2R, NormalSeq, m), tpenv))
 
-    | SynExpr.LetOrUse (isRec, isUse, binds, body, m, _) when not (isUse && isCompExpr) ->
+    | SynExpr.LetOrUse (isRecursive = isRec; isUse= isUse; bindings = binds; body = body; range = m) when not (isUse && isCompExpr) ->
         if isRec then
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -11288,6 +11292,97 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
     TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
 
+and ResolveAttributeType (cenv: cenv) (env: TcEnv) (mAttr: range) (tycon: Ident list) =
+    let tpenv = emptyUnscopedTyparEnv
+    let ad = env.eAccessRights
+    
+    let tyPath, tyId = List.frontAndBack tycon
+    
+    let try1 n =
+        let tyid = mkSynId tyId.idRange n
+        let tycon = (tyPath @ [tyid])
+
+        match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
+        | Exception err -> raze err
+        | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurrence.UseInAttribute env tpenv mAttr tcref tinstEnclosing [] inst)
+
+    ForceRaise ((try1 (tyId.idText + "Attribute")) |> otherwise (fun () -> (try1 tyId.idText)))
+
+and CheckAttributeUsage (g: TcGlobals) (mAttr: range) (tcref: TyconRef) (attrTgt: AttributeTargets) (targetIndicator: Ident option) (attrEx: AttributeTargets) =
+    // REVIEW: take notice of inherited?
+    let validOn, _inherited =
+        let validOnDefault = 0x7fff
+        let inheritedDefault = true
+        if tcref.IsILTycon then
+            let tdef = tcref.ILTyconRawMetadata
+            let tref = g.attrib_AttributeUsageAttribute.TypeRef
+
+            match TryDecodeILAttribute tref tdef.CustomAttrs with
+            | Some ([ILAttribElem.Int32 validOn ], named) ->
+                let inherited =
+                    match List.tryPick (function "Inherited", _, _, ILAttribElem.Bool res -> Some res | _ -> None) named with
+                    | None -> inheritedDefault
+                    | Some x -> x
+                (validOn, inherited)
+            | Some ([ILAttribElem.Int32 validOn; ILAttribElem.Bool _allowMultiple; ILAttribElem.Bool inherited ], _) ->
+                (validOn, inherited)
+            | _ ->
+                (validOnDefault, inheritedDefault)
+        else
+            match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with
+            | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn ])) ->
+                validOn, inheritedDefault
+            | Some(Attrib(unnamedArgs = [ AttribInt32Arg validOn; AttribBoolArg(_allowMultiple); AttribBoolArg inherited])) ->
+                validOn, inherited
+            | Some _ ->
+                warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
+                validOnDefault, inheritedDefault
+            | _ ->
+                validOnDefault, inheritedDefault
+    
+    // Determine valid attribute targets
+    let attributeTargets = enum validOn &&& attrTgt
+    let directedTargets =
+        match targetIndicator with
+        | LongFormAttrTarget attrTarget -> attrTarget
+        | UnrecognizedLongAttrTarget attrTarget ->
+            errorR(Error(FSComp.SR.tcUnrecognizedAttributeTarget(), attrTarget.idRange))
+            attributeTargets
+        | ShortFormAttributeTarget -> attributeTargets &&& ~~~ attrEx
+  
+    let constrainedTargets = attributeTargets &&& directedTargets
+
+    // Check if attribute is valid for the target
+    if constrainedTargets = enum 0 then
+        if (directedTargets = AttributeTargets.Assembly || directedTargets = AttributeTargets.Module) then
+            errorR(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), mAttr))
+        else
+            let attributeTargetsToString (targets: int) =
+                [|
+                    if targets &&& int AttributeTargets.Assembly <> 0 then "assembly"
+                    if targets &&& int AttributeTargets.Module <> 0 then "module"
+                    if targets &&& int AttributeTargets.Class <> 0 then "class"
+                    if targets &&& int AttributeTargets.Struct <> 0 then "struct"
+                    if targets &&& int AttributeTargets.Enum <> 0 then "enum"
+                    if targets &&& int AttributeTargets.Constructor <> 0 then "constructor"
+                    if targets &&& int AttributeTargets.Method <> 0 then "method"
+                    if targets &&& int AttributeTargets.Property <> 0 then "property"
+                    if targets &&& int AttributeTargets.Field <> 0 then "field"
+                    if targets &&& int AttributeTargets.Event <> 0 then "event"
+                    if targets &&& int AttributeTargets.Interface <> 0 then "interface"
+                    if targets &&& int AttributeTargets.Parameter <> 0 then "parameter"
+                    if targets &&& int AttributeTargets.Delegate <> 0 then "delegate"
+                    if targets &&& int AttributeTargets.ReturnValue <> 0 then "return value"
+                    if targets &&& int AttributeTargets.GenericParameter <> 0 then "type parameter"
+                |]
+
+            let elementTargets = attributeTargetsToString (int attrTgt)
+            let allowedTargets = attributeTargetsToString validOn
+
+            warning(InvalidAttributeTargetForLanguageElement(elementTargets, allowedTargets, mAttr))
+    
+    constrainedTargets
+
 //-------------------------------------------------------------------------
 // TcAttribute*
 // *Ex means the function accepts attribute targets that must be explicit
@@ -11302,24 +11397,13 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
     let targetIndicator = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter
     let mAttr = synAttr.Range
-    let typath, tyid = List.frontAndBack tycon
-    let tpenv = emptyUnscopedTyparEnv
+    let _, tyId = List.frontAndBack tycon
     let ad = env.eAccessRights
 
     // if we're checking an attribute that was applied directly to a getter or a setter, then
     // what we're really checking against is a method, not a property
     let attrTgt = if isAppliedToGetterOrSetter then ((attrTgt ^^^ AttributeTargets.Property) ||| AttributeTargets.Method) else attrTgt
-    let ty, tpenv =
-        let try1 n =
-            let tyid = mkSynId tyid.idRange n
-            let tycon = (typath @ [tyid])
-
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
-            | Exception err -> raze err
-            | Result(tinstEnclosing, tcref, inst) -> success(TcTypeApp cenv NoNewTypars CheckCxs ItemOccurrence.UseInAttribute env tpenv mAttr tcref tinstEnclosing [] inst)
-
-        ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
-
+    let ty, tpenv = ResolveAttributeType cenv env mAttr tycon
     if not (IsTypeAccessible g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
 
     let tcref = tcrefOfAppTy g ty
@@ -11330,53 +11414,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
     | Some d, Some defines when not (List.contains d defines) ->
         [], false
     | _ ->
-         // REVIEW: take notice of inherited?
-        let validOn, _inherited =
-            let validOnDefault = 0x7fff
-            let inheritedDefault = true
-            if tcref.IsILTycon then
-                let tdef = tcref.ILTyconRawMetadata
-                let tref = g.attrib_AttributeUsageAttribute.TypeRef
-
-                match TryDecodeILAttribute tref tdef.CustomAttrs with
-                | Some ([ILAttribElem.Int32 validOn ], named) ->
-                    let inherited =
-                        match List.tryPick (function "Inherited", _, _, ILAttribElem.Bool res -> Some res | _ -> None) named with
-                        | None -> inheritedDefault
-                        | Some x -> x
-                    (validOn, inherited)
-                | Some ([ILAttribElem.Int32 validOn; ILAttribElem.Bool _allowMultiple; ILAttribElem.Bool inherited ], _) ->
-                    (validOn, inherited)
-                | _ ->
-                    (validOnDefault, inheritedDefault)
-            else
-                match (TryFindFSharpAttribute g g.attrib_AttributeUsageAttribute tcref.Attribs) with
-                | Some(Attrib(_, _, [ AttribInt32Arg validOn ], _, _, _, _)) ->
-                    (validOn, inheritedDefault)
-                | Some(Attrib(_, _, [ AttribInt32Arg validOn
-                                      AttribBoolArg(_allowMultiple)
-                                      AttribBoolArg inherited], _, _, _, _)) ->
-                    (validOn, inherited)
-                | Some _ ->
-                    warning(Error(FSComp.SR.tcUnexpectedConditionInImportedAssembly(), mAttr))
-                    (validOnDefault, inheritedDefault)
-                | _ ->
-                    (validOnDefault, inheritedDefault)
-        let attributeTargets = enum validOn &&& attrTgt
-        let directedTargets =
-            match targetIndicator with
-            | LongFormAttrTarget attrTarget -> attrTarget
-            | UnrecognizedLongAttrTarget attrTarget ->
-                errorR(Error(FSComp.SR.tcUnrecognizedAttributeTarget(), attrTarget.idRange))
-                attributeTargets
-            | ShortFormAttributeTarget -> attributeTargets &&& ~~~ attrEx
-      
-        let constrainedTargets = attributeTargets &&& directedTargets
-        if constrainedTargets = enum 0 then
-            if (directedTargets = AttributeTargets.Assembly || directedTargets = AttributeTargets.Module) then
-                error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), mAttr))
-            else
-                warning(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElement(), mAttr))
+        let constrainedTargets = CheckAttributeUsage g mAttr tcref attrTgt targetIndicator attrEx
 
         match ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mAttr ad ty with
         | Exception _ when canFail = TcCanFail.IgnoreAllErrors || canFail = TcCanFail.IgnoreMemberResoutionError -> [ ], true
@@ -11391,7 +11429,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
             match item with
             | Item.CtorGroup(methodName, minfos) ->
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
-                let afterResolution = ForNewConstructors cenv.tcSink env tyid.idRange methodName minfos
+                let afterResolution = ForNewConstructors cenv.tcSink env tyId.idRange methodName minfos
                 let (expr, attributeAssignedNamedItems, _), _ =
                   TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
 
@@ -11399,7 +11437,12 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
 
                 let mkAttribExpr e =
                     AttribExpr(e, EvalLiteralExprOrAttribArg g e)
-
+                    
+                let checkPropSetterAttribAccess m (pinfo: PropInfo) =
+                    let setterMeth = pinfo.SetterMethod
+                    if not <| IsTypeAndMethInfoAccessible cenv.amap m ad ad setterMeth then
+                        errorR(Error (FSComp.SR.tcPropertyCannotBeSetPrivateSetter(pinfo.PropertyName), m))                       
+                        
                 let namedAttribArgMap =
                   attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, m, isOpt, callerArgExpr))) ->
                     if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), m))
@@ -11411,6 +11454,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                       | Item.Property (info = [pinfo]) ->
                           if not pinfo.HasSetter then
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
+                          checkPropSetterAttribAccess m pinfo
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo ->
                           CheckILFieldInfoAccessible g cenv.amap m ad finfo

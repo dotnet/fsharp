@@ -505,21 +505,6 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             Continuation.concatenate continuations continuation
         | SynExpr.YieldOrReturn(expr = expr) -> visit expr continuation
         | SynExpr.YieldOrReturnFrom(expr = expr) -> visit expr continuation
-        | SynExpr.LetOrUseBang(pat = pat; rhs = rhs; andBangs = andBangs; body = body) ->
-            let continuations =
-                let andBangExprs = List.map (fun (SynExprAndBang(body = body)) -> body) andBangs
-                List.map visit (body :: rhs :: andBangExprs)
-
-            let finalContinuation nodes =
-                [
-                    yield! List.concat nodes
-                    yield! visitPat pat
-                    for SynExprAndBang(pat = pat) in andBangs do
-                        yield! visitPat pat
-                ]
-                |> continuation
-
-            Continuation.sequence continuations finalContinuation
         | SynExpr.MatchBang(expr = expr; clauses = clauses) ->
             visit expr (fun exprNodes ->
                 [ yield! exprNodes; yield! List.collect visitSynMatchClause clauses ]
@@ -637,20 +622,9 @@ let visitPat (p: SynPat) : FileContentEntry list =
             let continuations = List.map visit elementPats
             Continuation.concatenate continuations continuation
         | SynPat.Record(fieldPats, _) ->
-            let pats = List.map (fun (_, _, p) -> p) fieldPats
-
-            let lids =
-                [
-                    for (l, _), _, _ in fieldPats do
-                        yield! visitLongIdent l
-                ]
-
+            let pats = fieldPats |> List.map (fun f -> f.Pattern)
             let continuations = List.map visit pats
-
-            let finalContinuation nodes =
-                [ yield! List.concat nodes; yield! lids ] |> continuation
-
-            Continuation.sequence continuations finalContinuation
+            Continuation.concatenate continuations continuation
         | SynPat.Null _ -> continuation []
         | SynPat.OptionalVal _ -> continuation []
         | SynPat.IsInst(t, _) -> continuation (visitSynType t)
@@ -665,8 +639,8 @@ let visitSynArgPats (argPat: SynArgPats) =
     | SynArgPats.Pats args -> List.collect visitPat args
     | SynArgPats.NamePatPairs(pats = pats) ->
         [
-            for _, _, p in pats do
-                yield! visitPat p
+            for p in pats do
+                yield! visitPat p.Pattern
         ]
 
 let visitSynSimplePat (pat: SynSimplePat) =

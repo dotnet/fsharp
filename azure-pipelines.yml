@@ -26,14 +26,12 @@ trigger:
 
 variables:
   # Release branch for F#
-  # Should be 'current' release branch name, i.e. 'release/dev17.10' in dotnet/fsharp/refs/heads/main, 'release/dev17.10' in dotnet/fsharp/refs/heads/release/dev17.10 and 'release/dev17.9' in dotnet/fsharp/refs/heads/release/dev17.9
-  # Should **never** be 'main' in dotnet/fsharp/refs/heads/main, since it will start inserting to VS twice.
+  # The future "product" gets developed in main, so should be main in main.
+  # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
   - name: FSharpReleaseBranchName
-    value: release/dev18.0
+    value: main
   # VS Insertion branch name (NOT the same as F# branch)
-  # Should be previous release branch or 'main' in 'main' and 'main' in release branch
-  # (since for all *new* release branches we insert into VS main and for all *previous* releases we insert into corresponding VS release),
-  # i.e. 'rel/d17.9' *or* 'main' in dotnet/fsharp/refs/heads/main and 'main' in F# dotnet/fsharp/refs/heads/release/dev17.10 (latest release branch)
+  # ( for main we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   - name: VSInsertionTargetBranchName
     value: main
   - name: _TeamName
@@ -87,8 +85,8 @@ extends:
       #-------------------------------------------------------------------------------------------------------------------#
       #                                                  Signed build                                                     #
       #-------------------------------------------------------------------------------------------------------------------#
-      # Localization: we only run it for specific release branches
-      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.14') }}:
+      # Localization: we only run it for main
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
         - template: /eng/common/templates-official/job/onelocbuild.yml@self
           parameters:
             MirrorRepo: fsharp
@@ -120,6 +118,7 @@ extends:
               mb:
                 signing:
                   enabled: true
+                  signWithProd: true
                   feedSource: https://dnceng.pkgs.visualstudio.com/_packaging/MicroBuildToolset/nuget/v3/index.json
                   signType: $(_SignType)
                   zipSources: false
@@ -148,6 +147,7 @@ extends:
                       /p:GenerateSbom=true
               env:
                   NativeToolsOnMachine: true
+                  FSHARP_CACHE_OVERRIDE: 256
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:

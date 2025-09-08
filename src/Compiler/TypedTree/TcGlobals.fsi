@@ -276,6 +276,8 @@ type internal TcGlobals =
 
     member ListCollector_tcr: FSharp.Compiler.TypedTree.EntityRef
 
+    member SupportsWhenTEnum_tcr: FSharp.Compiler.TypedTree.EntityRef
+
     member MatchFailureException_tcr: FSharp.Compiler.TypedTree.EntityRef
 
     member ResumableCode_tcr: FSharp.Compiler.TypedTree.EntityRef
@@ -495,6 +497,8 @@ type internal TcGlobals =
     member attrib_StructuralEqualityAttribute: BuiltinAttribInfo
 
     member attrib_SystemObsolete: BuiltinAttribInfo
+
+    member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
 
     member attrib_ThreadStaticAttribute: BuiltinAttribInfo option
 

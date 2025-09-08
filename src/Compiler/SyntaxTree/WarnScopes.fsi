@@ -9,9 +9,6 @@ open FSharp.Compiler.UnicodeLexing
 
 module internal WarnScopes =
 
-    /// To be called during lexing to register the line directives for warn scope processing.
-    val internal RegisterLineDirective: lexbuf: Lexbuf * fileIndex: int * line: int -> unit
-
     /// To be called during lexing to save #nowarn / #warnon directives.
     val ParseAndRegisterWarnDirective: lexbuf: Lexbuf -> unit
 
@@ -22,9 +19,6 @@ module internal WarnScopes =
 
     /// Get the collected ranges of the warn directives
     val getDirectiveTrivia: Lexbuf -> WarnDirectiveTrivia list
-
-    /// Get the ranges of comments after warn directives
-    val getCommentTrivia: Lexbuf -> CommentTrivia list
 
     /// Check if the range is inside a "warnon" scope for the given warning number.
     val IsWarnon: FSharpDiagnosticOptions -> warningNumber: int -> mo: range option -> bool

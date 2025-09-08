@@ -16,9 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\XunitSetup.fs">
-      <Link>XunitSetup.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs"/>
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fs">

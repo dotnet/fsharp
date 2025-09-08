@@ -132,3 +132,13 @@ If you're curious about F# itself, check out these links:
 * [Get started with F#](https://learn.microsoft.com/dotnet/fsharp/get-started/)
 * [F# Software Foundation](https://fsharp.org)
 * [F# Testimonials](https://fsharp.org/testimonials)
+
+## Contributors ✨
+
+F# exists because of these wonderful people:
+
+<a href="https://github.com/dotnet/fsharp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=dotnet/fsharp" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).

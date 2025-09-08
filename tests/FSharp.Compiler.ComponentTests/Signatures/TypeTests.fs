@@ -278,7 +278,7 @@ let bar = Bar 5
 
 let f = bar.get_IsBar
 """
-    |> withLangVersionPreview
+    |> withLangVersion10
     |> typecheckResults
     |> fun results ->
         let isBarSymbolUse = results.GetSymbolUseAtLocation(12, 21, "let f = bar.get_IsBar", [ "get_IsBar" ]).Value
@@ -300,7 +300,7 @@ type Foo() =
 
 let foo = Foo()
 """
-    |> withLangVersionPreview
+    |> withLangVersion10
     |> typecheckResults
     |> fun results ->
         let isBarSymbolUse = results.GetSymbolUseAtLocation(7, 13, "let foo = Foo()", [ "Foo" ]).Value

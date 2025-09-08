@@ -330,8 +330,8 @@ type ReqdItem =
 
 let reqdItemOrder =
     let rep = function
-      | ReqdSubEnv v -> true, v
-      | ReqdVal    v -> false, v
+      | ReqdSubEnv v -> struct (true, v)
+      | ReqdVal    v -> struct (false, v)
 
     Order.orderOn rep (Pair.order (Bool.order, valOrder))
 

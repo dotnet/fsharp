@@ -145,6 +145,9 @@ module internal PrintUtilities =
         | [x] -> [resultFunction x (layoutFunction x)] 
         | x :: rest -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
+
+    let showNullness (denv: DisplayEnv) (nullness: Nullness) =
+        denv.showNullnessAnnotations <> Some false && nullness.Evaluate() = NullnessInfo.WithNull
     
     let tagEntityRefName(denv: DisplayEnv) (xref: EntityRef) name =
         if xref.IsNamespace then tagNamespace name
@@ -305,7 +308,7 @@ module internal PrintUtilities =
     let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
         if denv.showDocumentation then
             GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
-            |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL             
+            |> layoutXmlDocFromSig denv infoReader true XmlDoc.Empty restL
         else
             restL
 
@@ -465,9 +468,11 @@ module PrintIL =
         | None -> WordL.equals ^^ (comment "value unavailable")
         | Some s -> WordL.equals ^^ wordL s
 
-    let layoutILEnumCase nm litVal =
+    let layoutILEnumCase nm litVal xmlDocOpt =
         let nameL = ConvertLogicalNameToDisplayLayout (tagEnum >> wordL) nm
-        WordL.bar ^^ nameL ^^ layoutILFieldInit litVal
+        match xmlDocOpt with
+        | Some layout -> layout @@ (WordL.bar ^^ nameL ^^ layoutILFieldInit litVal)
+        | None -> WordL.bar ^^ nameL ^^ layoutILFieldInit litVal
 
 module PrintTypes = 
     // Note: We need nice printing of constants in order to print literals and attributes 
@@ -940,15 +945,12 @@ module PrintTypes =
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 SepL.comma args) --- tcL)
 
-    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) =
+    and layoutNullness (denv: DisplayEnv) part2 (nullness: Nullness) prec =
         // Show nullness annotations unless explicitly turned off
-        if denv.showNullnessAnnotations <> Some false then
-            match nullness.Evaluate() with
-            | NullnessInfo.WithNull -> part2 ^^ wordL (tagPunctuation "|") ^^ wordL (tagKeyword "null") 
-            | NullnessInfo.WithoutNull -> part2
-            | NullnessInfo.AmbivalentToNull -> part2 //^^ wordL (tagText "__maybenull")
+        if showNullness denv nullness then
+            part2 ^^ wordL (tagPunctuation "|") ^^ wordL (tagKeyword "null") |> bracketIfL (prec <= 3)
         else
-            part2
+            part2 // if NullnessInfo.AmbivalentToNull -> part2 ^^ wordL (tagText "__maybenull")
     
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
@@ -1012,7 +1014,7 @@ module PrintTypes =
                     prefix
                     args
 
-            let part2 = layoutNullness denv part1 nullness
+            let part2 = layoutNullness denv part1 nullness prec
 
             part2
         // Layout a tuple type 
@@ -1044,14 +1046,15 @@ module PrintTypes =
             let retTyL = layoutTypeWithInfoAndPrec denv env 5 retTy
             let argTysL = argTys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
             let funcTyL = curriedLayoutsL arrow argTysL retTyL
-            let part1 = bracketIfL (prec <= 4) funcTyL
-            let part2 = layoutNullness denv part1 nullness
+            let showNull = showNullness denv nullness
+            let part1 = bracketIfL (prec <= 4 || showNull) funcTyL
+            let part2 = layoutNullness denv part1 nullness prec
             part2
 
         // Layout a type variable . 
         | TType_var (r, nullness) ->
             let part1 = layoutTyparRefWithInfo denv env r
-            let part2 = layoutNullness denv part1 nullness
+            let part2 = layoutNullness denv part1 nullness prec
             part2
 
         | TType_measure unt -> layoutMeasure denv unt
@@ -1102,8 +1105,13 @@ module PrintTypes =
 
         // Layout an unnamed argument
         // Cannot have any attributes
-        | None, _, _ -> 
-            layoutTypeWithInfoAndPrec denv env 2 ty
+        | None, _, _ ->
+            let prec =
+                match ty with
+                | TType_tuple _ -> 2
+                | _ -> 4
+
+            layoutTypeWithInfoAndPrec denv env prec ty
 
         // Layout a named argument 
         | Some id, _, _ -> 
@@ -1413,9 +1421,10 @@ module PrintTastMemberOrVals =
                         if short then
                             tauL --- withGet
                         else
-                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled prefixAccessModifier
+                            let prefixAccess = prefixAccessModifier || isNil argInfos
+                            let nameL = layoutMemberName denv vref niceMethodTypars argInfos tagProperty vref.DisplayNameCoreMangled prefixAccess
                             let nameL = if short then nameL else mkInlineL denv vref.Deref nameL
-                            stat --- ((nameL |> addColonL) ^^ (if isNil argInfos && not supportAccessModifiersBeforeGetSet then tauL else tauL --- withGet))
+                            stat --- ((nameL |> addColonL) ^^ (if isNil argInfos then tauL else (tauL --- withGet)))
                     prettyTyparInst, resL
 
             | SynMemberKind.PropertySet ->
@@ -1927,11 +1936,8 @@ module TastDefinitionPrinting =
     let layoutPropInfo denv (infoReader: InfoReader) m (pinfo: PropInfo) : Layout list =
         let amap = infoReader.amap
 
-        let supportAccessModifiersBeforeGetSet =
-            denv.g.langVersion.SupportsFeature Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-
         match pinfo.ArbitraryValRef with
-        | Some vref when not supportAccessModifiersBeforeGetSet ->
+        | Some vref ->
             match pinfo with
             | DifferentGetterAndSetter(getValRef, setValRef) ->
                 let getSuffix = if pinfo.IsIndexer then emptyL else WordL.keywordWith ^^ WordL.keywordGet
@@ -1951,26 +1957,6 @@ module TastDefinitionPrinting =
                     [ propL ^^ WordL.keywordWith ^^ wordL (tagText "get, set") ]
                 else
                     [ propL ]
-
-        | Some vref ->
-            let propL = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader vref
-            if pinfo.HasGetter && pinfo.HasSetter then
-                let rec ``replace 'with'`` layout newLayout =
-                    match layout with
-                    | Node(Leaf (text = text), _, _) when text.Text = "with" -> newLayout
-                    | Node(l, r, i) -> Node(l, ``replace 'with'`` r newLayout , i)
-                    | Attr(text, attr, l) -> Attr(text, attr, ``replace 'with'`` l newLayout )
-                    | Leaf _
-                    | ObjLeaf _ -> layout
-
-                let getterAccess, setterAccess =
-                    pinfo.GetterMethod.ArbitraryValRef |> Option.map _.Accessibility |> Option.defaultValue taccessPublic,
-                    pinfo.SetterMethod.ArbitraryValRef |> Option.map _.Accessibility |> Option.defaultValue taccessPublic
-                let getSet =
-                    WordL.keywordWith ^^ layoutAccessibilityCore denv getterAccess ^^ wordL (tagText "get") ^^ RightL.comma --- layoutAccessibilityCore denv setterAccess ^^ wordL (tagText "set")
-                [ ``replace 'with'`` propL getSet ]
-            else
-                [ propL ]
         | None ->
 
             let modifierAndMember =
@@ -2130,9 +2116,8 @@ module TastDefinitionPrinting =
 
         let ilFieldsL =
             ilFields
-            |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv infoReader m x)
-            |> List.sortBy fst
-            |> List.map snd
+            |> List.sortBy (fun x -> x.IsStatic, x.FieldName)
+            |> List.map (fun x -> layoutILFieldInfo denv infoReader m x)
 
         let staticVals =
             if isRecdTy g ty then
@@ -2247,6 +2232,14 @@ module TastDefinitionPrinting =
             else 
                 (lhsL ^^ WordL.equals) -* rhsL
 
+        let tryGetFieldXml (layoutList: Layout list) idxOpt =
+            match idxOpt with
+            | Some i when i >= 0 && i < layoutList.Length ->
+                match layoutList[i] with
+                | Node (Node (_, right, _), _, _) -> Some right
+                | _ -> None
+            | _ -> None
+
         let typeDeclL = 
 
             match repr with 
@@ -2349,9 +2342,14 @@ module TastDefinitionPrinting =
                 |> addLhs
 
             | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
-                infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
-                |> List.filter (fun x -> x.FieldName <> "value__")
-                |> List.map (fun x -> PrintIL.layoutILEnumCase x.FieldName x.LiteralValue)
+                let ilFieldsSorted = 
+                    ilFields
+                    |> List.sortBy (fun x -> x.IsStatic, x.FieldName)
+                infoReader.GetILFieldInfosOfType (None, ad, m, ty)
+                |> List.filter (fun (x: ILFieldInfo) -> x.FieldName <> "value__")
+                |> List.map (fun (x: ILFieldInfo) ->
+                    let xmlDocOpt = List.tryFindIndex (fun (e: ILFieldInfo) -> e.FieldName = x.FieldName) ilFieldsSorted |> tryGetFieldXml ilFieldsL
+                    PrintIL.layoutILEnumCase x.FieldName x.LiteralValue xmlDocOpt)
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> addLhs
@@ -2953,7 +2951,7 @@ let minimalStringOfType denv ty =
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
     let denv = suppressNullnessAnnotations denv
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
-    showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
+    showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 5 ty)
 
 let minimalStringOfTypeWithNullness denv ty = 
     minimalStringOfType {denv with showNullnessAnnotations = Some true} ty

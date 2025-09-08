@@ -1278,6 +1278,8 @@ type TcGlobals(
 
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
 
+  member val SupportsWhenTEnum_tcr = mk_MFCompilerServices_tcref fslibCcu "SupportsWhenTEnum"
+
   member _.TryEmbedILType(tref: ILTypeRef, mkEmbeddableType: unit -> ILTypeDef) =
     if tref.Scope = ILScopeRef.Local && not(embeddedILTypeDefs.ContainsKey(tref.Name)) then
         embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
@@ -1479,6 +1481,7 @@ type TcGlobals(
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
+  member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
   member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"

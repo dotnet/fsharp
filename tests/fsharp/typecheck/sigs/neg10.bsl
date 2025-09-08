@@ -37,6 +37,8 @@ neg10.fs(84,13,84,29): typecheck error FS0896: Enumerations cannot have members
 
 neg10.fs(90,23,90,41): typecheck error FS0907: Enumerations cannot have interface declarations
 
+neg10.fs(91,17,91,45): typecheck error FS0896: Enumerations cannot have members
+
 neg10.fs(99,23,99,29): typecheck error FS0907: Enumerations cannot have interface declarations
 
 neg10.fs(107,10,107,17): typecheck error FS0964: Type abbreviations cannot have augmentations
@@ -50,6 +52,8 @@ neg10.fs(116,13,116,29): typecheck error FS0895: Type abbreviations cannot have 
 neg10.fs(120,10,120,17): typecheck error FS0964: Type abbreviations cannot have augmentations
 
 neg10.fs(122,23,122,41): typecheck error FS0906: Type abbreviations cannot have interface declarations
+
+neg10.fs(123,17,123,45): typecheck error FS0895: Type abbreviations cannot have members
 
 neg10.fs(129,10,129,17): typecheck error FS0964: Type abbreviations cannot have augmentations
 
@@ -118,11 +122,11 @@ neg10.fs(245,50,245,51): typecheck error FS0193: A type parameter is missing a c
 
 neg10.fs(245,17,245,20): typecheck error FS0043: A type parameter is missing a constraint 'when 'b :> C'
 
-neg10.fs(251,49,251,61): typecheck error FS0001: The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type
+neg10.fs(251,49,251,61): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
 
-neg10.fs(252,45,252,57): typecheck error FS0001: The type '('a -> 'a)' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
+neg10.fs(252,45,252,57): typecheck error FS0001: The type ''a -> 'a' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
 
-neg10.fs(253,36,253,48): typecheck error FS0001: The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type
+neg10.fs(253,36,253,48): typecheck error FS0001: The type ''a -> 'a' does not support the 'equality' constraint because it is a function type
 
 neg10.fs(297,17,297,24): typecheck error FS1187: An indexer property must be given at least one argument
 

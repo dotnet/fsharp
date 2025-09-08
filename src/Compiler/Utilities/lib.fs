@@ -9,6 +9,7 @@ open System.Text
 open System.Threading.Tasks
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open System.Runtime.CompilerServices
 
 let debug = false
 
@@ -24,7 +25,7 @@ let isEnvVarSet s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x: IDisposable MaybeNull) = 
+let dispose (x: IDisposable MaybeNull) =
     match x with
     | Null -> ()
     | NonNull x -> x.Dispose()
@@ -59,11 +60,10 @@ module Int64 =
 
 module Pair =
     let order (compare1: IComparer<'T1>, compare2: IComparer<'T2>) =
-        { new IComparer<'T1 * 'T2> with
+        { new IComparer<struct ('T1 * 'T2)> with
              member _.Compare((a1, a2), (aa1, aa2)) =
                   let res1 = compare1.Compare (a1, aa1)
                   if res1 <> 0 then res1 else compare2.Compare (a2, aa2) }
-
 
 type NameSet =  Zset<string>
 
@@ -452,4 +452,24 @@ module ListParallel =
         |> ArrayParallel.map f
         |> Array.toList
 
-   
+[<RequireQualifiedAccess>]
+module Async =
+    let map f a =
+        async {
+            let! a = a
+            return f a
+        }
+
+module WeakMap =
+    /// Provides association of lazily-created values with arbitrary key objects.
+    /// The associated value is created on first request and kept alive only while the key
+    /// is strongly referenced elsewhere (backed by ConditionalWeakTable).
+    ///
+    /// Usage:
+    ///   let getValueFor = WeakMap.getOrCreate (fun key -> expensiveInit key)
+    ///   let v = getValueFor someKey
+    let getOrCreate valueFactory =
+        let table = ConditionalWeakTable<_, _>()
+        // Cached factory to avoid allocating a new lambda per lookup.
+        let factory = ConditionalWeakTable.CreateValueCallback(fun k -> valueFactory k)
+        fun (key: 'Key when 'Key: not null) -> table.GetValue(key, factory)

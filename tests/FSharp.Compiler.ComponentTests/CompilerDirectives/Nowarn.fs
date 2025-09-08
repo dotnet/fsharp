@@ -16,7 +16,7 @@ module Nowarn =
     let private make20 = "1"
     let private make25 = "match None with None -> ()"
     let private W20 = Warning 20
-    let private vp = "PREVIEW"
+    let private vp = "LATEST"
     let private v9 = "9.0"
     let private fs = String.concat Environment.NewLine >> FsSource
     let private fsMod lines = fs ("module A" :: lines)
@@ -113,7 +113,7 @@ module Nowarn =
         || (List.zip expected actual |> List.exists(fun((error, line), d) -> error <> d.Error || line <> d.Range.StartLine))
 
     let private withDiags testId langVersion flags (sources: SourceCodeFileKind list) (expected: (ErrorType * int) list) (result: CompilationResult) =
-        let actual = result.Output.Diagnostics
+        let actual = result.Output.Diagnostics |> List.distinctBy (fun ei -> ei.Range.StartLine, ei.Range.StartColumn, ei.Range.EndLine, ei.Range.EndColumn, ei.Message)
         if testFailed expected actual then
             let sb = new StringBuilder()
             let print (s: string) = sb.AppendLine s |> ignore
@@ -148,28 +148,6 @@ module Nowarn =
         |> withDiags testId langVersion flags sources (Array.toList expectedDiags)
 
     [<Fact>]
-    let testBadLineDirectiveInteraction() =
-        let sources =
-            [
-            "test1.fs", "module A1 \n#line 10 \"test.fsy\" \n()"
-            "test2.fs", "module A2 \n#line 20 \"test.fsy\" \n()"
-            ]
-            |> List.map (fun (name, text) -> {FileName = name; SourceText = Some text})
-            |> List.map SourceCodeFileKind.Fs
-        let result =
-            sources.Head
-            |> fsFromString
-            |> FS
-            |> withAdditionalSourceFiles sources.Tail
-            |> compile
-        let actual = result.Output.Diagnostics
-        if actual.Length <> 1 then Assert.Fail $"expected 1 warning, got {actual.Length}"
-        let errorInfo = actual.Head
-        if errorInfo.Error <> Warning 3877 then Assert.Fail $"expected Warning 3877, got {errorInfo.Error}"
-        if errorInfo.Range.StartLine <> 3 then Assert.Fail $"expected warning in line 3, got line {errorInfo.Range.StartLine}"
-        if not <| errorInfo.Message.StartsWith "The file 'test.fsy' was also pointed to" then Assert.Fail $"unexpected message {errorInfo.Message}"
- 
-    [<Fact>]
     let warnDirectiveArgRange() =
         FSharp """
 module A
@@ -179,6 +157,6 @@ let a = 1; #nowarn 20
         |> compile
         |> withDiagnostics [
             Error 3874, Line 4, Col 11, Line 4, Col 22, "#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
-            Warning 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'xy'"
-            Warning 203, Line 3, Col 12, Line 3, Col 17, "Invalid warning number 'abx'"
+            Error 203, Line 3, Col 9, Line 3, Col 11, "Invalid warning number 'xy'"
+            Error 203, Line 3, Col 12, Line 3, Col 17, "Invalid warning number 'abx'"
         ]

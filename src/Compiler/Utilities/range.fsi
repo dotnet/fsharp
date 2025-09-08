@@ -3,6 +3,7 @@
 // The Range and Pos types form part of the public API of FSharp.Compiler.Service
 namespace FSharp.Compiler.Text
 
+open System
 open System.Collections.Generic
 
 /// An index into a global tables of filenames
@@ -101,6 +102,9 @@ type Range =
 
     /// The file name for the file of the range
     member FileName: string
+    
+    /// Apply the line directives to the range.
+    member ApplyLineDirectives: unit -> range
 
     /// Synthetic marks ranges which are produced by intermediate compilation phases. This
     /// bit signifies that the range covers something that should not be visible to language
@@ -121,6 +125,7 @@ type Range =
     member internal IsAdjacentTo: otherRange: Range -> bool
 
     /// The range where all values are zero
+    [<Obsolete("Use Range.range0 instead")>]
     static member Zero: range
 
 /// Represents a range within a file
@@ -183,6 +188,13 @@ module internal FileIndex =
 
     val startupFileName: string
 
+[<RequireQualifiedAccess>]
+module internal LineDirectives =
+
+    /// Add the line directive data of the source file of fileIndex. Each line directive is represented 
+    /// by the line number of the directive and the file index and line number of the target.
+    val add: fileIndex: FileIndex -> lineDirectives: (int * (FileIndex * int)) list -> unit
+    
 module Range =
 
     /// Ordering on positions

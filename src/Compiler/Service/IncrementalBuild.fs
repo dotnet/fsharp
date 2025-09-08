@@ -1666,7 +1666,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     Array.ofList delayedLogger.Diagnostics, false
             diagnostics
             |> Array.map (fun (diagnostic, severity) ->
-                FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, suggestNamesForErrors, flatErrors, None))
+                FSharpDiagnostic.CreateFromException(diagnostic, severity, suggestNamesForErrors, flatErrors, None))
 
         return builderOpt, diagnostics
       }
