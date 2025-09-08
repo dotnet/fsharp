@@ -966,27 +966,28 @@ type TcGlobals(
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries =
-     [| "Int32"    , v_int_tcr
-        "IntPtr"   , v_nativeint_tcr
-        "UIntPtr"  , v_unativeint_tcr
-        "Int16"    , v_int16_tcr
-        "Int64"    , v_int64_tcr
-        "UInt16"   , v_uint16_tcr
-        "UInt32"   , v_uint32_tcr
-        "UInt64"   , v_uint64_tcr
-        "SByte"    , v_sbyte_tcr
-        "Decimal"  , v_decimal_tcr
-        "Byte"     , v_byte_tcr
-        "Boolean"  , v_bool_tcr
-        "String"   , v_string_tcr
-        "Object"   , v_obj_tcr
-        "Exception", v_exn_tcr
-        "Char"     , v_char_tcr
-        "Double"   , v_float_tcr
-        "Single"   , v_float32_tcr |]
-            |> Array.map (fun (nm, tcr) ->
+     [| sys,         "Int32"        , v_int_tcr
+        sys,         "IntPtr"       , v_nativeint_tcr
+        sys,         "UIntPtr"      , v_unativeint_tcr
+        sys,         "Int16"        , v_int16_tcr
+        sys,         "Int64"        , v_int64_tcr
+        sys,         "UInt16"       , v_uint16_tcr
+        sys,         "UInt32"       , v_uint32_tcr
+        sys,         "UInt64"       , v_uint64_tcr
+        sys,         "SByte"        , v_sbyte_tcr
+        sys,         "Decimal"      , v_decimal_tcr
+        sys,         "Byte"         , v_byte_tcr
+        sys,         "Boolean"      , v_bool_tcr
+        sys,         "String"       , v_string_tcr
+        sys,         "Object"       , v_obj_tcr
+        sys,         "Exception"    , v_exn_tcr
+        sys,         "Char"         , v_char_tcr
+        sys,         "Double"       , v_float_tcr
+        sys,         "Single"       , v_float32_tcr
+        sysGenerics, "IEnumerable`1", v_seq_tcr |]
+            |> Array.map (fun (sysLib, nm, tcr) ->
                 let ty = mkNonGenericTy tcr
-                nm, findSysTyconRef sys nm, (fun _ nullness ->
+                nm, findSysTyconRef sysLib nm, (fun _ nullness ->
                     match nullness with
                     | Nullness.Known NullnessInfo.WithoutNull -> ty
                     | _ -> mkNonGenericTyWithNullness tcr nullness))
