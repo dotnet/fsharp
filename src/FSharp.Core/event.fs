@@ -157,7 +157,7 @@ type Event<'Delegate, 'Args
                   let h = 
                       match Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) with
                       | null -> null
-                      | result -> result :?> 'Delegate
+                      | result -> downcast result
 
                   (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 
