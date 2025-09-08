@@ -2360,7 +2360,16 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         [| |]
 
     let imports = GenPdbImports cenv il.DebugImports
-    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
+    
+    // Check if any local is pinned, and if so, suppress tail calls to prevent runtime crashes
+    let hasPinnedLocals = il.Locals |> List.exists (fun local -> local.IsPinned)
+    let cenvForEmission = 
+        if hasPinnedLocals then 
+            { cenv with emitTailcalls = false }
+        else 
+            cenv
+            
+    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenvForEmission imports localSigs env mname il.Code
     let codeSize = code.Length
     use methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format?

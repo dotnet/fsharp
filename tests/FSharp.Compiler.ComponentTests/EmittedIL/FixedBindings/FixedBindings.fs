@@ -160,6 +160,63 @@ module FixedBindings =
     [<Theory>]
     [<InlineData("7.0")>]
     [<InlineData("preview")>]
+    let ``Tail calls suppressed with pinned locals`` langVersion =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PinnedLocalsTailCallSuppression.fs")
+        |> withLangVersion langVersion
+        |> withOptimize
+        |> withTailcalls
+        |> withNoWarn 9
+        |> compile
+        |> verifyIL ["""
+  .method public static int32  tailCallWithPinnedLocal(int32 x) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (int32 V_0,
+             native int V_1,
+             int32& pinned V_2)
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
+    IL_0002:  bgt.s      IL_0006
+
+    IL_0004:  ldc.i4.0
+    IL_0005:  ret
+
+    IL_0006:  ldarg.0
+    IL_0007:  stloc.0
+    IL_0008:  ldloca.s   V_0
+    IL_000a:  stloc.2
+    IL_000b:  ldloca.s   V_0
+    IL_000d:  conv.i
+    IL_000e:  stloc.1
+    IL_000f:  ldarg.0
+    IL_0010:  ldc.i4.1
+    IL_0011:  sub
+    IL_0012:  call       int32 PinnedLocalsTailCallSuppression::tailCallWithPinnedLocal(int32)
+    IL_0017:  ret
+  } """; """
+  .method public static int32  normalTailCall(int32 x) cil managed
+  {
+    
+    .maxstack  4
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
+    IL_0002:  bgt.s      IL_0006
+
+    IL_0004:  ldc.i4.0
+    IL_0005:  ret
+
+    IL_0006:  ldarg.0
+    IL_0007:  ldc.i4.1
+    IL_0008:  sub
+    IL_0009:  tail.
+    IL_000a:  call       int32 PinnedLocalsTailCallSuppression::normalTailCall(int32)
+    IL_000f:  ret
+  } """ ]
+
+    [<Theory>]
+    [<InlineData("7.0")>]
+    [<InlineData("preview")>]
     let ``Pin address of array element`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
         |> withLangVersion langVersion
