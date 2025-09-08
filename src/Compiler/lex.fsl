@@ -194,11 +194,14 @@ let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
 
 // Check if XML doc comment is positioned correctly (first non-whitespace on line)
 let checkXmlDocLinePosition (args: LexArgs) (lexbuf: UnicodeLexing.Lexbuf) =
+    // Store state to track if we've seen non-whitespace tokens on current line
+    // For simplicity in this lexer context, we'll use a conservative heuristic
     let m = lexbuf.LexemeRange
     let startCol = m.StartColumn
-    // For simplicity, warn if XML doc comment is not at the very beginning of the line
-    // A more sophisticated implementation could check for preceding whitespace only
-    if startCol > 0 then
+    
+    // If /// appears well after typical indentation levels (beyond column 16),
+    // it's likely after code rather than just indentation
+    if startCol > 16 then
         let error = Error(FSComp.SR.xmlDocNotFirstOnLine(), m)
         args.diagnosticsLogger.Warning(error)
 
