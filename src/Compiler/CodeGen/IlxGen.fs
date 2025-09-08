@@ -1250,9 +1250,6 @@ and IlxGenEnv =
         /// Indicates that the .locals init flag should be set on a method and all its nested methods and lambdas
         initLocals: bool
 
-        /// Indicates whether the current method has pinned locals that would prevent tail calls
-        hasPinnedLocals: bool
-
         /// Delay code gen for files.
         delayCodeGen: bool
 
@@ -2691,6 +2688,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
             locals[j] <- ((ranges @ prevRanges), ty, isFixed, canBeReallocd)
             j, true
         | None -> cgbuf.AllocLocal(ranges, ty, isFixed, canBeReallocd), false
+
+    /// Check if any locals have been allocated as pinned/fixed
+    member _.HasPinnedLocals() =
+        locals |> Seq.exists (fun (_, _, isFixed, _) -> isFixed)
 
     member _.Close() =
 
@@ -4374,7 +4375,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         isDllImport,
                         isSelfInit,
                         makesNoCriticalTailcalls,
-                        eenv.hasPinnedLocals,
+                        cgbuf,
                         sequel
                     )
                 else
@@ -4486,13 +4487,14 @@ and CanTailcall
         isDllImport,
         isSelfInit,
         makesNoCriticalTailcalls,
-        hasPinnedLocals,
+        cgbuf: CodeGenBuffer,
         sequel
     ) =
 
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
+    let hasPinnedLocals = cgbuf.HasPinnedLocals()
     if
         not hasStructObjArg
         && Option.isNone ccallInfo
@@ -4700,7 +4702,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
         check ilxClosureApps
 
     let isTailCall =
-        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, eenv.hasPinnedLocals, sequel)
+        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, cgbuf, sequel)
 
     CountCallFuncInstructions()
 
@@ -5438,7 +5440,7 @@ and GenILCall
             isDllImport,
             false,
             makesNoCriticalTailcalls,
-            eenv.hasPinnedLocals,
+            cgbuf,
             sequel
         )
 
@@ -9872,7 +9874,6 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
     realloc,
     { eenv with
         liveLocals = IntMap.add j () eenv.liveLocals
-        hasPinnedLocals = eenv.hasPinnedLocals || isFixed
     }
 
 /// Decide storage for local value and if necessary allocate an ILLocal for it
@@ -12029,7 +12030,6 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         withinSEH = false
         isInLoop = false
         initLocals = true
-        hasPinnedLocals = false
         imports = None
         delayCodeGen = true
         delayedFileGenReverse = []

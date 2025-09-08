@@ -252,8 +252,6 @@ let run() =
     IL_0042:  ldc.i4.5
     IL_0043:  call       void TailCall06::foo<int32>(int32,
                                                      !!0)
-    IL_0048:  nop
-    IL_0049:  ldc.i4.0
             """
             ]
 
