@@ -4124,11 +4124,7 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
             let renamedCctors = 
                 multipleCctors
                 |> List.mapi (fun i mdef ->
-                    let newName = 
-                        match i with
-                        | 0 -> "cctor_IncrClass"
-                        | 1 -> "cctor_UnionErasure" 
-                        | _ -> sprintf "cctor_%d" i
+                    let newName = sprintf "cctor_renamed_%d" i
                     mdef.With(name = newName))
             
             // Create call instructions for each renamed .cctor

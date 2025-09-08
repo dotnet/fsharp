@@ -53,10 +53,10 @@ type TestUnion<'T when 'T: comparison> =
           void  .cctor() cil managed
   {
     // Code size
-    IL_0000:  call       void DuplicateCctorFix/TestUnion`1::cctor_IncrClass()
-    IL_0005:  call       void DuplicateCctorFix/TestUnion`1::cctor_UnionErasure()
+    IL_0000:  call       void DuplicateCctorFix/TestUnion`1::cctor_renamed_0()
+    IL_0005:  call       void DuplicateCctorFix/TestUnion`1::cctor_renamed_1()
     IL_000a:  ret
   } // end of method TestUnion`1::.cctor
 
-  .method private static void cctor_IncrClass() cil managed
-  .method private static void cctor_UnionErasure() cil managed"""]
+  .method private static void cctor_renamed_0() cil managed
+  .method private static void cctor_renamed_1() cil managed"""]
