@@ -22,25 +22,56 @@ type ProjectItems() =
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener
             project.ComputeSourcesAndFlags()
 
-            let containsSystemNumerics () = 
-                project.CompilationOptions
-                |> Array.exists (fun f -> f.IndexOf("System.Numerics") <> -1)
+            let tfv  = project.BuildProject.GetPropertyValue("TargetFrameworkVersion")
+            let tfi  = project.BuildProject.GetPropertyValue("TargetFrameworkIdentifier")
+            let tfp  = project.BuildProject.GetPropertyValue("TargetFrameworkProfile")
+            let toolsv = project.BuildProject.ToolsVersion
+            let initialFrameworkInfo = sprintf "TFV=%s | TFI=%s | TFP=%s | ToolsVersion=%s" tfv tfi tfp toolsv
 
-            let mutable wasCalled = false
-            Assert.True(containsSystemNumerics (), "Project should contains reference to System.Numerics")
+            let msbuildRefs =
+                project.BuildProject.GetItems("Reference")
+                |> Seq.map (fun i -> i.EvaluatedInclude)
+                |> String.concat "; "
+            let refItemDump = "Reference Items: " + msbuildRefs
 
             let refContainer = project.GetReferenceContainer()
-            let reference = 
-                refContainer.EnumReferences() 
+            let refsByContainer =
+                refContainer.EnumReferences()
+                |> Seq.map (fun r -> r.SimpleName)
+                |> String.concat "; "
+            let containerHasSystemNumerics =
+                refContainer.EnumReferences() |> Seq.exists (fun r -> r.SimpleName = "System.Numerics")
+
+            let rec recalcContains() =
+                let hit =
+                    project.CompilationOptions
+                    |> Array.filter (fun f -> f.IndexOf("System.Numerics", StringComparison.OrdinalIgnoreCase) >= 0)
+                (hit.Length > 0, hit |> String.concat " || ")
+
+            let (hasFlagBefore, flagSamplesBefore) = recalcContains()
+
+            Assert.True(
+                hasFlagBefore,
+                sprintf "Expected System.Numerics in CompilationOptions.\n%s\n%s\nContainerRefs=%s\nContainerHas=%b\nFlagSamples=%s"
+                    initialFrameworkInfo refItemDump refsByContainer containerHasSystemNumerics flagSamplesBefore)
+
+            let reference =
+                refContainer.EnumReferences()
                 |> Seq.find(fun r -> r.SimpleName = "System.Numerics")
+
+            let mutable wasCalled = false
             (
                 use _guard = listener.OnAfterRemoveFiles.Subscribe(fun _ -> wasCalled <- true)
                 reference.Remove(false)
             )
 
             Assert.False(wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
-            Assert.False(containsSystemNumerics(), "Project should not contains reference to System.Numerics")            
-            ))
+
+            let (hasFlagAfter, flagSamplesAfter) = recalcContains()
+            Assert.False(
+                hasFlagAfter,
+                sprintf "System.Numerics still present after Remove.\nFlagSamplesAfter=%s" flagSamplesAfter)
+        ))
 
     [<Fact>]
     member public this.``AddNewItem.ItemAppearsAtBottomOfFsprojFile``() =
