@@ -9,7 +9,6 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
@@ -17,16 +16,11 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Layout
-open FSharp.Compiler.Text.LayoutRender
-open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
@@ -35,6 +29,61 @@ open System.Collections.Generic
 open System.Collections.ObjectModel
 
 let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
+
+//-------------------------------------------------------------------------
+// Cheap "occurs" checks (avoid full free-variable set construction)
+//-------------------------------------------------------------------------
+
+let rec private ExprUsesLocal (v: Val) (expr: Expr) =
+    // Be robust against reclinks and wrappers
+    let expr = stripExpr expr
+    match expr with
+    | Expr.Val (VRefLocal v2, _, _) -> valEq v v2
+    | Expr.App (f, _, _, args, _) ->
+        ExprUsesLocal v f || List.exists (ExprUsesLocal v) args
+    | Expr.Lambda (_, _, _, _, body, _, _)
+    | Expr.TyLambda (_, _, body, _, _) ->
+        ExprUsesLocal v body
+    | Expr.StaticOptimization (_, e2, e3, _) ->
+        ExprUsesLocal v e2 || ExprUsesLocal v e3
+    | Expr.TyChoose _ ->
+        // Conservative: free-choice typars inside; assume potential use
+        true
+    | Expr.Quote _ ->
+        // Conservative: quotations can capture locals
+        true
+    | Expr.Let (TBind (_, e1, _), e2, _, _) ->
+        ExprUsesLocal v e1 || ExprUsesLocal v e2
+    | Expr.LetRec (binds, body, _, _) ->
+        List.exists (fun (TBind (_, e, _)) -> ExprUsesLocal v e) binds || ExprUsesLocal v body
+    | Expr.Sequential (e1, e2, _, _) ->
+        ExprUsesLocal v e1 || ExprUsesLocal v e2
+    | Expr.Match (_, _, dtree, targets, _, _) ->
+        DecisionTreeUsesLocal v dtree ||
+        Array.exists (fun (TTarget (_, e, _)) -> ExprUsesLocal v e) targets
+    // IMPORTANT: account for address-of locals (e.g., passing out-byref) which carry the ValRef in the op payload
+    | Expr.Op (TOp.LValueOp (LAddrOf _, lv), _, _, _) ->
+        valEq v lv.Deref
+    | Expr.Op (_, _, args, _) ->
+        List.exists (ExprUsesLocal v) args
+    | Expr.Obj (_, _, _, ctorCall, overrides, iimpls, _) ->
+        ExprUsesLocal v ctorCall ||
+        List.exists (fun (TObjExprMethod (_, _, _, _, e, _)) -> ExprUsesLocal v e) overrides ||
+        List.exists (fun (_, ms) -> List.exists (fun (TObjExprMethod (_, _, _, _, e, _)) -> ExprUsesLocal v e) ms) iimpls
+    | Expr.DebugPoint (_, e) ->
+        ExprUsesLocal v e
+    | _ -> false
+
+and private DecisionTreeUsesLocal (v: Val) (dt: DecisionTree) =
+    match dt with
+    | TDSuccess (es, _) ->
+        List.exists (ExprUsesLocal v) es
+    | TDBind (TBind (_, e1, _), rest) ->
+        ExprUsesLocal v e1 || DecisionTreeUsesLocal v rest
+    | TDSwitch (e, cases, dflt, _) ->
+        ExprUsesLocal v e ||
+        List.exists (fun (TCase (_, t)) -> DecisionTreeUsesLocal v t) cases ||
+        Option.exists (DecisionTreeUsesLocal v) dflt
 
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4) ] 
 
@@ -1706,9 +1755,7 @@ let TryEliminateBinding cenv _env bind e2 _m =
         // But note the cases below cover some instances of side-effecting expressions as well.... 
         let IsUniqueUse vspec2 args = 
               valEq vspec1 vspec2  
-           // REVIEW: this looks slow. Look only for one variable instead 
-           && (let fvs = accFreeInExprs (CollectLocalsWithStackGuard()) args emptyFreeVars
-               not (Zset.contains vspec1 fvs.FreeLocals))
+           && not (List.exists (ExprUsesLocal vspec1) args)
 
         // Immediate consumption of value as 2nd or subsequent argument to a construction or projection operation 
         let rec GetImmediateUseContext rargsl argsr = 
@@ -1742,8 +1789,12 @@ let TryEliminateBinding cenv _env bind e2 _m =
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
          | Expr.Match (spMatch, _exprm, TDSwitch(DebugPoints(Expr.Val (VRefLocal vspec2, _, _), recreate1), cases, dflt, _), targets, m, ty2)
              when (valEq vspec1 vspec2 &&
-                   let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
-                   not (Zset.contains vspec1 fvs.FreeLocals)) -> 
+                   let fvsContains = 
+                       let fvTargets = accFreeInTargets CollectLocals targets emptyFreeVars
+                       let fvCases = accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars
+                       let fvs = unionFreeVars fvTargets fvCases
+                       Zset.contains vspec1 fvs.FreeLocals
+                   not fvsContains) -> 
 
               let spMatch = spBind.Combine spMatch
               Some (Expr.Match (spMatch, e1.Range, TDSwitch(recreate1 e1, cases, dflt, m), targets, m, ty2)  |> recreate0)
@@ -2896,12 +2947,25 @@ and OptimizeLinearExpr cenv env expr contf =
 
     | Expr.Let (bind, body, m, _) ->  
 
-      let (bindR, bindingInfo), env = OptimizeBinding cenv false env bind 
+      let (bindR: Binding, bindingInfo), env = OptimizeBinding cenv false env bind 
 
       OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
-        // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
-        // Is it quadratic or quasi-quadratic?
-        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
+        // Cheap occurrence check + precise fallback before eliminating
+        let v = bindR.Var
+        let usedQuick = ExprUsesLocal v bodyR
+        let usedFull =
+            if usedQuick then true
+            else
+                let fvs = freeInExpr CollectLocals bodyR
+                Zset.contains v fvs.FreeLocals
+        let keepBinding =
+            (not cenv.settings.EliminateUnusedBindings && not v.InlineIfLambda) ||
+            Option.isSome v.MemberInfo ||
+            (bindingInfo.HasEffect && not (IsDiscardableEffectExpr bindR.Expr)) ||
+            v.IsFixed ||
+            usedFull
+
+        if keepBinding then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
             exprR, 
@@ -4040,8 +4104,23 @@ and OptimizeDecisionTree cenv env m x =
         let (bind, binfo), envinner = OptimizeBinding cenv false env bind 
         let rest, rinfo = OptimizeDecisionTree cenv envinner m rest 
 
-        if ValueIsUsedOrHasEffect cenv (fun () -> (accFreeInDecisionTree CollectLocals rest emptyFreeVars).FreeLocals) (bind, binfo) then
+        // Quick occurrence check with precise fallback
+        let v = bind.Var
+        let usedQuick = DecisionTreeUsesLocal v rest
+        let usedFull =
+            if usedQuick then true
+            else
+                let fvs = accFreeInDecisionTree CollectLocals rest emptyFreeVars
+                Zset.contains v fvs.FreeLocals
 
+        let keepBinding =
+            (not cenv.settings.EliminateUnusedBindings && not v.InlineIfLambda) ||
+            Option.isSome v.MemberInfo ||
+            (binfo.HasEffect && not (IsDiscardableEffectExpr bind.Expr)) ||
+            v.IsFixed ||
+            usedFull
+
+        if keepBinding then
             let info = CombineValueInfosUnknown [rinfo;binfo]
             // try to fold the let-binding into a single result expression
             match rest with 
