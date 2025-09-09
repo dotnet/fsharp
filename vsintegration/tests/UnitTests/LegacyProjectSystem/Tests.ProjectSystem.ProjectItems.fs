@@ -10,6 +10,107 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
+module private DebuggingHelpers = 
+    open System.Diagnostics
+    open Microsoft.Build.Utilities
+    let private envFlag () = Environment.GetEnvironmentVariable("FSHARP_DIAG_FRAMEWORK") = "1" || true
+
+    let private fwDiagBasicsOnce =
+        lazy (
+            if envFlag() then
+                let pfX86 = Environment.GetEnvironmentVariable "ProgramFiles(x86)"
+                let pf    = Environment.GetEnvironmentVariable "ProgramFiles"
+                let dirs =
+                    [ if not (String.IsNullOrWhiteSpace pfX86) then
+                          Path.Combine(pfX86,"Reference Assemblies","Microsoft","Framework",".NETFramework","v4.7.2")
+                      if not (String.IsNullOrWhiteSpace pf) then
+                          Path.Combine(pf,"Reference Assemblies","Microsoft","Framework",".NETFramework","v4.7.2") ]
+                for d in dirs do
+                    let exists = Directory.Exists d
+                    printfn "FWDiag: RefDir='%s' Exists=%b" d exists
+                    if exists then
+                        try
+                            let dlls = Directory.EnumerateFiles(d, "*.dll") |> Seq.length
+                            printfn "FWDiag:   DLLCount=%d" dlls
+                        with e ->
+                            printfn "FWDiag:   DLLCount=ERR(%s)" e.Message
+                        let sn = Path.Combine(d,"System.Numerics.dll")
+                        if File.Exists sn then
+                            let fi = FileInfo(sn)
+                            let ver = FileVersionInfo.GetVersionInfo(sn).FileVersion
+                            printfn "FWDiag:   System.Numerics.dll Size=%d Version=%s" fi.Length ver
+                        else
+                            printfn "FWDiag:   System.Numerics.dll MISSING"
+                // ToolLocationHelper probe
+                try
+                    let p = ToolLocationHelper.GetPathToDotNetFrameworkFile("System.Numerics.dll", TargetDotNetFrameworkVersion.Version472, DotNetFrameworkArchitecture.Current)
+                    printfn "FWDiag: ToolLocationHelper(System.Numerics)='%s'" (if String.IsNullOrWhiteSpace p then "<null>" else p)
+                with e ->
+                    printfn "FWDiag: ToolLocationHelper exception: %s" e.Message
+                printfn "FWDiag: Is64BitProcess=%b PROC_ARCH=%s" Environment.Is64BitProcess (Environment.GetEnvironmentVariable "PROCESSOR_ARCHITECTURE")
+                for v in [ "VisualStudioVersion"; "FrameworkPathOverride"; "TargetFrameworkRootPath" ] do
+                    printfn "FWDiag: Env %s='%s'" v (Environment.GetEnvironmentVariable v)
+        )
+
+    let fwDiagProject (project: UnitTestingFSharpProjectNode) =
+        if envFlag() then
+            fwDiagBasicsOnce.Force() |> ignore
+            try
+                // BuildProject is Microsoft.Build.Evaluation.Project
+                let p = project.BuildProject
+                let get name = p.GetPropertyValue name
+                let tfd = get "TargetFrameworkDirectories"
+                let vs  = get "VisualStudioVersion"
+                let tv  = get "TargetFrameworkVersion"
+                let ti  = get "TargetFrameworkIdentifier"
+                let tp  = get "TargetFrameworkProfile"
+                let mtp = get "MSBuildToolsPath"
+                let mrt = get "MSBuildRuntimeType"
+                let mrv = get "MSBuildRuntimeVersion"
+                printfn "FWDiag: ProjectProps TFV='%s' TFI='%s' TFP='%s' VS='%s'" tv ti tp vs
+                printfn "FWDiag: Project MSBuildToolsPath='%s' RuntimeType='%s' RuntimeVersion='%s'" mtp mrt mrv
+                printfn "FWDiag: Project TargetFrameworkDirectories='%s'" (if String.IsNullOrWhiteSpace tfd then "<empty>" else tfd)
+            with e ->
+                printfn "FWDiag: Unable to read project properties (%s)" e.Message
+
+    let dumpOnFailure (project: UnitTestingFSharpProjectNode) =
+        // Called only when an assertion about System.Numerics is about to fail
+        let opts =
+            try project.CompilationOptions with _ -> [||]
+        printfn "FWDiag-FAIL: CompilationOptionsCount=%d" opts.Length
+        opts |> Array.iter (fun o -> printfn "FWDiag-FAIL:   Opt=%s" o)
+        try
+            let refContainer = project.GetReferenceContainer()
+            let refs = refContainer.EnumReferences() |> Seq.toArray
+            printfn "FWDiag-FAIL: ReferencesCount=%d" refs.Length
+            for r in refs do
+                let name = r.SimpleName
+                // Not all mock reference objects expose path; guard
+                let path =
+                    try
+                        let rp = r.GetType().GetProperty("FullPath")
+                        if rp = null then "<no FullPath prop>"
+                        else
+                            match rp.GetValue(r) with
+                            | :? string as s when not (String.IsNullOrWhiteSpace s) -> s
+                            | _ -> "<empty>"
+                    with _ -> "<err>"
+                printfn "FWDiag-FAIL:   Ref Name=%s Path=%s" name path
+                if name.Equals("System.Numerics", StringComparison.OrdinalIgnoreCase) then
+                    // Try pull 'ResolvedPath' metadata if available
+                    let rpMeta =
+                        try
+                            let mp = r.GetType().GetProperty("ResolvedPath")
+                            if mp = null then "<no ResolvedPath prop>"
+                            else
+                                match mp.GetValue(r) with
+                                | :? string as s when s <> "" -> s
+                                | _ -> "<empty>"
+                        with _ -> "<err>"
+                    printfn "FWDiag-FAIL:   System.Numerics.ResolvedPath=%s" rpMeta
+        with e ->
+            printfn "FWDiag-FAIL: Error dumping references (%s)" e.Message
+
 type ProjectItems() = 
     inherit TheTests()
     
@@ -22,80 +123,20 @@ type ProjectItems() =
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener
             project.ComputeSourcesAndFlags()
 
-            let tfv  = project.BuildProject.GetPropertyValue("TargetFrameworkVersion")
-            let tfi  = project.BuildProject.GetPropertyValue("TargetFrameworkIdentifier")
-            let tfp  = project.BuildProject.GetPropertyValue("TargetFrameworkProfile")
-            let toolsv = project.BuildProject.ToolsVersion
-            let initialFrameworkInfo = sprintf "TFV=%s | TFI=%s | TFP=%s | ToolsVersion=%s" tfv tfi tfp toolsv
+            let containsSystemNumerics () =
+                project.CompilationOptions
+                |> Array.exists (fun f -> f.IndexOf("System.Numerics", StringComparison.OrdinalIgnoreCase) >= 0)
 
-            let msbuildRefs =
-                project.BuildProject.GetItems("Reference")
-                |> Seq.map (fun i -> i.EvaluatedInclude)
-                |> String.concat "; "
-            let refItemDump = "Reference Items: " + msbuildRefs
+            DebuggingHelpers.fwDiagProject project
+
+            if not (containsSystemNumerics()) then
+                DebuggingHelpers.dumpOnFailure project
+                Assert.True(false, "Project should contain reference to System.Numerics (pre-remove)")
 
             let refContainer = project.GetReferenceContainer()
-            let refsByContainer =
-                refContainer.EnumReferences()
-                |> Seq.map (fun r -> r.SimpleName)
-                |> String.concat "; "
-            let containerHasSystemNumerics =
-                refContainer.EnumReferences() |> Seq.exists (fun r -> r.SimpleName = "System.Numerics")
-
-            let rec recalcContains() =
-                let hit =
-                    project.CompilationOptions
-                    |> Array.filter (fun f -> f.IndexOf("System.Numerics", StringComparison.OrdinalIgnoreCase) >= 0)
-                (hit.Length > 0, hit |> String.concat " || ")
-
-            let (hasFlagBefore, flagSamplesBefore) = recalcContains()
-
-
             let reference =
                 refContainer.EnumReferences()
                 |> Seq.find(fun r -> r.SimpleName = "System.Numerics")
-
-            // New logic: accept either compile flag OR container presence.
-            // Keep original strictness but degrade gracefully with diagnostics.
-            if not hasFlagBefore then
-                // Additional diagnostics
-                let dumpRAR name =
-                    let items = project.BuildProject.GetItems(name)
-                    if items <> null && Seq.length items > 0 then
-                        let vals = items |> Seq.map (fun i -> i.EvaluatedInclude) |> String.concat " || "
-                        printfn "RAR-%s=%s" name vals
-                dumpRAR "ReferencePath"
-                dumpRAR "ResolvedFiles"
-                dumpRAR "ReferenceDependencyPaths"
-
-                let tryRefProp n =
-                    try
-                        match reference.GetType().GetProperty(n) with
-                        | null -> sprintf "%s=<no-prop>" n
-                        | p ->
-                            let v = p.GetValue(reference,null)
-                            sprintf "%s=%O" n v
-                    with ex -> sprintf "%s=<ex:%s>" n ex.Message
-                printfn "RefNodeDiag: %s; %s" (tryRefProp "IsResolved") (tryRefProp "ResolvedPath")
-                printfn "TargetFrameworkDirectories=%s" (project.BuildProject.GetPropertyValue("TargetFrameworkDirectories"))
-                printfn "RuntimeSystemNumerics=%s" (typeof<System.Numerics.BigInteger>.Assembly.Location)
-
-                if containerHasSystemNumerics then
-                    // Downgrade to container assertion instead of failing hard
-                    printfn "NOTE: System.Numerics missing from CompilationOptions but present in container; proceeding with container-based validation."
-                else
-                    Assert.True(false,
-                        sprintf "System.Numerics neither in CompilationOptions nor container.\n%s\n%s\nContainerRefs=%s"
-                            initialFrameworkInfo refItemDump refsByContainer)
-
-                Assert.True(
-                    hasFlagBefore,
-                    sprintf "Expected System.Numerics in CompilationOptions.\n%s\n%s\nContainerRefs=%s\nContainerHas=%b\nFlagSamples=%s"
-                        initialFrameworkInfo refItemDump refsByContainer containerHasSystemNumerics flagSamplesBefore)
-
-            // Continue: now we rely on container for 'presence'
-            Assert.True(containerHasSystemNumerics, "Reference container must contain System.Numerics before removal")
-
 
             let mutable wasCalled = false
             (
@@ -103,12 +144,11 @@ type ProjectItems() =
                 reference.Remove(false)
             )
 
-            Assert.False(wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
+            if containsSystemNumerics() then
+                DebuggingHelpers.dumpOnFailure project
+                Assert.True(false, "Project should not contain reference to System.Numerics (post-remove)")
 
-            let (hasFlagAfter, flagSamplesAfter) = recalcContains()
-            Assert.False(
-                hasFlagAfter,
-                sprintf "System.Numerics still present after Remove.\nFlagSamplesAfter=%s" flagSamplesAfter)
+            Assert.False(wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
         ))
 
     [<Fact>]

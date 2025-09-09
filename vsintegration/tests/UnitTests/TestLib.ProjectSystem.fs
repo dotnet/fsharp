@@ -298,6 +298,7 @@ type TheTests() =
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, [], null, other, targetFramework))
             let sp, cnn = 
                 match targetFramework with
+                | "v4.7.2" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier472()
                 | "v4.6" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier46()
                 | "v4.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier45()
                 | "v4.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
