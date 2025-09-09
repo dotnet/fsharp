@@ -73,7 +73,19 @@ let private Net48 = "v4.8"
 let private Net481 = "v4.8.1"
 
 let SupportedDesktopFrameworkVersions =
-    [ Net481; Net48; Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
+    [
+        Net481
+        Net48
+        Net472
+        Net471
+        Net47
+        Net462
+        Net461
+        Net46
+        Net452
+        Net451
+        Net45
+    ]
 
 /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
 /// This is only used to specify the "last resort" path for assembly resolution.
