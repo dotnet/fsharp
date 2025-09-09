@@ -138,5 +138,5 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     (work: ('Item -> ProcessedNode<'Item, 'Result>) -> NodeInfo<'Item> -> 'Result)
     (parentCt: CancellationToken)
     : ('Item * 'Result)[] =
-        let work node info = async2 { return work node info }
-        Async2.RunImmediate(processGraphAsync graph (fun lookup info -> async2 { return! work lookup info }), parentCt)
+    let work node info = async2 { return work node info }
+    Async2.RunImmediate(processGraphAsync graph (fun lookup info -> async2 { return! work lookup info }), parentCt)

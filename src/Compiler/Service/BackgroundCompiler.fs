@@ -1642,8 +1642,7 @@ type internal BackgroundCompiler
                 let! sourceText = fileSnapshot.GetSource()
                 let options = projectSnapshot.ToOptions()
 
-                return!
-                    self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
+                return! self.ParseAndCheckFileInProject(fileName, 0, sourceText, options, userOpName)
             }
 
         member _.ParseAndCheckProject(options: FSharpProjectOptions, userOpName: string) : Async2<FSharpCheckProjectResults> =

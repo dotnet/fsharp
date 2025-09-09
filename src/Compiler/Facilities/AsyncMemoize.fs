@@ -237,11 +237,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
                         log Finished key
                         Interlocked.Add(&duration, sw.ElapsedMilliseconds) |> ignore
                         return Result.Ok result, logger
-                    with
-                    | :? OperationCanceledException ->
-                        log Canceled key
-                        return Unchecked.defaultof<_>
-                    | exn ->
+                    with exn ->
                         log Failed key
                         return Result.Error exn, logger
                 },
@@ -285,8 +281,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
         }
 
     member this.GetAsync(key, computation: Async<_>) =
-        this.Get(key, async2 {return! computation})
-        |> Async2.toAsync
+        this.Get(key, async2 { return! computation }) |> Async2.toAsync
 
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
         lock cache

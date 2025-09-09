@@ -174,8 +174,10 @@ module internal Async2Implementation =
     module Async2Code =
         let inline filterCancellation ([<InlineIfLambda>] catch: exn -> Async2Code<_, _>) (exn: exn) =
             Async2Code(fun sm ->
+                let ct = currentContext.Value.Token
+
                 match exn with
-                | :? OperationCanceledException as oce when oce.CancellationToken = currentContext.Value.Token -> raise exn
+                | :? OperationCanceledException as oce when ct.IsCancellationRequested || oce.CancellationToken = ct -> raise exn
                 | _ -> (catch exn).Invoke(&sm))
 
         let inline throwIfCancellationRequested (code: Async2Code<_, _>) =
@@ -471,35 +473,35 @@ module internal Async2 =
         Async2Impl(fun () -> task)
 
 type internal Async2 with
-    static member Ignore (computation: Async2<_>) : Async2<unit> =
+    static member Ignore(computation: Async2<_>) : Async2<unit> =
         async2 {
             let! _ = computation
             return ()
         }
 
-    static member Start (computation: Async2<_>, ?cancellationToken: CancellationToken) : unit =
+    static member Start(computation: Async2<_>, ?cancellationToken: CancellationToken) : unit =
         let ct = defaultArg cancellationToken CancellationToken.None
         Async2.startAsTask ct computation |> ignore
 
-    static member StartAsTask (computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
+    static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
         Async2.startAsTask ct computation
 
-    static member RunImmediate (computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
+    static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
         Async2.run ct computation
 
-    static member Parallel (computations: Async2<_> seq) =
+    static member Parallel(computations: Async2<_> seq) =
         async2 {
             use lcts = CancellationTokenSource.CreateLinkedTokenSource Async2.CancellationToken
+
             let tasks =
                 seq {
                     for c in computations do
                         async2 {
                             try
                                 return! c
-                            with
-                            exn ->
+                            with exn ->
                                 lcts.Cancel()
                                 return raise exn
                         }
@@ -509,16 +511,18 @@ type internal Async2 with
             return! Task.WhenAll tasks
         }
 
-    static member Sequential (computations: Async2<_> seq) =
+    static member Sequential(computations: Async2<_> seq) =
         async2 {
             let results = ResizeArray()
+
             for c in computations do
                 let! r = c
                 results.Add r
+
             return results.ToArray()
         }
 
-    static member Catch (computation: Async2<'T>) : Async2<Choice<'T, exn>> =
+    static member Catch(computation: Async2<'T>) : Async2<Choice<'T, exn>> =
         async2 {
             try
                 let! res = computation
@@ -531,7 +535,8 @@ type internal Async2 with
         async2 {
             let ct = Async2.CancellationToken
             let task = computation |> Async2.startAsTask ct
-            try 
+
+            try
                 return! task
             finally
                 if task.IsCanceled then
