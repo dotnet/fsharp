@@ -202,6 +202,7 @@ module OneTimeSetup =
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
     #endif
+        log $"Server GC enabled: {System.Runtime.GCSettings.IsServerGC}"
         log "Installing TestConsole redirection"
         TestConsole.install()
 
