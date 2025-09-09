@@ -474,6 +474,19 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - powershell: |
+              $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+              if (-not (Test-Path $vswhere)) { Write-Host "vswhere.exe not found"; exit 0 }
+              $ver  = & $vswhere -latest -requires Microsoft.Component.MSBuild -property installationVersion
+              $path = & $vswhere -latest -requires Microsoft.Component.MSBuild -property installationPath
+              Write-Host "VS Detect (testVs): version=$ver path=$path"
+              $major = ($ver -split '\.')[0]
+              if ($major -eq '17') {
+                Write-Host "Pinning VisualStudioVersion=17.0"
+                Write-Host "##vso[task.setvariable variable=VisualStudioVersion]17.0"
+              }
+            displayName: Detect/pin VisualStudioVersion (testVs only)
+            condition: and(succeeded(), eq(variables._testKind, 'testVs'))
 
           - powershell: eng\SetupVSHive.ps1
             displayName: Setup VS Hive
