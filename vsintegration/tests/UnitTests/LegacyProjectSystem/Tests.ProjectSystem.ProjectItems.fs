@@ -119,24 +119,26 @@ type ProjectItems() =
 
     [<Fact>]
     member public this.``RemoveAssemblyReference.NoIVsTrackProjectDocuments2Events``() =
-        this.MakeProjectAndDo(["file.fs"], ["System.Numerics"],"", (fun project ->
+        let systemAssName = "System.Configuration"
+
+        this.MakeProjectAndDo(["file.fs"], [systemAssName],"", (fun project ->
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener
             project.ComputeSourcesAndFlags()
 
             let containsSystemNumerics () =
                 project.CompilationOptions
-                |> Array.exists (fun f -> f.IndexOf("System.Numerics", StringComparison.OrdinalIgnoreCase) >= 0)
+                |> Array.exists (fun f -> f.IndexOf(systemAssName, StringComparison.OrdinalIgnoreCase) >= 0)
 
             DebuggingHelpers.fwDiagProject project
 
             if not (containsSystemNumerics()) then
                 DebuggingHelpers.dumpOnFailure project
-                Assert.True(false, "Project should contain reference to System.Numerics (pre-remove)")
+                Assert.True(false, $"Project should contain reference to {systemAssName} (pre-remove)")
 
             let refContainer = project.GetReferenceContainer()
             let reference =
                 refContainer.EnumReferences()
-                |> Seq.find(fun r -> r.SimpleName = "System.Numerics")
+                |> Seq.find(fun r -> r.SimpleName = systemAssName)
 
             let mutable wasCalled = false
             (
@@ -146,7 +148,7 @@ type ProjectItems() =
 
             if containsSystemNumerics() then
                 DebuggingHelpers.dumpOnFailure project
-                Assert.True(false, "Project should not contain reference to System.Numerics (post-remove)")
+                Assert.True(false, $"Project should not contain reference to {systemAssName} (post-remove)")
 
             Assert.False(wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
         ))
