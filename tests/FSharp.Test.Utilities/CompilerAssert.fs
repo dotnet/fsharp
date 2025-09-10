@@ -3,7 +3,6 @@
 namespace FSharp.Test
 
 open System.Threading
-open OpenTelemetry.Resources
 
 #nowarn "57"
 
