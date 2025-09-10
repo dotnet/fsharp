@@ -108,8 +108,7 @@ let TransformAstForNestedUpdates
 
         match withExpr with
         | SynExpr.Ident origId, (blockSep: BlockSeparator) ->
-            let sepRange = blockSep.Range
-            let lid, rng = upToId sepRange id (origId :: ids)
+            let lid, rng = upToId blockSep.Range id (origId :: ids)
             // We need a neutral, “offside” separator for the AST that does not claim there was a concrete token like a semicolon or a comma
             Some(
                 SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id),

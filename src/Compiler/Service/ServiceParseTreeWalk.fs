@@ -448,11 +448,9 @@ module SyntaxTraversal =
                         | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
-                            let withRange = blockSep.Range
-
                             yield
-                                dive () withRange (fun () ->
-                                    if posGeq pos withRange.End then
+                                dive () blockSep.Range (fun () ->
+                                    if posGeq pos blockSep.Range.End then
                                         // special case: caret is after WITH
                                         // { x with $ }
                                         visitor.VisitRecordField(path, Some expr, None)
@@ -501,16 +499,14 @@ module SyntaxTraversal =
 
                             match sepOpt with
                             | Some sep ->
-                                let scPosOpt = sep.Position
-                                let sepRange = sep.Range
 
                                 yield
-                                    dive () sepRange (fun () ->
+                                    dive () sep.Range (fun () ->
                                         // special case: caret is below 'inherit' + one or more fields are already defined
                                         // inherit A()
                                         // $
                                         // field1 = 5
-                                        diveIntoSeparator inheritRange.StartColumn scPosOpt None)
+                                        diveIntoSeparator inheritRange.StartColumn sep.Position None)
                             | None -> ()
                         | _ -> ()
 
@@ -518,11 +514,9 @@ module SyntaxTraversal =
                         | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
-                            let withRange = blockSep.Range
-
                             yield
-                                dive () withRange (fun () ->
-                                    if posGeq pos withRange.End then
+                                dive () blockSep.Range (fun () ->
+                                    if posGeq pos blockSep.Range.End then
                                         // special case: caret is after WITH
                                         // { x with $ }
                                         visitor.VisitRecordField(path, Some expr, None)
@@ -564,16 +558,14 @@ module SyntaxTraversal =
 
                             match sepOpt with
                             | Some sep ->
-                                let scPosOpt = sep.Position
-                                let sepRange = sep.Range
 
                                 yield
-                                    dive () sepRange (fun () ->
+                                    dive () sep.Range (fun () ->
                                         // special case: caret is between field bindings
                                         // field1 = 5
                                         // $
                                         // field2 = 5
-                                        diveIntoSeparator offsideColumn scPosOpt copyOpt)
+                                        diveIntoSeparator offsideColumn sep.Position copyOpt)
                             | _ -> ()
 
                     ]
