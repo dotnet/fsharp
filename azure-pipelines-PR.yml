@@ -474,49 +474,81 @@ stages:
           steps:
           - checkout: self
             clean: true
+          # Hardened VS/MSBuild detection + guaranteed pin
           - powershell: |
               $ErrorActionPreference = 'SilentlyContinue'
-              $pfX86 = ${env:ProgramFiles(x86)}
-              if (-not $pfX86) { $pfX86 = $env:ProgramFiles }
-              $candidates = @(
-                (Join-Path $pfX86 "Microsoft Visual Studio\Installer\vswhere.exe"),
-                "C:\Program Files\Microsoft Visual Studio\Installer\vswhere.exe"
-              ) | Where-Object { Test-Path $_ }
 
-              if ($candidates.Count -eq 0) {
-                Write-Host "VS Detect: vswhere.exe not found (skipping)"
-                exit 0
+              function Set-VSV($v) {
+                Write-Host "##vso[task.setvariable variable=VisualStudioVersion]$v"
+                Write-Host "VS Detect: SET VisualStudioVersion=$v"
               }
 
-              $vswhere = $candidates[0]
+              Write-Host "VS Detect: starting"
 
-              function Invoke-VsWhere([string[]]$Args) {
-                & $vswhere @Args 2>$null
+              # 1. Locate vswhere
+              $vswhere = (Get-Command vswhere.exe -ErrorAction SilentlyContinue)?.Source
+              if (-not $vswhere) {
+                $candidates = @(
+                  "$env:ProgramFiles(x86)\Microsoft Visual Studio\Installer\vswhere.exe",
+                  "$env:ProgramFiles\Microsoft Visual Studio\Installer\vswhere.exe"
+                ) | Where-Object { Test-Path $_ }
+                if ($candidates) { $vswhere = $candidates[0] }
               }
 
-              $rawVer  = Invoke-VsWhere -Args @('-latest','-property','installationVersion')
-              $rawPath = Invoke-VsWhere -Args @('-latest','-property','installationPath')
-
-              $msbVer  = Invoke-VsWhere -Args @('-latest','-requires','Microsoft.Component.MSBuild','-property','installationVersion')
-              $msbPath = Invoke-VsWhere -Args @('-latest','-requires','Microsoft.Component.MSBuild','-property','installationPath')
-
-              if ([string]::IsNullOrWhiteSpace($msbVer)) { $msbVer = $rawVer; $msbPath = $rawPath }
-
-              Write-Host ("VS Detect: msbuildVersion='{0}' rawVersion='{1}' msbuildPath='{2}' rawPath='{3}'" -f $msbVer,$rawVer,$msbPath,$rawPath)
-
-              if (-not [string]::IsNullOrWhiteSpace($msbVer)) {
-                $major = $msbVer.Split('.')[0]
-                $existing = $env:VisualStudioVersion
-                if ($major -eq '17' -and [string]::IsNullOrWhiteSpace($existing)) {
-                  Write-Host "VS Detect: setting VisualStudioVersion=17.0"
-                  Write-Host "##vso[task.setvariable variable=VisualStudioVersion]17.0"
+              if ($vswhere) {
+                Write-Host "VS Detect: using vswhere '$vswhere'"
+                $json = & $vswhere -prerelease -products * -latest -format json
+                if ($LASTEXITCODE -eq 0 -and $json) {
+                  try {
+                    $obj = $json | ConvertFrom-Json
+                    $ver = $obj.installationVersion
+                    Write-Host "VS Detect: installationVersion=$ver"
+                    if ($ver -match '^17\.') {
+                      if (-not $env:VisualStudioVersion) { Set-VSV "17.0" }
+                    } else {
+                      Write-Host "VS Detect: latest VS not 17.x (ver=$ver)"
+                    }
+                  } catch {
+                    Write-Host "VS Detect: JSON parse failed: $($_.Exception.Message)"
+                  }
                 } else {
-                  Write-Host "VS Detect: not pinning (major=$major existing='$existing')"
+                  Write-Host "VS Detect: vswhere returned no data"
                 }
               } else {
-                Write-Host "VS Detect: version still empty after retries"
+                Write-Host "VS Detect: vswhere not found"
               }
-            displayName: Detect/optionally pin VisualStudioVersion (testVs only)
+
+              # 2. Fallback: probe common MSBuild 17 paths
+              if (-not $env:VisualStudioVersion) {
+                $msbuildCandidates = @(
+                  "$env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
+                  "$env:ProgramFiles\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
+                  "$env:ProgramFiles\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
+                  "$env:ProgramFiles(x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+                ) | Where-Object { Test-Path $_ }
+
+                if ($msbuildCandidates) {
+                  $msb = $msbuildCandidates[0]
+                  $fileVer = (Get-Item $msb).VersionInfo.ProductVersion
+                  Write-Host "VS Detect: msbuild candidate '$msb' ProductVersion=$fileVer"
+                  if ($fileVer -match '^17\.') {
+                    Set-VSV "17.0"
+                  } else {
+                    Write-Host "VS Detect: msbuild candidate not 17.x"
+                  }
+                } else {
+                  Write-Host "VS Detect: no msbuild 17.x candidates found"
+                }
+              }
+
+              # 3. Final guaranteed fallback
+              if (-not $env:VisualStudioVersion) {
+                Write-Host "VS Detect: FINAL FALLBACK forcing VisualStudioVersion=17.0"
+                Set-VSV "17.0"
+              }
+
+              Write-Host "VS Detect: done (VisualStudioVersion now '$($env:VisualStudioVersion)')"
+            displayName: Detect / ensure VisualStudioVersion=17.0 (testVs only)
             condition: and(succeeded(), eq(variables._testKind, 'testVs'))
 
           - powershell: eng\SetupVSHive.ps1

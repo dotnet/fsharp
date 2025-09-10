@@ -298,13 +298,13 @@ type TheTests() =
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, [], null, other, targetFramework))
             let sp, cnn = 
                 match targetFramework with
-                | "v4.7.2" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier472()
-                | "v4.6" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier46()
-                | "v4.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier45()
-                | "v4.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
-                | "v3.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier35()
-                | "v3.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier30()
-                | "v2.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier20()
+                | "v4.7.2" | "4.7.2" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier472()
+                | "v4.6" | "4.6" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier46()
+                | "v4.5" | "4.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier45()
+                | "v4.0" | "4.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
+                | "v3.5" | "3.5" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier35()
+                | "v3.0" | "3.0" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier30()
+                | "v2.0" | "2.0"-> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier20()
                 | null -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier40()
                 | _ -> failwithf "unexpected targetFramework %s" targetFramework
             let project = TheTests.CreateProject(file, "false", cnn, sp)
