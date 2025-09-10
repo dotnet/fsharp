@@ -785,7 +785,22 @@ type public Fsc() as this =
         | "" -> ()
         | NonNull dotnetFscCompilerPath -> builder.AppendSwitch(dotnetFscCompilerPath)
 
-        builder.ToString()
+        let cmd = builder.ToString()
+
+        // FWDIAG-FSC
+        try
+            let nf = noFramework
+            let refs =
+                match references with
+                | arr -> arr.Length
+            System.Diagnostics.Trace.WriteLine(
+                sprintf "FWDIAG-FSC VS=%s NoFramework=%b RefCount=%d OutputAssembly=%s"
+                    (System.Environment.GetEnvironmentVariable("VisualStudioVersion"))
+                    nf refs outputAssembly
+            )
+        with _ -> ()
+
+        cmd
 
     override _.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()

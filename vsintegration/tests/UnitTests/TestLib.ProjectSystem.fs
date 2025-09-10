@@ -114,18 +114,50 @@ type TheTests() =
         try
             project.SetSite(serviceProvider) |> ignore
             project.BuildProject <- buildProject
-            let _ = project.BaseURI // This property needs to be touched at least once while the .BuildProject is populated
+            let _ = project.BaseURI
             let mutable cancelled = 0
             let mutable guid = Guid.NewGuid()
             printfn "about to load .fsproj"
             project.Load(filename, null, null, 2u, &guid, &cancelled)
             printfn "loaded"
+
+            // FWDIAG START (add below)
+            let bp = project.BuildProject
+            let prop n = try bp.GetPropertyValue(n) with _ -> ""
+            let dumpProp n = printfn "FWDIAG PROP %s=%s" n (prop n)
+            [ "VisualStudioVersion"; "MSBuildToolsVersion"; "MSBuildRuntimeType"; "TargetFrameworkIdentifier"
+              "TargetFrameworkVersion"; "TargetFrameworkMoniker"; "TargetFrameworkDirectories"
+              "ImplicitlyReferenceDotNetAssemblies"; "ImplicitlyResolveAssemblies"; "NoStdLib"; "NoFramework"
+              "FrameworkPathOverride"; "FSharpTargetsPath"; "FSharpBuildAssemblyFile"
+              "MSBuildExtensionsPath"; "MSBuildExtensionsPath32" ]
+            |> List.iter dumpProp
+
+            // Raw <Reference> items
+            for it in bp.GetItems("Reference") do
+                let fullPath = it.GetMetadataValue("FullPath")
+                let hintPath = it.GetMetadataValue("HintPath")
+                printfn "FWDIAG REF Include=%s FullPath=%s HintPath=%s" it.EvaluatedInclude (if System.String.IsNullOrWhiteSpace fullPath then "<empty>" else fullPath) (if System.String.IsNullOrWhiteSpace hintPath then "<empty>" else hintPath)
+
+            // Items that normally come from RAR
+            for it in bp.GetItems("ReferencePath") do
+                printfn "FWDIAG REFPATH %s -> %s" it.EvaluatedInclude (it.GetMetadataValue("FullPath"))
+
+            // Show evaluated Imports (paths)
+            for i in bp.Imports do
+                printfn "FWDIAG IMPORT %s" i.ImportedProject.FullPath
+
+            // Show global properties relevant to resolution
+            for KeyValue(k,v) in bp.GlobalProperties do
+                if k = "VisualStudioVersion" || k.StartsWith("TargetFramework", System.StringComparison.OrdinalIgnoreCase) then
+                    printfn "FWDIAG GLOBAL %s=%s" k v
+            // FWDIAG END
+
             let slfpe = new SolutionListenerForProjectEvents(project.Site)
             project.ProjectEventsProvider <- (slfpe :> IProjectEvents)
             slfpe.OnAfterOpenProject((project :> IVsHierarchy), 0) |> ignore
             MSBuildProject.SetGlobalProperty(project.BuildProject, "UTF8Output", forceUTF8)
             project
-        with 
+        with
         | e ->
             try
                 project.Close() |> ignore
