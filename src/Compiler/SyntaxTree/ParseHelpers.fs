@@ -1077,7 +1077,6 @@ let mkNamePatPairFieldFromLid (lid: SynLongIdent) (mEq: range option) (pat: SynP
 let mkMissingNamePatPairFieldFromId (id: Ident) (sep: BlockSeparator option) : NamePatPairField =
     let m = id.idRange
     let lid = SynLongIdent([ id ], [], [ None ])
-    // Bind the identifier but mark it as coming from parse recovery to avoid accepting the syntax
     let bindPat = SynPat.Named(SynIdent(id, None), false, None, m)
     let patErr = patFromParseError bindPat
     NamePatPairField(lid, None, m, patErr, sep)

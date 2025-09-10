@@ -3656,6 +3656,153 @@ conjPatternElements:
 
   | headBindingPattern AMP headBindingPattern
      { $3 :: $1 :: [] }
+     
+namePatPairsRecovery:
+  // Recovery: fold trailing comma-separated patterns into a tuple for the previous named field.
+  // Conditions: only when the first field has '=' and the initial pattern is not FromParseError.
+  // Notes: commas are treated as tuple separators (not field separators); no parentheses are synthesized; tuple comma ranges are preserved.
+  | namePatPair namePatPairCommaPatterns
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let pairs: (BlockSeparator * SynPat) list = List.rev $2
+      match tryFoldTuplePat mEq1 pat1 pairs with
+      | Some (tuplePat, _mTuple) ->
+          let lid1 = SynLongIdent([id1], [], [None])
+          // Do not feature‑gate: commas are tuple commas here, not field separators.
+          [ mkNamePatPairFieldFromLid lid1 mEq1 tuplePat None ]
+      | None ->
+          // Minimal fallback: keep only the first field. If there are trailing patterns, attach the first comma
+          // as this field's blockSeparator and ignore the rest (we cannot synthesize fields from arbitrary patterns safely).
+          let lid1 = SynLongIdent([id1], [], [None])
+          match pairs with
+          | [] -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 None ]
+          | (firstSep, _pat2) :: _ -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 (Some firstSep) ] }
+
+  // Recovery: fold trailing comma-separated identifiers into a tuple for the previous named field.
+  // Conditions: only when the first field has '=' and the initial pattern is not FromParseError.
+  // Notes: commas here are tuple separators (not field separators); no parentheses are synthesized; trivia/comma ranges are preserved.
+  | namePatPair namePatPairCommaIdents
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let pairs: (BlockSeparator * Ident) list = List.rev $2
+      match tryFoldTuplePatFromTrailingIdents mEq1 pat1 pairs with
+      | Some (tuplePat, _mTuple) ->
+          let lid1 = SynLongIdent([id1], [], [None])
+          [ mkNamePatPairFieldFromLid lid1 mEq1 tuplePat None ]
+      | None ->
+          let lid1 = SynLongIdent([id1], [], [None])
+          match pairs with
+          | [] -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 None ]
+          | (firstSep, _id2) :: _ -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 (Some firstSep) ] }
+
+// Recovery + continuation (semicolon): branches that fold trailing comma parts then continue with ';'
+namePatPairsRecoveryContSemicolon:
+  // fold trailing identifiers into tuple, then continue with a semicolon-separated field list
+  // Example: A(a = x, y; b = z)
+  | namePatPair namePatPairCommaIdents pairs_seps_block_semicolon namePatPairsContSemicolon
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let pairs = List.rev $2
+      let pat1' =
+        match tryFoldTuplePatFromTrailingIdents mEq1 pat1 pairs with
+        | Some (tuplePat, _) -> tuplePat
+        | None -> pat1
+      let lid1 = SynLongIdent([id1], [], [None])
+      let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
+      let fields = first :: $4
+      if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+        reportInconsistentSeparatorsForNamePatPairs fields
+      fields }
+
+  // fold trailing arbitrary patterns into tuple, then continue with a semicolon-separated field list
+  // Example: A(a = p1, _; b = z)
+  | namePatPair namePatPairCommaPatterns pairs_seps_block_semicolon namePatPairsContSemicolon
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let pairs: (BlockSeparator * SynPat) list = List.rev $2
+      let pat1' =
+        match tryFoldTuplePat mEq1 pat1 pairs with
+        | Some (tuplePat, _) -> tuplePat
+        | None -> pat1
+      let lid1 = SynLongIdent([id1], [], [None])
+      let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
+      let fields = first :: $4
+      if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+        reportInconsistentSeparatorsForNamePatPairs fields
+      fields }
+
+  // semicolon followed by bare identifier — synthesize a missing field for the trailing ident.
+  // Example: A(a = x; b)
+  | namePatPair pairs_seps_block_semicolon ident
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let first = mkNamePatPairFieldFromId id1 mEq1 pat1 (Some $2)
+      let (id2: Ident) = $3
+      let second = mkMissingNamePatPairFieldFromId id2 None
+      [ first; second ] }
+
+  // two semicolons in a row means a missing pattern after the first semicolon.
+  // Example: A(a = x;; b = y)
+  | namePatPair pairs_seps_block_semicolon pairs_seps_block_semicolon namePatPairs
+     { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
+       let (id: Ident), mEq, (pat: SynPat) = $1
+       let m = unionRanges id.idRange pat.Range
+       let lid = SynLongIdent([id], [], [None])
+       mkNamePatPairFieldFromLid lid mEq pat (Some $2) :: $4 }
+
+// Recovery + continuation (comma): branches that fold trailing comma parts then continue with ',' (feature-gated)
+namePatPairsRecoveryContComma:
+  // fold trailing identifiers into tuple, then continue with a comma-separated field list
+  // Example: A(a = x, y, b = z)
+  | namePatPair namePatPairCommaIdents pairs_seps_block_comma namePatPairsContComma
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let pairs = List.rev $2
+      let pat1' =
+        match tryFoldTuplePatFromTrailingIdents mEq1 pat1 pairs with
+        | Some (tuplePat, _) -> tuplePat
+        | None -> pat1
+      let lid1 = SynLongIdent([id1], [], [None])
+      // Attach the comma as a named-field separator for continuation; gate the feature on this comma
+      let mComma = ($3: BlockSeparator).Range
+      match pat1 with
+      | SynPat.FromParseError _ -> ()
+      | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
+      let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
+      let fields = first :: $4
+      if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+        reportInconsistentSeparatorsForNamePatPairs fields
+      fields }
+
+  // fold trailing arbitrary patterns into tuple, then continue with a comma-separated field list
+  // Example: A(a = p1, _, b = z)
+  | namePatPair namePatPairCommaPatterns pairs_seps_block_comma namePatPairsContComma
+    { let (id1: Ident), mEq1, (pat1: SynPat) = $1
+      let pairs: (BlockSeparator * SynPat) list = List.rev $2
+      let pat1' =
+        match tryFoldTuplePat mEq1 pat1 pairs with
+        | Some (tuplePat, _) -> tuplePat
+        | None -> pat1
+      let lid1 = SynLongIdent([id1], [], [None])
+      let mComma = ($3: BlockSeparator).Range
+      match pat1 with
+      | SynPat.FromParseError _ -> ()
+      | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
+      let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
+      let fields = first :: $4
+      if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
+        reportInconsistentSeparatorsForNamePatPairs fields
+      fields }
+
+  // two commas in a row means a missing pattern after the first comma.
+  // Example: A(a = x,, b = y)
+  // Note: Only the first comma ($2) is feature‑gated as a named-field separator; the second comma starts the error and is not gated.
+  | namePatPair pairs_seps_block_comma pairs_seps_block_comma namePatPairs
+     { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
+       let (id: Ident), mEq, (pat: SynPat) = $1
+       let m = unionRanges id.idRange pat.Range
+       let lid = SynLongIdent([id], [], [None])
+       // Gate comma as named field separator only when previous pattern parsed successfully.
+       // Only gate the first separator token ($2); the second comma begins the error and is not gated.
+       let mComma = ($2: BlockSeparator).Range
+       match pat with
+       | SynPat.FromParseError _ -> ()
+       | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
+       mkNamePatPairFieldFromLid lid mEq pat (Some $2) :: $4 }
 
 // | A(a = x)
 // | A(a = x; b = y
@@ -3698,147 +3845,14 @@ namePatPairs:
          reportInconsistentSeparatorsForNamePatPairs fields
        fields }
 
-   // Recovery: fold trailing comma-separated patterns into a tuple for the previous named field.
-   // Conditions: only when the first field has '=' and the initial pattern is not FromParseError.
-   // Notes: commas are treated as tuple separators (not field separators); no parentheses are synthesized; tuple comma ranges are preserved.
-   | namePatPair namePatPairCommaPatterns
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let pairs: (BlockSeparator * SynPat) list = List.rev $2
-       match tryFoldTuplePat mEq1 pat1 pairs with
-       | Some (tuplePat, _mTuple) ->
-           let lid1 = SynLongIdent([id1], [], [None])
-           // Do not feature‑gate: commas are tuple commas here, not field separators.
-           [ mkNamePatPairFieldFromLid lid1 mEq1 tuplePat None ]
-       | None ->
-           // Minimal fallback: keep only the first field. If there are trailing patterns, attach the first comma
-           // as this field's blockSeparator and ignore the rest (we cannot synthesize fields from arbitrary patterns safely).
-           let lid1 = SynLongIdent([id1], [], [None])
-           match pairs with
-           | [] -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 None ]
-           | (firstSep, _pat2) :: _ -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 (Some firstSep) ] }
+   | namePatPairsRecovery
+     { $1 }
 
-   // Recovery: fold trailing comma-separated identifiers into a tuple for the previous named field.
-   // Conditions: only when the first field has '=' and the initial pattern is not FromParseError.
-   // Notes: commas here are tuple separators (not field separators); no parentheses are synthesized; trivia/comma ranges are preserved.
-   | namePatPair namePatPairCommaIdents
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let pairs: (BlockSeparator * Ident) list = List.rev $2
-       match tryFoldTuplePatFromTrailingIdents mEq1 pat1 pairs with
-       | Some (tuplePat, _mTuple) ->
-           let lid1 = SynLongIdent([id1], [], [None])
-           [ mkNamePatPairFieldFromLid lid1 mEq1 tuplePat None ]
-       | None ->
-           let lid1 = SynLongIdent([id1], [], [None])
-           match pairs with
-           | [] -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 None ]
-           | (firstSep, _id2) :: _ -> [ mkNamePatPairFieldFromLid lid1 mEq1 pat1 (Some firstSep) ] }
+   | namePatPairsRecoveryContSemicolon
+     { $1 }
 
-   // Recovery + continuation: fold trailing identifiers into tuple, then continue with a semicolon-separated field list
-   // Example: A(a = x, y; b = z) => first field is a = Tuple(x, y) with blockSeparator=';', then continue at b
-   | namePatPair namePatPairCommaIdents pairs_seps_block_semicolon namePatPairsContSemicolon
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let pairs = List.rev $2
-       let pat1' =
-         match tryFoldTuplePatFromTrailingIdents mEq1 pat1 pairs with
-         | Some (tuplePat, _) -> tuplePat
-         | None -> pat1
-       let lid1 = SynLongIdent([id1], [], [None])
-       let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       let fields = first :: $4
-       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
-         reportInconsistentSeparatorsForNamePatPairs fields
-       fields }
-
-   // Recovery + continuation: fold trailing arbitrary patterns into tuple, then continue with a semicolon-separated field list
-   // Example: A(a = p1, _; b = z) => first field is a = Tuple(p1, _) with blockSeparator=';', then continue at b
-   | namePatPair namePatPairCommaPatterns pairs_seps_block_semicolon namePatPairsContSemicolon
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let pairs: (BlockSeparator * SynPat) list = List.rev $2
-       let pat1' =
-         match tryFoldTuplePat mEq1 pat1 pairs with
-         | Some (tuplePat, _) -> tuplePat
-         | None -> pat1
-       let lid1 = SynLongIdent([id1], [], [None])
-       let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       let fields = first :: $4
-       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
-         reportInconsistentSeparatorsForNamePatPairs fields
-       fields }
-
-   // Recovery + continuation: fold trailing identifiers into tuple, then continue with a comma-separated field list
-   // Example: A(a = x, y, b = z) => first field is a = Tuple(x, y) with blockSeparator=',' (feature-gated), then continue at b
-   | namePatPair namePatPairCommaIdents pairs_seps_block_comma namePatPairsContComma
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let pairs = List.rev $2
-       let pat1' =
-         match tryFoldTuplePatFromTrailingIdents mEq1 pat1 pairs with
-         | Some (tuplePat, _) -> tuplePat
-         | None -> pat1
-       let lid1 = SynLongIdent([id1], [], [None])
-       // Attach the comma as a named-field separator for continuation; gate the feature on this comma
-       let mComma = ($3: BlockSeparator).Range
-       match pat1 with
-       | SynPat.FromParseError _ -> ()
-       | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
-       let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       let fields = first :: $4
-       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
-         reportInconsistentSeparatorsForNamePatPairs fields
-       fields }
-
-   // Recovery + continuation: fold trailing arbitrary patterns into tuple, then continue with a comma-separated field list
-   // Example: A(a = p1, _, b = z) => first field is a = Tuple(p1, _) with blockSeparator=',' (feature-gated), then continue at b
-   | namePatPair namePatPairCommaPatterns pairs_seps_block_comma namePatPairsContComma
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let pairs: (BlockSeparator * SynPat) list = List.rev $2
-       let pat1' =
-         match tryFoldTuplePat mEq1 pat1 pairs with
-         | Some (tuplePat, _) -> tuplePat
-         | None -> pat1
-       let lid1 = SynLongIdent([id1], [], [None])
-       let mComma = ($3: BlockSeparator).Range
-       match pat1 with
-       | SynPat.FromParseError _ -> ()
-       | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
-       let first = mkNamePatPairFieldFromLid lid1 mEq1 pat1' (Some $3)
-       let fields = first :: $4
-       if parseState.LexBuffer.SupportsFeature LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator then
-         reportInconsistentSeparatorsForNamePatPairs fields
-       fields }
-
-   // Recovery: semicolon followed by bare identifier — synthesize a missing field for the trailing ident.
-   // Example: A(a = x; b)
-   | namePatPair pairs_seps_block_semicolon ident
-     { let (id1: Ident), mEq1, (pat1: SynPat) = $1
-       let first = mkNamePatPairFieldFromId id1 mEq1 pat1 (Some $2)
-       let (id2: Ident) = $3
-       let second = mkMissingNamePatPairFieldFromId id2 None
-       [ first; second ] }
-
-   // Error recovery: two semicolons in a row means a missing pattern after the first semicolon.
-   // Example: A(a = x;; b = y) => reports missing pattern at the second ';'
-   | namePatPair pairs_seps_block_semicolon pairs_seps_block_semicolon namePatPairs
-      { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        let (id: Ident), mEq, (pat: SynPat) = $1
-        let m = unionRanges id.idRange pat.Range
-        let lid = SynLongIdent([id], [], [None])
-        mkNamePatPairFieldFromLid lid mEq pat (Some $2) :: $4 }
-        
-   // Error recovery: two commas in a row means a missing pattern after the first comma.
-   // Example: A(a = x,, b = y) => reports missing pattern at the second ','
-   // Note: Only the first comma ($2) is feature‑gated as a named-field separator; the second comma starts the error and is not gated.
-   | namePatPair pairs_seps_block_comma pairs_seps_block_comma namePatPairs
-      { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        let (id: Ident), mEq, (pat: SynPat) = $1
-        let m = unionRanges id.idRange pat.Range
-        let lid = SynLongIdent([id], [], [None])
-        // Gate comma as named field separator only when previous pattern parsed successfully.
-        // Only gate the first separator token ($2); the second comma begins the error and is not gated.
-        let mComma = ($2: BlockSeparator).Range
-        match pat with
-        | SynPat.FromParseError _ -> ()
-        | _ -> parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator mComma
-        mkNamePatPairFieldFromLid lid mEq pat (Some $2) :: $4 }
+   | namePatPairsRecoveryContComma
+     { $1 }
 
 // | A(a = x, y, z)   // collects identifiers y and z for tuple folding
 namePatPairCommaIdents:
@@ -3862,6 +3876,7 @@ namePatPairCommaPatterns:
       let m = rhs parseState 2
       let pat: SynPat = SynPat.Wild m
       [ (sep, pat) ] }
+
   | namePatPairCommaPatterns pairs_seps_block_comma UNDERSCORE
     { let acc = $1
       let sep: BlockSeparator = $2
@@ -3873,16 +3888,19 @@ namePatPairCommaPatterns:
     { let sep: BlockSeparator = $1
       let pat: SynPat = $2
       [ (sep, pat) ] }
+
   | namePatPairCommaPatterns pairs_seps_block_comma parenPattern
     { let acc = $1
       let sep: BlockSeparator = $2
       let pat: SynPat = $3
       (sep, pat) :: acc }
+
   // Accept record patterns without parentheses; '{' cannot begin a named field, so this is unambiguous
   | pairs_seps_block_comma LBRACE recordPatternElementsAux rbrace
     { let sep: BlockSeparator = $1
       let pat: SynPat = SynPat.Record($3, rhs2 parseState 2 4)
       [ (sep, pat) ] }
+
   | namePatPairCommaPatterns pairs_seps_block_comma LBRACE recordPatternElementsAux rbrace
     { let acc = $1
       let sep: BlockSeparator = $2
