@@ -22,6 +22,15 @@ this file.
 		<FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">$(MSBuildThisFileDirectory)FSharp.Build.dll</FSharpBuildAssemblyFile>
 	</PropertyGroup>
 
+
+	<!-- Ensure language defaults are established BEFORE importing Microsoft.Common.targets so
+      any properties it derives (e.g. TargetFrameworkMonikerAssemblyAttributesPath) get the .fs suffix -->
+	<PropertyGroup>
+		<DefaultLanguageSourceExtension Condition="'$(DefaultLanguageSourceExtension)'==''">.fs</DefaultLanguageSourceExtension>
+		<Language Condition="'$(Language)'==''">F#</Language>
+
+	</PropertyGroup>
+
 	<!-- Added: Early guarded imports to ensure Microsoft.Common.targets is available for legacy/minimal projects.
          These do not affect SDK-style projects (which don't import this file) and are inert if the standard
          import chain already brought in Microsoft.Common.targets. -->
