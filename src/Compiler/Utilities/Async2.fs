@@ -481,7 +481,7 @@ type internal Async2 with
 
     static member Start(computation: Async2<_>, ?cancellationToken: CancellationToken) : unit =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.startAsTask ct computation |> ignore
+        Async2.queueTask ct computation |> ignore
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
