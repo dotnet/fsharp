@@ -3225,6 +3225,88 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
+        /// Ensure Microsoft.Common.targets (and via it Microsoft.Common.CurrentVersion.targets) is imported
+        /// for legacy F# projects that were authored without it. This is required so ResolveAssemblyReferences
+        /// runs and populates ReferencePath / ReferencePathWithRefAssemblies (needed because Fsc is invoked
+        /// with NoFramework=true in the F# targets).
+        /// </summary>
+        private void EnsureCommonTargetsImportedIfMissing()
+        {
+            // Opt-out escape hatch
+            if (Environment.GetEnvironmentVariable("FSharpSkipAutoCommonTargets") == "true")
+                return;
+
+            var project = this.BuildProject; // Microsoft.Build.Evaluation.Project
+            var root = project.Xml;
+
+            bool hasCommon = root.Imports.Any(i =>
+                i.Project.IndexOf("Microsoft.Common.targets", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (hasCommon)
+                return;
+
+            // We only auto-inject for traditional (non-SDK) style projects that already import F# targets directly
+            bool hasFSharpTargets = root.Imports.Any(i =>
+                i.Project.IndexOf("Microsoft.FSharp.Targets", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (!hasFSharpTargets)
+                return; // Not the pattern we are trying to fix.
+
+            // Build the import element
+            // Use the standard canonical path pattern; condition prevents errors on machines with unusual layouts.
+            var importText = @"$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets";
+            var import = root.CreateImportElement(importText);
+            import.Condition = $"Exists('{importText}')";
+
+            // Insert before the F# targets import so ordering matches normal legacy project template expectations.
+            var fsharpImport = root.Imports.FirstOrDefault(i =>
+                i.Project.IndexOf("Microsoft.FSharp.Targets", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (fsharpImport != null)
+            {
+                root.InsertBeforeChild(import, fsharpImport);
+            }
+            else
+            {
+                root.AppendChild(import);
+            }
+
+            // Force reevaluation so the newly imported targets are realized before we create a ProjectInstance.
+            project.ReevaluateIfNecessary();
+        }
+
+        /// <summary>
+        /// Returns true if (after any auto-import) the evaluated project contains Microsoft.Common.targets.
+        /// </summary>
+        private bool HasCommonTargetsImported()
+        {
+            return this.BuildProject.Xml.Imports.Any(i =>
+                i.Project.IndexOf("Microsoft.Common.targets", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        /// <summary>
+        /// Decide target list when caller asked for a single target (e.g. CoreCompile). If we now have Common
+        /// targets imported and CoreCompile was requested directly, prepend ResolveReferences when its
+        /// dependencies may otherwise be skipped (trimmed project cases).
+        /// </summary>
+        private string[] ComputeTargetsToBuild(string requestedSingleTarget)
+        {
+            if (string.IsNullOrEmpty(requestedSingleTarget))
+                return Array.Empty<string>();
+
+            // Only adjust for CoreCompile; Build already has the chain.
+            if (string.Equals(requestedSingleTarget, "CoreCompile", StringComparison.OrdinalIgnoreCase) &&
+                HasCommonTargetsImported())
+            {
+                // If ResolveReferences is already a dependency of CoreCompile (normal case), MSBuild will
+                // short-circuit duplicate execution. Supplying both explicitly is safe.
+                return new[] { "ResolveReferences", "CoreCompile" };
+            }
+
+            return new[] { requestedSingleTarget };
+        }
+
+        /// <summary>
         /// Start MSBuild build submission
         /// </summary>
         /// If buildKind is ASYNC, this method starts the submission ane returns. uiThreadCallback will be called on UI thread once submissions completes.
@@ -3247,6 +3329,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 accessor = (IVsBuildManagerAccessor)this.Site.GetService(typeof(SVsBuildManagerAccessor));
 
                 this.SetHostObject("CoreCompile", "Fsc", this);
+                // If we are about to create a ProjectInstance, first ensure the normal MSBuild
+                // import chain is present so reference resolution runs.
+                // (No effect if the project already imports Microsoft.Common.targets.)
+                if (projectInstance == null)
+                {
+                    EnsureCommonTargetsImportedIfMissing();
+                }
 
                 // Do the actual Build
                 var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>();
