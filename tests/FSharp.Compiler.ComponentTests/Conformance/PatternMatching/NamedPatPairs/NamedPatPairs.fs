@@ -399,3 +399,39 @@ but here has type
 ''a * 'b' ");
             (Warning 25, Line 7, Col 11, Line 7, Col 16, "Incomplete pattern matches on this expression.")
         ]
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs19.fs"|])>]
+    let ``Version9 NamedPatPairs - NamedPatPairs19_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> verifyCompile
+        |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs19.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs19_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs20.fs"|])>]
+    let ``Version9 NamedPatPairs - NamedPatPairs20_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersion90
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3350, Line 4, Col 17, Line 4, Col 18, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.");
+            (Error 3350, Line 5, Col 19, Line 5, Col 20, "Feature 'Allow comma as union case name field separator.' is not available in F# 9.0. Please use language version 'PREVIEW' or greater.")
+        ]
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NamedPatPairs20.fs"|])>]
+    let ``Preview: NamedPatPairs - NamedPatPairs20_fs`` compilation =
+        compilation
+        |> ignoreWarnings
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldSucceed
