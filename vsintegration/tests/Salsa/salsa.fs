@@ -651,6 +651,8 @@ module internal Salsa =
             for disabledWarning in disabledWarnings do
                 Append (sprintf "            %s;" disabledWarning)                            
             Append "        </NoWarn>"
+            if references = ["System.Configuration",false] then
+                Append "        <FSharpTargetsDiagnostic>true</FSharpTargetsDiagnostic>"
             Append "        <DefineConstants>"
             for define in defines do
                 Append (sprintf "            %s;" define)                            

@@ -128,6 +128,28 @@ this file.
         <UsingXBuild Condition="'$(MSBuildAssemblyVersion)' == ''">true</UsingXBuild>
     </PropertyGroup>
 
+	<!-- DIAGNOSTIC: opt‑in legacy reference resolution tracing -->
+	<PropertyGroup>
+		<!-- Enable with: /p:FSharpTargetsDiagnostic=true -->
+		<FSharpTargetsDiagnostic Condition="'$(FSharpTargetsDiagnostic)'==''">false</FSharpTargetsDiagnostic>
+	</PropertyGroup>
+
+	<Target Name="FSharpLegacyRefDiag"
+            AfterTargets="ResolveAssemblyReferences"
+            Condition="'$(FSharpTargetsDiagnostic)'=='true'">
+		<Message Importance="high" Text="FSharpDiag: ===== Legacy Reference Resolution Diagnostics BEGIN =====" />
+		<Message Importance="high" Text="FSharpDiag: VisualStudioVersion=$(VisualStudioVersion) MSBuildToolsVersion=$(MSBuildToolsVersion) MSBuildAssemblyVersion=$(MSBuildAssemblyVersion)" />
+		<Message Importance="high" Text="FSharpDiag: TargetFrameworkIdentifier=$(TargetFrameworkIdentifier) TargetFrameworkVersion=$(TargetFrameworkVersion) TargetFrameworkProfile=$(TargetFrameworkProfile)" />
+		<Message Importance="high" Text="FSharpDiag: FSharp_Shim_Present=$(FSharp_Shim_Present) FSharpPreferNetFrameworkTools=$(FSharpPreferNetFrameworkTools) FSharpPrefer64BitTools=$(FSharpPrefer64BitTools) FSharpPreferAnyCpuTools=$(FSharpPreferAnyCpuTools)" />
+		<Message Importance="high" Text="FSharpDiag: FscToolPath=$(FscToolPath) FscToolExe=$(FscToolExe) DotnetFscCompilerPath=$(DotnetFscCompilerPath)" />
+		<Message Importance="high" Text="FSharpDiag: DisableImplicitFrameworkReferences=$(DisableImplicitFrameworkReferences) ImplicitlyExpandDesignTimeFacades=$(ImplicitlyExpandDesignTimeFacades)" />
+		<Message Importance="high" Text="FSharpDiag: Reference Identities: @(Reference->'%(Identity)')" />
+		<Message Importance="high" Text="FSharpDiag: Reference HintPaths: @(Reference->'%(Identity)=%(HintPath)')" />
+		<Message Importance="high" Text="FSharpDiag: ReferencePathWithRefAssemblies (count=%(ReferencePathWithRefAssemblies.Identity->Count())): @(ReferencePathWithRefAssemblies)" />
+		<Message Importance="high" Text="FSharpDiag: Raw Fsc References Arg Source: @(ReferencePathWithRefAssemblies->'%(Filename)')" />
+		<Message Importance="high" Text="FSharpDiag: ===== Legacy Reference Resolution Diagnostics END =====" />
+	</Target>
+
     <Target
         Name="CreateManifestResourceNames"
         Condition="'@(EmbeddedResource)' != ''"
