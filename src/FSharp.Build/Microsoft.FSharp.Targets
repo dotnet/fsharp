@@ -442,10 +442,6 @@ this file.
 
        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
-
-	<Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"
-        Condition="'$(MicrosoftCommonTargetsImported)' != 'true' and Exists('$(MSBuildBinPath)\Microsoft.Common.targets')" />
-
     <!--
             ============================================================
             GenerateTargetFrameworkMonikerAttribute
