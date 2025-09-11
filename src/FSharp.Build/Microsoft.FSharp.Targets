@@ -17,36 +17,19 @@ this file.
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-	<PropertyGroup>
-		<MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-		<FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">$(MSBuildThisFileDirectory)FSharp.Build.dll</FSharpBuildAssemblyFile>
-	</PropertyGroup>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">$(MSBuildThisFileDirectory)FSharp.Build.dll</FSharpBuildAssemblyFile>
+    </PropertyGroup>
 
-
-	<!-- Ensure language defaults are established BEFORE importing Microsoft.Common.targets so
-      any properties it derives (e.g. TargetFrameworkMonikerAssemblyAttributesPath) get the .fs suffix -->
-	<PropertyGroup>
-		<DefaultLanguageSourceExtension Condition="'$(DefaultLanguageSourceExtension)'==''">.fs</DefaultLanguageSourceExtension>
-		<Language Condition="'$(Language)'==''">F#</Language>
-
-	</PropertyGroup>
-
-	<!-- Added: Early guarded imports to ensure Microsoft.Common.targets is available for legacy/minimal projects.
-         These do not affect SDK-style projects (which don't import this file) and are inert if the standard
-         import chain already brought in Microsoft.Common.targets. -->
-	<Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets"
-            Condition="'$(MSBuildLoadMicrosoftCommonTargets)' != 'false' and Exists('$(MSBuildToolsPath)\Microsoft.Common.targets') and '$(MicrosoftCommonTargetsImported)' != 'true'" />
-	<Import Project="$(MSBuildExtensionsPath32)\Microsoft\Build\Microsoft.Common.targets"
-            Condition="'$(MicrosoftCommonTargetsImported)' != 'true' and !Exists('$(MSBuildToolsPath)\Microsoft.Common.targets') and Exists('$(MSBuildExtensionsPath32)\Microsoft\Build\Microsoft.Common.targets')" />
-
-	<UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="WriteCodeFragment" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="FSharpPlatformInformation" AssemblyFile="$(FSharpBuildAssemblyFile)" />
-	<UsingTask TaskName="SubstituteText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="WriteCodeFragment" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpPlatformInformation" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="SubstituteText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
 
     <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
@@ -144,16 +127,6 @@ this file.
         <UsingXBuild>false</UsingXBuild>
         <UsingXBuild Condition="'$(MSBuildAssemblyVersion)' == ''">true</UsingXBuild>
     </PropertyGroup>
-
-
-	<Target Name="FWDiagBeforeCoreCompile" BeforeTargets="CoreCompile">
-		<Message Importance="High" Text="FWDIAG TARGET Microsoft.FSharp.Targets VS=$(VisualStudioVersion) TFI=$(TargetFrameworkIdentifier) TFV=$(TargetFrameworkVersion) TFDIRS=$(TargetFrameworkDirectories) NoFramework=$(NoFramework) ImplicitlyReferenceDotNetAssemblies=$(ImplicitlyReferenceDotNetAssemblies)"/>
-		<Message Importance="High" Text="FWDIAG ITEMS ReferencePath=@(ReferencePath)"/>
-	</Target>
-
-	<Target Name="FWDiagEnsureRAR" BeforeTargets="CoreCompile" DependsOnTargets="ResolveAssemblyReferences">
-		<Message Importance="High" Text="FWDIAG RAR Completed ReferencePathCount=@(ReferencePath->Count())"/>
-	</Target>
 
     <Target
         Name="CreateManifestResourceNames"
@@ -451,6 +424,9 @@ this file.
 
        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
+
+    <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
+
     <!--
             ============================================================
             GenerateTargetFrameworkMonikerAttribute
