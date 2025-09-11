@@ -920,16 +920,37 @@ type SynSimplePats =
         match x with
         | SynSimplePats.SimplePats(range = range) -> range
 
+[<NoEquality; NoComparison>]
+type NamePatPairField =
+    | NamePatPairField of
+        fieldName: SynLongIdent *
+        equalsRange: range option *
+        range: range *
+        pat: SynPat *
+        blockSeparator: BlockSeparator option
+
+    member this.FieldName =
+        match this with
+        | NamePatPairField(fieldName = n) -> n
+
+    member this.Range =
+        match this with
+        | NamePatPairField(range = m) -> m
+
+    member this.Pattern =
+        match this with
+        | NamePatPairField(pat = pat) -> pat
+
 [<RequireQualifiedAccess>]
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range option * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
+    | NamePatPairs of pats: NamePatPairField list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs(pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs(pats = pats) -> pats |> List.map _.Pattern
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -966,7 +987,7 @@ type SynPat =
 
     | ArrayOrList of isArray: bool * elementPats: SynPat list * range: range
 
-    | Record of fieldPats: ((LongIdent * Ident) * range option * SynPat) list * range: range
+    | Record of fieldPats: NamePatPairField list * range: range
 
     | Null of range: range
 

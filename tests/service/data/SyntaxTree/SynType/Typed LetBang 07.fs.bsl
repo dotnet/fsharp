@@ -19,10 +19,12 @@ ImplFile
                            Paren
                              (Typed
                                 (Record
-                                   ([(([], Name), Some (3,17--3,18),
-                                      Named
-                                        (SynIdent (name, None), false, None,
-                                         (3,19--3,23)))], (3,10--3,25)),
+                                   ([NamePatPairField
+                                       (SynLongIdent ([Name], [], [None]),
+                                        Some (3,17--3,18), (3,12--3,23),
+                                        Named
+                                          (SynIdent (name, None), false, None,
+                                           (3,19--3,23)), None)], (3,10--3,25)),
                                  LongIdent (SynLongIdent ([Person], [], [None])),
                                  (3,10--3,33)), (3,9--3,34)), None,
                            App
