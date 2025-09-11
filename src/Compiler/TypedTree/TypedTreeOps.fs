@@ -3171,6 +3171,7 @@ type GenericParameterStyle =
     | Implicit
     | Prefix
     | Suffix
+    | PrefixForTopLevel of nested: GenericParameterStyle
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 

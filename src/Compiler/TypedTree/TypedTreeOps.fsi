@@ -1061,6 +1061,11 @@ type GenericParameterStyle =
     | Prefix
     /// Force the suffix style: int List
     | Suffix
+    /// Force the prefix style for top-level types in interface/inherit declarations:
+    ///     inherit seq<int list>
+    /// instead of
+    ///     inherit int list seq
+    | PrefixForTopLevel of nested: GenericParameterStyle
 
 [<NoEquality; NoComparison>]
 type DisplayEnv =
