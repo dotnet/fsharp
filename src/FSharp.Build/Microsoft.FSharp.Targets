@@ -12,8 +12,7 @@ This file defines the steps in the standard build process specific for F# .NET p
 For example, it contains the step that actually calls the F# compiler.  The remainder
 of the build process is defined in Microsoft.Common.targets, which is imported by 
 this file.
-***********************************************************************************************
--->
+***********************************************************************************************-->
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
@@ -21,6 +20,18 @@ this file.
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
         <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">$(MSBuildThisFileDirectory)FSharp.Build.dll</FSharpBuildAssemblyFile>
     </PropertyGroup>
+
+    <!-- EARLY GUARDED IMPORTS: ensure Microsoft.Common.targets is present for legacy/minimal projects.
+         Safe because Microsoft.Common.targets sets MicrosoftCommonTargetsImported=true. -->
+    <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets"
+            Condition="'$(MSBuildLoadMicrosoftCommonTargets)' != 'false'
+                       and Exists('$(MSBuildToolsPath)\Microsoft.Common.targets')
+                       and '$(MicrosoftCommonTargetsImported)' != 'true'" />
+
+    <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Build\Microsoft.Common.targets"
+            Condition="'$(MicrosoftCommonTargetsImported)' != 'true'
+                       and !Exists('$(MSBuildToolsPath)\Microsoft.Common.targets')
+                       and Exists('$(MSBuildExtensionsPath32)\Microsoft\Build\Microsoft.Common.targets')" />
 
     <UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="Fsi" AssemblyFile="$(FSharpBuildAssemblyFile)" />
@@ -36,7 +47,7 @@ this file.
         <ImportByWildcardAfterMicrosoftFSharpTargets Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == ''">true</ImportByWildcardAfterMicrosoftFSharpTargets>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportBefore\*" Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportBefore')"/>
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportBefore\*" Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportBefore')" />
 
     <PropertyGroup>
         <DefaultLanguageSourceExtension>.fs</DefaultLanguageSourceExtension>
@@ -70,7 +81,7 @@ this file.
         <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
+    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'>
 
 
         <!-- Nothing set so use default, Arm, default to native arm, X64 default to AnyCpu -->
@@ -109,7 +120,7 @@ this file.
 
           [OUT]
           @(EmbeddedResource) - EmbeddedResource items with metadata         
-          
+      
       For F# applications the transformation is like:
 
           Resources1.resx => Resources1 => Build into main assembly
@@ -184,7 +195,8 @@ this file.
               ResourceFiles="@(EmbeddedResource)"
               RootNamespace="$(RootNamespace)"
               UseStandardResourceNames="$(UseStandardResourceNames)"
-              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and ('%(EmbeddedResource.WithCulture)' == 'false' or '%(EmbeddedResource.Type)' == 'Resx') AND '$(UsingXBuild)' == 'false'">
+              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and ('%(EmbeddedResource.WithCulture)' == 'false' or '%(EmbeddedResource.Type)' == 'Resx') AND '$(UsingXBuild)' == 'false'"
+>
 
             <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
 
@@ -196,7 +208,8 @@ this file.
               RootNamespace="$(RootNamespace)"
               UseStandardResourceNames="$(UseStandardResourceNames)"
               PrependCultureAsDirectory="false"
-              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and '%(EmbeddedResource.WithCulture)' == 'true' and '%(EmbeddedResource.Type)' == 'Non-Resx' AND '$(UsingXBuild)' == 'false'">
+              Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and '%(EmbeddedResource.WithCulture)' == 'true' and '%(EmbeddedResource.Type)' == 'Non-Resx' AND '$(UsingXBuild)' == 'false'"
+>
 
             <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
 
@@ -315,8 +328,7 @@ this file.
 
         <Warning
             Condition="'$(Win32ResourceFile)' != '' "
-            Text="The property &lt;Win32ResourceFile> has been renamed to &lt;Win32Resource>. Update your project file to ensure that the correct value is passed via the --win32res option to the F# compiler."
-        />
+            Text="The property &lt;Win32ResourceFile> has been renamed to &lt;Win32Resource>. Update your project file to ensure that the correct value is passed via the --win32res option to the compiler." />
 
         <!-- Workaround for differences between how msbuild and xbuild handle embedded resources.
              If we just naively include the additional items needed for mono, that leads to issues
@@ -380,7 +392,7 @@ this file.
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
               OutputRefAssembly="@(IntermediateRefAssembly)"
-    	      ParallelCompilation="@(ParallelCompilation)"
+            ParallelCompilation="@(ParallelCompilation)"
               PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
@@ -390,7 +402,7 @@ this file.
               PublicSign="$(PublicSign)"
               RealSig="$(RealSig)"
               References="@(ReferencePathWithRefAssemblies)"
-              ReferencePath="$(ReferencePathWithRefAssemblies)"
+              ReferencePath="@(ReferencePathWithRefAssemblies)"
               RefOnly="$(ProduceOnlyReferenceAssembly)"
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
@@ -425,7 +437,7 @@ this file.
        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
 
-    <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
+    <!-- (Late import of Microsoft.Common.targets removed; early guarded import ensures presence) -->
 
     <!--
             ============================================================
@@ -437,7 +449,7 @@ this file.
             ============================================================
     -->
 
-    <Target Name="GenerateTargetFrameworkMonikerAttribute" BeforeTargets="BeforeCompile" DependsOnTargets="PrepareForBuild;GetReferenceAssemblyPaths" Inputs="$(MSBuildThisFileFullPath)" Outputs="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(GenerateTargetFrameworkAttribute)' == 'true'">
+    <Target Name="GenerateTargetFrameworkMonikerAttribute" BeforeTargets="BeforeCompile" DependsOnTargets="PrepareForBuild;GetReferenceAssemblyPaths" Inputs="$(MSBuildThisFileFullPath)" Outputs="$(TargetFrameworkMonikerAssemblyAttributesPath)">
 
         <PropertyGroup>
             <!-- This attribute is only available in mscorlib v4 and later -->
@@ -541,5 +553,5 @@ this file.
           Condition=" '@(ReferenceToInboxTP->Count())' != '0' " />
     </Target>
 
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')"/>
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')" />
 </Project>
