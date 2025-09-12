@@ -58,5 +58,5 @@ CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outputfile "FSharp.
 CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9154048
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
-CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7607296
+CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7607296 
 
