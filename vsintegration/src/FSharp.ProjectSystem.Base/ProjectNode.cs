@@ -3335,6 +3335,118 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 if (projectInstance == null)
                 {
                     EnsureCommonTargetsImportedIfMissing();
+                // --- F# MSBuild reference resolution bridging BEGIN ---
+
+                // Diagnostics toggle: set env var FSharpAutoImportDiag=1 (or project property FSharpAutoImportDiag=true) to enable verbose logging.
+                bool diag =
+                    string.Equals(Environment.GetEnvironmentVariable("FSharpAutoImportDiag"), "1", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(this.BuildProject.GetPropertyValue("FSharpAutoImportDiag"), "true", StringComparison.OrdinalIgnoreCase);
+
+                    void LogDiag(string msg)
+                    {
+                        if (!diag) return;
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine("[F#AutoImport] " + msg);
+                            System.Diagnostics.Trace.WriteLine("[F#AutoImport] " + msg);
+                        }
+                        catch { /* ignore */ }
+                    }
+
+                    try
+                    {
+                        var proj = this.BuildProject;
+                        var root = proj.Xml;
+
+                        // Snapshot imports before any mutation
+                        if (diag)
+                        {
+                            foreach (var imp in root.Imports)
+                                LogDiag("PreImport: " + imp.Project);
+                        }
+
+                        bool hadRARInitially = proj.Targets.ContainsKey("ResolveAssemblyReferences");
+                        LogDiag("Initial Has RAR Target: " + hadRARInitially);
+
+                        // If Common was injected earlier but still no RAR, attempt explicit CurrentVersion import.
+                        if (!hadRARInitially)
+                        {
+                            bool hasCurrentVersionImport = root.Imports.Any(i =>
+                                i.Project.IndexOf("Microsoft.Common.CurrentVersion.targets", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                            if (!hasCurrentVersionImport)
+                            {
+                                string currentVersionPath = "$(MSBuildToolsPath)\\Microsoft.Common.CurrentVersion.targets";
+                                LogDiag("Attempting CurrentVersion import: " + currentVersionPath);
+
+                                var importCV = root.CreateImportElement(currentVersionPath);
+                                importCV.Condition = $"Exists('{currentVersionPath}')";
+                                var fsharpImport = root.Imports.FirstOrDefault(i =>
+                                    i.Project.IndexOf("Microsoft.FSharp.Targets", StringComparison.OrdinalIgnoreCase) >= 0);
+                                if (fsharpImport != null)
+                                {
+                                    root.InsertBeforeChild(importCV, fsharpImport);
+                                    LogDiag("Inserted CurrentVersion import before F# targets.");
+                                }
+                                else
+                                {
+                                    root.AppendChild(importCV);
+                                    LogDiag("Appended CurrentVersion import at end (no F# import found).");
+                                }
+
+                                proj.ReevaluateIfNecessary();
+                                LogDiag("Reevaluation after CurrentVersion import completed.");
+                                hadRARInitially = proj.Targets.ContainsKey("ResolveAssemblyReferences");
+                                LogDiag("Post-import Has RAR Target: " + hadRARInitially);
+                            }
+                            else
+                            {
+                                LogDiag("CurrentVersion import already present; skipping injection.");
+                            }
+                        }
+
+                        // If caller asked only CoreCompile, prepend ResolveReferences via composite target for trimmed legacy cases.
+                        if (target != null &&
+                            target.Equals("CoreCompile", StringComparison.OrdinalIgnoreCase) &&
+                            proj.Targets.ContainsKey("ResolveReferences"))
+                        {
+                            const string compositeName = "FSharpResolveReferencesThenCoreCompile";
+                            if (!proj.Targets.ContainsKey(compositeName))
+                            {
+                                LogDiag("Creating composite target: " + compositeName);
+                                var composite = proj.Xml.AddTarget(compositeName);
+                                composite.DependsOnTargets = "ResolveReferences;CoreCompile";
+                                proj.ReevaluateIfNecessary();
+                                LogDiag("Reevaluation after composite target creation done.");
+                            }
+                            target = compositeName;
+                            LogDiag("Adjusted requested target to composite: " + target);
+                        }
+
+                        if (diag)
+                        {
+                            // After final reevaluation log imports again
+                            foreach (var imp in proj.Xml.Imports)
+                                LogDiag("PostImport: " + imp.Project);
+
+                            // Log whether RAR target and CoreCompile target are present
+                            LogDiag("Final Has RAR Target: " + proj.Targets.ContainsKey("ResolveAssemblyReferences"));
+                            LogDiag("Final Has CoreCompile Target: " + proj.Targets.ContainsKey("CoreCompile"));
+
+                            // Log Reference items (raw & counts) prior to ProjectInstance creation
+                            var references = proj.GetItems("Reference").Select(i => i.EvaluatedInclude).ToList();
+                            LogDiag("Reference item count: " + references.Count);
+                            foreach (var r in references)
+                                LogDiag("Reference: " + r);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogDiag("Exception during auto-import logic: " + ex);
+                        // Swallow to avoid breaking build path; diagnostics only.
+                    }
+
+                    // --- F# MSBuild reference resolution bridging END ---
                 }
 
                 // Do the actual Build

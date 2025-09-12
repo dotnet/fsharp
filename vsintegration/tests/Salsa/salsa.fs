@@ -653,6 +653,8 @@ module internal Salsa =
             Append "        </NoWarn>"
             if references = ["System.Configuration",false] then
                 Append "        <FSharpTargetsDiagnostic>true</FSharpTargetsDiagnostic>"
+                Append "        <FSharpAutoImportDiag>true</FSharpAutoImportDiag>"
+                
             Append "        <DefineConstants>"
             for define in defines do
                 Append (sprintf "            %s;" define)                            
