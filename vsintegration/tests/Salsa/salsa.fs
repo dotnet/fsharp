@@ -704,7 +704,13 @@ module internal Salsa =
             Append otherProjMisc
 
             let t = targetsFileFolder.TrimEnd([|'\\'|])
-            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.Targets\"/>" t)
+            Append "  <PropertyGroup>"
+            Append (sprintf "    <FSharpTargetsPath>%s\\Microsoft.FSharp.Targets</FSharpTargetsPath>" t)
+            Append "    <VisualStudioVersion>17.0</VisualStudioVersion>"
+            Append "  </PropertyGroup>"
+            Append "  <Import Project=\"$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.targets\" Condition=\"Exists('$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.targets')\" />"
+            Append "  <Import Project=\"$(MSBuildToolsPath)\\Microsoft.Common.CurrentVersion.targets\" Condition=\"Exists('$(MSBuildToolsPath)\\Microsoft.Common.CurrentVersion.targets')\" />"
+            Append "  <Import Project=\"$(FSharpTargetsPath)\" Condition=\"Exists('$(FSharpTargetsPath)')\" />"
             Append "</Project>"
             sb.ToString()
 
