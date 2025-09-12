@@ -19,19 +19,14 @@ type SurfaceAreaTest() =
 
     [<Fact>]
     member _.VerifySurfaceAreaFSharpCompilerService() =
+        // System.Environment.SetEnvironmentVariable("TEST_UPDATE_BSL", "1")
 
         let platform = "netstandard20"
 
-        let flavor =
-#if DEBUG
-            "debug"
-#else
-            "release"
-#endif
         let assembly =
             let path = Path.Combine(Path.GetDirectoryName(typeof<int list>.Assembly.Location), "FSharp.Compiler.Service.dll")
             Assembly.LoadFrom path
 
-        let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.bsl")
-        let outFileName = $"FSharp.Compiler.Service.SurfaceArea.{platform}.{flavor}.out"
+        let baseline = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Compiler.Service.SurfaceArea.{platform}.bsl")
+        let outFileName = Path.Combine(__SOURCE_DIRECTORY__, $"FSharp.Compiler.Service.SurfaceArea.{platform}.out")
         FSharp.Test.SurfaceArea.verify assembly baseline outFileName

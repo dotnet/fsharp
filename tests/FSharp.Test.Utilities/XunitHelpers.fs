@@ -202,8 +202,6 @@ module OneTimeSetup =
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
     #endif
-        log "Overriding cache capacity"
-        Cache.OverrideCapacityForTesting()
         log "Installing TestConsole redirection"
         TestConsole.install()
 

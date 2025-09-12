@@ -295,3 +295,15 @@ module ListParallel =
 [<RequireQualifiedAccess>]
 module Async =
     val map: ('T -> 'U) -> Async<'T> -> Async<'U>
+
+module internal WeakMap =
+    /// Provides association of lazily-created values with arbitrary key objects.
+    /// The associated value is created on first request and kept alive only while the key
+    /// is strongly referenced elsewhere (backed by ConditionalWeakTable).
+    ///
+    /// Usage:
+    ///   let getValueFor = WeakMap.getOrCreate (fun key -> expensiveInit key)
+    ///   let v = getValueFor someKey
+    val internal getOrCreate:
+        valueFactory: ('Key -> 'Value) -> ('Key -> 'Value)
+            when 'Key: not struct and 'Key: not null and 'Value: not struct
