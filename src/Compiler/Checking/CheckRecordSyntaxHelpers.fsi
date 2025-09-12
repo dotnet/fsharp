@@ -10,7 +10,7 @@ open FSharp.Compiler.TypedTree
 val GroupUpdatesToNestedFields:
     fields: ((Ident list * Ident) * SynExpr option) list -> ((Ident list * Ident) * SynExpr option) list
 
-val TransformAstForNestedUpdates :
+val TransformAstForNestedUpdates:
     cenv: TcFileState ->
     env: TcEnv ->
     overallTy: TType ->
