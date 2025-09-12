@@ -55,15 +55,14 @@ module VSInstallDiscovery =
                 | [] ->
                     // d. vswhere.exe invocation
                     try
-                        let vsWherePath = 
-                            // Try common locations for vswhere.exe
-                            let programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                            let vsWherePath1 = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe")
-                            if File.Exists vsWherePath1 then Some vsWherePath1
-                            else
-                                // Try system PATH
+                        // Try common locations for vswhere.exe first
+                        let programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                        let vsWherePath = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe")
+                        
+                        let tryVsWhere (vsWhereExePath: string) =
+                            if File.Exists vsWhereExePath then
                                 try
-                                    let psi = ProcessStartInfo("vswhere", "-latest -products * -requires Microsoft.Component.MSBuild -property installationPath")
+                                    let psi = ProcessStartInfo(vsWhereExePath, "-latest -products * -requires Microsoft.Component.MSBuild -property installationPath")
                                     psi.UseShellExecute <- false
                                     psi.RedirectStandardOutput <- true
                                     psi.RedirectStandardError <- true
@@ -80,25 +79,15 @@ module VSInstallDiscovery =
                                         None
                                 with
                                 | _ -> None
-                        
-                        match vsWherePath with
-                        | Some path when File.Exists path ->
-                            let psi = ProcessStartInfo(path, "-latest -products * -requires Microsoft.Component.MSBuild -property installationPath")
-                            psi.UseShellExecute <- false
-                            psi.RedirectStandardOutput <- true
-                            psi.RedirectStandardError <- true
-                            psi.CreateNoWindow <- true
-                            use proc = Process.Start(psi)
-                            proc.WaitForExit(5000) |> ignore // 5 second timeout
-                            if proc.ExitCode = 0 then
-                                let output = proc.StandardOutput.ReadToEnd().Trim()
-                                if not (String.IsNullOrEmpty output) && Directory.Exists output then
-                                    Some output
-                                else
-                                    None
                             else
                                 None
-                        | _ -> None
+                        
+                        // Try explicit path first, then fall back to PATH
+                        match tryVsWhere vsWherePath with
+                        | Some result -> Some result
+                        | None ->
+                            // Try vswhere from PATH
+                            tryVsWhere "vswhere"
                     with
                     | _ -> None
 
