@@ -7736,7 +7736,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
     let withExprOptChecked, tpenv =
         match withExprOpt with
         | None -> None, tpenv
-        | Some (origExpr, _) ->
+        | Some (origExpr, _blockSep) ->
             match inherits with
             | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
             | None ->
@@ -7757,7 +7757,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
                 match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
                 | _, [ id ], _ -> ([], id), exprBeingAssigned
-                | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
+                | Some (origExpr, blockSep), lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned (origExpr, blockSep)
                 | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
