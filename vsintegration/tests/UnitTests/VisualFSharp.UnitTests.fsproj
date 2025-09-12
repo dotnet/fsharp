@@ -83,6 +83,7 @@
     <ProjectReference Include="..\..\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\FSharp.ProjectSystem.FSharp.fsproj" />
     <ProjectReference Include="..\..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="..\TestHelpers\FSharp.TestHelpers.fsproj" />
   </ItemGroup>
 
   <!-- assemblies used during tests -->

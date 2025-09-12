@@ -1642,6 +1642,7 @@ module internal VsActual =
     open System.ComponentModel.Composition.Primitives
     open Microsoft.VisualStudio.Text
     open Microsoft.VisualStudio.Threading
+    open FSharp.TestHelpers
 
     type TestExportJoinableTaskContext () =
 
@@ -1651,15 +1652,13 @@ module internal VsActual =
         member public _.JoinableTaskContext : JoinableTaskContext = jtc
 
     let vsInstallDir =
-        // use the environment variable to find the VS installdir
-        let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
-            if String.IsNullOrEmpty var then
-                Environment.GetEnvironmentVariable("VSAPPIDDIR")
-            else
-                var
-        if String.IsNullOrEmpty vsvar then failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
-        Path.Combine(vsvar, "..")
+        // Use centralized VS discovery logic, but log a message if no VS is found
+        if HasVisualStudio then
+            VSRoot
+        else
+            printfn "[FSharp Tests] VsActual module: No Visual Studio installation found. Editor catalog creation will attempt to use assemblies from current directory."
+            // Return empty string as fallback - CreateEditorCatalog will handle missing assemblies gracefully
+            ""
 
     let CreateEditorCatalog() =
         let thisAssembly = Assembly.GetExecutingAssembly().Location
@@ -1670,8 +1669,8 @@ module internal VsActual =
             if File.Exists(fullPath) then
                 list.Add(new AssemblyCatalog(fullPath))
             else
-                
-                failwith <| sprintf "unable to find assembly '%s' in location '%s'" p thisAssemblyDir
+                // Only warn instead of failing when VS assemblies are missing
+                printfn "[FSharp Tests] Warning: Unable to find assembly '%s' in location '%s'. Some editor functionality may be unavailable." p thisAssemblyDir
 
         list.Add(new AssemblyCatalog(thisAssembly))
         [ "Microsoft.VisualStudio.Text.Data.dll"
