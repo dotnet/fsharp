@@ -7736,7 +7736,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
     let withExprOptChecked, tpenv =
         match withExprOpt with
         | None -> None, tpenv
-        | Some (origExpr, _blockSep) ->
+        | Some (origExpr, _) ->
             match inherits with
             | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
             | None ->
