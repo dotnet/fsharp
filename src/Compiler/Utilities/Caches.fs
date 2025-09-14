@@ -244,14 +244,11 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
     let startEvictionProcessor ct =
         MailboxProcessor.Start(
             (fun mb ->
-                let rec processNext () =
-                    async {
+                async {
+                    while true do
                         let! message = mb.Receive()
                         processEvictionMessage message
-                        return! processNext ()
-                    }
-
-                processNext ()),
+                }),
             ct
         )
 
