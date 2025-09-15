@@ -357,14 +357,11 @@ type internal FSharpPackage() as this =
         base.RegisterInitializeAsyncWork(packageRegistrationTasks)
 
         packageRegistrationTasks.AddTask(
-            true,
+            false,
             (fun _tasks cancellationToken ->
-                foregroundCancellableTask {
+                cancellableTask {
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService
-
-                    // Switch to UI thread
-                    do! this.JoinableTaskFactory.SwitchToMainThreadAsync()
 
                     // FSI-LINKAGE-POINT: sited init
                     FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
@@ -373,16 +370,15 @@ type internal FSharpPackage() as this =
                     let _fsiPropertyPage =
                         this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
 
-                    let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
+                    let workspace =
+                        this.ComponentModel.DefaultExportProvider.GetExportedValue<VisualStudioWorkspace>()
 
-                    let _ =
-                        this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
+                    let fsharpWorkspaceService =
+                        workspace.Services.GetService<IFSharpWorkspaceService>()
 
-                    let optionsManager =
-                        workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+                    let optionsManager = fsharpWorkspaceService.FSharpProjectOptionsManager
 
-                    let metadataAsSource =
-                        this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
+                    let metadataAsSource = fsharpWorkspaceService.MetadataAsSource
 
                     let! solution = this.GetServiceAsync(typeof<SVsSolution>)
                     let solution = solution :?> IVsSolution
