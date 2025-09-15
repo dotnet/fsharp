@@ -5164,6 +5164,7 @@ FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisp
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithPrefixGenericParameters()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithShortTypeNames(Boolean)
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithSuffixGenericParameters()
+FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithTopLevelPrefixGenericParameters()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext get_Empty()
 FSharp.Compiler.Symbols.FSharpEntity: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpEntity: Boolean HasAssemblyCodeRepresentation
