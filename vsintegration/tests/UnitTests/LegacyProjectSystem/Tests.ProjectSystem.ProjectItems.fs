@@ -34,17 +34,17 @@ module private DebuggingHelpers =
                             printfn "FWDiag:   DLLCount=%d" dlls
                         with e ->
                             printfn "FWDiag:   DLLCount=ERR(%s)" e.Message
-                        let sn = Path.Combine(d,"System.Numerics.dll")
+                        let sn = Path.Combine(d,"System.Configuration.dll")
                         if File.Exists sn then
                             let fi = FileInfo(sn)
                             let ver = FileVersionInfo.GetVersionInfo(sn).FileVersion
-                            printfn "FWDiag:   System.Numerics.dll Size=%d Version=%s" fi.Length ver
+                            printfn "FWDiag:   System.Configuration.dll Size=%d Version=%s" fi.Length ver
                         else
-                            printfn "FWDiag:   System.Numerics.dll MISSING"
+                            printfn "FWDiag:   System.Configuration.dll MISSING"
                 // ToolLocationHelper probe
                 try
-                    let p = ToolLocationHelper.GetPathToDotNetFrameworkFile("System.Numerics.dll", TargetDotNetFrameworkVersion.Version472, DotNetFrameworkArchitecture.Current)
-                    printfn "FWDiag: ToolLocationHelper(System.Numerics)='%s'" (if String.IsNullOrWhiteSpace p then "<null>" else p)
+                    let p = ToolLocationHelper.GetPathToDotNetFrameworkFile("System.Configuration.dll", TargetDotNetFrameworkVersion.Version472, DotNetFrameworkArchitecture.Current)
+                    printfn "FWDiag: ToolLocationHelper(System.Configuration)='%s'" (if String.IsNullOrWhiteSpace p then "<null>" else p)
                 with e ->
                     printfn "FWDiag: ToolLocationHelper exception: %s" e.Message
                 printfn "FWDiag: Is64BitProcess=%b PROC_ARCH=%s" Environment.Is64BitProcess (Environment.GetEnvironmentVariable "PROCESSOR_ARCHITECTURE")
@@ -74,7 +74,7 @@ module private DebuggingHelpers =
                 printfn "FWDiag: Unable to read project properties (%s)" e.Message
 
     let dumpOnFailure (project: UnitTestingFSharpProjectNode) =
-        // Called only when an assertion about System.Numerics is about to fail
+        // Called only when an assertion about System.Configuration is about to fail
         let opts =
             try project.CompilationOptions with _ -> [||]
         printfn "FWDiag-FAIL: CompilationOptionsCount=%d" opts.Length
@@ -96,7 +96,7 @@ module private DebuggingHelpers =
                             | _ -> "<empty>"
                     with _ -> "<err>"
                 printfn "FWDiag-FAIL:   Ref Name=%s Path=%s" name path
-                if name.Equals("System.Numerics", StringComparison.OrdinalIgnoreCase) then
+                if name.Equals("System.Configuration", StringComparison.OrdinalIgnoreCase) then
                     // Try pull 'ResolvedPath' metadata if available
                     let rpMeta =
                         try
@@ -107,7 +107,7 @@ module private DebuggingHelpers =
                                 | :? string as s when s <> "" -> s
                                 | _ -> "<empty>"
                         with _ -> "<err>"
-                    printfn "FWDiag-FAIL:   System.Numerics.ResolvedPath=%s" rpMeta
+                    printfn "FWDiag-FAIL:   System.Configuration.ResolvedPath=%s" rpMeta
         with e ->
             printfn "FWDiag-FAIL: Error dumping references (%s)" e.Message
 

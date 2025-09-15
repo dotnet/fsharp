@@ -642,7 +642,7 @@ module internal Salsa =
             let sb = new System.Text.StringBuilder()
             let Append (text:string) = 
                 sb.Append(text+"\r\n") |> ignore
-            Append "<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
+            Append "<Project ToolsVersion='Current' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
             Append "    <PropertyGroup>"
 //            The salsa layer does Configuration/Platform in a kind of hacky way
 //            Append "        <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>"
