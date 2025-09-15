@@ -1065,7 +1065,7 @@ type GenericParameterStyle =
     ///     inherit seq<int list>
     /// instead of
     ///     inherit int list seq
-    | PrefixForTopLevel of nested: GenericParameterStyle
+    | TopLevelPrefix of nested: GenericParameterStyle
 
 [<NoEquality; NoComparison>]
 type DisplayEnv =
@@ -1115,6 +1115,8 @@ type DisplayEnv =
     member AddOpenModuleOrNamespace: ModuleOrNamespaceRef -> DisplayEnv
 
     member UseGenericParameterStyle: GenericParameterStyle -> DisplayEnv
+
+    member UseTopLevelPrefixGenericParameterStyle: unit -> DisplayEnv
 
     static member InitialForSigFileGeneration: TcGlobals -> DisplayEnv
 

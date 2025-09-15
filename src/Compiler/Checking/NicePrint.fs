@@ -124,9 +124,6 @@ module internal PrintUtilities =
         |> fun reversedArgs -> (true, retTyL) :: reversedArgs
         |> List.fold (fun acc (shouldBreak, layout) -> (if shouldBreak then (---) else (++)) layout acc) emptyL
 
-    let getSuperTypeDenv (denv: DisplayEnv) =
-        denv.UseGenericParameterStyle(PrefixForTopLevel(denv.genericParameterStyle))
-
     let tagNavArbValRef (valRefOpt: ValRef option) tag =
         match valRefOpt with
         | Some vref ->
@@ -175,7 +172,7 @@ module internal PrintUtilities =
         | GenericParameterStyle.Implicit -> tcref.IsPrefixDisplay, denv
         | GenericParameterStyle.Prefix -> true, denv
         | GenericParameterStyle.Suffix -> false, denv
-        | GenericParameterStyle.PrefixForTopLevel nested -> true, denv.UseGenericParameterStyle(nested) 
+        | GenericParameterStyle.TopLevelPrefix nested -> true, denv.UseGenericParameterStyle(nested) 
 
     /// <summary>
     /// Creates a layout for TyconRef.
@@ -748,12 +745,8 @@ module PrintTypes =
         | Some typarConstraintTy ->
             if Zset.contains typar env.singletons then
                 let tyLayout =
-                    match typarConstraintTy with
-                    | TType_app (tyconRef = tc; typeInstantiation = ti)
-                        when ti.Length > 0 && not (usePrefix denv tc |> fst) ->
-                        layoutTypeWithInfo denv env typarConstraintTy
-                        |> bracketL
-                    | _ -> layoutTypeWithInfo denv env typarConstraintTy
+                    let denv = denv.UseTopLevelPrefixGenericParameterStyle()
+                    layoutTypeWithInfo denv env typarConstraintTy
 
                 leftL (tagPunctuation "#") ^^ tyLayout
             else
@@ -2051,7 +2044,7 @@ module TastDefinitionPrinting =
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
 
         let iimplsLs =
-            let denv = getSuperTypeDenv denv
+            let denv = denv.UseTopLevelPrefixGenericParameterStyle()
             iimpls
             |> List.map (fun intfTy -> (if isInterfaceTy g ty then WordL.keywordInherit else WordL.keywordInterface) -* layoutType denv intfTy)
 
@@ -2187,7 +2180,7 @@ module TastDefinitionPrinting =
             ]
 
         let inheritsL =
-            let denv = getSuperTypeDenv denv
+            let denv = denv.UseTopLevelPrefixGenericParameterStyle()
             inherits
             |> List.map (fun super -> WordL.keywordInherit ^^ (layoutType denv super))
 

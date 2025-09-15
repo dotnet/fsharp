@@ -3171,7 +3171,7 @@ type GenericParameterStyle =
     | Implicit
     | Prefix
     | Suffix
-    | PrefixForTopLevel of nested: GenericParameterStyle
+    | TopLevelPrefix of nested: GenericParameterStyle
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
@@ -3256,6 +3256,14 @@ type DisplayEnv =
 
     member denv.UseGenericParameterStyle style =
         { denv with genericParameterStyle = style }
+    
+    member denv.UseTopLevelPrefixGenericParameterStyle() =
+        let nestedStyle =
+            match denv.genericParameterStyle with
+            | TopLevelPrefix(nested) -> nested
+            | style -> style
+
+        { denv with genericParameterStyle = TopLevelPrefix(nestedStyle) }
 
     static member InitialForSigFileGeneration g =
         let denv =

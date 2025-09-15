@@ -558,3 +558,13 @@ type A{caret} =
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "type A =\n  interface seq<int list>"
+
+[<Fact>]
+let ``Flexible generic type should be formatted in the prefix style`` () =
+    Checker.getTooltip """
+module Foo
+
+let f (x{caret}: #seq<int list>) = ()
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "val x: #seq<int list>"
