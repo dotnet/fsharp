@@ -966,28 +966,29 @@ type TcGlobals(
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries =
-     [| sys,         "Int32"        , v_int_tcr
-        sys,         "IntPtr"       , v_nativeint_tcr
-        sys,         "UIntPtr"      , v_unativeint_tcr
-        sys,         "Int16"        , v_int16_tcr
-        sys,         "Int64"        , v_int64_tcr
-        sys,         "UInt16"       , v_uint16_tcr
-        sys,         "UInt32"       , v_uint32_tcr
-        sys,         "UInt64"       , v_uint64_tcr
-        sys,         "SByte"        , v_sbyte_tcr
-        sys,         "Decimal"      , v_decimal_tcr
-        sys,         "Byte"         , v_byte_tcr
-        sys,         "Boolean"      , v_bool_tcr
-        sys,         "String"       , v_string_tcr
-        sys,         "Object"       , v_obj_tcr
-        sys,         "Exception"    , v_exn_tcr
-        sys,         "Char"         , v_char_tcr
-        sys,         "Double"       , v_float_tcr
-        sys,         "Single"       , v_float32_tcr
-        sysGenerics, "IEnumerable`1", v_seq_tcr |]
-            |> Array.map (fun (sysLib, nm, tcr) ->
+     [| yield sys, "Int32"    , v_int_tcr
+        yield sys, "IntPtr"   , v_nativeint_tcr
+        yield sys, "UIntPtr"  , v_unativeint_tcr
+        yield sys, "Int16"    , v_int16_tcr
+        yield sys, "Int64"    , v_int64_tcr
+        yield sys, "UInt16"   , v_uint16_tcr
+        yield sys, "UInt32"   , v_uint32_tcr
+        yield sys, "UInt64"   , v_uint64_tcr
+        yield sys, "SByte"    , v_sbyte_tcr
+        yield sys, "Decimal"  , v_decimal_tcr
+        yield sys, "Byte"     , v_byte_tcr
+        yield sys, "Boolean"  , v_bool_tcr
+        yield sys, "String"   , v_string_tcr
+        yield sys, "Object"   , v_obj_tcr
+        yield sys, "Exception", v_exn_tcr
+        yield sys, "Char"     , v_char_tcr
+        yield sys, "Double"   , v_float_tcr
+        yield sys, "Single"   , v_float32_tcr
+        if not compilingFSharpCore then
+            yield sysGenerics, "IEnumerable`1", v_seq_tcr |]
+            |> Array.map (fun (qualifier, nm, tcr) ->
                 let ty = mkNonGenericTy tcr
-                nm, findSysTyconRef sysLib nm, (fun typars nullness ->
+                nm, findSysTyconRef qualifier nm, (fun typars nullness ->
                     match typars, nullness with
                     | [], Nullness.Known NullnessInfo.WithoutNull -> ty
                     | [], nullness -> mkNonGenericTyWithNullness tcr nullness

@@ -528,24 +528,13 @@ let f (x: {declaredType}) = ()
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual formattedType
 
     [<Theory>]
-    [<InlineData("IEnumerable<int>", "IEnumerable<int>")>]
-    let ``Format explicit IEnumerable as IEnumerable`` declaredType formattedType =
+    [<InlineData("let x: IEnumerable<int> = []", "IEnumerable<int>")>]
+    [<InlineData("let x = [1].AsEnumerable()", "int seq")>]
+    let ``Format IEnumerable`` code formattedType =
         let _, checkResults = getParseAndCheckResults $"""
 open System.Collections.Generic
-let f (x: {declaredType}) = ()
-"""
-        let symbolUse = findSymbolUseByName "x" checkResults
-        let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
-        let typeArg = symbol.FullType
-        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual formattedType
-
-    [<Theory>]
-    [<InlineData("IEnumerable<int>", "int seq")>]
-    let ``Format implicit IEnumerable as seq`` declaredType formattedType =
-        let _, checkResults = getParseAndCheckResults $"""
 open System.Linq
-
-let x = [1].AsEnumerable()
+{code}
 """
         let symbolUse = findSymbolUseByName "x" checkResults
         let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
