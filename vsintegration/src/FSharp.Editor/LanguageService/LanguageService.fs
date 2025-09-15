@@ -322,7 +322,8 @@ type internal FSharpPackage() as this =
     do FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
 #if DEBUG
-    let flushTelemetry = Logging.FSharpServiceTelemetry.otelExport ()
+    let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
+    do DebugHelpers.FSharpServiceTelemetry.listenToAll()
 
     override this.Dispose(disposing: bool) =
         base.Dispose(disposing: bool)
@@ -335,19 +336,25 @@ type internal FSharpPackage() as this =
         base.RegisterInitializeAsyncWork(packageRegistrationTasks)
 
         packageRegistrationTasks.AddTask(
-            false,
+            true,
             (fun _tasks cancellationToken ->
-                cancellableTask {
+                foregroundCancellableTask {
+                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+                    this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>) |> ignore
+
                     let! commandService = this.GetServiceAsync(typeof<IMenuCommandService>)
                     let commandService = commandService :?> OleMenuCommandService
 
                     // FSI-LINKAGE-POINT: sited init
                     FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitializeSited (this :> Package) commandService
+                }
+                |> CancellableTask.startAsTask cancellationToken)
+        )
 
-                    // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-                    let _fsiPropertyPage =
-                        this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>)
-
+        packageRegistrationTasks.AddTask(
+            false,
+            (fun _tasks cancellationToken ->
+                cancellableTask {
                     let workspace =
                         this.ComponentModel.DefaultExportProvider.GetExportedValue<VisualStudioWorkspace>()
 
@@ -371,6 +378,9 @@ type internal FSharpPackage() as this =
 
                     let projectContextFactory =
                         this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
+
+                    let _ =
+                        this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
 
                     let miscFilesWorkspace =
                         this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
