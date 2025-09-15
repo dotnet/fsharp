@@ -323,7 +323,7 @@ type internal FSharpPackage() as this =
 
 #if DEBUG
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
-    do DebugHelpers.FSharpServiceTelemetry.listenToAll()
+    do DebugHelpers.FSharpServiceTelemetry.listenToAll ()
 
     override this.Dispose(disposing: bool) =
         base.Dispose(disposing: bool)

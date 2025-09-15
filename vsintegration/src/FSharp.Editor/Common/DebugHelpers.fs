@@ -34,14 +34,22 @@ open Microsoft.VisualStudio.Threading
 
 module FSharpOutputPane =
 
-    let private pane = AsyncLazy(fun () -> task {
-        do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
-        let! window = AsyncServiceProvider.GlobalProvider.GetServiceAsync<SVsOutputWindow, IVsOutputWindow>()
-        window.CreatePane(ref fsharpOutputGuid, "F# Language Service", Convert.ToInt32 true, Convert.ToInt32 false) |> ignore
-        match window.GetPane(ref fsharpOutputGuid) with
-        | 0, pane -> return pane
-        | _ -> return failwith "Could not get F# output pane"
-    }, ThreadHelper.JoinableTaskFactory)
+    let private pane =
+        AsyncLazy(
+            fun () ->
+                task {
+                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    let! window = AsyncServiceProvider.GlobalProvider.GetServiceAsync<SVsOutputWindow, IVsOutputWindow>()
+
+                    window.CreatePane(ref fsharpOutputGuid, "F# Language Service", Convert.ToInt32 true, Convert.ToInt32 false)
+                    |> ignore
+
+                    match window.GetPane(ref fsharpOutputGuid) with
+                    | 0, pane -> return pane
+                    | _ -> return failwith "Could not get F# output pane"
+                }
+            , ThreadHelper.JoinableTaskFactory
+        )
 
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
