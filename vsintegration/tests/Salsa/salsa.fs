@@ -80,6 +80,14 @@ module internal Salsa =
             
         let hostObjectCachePerFilename = new System.Collections.Generic.Dictionary<_,_>()  // REVIEW: this will leak, but hopefully only a small amount (e.g. maybe about 1K per project, and thus maybe just a few megs total for all 2000 unit tests)
 
+        let appendAssemblySearchPaths (project: Project) (extraPaths: string) =
+            let current = project.GetProperty("AssemblySearchPaths").EvaluatedValue
+            let newValue =
+                match current with
+                | null | "" -> extraPaths
+                | existing -> existing + ";" + extraPaths
+            project.SetGlobalProperty("AssemblySearchPaths", newValue) |> ignore
+
         /// Get the MSBuild project for the given project file.
         let GetProject (projectFileName:string, configuration:string, platform:string) = 
             let project, justCreated, theHostObject =
@@ -91,9 +99,9 @@ module internal Salsa =
                                   | _ -> failwith "multiple projects found"
                     match project with
                     | null ->
-                        let project = GlobalEngine().LoadProject(projectFileName, "4.0")
+                        let project = GlobalEngine().LoadProject(projectFileName)
                         // Set global properties.
-                        SetGlobalProperty(project, "AssemblySearchPaths", "{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}")
+                        appendAssemblySearchPaths project "{CandidateAssemblyFiles};{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}"
                         SetGlobalProperty(project, "BuildingInsideVisualStudio", "true")
                         SetGlobalProperty(project, "Configuration", configuration)
                         SetGlobalProperty(project, "Platform", platform)
