@@ -462,16 +462,16 @@ let f (x: int list seq) = ()
         let topLevelPrefixStyle =
             displayContext.WithTopLevelPrefixGenericParameters()
 
-        let topLevelPrefixWithNestedSuffixStyle1 =
+        let topLevelPrefixWithNestedPrefixStyle1 =
             displayContext.WithPrefixGenericParameters().WithTopLevelPrefixGenericParameters()
 
-        // Idempotent
-        let topLevelPrefixWithNestedSuffixStyle2 =
-            topLevelPrefixWithNestedSuffixStyle1.WithTopLevelPrefixGenericParameters()
+        // Should be idempotent
+        let topLevelPrefixWithNestedPrefixStyle2 =
+            topLevelPrefixWithNestedPrefixStyle1.WithTopLevelPrefixGenericParameters()
 
         [ typeArg.Format(topLevelPrefixStyle)
-          typeArg.Format(topLevelPrefixWithNestedSuffixStyle1)
-          typeArg.Format(topLevelPrefixWithNestedSuffixStyle2) ]
+          typeArg.Format(topLevelPrefixWithNestedPrefixStyle1)
+          typeArg.Format(topLevelPrefixWithNestedPrefixStyle2) ]
         |> shouldBe [
             "seq<int list>"
             "seq<list<int>>"
