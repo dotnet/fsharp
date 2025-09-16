@@ -1,4 +1,10 @@
 {
-  "FSharpLspExtension.FSharpLanguageServerProvider.DisplayName": "FSharp Analyzer LSP server"
-
+  "FSharpLspExtension.FSharpLanguageServerProvider.DisplayName": "FSharp Analyzer LSP server",
+  "F#": "F# LSP",
+  "FSharpSettings.Old": "Old extension (devenv process)",
+  "FSharpSettings.Both": "Both extensions",
+  "FSharpSettings.LSP": "LSP (separate process)",
+  "FSharpSettings.Unset": "Default",
+  "FSharpSettings.GetDiagnosticsFrom": "Get diagnostics from",
+  "FSharpSettings.GetDiagnosticsFrom.Description": "Which extension provides diagnostics (restart required)"
 }
