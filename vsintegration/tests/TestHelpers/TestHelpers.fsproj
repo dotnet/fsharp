@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <NoWarn>$(NoWarn);44;45;47;52;58;75;1204</NoWarn>
+    <TolerateUnusedBindings>true</TolerateUnusedBindings>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Editor.Tests" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="VSInstallDiscovery.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+  </ItemGroup>
+
+</Project>
