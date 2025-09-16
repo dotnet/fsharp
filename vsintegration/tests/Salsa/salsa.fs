@@ -80,14 +80,6 @@ module internal Salsa =
             
         let hostObjectCachePerFilename = new System.Collections.Generic.Dictionary<_,_>()  // REVIEW: this will leak, but hopefully only a small amount (e.g. maybe about 1K per project, and thus maybe just a few megs total for all 2000 unit tests)
 
-        let appendAssemblySearchPaths (project: Project) (extraPaths: string) =
-            let current = project.GetProperty("AssemblySearchPaths").EvaluatedValue
-            let newValue =
-                match current with
-                | null | "" -> extraPaths
-                | existing -> existing + ";" + extraPaths
-            project.SetGlobalProperty("AssemblySearchPaths", newValue) |> ignore
-
         /// Get the MSBuild project for the given project file.
         let GetProject (projectFileName:string, configuration:string, platform:string) = 
             let project, justCreated, theHostObject =
@@ -99,9 +91,9 @@ module internal Salsa =
                                   | _ -> failwith "multiple projects found"
                     match project with
                     | null ->
-                        let project = GlobalEngine().LoadProject(projectFileName)
+                        let project = GlobalEngine().LoadProject(projectFileName, "4.0")
                         // Set global properties.
-                        appendAssemblySearchPaths project "{CandidateAssemblyFiles};{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}"
+                        SetGlobalProperty(project, "AssemblySearchPaths", "{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}")
                         SetGlobalProperty(project, "BuildingInsideVisualStudio", "true")
                         SetGlobalProperty(project, "Configuration", configuration)
                         SetGlobalProperty(project, "Platform", platform)
@@ -642,7 +634,7 @@ module internal Salsa =
             let sb = new System.Text.StringBuilder()
             let Append (text:string) = 
                 sb.Append(text+"\r\n") |> ignore
-            Append "<Project ToolsVersion='Current' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
+            Append "<Project ToolsVersion='4.0' DefaultTargets='Build' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>"
             Append "    <PropertyGroup>"
 //            The salsa layer does Configuration/Platform in a kind of hacky way
 //            Append "        <Configuration Condition=\" '$(Configuration)' == '' \">Debug</Configuration>"
@@ -654,15 +646,11 @@ module internal Salsa =
 //                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
 //                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
 //            else
-            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "v4.7.2")
+            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.7.2")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
                 Append (sprintf "            %s;" disabledWarning)                            
             Append "        </NoWarn>"
-            if references = ["System.Configuration",false] then
-                Append "        <FSharpTargetsDiagnostic>true</FSharpTargetsDiagnostic>"
-                Append "        <FSharpAutoImportDiag>true</FSharpAutoImportDiag>"
-                
             Append "        <DefineConstants>"
             for define in defines do
                 Append (sprintf "            %s;" define)                            
@@ -712,13 +700,7 @@ module internal Salsa =
             Append otherProjMisc
 
             let t = targetsFileFolder.TrimEnd([|'\\'|])
-            Append "  <PropertyGroup>"
-            Append (sprintf "    <FSharpTargetsPath>%s\\Microsoft.FSharp.Targets</FSharpTargetsPath>" t)
-            Append "    <VisualStudioVersion>17.0</VisualStudioVersion>"
-            Append "  </PropertyGroup>"
-            Append "  <Import Project=\"$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.targets\" Condition=\"Exists('$(MSBuildExtensionsPath)\\$(MSBuildToolsVersion)\\Microsoft.Common.targets')\" />"
-            Append "  <Import Project=\"$(MSBuildToolsPath)\\Microsoft.Common.CurrentVersion.targets\" Condition=\"Exists('$(MSBuildToolsPath)\\Microsoft.Common.CurrentVersion.targets')\" />"
-            Append "  <Import Project=\"$(FSharpTargetsPath)\" Condition=\"Exists('$(FSharpTargetsPath)')\" />"
+            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.Targets\"/>" t)
             Append "</Project>"
             sb.ToString()
 

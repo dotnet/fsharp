@@ -358,15 +358,6 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                     yield "--define:COMPILED"
 
                 |]
-
-                        // FWDIAG LS
-            try
-                let hasNF = flags |> Array.exists ((=) "--noframework")
-                System.Diagnostics.Trace.WriteLine(sprintf "FWDIAG-LS GetParseTree VS=%s hasNoFramework=%b flags=%A"
-                                                       (System.Environment.GetEnvironmentVariable("VisualStudioVersion"))
-                                                       hasNF flags)
-            with _ -> ()
-
             // get a sync parse of the file
             let co, _ = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
