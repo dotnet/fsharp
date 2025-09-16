@@ -46,7 +46,7 @@ ImplFile
                                  None),
                               Named
                                 (SynIdent (a, None), false, None, (6,9--6,10)),
-                              None, Const (Int32 3, (6,13--6,14)), (6,4--8,13),
+                              None, Const (Int32 3, (6,13--6,14)), (6,4--6,14),
                               Yes (6,4--6,14),
                               { LeadingKeyword = Let (6,4--6,8)
                                 InlineKeyword = None

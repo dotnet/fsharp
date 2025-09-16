@@ -20,7 +20,7 @@ ImplFile
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
                            Named (SynIdent (x, None), false, None, (3,9--3,10)),
-                           None, Ident y, (3,4--5,13), Yes (3,4--3,14),
+                           None, Ident y, (3,4--3,14), Yes (3,4--3,14),
                            { LeadingKeyword = Let (3,4--3,8)
                              InlineKeyword = None
                              EqualsRange = Some (3,11--3,12) });
