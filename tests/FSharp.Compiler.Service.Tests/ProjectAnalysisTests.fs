@@ -3216,7 +3216,7 @@ let ``Test Project22 IList contents`` () =
     set [ for x in ilistTypeDefn.AllInterfaces -> x.TypeDefinition.DisplayName, attribsOfSymbol x.TypeDefinition ]
        |> shouldEqual
               (set [("IList", ["interface"]); ("ICollection", ["interface"]);
-                    ("IEnumerable", ["interface"]); ("IEnumerable", ["interface"])])
+                    ("IEnumerable", ["interface"]); ("seq", ["abbrev"])])
 
     arrayTypes |> shouldEqual [|("[]", 1); ("[,,]", 3)|]
 

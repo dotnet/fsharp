@@ -29,7 +29,7 @@ ImplFile
                                    ((false, true), Const (Int32 1, (4,35--4,36)),
                                     (4,28--4,36),
                                     { YieldOrReturnKeyword = (4,28--4,34) }),
-                                 (4,26--4,38)), (4,20--4,38)), (4,4--5,14),
+                                 (4,26--4,38)), (4,20--4,38)), (4,4--4,38),
                            Yes (4,4--4,38), { LeadingKeyword = Let (4,4--4,8)
                                               InlineKeyword = None
                                               EqualsRange = Some (4,18--4,19) })],

@@ -226,7 +226,7 @@ let res8 = abs 5.0<kg>
             [
                 mkDesc
                     "GroupBy"
-                    "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
+                    "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : IGrouping<'TKey,'TSource> seq
 'TSource is int * string
 'TKey is int"
                 mkDesc
