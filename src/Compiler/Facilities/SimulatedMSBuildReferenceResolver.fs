@@ -43,8 +43,23 @@ let private Net472 = "v4.7.2"
 [<Literal>]
 let private Net48 = "v4.8"
 
+[<Literal>]
+let private Net481 = "v4.8.1"
+
 let SupportedDesktopFrameworkVersions =
-    [ Net48; Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
+    [
+        Net481
+        Net48
+        Net472
+        Net471
+        Net47
+        Net462
+        Net461
+        Net46
+        Net452
+        Net451
+        Net45
+    ]
 
 let private SimulatedMSBuildResolver =
 
