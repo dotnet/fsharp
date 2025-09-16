@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Include="VSInstallDiscovery.fs" />
+    <Compile Include="VSInstallDiscoveryTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
