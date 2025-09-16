@@ -20,11 +20,18 @@ ImplFile
                      None, (1,4--1,7)), None,
                   AnonRecd
                     (false, Some (Ident x, Offside ((1,15--1,19), None)),
-                     [(SynLongIdent ([R; D], [(1,21--1,22)], [None; None]),
-                       Some (1,24--1,25),
-                       Const (String ("s", Regular, (1,26--1,29)), (1,26--1,29)));
-                      (SynLongIdent ([A], [], [None]), Some (1,33--1,34),
-                       Const (Int32 3, (1,35--1,36)))], (1,10--1,39),
+                     [SynExprRecordField
+                        ((SynLongIdent ([R; D], [(1,21--1,22)], [None; None]),
+                          true), Some (1,24--1,25),
+                         Some
+                           (Const
+                              (String ("s", Regular, (1,26--1,29)), (1,26--1,29))),
+                         (1,20--1,29),
+                         Some (Semicolon ((1,29--1,30), Some (1,30))));
+                      SynExprRecordField
+                        ((SynLongIdent ([A], [], [None]), true),
+                         Some (1,33--1,34), Some (Const (Int32 3, (1,35--1,36))),
+                         (1,31--1,36), None)], (1,10--1,39),
                      { OpeningBraceRange = (1,10--1,12) }), (1,4--1,7),
                   NoneAtLet, { LeadingKeyword = Let (1,0--1,3)
                                InlineKeyword = None

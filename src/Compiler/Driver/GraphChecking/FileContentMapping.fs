@@ -361,6 +361,19 @@ let (|NameofExpr|_|) (e: SynExpr) : NameofResult voption =
         | _ -> ValueNone
     | _ -> ValueNone
 
+let visitRecordLikeExpr baseInfo copyInfo (recordFields: SynExprRecordField list) : FileContentEntry list =
+    let fieldNodes =
+        [
+            for SynExprRecordField(fieldName = (si, _); expr = expr) in recordFields do
+                yield! visitSynLongIdent si
+                yield! collectFromOption visitSynExpr expr
+        ]
+
+    match baseInfo, copyInfo with
+    | Some(t, e, _, _, _), None -> visitSynType t @ visitSynExpr e @ fieldNodes
+    | None, Some(e, _) -> visitSynExpr e @ fieldNodes
+    | _ -> fieldNodes
+
 let visitSynExpr (e: SynExpr) : FileContentEntry list =
     let rec visit (e: SynExpr) (continuation: FileContentEntry list -> FileContentEntry list) : FileContentEntry list =
         match e with
@@ -375,28 +388,13 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                 List.map visit exprs
 
             Continuation.concatenate continuations continuation
-        | SynExpr.AnonRecd(copyInfo = copyInfo; recordFields = recordFields) ->
-            let continuations =
-                match copyInfo with
-                | None -> List.map (fun (_, _, e) -> visit e) recordFields
-                | Some(cp, _) -> visit cp :: List.map (fun (_, _, e) -> visit e) recordFields
-
-            Continuation.concatenate continuations continuation
         | SynExpr.ArrayOrList(exprs = exprs) ->
             let continuations = List.map visit exprs
             Continuation.concatenate continuations continuation
+        | SynExpr.AnonRecd(copyInfo = copyInfo; recordFields = recordFields) ->
+            continuation (visitRecordLikeExpr None copyInfo recordFields)
         | SynExpr.Record(baseInfo = baseInfo; copyInfo = copyInfo; recordFields = recordFields) ->
-            let fieldNodes =
-                [
-                    for SynExprRecordField(fieldName = (si, _); expr = expr) in recordFields do
-                        yield! visitSynLongIdent si
-                        yield! collectFromOption visitSynExpr expr
-                ]
-
-            match baseInfo, copyInfo with
-            | Some(t, e, _, _, _), None -> visit e (fun nodes -> [ yield! visitSynType t; yield! nodes; yield! fieldNodes ] |> continuation)
-            | None, Some(e, _) -> visit e (fun nodes -> nodes @ fieldNodes |> continuation)
-            | _ -> continuation fieldNodes
+            continuation (visitRecordLikeExpr baseInfo copyInfo recordFields)
         | SynExpr.New(targetType = targetType; expr = expr) -> visit expr (fun nodes -> visitSynType targetType @ nodes |> continuation)
         | SynExpr.ObjExpr(objType, argOptions, _, bindings, members, extraImpls, _, _) ->
             [

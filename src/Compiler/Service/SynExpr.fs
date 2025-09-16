@@ -1107,22 +1107,12 @@ module SynExpr =
             | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), (PrefixApp _ | InfixApp _ | Dangling.Problematic _) ->
                 true
 
-            | SynExpr.Record(recordFields = recordFields), Dangling.Problematic _ ->
+            | (SynExpr.Record(recordFields = recordFields) | SynExpr.AnonRecd(recordFields = recordFields)), Dangling.Problematic _ ->
                 let rec loop recordFields =
                     match recordFields with
                     | [] -> false
                     | SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _) :: SynExprRecordField(
                         fieldName = SynLongIdent(id = id :: _), _) :: _ -> problematic inner.Range id.idRange
-                    | _ :: recordFields -> loop recordFields
-
-                loop recordFields
-
-            | SynExpr.AnonRecd(recordFields = recordFields), Dangling.Problematic _ ->
-                let rec loop recordFields =
-                    match recordFields with
-                    | [] -> false
-                    | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ ->
-                        problematic inner.Range id.idRange
                     | _ :: recordFields -> loop recordFields
 
                 loop recordFields
