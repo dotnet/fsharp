@@ -323,7 +323,6 @@ type internal FSharpPackage() as this =
 
 #if DEBUG
     let flushTelemetry = DebugHelpers.FSharpServiceTelemetry.otelExport ()
-    do DebugHelpers.FSharpServiceTelemetry.listenToAll ()
 
     override this.Dispose(disposing: bool) =
         base.Dispose(disposing: bool)
@@ -339,6 +338,11 @@ type internal FSharpPackage() as this =
             true,
             (fun _tasks cancellationToken ->
                 foregroundCancellableTask {
+                    let exportProvider = this.ComponentModel.DefaultExportProvider
+
+                    let theme = exportProvider.GetExport<ISetThemeColors>().Value
+                    theme.SetColors()
+
                     // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                     this.GetDialogPage(typeof<FSharp.Interactive.FsiPropertyPage>) |> ignore
 
@@ -355,8 +359,9 @@ type internal FSharpPackage() as this =
             false,
             (fun _tasks cancellationToken ->
                 cancellableTask {
-                    let workspace =
-                        this.ComponentModel.DefaultExportProvider.GetExportedValue<VisualStudioWorkspace>()
+                    let exportProvider = this.ComponentModel.DefaultExportProvider
+
+                    let workspace = exportProvider.GetExportedValue<VisualStudioWorkspace>()
 
                     let fsharpWorkspaceService =
                         workspace.Services.GetService<IFSharpWorkspaceService>()
@@ -393,6 +398,15 @@ type internal FSharpPackage() as this =
                         LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
                         |> ignore
 
+                    let globalOptions = exportProvider.GetExport<FSharpGlobalOptions>().Value
+
+                    let solutionAnalysis =
+                        workspace.Services.GetService<EditorOptions>().Advanced.SolutionBackgroundAnalysis
+
+                    globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
+
+                    globalOptions.BlockForCompletionItems <- false
+
                 }
                 |> CancellableTask.startAsTask cancellationToken)
         )
@@ -417,22 +431,6 @@ type internal FSharpPackage() as this =
 [<Guid(FSharpConstants.languageServiceGuidString)>]
 type internal FSharpLanguageService(package: FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
-
-    member _.Initialize() =
-        let exportProvider = package.ComponentModel.DefaultExportProvider
-        let globalOptions = exportProvider.GetExport<FSharpGlobalOptions>().Value
-
-        let workspace = package.ComponentModel.GetService<VisualStudioWorkspace>()
-
-        let solutionAnalysis =
-            workspace.Services.GetService<EditorOptions>().Advanced.SolutionBackgroundAnalysis
-
-        globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
-
-        globalOptions.BlockForCompletionItems <- false
-
-        let theme = exportProvider.GetExport<ISetThemeColors>().Value
-        theme.SetColors()
 
     override _.ContentTypeName = FSharpConstants.FSharpContentTypeName
     override _.LanguageName = FSharpConstants.FSharpLanguageName
