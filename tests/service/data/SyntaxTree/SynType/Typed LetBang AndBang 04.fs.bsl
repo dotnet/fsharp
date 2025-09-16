@@ -37,7 +37,7 @@ ImplFile
                            App
                              (Atomic, false, Ident asyncPerson,
                               Const (Unit, (4,57--4,59)), (4,46--4,59)),
-                           (4,4--6,15), Yes (4,4--4,59),
+                           (4,4--4,59), Yes (4,4--4,59),
                            { LeadingKeyword = Let (4,4--4,8)
                              InlineKeyword = None
                              EqualsRange = Some (4,44--4,45) });
