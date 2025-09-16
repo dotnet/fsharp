@@ -17,6 +17,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\XunitSetup.fs">
+        <Link>XunitSetup.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\NullnessShims.fs" />
     <Compile Include="AssemblyResolver.fs" />
     <Compile Include="$(FSharpSourcesRoot)\Compiler\Utilities\InternalCollections.fsi">
@@ -79,6 +82,7 @@
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\FSharp.ProjectSystem.FSharp.fsproj" />
+    <ProjectReference Include="..\..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
   <!-- assemblies used during tests -->
