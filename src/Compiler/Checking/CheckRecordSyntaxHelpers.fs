@@ -100,7 +100,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             )
         | _ -> None
 
-    let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
+    let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields (exprBeingAssigned: SynExpr) =
         match innerFields with
         | [] -> failwith "unreachable"
         | (fieldId: Ident, item) :: rest ->
@@ -115,11 +115,13 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                     synExprRecd copyInfo fieldId rest exprBeingAssigned
 
             match item with
-            | Item.AnonRecdField(
-                anonInfo = {
-                               AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                           }) ->
-                let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
+            | Item.AnonRecdField(anonInfo = { TupInfo = TupInfo.Const isStruct }) ->
+                let fieldName = (SynLongIdent([ fieldId ], [], [ None ]), true)
+                let fieldRange = unionRanges fieldId.idRange nestedField.Range
+
+                let fields =
+                    [ SynExprRecordField(fieldName, None, Some nestedField, fieldRange, None) ]
+
                 SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =

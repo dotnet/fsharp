@@ -641,7 +641,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             | Some(e, _) -> yield! walkExpr true e
                             | None -> ()
 
-                            yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
+                            yield! walkExprs (fs |> List.choose (fun (SynExprRecordField(expr = e)) -> e))
 
                         | SynExpr.ObjExpr(argOptions = args; bindings = bs; members = ms; extraImpls = is) ->
                             let bs = unionBindingAndMembers bs ms

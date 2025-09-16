@@ -378,8 +378,15 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.AnonRecd(copyInfo = copyInfo; recordFields = recordFields) ->
             let continuations =
                 match copyInfo with
-                | None -> List.map (fun (_, _, e) -> visit e) recordFields
-                | Some(cp, _) -> visit cp :: List.map (fun (_, _, e) -> visit e) recordFields
+                | None ->
+                    recordFields
+                    |> List.choose (fun (SynExprRecordField(expr = e)) -> e)
+                    |> List.map visit
+                | Some(cp, _) ->
+                    visit cp
+                    :: (recordFields
+                        |> List.choose (fun (SynExprRecordField(expr = e)) -> e)
+                        |> List.map visit)
 
             Continuation.concatenate continuations continuation
         | SynExpr.ArrayOrList(exprs = exprs) ->

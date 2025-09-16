@@ -915,11 +915,12 @@ let rec synExprContainsError inpExpr =
         | SynExpr.ArrayOrList(_, es, _)
         | SynExpr.Tuple(_, es, _, _) -> walkExprs es
 
-        | SynExpr.AnonRecd(copyInfo = origExpr; recordFields = flds) ->
+        | SynExpr.AnonRecd(copyInfo = origExpr; recordFields = fs) ->
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
+            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
+                walkExprs flds)
 
         | SynExpr.Record(_, origExpr, fs, _) ->
             (match origExpr with

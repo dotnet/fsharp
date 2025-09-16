@@ -7,8 +7,9 @@ ImplFile
           [Expr
              (AnonRecd
                 (true, None,
-                 [(SynLongIdent ([Foo], [], [None]), Some (3,11--3,12),
-                   Ident someValue)], (2,0--5,16),
+                 [SynExprRecordField
+                    ((SynLongIdent ([Foo], [], [None]), true), Some (3,11--3,12),
+                     Some (Ident someValue), (3,7--5,13), None)], (2,0--5,16),
                  { OpeningBraceRange = (3,4--3,6) }), (2,0--5,16));
            Expr
              (AnonRecd

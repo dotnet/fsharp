@@ -1121,8 +1121,8 @@ module SynExpr =
                 let rec loop recordFields =
                     match recordFields with
                     | [] -> false
-                    | (_, Some _blockSeparator, SynExpr.Paren(expr = Is inner)) :: (SynLongIdent(id = id :: _), _, _) :: _ ->
-                        problematic inner.Range id.idRange
+                    | SynExprRecordField(expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _) :: SynExprRecordField(
+                        fieldName = SynLongIdent(id = id :: _), _) :: _ -> problematic inner.Range id.idRange
                     | _ :: recordFields -> loop recordFields
 
                 loop recordFields
