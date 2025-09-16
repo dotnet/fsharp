@@ -527,6 +527,20 @@ let f (x: {declaredType}) = ()
         let typeArg = symbol.FullType
         typeArg.Format(symbolUse.DisplayContext) |> shouldEqual formattedType
 
+    [<Theory>]
+    [<InlineData("let x: IEnumerable<int> = []", "IEnumerable<int>")>]
+    [<InlineData("let x = [1].AsEnumerable()", "int seq")>]
+    let ``Format IEnumerable`` code formattedType =
+        let _, checkResults = getParseAndCheckResults $"""
+open System.Collections.Generic
+open System.Linq
+{code}
+"""
+        let symbolUse = findSymbolUseByName "x" checkResults
+        let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        let typeArg = symbol.FullType
+        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual formattedType
+
 
 module FSharpMemberOrFunctionOrValue =
     let private chooseMemberOrFunctionOrValue (su: FSharpSymbolUse) =
