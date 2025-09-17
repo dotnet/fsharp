@@ -278,6 +278,6 @@ module MemberDefinitions_OverloadingMembers =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 438, Line 7, Col 17, Line 7, Col 18, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S'.")
-            (Error 438, Line 8, Col 17, Line 8, Col 18, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S'.")
+            (Error 438, Line 8, Col 19, Line 8, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
+            (Error 438, Line 9, Col 19, Line 9, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
         ]
