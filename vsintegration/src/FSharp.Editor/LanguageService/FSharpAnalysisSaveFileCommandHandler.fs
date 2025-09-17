@@ -8,7 +8,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 open Microsoft.VisualStudio.Text.Editor.Commanding.Commands
 open Microsoft.VisualStudio.Commanding
 open Microsoft.VisualStudio.Utilities
@@ -90,7 +90,7 @@ type internal FSharpAnalysisSaveFileCommandHandler [<ImportingConstructor>] (ana
                                         analyzerService.Reanalyze(workspace, documentIds = docIdsToReanalyze)
                                 with ex ->
                                     TelemetryReporter.ReportFault(TelemetryEvents.AnalysisSaveFileHandler, e = ex)
-                                    logException ex
+                                    FSharpOutputPane.logException ex
                             }
                             |> CancellableTask.startWithoutCancellation
                             |> ignore // fire and forget
