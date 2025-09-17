@@ -56,29 +56,16 @@ module FSharpOutputPane =
     let private log logType msg =
         task {
             System.Diagnostics.Trace.TraceInformation(msg)
-            let time = DateTime.Now.ToString("hh:mm:ss tt")
-
             let! pane = pane.GetValueAsync()
 
             do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
 
             match logType with
-            | LogType.Message ->
-                String.Format("[{0}{1}] {2}{3}", "", time, msg, Environment.NewLine)
-                |> pane.OutputStringThreadSafe
-                |> ignore
-            | LogType.Info ->
-                String.Format("[{0}{1}] {2}{3}", "INFO ", time, msg, Environment.NewLine)
-                |> pane.OutputStringThreadSafe
-                |> ignore
-            | LogType.Warn ->
-                String.Format("[{0}{1}] {2}{3}", "WARN ", time, msg, Environment.NewLine)
-                |> pane.OutputStringThreadSafe
-                |> ignore
-            | LogType.Error ->
-                String.Format("[{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine)
-                |> pane.OutputStringThreadSafe
-                |> ignore
+            | LogType.Message -> $"{msg}"
+            | LogType.Info -> $"[INFO] {msg}"
+            | LogType.Warn -> $"[WARN] {msg}"
+            | LogType.Error -> $"[ERROR] {msg}"
+            |> pane.OutputStringThreadSafe |> ignore
         }
         |> ignore
 
@@ -102,6 +89,7 @@ module FSharpOutputPane =
 
 module FSharpServiceTelemetry =
     open FSharp.Compiler.Caches
+    open System.Threading.Tasks
 
     let listen filter =
         let indent (activity: Activity) =
@@ -129,6 +117,13 @@ module FSharpServiceTelemetry =
             )
 
         ActivitySource.AddActivityListener(listener)
+
+    let periodicallyDisplayCacheStats() = backgroundTask {
+        CacheMetrics.ListenToAll()
+        while true do
+            do! Task.Delay(TimeSpan.FromSeconds 10.0)
+            FSharpOutputPane.logMsg (CacheMetrics.StatsToString())
+    }
 
 #if DEBUG
     open OpenTelemetry.Resources
