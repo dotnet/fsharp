@@ -255,3 +255,24 @@ let run() =
             """
             ]
 
+    [<Fact>]
+    let ``TailCall 07 - No tail call with pinned locals in recursive function``() =
+        FSharp """
+module TailCall07
+let rec countdown n = 
+    use ptr = fixed [| n |]
+    if n <= 0 then 
+        0
+    else 
+        countdown (n - 1)
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
+            """
+.locals init (native int V_0,
+             int32[] V_1,
+             int32& pinned V_2)
+            """
+            ]
+

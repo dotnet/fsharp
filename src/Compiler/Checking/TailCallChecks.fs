@@ -744,12 +744,15 @@ and CheckBinding cenv alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) :
     CheckLambdas isTop (Some v) cenv v.ShouldInline valReprInfo tailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv binds =
-    let mutable currentCenv = cenv
     for bind in binds do
         let (TBind(v, _, _)) = bind
         // Update the environment if this binding is fixed
-        if v.IsFixed then
-            currentCenv <- { currentCenv with hasPinnedLocals = true }
+        let currentCenv =
+            if v.IsFixed then
+                { cenv with hasPinnedLocals = true }
+            else
+                cenv
+
         CheckBinding currentCenv false PermitByRefExpr.Yes bind
 
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =

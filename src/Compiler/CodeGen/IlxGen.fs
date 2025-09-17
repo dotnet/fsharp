@@ -4495,6 +4495,7 @@ and CanTailcall
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
+
     if
         not hasStructObjArg
         && Option.isNone ccallInfo
