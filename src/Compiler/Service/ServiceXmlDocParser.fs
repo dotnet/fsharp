@@ -205,7 +205,8 @@ module XmlDocParsing =
                 | SynMemberDefn.ImplicitInherit _
                 | SynMemberDefn.Inherit _
                 | SynMemberDefn.ValField _
-                | SynMemberDefn.LetBindings _ -> ()
+                | SynMemberDefn.LetBindings _
+                | SynMemberDefn.Spread _ -> ()
             ]
 
         and getXmlDocablesInput input =

@@ -821,8 +821,9 @@ val internal ResolveField:
     ty: TType ->
     mp: Ident list ->
     id: Ident ->
+    isFromSpread: bool ->
     allFields: Ident list ->
-        FieldResolution list
+        FieldResolution list option
 
 /// Resolve a long identifier to a nested field
 val internal ResolveNestedField:

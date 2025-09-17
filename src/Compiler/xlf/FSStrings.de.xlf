@@ -92,6 +92,11 @@
         <target state="new">symbol '|' (directly before 'null')</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.DOT">
+        <source>symbol '...'</source>
+        <target state="new">symbol '...'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">Symbol "..^"</target>

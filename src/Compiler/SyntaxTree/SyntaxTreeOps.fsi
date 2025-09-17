@@ -379,3 +379,7 @@ val getGetterSetterAccess:
 
 /// Adds SynPat.Or pattern for unfinished empty clause above
 val addEmptyMatchClause: mBar1: range -> mBar2: range -> clauses: SynMatchClause list -> SynMatchClause list
+
+val (|SynFields|): synFieldsAndSpreads: SynFieldOrSpread list -> SynField list
+
+val (|SynSpreads|): synFieldsAndSpreads: SynFieldOrSpread list -> SynTypeSpread list

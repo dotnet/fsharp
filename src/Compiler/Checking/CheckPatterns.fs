@@ -457,12 +457,14 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let fieldPats = 
+    let fieldPats =
+        // This will obviously need to change if we support spreads in record patterns.
+        let isFromSpread = false
         fieldPats 
         |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
             match fieldLid.LongIdent with
-            | [id] -> ([], id), pat
-            | lid -> List.frontAndBack lid, pat)
+            | [id] -> isFromSpread, ([], id), pat
+            | lid -> isFromSpread, List.frontAndBack lid, pat)
     
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv

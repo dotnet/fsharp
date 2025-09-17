@@ -13,7 +13,11 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
-open TypedTreeOps
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type SynExprOrSpreadValue =
+    | SynExpr of SynExpr
+    | SpreadValue of TType * Expr
 
 /// Merges updates to nested record fields on the same level in record copy-and-update.
 ///
@@ -29,21 +33,23 @@ open TypedTreeOps
 /// which we here convert to
 ///
 /// { x with A = { x.A with B = 10; C = "" } }
-let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) list) =
+let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExprOrSpreadValue option) list) =
     let rec groupIfNested res xs =
         match xs with
         | [] -> res
         | [ x ] -> x :: res
         | x :: y :: ys ->
             match x, y with
-            | (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))), (_, Some(SynExpr.Record(recordFields = fields2))) ->
+            | (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.Record(baseInfo, copyInfo, fields1, m)))),
+              (_, Some(SynExprOrSpreadValue.SynExpr(SynExpr.Record(recordFields = fields2)))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
+                    (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m))))
 
                 groupIfNested res (reducedRecd :: ys)
-            | (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))), (_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
+            | (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia)))),
+              (_, Some(SynExprOrSpreadValue.SynExpr(SynExpr.AnonRecd(recordFields = fields2)))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
+                    (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia))))
 
                 groupIfNested res (reducedRecd :: ys)
             | _ -> groupIfNested (x :: res) (y :: ys)
@@ -118,18 +124,28 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             | Item.AnonRecdField(
                 anonInfo = {
                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                           }) ->
-                let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
+                           }
+                range = m) ->
+                let fields =
+                    [
+                        SynExprAnonRecordFieldOrSpread.Field(
+                            SynExprAnonRecordField(LongIdentWithDots([ fieldId ], []), None, nestedField, m),
+                            None
+                        )
+                    ]
+
                 SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =
                     [
-                        SynExprRecordField(
-                            (LongIdentWithDots([ fieldId ], []), true),
-                            None,
-                            Some nestedField,
-                            unionRanges fieldId.idRange nestedField.Range,
-                            None
+                        SynExprRecordFieldOrSpread.Field(
+                            SynExprRecordField(
+                                (LongIdentWithDots([ fieldId ], []), true),
+                                None,
+                                Some nestedField,
+                                unionRanges fieldId.idRange nestedField.Range,
+                                None
+                            )
                         )
                     ]
 
@@ -148,8 +164,15 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
         let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())
 
-        (accessIds, outerFieldId),
-        Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
+        let recdExpr =
+            match exprBeingAssigned with
+            | SynExprOrSpreadValue.SynExpr synExpr ->
+                Some(
+                    SynExprOrSpreadValue.SynExpr(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest synExpr)
+                )
+            | SynExprOrSpreadValue.SpreadValue _ -> Some exprBeingAssigned
+
+        (accessIds, outerFieldId), recdExpr
 
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
