@@ -26,9 +26,11 @@ module CacheMetrics =
 
     let mkTags (name: string) =
         let cacheId = Interlocked.Increment &nextCacheId
-        [| "name", box name; "cacheId", box cacheId |]
-        |> Array.map KeyValuePair
-        |> TagList
+        // Avoid TagList(ReadOnlySpan<...>) to support net472 runtime
+        let mutable tags = TagList()
+        tags.Add("name", box name)
+        tags.Add("cacheId", box cacheId)
+        tags
 
     let Add (tags: inref<TagList>) = adds.Add(1L, &tags)
     let Update (tags: inref<TagList>) = updates.Add(1L, &tags)
