@@ -116,7 +116,7 @@ module RecordTypes =
             (Warning 464, Line 15, Col 22, Line 15, Col 28, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
             (Warning 464, Line 15, Col 35, Line 15, Col 42, "This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.")
             (Error 5, Line 17, Col 1, Line 17, Col 5, "This field is not mutable")
-            (Error 1, Line 17, Col 16, Line 17, Col 22, "The type 'decimal<Kg>' does not match the type 'float<Kg>'")
+            (Error 1, Line 17, Col 16, Line 17, Col 22, "The type 'float<Kg>' does not match the type 'decimal<Kg>'")
             (Error 5, Line 18, Col 1, Line 18, Col 5, "This field is not mutable")
             (Error 1, Line 18, Col 16, Line 18, Col 21, "This expression was expected to have type\n    'float'    \nbut here has type\n    'decimal'    ")
         ]
