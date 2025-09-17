@@ -105,7 +105,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
-    <ProjectReference Include="..\TestHelpers\TestHelpers.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj" />
   </ItemGroup>
 

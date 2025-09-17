@@ -1652,7 +1652,7 @@ module internal VsActual =
 
     let vsInstallDir =
         // Use centralized VS installation discovery with graceful fallback
-        match Microsoft.VisualStudio.FSharp.TestHelpers.VSInstallDiscovery.tryGetVSInstallDir () with
+        match FSharp.Test.Utilities.VSInstallDiscovery.tryGetVSInstallDir () with
         | Some dir -> dir
         | None -> 
             // Fallback to legacy behavior for backward compatibility

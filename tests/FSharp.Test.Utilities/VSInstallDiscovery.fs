@@ -4,7 +4,7 @@
 /// Provides a centralized, robust, and graceful discovery mechanism for Visual Studio installations 
 /// used by integration/editor/unit tests under vsintegration/tests.
 [<CompilerMessage("This module is for test code only", 1204, IsHidden=true)>]
-module Microsoft.VisualStudio.FSharp.TestHelpers.VSInstallDiscovery
+module FSharp.Test.Utilities.VSInstallDiscovery
 
 open System
 open System.IO
@@ -31,14 +31,7 @@ let tryFindVSInstallation () : VSInstallResult =
             with
             | _ -> false
 
-    /// Strategy 1: FSHARP_VS_INSTALL_DIR (explicit override for tests)
-    let tryExplicitOverride () =
-        let envVar = Environment.GetEnvironmentVariable("FSHARP_VS_INSTALL_DIR")
-        if validateVSPath envVar then
-            Some (Found (Path.GetFullPath(envVar), "FSHARP_VS_INSTALL_DIR environment variable"))
-        else None
-
-    /// Strategy 2: VSAPPIDDIR (derive parent of Common7/IDE)
+    /// Strategy 1: VSAPPIDDIR (derive parent of Common7/IDE)
     let tryVSAppIdDir () =
         let envVar = Environment.GetEnvironmentVariable("VSAPPIDDIR")
         if not (String.IsNullOrEmpty(envVar)) then
@@ -51,9 +44,10 @@ let tryFindVSInstallation () : VSInstallResult =
             | _ -> None
         else None
 
-    /// Strategy 3: Highest version among VS*COMNTOOLS environment variables
+    /// Strategy 2: Highest version among VS*COMNTOOLS environment variables
     let tryVSCommonTools () =
         let vsVersions = [
+            ("VS180COMNTOOLS", 18) // Visual Studio 2026
             ("VS170COMNTOOLS", 17) // Visual Studio 2022
             ("VS160COMNTOOLS", 16) // Visual Studio 2019  
             ("VS150COMNTOOLS", 15) // Visual Studio 2017
@@ -74,7 +68,7 @@ let tryFindVSInstallation () : VSInstallResult =
                 | _ -> None
             else None)
 
-    /// Strategy 4: vswhere.exe (Visual Studio Installer)
+    /// Strategy 3: vswhere.exe (Visual Studio Installer)
     let tryVSWhere () =
         try
             let programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
@@ -104,18 +98,15 @@ let tryFindVSInstallation () : VSInstallResult =
         | _ -> None
 
     // Try each strategy in order of precedence
-    match tryExplicitOverride () with
+    match tryVSAppIdDir () with
     | Some result -> result
     | None ->
-        match tryVSAppIdDir () with
+        match tryVSCommonTools () with
         | Some result -> result
         | None ->
-            match tryVSCommonTools () with
+            match tryVSWhere () with
             | Some result -> result
-            | None ->
-                match tryVSWhere () with
-                | Some result -> result
-                | None -> NotFound "No Visual Studio installation found using any discovery method"
+            | None -> NotFound "No Visual Studio installation found using any discovery method"
 
 /// Gets the VS installation directory, with graceful fallback behavior.
 /// Returns None if no VS installation can be found, allowing callers to handle gracefully.

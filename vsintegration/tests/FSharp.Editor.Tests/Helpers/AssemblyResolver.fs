@@ -8,7 +8,7 @@ open System.Reflection
 
 module AssemblyResolver =
     open System.Globalization
-    open Microsoft.VisualStudio.FSharp.TestHelpers.VSInstallDiscovery
+    open FSharp.Test.Utilities.VSInstallDiscovery
 
     let vsInstallDir =
         // Use centralized VS installation discovery with graceful fallback
