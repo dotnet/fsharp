@@ -65,7 +65,8 @@ module FSharpOutputPane =
             | LogType.Info -> $"[INFO] {msg}"
             | LogType.Warn -> $"[WARN] {msg}"
             | LogType.Error -> $"[ERROR] {msg}"
-            |> pane.OutputStringThreadSafe |> ignore
+            |> pane.OutputStringThreadSafe
+            |> ignore
         }
         |> ignore
 
@@ -118,12 +119,14 @@ module FSharpServiceTelemetry =
 
         ActivitySource.AddActivityListener(listener)
 
-    let periodicallyDisplayCacheStats() = backgroundTask {
-        CacheMetrics.ListenToAll()
-        while true do
-            do! Task.Delay(TimeSpan.FromSeconds 10.0)
-            FSharpOutputPane.logMsg (CacheMetrics.StatsToString())
-    }
+    let periodicallyDisplayCacheStats () =
+        backgroundTask {
+            CacheMetrics.ListenToAll()
+
+            while true do
+                do! Task.Delay(TimeSpan.FromSeconds 10.0)
+                FSharpOutputPane.logMsg (CacheMetrics.StatsToString())
+        }
 
 #if DEBUG
     open OpenTelemetry.Resources

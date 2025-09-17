@@ -46,11 +46,9 @@ module CacheMetrics =
         let total key = totals[key].Value
 
         let mutable ratio = Double.NaN
-        
+
         let updateRatio () =
-            ratio <-
-                float (total hits.Name)
-                / float (total hits.Name + total misses.Name)
+            ratio <- float (total hits.Name) / float (total hits.Name + total misses.Name)
 
         member _.Incr key v =
             assert (totals.ContainsKey key)
@@ -66,33 +64,42 @@ module CacheMetrics =
 
         override _.ToString() =
             let parts =
-                [ for kv in totals do
-                    yield $"{kv.Key}={kv.Value.Value}"
-                  if not (Double.IsNaN ratio) then
-                      yield $"hit-ratio={ratio:P2}" ]
+                [
+                    for kv in totals do
+                        yield $"{kv.Key}={kv.Value.Value}"
+                    if not (Double.IsNaN ratio) then
+                        yield $"hit-ratio={ratio:P2}"
+                ]
+
             String.Join(", ", parts)
 
     let statsByName = ConcurrentDictionary<string, Stats>()
 
-    let getStatsByName name = statsByName.GetOrAdd(name, fun _ -> Stats ())
+    let getStatsByName name =
+        statsByName.GetOrAdd(name, fun _ -> Stats())
 
     let ListenToAll () =
         let listener = new MeterListener()
+
         for instrument in allCounters do
             listener.EnableMeasurementEvents instrument
+
         listener.SetMeasurementEventCallback(fun instrument v tags _ ->
             match tags[0].Value with
             | :? string as name ->
                 let stats = getStatsByName name
                 stats.Incr instrument.Name v
             | _ -> assert false)
+
         listener.Start()
 
     let StatsToString () =
         let sb = Text.StringBuilder()
         sb.AppendLine "Cache Metrics:" |> ignore
+
         for kv in statsByName do
             sb.AppendLine $"Cache {kv.Key}: {kv.Value}" |> ignore
+
         sb.AppendLine() |> ignore
         string sb
 
@@ -109,7 +116,9 @@ module CacheMetrics =
 
             listener.SetMeasurementEventCallback(fun instrument v tags _ ->
                 let tagsMatch = tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
-                if tagsMatch then stats.Incr instrument.Name v)
+
+                if tagsMatch then
+                    stats.Incr instrument.Name v)
 
             listener.Start()
 
@@ -366,7 +375,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
         if wasMiss then
             post (EvictionQueueMessage.Add(result, store))
-            CacheMetrics.Add &tags    
+            CacheMetrics.Add &tags
             CacheMetrics.Miss &tags
         else
             post (EvictionQueueMessage.Update result)
@@ -391,7 +400,8 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
             CacheMetrics.Update &tags
             post (EvictionQueueMessage.Update result)
 
-    member _.CreateMetricsListener() = new CacheMetrics.CacheMetricsListener(tags)
+    member _.CreateMetricsListener() =
+        new CacheMetrics.CacheMetricsListener(tags)
 
     member _.Dispose() =
         if Interlocked.Exchange(&disposed, 1) = 0 then
