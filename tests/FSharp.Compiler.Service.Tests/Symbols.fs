@@ -450,6 +450,34 @@ let tester2: int Group = []
             | other -> failwithf "myArr was supposed to be a value, but is %A"  other
 
     [<Fact>]
+    let ``FSharpType.Format with top-level prefix generic parameters style`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f (x: int list seq) = ()
+"""
+        let symbolUse = findSymbolUseByName "x" checkResults
+        let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        let typeArg = symbol.FullType
+        let displayContext = symbolUse.DisplayContext
+
+        let topLevelPrefixStyle =
+            displayContext.WithTopLevelPrefixGenericParameters()
+
+        let topLevelPrefixWithNestedPrefixStyle1 =
+            displayContext.WithPrefixGenericParameters().WithTopLevelPrefixGenericParameters()
+
+        // Should be idempotent
+        let topLevelPrefixWithNestedPrefixStyle2 =
+            topLevelPrefixWithNestedPrefixStyle1.WithTopLevelPrefixGenericParameters()
+
+        [ typeArg.Format(topLevelPrefixStyle)
+          typeArg.Format(topLevelPrefixWithNestedPrefixStyle1)
+          typeArg.Format(topLevelPrefixWithNestedPrefixStyle2) ]
+        |> shouldBe [
+            "seq<int list>"
+            "seq<list<int>>"
+            "seq<list<int>>" ]
+
+    [<Fact>]
     let ``Unfinished long ident type `` () =
         let _, checkResults = getParseAndCheckResults """
 let g (s: string) = ()
