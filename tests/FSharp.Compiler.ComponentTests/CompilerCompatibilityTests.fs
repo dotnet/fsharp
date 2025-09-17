@@ -13,14 +13,39 @@ type CompilerCompatibilityTests() =
     let libProjectPath = Path.Combine(projectsPath, "CompilerCompatLib")
     let appProjectPath = Path.Combine(projectsPath, "CompilerCompatApp")
     
-    let runDotnetBuild projectPath useLocalCompiler =
+    let createGlobalJson targetFramework projectPath =
+        let globalJsonContent = $"""{{
+  "sdk": {{
+    "version": "{targetFramework}"
+  }}
+}}"""
+        let globalJsonPath = Path.Combine(projectPath, "global.json")
+        File.WriteAllText(globalJsonPath, globalJsonContent)
+        globalJsonPath
+    
+    let cleanupGlobalJson globalJsonPath =
+        if File.Exists(globalJsonPath) then
+            File.Delete(globalJsonPath)
+    
+    let runDotnetBuild projectPath compilerVersion =
+        let globalJsonPath = 
+            match compilerVersion with
+            | "local" -> 
+                // For local compiler, use LoadLocalFSharpBuild property
+                None
+            | version -> 
+                // For specific .NET versions, create global.json
+                Some (createGlobalJson version projectPath)
+        
         let args = 
-            if useLocalCompiler then
-                "build -c Release -p:LoadLocalFSharpBuild=True"
-            else
-                "build -c Release"
+            match compilerVersion with
+            | "local" -> "build -c Release -p:LoadLocalFSharpBuild=True"
+            | _ -> "build -c Release"
                 
         let (exitCode, output, error) = Commands.executeProcess "dotnet" args projectPath
+        
+        // Cleanup global.json if created
+        globalJsonPath |> Option.iter cleanupGlobalJson
         
         if exitCode <> 0 then
             let outputStr = String.concat "\n" output
@@ -46,67 +71,26 @@ type CompilerCompatibilityTests() =
         // The app is built to artifacts directory due to Directory.Build.props
         Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "CompilerCompatApp", "Release", "net8.0", "CompilerCompatApp.dll")
 
-    [<Fact>]
-    member _.``Baseline scenario - Both library and app built with local compiler``() =
+    [<Theory>]
+    [<InlineData("local", "local", "Baseline scenario - Both library and app built with local compiler")>]
+    [<InlineData("10.0.100-rc.1.25411.109", "local", "Forward compatibility - Library built with .NET 10 SDK, app with local compiler")>]
+    [<InlineData("local", "10.0.100-rc.1.25411.109", "Backward compatibility - Library built with local compiler, app with .NET 10 SDK")>]
+    member _.``Compiler compatibility test``(libCompilerVersion: string, appCompilerVersion: string, scenarioDescription: string) =
         // Clean previous builds
         cleanBinObjDirectories libProjectPath
         cleanBinObjDirectories appProjectPath
         
-        // Build library with local compiler
-        let libOutput = runDotnetBuild libProjectPath true
+        // Build library with specified compiler version
+        let libOutput = runDotnetBuild libProjectPath libCompilerVersion
         Assert.Contains("CompilerCompatLib -> ", libOutput)
         
-        // Build app with local compiler
-        let appOutput = runDotnetBuild appProjectPath true
+        // Build app with specified compiler version
+        let appOutput = runDotnetBuild appProjectPath appCompilerVersion
         Assert.Contains("CompilerCompatApp -> ", appOutput)
         
         // Run app and verify it works
         let appDllPath = getAppDllPath()
-        Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath}")
-        
-        let (exitCode, output, _error) = runApp appDllPath
-        Assert.Equal(0, exitCode)
-        Assert.Contains("✓ All compiler compatibility tests passed", output)
-        
-    [<Fact>]
-    member _.``Forward compatibility - Library built with SDK compiler, app with local compiler``() =
-        // Clean previous builds
-        cleanBinObjDirectories libProjectPath
-        cleanBinObjDirectories appProjectPath
-        
-        // Build library with SDK compiler
-        let libOutput = runDotnetBuild libProjectPath false
-        Assert.Contains("CompilerCompatLib -> ", libOutput)
-        
-        // Build app with local compiler (should use the library built with SDK compiler)
-        let appOutput = runDotnetBuild appProjectPath true  
-        Assert.Contains("CompilerCompatApp -> ", appOutput)
-        
-        // Run app and verify it works
-        let appDllPath = getAppDllPath()
-        Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath}")
-        
-        let (exitCode, output, _error) = runApp appDllPath
-        Assert.Equal(0, exitCode)
-        Assert.Contains("✓ All compiler compatibility tests passed", output)
-        
-    [<Fact>]  
-    member _.``Backward compatibility - Library built with local compiler, app with SDK compiler``() =
-        // Clean previous builds
-        cleanBinObjDirectories libProjectPath
-        cleanBinObjDirectories appProjectPath
-        
-        // Build library with local compiler
-        let libOutput = runDotnetBuild libProjectPath true
-        Assert.Contains("CompilerCompatLib -> ", libOutput)
-        
-        // Build app with SDK compiler (should use the library built with local compiler)
-        let appOutput = runDotnetBuild appProjectPath false
-        Assert.Contains("CompilerCompatApp -> ", appOutput)
-        
-        // Run app and verify it works
-        let appDllPath = getAppDllPath()
-        Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath}")
+        Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath} for scenario: {scenarioDescription}")
         
         let (exitCode, output, _error) = runApp appDllPath
         Assert.Equal(0, exitCode)
