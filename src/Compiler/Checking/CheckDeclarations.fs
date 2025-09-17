@@ -4253,12 +4253,6 @@ module TcDeclarations =
         if isAtOriginalTyconDefn then
             ModuleOrMemberBinding, tcref, reqTypars
         else
-            match tcref.TypeAbbrev |> Option.toValueOption |> ValueOption.bind (tryTcrefOfAppTy g) with
-            | ValueSome abbrTcref ->
-                errorR (Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), m))
-                ExtrinsicExtensionBinding, abbrTcref, abbrTcref.TyparsNoRange
-            | _ ->
-
             let isInSameModuleOrNamespace = 
                  match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryGetValue tcref.LogicalName with 
                  | true, tycon -> tyconOrder.Compare(tcref.Deref, tycon) = 0
@@ -4273,6 +4267,11 @@ module TcDeclarations =
             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
+
+            if tcref.TypeAbbrev.IsSome then
+                errorR (Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), m))
+                ExtrinsicExtensionBinding, tcref, declaredTypars
+            else
 
             if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
