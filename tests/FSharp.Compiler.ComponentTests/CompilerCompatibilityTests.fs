@@ -42,6 +42,10 @@ type CompilerCompatibilityTests() =
         if Directory.Exists(objPath) then
             Directory.Delete(objPath, true)
 
+    let getAppDllPath () =
+        // The app is built to artifacts directory due to Directory.Build.props
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "CompilerCompatApp", "Release", "net8.0", "CompilerCompatApp.dll")
+
     [<Fact>]
     member _.``Baseline scenario - Both library and app built with local compiler``() =
         // Clean previous builds
@@ -57,7 +61,7 @@ type CompilerCompatibilityTests() =
         Assert.Contains("CompilerCompatApp -> ", appOutput)
         
         // Run app and verify it works
-        let appDllPath = Path.Combine(appProjectPath, "bin", "Release", "net8.0", "CompilerCompatApp.dll")
+        let appDllPath = getAppDllPath()
         Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath}")
         
         let (exitCode, output, _error) = runApp appDllPath
@@ -79,7 +83,7 @@ type CompilerCompatibilityTests() =
         Assert.Contains("CompilerCompatApp -> ", appOutput)
         
         // Run app and verify it works
-        let appDllPath = Path.Combine(appProjectPath, "bin", "Release", "net8.0", "CompilerCompatApp.dll")
+        let appDllPath = getAppDllPath()
         Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath}")
         
         let (exitCode, output, _error) = runApp appDllPath
@@ -101,7 +105,7 @@ type CompilerCompatibilityTests() =
         Assert.Contains("CompilerCompatApp -> ", appOutput)
         
         // Run app and verify it works
-        let appDllPath = Path.Combine(appProjectPath, "bin", "Release", "net8.0", "CompilerCompatApp.dll")
+        let appDllPath = getAppDllPath()
         Assert.True(File.Exists(appDllPath), $"App DLL not found at {appDllPath}")
         
         let (exitCode, output, _error) = runApp appDllPath
