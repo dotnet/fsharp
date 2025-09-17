@@ -163,7 +163,7 @@ foreach ($project in $projects.Keys) {
             }
 
             # Read baseline file into string array and normalize it
-            [string[]] $baseline = Get-Content $baseline_file | ForEach-Object { Normalize-IlverifyOutputLine $_ }
+            [string[]] $baseline = Get-Content $baseline_file # | ForEach-Object { Normalize-IlverifyOutputLine $_ }
 
             if ($baseline.Length -eq 0) {
                 Write-Host "Baseline file is empty: $baseline_file"
