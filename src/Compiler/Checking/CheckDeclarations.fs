@@ -4269,11 +4269,8 @@ module TcDeclarations =
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
             if tcref.TypeAbbrev.IsSome then
-                errorR (Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), m))
                 ExtrinsicExtensionBinding, tcref, declaredTypars
-            else
-
-            if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
+            elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
@@ -4608,6 +4605,9 @@ module TcDeclarations =
                 if (declKind = ExtrinsicExtensionBinding) && isByrefTyconRef g tcref then 
                     error(Error(FSComp.SR.tcByrefsMayNotHaveTypeExtensions(), tyDeclRange))
 
+                if not (isNil members) && tcref.IsTypeAbbrev then 
+                    errorR(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveAugmentations(), tyDeclRange))
+                
                 let (SynComponentInfo (attributes, _, _, _, _, _, _, _)) = synTyconInfo
                 if not (List.isEmpty attributes) && (declKind = ExtrinsicExtensionBinding || declKind = IntrinsicExtensionBinding) then
                     let attributeRange = (List.head attributes).Range
