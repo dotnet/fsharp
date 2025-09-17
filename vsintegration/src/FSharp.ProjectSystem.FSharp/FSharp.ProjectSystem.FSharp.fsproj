@@ -13,8 +13,8 @@
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
-  <!-- When building in a VS/VSSDK context (VisualStudioVersion set) fall back to legacy format so the CTO merger can read the .resources file. -->
-  <PropertyGroup Condition="'$(VisualStudioVersion)' != ''">
+  <!-- When building with desktop MSBuild (Full), fall back to legacy resources so the CTO merger (VSSDK) can read .resources files. -->
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' != 'Core'">
     <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
@@ -35,8 +35,8 @@
     <EmbeddedResource Include="VSPackage.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpSR</GeneratedModuleName>
-      <!-- Only merge with CTO when we are using legacy (non-preserialized) resources. -->
-      <MergeWithCTO Condition="'$(GenerateResourceUsePreserializedResources)' != 'true'">true</MergeWithCTO>
+      <!-- Only merge with CTO when building with desktop MSBuild (typical for VS/VSSDK builds). Skip for dotnet (MSBuild Core). -->
+      <MergeWithCTO Condition="'$(MSBuildRuntimeType)' != 'Core'">true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
       <SubType>Designer</SubType>
       <IntermediateTargetPath>$(IntermediateOutputPath)resources\</IntermediateTargetPath>
