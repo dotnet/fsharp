@@ -7855,30 +7855,30 @@ and CheckAnonRecdExprDuplicateFields (elems: Ident array) =
                errorR(Error (FSComp.SR.tcAnonRecdDuplicateFieldId(uc1.idText), uc1.idRange))))
 
 // Check '{| .... |}'
-and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, recordFields: SynExprRecordField list, mWholeExpr) =
+and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven: SynExprRecordField list, mWholeExpr) =
     match optOrigSynExpr with
     | None ->
-        TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, recordFields, mWholeExpr)
+        TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
     | Some orig ->
         // Ideally we should also check for duplicate field IDs in the TcCopyAndUpdateAnonRecdExpr case, but currently the logic is too complex to guarantee a proper error reporting
         // So here we error instead errorR to avoid cascading  internal errors
-        recordFields
+        unsortedFieldIdsAndSynExprsGiven
         |> List.countBy (fun (SynExprRecordField(fieldName = (fId, _))) -> textOfLid fId.LongIdent)
         |> List.iter (fun (label, count) ->
             if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
 
-        TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, orig, recordFields, mWholeExpr)
+        TcCopyAndUpdateAnonRecdExpr cenv overallTy env tpenv (isStruct, orig, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
 
-and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, recordFields: SynExprRecordField list, mWholeExpr) =
+and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven: SynExprRecordField list, mWholeExpr) =
 
     let g = cenv.g
 
     // For new anonymous records, each field label must be a single identifier.
     // If a long identifier is given, report an error and skip that entry for typechecking purposes.
     // Also normalize missing expressions to an error expression to keep traversal stable.
-    let validFields : (Ident * SynExpr * SynLongIdent) list =
-        recordFields
+    let unsortedFieldIdsAndSynExprsGiven : (Ident * SynExpr * SynLongIdent) list =
+        unsortedFieldIdsAndSynExprsGiven
         |> List.choose (fun (SynExprRecordField(fieldName = (synLongIdent, _); expr = expr)) ->
             match synLongIdent.LongIdent with
             | [ id ] ->
@@ -7896,9 +7896,9 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, recordFields:
                 errorR (Error(FSComp.SR.parsInvalidAnonRecdType(), synLongIdent.Range))
                 None)
 
-    let unsortedFieldSynExprsGiven = validFields |> List.map (fun (_, e, _) -> e)
+    let unsortedFieldSynExprsGiven = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (_, e, _) -> e)
 
-    let unsortedFieldIds = validFields |> List.map (fun (id, _, _) -> id) |> List.toArray
+    let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (id, _, _) -> id) |> List.toArray
 
     let anonInfo, sortedFieldTys =
         UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
@@ -7908,15 +7908,15 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, recordFields:
 
     // Sort into canonical order
     let sortedIndexedArgs =
-        validFields
+        unsortedFieldIdsAndSynExprsGiven
         |> List.indexed
         |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText)
 
     // Map from sorted indexes to unsorted indexes
     let sigma = sortedIndexedArgs |> List.map fst |> List.toArray
-    let sortedFieldTriples = sortedIndexedArgs |> List.map snd
+    let sortedFieldExprs = sortedIndexedArgs |> List.map snd
 
-    sortedFieldTriples
+    sortedFieldExprs
     |> List.iteri (fun j (_, _, synLongIdent) ->
         let m = rangeOfLid synLongIdent.LongIdent
         let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
@@ -7935,7 +7935,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, recordFields:
 
     mkAnonRecd g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
 
-and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (origExpr, blockSeparator), recordFields: SynExprRecordField list, mWholeExpr) =
+and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (origExpr, blockSeparator), unsortedFieldIdsAndSynExprsGiven: SynExprRecordField list, mWholeExpr) =
     // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
     // The origExpr may be either a record or anonymous record.
     // The origExpr may be either a struct or not.
@@ -7956,7 +7956,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
 
     // Expand expressions with respect to potentially nesting
     let unsortedFieldIdsAndSynExprsGiven =
-        recordFields
+        unsortedFieldIdsAndSynExprsGiven
         |> List.map (fun (SynExprRecordField(fieldName = (synLongIdent, _); expr = e)) ->
             match synLongIdent.LongIdent with
             | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), mWholeExpr))
