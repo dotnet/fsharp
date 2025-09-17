@@ -13,12 +13,12 @@ type CompilerCompatibilityTests() =
     let libProjectPath = Path.Combine(projectsPath, "CompilerCompatLib")
     let appProjectPath = Path.Combine(projectsPath, "CompilerCompatApp")
     
-    let createGlobalJson targetFramework projectPath =
-        let globalJsonContent = $"""{{
-  "sdk": {{
-    "version": "{targetFramework}"
-  }}
-}}"""
+    let createGlobalJson version projectPath =
+        let globalJsonContent = 
+            match version with
+            | "9" -> """{"sdk":{"version":"9.0.100"}}"""
+            | _ -> failwith $"Unsupported version for global.json: {version}"
+        
         let globalJsonPath = Path.Combine(projectPath, "global.json")
         File.WriteAllText(globalJsonPath, globalJsonContent)
         globalJsonPath
@@ -30,12 +30,9 @@ type CompilerCompatibilityTests() =
     let runDotnetBuild projectPath compilerVersion =
         let globalJsonPath = 
             match compilerVersion with
-            | "local" -> 
-                // For local compiler, use LoadLocalFSharpBuild property
-                None
-            | version -> 
-                // For specific .NET versions, create global.json
-                Some (createGlobalJson version projectPath)
+            | "local" -> None
+            | "latest" -> None  
+            | version -> Some (createGlobalJson version projectPath)
         
         let args = 
             match compilerVersion with
@@ -73,8 +70,10 @@ type CompilerCompatibilityTests() =
 
     [<Theory>]
     [<InlineData("local", "local", "Baseline scenario - Both library and app built with local compiler")>]
-    [<InlineData("10.0.100-rc.1.25411.109", "local", "Forward compatibility - Library built with .NET 10 SDK, app with local compiler")>]
-    [<InlineData("local", "10.0.100-rc.1.25411.109", "Backward compatibility - Library built with local compiler, app with .NET 10 SDK")>]
+    [<InlineData("latest", "local", "Forward compatibility - Library built with latest SDK, app with local compiler")>]
+    [<InlineData("local", "latest", "Backward compatibility - Library built with local compiler, app with latest SDK")>]
+    [<InlineData("9", "local", "Forward compatibility - Library built with .NET 9 SDK, app with local compiler")>]
+    [<InlineData("local", "9", "Backward compatibility - Library built with local compiler, app with .NET 9 SDK")>]
     member _.``Compiler compatibility test``(libCompilerVersion: string, appCompilerVersion: string, scenarioDescription: string) =
         // Clean previous builds
         cleanBinObjDirectories libProjectPath

@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' == 'True'">../../../../UseLocalCompiler.Directory.Build.props</DirectoryBuildPropsPath>
+    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' != 'True'"></DirectoryBuildPropsPath>
   </PropertyGroup>
 
   <ItemGroup>

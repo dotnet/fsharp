@@ -1,2 +1,0 @@
-cd /home/runner/work/fsharp/fsharp/tests/projects/CompilerCompat/CompilerCompatLib
-dotnet build -c Release -p:LoadLocalFSharpBuild=True /bl
