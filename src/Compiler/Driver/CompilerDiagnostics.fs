@@ -822,6 +822,12 @@ type Exception with
                 if ty1 <> ty2 + tpcs then
                     os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
 
+            let e =
+                match e with
+                | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when typeEquiv g ty2 ty2b ->
+                    ConstraintSolverTypesNotInEqualityRelation(env, ty2b, ty1b, m, m2, contextInfo)
+                | _ -> e
+
             e.Output(os, suggestNames)
 
         | ErrorFromApplyingDefault(_, denv, _, defaultType, e, _) ->
