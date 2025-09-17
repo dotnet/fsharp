@@ -256,8 +256,8 @@ module MemberDefinitions_OverloadingMembers =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 438, Line 6, Col 17, Line 6, Col 18, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
-            (Error 438, Line 7, Col 17, Line 7, Col 18, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
+            (Error 438, Line 6, Col 19, Line 6, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
+            (Error 438, Line 7, Col 19, Line 7, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
         ]
 
     // NativePtrOverloads03.fs - regression test, previously failing overloads should now compile
