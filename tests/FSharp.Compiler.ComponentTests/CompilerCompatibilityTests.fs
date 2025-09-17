@@ -23,7 +23,9 @@ type CompilerCompatibilityTests() =
         let (exitCode, output, error) = Commands.executeProcess "dotnet" args projectPath
         
         if exitCode <> 0 then
-            failwith $"Build failed with exit code {exitCode}. Output: {String.concat "\n" output}. Error: {String.concat "\n" error}"
+            let outputStr = String.concat "\n" output
+            let errorStr = String.concat "\n" error
+            failwith $"Build failed with exit code {exitCode}. Output: {outputStr}. Error: {errorStr}"
         
         String.concat "\n" output
     
