@@ -394,7 +394,7 @@ module internal Async2LowPriority =
             let t = Async.StartAsTask(expr, cancellationToken = ct)
             this.Source(t.ConfigureAwait(false))
 
-        member inline _.Source(items: #seq<_>) : seq<_> = upcast items
+        member inline _.Source(items: _ seq) : _ seq = upcast items
 
 [<AutoOpen>]
 module internal Async2MediumPriority =
@@ -541,4 +541,18 @@ type internal Async2 with
             finally
                 if task.IsCanceled then
                     compensation ()
+        }
+
+    static member StartChild(computation: Async2<'T>) : Async2<Async2<'T>> =
+        async2 {
+            let ct = Async2.CancellationToken
+            let task = computation |> Async2.queueTask ct
+            return Async2Impl(fun () -> task)
+        }
+
+    static member StartChildAsTask(computation: Async2<'T>) : Async2<Task<'T>> =
+        async2 {
+            let ct = Async2.CancellationToken
+            let task = computation |> Async2.queueTask ct
+            return task
         }

@@ -12,6 +12,70 @@ open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 
+module MultipleDiagnosticsLoggers =
+    let Parallel (computations: Async2<_> seq) =
+        let computationsWithLoggers, diagnosticsReady =
+            [
+                for i, computation in computations |> Seq.indexed do
+                    let diagnosticsReady = TaskCompletionSource<_>()
+
+                    let logger = CapturingDiagnosticsLogger($"CaptureDiagnosticsConcurrently {i}")
+
+                    // Inject capturing logger into the computation. Signal the TaskCompletionSource when done.
+                    let computationsWithLoggers =
+                        async2 {
+                            SetThreadDiagnosticsLoggerNoUnwind logger
+
+                            try
+                                return! computation
+                            finally
+                                diagnosticsReady.SetResult logger
+                        }
+
+                    computationsWithLoggers, diagnosticsReady
+            ]
+            |> List.unzip
+
+        // Commit diagnostics from computations as soon as it is possible, preserving the order.
+        let replayDiagnostics =
+            backgroundTask {
+                let target = DiagnosticsThreadStatics.DiagnosticsLogger
+
+                for tcs in diagnosticsReady do
+                    let! finishedLogger = tcs.Task
+                    finishedLogger.CommitDelayedDiagnostics target
+            }
+
+        async2 {
+            try
+                // We want to restore the current diagnostics context when finished.
+                use _ = new CompilationGlobalsScope()
+                let! results = Async2.Parallel computationsWithLoggers
+                do! replayDiagnostics |> Async.AwaitTask
+                return results
+            finally
+                // When any of the computation throws, Async.Parallel may not start some remaining computations at all.
+                // We set dummy results for them to allow the task to finish and to not lose any already emitted diagnostics.
+                if not replayDiagnostics.IsCompleted then
+                    let emptyLogger = CapturingDiagnosticsLogger("empty")
+
+                    for tcs in diagnosticsReady do
+                        tcs.TrySetResult(emptyLogger) |> ignore
+
+                    replayDiagnostics.Wait()
+        }
+
+    let Sequential (computations: Async2<_> seq) =
+        async2 {
+            let results = ResizeArray()
+
+            for computation in computations do
+                let! result = computation
+                results.Add result
+
+            return results.ToArray()
+        }
+
 module BuildGraphTests =
     
     [<MethodImpl(MethodImplOptions.NoInlining)>]
@@ -256,7 +320,7 @@ module BuildGraphTests =
             let rng = Random()
             fun n -> rng.Next n
     
-        let job phase i = async2 {
+        let job phase i : Async2<unit> = async2 {
             do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
@@ -264,13 +328,13 @@ module BuildGraphTests =
 
             errorR (ExampleException $"job {i}")
         }
-    
+        
         let work (phase: BuildPhase) =
             async2 {
                 let n = 8
                 let logger = CapturingDiagnosticsLogger("test NodeCode")
                 use _ = new CompilationGlobalsScope(logger, phase)
-                let! _ = Seq.init n (job phase) |> MultipleDiagnosticsLoggers.Parallel
+                let x =  MultipleDiagnosticsLoggers.Parallel ((Seq.init n (job phase)) : Async2<_> seq)
 
                 let diags = logger.Diagnostics |> List.map fst
 
@@ -412,7 +476,7 @@ module BuildGraphTests =
     [<Fact>]
     let ``AsyncLocal diagnostics context flows correctly`` () =
 
-        let work logger = async {
+        let work logger = async2 {
             SetThreadDiagnosticsLoggerNoUnwind logger
 
             errorR TestException
@@ -440,11 +504,11 @@ module BuildGraphTests =
                     loggerShouldBe logger
                 }
 
-            let! child = workInner |> Async.StartChild
-            let! childTask = workInner |> Async.StartChildAsTask
+            let! child = workInner |> Async2.StartChild
+            let! childTask = workInner |> Async2.StartChildAsTask
 
             do! child
-            do! childTask |> Async.AwaitTask
+            do! childTask
             errorCountShouldBe 5
         }
 
@@ -453,7 +517,7 @@ module BuildGraphTests =
             let logger = SimpleConcurrentLogger name
             work logger
 
-        Seq.init 10 init |> Async.Parallel |> Async.RunSynchronously |> ignore
+        Seq.init 10 init |> Async2.Parallel |> Async2.RunImmediate |> ignore
 
         let logger = SimpleConcurrentLogger "main"
         use _ =  UseDiagnosticsLogger logger
