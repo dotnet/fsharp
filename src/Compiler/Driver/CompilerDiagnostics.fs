@@ -816,7 +816,9 @@ type Exception with
                     os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
-            if not (typeEquiv g ty1 ty2) then
+            let typesAreEqual = typeEquiv g ty1 ty2
+
+            if not typesAreEqual then
                 let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
                 if ty1 <> ty2 + tpcs then
@@ -824,7 +826,9 @@ type Exception with
 
             let e =
                 match e with
-                | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when typeEquiv g ty2 ty2b ->
+                | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when
+                    not typesAreEqual || typeEquiv g ty1 ty1b
+                    ->
                     ConstraintSolverTypesNotInEqualityRelation(env, ty2b, ty1b, m, m2, contextInfo)
                 | _ -> e
 

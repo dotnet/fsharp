@@ -181,7 +181,7 @@ let f2 (x: inref<'T>) = f1 &x
 """
     |> typecheckResults
     |> checkDiagnosticData
-       (1, "Type mismatch. Expecting a\n    'outref<'T>'    \nbut given a\n    'inref<'T>'    \nThe type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
+       (1, "Type mismatch. Expecting a\n    'outref<'T>'    \nbut given a\n    'inref<'T>'    \nThe type 'ByRefKinds.In' does not match the type 'ByRefKinds.Out'")
        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
         let displayContext = typeMismatch.DisplayContext
         Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
