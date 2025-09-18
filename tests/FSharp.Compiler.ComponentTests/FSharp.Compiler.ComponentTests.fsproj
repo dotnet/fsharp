@@ -349,12 +349,6 @@
     <Compile Include="CompilerService\RangeModule.fs" />
     <Compile Include="CompilerService\Caches.fs" />
     <Compile Include="CompilerService\LruCache.fs" />
-    <Compile Include="..\..\src\Compiler\Utilities\Async2.fs">
-        <Link>CompilerService\Async2.fs</Link>
-    </Compile>
-    <Compile Include="..\..\src\Compiler\Facilities\AsyncMemoize.fs">
-        <Link>CompilerService\AsyncMemoImpl.fs</Link>
-    </Compile>
     <Compile Include="CompilerService\AsyncMemoize.fs" />
     <Compile Include="CompilerService\FSharpWorkspace.fs" />
     <Compile Include="CompilerService\DependencyGraph.fs" />

@@ -61,12 +61,6 @@
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
     <Compile Include="BlockTests.fs" />
-    <Compile Include="..\..\src\Compiler\Utilities\Async2.fs">
-      <Link>Async2.fs</Link>
-    </Compile>
-    <Compile Include="..\..\src\Compiler\Facilities\BuildGraph.fs">
-      <Link>BuildGraph.fs</Link>
-    </Compile> 
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="FsiHelpTests.fs" />

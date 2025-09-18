@@ -11,7 +11,7 @@ type Async2<'t> =
     abstract Start: unit -> Task<'t>
     abstract GetAwaiter: unit -> TaskAwaiter<'t>
 
-module internal Async2Implementation =
+module Async2Implementation =
 
     open FSharp.Core.CompilerServices.StateMachineHelpers
 
@@ -28,13 +28,12 @@ module internal Async2Implementation =
     let currentContext = AsyncLocal<Context>()
 
     /// A structure that looks like an Awaiter
-    type internal Awaiter<'Awaiter, 'TResult
+    type Awaiter<'Awaiter, 'TResult
         when 'Awaiter :> ICriticalNotifyCompletion
         and 'Awaiter: (member get_IsCompleted: unit -> bool)
         and 'Awaiter: (member GetResult: unit -> 'TResult)> = 'Awaiter
 
-    type internal Awaitable<'Awaitable, 'Awaiter, 'TResult when 'Awaitable: (member GetAwaiter: unit -> Awaiter<'Awaiter, 'TResult>)> =
-        'Awaitable
+    type Awaitable<'Awaitable, 'Awaiter, 'TResult when 'Awaitable: (member GetAwaiter: unit -> Awaiter<'Awaiter, 'TResult>)> = 'Awaitable
 
     module Awaiter =
         let inline isCompleted (awaiter: ^Awaiter) : bool when ^Awaiter: (member get_IsCompleted: unit -> bool) = awaiter.get_IsCompleted ()
@@ -377,13 +376,13 @@ module internal Async2Implementation =
         member inline _.Source(code: Async2<_>) = code.Start().GetAwaiter()
 
 [<AutoOpen>]
-module internal Async2AutoOpens =
+module Async2AutoOpens =
     open Async2Implementation
 
     let async2 = Async2Builder()
 
 [<AutoOpen>]
-module internal Async2LowPriority =
+module Async2LowPriority =
     open Async2Implementation
 
     type Async2Builder with
@@ -397,7 +396,7 @@ module internal Async2LowPriority =
         member inline _.Source(items: _ seq) : _ seq = upcast items
 
 [<AutoOpen>]
-module internal Async2MediumPriority =
+module Async2MediumPriority =
     open Async2Implementation
 
     type Async2Builder with
@@ -406,7 +405,7 @@ module internal Async2MediumPriority =
 
 open Async2Implementation
 
-type internal Async2 =
+type Async2 =
     static member CancellationToken = currentContext.Value.Token
 
     static member UseTokenAsync() =
@@ -425,7 +424,7 @@ type internal Async2 =
                 }
         }
 
-module internal Async2 =
+module Async2 =
 
     let inline startWithContext context (code: Async2<_>) =
         let old = currentContext.Value
@@ -472,7 +471,7 @@ module internal Async2 =
         let task = Task.FromResult value
         Async2Impl(fun () -> task)
 
-type internal Async2 with
+type Async2 with
     static member Ignore(computation: Async2<_>) : Async2<unit> =
         async2 {
             let! _ = computation
@@ -555,4 +554,25 @@ type internal Async2 with
             let ct = Async2.CancellationToken
             let task = computation |> Async2.queueTask ct
             return task
+        }
+
+    static member AwaitWaitHandle(waitHandle: WaitHandle) : Async2<bool> =
+        async2 {
+            let ct = Async2.CancellationToken
+
+            let tcs =
+                TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+            use _ = ct.Register(fun () -> tcs.TrySetCanceled() |> ignore)
+
+            let callback =
+                WaitOrTimerCallback(fun _ timedOut -> tcs.TrySetResult(not timedOut) |> ignore)
+
+            let handle =
+                ThreadPool.RegisterWaitForSingleObject(waitHandle, callback, null, -1, true)
+
+            try
+                return! tcs.Task
+            finally
+                handle.Unregister(waitHandle) |> ignore
         }
