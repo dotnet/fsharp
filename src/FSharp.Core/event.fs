@@ -145,16 +145,15 @@ type Event<'Delegate, 'Args
             member x.ToString() =
                 "<published event>"
           interface IEvent<'Delegate, 'Args> with
-              member e.AddHandler(d) =
+              member e.AddHandler(d: 'Delegate) : unit =
                   Atomic.setWith (fun value -> 
                       let combined = System.Delegate.Combine(value, d)
-                      // System.Delegate.Combine with a non-null second argument never returns null
-                      if isNull combined then
-                          failwith "Unexpected null result from System.Delegate.Combine"
-                      else
-                          downcast combined) &multicast
+                      // Delegate.Combine(x, d) where d is non-null always returns non-null
+                      match combined with
+                      | null -> d // fallback, should never happen with non-null d
+                      | x -> downcast x) &multicast
 
-              member e.RemoveHandler(d) =
+              member e.RemoveHandler(d: 'Delegate) : unit =
                   Atomic.setWith (fun value -> 
                       match System.Delegate.Remove(value, d) with
                       | null -> Unchecked.defaultof<'Delegate>
@@ -194,16 +193,15 @@ type Event<'T> =
             member x.ToString() =
                 "<published event>"
           interface IEvent<'T> with
-              member e.AddHandler(d) =
+              member e.AddHandler(d: Handler<'T>) : unit =
                   Atomic.setWith (fun value -> 
                       let combined = System.Delegate.Combine(value, d)
-                      // System.Delegate.Combine with a non-null second argument never returns null
-                      if isNull combined then
-                          failwith "Unexpected null result from System.Delegate.Combine"
-                      else
-                          downcast combined) &x.multicast
+                      // Delegate.Combine(x, d) where d is non-null always returns non-null
+                      match combined with
+                      | null -> d // fallback, should never happen with non-null d
+                      | x -> downcast x) &x.multicast
 
-              member e.RemoveHandler(d) =
+              member e.RemoveHandler(d: Handler<'T>) : unit =
                   Atomic.setWith (fun value -> 
                       match System.Delegate.Remove(value, d) with
                       | null -> Unchecked.defaultof<Handler<'T>>
