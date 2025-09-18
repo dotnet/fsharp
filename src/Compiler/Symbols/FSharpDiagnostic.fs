@@ -176,6 +176,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
             | Some symbolEnv ->
 
             match diagnostic.Exception with
+            | ErrorFromAddingConstraint(displayEnv, ConstraintSolverTypesNotInEqualityRelation(_, actualType, expectedType, _, _, contextInfo), _)
             | ErrorFromAddingTypeEquation(_, displayEnv, expectedType, actualType, ConstraintSolverTupleDiffLengths(contextInfo = contextInfo), _)
             | ErrorsFromAddingSubsumptionConstraint(_, displayEnv, expectedType, actualType, _, contextInfo, _) ->
                let context = DiagnosticContextInfo.From(contextInfo)
