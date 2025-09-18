@@ -23,7 +23,7 @@ ImplFile
                              ((false, true), Const (Int32 1, (3,28--3,29)),
                               (3,21--3,29),
                               { YieldOrReturnKeyword = (3,21--3,27) }),
-                           (3,19--3,31)), (3,13--3,31)), (3,0--4,33),
+                           (3,19--3,31)), (3,13--3,31)), (3,0--3,31),
                      Yes (3,0--3,31), { LeadingKeyword = Use (3,0--3,4)
                                         InlineKeyword = None
                                         EqualsRange = Some (3,11--3,12) })],
