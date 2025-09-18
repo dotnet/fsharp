@@ -140,31 +140,43 @@ type Event<'Delegate, 'Args
                 // CreateDelegate creates a delegate that is fast to invoke.
                 invoker.Invoke(multicast, sender, args) |> ignore
 
-    member x.Publish =
+    member x.Publish : IEvent<'Delegate, 'Args> =
         { new obj() with
             member x.ToString() =
                 "<published event>"
           interface IEvent<'Delegate, 'Args> with
               member e.AddHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> 'Delegate) &multicast
+                  Atomic.setWith (fun value -> 
+                      let combined = System.Delegate.Combine(value, d)
+                      // System.Delegate.Combine with a non-null second argument never returns null
+                      if isNull combined then
+                          failwith "Unexpected null result from System.Delegate.Combine"
+                      else
+                          downcast combined) &multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> downcast (System.Delegate.Remove(value, d))) &multicast
+                  Atomic.setWith (fun value -> 
+                      match System.Delegate.Remove(value, d) with
+                      | null -> Unchecked.defaultof<'Delegate>
+                      | result -> downcast result) &multicast
           interface System.IObservable<'Args> with
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
 
-                  let h = 
-                      match Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) with
-                      | null -> null
-                      | result -> downcast result
+                  match Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) with
+                  | null -> 
+                      // If CreateDelegate returns null, return a no-op disposable
+                      { new System.IDisposable with
+                          member x.Dispose() = ()
+                      }
+                  | result -> 
+                      let h = downcast result
+                      (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 
-                  (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
-
-                  { new System.IDisposable with
-                      member x.Dispose() =
-                          (e :?> IDelegateEvent<'Delegate>).RemoveHandler(h)
-                  }
+                      { new System.IDisposable with
+                          member x.Dispose() =
+                              (e :?> IDelegateEvent<'Delegate>).RemoveHandler(h)
+                      }
         }
 
 [<CompiledName("FSharpEvent`1")>]
@@ -177,16 +189,25 @@ type Event<'T> =
         | null -> ()
         | d -> d.Invoke(null, arg) |> ignore
 
-    member x.Publish =
+    member x.Publish : IEvent<'T> =
         { new obj() with
             member x.ToString() =
                 "<published event>"
           interface IEvent<'T> with
               member e.AddHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> Handler<'T>) &x.multicast
+                  Atomic.setWith (fun value -> 
+                      let combined = System.Delegate.Combine(value, d)
+                      // System.Delegate.Combine with a non-null second argument never returns null
+                      if isNull combined then
+                          failwith "Unexpected null result from System.Delegate.Combine"
+                      else
+                          downcast combined) &x.multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> downcast (System.Delegate.Remove(value, d))) &x.multicast
+                  Atomic.setWith (fun value -> 
+                      match System.Delegate.Remove(value, d) with
+                      | null -> Unchecked.defaultof<Handler<'T>>
+                      | result -> downcast result) &x.multicast
           interface System.IObservable<'T> with
               member e.Subscribe(observer) =
                   let h = new Handler<_>(fun sender args -> observer.OnNext(args))
