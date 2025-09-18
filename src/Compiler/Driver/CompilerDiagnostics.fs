@@ -827,7 +827,7 @@ type Exception with
             let e =
                 match e with
                 | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when
-                    not typesAreEqual || typeEquiv g ty1 ty1b
+                    not typesAreEqual || typeEquiv g ty2 ty2b
                     ->
                     ConstraintSolverTypesNotInEqualityRelation(env, ty2b, ty1b, m, m2, contextInfo)
                 | _ -> e
