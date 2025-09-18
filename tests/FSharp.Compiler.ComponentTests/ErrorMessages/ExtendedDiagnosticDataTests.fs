@@ -214,6 +214,20 @@ type T() =
              Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
              Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
 
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 12`` () =
+    FSharp """
+let x: string = 1 + 1
+"""
+    |> typecheckResults
+    |> checkDiagnosticData
+       (1, "The type 'int' does not match the type 'string'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+            let displayContext = typeMismatch.DisplayContext
+            Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+            Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+            Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
 [<Theory>]
 [<InlineData true>]
 [<InlineData false>]
