@@ -234,21 +234,7 @@ module CustomAttributes_AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 842, Line 12, Col 6, Line 12, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 15, Col 6, Line 15, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 18, Col 6, Line 18, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 20, Col 10, Line 20, Col 20, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 22, Col 6, Line 22, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 25, Col 6, Line 25, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 28, Col 6, Line 28, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 31, Col 6, Line 31, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 34, Col 6, Line 34, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 37, Col 6, Line 37, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 39, Col 10, Line 39, Col 20, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 41, Col 6, Line 41, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 44, Col 6, Line 44, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 47, Col 6, Line 47, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
-            (Warning 842, Line 52, Col 6, Line 52, Col 16, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
+            (Error 58, Line 50, Col 4, Line 50, Col 8, "Nested type definitions are not allowed. Types must be defined at module or namespace level.")
         ]
 
     // SOURCE=E_AttributeTargetIsMethod04.fs					# E_AttributeTargetIsMethod04.fs

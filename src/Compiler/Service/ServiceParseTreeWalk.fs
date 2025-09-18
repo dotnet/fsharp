@@ -445,12 +445,12 @@ module SyntaxTraversal =
                 | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
                     [
                         match copyOpt with
-                        | Some(expr, (withRange, _)) ->
+                        | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
                             yield
-                                dive () withRange (fun () ->
-                                    if posGeq pos withRange.End then
+                                dive () blockSep.Range (fun () ->
+                                    if posGeq pos blockSep.Range.End then
                                         // special case: caret is after WITH
                                         // { x with $ }
                                         visitor.VisitRecordField(path, Some expr, None)
@@ -498,24 +498,24 @@ module SyntaxTraversal =
                                         traverseSynExpr expr)
 
                             match sepOpt with
-                            | Some(sep, scPosOpt) ->
+                            | Some blockSep ->
                                 yield
-                                    dive () sep (fun () ->
+                                    dive () blockSep.Range (fun () ->
                                         // special case: caret is below 'inherit' + one or more fields are already defined
                                         // inherit A()
                                         // $
                                         // field1 = 5
-                                        diveIntoSeparator inheritRange.StartColumn scPosOpt None)
+                                        diveIntoSeparator inheritRange.StartColumn blockSep.Position None)
                             | None -> ()
                         | _ -> ()
 
                         match copyOpt with
-                        | Some(expr, (withRange, _)) ->
+                        | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
                             yield
-                                dive () withRange (fun () ->
-                                    if posGeq pos withRange.End then
+                                dive () blockSep.Range (fun () ->
+                                    if posGeq pos blockSep.Range.End then
                                         // special case: caret is after WITH
                                         // { x with $ }
                                         visitor.VisitRecordField(path, Some expr, None)
@@ -556,14 +556,14 @@ module SyntaxTraversal =
                             | None -> ()
 
                             match sepOpt with
-                            | Some(sep, scPosOpt) ->
+                            | Some blockSep ->
                                 yield
-                                    dive () sep (fun () ->
+                                    dive () blockSep.Range (fun () ->
                                         // special case: caret is between field bindings
                                         // field1 = 5
                                         // $
                                         // field2 = 5
-                                        diveIntoSeparator offsideColumn scPosOpt copyOpt)
+                                        diveIntoSeparator offsideColumn blockSep.Position copyOpt)
                             | _ -> ()
 
                     ]
@@ -772,7 +772,7 @@ module SyntaxTraversal =
                 | SynPat.Ands(ps, _)
                 | SynPat.Tuple(elementPats = ps)
                 | SynPat.ArrayOrList(_, ps, _) -> ps |> List.tryPick (traversePat path)
-                | SynPat.Record(fieldPats = fieldPats) -> fieldPats |> List.tryPick (fun (_, _, p) -> traversePat path p)
+                | SynPat.Record(fieldPats = fieldPats) -> fieldPats |> List.tryPick (fun x -> traversePat path x.Pattern)
                 | SynPat.Attrib(p, attributes, m) ->
                     match traversePat path p with
                     | None -> attributeApplicationDives path attributes |> pick m attributes
@@ -780,7 +780,7 @@ module SyntaxTraversal =
                 | SynPat.LongIdent(argPats = args) ->
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
-                    | SynArgPats.NamePatPairs(pats = ps) -> ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
+                    | SynArgPats.NamePatPairs(pats = ps) -> ps |> List.tryPick (fun x -> traversePat path x.Pattern)
                 | SynPat.Typed(p, ty, _) ->
                     match traversePat path p with
                     | None -> traverseSynType path ty

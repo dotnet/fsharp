@@ -18,16 +18,18 @@ ImplFile
                               None),
                            Typed
                              (Record
-                                ([(([], Name), Some (3,16--3,17),
-                                   Named
-                                     (SynIdent (name, None), false, None,
-                                      (3,18--3,22)))], (3,9--3,24)),
+                                ([NamePatPairField
+                                    (SynLongIdent ([Name], [], [None]),
+                                     Some (3,16--3,17), (3,11--3,22),
+                                     Named
+                                       (SynIdent (name, None), false, None,
+                                        (3,18--3,22)), None)], (3,9--3,24)),
                               LongIdent (SynLongIdent ([Person], [], [None])),
                               (3,9--3,32)), None,
                            App
                              (Atomic, false, Ident asyncPerson,
                               Const (Unit, (3,46--3,48)), (3,35--3,48)),
-                           (3,4--4,15), Yes (3,4--3,48),
+                           (3,4--3,48), Yes (3,4--3,48),
                            { LeadingKeyword = Let (3,4--3,8)
                              InlineKeyword = None
                              EqualsRange = Some (3,33--3,34) })],

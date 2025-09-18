@@ -397,6 +397,11 @@
         <target state="translated">errore durante l'accesso deprecato del costrutto con l'attributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnInvalidDeclsInTypeDefinitions">
+        <source>Error when invalid declarations are used in type definitions.</source>
+        <target state="new">Error when invalid declarations are used in type definitions.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorReportingOnStaticClasses">
         <source>Error reporting on static classes</source>
         <target state="translated">Segnalazione errori nelle classi statiche</target>
@@ -905,6 +910,31 @@
       <trans-unit id="lexWarnDirectivesMustMatch">
         <source>There is another {0} for this warning already in line {1}.</source>
         <target state="new">There is another {0} for this warning already in line {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedConstruct">
+        <source>'{0}' must be defined at module level, not inside a type.</source>
+        <target state="new">'{0}' must be defined at module level, not inside a type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedExceptionDefinition">
+        <source>Exceptions must be defined at module level, not inside types.</source>
+        <target state="new">Exceptions must be defined at module level, not inside types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedModule">
+        <source>Modules cannot be nested inside types. Define modules at module or namespace level.</source>
+        <target state="new">Modules cannot be nested inside types. Define modules at module or namespace level.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedOpenDeclaration">
+        <source>'open' declarations must appear at module level, not inside types.</source>
+        <target state="new">'open' declarations must appear at module level, not inside types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexfltInvalidNestedTypeDefinition">
+        <source>Nested type definitions are not allowed. Types must be defined at module or namespace level.</source>
+        <target state="new">Nested type definitions are not allowed. Types must be defined at module or namespace level.</target>
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeTuple">
@@ -6605,11 +6635,6 @@
       <trans-unit id="nrInvalidExpression">
         <source>Invalid expression '{0}'</source>
         <target state="translated">Espressione '{0}' non valida</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nrNoConstructorsAvailableForType">
-        <source>No constructors are available for the type '{0}'</source>
-        <target state="translated">Nessun costruttore disponibile per il tipo '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="nrUnionTypeNeedsQualifiedAccess">

@@ -74,4 +74,16 @@ module TyperelatedExpressions =
             (Warning 20, Line 9, Col 1, Line 9, Col 22, "The result of this expression has type 'obj' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
+    [<Fact>]
+    let ``Upcast 01`` () =
+        FSharp """
+module Module
 
+type A() =
+    class end
+
+not true :> A |> ignore
+"""
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [(Error 193, Line 7, Col 1, Line 7, Col 9, "Type constraint mismatch. The type \n    'bool'    \nis not compatible with type\n    'A'    \n")]
