@@ -205,10 +205,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | :? FSharpEntity as symbol -> symbol.TryGetMetadataText() |> Option.map (fun text -> text, symbol.DisplayName)
             | :? FSharpMemberOrFunctionOrValue as symbol ->
                 symbol.ApparentEnclosingEntity
-                |> Option.bind (fun entity ->
-                    entity.TryGetMetadataText()
-                    |> Option.map (fun text -> text, entity.DisplayName)
-                )
+                |> Option.bind (fun entity -> entity.TryGetMetadataText() |> Option.map (fun text -> text, entity.DisplayName))
 
             | :? FSharpField as symbol ->
                 match symbol.DeclaringEntity with
@@ -657,10 +654,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             | :? FSharpEntity as symbol -> symbol.TryGetMetadataText() |> Option.map (fun text -> text, symbol.DisplayName)
             | :? FSharpMemberOrFunctionOrValue as symbol ->
                 symbol.ApparentEnclosingEntity
-                |> Option.bind (fun entity ->
-                    entity.TryGetMetadataText()
-                    |> Option.map (fun text -> text, entity.DisplayName)
-                )
+                |> Option.bind (fun entity -> entity.TryGetMetadataText() |> Option.map (fun text -> text, entity.DisplayName))
             | :? FSharpField as symbol ->
                 match symbol.DeclaringEntity with
                 | Some entity ->
