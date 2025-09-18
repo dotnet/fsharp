@@ -26,7 +26,8 @@ ImplFile
                                         Named
                                           (SynIdent (name, None), false, None,
                                            (4,19--4,23)),
-                                        Some ((4,23--4,24), Some (4,24)));
+                                        Some
+                                          (Semicolon ((4,23--4,24), Some (4,24))));
                                      NamePatPairField
                                        (SynLongIdent ([Age], [], [None]),
                                         Some (4,29--4,30), (4,25--4,34),
@@ -38,7 +39,7 @@ ImplFile
                            App
                              (Atomic, false, Ident asyncPerson,
                               Const (Unit, (4,59--4,61)), (4,48--4,61)),
-                           (4,4--6,15), Yes (4,4--4,61),
+                           (4,4--4,61), Yes (4,4--4,61),
                            { LeadingKeyword = Let (4,4--4,8)
                              InlineKeyword = None
                              EqualsRange = Some (4,46--4,47) });
