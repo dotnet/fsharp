@@ -1154,7 +1154,7 @@ type internal TransparentCompiler
             let! sources =
                 projectSnapshot.SourceFiles
                 |> Seq.map (fun f -> LoadSource f isExe (f.FileName = bootstrapInfo.LastFileName))
-                |> MultipleDiagnosticsLoggers.Parallel2
+                |> MultipleDiagnosticsLoggers.Parallel
 
             return ProjectSnapshotWithSources(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, sources |> Array.toList)
 
@@ -1538,7 +1538,7 @@ type internal TransparentCompiler
             let! parsedInputs =
                 projectSnapshot.SourceFiles
                 |> Seq.map (ComputeParseFile projectSnapshot tcConfig)
-                |> MultipleDiagnosticsLoggers.Parallel2
+                |> MultipleDiagnosticsLoggers.Parallel
 
             return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedInputs |> Array.toList)
         }

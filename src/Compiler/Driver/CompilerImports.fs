@@ -2326,8 +2326,8 @@ and [<Sealed>] TcImports
 
             let runMethod =
                 match tcConfig.parallelReferenceResolution with
-                | ParallelReferenceResolution.On -> MultipleDiagnosticsLoggers.Parallel2
-                | ParallelReferenceResolution.Off -> MultipleDiagnosticsLoggers.Sequential2
+                | ParallelReferenceResolution.On -> MultipleDiagnosticsLoggers.Parallel
+                | ParallelReferenceResolution.Off -> MultipleDiagnosticsLoggers.Sequential
 
             let! results =
                 nms

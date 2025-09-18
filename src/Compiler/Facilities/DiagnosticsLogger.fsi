@@ -494,11 +494,7 @@ module MultipleDiagnosticsLoggers =
     /// Run computations using Async.Parallel.
     /// Captures the diagnostics from each computation and commits them to the caller's logger preserving their order.
     /// When done, restores caller's build phase and diagnostics logger.
-    val Parallel: computations: Async<'T> seq -> Async<'T array>
-
-    val Parallel2: computations: Async2<'T> seq -> Async2<'T array>
+    val Parallel: computations: Async2<'T> seq -> Async2<'T array>
 
     /// Run computations sequentially starting immediately on the current thread.
-    val Sequential: computations: Async<'T> seq -> Async<'T array>
-
-    val Sequential2: computations: Async2<'T> seq -> Async2<'T array>
+    val Sequential: computations: Async2<'T> seq -> Async2<'T array>
