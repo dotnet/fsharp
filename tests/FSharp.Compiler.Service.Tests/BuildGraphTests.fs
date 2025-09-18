@@ -256,7 +256,7 @@ module BuildGraphTests =
             let rng = Random()
             fun n -> rng.Next n
     
-        let job phase i = async {
+        let job phase i = async2 {
             do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             DiagnosticsThreadStatics.DiagnosticsLogger.DebugDisplay()
@@ -266,7 +266,7 @@ module BuildGraphTests =
         }
     
         let work (phase: BuildPhase) =
-            async {
+            async2 {
                 let n = 8
                 let logger = CapturingDiagnosticsLogger("test NodeCode")
                 use _ = new CompilationGlobalsScope(logger, phase)
@@ -298,8 +298,8 @@ module BuildGraphTests =
         let pickRandomPhase _ = phases[random phases.Length]
         Seq.init 100 pickRandomPhase
         |> Seq.map work
-        |> Async.Parallel
-        |> Async.RunSynchronously
+        |> Async2.Parallel
+        |> Async2.StartAsTask
 
     exception TestException
 
@@ -367,7 +367,7 @@ module BuildGraphTests =
             Assert.shouldBeTrue (msg > prevError)
             prevError <- msg
 
-        let work i = async {
+        let work i = async2 {
             for c in 'A' .. 'F' do
                 do! Async.SwitchToThreadPool()
                 errorR (ExampleException $"%03d{i}{c}")
@@ -377,12 +377,12 @@ module BuildGraphTests =
 
         let logger = DiagnosticsLoggerWithCallback errorCommitted
         use _ = UseDiagnosticsLogger logger
-        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore |> Async.RunImmediate
+        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async2.Ignore |> Async2.RunImmediate
 
         // all errors committed
         errorCountShouldBe 300
 
-        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async.Ignore |> Async.RunImmediate
+        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async2.Ignore |> Async2.RunImmediate
 
         errorCountShouldBe 600
 
@@ -393,17 +393,17 @@ module BuildGraphTests =
         use _ = UseDiagnosticsLogger (CapturingDiagnosticsLogger "test logger")
 
         let tasks = [
-            async { failwith "computation failed" }
+            async2 { failwith "computation failed" }
 
             for i in 1 .. 300 do
-                async {
+                async2 {
                     errorR (ExampleException $"{Interlocked.Increment(&count)}")
                     error (ExampleException $"{Interlocked.Increment(&count)}")
                 }
         ]
 
         task {
-            do! tasks |> MultipleDiagnosticsLoggers.Parallel |> Async.Catch |> Async.Ignore
+            do! tasks |> MultipleDiagnosticsLoggers.Parallel |> Async2.Catch |> Async2.Ignore
 
             // Diagnostics from all started tasks should be collected despite the exception.
             errorCountShouldBe count
@@ -434,7 +434,7 @@ module BuildGraphTests =
             loggerShouldBe logger
             errorCountShouldBe 3
 
-            let workInner = async {
+            let workInner = async2 {
                     do! async.Zero()
                     errorR TestException
                     loggerShouldBe logger
@@ -509,27 +509,27 @@ module BuildGraphTests =
         loggerShouldBe logger
         errorCountShouldBe 17
 
-        async {
+        async2 {
 
             // After Async.Parallel the continuation runs in the context of the last computation that finished.
             do! 
-                [ async {
+                [ async2 {
                     SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
-                |> Async.Parallel
-                |> Async.Ignore
+                |> Async2.Parallel
+                |> Async2.Ignore
             loggerShouldBe DiscardErrorsLogger
 
             SetThreadDiagnosticsLoggerNoUnwind logger
 
             // On the other hand, MultipleDiagnosticsLoggers.Parallel restores caller's context.
             do!
-                [ async {
+                [ async2 {
                     SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
                 |> MultipleDiagnosticsLoggers.Parallel
-                |> Async.Ignore
+                |> Async2.Ignore
             loggerShouldBe logger
         }
-        |> Async.RunImmediate
+        |> Async2.RunImmediate
 
         // Synchronous code will affect current context:
 
@@ -544,13 +544,13 @@ module BuildGraphTests =
 
         SetThreadDiagnosticsLoggerNoUnwind logger
         // This runs in async continuation, so the context is forked.
-        async {
+        async2 {
             do! Async.Sleep 0
             SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger
             do! Async.SwitchToNewThread()
             loggerShouldBe DiscardErrorsLogger
         }
-        |> Async.RunImmediate
+        |> Async2.RunImmediate
         loggerShouldBe logger
 
 
