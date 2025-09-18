@@ -4250,11 +4250,9 @@ module TcDeclarations =
         // a) For interfaces, only if it is in the original defn.
         //    Augmentations to interfaces via partial type defns will always be extensions, e.g. extension members on interfaces.
         // b) For other types, if the type is isInSameModuleOrNamespace
-        let declKind, typars = 
-          if isAtOriginalTyconDefn then 
-              ModuleOrMemberBinding, reqTypars
-
-          else
+        if isAtOriginalTyconDefn then
+            ModuleOrMemberBinding, tcref, reqTypars
+        else
             let isInSameModuleOrNamespace = 
                  match envForDecls.eModuleOrNamespaceTypeAccumulator.Value.TypesByMangledName.TryGetValue tcref.LogicalName with 
                  | true, tycon -> tyconOrder.Compare(tcref.Deref, tycon) = 0
@@ -4270,14 +4268,16 @@ module TcDeclarations =
             let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurrence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
             declaredTypars |> List.iter (SetTyparRigid envForDecls.DisplayEnv m)
 
-            if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
+            if tcref.TypeAbbrev.IsSome then
+                ExtrinsicExtensionBinding, tcref, declaredTypars
+            elif isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
-                IntrinsicExtensionBinding, reqTypars
+                IntrinsicExtensionBinding, tcref, reqTypars
             else 
                 if isInSameModuleOrNamespace && isDelegateOrEnum then 
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(), tcref.Range))
@@ -4285,10 +4285,7 @@ module TcDeclarations =
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 if not (typarsAEquiv g (TypeEquivEnv.EmptyWithNullChecks g) reqTypars declaredTypars) then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-                ExtrinsicExtensionBinding, declaredTypars
-
-
-        declKind, tcref, typars
+                ExtrinsicExtensionBinding, tcref, declaredTypars
 
 
     let private isAugmentationTyconDefnRepr = function SynTypeDefnSimpleRepr.General(kind=SynTypeDefnKind.Augmentation _) -> true | _ -> false

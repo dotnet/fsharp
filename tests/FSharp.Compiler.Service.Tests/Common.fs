@@ -141,11 +141,14 @@ let mkTestFileAndOptions additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
+    Range.setTestSource fileName source
+
     match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
 let parseAndCheckScriptWithOptions (file:string, input, opts) =
+    Range.setTestSource file input
 
 #if NETCOREAPP
     let projectOptions =
@@ -194,6 +197,7 @@ let parseSourceCode (name: string, code: string) =
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
+    Range.setTestSource filePath code
     parseResults.ParseTree
 
 let matchBraces (name: string, code: string) =

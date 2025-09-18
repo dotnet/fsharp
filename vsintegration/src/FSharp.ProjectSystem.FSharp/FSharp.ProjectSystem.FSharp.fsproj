@@ -9,6 +9,13 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <!-- Enable preserialized resources by default (required by newer SDKs for non-string resources). -->
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+  </PropertyGroup>
+
+  <!-- When building with desktop MSBuild (Full), fall back to legacy resources so the CTO merger (VSSDK) can read .resources files. -->
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' != 'Core'">
+    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +35,8 @@
     <EmbeddedResource Include="VSPackage.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpSR</GeneratedModuleName>
-      <MergeWithCTO>true</MergeWithCTO>
+      <!-- Only merge with CTO when building with desktop MSBuild (typical for VS/VSSDK builds). Skip for dotnet (MSBuild Core). -->
+      <MergeWithCTO Condition="'$(MSBuildRuntimeType)' != 'Core'">true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
       <SubType>Designer</SubType>
       <IntermediateTargetPath>$(IntermediateOutputPath)resources\</IntermediateTargetPath>
