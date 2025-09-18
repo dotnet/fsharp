@@ -352,7 +352,9 @@ namespace CSharpLib
     
     let sourceIdSource = """
 #line 100 "/temp/target.fs"
-printfn $"{__LINE__} in {__SOURCE_FILE__} in {__SOURCE_DIRECTORY__}"
+let dir = __SOURCE_DIRECTORY__
+let d = dir[dir.Length - 4 ..]
+printf $"{__LINE__} in {__SOURCE_FILE__} in {d}"
 """    
 
     [<Fact>]
@@ -363,10 +365,10 @@ printfn $"{__LINE__} in {__SOURCE_FILE__} in {__SOURCE_DIRECTORY__}"
             |> withFileName "original.fs"
             |> compileExeAndRun
             |> shouldSucceed
-        let expected = "100 in target.fs in /temp"
+        let expected = "102 in target.fs in temp"
         match result.RunOutput with
         | Some (ExecutionOutput r) ->
-            Assert.Equal(expected, r.StdOut.Trim())
+            Assert.Equal(expected, r.StdOut)
         | _ ->
             Assert.Fail "unexpected: no execution output"
 
