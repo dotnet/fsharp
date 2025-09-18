@@ -6,7 +6,7 @@
 let test = 
     sprintf "%1A" [1..5] = "[1;\n 2;\n 3;\n 4;\n 5]" &&
     sprintf "%13A" [|1..5|] = "[|1; 2; 3; 4;\n  5|]" &&
-    sprintf "%3.1A" {1..3} = "seq\n  [1;\n   ...]"
+    sprintf "%3.1A"  (seq {1..3}) = "seq\n  [1;\n   ...]"
 
 match test with
 | false -> raise (new System.Exception("LazyValues03 failed - this should never be forced"))

@@ -76,6 +76,7 @@
     <Compile Include="SourceTextTests.fs" />
     <Compile Include="SynExprTests.fs" />
     <Compile Include="SynPatTests.fs" />
+    <Compile Include="CapturedTypes.fs" />
     <Compile Include="WarnScopeTests.fs" />
   </ItemGroup>
 
@@ -90,7 +91,7 @@
     <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
 	<ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj">
-		<!-- If tests would use net9.0, the surface area changes because of different set of Assembly references -->
+		<!-- If tests would use net10.0, the surface area changes because of different set of Assembly references -->
 		<SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
 	</ProjectReference>
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />

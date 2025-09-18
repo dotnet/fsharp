@@ -216,6 +216,9 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
     member _.WithSuffixGenericParameters () =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Suffix }  )
 
+    member x.WithTopLevelPrefixGenericParameters () =
+        FSharpDisplayContext(fun g -> (denv g).UseTopLevelPrefixGenericParameterStyle())
+
 // delay the realization of 'item' in case it is unresolved
 type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> CcuThunk -> AccessorDomain -> bool) =
 

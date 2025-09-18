@@ -1,5 +1,23 @@
 # Cross-platform PowerShell script to verify the integrity of the produced dlls, using dotnet-ilverify.
 
+function Normalize-IlverifyOutputLine {
+    param(
+        [string]$line
+    )
+    # Remove F# closure suffixes: +clo@NNN-NNN, +clo@NNN, +NAME@NNN-NNN, +NAME@NNN
+    $line = $line -replace '(\+\w+)@\d+(-\d+)?', '$1'
+    # Remove patterns like "Pipe #1 stage #1 at line 1782@1782"
+    $line = $line -replace 'Pipe #\d+ stage #\d+ at line \d+@\d+', ''
+    # Remove function suffixes like NAME@NNN or NAME@NNN-NNN in method names
+    $line = $line -replace '(\w+)@\d+(-\d+)?', '$1'
+    # Remove 'at line NNNN'
+    $line = $line -replace 'at line \d+', ''
+    # Remove leftover double spaces, stray "+" etc.
+    $line = $line -replace '\s+', ' '
+    $line = $line.Trim()
+    return $line
+}
+
 # Set build script based on which OS we're running on - Windows (build.cmd), Linux or macOS (build.sh)
 
 Write-Host "Checking whether running on Windows: $IsWindows"
@@ -24,7 +42,7 @@ Write-Host "Repository path: $repo_path"
 # List projects to verify, with TFMs
 $projects = @{
     "FSharp.Core" = @($default_tfm, "netstandard2.1")
-    "FSharp.Compiler.Service" = @($default_tfm, "net9.0")
+    "FSharp.Compiler.Service" = @($default_tfm, "net10.0")
 }
 
 # Check ilverify can run
@@ -111,16 +129,19 @@ foreach ($project in $projects.Keys) {
             $ilverify_output = @(Invoke-Expression "& $ilverify_cmd" -ErrorAction SilentlyContinue)
 
             # Normalize output, get rid of paths in log like
-            #  [IL]: Error [StackUnexpected]: [/Users/u/code/fsharp3/artifacts/bin/FSharp.Compiler.Service/Release/net9.0/FSharp.Core.dll : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
+            #  [IL]: Error [StackUnexpected]: [/Users/u/code/fsharp3/artifacts/bin/FSharp.Compiler.Service/Release/net10.0/FSharp.Core.dll : Microsoft.FSharp.Collections.ArrayModule+Parallel::Choose([FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,Microsoft.FSharp.Core.FSharpOption`1<!!1>>, !!0[])][offset 0x00000081][found Byte] Unexpected type on the stack.
             # This is a quick and dirty way to do it, but it works for now.
             $ilverify_output = $ilverify_output | ForEach-Object {
                 if ($_ -match "\[IL\]: Error \[") {
                     $parts = $_ -split " "
-                    "$($parts[0]) $($parts[1]) $($parts[2]) $($parts[4..$parts.Length])"
+                    $normalized_line = "$($parts[0]) $($parts[1]) $($parts[2]) $($parts[4..$parts.Length])"
+                    # Apply additional normalization to remove auto-generated numeric suffixes
+                    Normalize-IlverifyOutputLine $normalized_line
                 } elseif ($_ -match "Error\(s\) Verifying") {
                     # do nothing
                 } else {
-                    $_
+                    # Apply normalization to all other lines too
+                    Normalize-IlverifyOutputLine $_
                 }
             }
 
@@ -141,8 +162,8 @@ foreach ($project in $projects.Keys) {
                 continue
             }
 
-            # Read baseline file into string array
-            [string[]] $baseline = Get-Content $baseline_file
+            # Read baseline file into string array and normalize it
+            [string[]] $baseline = Get-Content $baseline_file # | ForEach-Object { Normalize-IlverifyOutputLine $_ }
 
             if ($baseline.Length -eq 0) {
                 Write-Host "Baseline file is empty: $baseline_file"

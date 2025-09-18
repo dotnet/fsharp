@@ -11,23 +11,22 @@ module TestConsole =
     type private RedirectingTextReader() =
         inherit TextReader()
         let holder = AsyncLocal<_>()
-        do holder.Value <- TextReader.Null
-
-        override _.Peek() = holder.Value.Peek()
-        override _.Read() = holder.Value.Read()
-        member _.Value = holder.Value
-        member _.Set (reader: TextReader) = holder.Value <- reader
+        member _.Reader
+            with get() = holder.Value |> ValueOption.defaultValue TextReader.Null
+            and set v = holder.Value <- ValueSome v
+        override this.Peek() = this.Reader.Peek()
+        override this.Read() = this.Reader.Read()
 
     /// Redirects writes performed on different async execution contexts to the relevant TextWriter held by AsyncLocal.
     type private RedirectingTextWriter() =
         inherit TextWriter()
-        let holder = AsyncLocal<TextWriter>()
-        do holder.Value <- TextWriter.Null
+        let holder = AsyncLocal<_>()      
+        member _.Writer
+            with get() = holder.Value |> ValueOption.defaultValue TextWriter.Null
+            and set v = holder.Value <- ValueSome v
 
         override _.Encoding = Encoding.UTF8
-        override _.Write(value: char) = holder.Value.Write(value)
-        member _.Value = holder.Value
-        member _.Set (writer: TextWriter) = holder.Value <- writer
+        override this.Write(value: char) = this.Writer.Write(value)
 
     let private localIn = new RedirectingTextReader()
     let private localOut = new RedirectingTextWriter()
@@ -41,12 +40,12 @@ module TestConsole =
     // Taps into the redirected console stream.
     type private CapturingWriter(redirecting: RedirectingTextWriter) as this =
         inherit StringWriter()
-        let wrapped = redirecting.Value
-        do redirecting.Set this
+        let wrapped = redirecting.Writer
+        do redirecting.Writer <- this
         override _.Encoding = Encoding.UTF8
         override _.Write(value: char) = wrapped.Write(value); base.Write(value)
         override _.Dispose (disposing: bool) =
-            redirecting.Set wrapped
+            redirecting.Writer <- wrapped
             base.Dispose(disposing: bool)
 
     /// Captures console streams for the current async execution context.
@@ -77,9 +76,9 @@ module TestConsole =
             string error
 
     type ProvideInput(input: string) =
-        let oldIn = localIn.Value
+        let oldIn = localIn.Reader
         do
-            new StringReader(input) |> localIn.Set
+            localIn.Reader <- new StringReader(input)
 
         interface IDisposable with
-            member this.Dispose (): unit = localIn.Set oldIn
+            member this.Dispose (): unit = localIn.Reader <- oldIn

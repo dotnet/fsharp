@@ -3004,20 +3004,19 @@ let TcRuntimeTypeTest isCast isOperator (cenv: cenv) denv m tgtTy srcTy =
                 warning(Error(FSComp.SR.tcTypeTestLossy(NicePrint.minimalStringOfTypeWithNullness denv ety, NicePrint.minimalStringOfType denv (stripTyEqnsWrtErasure EraseAll g ety)), m))
 
 ///  Checks, warnings and constraint assertions for upcasts
-let TcStaticUpcast (cenv: cenv) denv m tgtTy srcTy =
+let TcStaticUpcast (cenv: cenv) denv mSourceExpr mUpcastExpr tgtTy srcTy =
     let g = cenv.g
     if isTyparTy g tgtTy then
         if not (destTyparTy g tgtTy).IsCompatFlex then
-            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, m))
-            //else warning(UpcastUnnecessary m)
+            error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, mUpcastExpr))
 
     if isSealedTy g tgtTy && not (isTyparTy g tgtTy) then
-        warning(CoercionTargetSealed(denv, tgtTy, m))
+        warning(CoercionTargetSealed(denv, tgtTy, mUpcastExpr))
 
     if typeEquiv g srcTy tgtTy then
-        warning(UpcastUnnecessary m)
+        warning(UpcastUnnecessary mUpcastExpr)
 
-    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace tgtTy srcTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css mSourceExpr NoTrace tgtTy srcTy
 
 let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
 
@@ -6072,7 +6071,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.DoBang (trivia = { DoBangKeyword = m })
     | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
     | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUseBang (trivia = { LetOrUseBangKeyword = m }) ->
+    | SynExpr.LetOrUse (isBang = true; trivia = { LetOrUseKeyword = m }) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->
@@ -6139,7 +6138,7 @@ and TcExprUpcast (cenv: cenv) overallTy env tpenv (synExpr, synInnerExpr, m) =
         | SynExpr.InferredUpcast _ ->
             overallTy.Commit, tpenv
         | _ -> failwith "upcast"
-    TcStaticUpcast cenv env.DisplayEnv m tgtTy srcTy
+    TcStaticUpcast cenv env.DisplayEnv synInnerExpr.Range m tgtTy srcTy
     let expr = mkCoerceExpr(innerExpr, tgtTy, m, srcTy)
     expr, tpenv
 
@@ -6199,6 +6198,7 @@ and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
         let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, mkAnyTupledTy g tupInfo argTys, env.eAccessRights)
         expr, tpenv
     )
 
@@ -7758,7 +7758,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
                 match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
                 | _, [ id ], _ -> ([], id), exprBeingAssigned
-                | Some withExpr, lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
+                | Some (origExpr, blockSep), lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned (origExpr, blockSep)
                 | _ -> List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
@@ -9199,7 +9199,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.YieldOrReturn _
         | SynExpr.YieldOrReturnFrom _
         | SynExpr.MatchBang _
-        | SynExpr.LetOrUseBang _
+        | SynExpr.LetOrUse (isBang = true)
         | SynExpr.DoBang _
         | SynExpr.WhileBang _
         | SynExpr.TraitCall _
@@ -10614,7 +10614,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
         TcLinearExprs bodyChecker cenv env2 overallTy tpenv isCompExpr expr2 (fun (expr2R, tpenv) ->
             cont (Expr.Sequential (expr1R, expr2R, NormalSeq, m), tpenv))
 
-    | SynExpr.LetOrUse (isRec, isUse, binds, body, m, _) when not (isUse && isCompExpr) ->
+    | SynExpr.LetOrUse (isRecursive = isRec; isUse= isUse; bindings = binds; body = body; range = m) when not (isUse && isCompExpr) ->
         if isRec then
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -10652,6 +10652,8 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synExpr cont =
 
             if not isRecovery && Option.isNone synElseExprOpt then
                 UnifyTypes cenv env m g.unit_ty overallTy.Commit
+
+            CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
 
             TcExprThatCanBeCtorBody cenv overallTy env tpenv synThenExpr
 

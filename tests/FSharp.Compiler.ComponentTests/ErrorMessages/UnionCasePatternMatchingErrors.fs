@@ -24,7 +24,7 @@ let myVal =
 \tf1: int list
 \t{| X: string |}
 \tf3: U
-\tf4: (int * System.String)")
+\tf4: int * System.String")
 
     [<Fact>]
     let ``Union matching error - Named args - Name used twice`` () =

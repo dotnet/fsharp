@@ -966,30 +966,33 @@ type TcGlobals(
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries =
-     [| "Int32"    , v_int_tcr
-        "IntPtr"   , v_nativeint_tcr
-        "UIntPtr"  , v_unativeint_tcr
-        "Int16"    , v_int16_tcr
-        "Int64"    , v_int64_tcr
-        "UInt16"   , v_uint16_tcr
-        "UInt32"   , v_uint32_tcr
-        "UInt64"   , v_uint64_tcr
-        "SByte"    , v_sbyte_tcr
-        "Decimal"  , v_decimal_tcr
-        "Byte"     , v_byte_tcr
-        "Boolean"  , v_bool_tcr
-        "String"   , v_string_tcr
-        "Object"   , v_obj_tcr
-        "Exception", v_exn_tcr
-        "Char"     , v_char_tcr
-        "Double"   , v_float_tcr
-        "Single"   , v_float32_tcr |]
-            |> Array.map (fun (nm, tcr) ->
+     [| yield sys, "Int32"    , v_int_tcr
+        yield sys, "IntPtr"   , v_nativeint_tcr
+        yield sys, "UIntPtr"  , v_unativeint_tcr
+        yield sys, "Int16"    , v_int16_tcr
+        yield sys, "Int64"    , v_int64_tcr
+        yield sys, "UInt16"   , v_uint16_tcr
+        yield sys, "UInt32"   , v_uint32_tcr
+        yield sys, "UInt64"   , v_uint64_tcr
+        yield sys, "SByte"    , v_sbyte_tcr
+        yield sys, "Decimal"  , v_decimal_tcr
+        yield sys, "Byte"     , v_byte_tcr
+        yield sys, "Boolean"  , v_bool_tcr
+        yield sys, "String"   , v_string_tcr
+        yield sys, "Object"   , v_obj_tcr
+        yield sys, "Exception", v_exn_tcr
+        yield sys, "Char"     , v_char_tcr
+        yield sys, "Double"   , v_float_tcr
+        yield sys, "Single"   , v_float32_tcr
+        if not compilingFSharpCore then
+            yield sysGenerics, "IEnumerable`1", v_seq_tcr |]
+            |> Array.map (fun (qualifier, nm, tcr) ->
                 let ty = mkNonGenericTy tcr
-                nm, findSysTyconRef sys nm, (fun _ nullness ->
-                    match nullness with
-                    | Nullness.Known NullnessInfo.WithoutNull -> ty
-                    | _ -> mkNonGenericTyWithNullness tcr nullness))
+                nm, findSysTyconRef qualifier nm, (fun typars nullness ->
+                    match typars, nullness with
+                    | [], Nullness.Known NullnessInfo.WithoutNull -> ty
+                    | [], nullness -> mkNonGenericTyWithNullness tcr nullness
+                    | _ -> TType_app(tcr, typars, nullness)))
 
   let decompileTyconEntries =
         [|
@@ -1481,6 +1484,7 @@ type TcGlobals(
   member val enum_DynamicallyAccessedMemberTypes = findOrEmbedSysPublicType "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"
 
   member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
+  member val attrib_IsByRefLikeAttribute_opt = tryFindSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
   member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
   member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
