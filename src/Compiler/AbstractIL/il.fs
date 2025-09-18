@@ -4121,27 +4121,33 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
         | multipleCctors ->
             // Handle multiple .cctor methods by renaming them and creating a new .cctor that calls them
             // This resolves the "duplicate entry '.cctor' in method table" error (FS2014)
-            let renamedCctors = 
+            let renamedCctors =
                 multipleCctors
                 |> List.mapi (fun i mdef ->
                     let newName = sprintf "cctor_renamed_%d" i
                     mdef.With(name = newName))
-            
+
             // Create call instructions for each renamed .cctor
             // Use a simple self-referencing type
             let currentTypeRef = mkILTyRef (ILScopeRef.Local, cd.Name)
             let currentType = mkILNonGenericBoxedTy currentTypeRef
-            let callInstrs = 
+
+            let callInstrs =
                 renamedCctors
-                |> List.map (fun mdef -> 
-                    let mspec = mkILNonGenericStaticMethSpecInTy (currentType, mdef.Name, [], ILType.Void)
+                |> List.map (fun mdef ->
+                    let mspec =
+                        mkILNonGenericStaticMethSpecInTy (currentType, mdef.Name, [], ILType.Void)
+
                     mkNormalCall mspec)
-            
+
             // Create new .cctor that calls all renamed methods
-            let newCctorInstrs = callInstrs @ [I_ret]
-            let newCctorBody = mkMethodBody (false, [], 8, nonBranchingInstrsToCode newCctorInstrs, tag, imports)
+            let newCctorInstrs = callInstrs @ [ I_ret ]
+
+            let newCctorBody =
+                mkMethodBody (false, [], 8, nonBranchingInstrsToCode newCctorInstrs, tag, imports)
+
             let newCctor = mkILClassCtor newCctorBody
-            
+
             newCctor, renamedCctors
 
     let methods =
