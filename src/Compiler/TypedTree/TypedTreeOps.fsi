@@ -1061,6 +1061,9 @@ type GenericParameterStyle =
     | Prefix
     /// Force the suffix style: int List
     | Suffix
+    /// Force the prefix style for a top-level type,
+    /// for example, `seq<int list>` instead of `int list seq`
+    | TopLevelPrefix of nested: GenericParameterStyle
 
 [<NoEquality; NoComparison>]
 type DisplayEnv =
@@ -1110,6 +1113,8 @@ type DisplayEnv =
     member AddOpenModuleOrNamespace: ModuleOrNamespaceRef -> DisplayEnv
 
     member UseGenericParameterStyle: GenericParameterStyle -> DisplayEnv
+
+    member UseTopLevelPrefixGenericParameterStyle: unit -> DisplayEnv
 
     static member InitialForSigFileGeneration: TcGlobals -> DisplayEnv
 

@@ -450,6 +450,34 @@ let tester2: int Group = []
             | other -> failwithf "myArr was supposed to be a value, but is %A"  other
 
     [<Fact>]
+    let ``FSharpType.Format with top-level prefix generic parameters style`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f (x: int list seq) = ()
+"""
+        let symbolUse = findSymbolUseByName "x" checkResults
+        let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        let typeArg = symbol.FullType
+        let displayContext = symbolUse.DisplayContext
+
+        let topLevelPrefixStyle =
+            displayContext.WithTopLevelPrefixGenericParameters()
+
+        let topLevelPrefixWithNestedPrefixStyle1 =
+            displayContext.WithPrefixGenericParameters().WithTopLevelPrefixGenericParameters()
+
+        // Should be idempotent
+        let topLevelPrefixWithNestedPrefixStyle2 =
+            topLevelPrefixWithNestedPrefixStyle1.WithTopLevelPrefixGenericParameters()
+
+        [ typeArg.Format(topLevelPrefixStyle)
+          typeArg.Format(topLevelPrefixWithNestedPrefixStyle1)
+          typeArg.Format(topLevelPrefixWithNestedPrefixStyle2) ]
+        |> shouldBe [
+            "seq<int list>"
+            "seq<list<int>>"
+            "seq<list<int>>" ]
+
+    [<Fact>]
     let ``Unfinished long ident type `` () =
         let _, checkResults = getParseAndCheckResults """
 let g (s: string) = ()
@@ -521,6 +549,20 @@ let f2 b1 b2 b3 b4 b5 =
     let ``Nullable types`` declaredType formattedType =
         let _, checkResults = getParseAndCheckResults $"""
 let f (x: {declaredType}) = ()
+"""
+        let symbolUse = findSymbolUseByName "x" checkResults
+        let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
+        let typeArg = symbol.FullType
+        typeArg.Format(symbolUse.DisplayContext) |> shouldEqual formattedType
+
+    [<Theory>]
+    [<InlineData("let x: IEnumerable<int> = []", "IEnumerable<int>")>]
+    [<InlineData("let x = [1].AsEnumerable()", "int seq")>]
+    let ``Format IEnumerable`` code formattedType =
+        let _, checkResults = getParseAndCheckResults $"""
+open System.Collections.Generic
+open System.Linq
+{code}
 """
         let symbolUse = findSymbolUseByName "x" checkResults
         let symbol = symbolUse.Symbol :?> FSharpMemberOrFunctionOrValue
