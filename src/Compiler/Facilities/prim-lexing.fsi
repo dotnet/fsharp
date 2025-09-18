@@ -143,6 +143,8 @@ type internal LexBuffer<'Char> =
 
     member StrictIndentation: bool option
 
+    member SourceText: ISourceText
+
     /// Logs a recoverable error if a language feature is unsupported, at the specified range.
     member CheckLanguageFeatureAndRecover: LanguageFeature -> range -> unit
 
