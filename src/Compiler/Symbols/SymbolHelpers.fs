@@ -407,9 +407,9 @@ module internal SymbolHelpers =
 
           member x.Equals(item1, item2) =
             match item1,item2 with
-            | null,null -> true
-            | null,_ | _,null -> false
-            | item1,item2 ->
+            | Null,Null -> true
+            | Null,_ | _,Null -> false
+            | NonNull item1,NonNull item2 ->
                 // This may explore assemblies that are not in the reference set.
                 // In this case just bail out and assume items are not equal
                 protectAssemblyExploration false (fun () ->

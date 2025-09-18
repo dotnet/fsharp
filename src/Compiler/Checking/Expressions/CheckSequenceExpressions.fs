@@ -263,7 +263,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             // The 'mBind' is attached to the lambda
             Some(mkSeqUsing cenv env wholeExprMark bindPatTy genOuterTy inputExpr consumeExpr, tpenv)
 
-        | SynExpr.LetOrUseBang(range = m) -> error (Error(FSComp.SR.tcUseForInSequenceExpression (), m))
+        | SynExpr.LetOrUse(isBang = true; range = m) -> error (Error(FSComp.SR.tcUseForInSequenceExpression (), m))
 
         | SynExpr.Match(spMatch, expr, clauses, _m, _trivia) ->
             let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv expr

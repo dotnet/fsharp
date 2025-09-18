@@ -65,7 +65,7 @@ match 1, 2 with
 """
     assertHasSymbolUsages ["y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(3,2--3,6): The type '(int * int)' does not have 'null' as a proper value"
+        "(3,2--3,6): The type 'int * int' does not have 'null' as a proper value"
         "(2,6--2,10): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
     ]
 

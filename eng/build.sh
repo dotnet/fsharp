@@ -83,7 +83,7 @@ properties=""
 docker=false
 args=""
 
-tfm="net9.0" # This needs to be changed every time it's bumped by arcade/us.
+tfm="net10.0" # This needs to be changed every time it's bumped by arcade/us.
 
 BuildCategory=""
 BuildMessage=""

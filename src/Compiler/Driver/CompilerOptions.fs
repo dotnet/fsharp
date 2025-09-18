@@ -1308,6 +1308,13 @@ let advancedFlagsFsi tcConfigB =
             None,
             Some(FSComp.SR.optsClearResultsCache ())
         )
+        CompilerOption(
+            "typecheck-only",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.typeCheckOnly <- true),
+            None,
+            Some(FSComp.SR.optsTypecheckOnly ())
+        )
     ]
 
 let advancedFlagsFsc tcConfigB =

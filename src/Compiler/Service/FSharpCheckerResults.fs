@@ -538,7 +538,7 @@ type internal TypeCheckInfo
                         // check that type of value is the same or subtype of tcref
                         // yes - allow access to protected members
                         // no - strip ability to access protected members
-                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy Import.CanCoerce ty then
+                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy TypeRelations.CanCoerce ty then
                             ad
                         else
                             AccessibleFrom(paths, None)
@@ -2040,6 +2040,16 @@ type internal TypeCheckInfo
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
+    member scope.TryGetCapturedType(range) =
+        sResolutions.CapturedExpressionTypings
+        |> Seq.tryFindBack (fun (_, _, _, m) -> equals m range)
+        |> Option.map (fun (ty, _, _, _) -> FSharpType(cenv, ty))
+
+    member scope.TryGetCapturedDisplayContext(range) =
+        sResolutions.CapturedExpressionTypings
+        |> Seq.tryFindBack (fun (_, _, _, m) -> equals m range)
+        |> Option.map (fun (_, q, _, _) -> FSharpDisplayContext(fun _ -> q.DisplayEnv))
+
     /// Get the auto-complete items at a location
     member _.GetDeclarations
         (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, genBodyForOverriddenMeth)
@@ -3479,6 +3489,16 @@ type FSharpCheckFileResults
             FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights, scope.ProjectOptions)
 
     member _.DependencyFiles = dependencyFiles
+
+    member _.TryGetCapturedType(range: range) =
+        match details with
+        | None -> None
+        | Some(scope, _) -> scope.TryGetCapturedType(range)
+
+    member _.TryGetCapturedDisplayContext(range: range) =
+        match details with
+        | None -> None
+        | Some(scope, _) -> scope.TryGetCapturedDisplayContext(range)
 
     member _.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken) =
         match details with

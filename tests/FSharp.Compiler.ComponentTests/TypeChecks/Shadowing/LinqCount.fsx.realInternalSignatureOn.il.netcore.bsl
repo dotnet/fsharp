@@ -5,15 +5,10 @@
 
 .assembly extern runtime { }
 .assembly extern FSharp.Core { }
-.assembly extern System.Collections
-{
-  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 9:0:0:0
-}
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         
-  .ver 9:0:0:0
+  .ver 10:0:0:0
 }
 .assembly assembly
 {
@@ -53,13 +48,13 @@
 
   } 
 
-  .field static assembly class [System.Collections]System.Collections.Generic.List`1<int32> r@2
+  .field static assembly class [runtime]System.Collections.Generic.List`1<int32> r@2
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .method public specialname static class [System.Collections]System.Collections.Generic.List`1<int32> get_r() cil managed
+  .method public specialname static class [runtime]System.Collections.Generic.List`1<int32> get_r() cil managed
   {
     
     .maxstack  8
-    IL_0000:  ldsfld     class [System.Collections]System.Collections.Generic.List`1<int32> assembly::r@2
+    IL_0000:  ldsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::r@2
     IL_0005:  ret
   } 
 
@@ -78,12 +73,12 @@
   {
     
     .maxstack  8
-    IL_0000:  newobj     instance void class [System.Collections]System.Collections.Generic.List`1<int32>::.ctor()
-    IL_0005:  stsfld     class [System.Collections]System.Collections.Generic.List`1<int32> assembly::r@2
-    IL_000a:  call       class [System.Collections]System.Collections.Generic.List`1<int32> assembly::get_r()
-    IL_000f:  callvirt   instance int32 class [System.Collections]System.Collections.Generic.List`1<int32>::get_Count()
+    IL_0000:  newobj     instance void class [runtime]System.Collections.Generic.List`1<int32>::.ctor()
+    IL_0005:  stsfld     class [runtime]System.Collections.Generic.List`1<int32> assembly::r@2
+    IL_000a:  call       class [runtime]System.Collections.Generic.List`1<int32> assembly::get_r()
+    IL_000f:  callvirt   instance int32 class [runtime]System.Collections.Generic.List`1<int32>::get_Count()
     IL_0014:  pop
-    IL_0015:  call       class [System.Collections]System.Collections.Generic.List`1<int32> assembly::get_r()
+    IL_0015:  call       class [runtime]System.Collections.Generic.List`1<int32> assembly::get_r()
     IL_001a:  ldnull
     IL_001b:  ldftn      bool assembly/clo@4::Invoke(int32)
     IL_0021:  newobj     instance void class [runtime]System.Func`2<int32,bool>::.ctor(object,
@@ -94,11 +89,11 @@
     IL_002c:  ret
   } 
 
-  .property class [System.Collections]System.Collections.Generic.List`1<int32>
+  .property class [runtime]System.Collections.Generic.List`1<int32>
           r()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [System.Collections]System.Collections.Generic.List`1<int32> assembly::get_r()
+    .get class [runtime]System.Collections.Generic.List`1<int32> assembly::get_r()
   } 
 } 
 

@@ -38,7 +38,7 @@
     <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Extensions.fs" />
     <Compile Include="Common\Error.fs" />
-    <Compile Include="Common\Logging.fs" />
+    <Compile Include="Common\DebugHelpers.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
@@ -196,7 +196,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(MicrosoftVisualStudioTextUIWpfVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
     <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />

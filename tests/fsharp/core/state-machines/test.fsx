@@ -656,6 +656,19 @@ module ``Check after code may include closures`` =
                 f 3))
     check "vwelvewl" (makeStateMachine 3) -2
 
+module ``Check simple state machine as top level value`` =
+    let stateMachine = 
+        __stateMachine<int, int>
+            (MoveNextMethodImpl<_>(fun sm -> 
+                if __useResumableCode then
+                    sm.Data <- 42 // we expect this result for successful resumable code compilation
+                else
+                    sm.Data <- 0xdeadbeef // if we get this result it means we've failed to compile as resumable code
+                )) 
+            (SetStateMachineMethodImpl<_>(fun sm state -> ()))
+            (AfterCode<_,_>(fun sm -> MoveOnce(&sm)))
+    check "top_level_value" stateMachine 42
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

@@ -27,6 +27,8 @@ let FSI = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
+let log = printfn
+
 module CoreTests =
 
 

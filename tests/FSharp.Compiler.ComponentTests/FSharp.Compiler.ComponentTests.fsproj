@@ -83,6 +83,7 @@
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
+    <Compile Include="Conformance\Expressions\ApplicationExpressions\Ctor.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="Conformance\Expressions\ObjectExpressions\ObjectExpressions.fs" />
@@ -221,6 +222,7 @@
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
+    <Compile Include="ErrorMessages\ErrorOnInvalidDeclsInTypeDefinitions.fs" />
     <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />
     <Compile Include="ErrorMessages\ExtendedDiagnosticDataTests.fs" />
@@ -273,6 +275,7 @@
     <Compile Include="Interop\ParamArray.fs" />
     <Compile Include="Interop\Literals.fs" />
     <Compile Include="Scripting\Interactive.fs" />
+    <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="TypeChecks\Graph\Utils.fs" />
@@ -348,7 +351,7 @@
     <Compile Include="FSharpChecker\TransparentCompiler.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs"/>
+    <Compile Include="Attributes\AttributeCtorSetPropAccess.fs" />
   </ItemGroup>
 
   <ItemGroup>

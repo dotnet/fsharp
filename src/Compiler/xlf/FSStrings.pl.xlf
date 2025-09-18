@@ -67,6 +67,11 @@
         <target state="new">This attribute is not valid for use on this language element</target>
         <note />
       </trans-unit>
+      <trans-unit id="NoConstructorsAvailableForType">
+        <source>No constructors are available for the type '{0}'</source>
+        <target state="new">No constructors are available for the type '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="translated">Przypadki unii z dyskryminatorem z małymi literami są dozwolone tylko w przypadku używania atrybutu RequireQualifiedAccess</target>

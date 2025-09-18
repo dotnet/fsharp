@@ -130,15 +130,15 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
                 yield ms.Symbol.DisplayName, extractCurriedParams ms ]
             |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
         let expected =
-            [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
-             ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
+            [("Concat", [("values", "'T seq")]);
 #if NETCOREAPP
              ("Concat", [("args", "ReadOnlySpan<obj>")]);
              ("Concat", [("values", "ReadOnlySpan<string>")]);
 #endif
              ("Concat", [("arg0", "obj")]);
              ("Concat", [("args", "obj array")]);
-             ("Concat", [("values", "string array")]);
+             ("Concat", [("values", "string array")])
+             ("Concat", [("values", "string seq")])
 #if NETCOREAPP
              ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
 #endif

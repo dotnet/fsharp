@@ -166,7 +166,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
 
 #if NETSTANDARD
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(``C# base with dim``, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
+            CompilationUtil.CreateCSharpCompilation(``C# base with dim``, CSharpLanguageVersion.CSharp8, TargetFramework.Current)
             |> CompilationReference.Create
 #endif
 

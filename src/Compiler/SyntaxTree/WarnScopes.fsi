@@ -9,9 +9,6 @@ open FSharp.Compiler.UnicodeLexing
 
 module internal WarnScopes =
 
-    /// To be called during lexing to register the line directives for warn scope processing.
-    val internal RegisterLineDirective: lexbuf: Lexbuf * fileIndex: int * line: int -> unit
-
     /// To be called during lexing to save #nowarn / #warnon directives.
     val ParseAndRegisterWarnDirective: lexbuf: Lexbuf -> unit
 

@@ -2,7 +2,7 @@
 //
 
 #r "nuget: Ionide.ProjInfo"
-#I @"..\..\artifacts\bin\fsc\Debug\net9.0\"
+#I @"..\..\artifacts\bin\fsc\Debug\net10.0\"
 #r "FSharp.Compiler.Service.dll"
 
 open System

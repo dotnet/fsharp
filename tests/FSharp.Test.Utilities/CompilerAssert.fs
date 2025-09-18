@@ -59,8 +59,6 @@ module AssemblyResolver =
             match found() with
             | None -> Unchecked.defaultof<Assembly>
             | Some name -> Assembly.Load(name) )
-
-    do addResolver()
 #endif
 
 type ExecutionOutcome = 
@@ -135,6 +133,8 @@ type SourceCodeFileKind =
         | Fsx s -> s.FileName
         | Fsi s -> s.FileName
         | Cs s -> s.FileName
+
+    member this.LoadSourceText() = FileSystem.OpenFileForReadShim(this.GetSourceFileName).ReadAllText()
 
     member this.GetSourceText =
         match this with
@@ -616,7 +616,7 @@ module CompilerAssertHelpers =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net9.0",
+        "tfm": "net10.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "7.0"

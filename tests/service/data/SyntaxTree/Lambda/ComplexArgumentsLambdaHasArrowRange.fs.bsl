@@ -25,14 +25,16 @@ ImplFile
                          (NoneAtInvisible, Ident _arg2,
                           [SynMatchClause
                              (Record
-                                ([(([], Y), Some (3,9--3,10),
-                                   ListCons
-                                     (Named
-                                        (SynIdent (h, None), false, None,
-                                         (3,11--3,12)), Wild (3,14--3,15),
-                                      (3,11--3,15),
-                                      { ColonColonRange = (3,12--3,14) }))],
-                                 (3,5--3,17)), None,
+                                ([NamePatPairField
+                                    (SynLongIdent ([Y], [], [None]),
+                                     Some (3,9--3,10), (3,7--3,15),
+                                     ListCons
+                                       (Named
+                                          (SynIdent (h, None), false, None,
+                                           (3,11--3,12)), Wild (3,14--3,15),
+                                        (3,11--3,15),
+                                        { ColonColonRange = (3,12--3,14) }),
+                                     None)], (3,5--3,17)), None,
                               Match
                                 (NoneAtInvisible, Ident _arg1,
                                  [SynMatchClause
@@ -88,12 +90,15 @@ ImplFile
                         (2,4--2,10));
                      Paren
                        (Record
-                          ([(([], Y), Some (3,9--3,10),
-                             ListCons
-                               (Named
-                                  (SynIdent (h, None), false, None, (3,11--3,12)),
-                                Wild (3,14--3,15), (3,11--3,15),
-                                { ColonColonRange = (3,12--3,14) }))],
+                          ([NamePatPairField
+                              (SynLongIdent ([Y], [], [None]), Some (3,9--3,10),
+                               (3,7--3,15),
+                               ListCons
+                                 (Named
+                                    (SynIdent (h, None), false, None,
+                                     (3,11--3,12)), Wild (3,14--3,15),
+                                  (3,11--3,15),
+                                  { ColonColonRange = (3,12--3,14) }), None)],
                            (3,5--3,17)), (3,4--3,18));
                      Paren
                        (LongIdent
@@ -108,13 +113,15 @@ ImplFile
                       (NoneAtInvisible, Ident _arg2,
                        [SynMatchClause
                           (Record
-                             ([(([], Y), Some (3,9--3,10),
-                                ListCons
-                                  (Named
-                                     (SynIdent (h, None), false, None,
-                                      (3,11--3,12)), Wild (3,14--3,15),
-                                   (3,11--3,15),
-                                   { ColonColonRange = (3,12--3,14) }))],
+                             ([NamePatPairField
+                                 (SynLongIdent ([Y], [], [None]),
+                                  Some (3,9--3,10), (3,7--3,15),
+                                  ListCons
+                                    (Named
+                                       (SynIdent (h, None), false, None,
+                                        (3,11--3,12)), Wild (3,14--3,15),
+                                     (3,11--3,15),
+                                     { ColonColonRange = (3,12--3,14) }), None)],
                               (3,5--3,17)), None,
                            Match
                              (NoneAtInvisible, Ident _arg1,

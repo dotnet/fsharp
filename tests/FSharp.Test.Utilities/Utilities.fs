@@ -58,7 +58,6 @@ module Utilities =
     [<RequireQualifiedAccess>]
     type TargetFramework =
         | NetStandard20
-        | NetCoreApp31
         | Current
 
     let private getResourceStream name =
@@ -109,31 +108,6 @@ module Utilities =
                 let systemCoreRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.System_Core).GetReference(display = "System.Core.dll (netstandard 2.0 ref)")
                 let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netstandard 2.0 ref)")
                 let systemCollectionsImmutableRef = lazy AssemblyMetadata.CreateFromImage(System_Collections_Immutable.Force()).GetReference(display = "System.Collections.Immutable.dll (netstandard 2.0 ref)")
-
-        [<RequireQualifiedAccess>]
-        module NetCoreApp31 =
-            let private mscorlib = lazy getResourceBlob "mscorlib.dll"
-            let private netstandard = lazy getResourceBlob "netstandard.dll"
-            let private System_Console = lazy getResourceBlob  "System.Console.dll"
-            let private System_Core = lazy getResourceBlob "System.Core.dll"
-            let private System_Dynamic_Runtime = lazy getResourceBlob "System.Dynamic.Runtime.dll"
-            let private System_Runtime = lazy getResourceBlob  "System.Runtime.dll"
-
-            module Files =
-                let mscorlib = lazy writeToTempDirectory "mscorlib" (mscorlib.Force())
-                let netStandard = lazy writeToTempDirectory "netstandard" (netstandard.Force())
-                let systemConsole = lazy writeToTempDirectory "System.Console" (System_Console.Force())
-                let systemCore =  lazy writeToTempDirectory "System.Core" (System_Core.Force())
-                let systemDynamicRuntime = lazy writeToTempDirectory "System.Dynamic.Runtime" (System_Dynamic_Runtime.Force())
-                let systemRuntime = lazy writeToTempDirectory "System.Runtime" (System_Runtime.Force())
-
-            module References =
-                let netStandardRef = lazy AssemblyMetadata.CreateFromImage(netstandard.Force()).GetReference(display = "netstandard.dll (netcoreapp 3.1 ref)")
-                let mscorlibRef = lazy AssemblyMetadata.CreateFromImage(mscorlib.Force()).GetReference(display = "mscorlib.dll (netcoreapp 3.1 ref)")
-                let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(System_Console.Force()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
-                let systemCoreRef = lazy AssemblyMetadata.CreateFromImage(System_Core.Force()).GetReference(display = "System.Core.dll (netcoreapp 3.1 ref)")
-                let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(System_Dynamic_Runtime.Force()).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.1 ref)")
-                let systemRuntimeRef = lazy AssemblyMetadata.CreateFromImage(System_Runtime.Force ()).GetReference(display = "System.Runtime.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
     module public TargetFrameworkUtil =
@@ -208,7 +182,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net9.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net10.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
@@ -266,15 +240,6 @@ An error occurred getting netcoreapp references (compare the output of `dotnet -
                 NetStandard20.References.systemDynamicRuntimeRef.Value,
                 NetStandard20.References.systemCollectionsImmutableRef.Value)
 
-        let private netCoreApp31References =
-            lazy ImmutableArray.Create(
-                NetCoreApp31.References.netStandardRef.Value, 
-                NetCoreApp31.References.mscorlibRef.Value, 
-                NetCoreApp31.References.systemRuntimeRef.Value, 
-                NetCoreApp31.References.systemCoreRef.Value, 
-                NetCoreApp31.References.systemDynamicRuntimeRef.Value, 
-                NetCoreApp31.References.systemConsoleRef.Value)
-
         let currentReferences =
             getNetCoreAppReferences
 
@@ -286,13 +251,11 @@ An error occurred getting netcoreapp references (compare the output of `dotnet -
         let getReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
-                | TargetFramework.NetCoreApp31 -> netCoreApp31References.Value
                 | TargetFramework.Current -> currentReferencesAsPEs
 
         let getFileReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20Files.Value |> Seq.toArray
-                | TargetFramework.NetCoreApp31 -> [||]                            //ToDo --- Perhaps NetCoreApp31Files 
                 | TargetFramework.Current -> currentReferences
 
 

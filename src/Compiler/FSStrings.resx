@@ -1152,4 +1152,7 @@
   <data name="InvalidAttributeTargetForLanguageElement2" xml:space="preserve">
     <value>This attribute is not valid for use on this language element</value>
   </data>
+  <data name="NoConstructorsAvailableForType" xml:space="preserve">
+    <value>No constructors are available for the type '{0}'</value>
+  </data>
 </root>

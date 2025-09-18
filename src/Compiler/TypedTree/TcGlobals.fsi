@@ -498,6 +498,8 @@ type internal TcGlobals =
 
     member attrib_SystemObsolete: BuiltinAttribInfo
 
+    member attrib_IsByRefLikeAttribute_opt: BuiltinAttribInfo option
+
     member attrib_ThreadStaticAttribute: BuiltinAttribInfo option
 
     member attrib_TypeForwardedToAttribute: BuiltinAttribInfo

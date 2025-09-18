@@ -291,7 +291,7 @@ module ExceptionDefinition =
         |> shouldFail
         |> withDiagnostics [
             (Error 945, Line 9, Col 13, Line 9, Col 22, "Cannot inherit a sealed type")
-            (Error 1133, Line 9, Col 5, Line 9, Col 24, "No constructors are available for the type 'FSharpExn'")
+            (Error 1133, Line 9, Col 13, Line 9, Col 24, "No constructors are available for the type 'FSharpExn'")
         ]
 
     // SOURCE=E_MatchFailure.fsx                  SCFLAGS=--test:ErrorRanges                   # E_MatchFailure.fsx

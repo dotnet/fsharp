@@ -11,15 +11,15 @@
     <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
     <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
 
-    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net9.0/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net9.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
 
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
-    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net9.0</LocalFSharpBuildBinPath>
+    <LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0</LocalFSharpBuildBinPath>
     <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
     <FSharpTargetsPath>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.Targets</FSharpTargetsPath>
     <FSharpPropsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>

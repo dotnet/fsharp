@@ -38,6 +38,8 @@ open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeProviders
 #endif
 
+exception NoConstructorsAvailableForType of TType * DisplayEnv * range
+
 /// An object that captures the logical context for name resolution.
 type NameResolver(g: TcGlobals,
                   amap: Import.ImportMap,
@@ -2554,7 +2556,7 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
                     [DefaultStructCtor(g, ty)]
                 else []
             if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g ty) && not (isAnyTupleTy g ty)) then
-                raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv ty), m))
+                raze (NoConstructorsAvailableForType(ty, edenv, m))
             else
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)
                 let metadataTy = convertToTypeWithMetadataIfPossible g ty

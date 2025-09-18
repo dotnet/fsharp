@@ -9,6 +9,8 @@ open FSharp.Compiler.IO
 
 let testConfig = testConfig __SOURCE_DIRECTORY__
 
+let log = printfn
+
 type Permutation =
 #if NETCOREAPP
     | FSC_NETCORE of optimized: bool * buildOnly: bool
@@ -218,7 +220,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = []
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net9.0"
+    let framework = "net10.0"
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
@@ -282,8 +284,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
 #if NETCOREAPP
-    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net9.0" optimized buildOnly
-    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net9.0" true false
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net10.0" optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net10.0" true false
 #else
     | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
     | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false

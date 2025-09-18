@@ -4453,9 +4453,9 @@ type TType =
             scope.QualifiedName
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText = x.ToString()
+    member x.DebugText = x.LimitedToString(4)
 
-    override x.ToString() =  
+    member x.LimitedToString(maxDepth:int) = 
         match x with 
         | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
         | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
@@ -4474,8 +4474,11 @@ type TType =
         | TType_var (tp, _) -> 
             match tp.Solution with 
             | None -> tp.DisplayName
-            | Some _ -> tp.DisplayName + " (solved)"
+            | Some t -> tp.DisplayName + $" (solved: {if maxDepth < 0 then Boolean.TrueString else t.LimitedToString(maxDepth-1)})"
         | TType_measure ms -> ms.ToString()
+
+    override x.ToString() = x.LimitedToString(4)
+
 
 type TypeInst = TType list 
 

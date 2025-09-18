@@ -229,7 +229,7 @@ type MyClass() =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(cs, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
+            CompilationUtil.CreateCSharpCompilation(cs, CSharpLanguageVersion.CSharp8, TargetFramework.Current)
             |> CompilationReference.Create
 
         let fsCmpl =
