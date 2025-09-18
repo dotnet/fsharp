@@ -13,7 +13,7 @@ let main _argv =
             printfn "ERROR: Basic record values don't match expected"
             1
         else
-            printfn "✓ Basic record test passed"
+            printfn "SUCCESS: Basic record test passed"
             
             // Test complex anonymous record functionality
             let complex = Library.getComplexAnonymousRecord()
@@ -26,7 +26,7 @@ let main _argv =
             printfn "Processed result: %s" processed
             
             if processed = "Processed: X=123, Y=test" then
-                printfn "✓ All compiler compatibility tests passed"
+                printfn "SUCCESS: All compiler compatibility tests passed"
                 0
             else
                 printfn "ERROR: Processed result doesn't match expected"
