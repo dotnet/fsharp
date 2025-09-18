@@ -90,19 +90,14 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
         let totalRange (origId: Ident) (id: Ident) =
             withStartEnd origId.idRange.End id.idRange.Start origId.idRange
 
-        let rangeOfBlockSeparator (id: Ident) =
-            let idEnd = id.idRange.End
-            let blockSeparatorStartCol = idEnd.Column
-            let blockSeparatorEndCol = blockSeparatorStartCol + 4
-            let blockSeparatorStartPos = mkPos idEnd.Line blockSeparatorStartCol
-            let blockSeparatorEndPos = mkPos idEnd.Line blockSeparatorEndCol
-
-            withStartEnd blockSeparatorStartPos blockSeparatorEndPos id.idRange
-
         match withExpr with
-        | SynExpr.Ident origId, (sepRange, _) ->
-            let lid, rng = upToId sepRange id (origId :: ids)
-            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), (rangeOfBlockSeparator id, None))
+        | SynExpr.Ident origId, (blockSep: BlockSeparator) ->
+            let lid, rng = upToId blockSep.Range id (origId :: ids)
+
+            Some(
+                SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id),
+                BlockSeparator.Offside(blockSep.Range, None)
+            )
         | _ -> None
 
     let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
