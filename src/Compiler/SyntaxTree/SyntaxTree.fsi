@@ -354,8 +354,7 @@ type SeqExprOnly =
     /// Indicates if a for loop is 'for x in e1 -> e2', only valid in sequence expressions
     | SeqExprOnly of bool
 
-/// Represents the location of the separator block and optional position
-/// of the semicolon (used for tooling support)
+/// Represents the location of the separator block and optional position of the semicolon (used for tooling support)
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type BlockSeparator =
     /// A separator consisting of a semicolon ';'

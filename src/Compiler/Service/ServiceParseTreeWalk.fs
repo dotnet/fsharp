@@ -498,15 +498,14 @@ module SyntaxTraversal =
                                         traverseSynExpr expr)
 
                             match sepOpt with
-                            | Some sep ->
-
+                            | Some blockSep ->
                                 yield
-                                    dive () sep.Range (fun () ->
+                                    dive () blockSep.Range (fun () ->
                                         // special case: caret is below 'inherit' + one or more fields are already defined
                                         // inherit A()
                                         // $
                                         // field1 = 5
-                                        diveIntoSeparator inheritRange.StartColumn sep.Position None)
+                                        diveIntoSeparator inheritRange.StartColumn blockSep.Position None)
                             | None -> ()
                         | _ -> ()
 
@@ -557,15 +556,14 @@ module SyntaxTraversal =
                             | None -> ()
 
                             match sepOpt with
-                            | Some sep ->
-
+                            | Some blockSep ->
                                 yield
-                                    dive () sep.Range (fun () ->
+                                    dive () blockSep.Range (fun () ->
                                         // special case: caret is between field bindings
                                         // field1 = 5
                                         // $
                                         // field2 = 5
-                                        diveIntoSeparator offsideColumn sep.Position copyOpt)
+                                        diveIntoSeparator offsideColumn blockSep.Position copyOpt)
                             | _ -> ()
 
                     ]

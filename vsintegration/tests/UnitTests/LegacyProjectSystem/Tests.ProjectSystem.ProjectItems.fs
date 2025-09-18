@@ -9,6 +9,27 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
+[<AutoOpen>]
+module Helpers =
+    /// Active pattern to parse a float from an env var
+    let (|EnvFloat|_|) (envVar: string) =
+        match Environment.GetEnvironmentVariable(envVar) with
+        | null | "" -> None
+        | str ->
+            match System.Double.TryParse(str, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture) with
+            | true, v -> Some v
+            | _ -> None
+
+
+/// xUnit Fact attribute that skips the test unless VISUALSTUDIOVERSION >= 18.0
+type Vs18OrNewerFactAttribute() =
+    inherit FactAttribute()
+    do
+        match "VISUALSTUDIOVERSION" with
+        | EnvFloat v when v >= 18.0 -> ()
+        | EnvFloat v -> base.Skip <- $"Test requires Visual Studio 18.0 or newer (VISUALSTUDIOVERSION >= 18.0), found: {v}"
+        | _ -> base.Skip <- "Test requires Visual Studio 18.0 or newer (VISUALSTUDIOVERSION not set)"
+
 
 type ProjectItems() = 
     inherit TheTests()
@@ -16,7 +37,7 @@ type ProjectItems() =
     //TODO: look for a way to remove the helper functions
     static let ANYTREE = Tree("",Nil,Nil)
 
-    [<Fact>]
+    [<Vs18OrNewerFact>]
     member public this.``RemoveAssemblyReference.NoIVsTrackProjectDocuments2Events``() =
         this.MakeProjectAndDo(["file.fs"], ["System.Numerics"],"", (fun project ->
             let listener = project.Site.GetService(typeof<Salsa.VsMocks.IVsTrackProjectDocuments2Listener>) :?> Salsa.VsMocks.IVsTrackProjectDocuments2Listener

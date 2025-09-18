@@ -6041,21 +6041,17 @@ opt_seps_block:
 
 seps_block:
   | OBLOCKSEP
-     { BlockSeparator.Offside(rhs parseState 1, None) }
+     { BlockSeparator.Offside((rhs parseState 1), None) }
 
   | SEMICOLON
      { let m = (rhs parseState 1)
        BlockSeparator.Semicolon(m, Some m.End) }
 
   | SEMICOLON OBLOCKSEP
-     { let mSemi = rhs parseState 1
-       let m = rhs2 parseState 1 2
-       BlockSeparator.Semicolon(m, Some mSemi.End) }
+     { BlockSeparator.Semicolon((rhs2 parseState 1 2), Some (rhs parseState 1).End) }
 
   | OBLOCKSEP SEMICOLON
-     { let mSemi = rhs parseState 2
-       let m = rhs2 parseState 1 2
-       BlockSeparator.Semicolon(m, Some mSemi.End) }
+     { BlockSeparator.Semicolon((rhs2 parseState 1 2), Some (rhs parseState 2).End) }
 
 
 opt_pairs_seps_block:

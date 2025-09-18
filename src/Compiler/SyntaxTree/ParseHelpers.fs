@@ -1199,7 +1199,7 @@ let mkLetExpression
                     headPat = pat,
                     returnInfo = None,
                     expr = rhs,
-                    range = mWhole,
+                    range = unionRanges mKeyword rhs.Range,
                     debugPoint = spBind,
                     trivia = trivia
                 )
