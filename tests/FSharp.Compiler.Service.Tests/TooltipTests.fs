@@ -536,3 +536,35 @@ let doIt(myAction : Action<int>) = myAc{caret}tion.Invoke(42)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo ("""val myAction: Action<int>""" |> normalize)
+
+[<Fact>]
+let ``Super type should be formatted in the prefix style`` () =
+    Checker.getTooltip """
+namespace Foo
+
+type A{caret} =
+    inherit seq<int list>
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "type A =\n  inherit seq<int list>"
+
+[<Fact>]
+let ``Interface impl should be formatted in the prefix style`` () =
+    Checker.getTooltip """
+namespace Foo
+
+type A{caret} =
+    interface seq<int list> with
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "type A =\n  interface seq<int list>"
+
+[<Fact>]
+let ``Flexible generic type should be formatted in the prefix style`` () =
+    Checker.getTooltip """
+module Foo
+
+let f (x{caret}: #seq<int list>) = ()
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldBeEquivalentTo "val x: #seq<int list>"
