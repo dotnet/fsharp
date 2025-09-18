@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
+open System.IO
 
 module CacheMetrics =
     let Meter = new Meter("FSharp.Compiler.Cache")
@@ -92,16 +93,55 @@ module CacheMetrics =
             | _ -> assert false)
 
         listener.Start()
+        listener :> IDisposable
 
     let StatsToString () =
-        let sb = Text.StringBuilder()
-        sb.AppendLine "Cache Metrics:" |> ignore
+        use sw = new StringWriter()
+
+        let nameColumnWidth =
+            [ yield! statsByName.Keys; "Cache name" ] |> Seq.map String.length |> Seq.max
+
+        let ratioColumnWidth = "hit-ratio".Length
+        let columns = allCounters |> List.map _.Name
+        let columnWidths = columns |> List.map String.length |> List.map (max 8)
+
+        let totalWidth =
+            1 + nameColumnWidth :: ratioColumnWidth :: columnWidths
+            |> List.map ((+) 3)
+            |> List.sum
+
+        sw.WriteLine(String('-', totalWidth))
+        let cacheNameHeader = "Cache name".PadRight nameColumnWidth
+        sw.Write $"| {cacheNameHeader} | hit-ratio |"
+
+        for w, c in (columnWidths, columns) ||> List.zip do
+            sw.Write $" {c.PadLeft w} |"
+
+        sw.WriteLine()
+        sw.WriteLine(String('-', totalWidth))
 
         for kv in statsByName do
-            sb.AppendLine $"Cache {kv.Key}: {kv.Value}" |> ignore
+            let name = kv.Key
+            let stats = kv.Value
+            let totals = stats.GetTotals()
+            sw.Write $"| {name.PadLeft nameColumnWidth} | {stats.Ratio, 9:P2} |"
 
-        sb.AppendLine() |> ignore
-        string sb
+            for w, c in (columnWidths, columns) ||> List.zip do
+                sw.Write $" {totals[c].ToString().PadLeft(w)} |"
+
+            sw.WriteLine()
+
+        sw.WriteLine(String('-', totalWidth))
+        string sw
+
+    let CaptureStatsAndWriteToConsole () =
+        let listener = ListenToAll()
+
+        { new IDisposable with
+            member _.Dispose() =
+                listener.Dispose()
+                Console.WriteLine(StatsToString())
+        }
 
     // Currently the Cache emits telemetry for raw cache events: hits, misses, evictions etc.
     // This type observes those counters and keeps a snapshot of readings. It is used in tests and can be used to print cache stats in debug mode.

@@ -569,6 +569,7 @@ let main1
             exiter.Exit 1
 
     if tcConfig.showTimes then
+        Caches.CacheMetrics.CaptureStatsAndWriteToConsole() |> disposables.Register
         Activity.Profiling.addConsoleListener () |> disposables.Register
 
     tcConfig.writeTimesToFile

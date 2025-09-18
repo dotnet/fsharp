@@ -31,6 +31,7 @@ open Config
 open System.Diagnostics.Metrics
 open System.Text
 open Microsoft.VisualStudio.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 module FSharpOutputPane =
 
@@ -119,14 +120,15 @@ module FSharpServiceTelemetry =
 
         ActivitySource.AddActivityListener(listener)
 
-    let periodicallyDisplayCacheStats () =
-        backgroundTask {
-            CacheMetrics.ListenToAll()
+    let periodicallyDisplayCacheStats (disposalToken: Threading.CancellationToken) =
+        cancellableTask {
+            use _ = CacheMetrics.ListenToAll()
 
             while true do
                 do! Task.Delay(TimeSpan.FromSeconds 10.0)
                 FSharpOutputPane.logMsg (CacheMetrics.StatsToString())
         }
+        |> CancellableTask.start disposalToken
 
 #if DEBUG
     open OpenTelemetry.Resources
