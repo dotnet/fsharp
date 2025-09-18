@@ -794,7 +794,10 @@ type FSharpMemberOrFunctionOrValue =
     member DeclaringEntity: FSharpEntity option
 
     /// Get the logical enclosing entity, which for an extension member is type being extended
-    member ApparentEnclosingEntity: FSharpEntity
+    member ApparentEnclosingEntity: FSharpEntity option
+
+    /// Get the logical enclosing type, which for an extension member is type being extended
+    member ApparentEnclosingType: FSharpType
 
     /// Get the declaration location of the member, function or value
     member DeclarationLocation: range

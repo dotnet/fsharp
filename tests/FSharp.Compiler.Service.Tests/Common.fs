@@ -421,6 +421,11 @@ let getSymbolFullName (symbol: FSharpSymbol) =
     | :? FSharpField as field -> Some field.FullName
     | _ -> None
 
+let tryGetEntityFullName (entity: FSharpEntity option) =
+    entity
+    |> Option.map _.FullName
+    |> Option.defaultValue ""
+
 let assertContainsSymbolWithName name source =
     getSymbols source
     |> Seq.choose getSymbolName
