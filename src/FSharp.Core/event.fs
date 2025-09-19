@@ -140,35 +140,40 @@ type Event<'Delegate, 'Args
                 // CreateDelegate creates a delegate that is fast to invoke.
                 invoker.Invoke(multicast, sender, args) |> ignore
 
-    member x.Publish : IEvent<'Delegate, 'Args> =
+    member x.Publish: IEvent<'Delegate, 'Args> =
         { new obj() with
             member x.ToString() =
                 "<published event>"
           interface IEvent<'Delegate, 'Args> with
               member e.AddHandler(d: 'Delegate) : unit =
-                  Atomic.setWith (fun value -> 
-                      let combined = System.Delegate.Combine(value, d)
-                      // Delegate.Combine(x, d) where d is non-null always returns non-null
-                      match combined with
-                      | null -> d // fallback, should never happen with non-null d
-                      | x -> unbox<'Delegate> x) &multicast
+                  Atomic.setWith
+                      (fun value ->
+                          let combined = System.Delegate.Combine(value, d)
+                          // Delegate.Combine(x, d) where d is non-null always returns non-null
+                          match combined with
+                          | null -> d // fallback, should never happen with non-null d
+                          | x -> unbox<'Delegate> x)
+                      &multicast
 
               member e.RemoveHandler(d: 'Delegate) : unit =
-                  Atomic.setWith (fun value -> 
-                      match System.Delegate.Remove(value, d) with
-                      | null -> Unchecked.defaultof<'Delegate>
-                      | result -> unbox<'Delegate> result) &multicast
+                  Atomic.setWith
+                      (fun value ->
+                          match System.Delegate.Remove(value, d) with
+                          | null -> Unchecked.defaultof<'Delegate>
+                          | result -> unbox<'Delegate> result)
+                      &multicast
           interface System.IObservable<'Args> with
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
 
                   match Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) with
-                  | null -> 
+                  | null ->
                       // If CreateDelegate returns null, return a no-op disposable
                       { new System.IDisposable with
-                          member x.Dispose() = ()
+                          member x.Dispose() =
+                              ()
                       }
-                  | result -> 
+                  | result ->
                       let h = downcast result
                       (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 
@@ -188,24 +193,28 @@ type Event<'T> =
         | null -> ()
         | d -> d.Invoke(null, arg) |> ignore
 
-    member x.Publish : IEvent<'T> =
+    member x.Publish: IEvent<'T> =
         { new obj() with
             member x.ToString() =
                 "<published event>"
           interface IEvent<'T> with
               member e.AddHandler(d: Handler<'T>) : unit =
-                  Atomic.setWith (fun value -> 
-                      let combined = System.Delegate.Combine(value, d)
-                      // Delegate.Combine(x, d) where d is non-null always returns non-null
-                      match combined with
-                      | null -> d // fallback, should never happen with non-null d
-                      | x -> unbox<Handler<'T>> x) &x.multicast
+                  Atomic.setWith
+                      (fun value ->
+                          let combined = System.Delegate.Combine(value, d)
+                          // Delegate.Combine(x, d) where d is non-null always returns non-null
+                          match combined with
+                          | null -> d // fallback, should never happen with non-null d
+                          | x -> unbox<Handler<'T>> x)
+                      &x.multicast
 
               member e.RemoveHandler(d: Handler<'T>) : unit =
-                  Atomic.setWith (fun value -> 
-                      match System.Delegate.Remove(value, d) with
-                      | null -> Unchecked.defaultof<Handler<'T>>
-                      | result -> unbox<Handler<'T>> result) &x.multicast
+                  Atomic.setWith
+                      (fun value ->
+                          match System.Delegate.Remove(value, d) with
+                          | null -> Unchecked.defaultof<Handler<'T>>
+                          | result -> unbox<Handler<'T>> result)
+                      &x.multicast
           interface System.IObservable<'T> with
               member e.Subscribe(observer) =
                   let h = new Handler<_>(fun sender args -> observer.OnNext(args))
