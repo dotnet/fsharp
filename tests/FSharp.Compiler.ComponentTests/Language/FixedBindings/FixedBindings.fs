@@ -46,7 +46,7 @@ module Legacy =
     'nativeptr<int>'    
 but given a
     'nativeptr<byte>'    
-The type 'int' does not match the type 'byte'""")
+The type 'byte' does not match the type 'int'""")
         ]
         
     [<Theory>]
@@ -63,7 +63,7 @@ The type 'int' does not match the type 'byte'""")
     'nativeptr<char>'    
 but given a
     'nativeptr<byte>'    
-The type 'char' does not match the type 'byte'""")
+The type 'byte' does not match the type 'char'""")
         ]
         
     [<Theory>]
@@ -436,7 +436,7 @@ The type 'char' does not match the type 'byte'""")
     'nativeptr<int>'    
 but given a
     'nativeptr<char>'    
-The type 'int' does not match the type 'char'")
+The type 'char' does not match the type 'int'")
         ]
         
     [<Theory>]
@@ -666,7 +666,7 @@ module ExtendedFixedBindings =
     'nativeptr<int>'    
 but given a
     'nativeptr<char>'    
-The type 'int' does not match the type 'char'")
+The type 'char' does not match the type 'int'")
         ]
         
     [<Theory>]

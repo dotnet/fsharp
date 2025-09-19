@@ -184,7 +184,7 @@ module Diagnostics =
 'float<Kg>' 
 but given a
 'float<s>' 
-The unit of measure 'Kg' does not match the unit of measure 's'""")
+The unit of measure 's' does not match the unit of measure 'Kg'""")
             (Error 1, Line 9, Col 22, Line 9, Col 28, "The unit of measure 's' does not match the unit of measure 'Kg'")
         ]
 
