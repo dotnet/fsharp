@@ -91,13 +91,14 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             withStartEnd origId.idRange.End id.idRange.Start origId.idRange
 
         match withExpr with
-        | SynExpr.Ident origId, (blockSep: BlockSeparator) ->
+        | SynExpr.Ident origId, Some(blockSep: BlockSeparator) ->
             let lid, rng = upToId blockSep.Range id (origId :: ids)
-
-            Some(
-                SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id),
-                BlockSeparator.Offside(blockSep.Range, None)
-            )
+            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), Some blockSep)
+        | SynExpr.Ident origId, None ->
+            // Synthesize a zero-width separator range at the end of the identifier when missing
+            let zero = origId.idRange.EndRange
+            let lid, rng = upToId zero id (origId :: ids)
+            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), None)
         | _ -> None
 
     let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
@@ -120,7 +121,13 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
                            }) ->
                 let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
-                SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
+                // Pass through optional separator for anonymous records
+                let copyInfoAnon =
+                    match copyInfo outerFieldId with
+                    | Some(exprWhenWith, sepOpt) -> Some(exprWhenWith, sepOpt)
+                    | None -> None
+
+                SynExpr.AnonRecd(isStruct, copyInfoAnon, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =
                     [
@@ -153,11 +160,11 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
-let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
-    let originalExpr, blockSep = withExpr
+let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator option) mkRecdExpr =
+    let originalExpr, blockSepOpt = withExpr
     let mOrigExprSynth = originalExpr.Range.MakeSynthetic()
     let id = mkSynId mOrigExprSynth "bind@"
-    let withExpr = SynExpr.Ident id, blockSep
+    let withExpr = SynExpr.Ident id, blockSepOpt
 
     let binding =
         mkSynBinding

@@ -308,21 +308,18 @@ type SeqExprOnly = SeqExprOnly of bool
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type BlockSeparator =
-    | Semicolon of range: range * position: pos option
-    | Comma of range: range * position: pos option
-    | Offside of range: range * position: pos option
+    | Semicolon of range: range * position: pos
+    | Comma of range: range * position: pos
 
     member this.Range =
         match this with
         | Semicolon(range = m)
-        | Comma(range = m)
-        | Offside(range = m) -> m
+        | Comma(range = m) -> m
 
     member this.Position =
         match this with
-        | Semicolon(position = p)
-        | Comma(position = p)
-        | Offside(position = p) -> p
+        | Semicolon(position = p) -> p
+        | Comma(position = p) -> p
 
 type RecordFieldName = SynLongIdent * bool
 
@@ -549,7 +546,7 @@ type SynExpr =
 
     | AnonRecd of
         isStruct: bool *
-        copyInfo: (SynExpr * BlockSeparator) option *
+        copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: (SynLongIdent * range option * SynExpr) list *
         range: range *
         trivia: SynExprAnonRecdTrivia
@@ -558,7 +555,7 @@ type SynExpr =
 
     | Record of
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
-        copyInfo: (SynExpr * BlockSeparator) option *
+        copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: SynExprRecordField list *
         range: range
 

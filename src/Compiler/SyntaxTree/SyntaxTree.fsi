@@ -359,21 +359,16 @@ type SeqExprOnly =
 type BlockSeparator =
     /// A separator consisting of a semicolon ';'
     /// range is the range of the semicolon
-    /// position is the position of the semicolon (if available)
-    | Semicolon of range: range * position: pos option
+    /// position is the position of the semicolon
+    | Semicolon of range: range * position: pos
     /// A separator consisting of a comma ','
     /// range is the range of the comma
-    /// position is the position of the comma (if available)
-    | Comma of range: range * position: pos option
-
-    // A separator consisting of a newline
-    /// range is the range of the newline
-    /// position is the position of the newline (if available)
-    | Offside of range: range * position: pos option
+    /// position is the position of the comma
+    | Comma of range: range * position: pos
 
     member Range: range
 
-    member Position: pos option
+    member Position: pos
 
 /// Represents a record field name plus a flag indicating if given record field name is syntactically
 /// correct and can be used in name resolution.
@@ -607,7 +602,7 @@ type SynExpr =
     /// F# syntax: struct {| id1=e1; ...; idN=eN |}
     | AnonRecd of
         isStruct: bool *
-        copyInfo: (SynExpr * BlockSeparator) option *
+        copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: (SynLongIdent * range option * SynExpr) list *
         range: range *
         trivia: SynExprAnonRecdTrivia
@@ -621,7 +616,7 @@ type SynExpr =
     /// every field includes range of separator after the field (for tooling)
     | Record of
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
-        copyInfo: (SynExpr * BlockSeparator) option *
+        copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: SynExprRecordField list *
         range: range
 

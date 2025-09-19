@@ -13,7 +13,7 @@ ImplFile
                           ([NamePatPairField
                               (SynLongIdent ([a], [], [None]), Some (4,6--4,7),
                                (4,4--4,9), Wild (4,8--4,9),
-                               Some (Semicolon ((4,9--4,10), Some (4,10))));
+                               Some (Semicolon ((4,9--4,10), (4,10))));
                             NamePatPairField
                               (SynLongIdent ([c], [], [None]), Some (4,15--4,16),
                                (4,13--4,18), Wild (4,17--4,18), None)],
@@ -28,5 +28,3 @@ ImplFile
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
-
-(4,11)-(4,12) parse error Expecting pattern

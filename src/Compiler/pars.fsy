@@ -3668,14 +3668,13 @@ namePatPairs:
      { let (id: Ident), mEq, (pat: SynPat) = $1
        let m = unionRanges id.idRange pat.Range
        let lid = SynLongIdent([id], [], [None])
-       NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
+       NamePatPairField(lid, mEq, m, pat, $2) :: $3 }
 
    | namePatPair seps_block seps_block namePatPairs
-      { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        let (id: Ident), mEq, (pat: SynPat) = $1
+      { let (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
         let lid = SynLongIdent([id], [], [None])
-        NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
+        NamePatPairField(lid, mEq, m, pat, $2) :: $4 }
 
 namePatPair:
    | ident EQUALS parenPattern
@@ -4016,13 +4015,13 @@ recordPatternElementsAux:
   | recordPatternElement seps_block recordPatternElementsAux
       { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
-        NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
+        NamePatPairField(lid, mEq, m, pat, $2) :: $3 }
 
   | recordPatternElement seps_block seps_block recordPatternElementsAux
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
         let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
         let m = unionRanges lid.Range pat.Range
-        NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
+        NamePatPairField(lid, mEq, m, pat, $2) :: $4 }
 
 recordPatternElement:
   | path EQUALS parenPattern
@@ -5709,7 +5708,7 @@ recdExprCore:
   | appExpr
     { let mExpr = rhs parseState 1
       reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
-      Some($1, BlockSeparator.Offside(mExpr.EndRange, None)), [] }
+      (Some($1, None), []) }
 
 /*
     handles cases when identifier can start from the underscore
@@ -5743,36 +5742,40 @@ recdExprCore:
   | appExpr WITH recdBinding recdExprBindings opt_seps_block
      { let l = List.rev $4
        let l = rebindRanges $3 l $5
-       (Some($1, BlockSeparator.Offside(rhs parseState 2, None)), l) }
+       (Some($1, $5), l) }
 
   | appExpr OWITH opt_seps_block OEND
-     { (Some($1, BlockSeparator.Offside(rhs parseState 2, None)), []) }
+     { (Some($1, $3), []) }
 
   | appExpr OWITH recdBinding recdExprBindings opt_seps_block OEND
      { let l = List.rev $4
        let l = rebindRanges $3 l $5
-       (Some($1, BlockSeparator.Offside(rhs parseState 2, None)), l) }
+       (Some($1, $5), l) }
 
 opt_seps_block:
   | seps_block
-     { Some $1 }
+     { $1 }
 
   | /* EMPTY */
      { None }
 
 seps_block:
   | OBLOCKSEP
-     { BlockSeparator.Offside((rhs parseState 1), None) }
+     { 
+       // OBLOCKSEP is purely syntactic: do not produce a BlockSeparator value
+       // Treat it as absence of an explicit separator
+       None
+     }
 
   | SEMICOLON
      { let m = (rhs parseState 1)
-       BlockSeparator.Semicolon(m, Some m.End) }
+       Some (BlockSeparator.Semicolon(m, m.End)) }
 
   | SEMICOLON OBLOCKSEP
-     { BlockSeparator.Semicolon((rhs2 parseState 1 2), Some (rhs parseState 1).End) }
+     { Some (BlockSeparator.Semicolon((rhs2 parseState 1 2), (rhs parseState 1).End)) }
 
   | OBLOCKSEP SEMICOLON
-     { BlockSeparator.Semicolon((rhs2 parseState 1 2), Some (rhs parseState 2).End) }
+     { Some (BlockSeparator.Semicolon((rhs2 parseState 1 2), (rhs parseState 2).End)) }
 
 
 /* identifier can start from the underscore */
@@ -5787,7 +5790,7 @@ pathOrUnderscore :
 
 recdExprBindings:
   | recdExprBindings seps_block recdBinding
-     { ($3, Some $2) :: $1 }
+     { ($3, $2) :: $1 }
 
   | /* EMPTY */
      { [] }

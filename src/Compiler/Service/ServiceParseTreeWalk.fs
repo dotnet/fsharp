@@ -445,7 +445,7 @@ module SyntaxTraversal =
                 | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
                     [
                         match copyOpt with
-                        | Some(expr, blockSep) ->
+                        | Some(expr, Some blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
                             yield
@@ -456,6 +456,9 @@ module SyntaxTraversal =
                                         visitor.VisitRecordField(path, Some expr, None)
                                     else
                                         None)
+                        | Some(expr, None) ->
+                            // No explicit separator (implicit OBLOCKSEP). Still dive into expr.
+                            yield dive expr expr.Range traverseSynExpr
                         | _ -> ()
 
                         for field, _, x in fields do
@@ -466,19 +469,11 @@ module SyntaxTraversal =
 
                 | SynExpr.Record(baseInfo = inheritOpt; copyInfo = copyOpt; recordFields = fields) ->
                     [
-                        let diveIntoSeparator offsideColumn scPosOpt copyOpt =
-                            match scPosOpt with
-                            | Some scPos ->
-                                if posGeq pos scPos then
-                                    visitor.VisitRecordField(path, copyOpt, None) // empty field after the inherits
-                                else
-                                    None
-                            | None ->
-                                //semicolon position is not available - use offside rule
-                                if pos.Column = offsideColumn then
-                                    visitor.VisitRecordField(path, copyOpt, None) // empty field after the inherits
-                                else
-                                    None
+                        let diveIntoSeparator scPos copyOpt =
+                            if posGeq pos scPos then
+                                visitor.VisitRecordField(path, copyOpt, None) // empty field after the inherits
+                            else
+                                None
 
                         match inheritOpt with
                         | Some(_ty, expr, _range, sepOpt, inheritRange) ->
@@ -505,12 +500,12 @@ module SyntaxTraversal =
                                         // inherit A()
                                         // $
                                         // field1 = 5
-                                        diveIntoSeparator inheritRange.StartColumn blockSep.Position None)
+                                        diveIntoSeparator blockSep.Position None)
                             | None -> ()
                         | _ -> ()
 
                         match copyOpt with
-                        | Some(expr, blockSep) ->
+                        | Some(expr, Some blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
                             yield
@@ -521,6 +516,9 @@ module SyntaxTraversal =
                                         visitor.VisitRecordField(path, Some expr, None)
                                     else
                                         None)
+                        | Some(expr, None) ->
+                            // No explicit separator (implicit OBLOCKSEP). Still dive into expr.
+                            yield dive expr expr.Range traverseSynExpr
                         | _ -> ()
 
                         let copyOpt = Option.map fst copyOpt
@@ -563,7 +561,7 @@ module SyntaxTraversal =
                                         // field1 = 5
                                         // $
                                         // field2 = 5
-                                        diveIntoSeparator offsideColumn blockSep.Position copyOpt)
+                                        diveIntoSeparator blockSep.Position copyOpt)
                             | _ -> ()
 
                     ]
