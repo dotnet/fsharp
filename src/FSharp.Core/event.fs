@@ -141,7 +141,7 @@ type Event<'Delegate, 'Args
                 invoker.Invoke(multicast, sender, args) |> ignore
 
     member x.Publish: IEvent<'Delegate, 'Args> =
-        { new obj() with
+        ({ new obj() with
             member x.ToString() =
                 "<published event>"
           interface IEvent<'Delegate, 'Args> with
@@ -181,7 +181,7 @@ type Event<'Delegate, 'Args
                           member x.Dispose() =
                               (e :?> IDelegateEvent<'Delegate>).RemoveHandler(h)
                       }
-        }
+        } : IEvent<'Delegate, 'Args>)
 
 [<CompiledName("FSharpEvent`1")>]
 type Event<'T> =
@@ -194,7 +194,7 @@ type Event<'T> =
         | d -> d.Invoke(null, arg) |> ignore
 
     member x.Publish: IEvent<'T> =
-        { new obj() with
+        ({ new obj() with
             member x.ToString() =
                 "<published event>"
           interface IEvent<'T> with
@@ -224,4 +224,4 @@ type Event<'T> =
                       member x.Dispose() =
                           (e :?> IEvent<_, _>).RemoveHandler(h)
                   }
-        }
+        } : IEvent<'T>)
