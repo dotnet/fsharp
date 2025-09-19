@@ -194,9 +194,15 @@ let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
 
 // Check if XML doc comment is positioned correctly (first non-whitespace on line)
 let checkXmlDocLinePosition (args: LexArgs) (lexbuf: UnicodeLexing.Lexbuf) =
-    // This warning is temporarily disabled pending a proper implementation 
-    // that correctly checks for non-whitespace content before /// on the same line
-    // without relying on hardcoded column limits
+    // TODO: Implement proper line content analysis
+    // The correct implementation should:
+    // 1. Access the lexbuf buffer content to examine the current line
+    // 2. Check characters from the start of the line to the /// position
+    // 3. Determine if any non-whitespace characters exist before ///
+    // 4. Issue warning only when /// appears after actual code, not just indentation
+    //
+    // Currently disabled to avoid false positives with hardcoded column limits.
+    // Need to analyze available data in the lexbuf LexBuffer properly.
     ()
 
 // Utilities for parsing #if/#else/#endif
