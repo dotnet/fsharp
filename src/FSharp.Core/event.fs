@@ -151,13 +151,13 @@ type Event<'Delegate, 'Args
                       // Delegate.Combine(x, d) where d is non-null always returns non-null
                       match combined with
                       | null -> d // fallback, should never happen with non-null d
-                      | x -> downcast x) &multicast
+                      | x -> unbox<'Delegate> x) &multicast
 
               member e.RemoveHandler(d: 'Delegate) : unit =
                   Atomic.setWith (fun value -> 
                       match System.Delegate.Remove(value, d) with
                       | null -> Unchecked.defaultof<'Delegate>
-                      | result -> downcast result) &multicast
+                      | result -> unbox<'Delegate> result) &multicast
           interface System.IObservable<'Args> with
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
@@ -199,13 +199,13 @@ type Event<'T> =
                       // Delegate.Combine(x, d) where d is non-null always returns non-null
                       match combined with
                       | null -> d // fallback, should never happen with non-null d
-                      | x -> downcast x) &x.multicast
+                      | x -> unbox<Handler<'T>> x) &x.multicast
 
               member e.RemoveHandler(d: Handler<'T>) : unit =
                   Atomic.setWith (fun value -> 
                       match System.Delegate.Remove(value, d) with
                       | null -> Unchecked.defaultof<Handler<'T>>
-                      | result -> downcast result) &x.multicast
+                      | result -> unbox<Handler<'T>> result) &x.multicast
           interface System.IObservable<'T> with
               member e.Subscribe(observer) =
                   let h = new Handler<_>(fun sender args -> observer.OnNext(args))
