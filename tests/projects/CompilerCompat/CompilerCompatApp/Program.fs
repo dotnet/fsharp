@@ -5,9 +5,17 @@ open System
 [<EntryPoint>]
 let main _argv =
     try
-        // Print build information to verify which compiler was used
-        printfn "%s" (Library.getBuildInfo())
-        printfn "Application - SDK Version: %s, FSC Path: %s" AppBuildInfo.sdkVersion AppBuildInfo.fscPath
+        // Print detailed build information to verify which compiler was used
+        printfn "=== BUILD VERIFICATION ==="
+        printfn "Library Build Info:"
+        printfn "  SDK Version: %s" LibBuildInfo.sdkVersion
+        printfn "  FSC Path: %s" LibBuildInfo.fscPath
+        printfn "  Is Local Build: %b" LibBuildInfo.isLocalBuild
+        printfn "Application Build Info:"
+        printfn "  SDK Version: %s" AppBuildInfo.sdkVersion
+        printfn "  FSC Path: %s" AppBuildInfo.fscPath
+        printfn "  Is Local Build: %b" AppBuildInfo.isLocalBuild
+        printfn "=========================="
         
         // Test basic anonymous record functionality
         let record = Library.getAnonymousRecord()
