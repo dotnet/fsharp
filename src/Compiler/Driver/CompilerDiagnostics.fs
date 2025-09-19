@@ -733,21 +733,15 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
 
-        | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as ty1), (TType_measure _ as ty2), m, m2, _) ->
-            // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-
-            os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1 ty2)
-
-            if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
-
         | ConstraintSolverTypesNotInEqualityRelation(denv, ty1, ty2, m, m2, contextInfo) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let ty1str, ty2str, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun _ ->
-                os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1 ty2))
+            match ty1, ty2 with
+            | TType_measure _, TType_measure _ -> os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1str ty2str)
+            | _ ->
+                OutputTypesNotInEqualityRelationContextInfo contextInfo ty1str ty2str m os (fun _ ->
+                    os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1str ty2str))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
