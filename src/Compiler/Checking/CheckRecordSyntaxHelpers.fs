@@ -90,15 +90,24 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
         let totalRange (origId: Ident) (id: Ident) =
             withStartEnd origId.idRange.End id.idRange.Start origId.idRange
 
+        let rangeOfBlockSeparator (id: Ident) =
+            let idEnd = id.idRange.End
+            let blockSeparatorStartCol = idEnd.Column
+            let blockSeparatorEndCol = blockSeparatorStartCol + 4
+            let blockSeparatorStartPos = mkPos idEnd.Line blockSeparatorStartCol
+            let blockSeparatorEndPos = mkPos idEnd.Line blockSeparatorEndCol
+
+            withStartEnd blockSeparatorStartPos blockSeparatorEndPos id.idRange
+
         match withExpr with
-        | SynExpr.Ident origId, Some(blockSep: BlockSeparator) ->
-            let lid, rng = upToId blockSep.Range id (origId :: ids)
-            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), Some blockSep)
-        | SynExpr.Ident origId, None ->
-            // Synthesize a zero-width separator range at the end of the identifier when missing
-            let zero = origId.idRange.EndRange
-            let lid, rng = upToId zero id (origId :: ids)
-            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), None)
+        | SynExpr.Ident origId, (blockSep: BlockSeparator option) ->
+            let mBlockSep =
+                match blockSep with
+                | Some sep -> sep.Range
+                | None -> rangeOfBlockSeparator origId
+
+            let lid, rng = upToId mBlockSep id (origId :: ids)
+            Some(SynExpr.LongIdent(false, LongIdentWithDots(lid, rng), None, totalRange origId id), blockSep)
         | _ -> None
 
     let rec synExprRecd copyInfo (outerFieldId: Ident) innerFields exprBeingAssigned =
@@ -161,10 +170,10 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
 let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator option) mkRecdExpr =
-    let originalExpr, blockSepOpt = withExpr
+    let originalExpr, blockSep = withExpr
     let mOrigExprSynth = originalExpr.Range.MakeSynthetic()
     let id = mkSynId mOrigExprSynth "bind@"
-    let withExpr = SynExpr.Ident id, blockSepOpt
+    let withExpr = SynExpr.Ident id, blockSep
 
     let binding =
         mkSynBinding

@@ -28,3 +28,5 @@ ImplFile
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
+
+(4,11)-(4,12) parse error Expecting pattern
