@@ -1286,6 +1286,28 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
+        
+    [<Fact>]
+    let ``CLIEvent is recognized as event`` () =
+        // Now CLIEvent properties are recognized as events in the FSharpMemberOrFunctionOrValue.IsEvent property
+        // and use "E:" XmlDocSig prefix
+        let _, checkResults = getParseAndCheckResults """
+type T() = 
+    [<CLIEvent>]
+    member this.Event = Event<int>().Publish
+"""
+        let symbolUse = 
+            checkResults.GetSymbolUsesAtLocation(4, 21, "    member this.Event = Event<int>().Publish", [ "Event" ])
+            |> List.head
+            
+        match symbolUse.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as mfv ->
+            // CLIEvent properties are recognized as events
+            Assert.True mfv.IsEvent
+            // Their XmlDocSig uses E: prefix
+            Assert.StartsWith("E:", mfv.XmlDocSig)
+        | _ -> 
+            Assert.True(false, "Expected FSharpMemberOrFunctionOrValue")
 
 module Delegates =
     [<Fact>]
