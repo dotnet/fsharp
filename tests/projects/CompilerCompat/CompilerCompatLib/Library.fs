@@ -15,3 +15,7 @@ module Library =
     /// Function that takes an anonymous record as parameter
     let processAnonymousRecord (record: {| X: int; Y: string |}) =
         sprintf "Processed: X=%d, Y=%s" record.X record.Y
+    
+    /// Get build information to verify which compiler was used
+    let getBuildInfo () =
+        $"Library - SDK Version: {LibBuildInfo.sdkVersion}, FSC Path: {LibBuildInfo.fscPath}"

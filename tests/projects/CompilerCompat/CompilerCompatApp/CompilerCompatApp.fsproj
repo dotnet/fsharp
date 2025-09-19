@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AppBuildInfo.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

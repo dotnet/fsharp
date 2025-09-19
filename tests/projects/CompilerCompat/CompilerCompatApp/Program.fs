@@ -1,9 +1,14 @@
 open CompilerCompatLib
+open CompilerCompatApp
 open System
 
 [<EntryPoint>]
 let main _argv =
     try
+        // Print build information to verify which compiler was used
+        printfn "%s" (Library.getBuildInfo())
+        printfn "Application - SDK Version: %s, FSC Path: %s" AppBuildInfo.sdkVersion AppBuildInfo.fscPath
+        
         // Test basic anonymous record functionality
         let record = Library.getAnonymousRecord()
         printfn "Basic record: X=%d, Y=%s" record.X record.Y

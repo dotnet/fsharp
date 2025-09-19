@@ -16,7 +16,12 @@ type CompilerCompatibilityTests() =
     let createGlobalJson version projectPath =
         let globalJsonContent = 
             match version with
-            | "9" -> """{"sdk":{"version":"9.0.100"}}"""
+            | "9" -> """{
+  "sdk": {
+    "version": "9.0.100",
+    "rollForward": "latestMinor"
+  }
+}"""
             | _ -> failwith $"Unsupported version for global.json: {version}"
         
         let globalJsonPath = Path.Combine(projectPath, "global.json")
@@ -72,6 +77,8 @@ type CompilerCompatibilityTests() =
     [<InlineData("local", "local", "Baseline scenario - Both library and app built with local compiler")>]
     [<InlineData("latest", "local", "Forward compatibility - Library built with latest SDK, app with local compiler")>]
     [<InlineData("local", "latest", "Backward compatibility - Library built with local compiler, app with latest SDK")>]
+    [<InlineData("9", "local", "Forward compatibility - Library built with .NET 9 SDK, app with local compiler")>]
+    [<InlineData("local", "9", "Backward compatibility - Library built with local compiler, app with .NET 9 SDK")>]
     member _.``Compiler compatibility test``(libCompilerVersion: string, appCompilerVersion: string, scenarioDescription: string) =
         // Clean previous builds
         cleanBinObjDirectories libProjectPath
