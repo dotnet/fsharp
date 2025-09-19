@@ -512,6 +512,15 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | _ -> ()
                 ]
 
+            and walkRecordLike (copyExprOpt: (SynExpr * BlockSeparator) option) (fs: SynExprRecordField list) =
+                [
+                    match copyExprOpt with
+                    | Some(e, _) -> yield! walkExpr true e
+                    | None -> ()
+
+                    yield! walkExprs (fs |> List.choose (fun (SynExprRecordField(expr = e)) -> e))
+                ]
+
             // Determine the breakpoint locations for an expression. spImplicit indicates we always
             // emit a breakpoint location for the expression unless it is a syntactic control flow construct
             and walkExpr spImplicit expr =
@@ -629,19 +638,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.ArrayOrList(_, exprs, _)
                         | SynExpr.Tuple(_, exprs, _, _) -> yield! walkExprs exprs
 
-                        | SynExpr.Record(_, copyExprOpt, fs, _) ->
-                            match copyExprOpt with
-                            | Some(e, _) -> yield! walkExpr true e
-                            | None -> ()
-
-                            yield! walkExprs (fs |> List.choose (fun (SynExprRecordField(expr = e)) -> e))
-
-                        | SynExpr.AnonRecd(copyInfo = copyExprOpt; recordFields = fs) ->
-                            match copyExprOpt with
-                            | Some(e, _) -> yield! walkExpr true e
-                            | None -> ()
-
-                            yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
+                        | SynExpr.Record(_, copyExprOpt, fs, _)
+                        | SynExpr.AnonRecd(copyInfo = copyExprOpt; recordFields = fs) -> yield! walkRecordLike copyExprOpt fs
 
                         | SynExpr.ObjExpr(argOptions = args; bindings = bs; members = ms; extraImpls = is) ->
                             let bs = unionBindingAndMembers bs ms

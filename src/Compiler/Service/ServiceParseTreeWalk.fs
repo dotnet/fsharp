@@ -400,6 +400,103 @@ module SyntaxTraversal =
                 let traverseSynType = traverseSynType path
                 let traversePat = traversePat path
 
+                let visitRecordLike
+                    (inheritOpt: (SynType * SynExpr * range * BlockSeparator option * range) option)
+                    (copyOpt: (SynExpr * BlockSeparator) option)
+                    (fields: SynExprRecordField list)
+                    (expr: SynExpr)
+                    =
+                    [
+                        match inheritOpt with
+                        | Some(_ty, inheritArgExpr, _inheritEqRange, inheritSepOpt, inheritRange) ->
+                            yield
+                                dive inheritArgExpr inheritArgExpr.Range (fun inner ->
+                                    if
+                                        not (rangeContainsPos inheritArgExpr.Range pos)
+                                        && inheritSepOpt.IsNone
+                                        && pos.Column = inheritRange.StartColumn
+                                    then
+                                        visitor.VisitRecordField(path, None, None)
+                                    else
+                                        traverseSynExpr inner)
+
+                            match inheritSepOpt with
+                            | Some blockSep ->
+                                yield
+                                    dive () blockSep.Range (fun () ->
+                                        let scPosOpt = blockSep.Position
+
+                                        if scPosOpt |> Option.exists (fun scPos -> posGeq pos scPos) then
+                                            visitor.VisitRecordField(path, None, None)
+                                        else
+                                            None)
+                            | None -> ()
+                        | None -> ()
+
+                        match copyOpt with
+                        | Some(orig, blockSep) ->
+                            yield dive orig orig.Range traverseSynExpr
+
+                            yield
+                                dive () blockSep.Range (fun () ->
+                                    if posGeq pos blockSep.Range.End then
+                                        visitor.VisitRecordField(path, Some orig, None)
+                                    else
+                                        None)
+                        | None -> ()
+
+                        let copyExprOnly = Option.map fst copyOpt
+
+                        for SynExprRecordField(fieldName = (fieldLid, _); expr = e; blockSeparator = sepOpt) in fields do
+                            yield
+                                dive (path, copyExprOnly, Some fieldLid) fieldLid.Range (fun r ->
+                                    if rangeContainsPos fieldLid.Range pos then
+                                        visitor.VisitRecordField r
+                                    else
+                                        None)
+
+                            let offsideColumn =
+                                match inheritOpt with
+                                | Some(_, _, _, _, inheritRange) -> inheritRange.StartColumn
+                                | None -> fieldLid.Range.StartColumn
+
+                            match e with
+                            | Some fe ->
+                                yield
+                                    dive fe fe.Range (fun inner ->
+                                        if
+                                            not (rangeContainsPos fe.Range pos)
+                                            && sepOpt.IsNone
+                                            && pos.Column = offsideColumn
+                                        then
+                                            visitor.VisitRecordField(path, copyExprOnly, None)
+                                        else
+                                            traverseSynExpr inner)
+                            | None -> ()
+
+                            match sepOpt with
+                            | Some blockSep ->
+                                yield
+                                    dive () blockSep.Range (fun () ->
+                                        match inheritOpt with
+                                        | Some _ ->
+                                            let scPosOpt = blockSep.Position
+
+                                            if scPosOpt |> Option.exists (fun scPos -> posGeq pos scPos) then
+                                                visitor.VisitRecordField(path, copyExprOnly, None)
+                                            elif scPosOpt.IsNone && pos.Column = offsideColumn then
+                                                visitor.VisitRecordField(path, copyExprOnly, None)
+                                            else
+                                                None
+                                        | None ->
+                                            if posGeq pos blockSep.Range.End then
+                                                visitor.VisitRecordField(path, copyExprOnly, None)
+                                            else
+                                                None)
+                            | None -> ()
+                    ]
+                    |> pick expr
+
                 match e with
                 | SynExpr.LongIdentSet(expr = synExpr)
                 | SynExpr.DotGet(expr = synExpr)
@@ -442,132 +539,10 @@ module SyntaxTraversal =
                 | SynExpr.Tuple(exprs = synExprList)
                 | SynExpr.ArrayOrList(exprs = synExprList) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
 
-                | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
-                    [
-                        match copyOpt with
-                        | Some(expr, blockSep) ->
-                            yield dive expr expr.Range traverseSynExpr
-
-                            yield
-                                dive () blockSep.Range (fun () ->
-                                    if posGeq pos blockSep.Range.End then
-                                        // special case: caret is after WITH
-                                        // { x with $ }
-                                        visitor.VisitRecordField(path, Some expr, None)
-                                    else
-                                        None)
-                        | _ -> ()
-
-                        for field, _, x in fields do
-                            yield dive () field.Range (fun () -> visitor.VisitRecordField(path, copyOpt |> Option.map fst, Some field))
-                            yield dive x x.Range traverseSynExpr
-                    ]
-                    |> pick expr
+                | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) -> visitRecordLike None copyOpt fields expr
 
                 | SynExpr.Record(baseInfo = inheritOpt; copyInfo = copyOpt; recordFields = fields) ->
-                    [
-                        let diveIntoSeparator offsideColumn scPosOpt copyOpt =
-                            match scPosOpt with
-                            | Some scPos ->
-                                if posGeq pos scPos then
-                                    visitor.VisitRecordField(path, copyOpt, None) // empty field after the inherits
-                                else
-                                    None
-                            | None ->
-                                //semicolon position is not available - use offside rule
-                                if pos.Column = offsideColumn then
-                                    visitor.VisitRecordField(path, copyOpt, None) // empty field after the inherits
-                                else
-                                    None
-
-                        match inheritOpt with
-                        | Some(_ty, expr, _range, sepOpt, inheritRange) ->
-                            // dive into argument
-                            yield
-                                dive expr expr.Range (fun expr ->
-                                    // special-case:caret is located in the offside position below inherit
-                                    // inherit A()
-                                    // $
-                                    if
-                                        not (rangeContainsPos expr.Range pos)
-                                        && sepOpt.IsNone
-                                        && pos.Column = inheritRange.StartColumn
-                                    then
-                                        visitor.VisitRecordField(path, None, None)
-                                    else
-                                        traverseSynExpr expr)
-
-                            match sepOpt with
-                            | Some blockSep ->
-                                yield
-                                    dive () blockSep.Range (fun () ->
-                                        // special case: caret is below 'inherit' + one or more fields are already defined
-                                        // inherit A()
-                                        // $
-                                        // field1 = 5
-                                        diveIntoSeparator inheritRange.StartColumn blockSep.Position None)
-                            | None -> ()
-                        | _ -> ()
-
-                        match copyOpt with
-                        | Some(expr, blockSep) ->
-                            yield dive expr expr.Range traverseSynExpr
-
-                            yield
-                                dive () blockSep.Range (fun () ->
-                                    if posGeq pos blockSep.Range.End then
-                                        // special case: caret is after WITH
-                                        // { x with $ }
-                                        visitor.VisitRecordField(path, Some expr, None)
-                                    else
-                                        None)
-                        | _ -> ()
-
-                        let copyOpt = Option.map fst copyOpt
-
-                        for SynExprRecordField(fieldName = (field, _); expr = e; blockSeparator = sepOpt) in fields do
-                            yield
-                                dive (path, copyOpt, Some field) field.Range (fun r ->
-                                    if rangeContainsPos field.Range pos then
-                                        visitor.VisitRecordField r
-                                    else
-                                        None)
-
-                            let offsideColumn =
-                                match inheritOpt with
-                                | Some(_, _, _, _, inheritRange) -> inheritRange.StartColumn
-                                | None -> field.Range.StartColumn
-
-                            match e with
-                            | Some e ->
-                                yield
-                                    dive e e.Range (fun expr ->
-                                        // special case: caret is below field binding
-                                        // field x = 5
-                                        // $
-                                        if
-                                            not (rangeContainsPos e.Range pos)
-                                            && sepOpt.IsNone
-                                            && pos.Column = offsideColumn
-                                        then
-                                            visitor.VisitRecordField(path, copyOpt, None)
-                                        else
-                                            traverseSynExpr expr)
-                            | None -> ()
-
-                            match sepOpt with
-                            | Some blockSep ->
-                                yield
-                                    dive () blockSep.Range (fun () ->
-                                        // special case: caret is between field bindings
-                                        // field1 = 5
-                                        // $
-                                        // field2 = 5
-                                        diveIntoSeparator offsideColumn blockSep.Position copyOpt)
-                            | _ -> ()
-
-                    ]
-                    |> pick expr
+                    visitRecordLike inheritOpt copyOpt fields expr
 
                 | SynExpr.ObjExpr(objType = ty; argOptions = baseCallOpt; bindings = binds; members = ms; extraImpls = ifaces) ->
                     let binds = unionBindingAndMembers binds ms

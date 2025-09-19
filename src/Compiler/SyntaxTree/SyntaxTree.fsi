@@ -608,7 +608,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: (SynLongIdent * range option * SynExpr) list *
+        recordFields: SynExprRecordField list *
         range: range *
         trivia: SynExprAnonRecdTrivia
 

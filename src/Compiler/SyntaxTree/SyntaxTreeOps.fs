@@ -862,6 +862,12 @@ let rec synExprContainsError inpExpr =
 
     and walkExprOpt eOpt = eOpt |> Option.exists walkExpr
 
+    and walkRecordLike copyExprOpt (fs: SynExprRecordField list) =
+        (match copyExprOpt with
+         | Some(e, _) -> walkExpr e
+         | None -> false)
+        || (fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v) |> walkExprs)
+
     and walkExpr e =
         match e with
         | SynExpr.FromParseError _
@@ -915,18 +921,8 @@ let rec synExprContainsError inpExpr =
         | SynExpr.ArrayOrList(_, es, _)
         | SynExpr.Tuple(_, es, _, _) -> walkExprs es
 
-        | SynExpr.AnonRecd(copyInfo = origExpr; recordFields = flds) ->
-            (match origExpr with
-             | Some(e, _) -> walkExpr e
-             | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
-
-        | SynExpr.Record(_, origExpr, fs, _) ->
-            (match origExpr with
-             | Some(e, _) -> walkExpr e
-             | None -> false)
-            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
-                walkExprs flds)
+        | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fs)
+        | SynExpr.Record(baseInfo = _; copyInfo = copyOpt; recordFields = fs) -> walkRecordLike copyOpt fs
 
         | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
             let bs = unionBindingAndMembers bs ms

@@ -818,7 +818,8 @@ module ParsedInput =
 
             | SynExpr.MatchLambda(matchClauses = clauses) -> List.tryPick walkClause clauses
 
-            | SynExpr.Record(_, _, fields, r) ->
+            | SynExpr.Record(_, _, fields, r)
+            | SynExpr.AnonRecd(copyInfo = _; recordFields = fields; range = r) ->
                 ifPosInRange r (fun _ ->
                     fields
                     |> List.tryPick (fun (SynExprRecordField(expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)))
@@ -1475,7 +1476,8 @@ module ParsedInput =
                             | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
                             | _ -> defaultTraverse expr
 
-                        | SynExpr.Record(None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
+                        | SynExpr.Record(None, None, [], _)
+                        | SynExpr.AnonRecd(copyInfo = None; recordFields = []) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
                         // Unchecked.defaultof<str$>
                         | SynExpr.TypeApp(typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.Type
@@ -1501,7 +1503,8 @@ module ParsedInput =
                         | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
                             typeInfo = SynComponentInfo(longId = [ id ]))) :: _ -> RecordContext.Constructor(id.idText)
 
-                        | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
+                        | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _
+                        | SyntaxNode.SynExpr(SynExpr.AnonRecd(copyInfo = _; recordFields = fields)) :: _ ->
                             let isFirstField =
                                 match field, fields with
                                 | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
@@ -2083,7 +2086,8 @@ module ParsedInput =
                 walkExpr e1
                 walkExpr e2
 
-            | SynExpr.Record(recordFields = fields) ->
+            | SynExpr.Record(recordFields = fields)
+            | SynExpr.AnonRecd(recordFields = fields) ->
                 fields
                 |> List.iter (fun (SynExprRecordField(fieldName = (ident, _); expr = e)) ->
                     addLongIdentWithDots ident
