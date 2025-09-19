@@ -96,6 +96,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | AllowCommaAsUnionCaseNamedFieldSeparator
 
 /// LanguageVersion management
 type LanguageVersion =

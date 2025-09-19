@@ -105,6 +105,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | AllowCommaAsUnionCaseNamedFieldSeparator
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -245,6 +246,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview (still preview in 10.0)
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
+                LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -415,6 +417,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions -> FSComp.SR.featureErrorOnInvalidDeclsInTypeDefinitions ()
         | LanguageFeature.AllowTypedLetUseAndBang -> FSComp.SR.featureAllowLetOrUseBangTypeAnnotationWithoutParens ()
         | LanguageFeature.ReturnFromFinal -> FSComp.SR.featureReturnFromFinal ()
+        | LanguageFeature.AllowCommaAsUnionCaseNamedFieldSeparator -> FSComp.SR.featureAllowCommaAsUnionCaseNamedFieldSeparator ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

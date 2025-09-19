@@ -30,4 +30,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(4,15)-(4,16) parse error Unexpected symbol ')' in pattern
+(4,13)-(4,14) parse error Expecting pattern

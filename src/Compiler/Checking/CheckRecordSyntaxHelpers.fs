@@ -59,7 +59,14 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
 /// Expands a long identifier into nested copy-and-update expressions.
 ///
 /// `{ x with A.B = 0; A.C = "" }` becomes `{ x with A = { x.A with B = 0 }; A = { x.A with C = "" } }`
-let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid: LongIdent) exprBeingAssigned withExpr =
+let TransformAstForNestedUpdates
+    (cenv: TcFileState)
+    (env: TcEnv)
+    overallTy
+    (lid: LongIdent)
+    exprBeingAssigned
+    (withExpr: SynExpr * BlockSeparator)
+    =
     let recdExprCopyInfo ids withExpr id =
         let upToId origSepRng id lidwd =
             let rec buildLid res (id: Ident) =
