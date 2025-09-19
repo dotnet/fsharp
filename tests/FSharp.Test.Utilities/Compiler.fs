@@ -368,6 +368,8 @@ module rec Compiler =
     let loadSourceFromFile path = getSource(TestType.Path path)
 
     let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+        source.GetSourceText |> Option.iter (Range.setTestSource source.GetSourceFileName)
+
         {
             Source            = source
             AdditionalSources = []
@@ -1308,7 +1310,7 @@ Actual:
     /// After compile, rebuild and print FSharpDiagnostic[] exactly as before,
     /// then diff against your existing .err.bsl files (few lines will shift).
     let verifyBaseline (cResult: CompilationResult) : CompilationResult =
-        // 1) Grab the ErrorInfo list from the compile result…
+        // 1) Grab the ErrorInfo list from the compilation result
         let errorInfos =
             match cResult with
             | CompilationResult.Success o

@@ -298,7 +298,7 @@ let ``Binding linq function doesnt crash`` () =
     let code =
         $"""
 let skip1 elements = 
-    System.Linq.Enumerable.Skip(elements, 1)
+    System.Linq.Enumerable.Skip(elements, 1).GetEnumerator()
         """
 
     use context = TestContext.CreateWithCode code
@@ -309,8 +309,8 @@ let skip1 elements =
 
     let expectedCode =
         $"""
-let skip1 elements : System.Collections.Generic.IEnumerable<'a> = 
-    System.Linq.Enumerable.Skip(elements, 1)
+let skip1 elements : System.Collections.Generic.IEnumerator<'a> = 
+    System.Linq.Enumerable.Skip(elements, 1).GetEnumerator()
         """
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
@@ -325,7 +325,7 @@ let ``Handle already existing opens on Linq`` () =
 open System
 
 let skip1 elements = 
-    Linq.Enumerable.Skip(elements, 1)
+    Linq.Enumerable.Skip(elements, 1).GetEnumerator()
         """
 
     use context = TestContext.CreateWithCode code
@@ -338,8 +338,8 @@ let skip1 elements =
         $"""
 open System
 
-let skip1 elements : Collections.Generic.IEnumerable<'a> = 
-    Linq.Enumerable.Skip(elements, 1)
+let skip1 elements : Collections.Generic.IEnumerator<'a> = 
+    Linq.Enumerable.Skip(elements, 1).GetEnumerator()
         """
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
@@ -355,7 +355,7 @@ open System
 open System.Linq
 
 let skip1 elements = 
-    Enumerable.Skip(elements, 1)
+    Enumerable.Skip(elements, 1).GetEnumerator()
         """
 
     use context = TestContext.CreateWithCode code
@@ -369,8 +369,37 @@ let skip1 elements =
 open System
 open System.Linq
 
-let skip1 elements : Collections.Generic.IEnumerable<'a> = 
-    Enumerable.Skip(elements, 1)
+let skip1 elements : Collections.Generic.IEnumerator<'a> = 
+    Enumerable.Skip(elements, 1).GetEnumerator()
+        """
+
+    let resultText = newDoc.GetTextAsync() |> GetTaskResult
+    Assert.Equal(expectedCode, resultText.ToString())
+
+[<Fact>]
+let ``Handle seq`` () =
+    let symbolName = "skip1"
+
+    let code =
+        $"""
+open System
+
+let skip1 elements =
+    Linq.Enumerable.Skip(elements, 1)
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    let newDoc = tryRefactor code spanStart context (new AddReturnType())
+
+    let expectedCode =
+        $"""
+open System
+
+let skip1 elements : 'a seq =
+    Linq.Enumerable.Skip(elements, 1)
         """
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
