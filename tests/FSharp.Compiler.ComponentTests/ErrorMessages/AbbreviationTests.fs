@@ -55,6 +55,23 @@ type FloatAlias with
         ]
 
 [<Fact>]
+let ``Members 04 - Error in expr`` () =
+    Fsx """
+type StringAlias = string
+
+type StringAlias with
+    member x.Length = x.Length + ""
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 964, Line 4, Col 6, Line 4, Col 17, "Type abbreviations cannot have augmentations")
+            (Error 895, Line 5, Col 5, Line 5, Col 36, "Type abbreviations cannot have members")
+            (Error 1, Line 5, Col 34, Line 5, Col 36, "The type 'string' does not match the type 'int'")
+            (Error 43, Line 5, Col 32, Line 5, Col 33, "The type 'string' does not match the type 'int'")
+        ]
+
+[<Fact>]
 let ``Multiple types 01`` () =
     Fsx """
 type ListAlias = int list
