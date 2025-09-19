@@ -626,7 +626,7 @@ let f2 (x: inref<'T>) = f1 &x    // not allowed
     'byref<'T>'    
 but given a
     'inref<'T>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+The type 'ByRefKinds.In' does not match the type 'ByRefKinds.InOut'")
         ]
     
     [<Fact>]
@@ -643,7 +643,7 @@ let f2 (x: inref<'T>) = f1 &x     // not allowed
     'outref<'T>'    
 but given a
     'inref<'T>'    
-The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'")
+The type 'ByRefKinds.In' does not match the type 'ByRefKinds.Out'")
         ]
     
     [<Fact>]
@@ -661,7 +661,7 @@ let f2 (x: inref<'T>) = C.f1 &x // not allowed
     'byref<'T>'    
 but given a
     'inref<'T>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+The type 'ByRefKinds.In' does not match the type 'ByRefKinds.InOut'")
         ]
     
     [<Fact>]
@@ -697,7 +697,7 @@ let f2 (x: inref<'T>) = C.f1(&x) // not allowed
     'byref<'T>'    
 but given a
     'inref<'T>'    
-The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'")
+The type 'ByRefKinds.In' does not match the type 'ByRefKinds.InOut'")
         ]
     
     [<Fact>]
