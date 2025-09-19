@@ -192,19 +192,6 @@ let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
     | None -> ()
     | Some (_, sb) -> ignore(sb.Append s)
 
-// Check if XML doc comment is positioned correctly (first non-whitespace on line)
-let checkXmlDocLinePosition (args: LexArgs) (lexbuf: UnicodeLexing.Lexbuf) =
-    // TODO: Implement proper line content analysis
-    // The correct implementation should:
-    // 1. Access the lexbuf buffer content to examine the current line
-    // 2. Check characters from the start of the line to the /// position
-    // 3. Determine if any non-whitespace characters exist before ///
-    // 4. Issue warning only when /// appears after actual code, not just indentation
-    //
-    // Currently disabled to avoid false positives with hardcoded column limits.
-    // Need to analyze available data in the lexbuf LexBuffer properly.
-    ()
-
 // Utilities for parsing #if/#else/#endif
 
 let shouldStartLine args lexbuf (m:range) err =
@@ -753,7 +740,6 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "///" op_char*
      { // Match exactly 3 slash, 4+ slash caught by preceding rule
        let m = lexbuf.LexemeRange
-       checkXmlDocLinePosition args lexbuf
        let doc = lexemeTrimLeft lexbuf 3
        let sb = (new StringBuilder(100)).Append(doc)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
