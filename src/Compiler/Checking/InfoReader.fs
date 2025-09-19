@@ -726,7 +726,6 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
-
     let MakeInfoCache f (flagsEq : IEqualityComparer<_>) = 
         MemoizationTable<_, _>
              (compute=f,
@@ -736,24 +735,42 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
               // Nullness of `ty` (TType_app) is not considered here, as the info is used to load members of the type
               // It would matter for different generic instantiations of the same type, but we don't cache that here - TType_app is always matched for `[]` typars.
+          
+              // Modified to allow caching of polymorphic types using type structure
               canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
                                     | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed
+                                    // Allow caching of polymorphic types by using type structure
+                                    | TType_app(tcref, tinst, _) when tcref.TypeContents.tcaug_closed && 
+                                                                       not (List.isEmpty tinst) -> true
                                     | _ -> false),
-              
+          
               keyComparer=
                  { new IEqualityComparer<_> with 
                        member _.GetHashCode((flags, _, ty)) =
                                     // Ignoring the ranges - that's OK.
-                                    flagsEq.GetHashCode flags + 
-                                    (match stripTyEqns g ty with 
-                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName
-                                     | _ -> 0)
+                                    let tyStructureHash = 
+                                        match stripTyEqns g ty with 
+                                        | TType_app(tcref, [], _) -> hash tcref.LogicalName
+                                        | TType_app _ ->
+                                            // Use type structure for polymorphic types
+                                            let typeStructure = Internal.Utilities.TypeHashing.StructuralUtilities.getTypeStructure ty
+                                            hash typeStructure
+                                        | _ -> 0
+                                    flagsEq.GetHashCode flags + tyStructureHash
                        member _.Equals((flags1, _, ty1), (flags2, _, ty2)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
                                     match stripTyEqns g ty1, stripTyEqns g ty2 with 
-                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2
+                                    | TType_app(tcref1, [], _), TType_app(tcref2, [], _) -> 
+                                        tyconRefEq g tcref1 tcref2
+                                    | TType_app(tcref1, tinst1, _), TType_app(tcref2, tinst2, _) 
+                                        when not (List.isEmpty tinst1) && not (List.isEmpty tinst2) ->
+                                        // Use type structure comparison for polymorphic types
+                                        tyconRefEq g tcref1 tcref2 &&
+                                        let struct1 = Internal.Utilities.TypeHashing.StructuralUtilities.getTypeStructure ty1
+                                        let struct2 = Internal.Utilities.TypeHashing.StructuralUtilities.getTypeStructure ty2
+                                        struct1 = struct2
                                     | _ -> false })
     
     let FindImplicitConversionsUncached (ad, m, ty) = 
