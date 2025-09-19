@@ -1,0 +1,5 @@
+# Ignore test-generated files
+global.json
+commandline.txt
+StandardOutput.txt
+StandardError.txt

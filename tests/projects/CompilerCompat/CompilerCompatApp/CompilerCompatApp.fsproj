@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' == 'True'">../../../../UseLocalCompiler.Directory.Build.props</DirectoryBuildPropsPath>
+    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' != 'True'"></DirectoryBuildPropsPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AppBuildInfo.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../CompilerCompatLib/CompilerCompatLib.fsproj" />
+  </ItemGroup>
+
+</Project>
