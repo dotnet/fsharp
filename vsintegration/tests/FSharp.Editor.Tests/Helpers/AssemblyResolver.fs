@@ -8,13 +8,13 @@ open System.Reflection
 
 module AssemblyResolver =
     open System.Globalization
-    open FSharp.Test.Utilities.VSInstallDiscovery
+    open FSharp.Test.VSInstallDiscovery
 
     let vsInstallDir =
         // Use centralized VS installation discovery with graceful fallback
         match tryGetVSInstallDir () with
         | Some dir -> dir
-        | None -> 
+        | None ->
             // Fallback to legacy behavior for backward compatibility
             let vsvar =
                 let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
