@@ -670,4 +670,4 @@ module FsiTests =
         fsiSession.EvalInteraction("""#line 100
         let y = __LINE__""")
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
-        Assert.shouldBe 100 boundValue.Value.ReflectionValue
+        Assert.shouldBe "100" boundValue.Value.ReflectionValue
