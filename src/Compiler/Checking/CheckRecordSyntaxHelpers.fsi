@@ -16,8 +16,10 @@ val TransformAstForNestedUpdates:
     overallTy: TType ->
     lid: LongIdent ->
     exprBeingAssigned: SynExpr ->
-    withExpr: SynExpr * BlockSeparator ->
+    withExpr: SynExpr * BlockSeparator option ->
         (Ident list * Ident) * SynExpr option
 
 val BindOriginalRecdExpr:
-    withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr
+    withExpr: SynExpr * BlockSeparator option ->
+        mkRecdExpr: ((SynExpr * BlockSeparator option) option -> SynExpr) ->
+            SynExpr
