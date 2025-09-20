@@ -359,16 +359,12 @@ type SeqExprOnly =
 type BlockSeparator =
     /// A separator consisting of a semicolon ';'
     /// range is the range of the semicolon
-    /// position is the position of the semicolon
-    | Semicolon of range: range * position: pos
+    | Semicolon of range: range
     /// A separator consisting of a comma ','
     /// range is the range of the comma
-    /// position is the position of the comma
-    | Comma of range: range * position: pos
+    | Comma of range: range
 
     member Range: range
-
-    member Position: pos
 
 /// Represents a record field name plus a flag indicating if given record field name is syntactically
 /// correct and can be used in name resolution.

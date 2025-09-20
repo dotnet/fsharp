@@ -5771,13 +5771,13 @@ seps_block:
 
   | SEMICOLON
      { let m = (rhs parseState 1)
-       Some (BlockSeparator.Semicolon(m, m.End)) }
+       Some (BlockSeparator.Semicolon(m)) }
 
   | SEMICOLON OBLOCKSEP
-     { Some (BlockSeparator.Semicolon((rhs2 parseState 1 2), (rhs parseState 1).End)) }
+     { Some (BlockSeparator.Semicolon((rhs2 parseState 1 2))) }
 
   | OBLOCKSEP SEMICOLON
-     { Some (BlockSeparator.Semicolon((rhs2 parseState 1 2), (rhs parseState 2).End)) }
+     { Some (BlockSeparator.Semicolon((rhs2 parseState 1 2))) }
 
 
 /* identifier can start from the underscore */

@@ -5919,12 +5919,8 @@ FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 GetHashCode(System.Collections.IEqua
 FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 Tag
 FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 get_Tag()
 FSharp.Compiler.Symbols.FSharpXmlDoc: System.String ToString()
-FSharp.Compiler.Syntax.BlockSeparator+Comma: FSharp.Compiler.Text.Position get_position()
-FSharp.Compiler.Syntax.BlockSeparator+Comma: FSharp.Compiler.Text.Position position
 FSharp.Compiler.Syntax.BlockSeparator+Comma: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.BlockSeparator+Comma: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.BlockSeparator+Semicolon: FSharp.Compiler.Text.Position get_position()
-FSharp.Compiler.Syntax.BlockSeparator+Semicolon: FSharp.Compiler.Text.Position position
 FSharp.Compiler.Syntax.BlockSeparator+Semicolon: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.BlockSeparator+Semicolon: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.BlockSeparator+Tags: Int32 Comma
@@ -5933,13 +5929,11 @@ FSharp.Compiler.Syntax.BlockSeparator: Boolean IsComma
 FSharp.Compiler.Syntax.BlockSeparator: Boolean IsSemicolon
 FSharp.Compiler.Syntax.BlockSeparator: Boolean get_IsComma()
 FSharp.Compiler.Syntax.BlockSeparator: Boolean get_IsSemicolon()
-FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator NewComma(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Position)
-FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator NewSemicolon(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Position)
+FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator NewComma(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator NewSemicolon(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator+Comma
 FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator+Semicolon
 FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Syntax.BlockSeparator+Tags
-FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Text.Position Position
-FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Text.Position get_Position()
 FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.BlockSeparator: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.BlockSeparator: Int32 Tag

@@ -500,7 +500,7 @@ module SyntaxTraversal =
                                         // inherit A()
                                         // $
                                         // field1 = 5
-                                        diveIntoSeparator blockSep.Position None)
+                                        diveIntoSeparator blockSep.Range.End None)
                             | None -> ()
                         | _ -> ()
 
@@ -561,7 +561,7 @@ module SyntaxTraversal =
                                         // field1 = 5
                                         // $
                                         // field2 = 5
-                                        diveIntoSeparator blockSep.Position copyOpt)
+                                        diveIntoSeparator blockSep.Range.End copyOpt)
                             | _ -> ()
 
                     ]

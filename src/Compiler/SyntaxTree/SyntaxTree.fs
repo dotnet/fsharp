@@ -308,18 +308,13 @@ type SeqExprOnly = SeqExprOnly of bool
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type BlockSeparator =
-    | Semicolon of range: range * position: pos
-    | Comma of range: range * position: pos
+    | Semicolon of range: range
+    | Comma of range: range
 
     member this.Range =
         match this with
         | Semicolon(range = m)
         | Comma(range = m) -> m
-
-    member this.Position =
-        match this with
-        | Semicolon(position = p) -> p
-        | Comma(position = p) -> p
 
 type RecordFieldName = SynLongIdent * bool
 
