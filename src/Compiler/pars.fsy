@@ -3671,14 +3671,11 @@ namePatPairs:
        NamePatPairField(lid, mEq, m, pat, $2) :: $3 }
 
    | namePatPair seps_block seps_block namePatPairs
-      { let (id: Ident), mEq, (pat: SynPat) = $1
+      { let mSep = match $3 with | Some sep -> sep.Range | None -> rhs parseState 3
+        reportParseErrorAt mSep (FSComp.SR.parsExpectingPattern ())
+        let (id: Ident), mEq, (pat: SynPat) = $1
         let m = unionRanges id.idRange pat.Range
         let lid = SynLongIdent([id], [], [None])
-        let mSep =
-            match $3 with
-            | Some sep -> sep.Range
-            | None -> rhs parseState 3
-        reportParseErrorAt mSep (FSComp.SR.parsExpectingPattern ())
         NamePatPairField(lid, mEq, m, pat, $2) :: $4 }
 
 namePatPair:
