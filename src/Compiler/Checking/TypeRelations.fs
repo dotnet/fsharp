@@ -35,8 +35,8 @@ let getTypeSubsumptionCache =
     let factory (g: TcGlobals) =
         let options =
             match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault() |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault() with TotalCapacity = 65536; HeadroomPercentage = 75 }
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
     Extras.WeakMap.getOrCreate factory     
 
@@ -51,8 +51,8 @@ let getTypeFeasibleEquivCache =
     let factory (g: TcGlobals) =
         let options =
             match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault() |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault() with TotalCapacity = 65536; HeadroomPercentage = 75 }
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeFeasibleEquivCacheKey, bool>(options, "typeFeasibleEquivCache")
     Extras.WeakMap.getOrCreate factory
 
@@ -67,8 +67,8 @@ let getTypeDefinitelySubsumesNoCoerceCache =
     let factory (g: TcGlobals) =
         let options =
             match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault() |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault() with TotalCapacity = 65536; HeadroomPercentage = 75 }
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeDefinitelySubsumesNoCoerceCacheKey, bool>(options, "typeDefinitelySubsumesNoCoerceCache")
     Extras.WeakMap.getOrCreate factory
 

@@ -956,7 +956,7 @@ let AdjustValSynInfoInSignature g ty (SynValInfo(argsData, retData) as sigMD) =
         sigMD
 
 let getArgInfoCache =
-    let options = Caches.CacheOptions.getDefault() |> Caches.CacheOptions.withNoEviction
+    let options = Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
     let factory _ = new Caches.Cache<_, ArgReprInfo>(options, "argInfoCache")
     WeakMap.getOrCreate factory
 

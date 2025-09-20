@@ -206,21 +206,15 @@ module CacheOptions =
         else
             EvictionMode.MailboxProcessor
 
-    let getDefault () =
+    let getDefault comparer =
         {
             CacheOptions.TotalCapacity = 1024
             CacheOptions.HeadroomPercentage = 50
             CacheOptions.EvictionMode = defaultEvictionMode
-            CacheOptions.Comparer = HashIdentity.Structural
+            CacheOptions.Comparer = comparer
         }
 
-    let getReferenceIdentity () =
-        {
-            CacheOptions.TotalCapacity = 1024
-            CacheOptions.HeadroomPercentage = 50
-            CacheOptions.EvictionMode = defaultEvictionMode
-            CacheOptions.Comparer = HashIdentity.Reference
-        }
+    let getReferenceIdentity () = getDefault HashIdentity.Reference
 
     let withNoEviction options =
         { options with

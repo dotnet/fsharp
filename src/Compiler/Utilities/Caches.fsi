@@ -46,7 +46,7 @@ type internal CacheOptions<'Key> =
 
 module internal CacheOptions =
     /// Default options, using structural equality for keys and queued eviction.
-    val getDefault: unit -> CacheOptions<'Key> when 'Key: equality
+    val getDefault: IEqualityComparer<'Key> -> CacheOptions<'Key>
     /// Default options, using reference equality for keys and queued eviction.
     val getReferenceIdentity: unit -> CacheOptions<'Key> when 'Key: not struct
     /// Set eviction mode to NoEviction.
