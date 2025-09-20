@@ -400,6 +400,25 @@ module SyntaxTraversal =
                 let traverseSynType = traverseSynType path
                 let traversePat = traversePat path
 
+                let diveIntoRecordLikeExpr path (copyOpt: (SynExpr * BlockSeparator option) option) =
+                    [
+                        match copyOpt with
+                        | Some(expr, blockSep) ->
+                            yield dive expr expr.Range traverseSynExpr
+
+                            match blockSep with
+                            | Some blockSep ->
+                                yield
+                                    dive () blockSep.Range (fun () ->
+                                        if posGeq pos blockSep.Range.End then
+                                            // { x with $ }
+                                            visitor.VisitRecordField(path, Some expr, None)
+                                        else
+                                            None)
+                            | None -> ()
+                        | None -> ()
+                    ]
+
                 match e with
                 | SynExpr.LongIdentSet(expr = synExpr)
                 | SynExpr.DotGet(expr = synExpr)
@@ -444,22 +463,7 @@ module SyntaxTraversal =
 
                 | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
                     [
-                        match copyOpt with
-                        | Some(expr, blockSep) ->
-                            yield dive expr expr.Range traverseSynExpr
-
-                            match blockSep with
-                            | Some blockSep ->
-                                yield
-                                    dive () blockSep.Range (fun () ->
-                                        if posGeq pos blockSep.Range.End then
-                                            // special case: caret is after WITH
-                                            // { x with $ }
-                                            visitor.VisitRecordField(path, Some expr, None)
-                                        else
-                                            None)
-                            | None -> ()
-                        | _ -> ()
+                        yield! diveIntoRecordLikeExpr path copyOpt
 
                         for field, _, x in fields do
                             yield dive () field.Range (fun () -> visitor.VisitRecordField(path, copyOpt |> Option.map fst, Some field))
@@ -504,22 +508,7 @@ module SyntaxTraversal =
                             | None -> ()
                         | _ -> ()
 
-                        match copyOpt with
-                        | Some(expr, blockSep) ->
-                            yield dive expr expr.Range traverseSynExpr
-
-                            match blockSep with
-                            | Some blockSep ->
-                                yield
-                                    dive () blockSep.Range (fun () ->
-                                        if posGeq pos blockSep.Range.End then
-                                            // special case: caret is after WITH
-                                            // { x with $ }
-                                            visitor.VisitRecordField(path, Some expr, None)
-                                        else
-                                            None)
-                            | None -> ()
-                        | _ -> ()
+                        yield! diveIntoRecordLikeExpr path copyOpt
 
                         let copyOpt = Option.map fst copyOpt
 
