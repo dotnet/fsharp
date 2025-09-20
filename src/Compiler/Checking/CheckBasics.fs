@@ -243,11 +243,7 @@ type TcEnv =
       eLambdaArgInfos: ArgReprInfo list list
 
       // Do we lay down an implicit debug point?
-      eIsControlFlow: bool
-      
-      // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
-      // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
-      eCachedImplicitYieldExpressions : HashMultiMap<range, SynExpr * TType * Expr>
+      eIsControlFlow: bool     
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
@@ -319,8 +315,6 @@ type TcFileState =
 
       diagnosticOptions: FSharpDiagnosticOptions
 
-      argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
-
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
@@ -370,7 +364,6 @@ type TcFileState =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           diagnosticOptions = diagnosticOptions
-          argInfoCache = ConcurrentDictionary()
           TcPat = tcPat
           TcSimplePats = tcSimplePats
           TcSequenceExpressionEntry = tcSequenceExpressionEntry

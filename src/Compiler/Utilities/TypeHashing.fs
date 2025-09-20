@@ -9,6 +9,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open System.Collections.Immutable
+open System
 
 type ObserverVisibility =
     | PublicOnly
@@ -397,10 +398,29 @@ module StructuralUtilities =
         | Nullness of nullness: NullnessInfo
         | TupInfo of b: bool
         | MeasureOne
-        | MeasureRational of rational: Rational
+        | MeasureRational of Rational
         | NeverEqual of never: NeverEqual
 
-    type TypeStructure = TypeToken[]
+    [<Struct; CustomEquality; NoComparison>]
+    type TypeStructure =
+        | TypeStructure of hash: int * tokens: ImmutableArray<TypeToken>
+
+        static member inline FromTokens(tokens: ImmutableArray<TypeToken>) =
+            // We might as well precompute the hash, because this is only going to be used as a key.
+            TypeStructure(hash tokens, tokens)
+
+        override this.GetHashCode() = let (TypeStructure(h, _)) = this in h
+
+        interface System.IEquatable<TypeStructure> with
+            member this.Equals that =
+                let (TypeStructure(h1, tokens1)) = this
+                let (TypeStructure(h2, tokens2)) = that
+                h1 = h2 && tokens1 = tokens2
+
+        override this.Equals that =
+            match that with
+            | :? TypeStructure as that -> (this :> IEquatable<_>).Equals that
+            | _ -> false
 
     [<Literal>]
     let private initialTokenCapacity = 4
@@ -410,7 +430,7 @@ module StructuralUtilities =
         | ValueSome k -> TypeToken.Nullness k
         | _ -> TypeToken.NeverEqual NeverEqual.Singleton
 
-    let rec private accumulateMeasure (tokens: ResizeArray<TypeToken>) (m: Measure) =
+    let rec private accumulateMeasure (tokens: ImmutableArray<TypeToken>.Builder) (m: Measure) =
         match m with
         | Measure.Var mv -> tokens.Add(TypeToken.Stamp mv.Stamp)
         | Measure.Const(tcref, _) -> tokens.Add(TypeToken.Stamp tcref.Stamp)
@@ -423,7 +443,7 @@ module StructuralUtilities =
             accumulateMeasure tokens m1
             tokens.Add(TypeToken.MeasureRational r)
 
-    let rec private accumulateTType (tokens: ResizeArray<TypeToken>) (ty: TType) =
+    let rec private accumulateTType (tokens: ImmutableArray<_>.Builder ) (ty: TType) =
         match ty with
         | TType_ucase(u, tinst) ->
             tokens.Add(TypeToken.Stamp u.TyconRef.Stamp)
@@ -462,7 +482,7 @@ module StructuralUtilities =
         | TType_measure m -> accumulateMeasure tokens m
 
     /// Get the full structure of a type as a sequence of tokens, suitable for equality
-    let getTypeStructure ty =
-        let tokens = ResizeArray<TypeToken>(initialTokenCapacity)
+    let inline getTypeStructure ty =
+        let tokens = ImmutableArray.CreateBuilder(initialTokenCapacity)
         accumulateTType tokens ty
-        tokens.ToArray()
+        tokens.ToImmutable() |> TypeStructure.FromTokens

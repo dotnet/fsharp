@@ -407,6 +407,9 @@ type internal FSharpPackage() as this =
 
                     globalOptions.BlockForCompletionItems <- false
 
+                    DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayCacheStats this.DisposalToken
+                    |> ignore
+
                 }
                 |> CancellableTask.startAsTask cancellationToken)
         )

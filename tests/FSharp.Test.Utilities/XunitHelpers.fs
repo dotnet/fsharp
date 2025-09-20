@@ -195,6 +195,8 @@ type OpenTelemetryExport(testRunName, enable) =
 // However, we want to ensure that OneTimeSetup is called only once per test run.
 module OneTimeSetup =
 
+    open System.Threading
+
     let init =
         lazy
     #if !NETCOREAPP
@@ -202,6 +204,7 @@ module OneTimeSetup =
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
     #endif
+        log $"Server GC enabled: {System.Runtime.GCSettings.IsServerGC}"
         log "Installing TestConsole redirection"
         TestConsole.install()
 
