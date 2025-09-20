@@ -235,3 +235,44 @@ let run() = let mutable x = 0 in foo(&x,&x,5)
             """
             ]
 
+    [<Fact>]
+    let ``TailCall 06 - No tail call with pinned locals``() =
+        FSharp """
+module TailCall06
+let foo(x:int, y) = printfn "%d" x
+let run() = 
+    use ptr = fixed [| 1; 2; 3 |]
+    foo(42, 5)
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
+            """
+    IL_0040:  ldc.i4.s   42
+    IL_0042:  ldc.i4.5
+    IL_0043:  call       void TailCall06::foo<int32>(int32,
+                                                     !!0)
+            """
+            ]
+
+    [<Fact>]
+    let ``TailCall 07 - No tail call with pinned locals in recursive function``() =
+        FSharp """
+module TailCall07
+let rec countdown n = 
+    use ptr = fixed [| n |]
+    if n <= 0 then 
+        0
+    else 
+        countdown (n - 1)
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
+            """
+.locals init (native int V_0,
+             int32[] V_1,
+             int32& pinned V_2)
+            """
+            ]
+
