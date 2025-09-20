@@ -445,20 +445,20 @@ module SyntaxTraversal =
                 | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
                     [
                         match copyOpt with
-                        | Some(expr, Some blockSep) ->
+                        | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
-                            yield
-                                dive () blockSep.Range (fun () ->
-                                    if posGeq pos blockSep.Range.End then
-                                        // special case: caret is after WITH
-                                        // { x with $ }
-                                        visitor.VisitRecordField(path, Some expr, None)
-                                    else
-                                        None)
-                        | Some(expr, None) ->
-                            // No explicit separator (implicit OBLOCKSEP). Still dive into expr.
-                            yield dive expr expr.Range traverseSynExpr
+                            match blockSep with
+                            | Some blockSep ->
+                                yield
+                                    dive () blockSep.Range (fun () ->
+                                        if posGeq pos blockSep.Range.End then
+                                            // special case: caret is after WITH
+                                            // { x with $ }
+                                            visitor.VisitRecordField(path, Some expr, None)
+                                        else
+                                            None)
+                            | None -> ()
                         | _ -> ()
 
                         for field, _, x in fields do
@@ -505,20 +505,20 @@ module SyntaxTraversal =
                         | _ -> ()
 
                         match copyOpt with
-                        | Some(expr, Some blockSep) ->
+                        | Some(expr, blockSep) ->
                             yield dive expr expr.Range traverseSynExpr
 
-                            yield
-                                dive () blockSep.Range (fun () ->
-                                    if posGeq pos blockSep.Range.End then
-                                        // special case: caret is after WITH
-                                        // { x with $ }
-                                        visitor.VisitRecordField(path, Some expr, None)
-                                    else
-                                        None)
-                        | Some(expr, None) ->
-                            // No explicit separator (implicit OBLOCKSEP). Still dive into expr.
-                            yield dive expr expr.Range traverseSynExpr
+                            match blockSep with
+                            | Some blockSep ->
+                                yield
+                                    dive () blockSep.Range (fun () ->
+                                        if posGeq pos blockSep.Range.End then
+                                            // special case: caret is after WITH
+                                            // { x with $ }
+                                            visitor.VisitRecordField(path, Some expr, None)
+                                        else
+                                            None)
+                            | None -> ()
                         | _ -> ()
 
                         let copyOpt = Option.map fst copyOpt
