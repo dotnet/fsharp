@@ -1929,6 +1929,15 @@ let hasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =
     )
     |> fun exists -> Assert.True(exists, $"Field {fieldName} not found.")
 
+let notHasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =
+    symbolUses
+    |> List.exists (fun symbolUse ->
+        match symbolUse.Symbol with
+        | :? FSharpField as field -> field.DisplayName = fieldName
+        | _ -> false
+    )
+    |> fun exists -> Assert.False(exists, $"Field {fieldName} should not be found.")
+
 let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
     symbolUses
     |> List.exists (fun symbolUse ->
@@ -2144,3 +2153,34 @@ let rUpdate = { r1 with Fi }
 
     hasRecordField "Field1" declarations
     hasRecordField "Field2" declarations
+
+[<Fact>]
+let ``No record fields are completed before 'with' in update record`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type T =
+    { AAA: int }
+
+let r = { AAA = 5 }
+
+let b = { r with  }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            9,
+            "let b = { r with  }",
+            {
+                EndColumn = 12
+                LastDotPos = None
+                PartialIdent = ""
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    notHasRecordField "AAA" declarations
