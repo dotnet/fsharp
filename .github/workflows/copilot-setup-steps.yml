@@ -29,4 +29,4 @@ jobs:
       - name: Restore dotnet tools
         env:
           CI: false
-        run: dotnet tool restore
+        run: dotnet tool restore || true
