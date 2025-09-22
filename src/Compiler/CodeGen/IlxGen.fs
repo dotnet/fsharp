@@ -2689,6 +2689,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
             j, true
         | None -> cgbuf.AllocLocal(ranges, ty, isFixed, canBeReallocd), false
 
+    /// Check if any locals have been allocated as pinned/fixed
+    member _.HasPinnedLocals() =
+        locals |> Seq.exists (fun (_, _, isFixed, _) -> isFixed)
+
     member _.Close() =
 
         let instrs = codebuf.ToArray()
@@ -4371,6 +4375,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         isDllImport,
                         isSelfInit,
                         makesNoCriticalTailcalls,
+                        cgbuf,
                         sequel
                     )
                 else
@@ -4482,11 +4487,15 @@ and CanTailcall
         isDllImport,
         isSelfInit,
         makesNoCriticalTailcalls,
+        cgbuf: CodeGenBuffer,
         sequel
     ) =
 
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
+    // Can't tailcall when there are pinned locals since the stack frame must remain alive
+    let hasPinnedLocals = cgbuf.HasPinnedLocals()
+
     if
         not hasStructObjArg
         && Option.isNone ccallInfo
@@ -4495,6 +4504,7 @@ and CanTailcall
         && not isDllImport
         && not isSelfInit
         && not makesNoCriticalTailcalls
+        && not hasPinnedLocals
         &&
 
         // We can tailcall even if we need to generate "unit", as long as we're about to throw the value away anyway as par of the return.
@@ -4693,7 +4703,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
         check ilxClosureApps
 
     let isTailCall =
-        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, sequel)
+        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, cgbuf, sequel)
 
     CountCallFuncInstructions()
 
@@ -5431,6 +5441,7 @@ and GenILCall
             isDllImport,
             false,
             makesNoCriticalTailcalls,
+            cgbuf,
             sequel
         )
 

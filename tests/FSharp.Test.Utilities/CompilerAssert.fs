@@ -627,8 +627,6 @@ module CompilerAssertHelpers =
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
 #endif
         let rc, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath))
-        let output = String.Join(Environment.NewLine, output)
-        let errors = String.Join(Environment.NewLine, errors)
         ExitCode rc, output, errors
 
 open CompilerAssertHelpers
