@@ -2630,7 +2630,7 @@ type LexFilterImpl (
     and checkXmlDocCommentPosition(tokenTup: TokenTup) =
         // Check if the current token is a LINE_COMMENT that appears after other content
         match tokenTup.Token with
-        | LINE_COMMENT cont ->
+        | LINE_COMMENT _ ->
             let commentStartPos = startPosOfTokenTup tokenTup
             let lastTokenEndPos = tokenTup.LastTokenPos
             
