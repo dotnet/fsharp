@@ -2,15 +2,18 @@
 
 module FSharp.Compiler.SyntaxTreeOps
 
+open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.IO
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open System
 
 /// Generate implicit argument names in parsing
 type SynArgNameGenerator() =
@@ -992,11 +995,47 @@ let rec synExprContainsError inpExpr =
 let longIdentToString (ident: SynLongIdent) =
     System.String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
 
+/// The "mock" file name used by fsi.exe when reading from stdin.
+/// Has special treatment, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
+let stdinMockFileName = "stdin"
+
+let getSourceIdentifierValue pathMap s (m: range) =
+    match s with
+    | "__SOURCE_DIRECTORY__" ->
+        let fileName = FileIndex.fileOfFileIndex m.FileIndex
+
+        let dirname =
+            if String.IsNullOrWhiteSpace fileName then
+                String.Empty
+            else if fileName = stdinMockFileName then
+                System.IO.Directory.GetCurrentDirectory()
+            else
+                fileName
+                |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
+                |> System.IO.Path.GetDirectoryName
+                |> (!!)
+
+        if String.IsNullOrEmpty dirname then
+            dirname
+        else
+            PathMap.applyDir pathMap dirname
+    | "__SOURCE_FILE__" -> !!System.IO.Path.GetFileName(FileIndex.fileOfFileIndex m.FileIndex)
+    | "__LINE__" -> string m.StartLine
+    | _ -> failwith "getSourceIdentifierValue: unexpected identifier"
+
+let applyLineDirectivesToSourceIdentifier s value (m: range) =
+    let mm = m.ApplyLineDirectives()
+
+    if mm = m then
+        value // keep the value that was assigned during lexing (when line directives were not yet evaluated)
+    else
+        getSourceIdentifierValue PathMap.empty s mm // update because of line directive
+
 let parsedHashDirectiveArguments (input: ParsedHashDirectiveArgument list) (langVersion: LanguageVersion) =
     List.choose
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
-        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
+        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier s v m)
         | ParsedHashDirectiveArgument.Int32(n, m) ->
             match tryCheckLanguageFeatureAndRecover langVersion LanguageFeature.ParsedHashDirectiveArgumentNonQuotes m with
             | true -> Some(string n)
@@ -1015,7 +1054,7 @@ let parsedHashDirectiveArgumentsNoCheck (input: ParsedHashDirectiveArgument list
     List.map
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> s
-        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> v
+        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> applyLineDirectivesToSourceIdentifier s v m
         | ParsedHashDirectiveArgument.Int32(n, _) -> string n
         | ParsedHashDirectiveArgument.Ident(ident, _) -> ident.idText
         | ParsedHashDirectiveArgument.LongIdent(ident, _) -> longIdentToString ident)
@@ -1028,7 +1067,7 @@ let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list)
         | ParsedHashDirectiveArgument.Int32(n, m) ->
             errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
             None
-        | ParsedHashDirectiveArgument.SourceIdentifier(_, v, _) -> Some v
+        | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier s v m)
         | ParsedHashDirectiveArgument.Ident(ident, m) ->
             errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
             None
