@@ -16,4 +16,22 @@
     <ProjectReference Include="../CompilerCompatLib/CompilerCompatLib.fsproj" />
   </ItemGroup>
 
+  <Target Name="GenerateAppBuildInfo" BeforeTargets="BeforeCompile">
+    <PropertyGroup>
+      <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' == 'True'">true</IsLocalBuildValue>
+      <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' != 'True'">false</IsLocalBuildValue>
+      <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' != ''">$(DotnetFscCompilerPath.Replace('&quot;', ''))</CleanDotnetFscCompilerPath>
+      <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">N/A</CleanDotnetFscCompilerPath>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="AppBuildInfo.fs"
+      Overwrite="true"
+      Lines="namespace CompilerCompatApp
+module AppBuildInfo =
+    let sdkVersion = &quot;$(NETCoreSdkVersion)&quot;
+    let fsharpCompilerPath = &quot;$(FscToolPath)\$(FscToolExe)&quot;
+    let dotnetFscCompilerPath = &quot;$(CleanDotnetFscCompilerPath)&quot;
+    let isLocalBuild = $(IsLocalBuildValue)" />
+  </Target>
+
 </Project>

@@ -9,11 +9,13 @@ let main _argv =
         printfn "=== BUILD VERIFICATION ==="
         printfn "Library Build Info:"
         printfn "  SDK Version: %s" LibBuildInfo.sdkVersion
-        printfn "  FSC Path: %s" LibBuildInfo.fscPath
+        printfn "  F# Compiler Path: %s" LibBuildInfo.fsharpCompilerPath
+        printfn "  .NET FSC Compiler Path: %s" LibBuildInfo.dotnetFscCompilerPath
         printfn "  Is Local Build: %b" LibBuildInfo.isLocalBuild
         printfn "Application Build Info:"
         printfn "  SDK Version: %s" AppBuildInfo.sdkVersion
-        printfn "  FSC Path: %s" AppBuildInfo.fscPath
+        printfn "  F# Compiler Path: %s" AppBuildInfo.fsharpCompilerPath
+        printfn "  .NET FSC Compiler Path: %s" AppBuildInfo.dotnetFscCompilerPath
         printfn "  Is Local Build: %b" AppBuildInfo.isLocalBuild
         printfn "=========================="
         

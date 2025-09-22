@@ -69,3 +69,43 @@ type CompilerCompatibilityTests() =
         let (exitCode, output, _error) = runApp appDllPath
         Assert.Equal(0, exitCode)
         Assert.Contains("SUCCESS: All compiler compatibility tests passed", output)
+        
+        // Parse build info from output to validate compiler usage consistency
+        let lines = output.Split('\n') |> Array.map (fun s -> s.Trim())
+        
+        // Extract isLocalBuild values from the output
+        let parseIsLocalBuild (prefix: string) =
+            lines 
+            |> Array.tryFindIndex (fun l -> l.StartsWith(prefix))
+            |> Option.bind (fun startIdx ->
+                lines 
+                |> Array.skip (startIdx + 1)
+                |> Array.tryFind (fun l -> l.Contains("Is Local Build: "))
+                |> Option.map (fun l -> l.Contains("Is Local Build: true")))
+            |> function Some x -> x | None -> false
+        
+        let libIsLocalBuild = parseIsLocalBuild "Library Build Info:"
+        let appIsLocalBuild = parseIsLocalBuild "Application Build Info:"
+        
+        // Validate that build info matches expected compiler versions
+        let expectedLibIsLocal = libCompilerVersion = "local"
+        let expectedAppIsLocal = appCompilerVersion = "local"
+        
+        Assert.True((libIsLocalBuild = expectedLibIsLocal), 
+            $"Library build info mismatch: expected isLocalBuild={expectedLibIsLocal} for version '{libCompilerVersion}', but got {libIsLocalBuild}")
+        Assert.True((appIsLocalBuild = expectedAppIsLocal), 
+            $"Application build info mismatch: expected isLocalBuild={expectedAppIsLocal} for version '{appCompilerVersion}', but got {appIsLocalBuild}")
+        
+        // Validate consistency: same compiler versions should have same build info
+        if libCompilerVersion = appCompilerVersion then
+            Assert.True((libIsLocalBuild = appIsLocalBuild), 
+                $"Inconsistent build info: both lib and app use '{libCompilerVersion}' but have different isLocalBuild values (lib={libIsLocalBuild}, app={appIsLocalBuild})")
+        else
+            Assert.True((libIsLocalBuild <> appIsLocalBuild), 
+                $"Expected different build info for different compiler versions (lib='{libCompilerVersion}', app='{appCompilerVersion}'), but both have isLocalBuild={libIsLocalBuild}")
+        
+        // Additional validation: check that we have actual build-time values
+        Assert.True((lines |> Array.exists (fun l -> l.Contains("SDK Version:") && not (l.Contains("Unknown")))), 
+            "SDK Version should be captured from build-time, not show 'Unknown'")
+        Assert.True((lines |> Array.exists (fun l -> l.Contains("F# Compiler Path:") && not (l.Contains("Unknown")))), 
+            "F# Compiler Path should be captured from build-time, not show 'Unknown'")
