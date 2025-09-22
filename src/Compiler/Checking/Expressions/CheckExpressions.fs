@@ -4893,7 +4893,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
             | SynConst.Single n when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
             | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
-            | SynConst.String (s, _, _) -> record(g.string_ty); box (s: string)
+            | SynConst.String (s, _, _) when typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.SourceIdentifier (i, s, m) when typeEquiv g g.string_ty kind ->
                 let s = applyLineDirectivesToSourceIdentifier i s m
                 record(g.string_ty); box (s: string)
