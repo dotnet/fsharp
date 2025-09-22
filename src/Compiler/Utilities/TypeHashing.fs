@@ -420,7 +420,7 @@ module StructuralUtilities =
             | Measure.One _ -> TypeToken.MeasureOne
             | Measure.RationalPower(m1, r) ->
                 yield! accumulateMeasure m1
-                TypeToken.MeasureRational (GetNumerator r, GetDenominator r)
+                TypeToken.MeasureRational(GetNumerator r, GetDenominator r)
         }
 
     let rec private accumulateTType (ty: TType) =
