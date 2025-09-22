@@ -109,3 +109,17 @@ type CompilerCompatibilityTests() =
             "SDK Version should be captured from build-time, not show 'Unknown'")
         Assert.True((lines |> Array.exists (fun l -> l.Contains("F# Compiler Path:") && not (l.Contains("Unknown")))), 
             "F# Compiler Path should be captured from build-time, not show 'Unknown'")
+        
+        // Validate that local builds have artifacts path and non-local builds don't
+        if expectedLibIsLocal then
+            Assert.True((lines |> Array.exists (fun l -> l.Contains("Library") && l.Contains("artifacts"))), 
+                "Local library build should reference artifacts path")
+        if expectedAppIsLocal then
+            Assert.True((lines |> Array.exists (fun l -> l.Contains("Application") && l.Contains("artifacts"))), 
+                "Local app build should reference artifacts path")
+        
+        // Ensure build verification section is present
+        Assert.True((output.Contains("=== BUILD VERIFICATION ===")), 
+            "Build verification section should be present in output")
+        Assert.True((output.Contains("==========================")), 
+            "Build verification section should be properly formatted")
