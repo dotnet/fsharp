@@ -49,9 +49,17 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
   </PropertyGroup>
 
-  <PropertyGroup>
+  <!-- Gate inclusion of PackageFSharpDesignTimeTools target only when IsFSharpDesignTimeProvider is true -->
+  <PropertyGroup Condition="'$(IsFSharpDesignTimeProvider)' == 'true'">
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
+
+  <!-- Check for IsFSharpDesignTimeProvider in references and conditionally add target -->
+  <Target Name="_CheckForFSharpDesignTimeProvider" BeforeTargets="GenerateNuspec;Pack" Condition="'$(IsFSharpDesignTimeProvider)' != 'true'">
+    <PropertyGroup Condition="'@(PackageReference->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))' != '' or '@(ProjectReference->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))' != ''">
+      <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+  </Target>
 
   <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
@@ -65,7 +73,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     </ItemGroup>
   </Target>
 
-  <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
+  <Target Name="PackageFSharpDesignTimeTools" AfterTargets="ResolveReferences">
+    <!-- Conditional safety call to prevent early execution -->
+    <PropertyGroup>
+      <_ShouldExecutePackageFSharpDesignTimeTools Condition="'$(IsFSharpDesignTimeProvider)' == 'true' or '@(_ResolvedProjectReferencePaths->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))' != '' or '@(BuiltProjectOutputGroupKeyOutput)' != ''">true</_ShouldExecutePackageFSharpDesignTimeTools>
+    </PropertyGroup>
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
       <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
@@ -74,7 +86,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Error Text="'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'." Condition="'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'" />
     <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(_ShouldExecutePackageFSharpDesignTimeTools)' == 'true'">
       <_ResolvedOutputFiles
           Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*"
           Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll"
