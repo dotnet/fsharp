@@ -54,9 +54,13 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <!-- Check for IsFSharpDesignTimeProvider in references and conditionally add target -->
+  <!-- Check for F# design-time provider references and conditionally add target -->
   <Target Name="_CheckForFSharpDesignTimeProvider" BeforeTargets="GenerateNuspec;Pack" Condition="'$(IsFSharpDesignTimeProvider)' != 'true'">
-    <PropertyGroup Condition="'@(PackageReference->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))' != '' or '@(ProjectReference->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))' != ''">
+    <ItemGroup>
+      <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
+      <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
+    </ItemGroup>
+    <PropertyGroup Condition="'@(_FSharpDesignTimeProviderProject)' != '' or '@(_FSharpDesignTimeProviderPackage)' != ''">
       <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
     </PropertyGroup>
   </Target>
@@ -74,9 +78,13 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </Target>
 
   <Target Name="PackageFSharpDesignTimeTools" AfterTargets="ResolveReferences">
-    <!-- Conditional safety call to prevent early execution -->
+    <!-- Check if this target should execute based on design-time provider settings -->
+    <ItemGroup>
+      <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
+      <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
+    </ItemGroup>
     <PropertyGroup>
-      <_ShouldExecutePackageFSharpDesignTimeTools Condition="'$(IsFSharpDesignTimeProvider)' == 'true' or '@(_ResolvedProjectReferencePaths->WithMetadataValue('IsFSharpDesignTimeProvider', 'true'))' != '' or '@(BuiltProjectOutputGroupKeyOutput)' != ''">true</_ShouldExecutePackageFSharpDesignTimeTools>
+      <_ShouldExecutePackageFSharpDesignTimeTools Condition="'$(IsFSharpDesignTimeProvider)' == 'true' or '@(_FSharpDesignTimeProviderProject)' != '' or '@(_FSharpDesignTimeProviderPackage)' != ''">true</_ShouldExecutePackageFSharpDesignTimeTools>
     </PropertyGroup>
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
