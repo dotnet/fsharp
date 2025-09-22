@@ -1,6 +1,7 @@
 module internal Internal.Utilities.TypeHashing
 
 open Internal.Utilities.Rational
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -397,72 +398,72 @@ module StructuralUtilities =
         | Nullness of nullness: NullnessInfo
         | TupInfo of b: bool
         | MeasureOne
-        | MeasureRational of rational: Rational
+        | MeasureRational of int * int
         | NeverEqual of never: NeverEqual
 
-    type TypeStructure = TypeToken[]
-
-    [<Literal>]
-    let private initialTokenCapacity = 4
+    type TypeStructure = TypeStructure of ImmutableArray<TypeToken>
 
     let inline toNullnessToken (n: Nullness) =
         match n.TryEvaluate() with
         | ValueSome k -> TypeToken.Nullness k
         | _ -> TypeToken.NeverEqual NeverEqual.Singleton
 
-    let rec private accumulateMeasure (tokens: ResizeArray<TypeToken>) (m: Measure) =
-        match m with
-        | Measure.Var mv -> tokens.Add(TypeToken.Stamp mv.Stamp)
-        | Measure.Const(tcref, _) -> tokens.Add(TypeToken.Stamp tcref.Stamp)
-        | Measure.Prod(m1, m2, _) ->
-            accumulateMeasure tokens m1
-            accumulateMeasure tokens m2
-        | Measure.Inv m1 -> accumulateMeasure tokens m1
-        | Measure.One _ -> tokens.Add(TypeToken.MeasureOne)
-        | Measure.RationalPower(m1, r) ->
-            accumulateMeasure tokens m1
-            tokens.Add(TypeToken.MeasureRational r)
+    let rec private accumulateMeasure (m: Measure) =
+        seq {
+            match m with
+            | Measure.Var mv -> TypeToken.Stamp mv.Stamp
+            | Measure.Const(tcref, _) -> TypeToken.Stamp tcref.Stamp
+            | Measure.Prod(m1, m2, _) ->
+                yield! accumulateMeasure m1
+                yield! accumulateMeasure m2
+            | Measure.Inv m1 -> yield! accumulateMeasure m1
+            | Measure.One _ -> TypeToken.MeasureOne
+            | Measure.RationalPower(m1, r) ->
+                yield! accumulateMeasure m1
+                TypeToken.MeasureRational(GetNumerator r, GetDenominator r)
+        }
 
-    let rec private accumulateTType (tokens: ResizeArray<TypeToken>) (ty: TType) =
-        match ty with
-        | TType_ucase(u, tinst) ->
-            tokens.Add(TypeToken.Stamp u.TyconRef.Stamp)
-            tokens.Add(TypeToken.UCase u.CaseName)
+    let rec private accumulateTType (ty: TType) =
+        seq {
+            match ty with
+            | TType_ucase(u, tinst) ->
+                TypeToken.Stamp u.TyconRef.Stamp
+                TypeToken.UCase u.CaseName
 
-            for arg in tinst do
-                accumulateTType tokens arg
-        | TType_app(tcref, tinst, n) ->
-            tokens.Add(TypeToken.Stamp tcref.Stamp)
-            tokens.Add(toNullnessToken n)
+                for arg in tinst do
+                    yield! accumulateTType arg
 
-            for arg in tinst do
-                accumulateTType tokens arg
-        | TType_anon(info, tys) ->
-            tokens.Add(TypeToken.Stamp info.Stamp)
+            | TType_app(tcref, tinst, n) ->
+                TypeToken.Stamp tcref.Stamp
+                toNullnessToken n
 
-            for arg in tys do
-                accumulateTType tokens arg
-        | TType_tuple(tupInfo, tys) ->
-            tokens.Add(TypeToken.TupInfo(evalTupInfoIsStruct tupInfo))
+                for arg in tinst do
+                    yield! accumulateTType arg
+            | TType_anon(info, tys) ->
+                TypeToken.Stamp info.Stamp
 
-            for arg in tys do
-                accumulateTType tokens arg
-        | TType_forall(tps, tau) ->
-            for tp in tps do
-                tokens.Add(TypeToken.Stamp tp.Stamp)
+                for arg in tys do
+                    yield! accumulateTType arg
+            | TType_tuple(tupInfo, tys) ->
+                TypeToken.TupInfo(evalTupInfoIsStruct tupInfo)
 
-            accumulateTType tokens tau
-        | TType_fun(d, r, n) ->
-            accumulateTType tokens d
-            accumulateTType tokens r
-            tokens.Add(toNullnessToken n)
-        | TType_var(r, n) ->
-            tokens.Add(TypeToken.Stamp r.Stamp)
-            tokens.Add(toNullnessToken n)
-        | TType_measure m -> accumulateMeasure tokens m
+                for arg in tys do
+                    yield! accumulateTType arg
+            | TType_forall(tps, tau) ->
+                for tp in tps do
+                    TypeToken.Stamp tp.Stamp
+
+                yield! accumulateTType tau
+            | TType_fun(d, r, n) ->
+                yield! accumulateTType d
+                yield! accumulateTType r
+                toNullnessToken n
+            | TType_var(r, n) ->
+                TypeToken.Stamp r.Stamp
+                toNullnessToken n
+            | TType_measure m -> yield! accumulateMeasure m
+        }
 
     /// Get the full structure of a type as a sequence of tokens, suitable for equality
-    let getTypeStructure ty =
-        let tokens = ResizeArray<TypeToken>(initialTokenCapacity)
-        accumulateTType tokens ty
-        tokens.ToArray()
+    let getTypeStructure =
+        Extras.WeakMap.getOrCreate (fun ty -> accumulateTType ty |> ImmutableArray.ofSeq |> TypeStructure)
