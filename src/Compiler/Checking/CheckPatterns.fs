@@ -458,13 +458,11 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats =
-        // This will obviously need to change if we support spreads in record patterns.
-        let isFromSpread = false
         fieldPats 
         |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
             match fieldLid.LongIdent with
-            | [id] -> isFromSpread, ([], id), pat
-            | lid -> isFromSpread, List.frontAndBack lid, pat)
+            | [id] -> ExplicitOrSpread.Explicit (([], id), pat)
+            | lid -> ExplicitOrSpread.Explicit (List.frontAndBack lid, pat))
     
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
@@ -481,13 +479,14 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats, patEnvR =
         (patEnv, ftys) ||> List.mapFold (fun s (ty, fsp) ->
             match fldsmap.TryGetValue fsp.rfield_id.idText with
-            | true, v ->
+            | true, ExplicitOrSpread.Explicit v ->
                 let warnOnUpper =
                     if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
                         AllIdsOK
                     else
                         warnOnUpper
                 TcPat warnOnUpper cenv env None vFlags s ty v
+            | true, ExplicitOrSpread.Spread _ -> (* Unreachable. *) error (InternalError ("Spreads in patterns are not supported.", m))
             | _ -> (fun _ -> TPat_wild m), s)
 
     let phase2 values =

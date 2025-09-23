@@ -3818,8 +3818,19 @@ let SuggestLabelsOfRelatedRecords g (nenv: NameResolutionEnv) (id: Ident) (allFi
 
     UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type internal ExplicitOrSpread<'Explicit, 'Spread> =
+    /// An expression or value derived from an explicit member or record field.
+    | Explicit of 'Explicit
+
+    /// An expression or value derived from a member or field coming from a spread.
+    | Spread of 'Spread
+
+let (|ExplicitOrSpread|) (ExplicitOrSpread.Explicit value | ExplicitOrSpread.Spread value) = value
+
 /// Resolve a long identifier representing a record field
-let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) isFromSpread allFields =
+let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad fldInfo allFields =
+    let (ExplicitOrSpread (ty, mp, id: Ident)) = fldInfo
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
     let m = id.idRange
@@ -3847,8 +3858,8 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) isFro
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
             | ValueSome (RecdFieldInfo(_, rfref)) -> Some [ResolutionInfo.Empty, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false)]
             | _ ->
-                if isFromSpread then None
-                elif tcref.IsRecordTycon && not isFromSpread then
+                if fldInfo.IsSpread then None
+                elif tcref.IsRecordTycon then
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels (addToBuffer: string -> unit) = 
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id allFields do
@@ -3892,8 +3903,8 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) isFro
 
         Some [(resInfo, item)]
 
-let ResolveField sink ncenv nenv ad ty mp id isFromSpread allFields =
-    let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) isFromSpread allFields
+let ResolveField sink ncenv nenv ad fldInfo allFields =
+    let res = ResolveFieldPrim sink ncenv nenv ad fldInfo allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
     res

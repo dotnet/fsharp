@@ -14,11 +14,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
 
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type SynExprOrSpreadValue =
-    | SynExpr of SynExpr
-    | SpreadValue of TType * Expr
-
 /// Merges updates to nested record fields on the same level in record copy-and-update.
 ///
 /// `TransformAstForNestedUpdates` expands `{ x with A.B = 10; A.C = "" }`
@@ -33,29 +28,29 @@ type SynExprOrSpreadValue =
 /// which we here convert to
 ///
 /// { x with A = { x.A with B = 10; C = "" } }
-let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExprOrSpreadValue option) list) =
+let GroupUpdatesToNestedFields (fields: (ExplicitOrSpread<(Ident list * Ident) * SynExpr option, (Ident list * Ident) * 'Spread>) list) =
     let rec groupIfNested res xs =
         match xs with
         | [] -> res
         | [ x ] -> x :: res
         | x :: y :: ys ->
             match x, y with
-            | (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.Record(baseInfo, copyInfo, fields1, m)))),
-              (_, Some(SynExprOrSpreadValue.SynExpr(SynExpr.Record(recordFields = fields2)))) ->
+            | ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))),
+              ExplicitOrSpread.Explicit(_, Some(SynExpr.Record(recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m))))
+                    ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
 
                 groupIfNested res (reducedRecd :: ys)
-            | (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia)))),
-              (_, Some(SynExprOrSpreadValue.SynExpr(SynExpr.AnonRecd(recordFields = fields2)))) ->
+            | ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))),
+              ExplicitOrSpread.Explicit(_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExprOrSpreadValue.SynExpr(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia))))
+                    ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
 
                 groupIfNested res (reducedRecd :: ys)
             | _ -> groupIfNested (x :: res) (y :: ys)
 
     fields
-    |> List.groupBy (fun ((_, field), _) -> field.idText)
+    |> List.groupBy (fun (ExplicitOrSpread.Explicit((_, field), _) | ExplicitOrSpread.Spread((_, field), _)) -> field.idText)
     |> List.collect (fun (_, fields) ->
         if fields.Length < 2 then
             fields
@@ -156,7 +151,11 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
     match access, fields with
     | _, [] -> failwith "unreachable"
-    | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned
+    | accessIds, [ (fieldId, _) ] ->
+        match exprBeingAssigned with
+        | ExplicitOrSpread.Explicit exprBeingAssigned -> ExplicitOrSpread.Explicit((accessIds, fieldId), Some exprBeingAssigned)
+        | ExplicitOrSpread.Spread exprBeingAssigned -> ExplicitOrSpread.Spread((accessIds, fieldId), Some exprBeingAssigned)
+
     | accessIds, (outerFieldId, item) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
 
@@ -164,15 +163,13 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
         let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())
 
-        let recdExpr =
-            match exprBeingAssigned with
-            | SynExprOrSpreadValue.SynExpr synExpr ->
-                Some(
-                    SynExprOrSpreadValue.SynExpr(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest synExpr)
-                )
-            | SynExprOrSpreadValue.SpreadValue _ -> Some exprBeingAssigned
-
-        (accessIds, outerFieldId), recdExpr
+        match exprBeingAssigned with
+        | ExplicitOrSpread.Explicit synExpr ->
+            ExplicitOrSpread.Explicit(
+                (accessIds, outerFieldId),
+                Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest synExpr)
+            )
+        | ExplicitOrSpread.Spread exprBeingAssigned -> ExplicitOrSpread.Spread((accessIds, outerFieldId), Some exprBeingAssigned)
 
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
