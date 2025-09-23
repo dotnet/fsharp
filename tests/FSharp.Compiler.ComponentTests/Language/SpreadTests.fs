@@ -1035,6 +1035,30 @@ module NominalAndAnonymousRecords =
                 |> typecheck
                 |> shouldSucceed
 
+        module Effects =
+            [<Fact>]
+            let ``Effects in spread sources are evaluated exactly once per spread, even if all fields are shadowed`` () =
+                let src =
+                    """
+                    let effects = ResizeArray ()
+                    let f () = effects.Add "f"; {| A = 0; B = 1 |}
+                    let g () = effects.Add "g"; {| A = 2; B = 3 |}
+                    let h () = effects.Add "h"; {| A = 99 |}
+                    let r = {| ...g (); ...g (); ...h (); A = 100 |}
+                    let r' = {| f () with ...g (); ...g (); ...h (); A = 100 |}
+
+                    if r.A <> 100 then failwith $"Expected r.A = 100 but got %d{r.A}."
+                    if r'.A <> 100 then failwith $"Expected r'.A = 100 but got %d{r'.A}."
+                    match List.ofSeq effects with
+                    | ["g"; "g"; "h"; "f"; "g"; "g"; "h"] -> ()
+                    | unexpected -> failwith $"Expected [\"g\"; \"g\"; \"h\"; \"f\"; \"g\"; \"g\"; \"h\"] but got %A{unexpected}."
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> compileExeAndRun
+                |> shouldSucceed
+
         module Conversions =
             ()
 
@@ -1410,3 +1434,29 @@ module NominalAndAnonymousRecords =
                     Error 39, Line 16, Col 31, Line 16, Col 32, "The type 'R2' does not define the field, constructor or member 'Y'."
                     Error 39, Line 17, Col 24, Line 17, Col 25, "The type 'R2' does not define the field, constructor or member 'Q'."
                 ]
+
+        module Effects =
+            [<Fact>]
+            let ``Effects in spread sources are evaluated exactly once per spread, even if all fields are shadowed`` () =
+                let src =
+                    """
+                    type R = { A : int; B : int }
+
+                    let effects = ResizeArray ()
+                    let f () = effects.Add "f"; { A = 0; B = 1 }
+                    let g () = effects.Add "g"; { A = 2; B = 3 }
+                    let h () = effects.Add "h"; {| A = 99 |}
+                    let r = { ...g (); ...g (); ...h (); A = 100 }
+                    let r' = { f () with ...g (); ...g (); ...h (); A = 100 }
+
+                    if r.A <> 100 then failwith $"Expected r.A = 100 but got %d{r.A}."
+                    if r'.A <> 100 then failwith $"Expected r'.A = 100 but got %d{r'.A}."
+                    match List.ofSeq effects with
+                    | ["g"; "g"; "h"; "f"; "g"; "g"; "h"] -> ()
+                    | unexpected -> failwith $"Expected [\"g\"; \"g\"; \"h\"; \"f\"; \"g\"; \"g\"; \"h\"] but got %A{unexpected}."
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> compileExeAndRun
+                |> shouldSucceed
