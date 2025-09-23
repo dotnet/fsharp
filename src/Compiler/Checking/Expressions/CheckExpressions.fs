@@ -7781,7 +7781,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
     let spreadSrcs, fldsList, tpenv =
         let spreadSrcs, flds, tpenv =
-            let rec loopFieldsAndSpreads spreadSrcs flds tpenv fieldsAndSpreads =
+            let rec loopFieldsAndSpreads spreadSrcs flds i tpenv fieldsAndSpreads =
                 let (|LeftwardExplicit|NoLeftwardExplicit|) hasLeftwardExplicit = if hasLeftwardExplicit then LeftwardExplicit else NoLeftwardExplicit
                 let LeftwardExplicit = true
                 let NoLeftwardExplicit = false
@@ -7792,6 +7792,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                         flds
                         |> Map.toList
                         |> List.collect (fun (_, (_, dupes)) -> dupes)
+                        |> List.sortBy (fun (i, _) -> i)
+                        |> List.map (fun (_, field) -> field)
 
                     List.rev spreadSrcs, flds, tpenv
 
@@ -7812,7 +7814,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                         flds |> Map.change fieldId.idText (function
                             // The first field of this name, explicit or spread.
                             | None ->
-                                Some (LeftwardExplicit, [field])
+                                Some (LeftwardExplicit, [i, field])
 
                             // Rightward explicit duplicate of leftward explicit field, potentially with intervening spreads.
                             //
@@ -7826,7 +7828,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                             // Keep both, but error.
                             | Some (LeftwardExplicit, dupes) ->
                                 errorR (Duplicate ("field", fieldId.idText, m))
-                                Some (LeftwardExplicit, field :: dupes)
+                                Some (LeftwardExplicit, (i, field) :: dupes)
 
                             // Rightward explicit field shadowing leftward spread field.
                             //
@@ -7835,9 +7837,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                             //
                             // Keep right.
                             | Some (NoLeftwardExplicit, _dupes) ->
-                                Some (LeftwardExplicit, [field]))
+                                Some (LeftwardExplicit, [i, field]))
 
-                    loopFieldsAndSpreads spreadSrcs flds tpenv fieldsAndSpreads
+                    loopFieldsAndSpreads spreadSrcs flds (i + 1) tpenv fieldsAndSpreads
 
                 | SynExprRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; without = _without; range = m), _) :: fieldsAndSpreads ->
                     checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
@@ -7852,9 +7854,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                             let wrap, oldAddr, _readonly, _writeonly = mkExprAddrOfExpr g (isStructTy g tyOfSpreadSrcExpr) false NeverMutates spreadSrcExpr None m
                             spreadSrcAddrExpr, (fun expr -> wrap (mkCompGenLet m spreadSrcAddrVal oldAddr expr)) :: spreadSrcs
 
-                        let rec loopFieldsFromSpread flds fieldsFromSpread =
+                        let rec loopFieldsFromSpread flds i fieldsFromSpread =
                             match fieldsFromSpread with
-                            | [] -> loopFieldsAndSpreads spreadSrcs flds tpenv fieldsAndSpreads
+                            | [] -> loopFieldsAndSpreads spreadSrcs flds i tpenv fieldsAndSpreads
 
                             | Item.RecdField fieldInfo :: fieldsFromSpread ->
                                 let fieldExpr = mkRecdFieldGetViaExprAddr (spreadSrcAddrExpr, fieldInfo.RecdFieldRef, fieldInfo.TypeInst, m)
@@ -7865,7 +7867,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                     flds |> Map.change fieldId.idText (function
                                         // The first field with this name, spread or explicit.
                                         | None ->
-                                            Some (NoLeftwardExplicit, [ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
+                                            Some (NoLeftwardExplicit, [i, ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
 
                                         // Rightward spread field shadowing leftward explicit field.
                                         //
@@ -7876,7 +7878,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                         | Some (LeftwardExplicit, _dupes) ->
                                             let fmtedSpreadField = NicePrint.stringOfRecdField env.DisplayEnv cenv.infoReader fieldInfo.TyconRef fieldInfo.RecdField
                                             warning (Error (FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
-                                            Some (LeftwardExplicit, [ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
+                                            Some (LeftwardExplicit, [i, ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
 
                                         // Spread field shadowing spread field.
                                         //
@@ -7886,9 +7888,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                         //
                                         // Keep right.
                                         | Some (NoLeftwardExplicit, _dupes) ->
-                                            Some (NoLeftwardExplicit, [ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))]))
+                                            Some (NoLeftwardExplicit, [i, ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))]))
 
-                                loopFieldsFromSpread flds fieldsFromSpread
+                                loopFieldsFromSpread flds (i + 1) fieldsFromSpread
 
                             | Item.AnonRecdField (anonInfo, tys, fieldIndex, _) :: fieldsFromSpread ->
                                 let fieldExpr = mkAnonRecdFieldGet g (anonInfo, spreadSrcAddrExpr, tys, fieldIndex, m)
@@ -7899,7 +7901,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                     flds |> Map.change fieldId.idText (function
                                         // The first field with this name, spread or explicit.
                                         | None ->
-                                            Some (NoLeftwardExplicit, [ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
+                                            Some (NoLeftwardExplicit, [i, ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
 
                                         // Rightward spread field shadowing leftward explicit field.
                                         //
@@ -7911,7 +7913,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                             let typars = tryAppTy g ty |> ValueOption.map (snd >> List.choose (tryDestTyparTy g >> ValueOption.toOption)) |> ValueOption.defaultValue []
                                             let fmtedSpreadField = LayoutRender.showL (NicePrint.prettyLayoutOfMemberSig env.DisplayEnv ([], fieldId.idText, typars, [], ty))
                                             warning (Error (FSComp.SR.tcRecordExprSpreadFieldShadowsExplicitField fmtedSpreadField, m))
-                                            Some (LeftwardExplicit, [ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
+                                            Some (LeftwardExplicit, [i, ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))])
 
                                         // Spread field shadowing spread field.
                                         //
@@ -7921,11 +7923,11 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                         //
                                         // Keep right.
                                         | Some (NoLeftwardExplicit, _dupes) ->
-                                            Some (NoLeftwardExplicit, [ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))]))
+                                            Some (NoLeftwardExplicit, [i, ExplicitOrSpread.Spread (([], fieldId), Some (ty, fieldExpr))]))
 
-                                loopFieldsFromSpread flds fieldsFromSpread
+                                loopFieldsFromSpread flds (i + 1) fieldsFromSpread
 
-                            | _ :: fieldsFromSpread -> loopFieldsFromSpread flds fieldsFromSpread
+                            | _ :: fieldsFromSpread -> loopFieldsFromSpread flds i fieldsFromSpread
 
                         let recordFieldsFromSpread =
                             if isRecdTy g tyOfSpreadSrcExpr then
@@ -7938,13 +7940,13 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                                     |> List.mapi (fun i id -> Item.AnonRecdField (anonInfo, tys, i, id.idRange)))
                                 |> ValueOption.defaultValue []
 
-                        loopFieldsFromSpread flds recordFieldsFromSpread
+                        loopFieldsFromSpread flds i recordFieldsFromSpread
                     else
                         if not expr.IsArbExprAndThusAlreadyReportedError then
                             errorR (Error (FSComp.SR.tcRecordExprSpreadSourceMustBeRecord (), m))
-                        loopFieldsAndSpreads spreadSrcs flds tpenv fieldsAndSpreads
+                        loopFieldsAndSpreads spreadSrcs flds i tpenv fieldsAndSpreads
 
-            loopFieldsAndSpreads [] Map.empty tpenv synRecdFields
+            loopFieldsAndSpreads [] Map.empty 0 tpenv synRecdFields
 
         let flds = if hasOrigExpr then GroupUpdatesToNestedFields flds else flds
         // Check if the overall type is an anon record type and if so raise an copy-update syntax error
