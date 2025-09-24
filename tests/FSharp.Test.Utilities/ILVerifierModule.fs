@@ -23,9 +23,7 @@ module ILVerifierModule =
 
     let private exec (dotnetExe: string) args workingDirectory =
         let arguments = args |> String.concat " "
-        let exitCode, _output, errors = Commands.executeProcess dotnetExe arguments workingDirectory
-        let errors = errors |> String.concat Environment.NewLine
-        errors, exitCode
+        Commands.executeProcess dotnetExe arguments workingDirectory
 
     let private verifyPEFileCore peverifierArgs (dllFilePath: string) =
         let nuget_packages =
@@ -36,16 +34,12 @@ module ILVerifierModule =
             | path -> path
         let peverifyFullArgs = [ yield "exec"; yield $"""{nuget_packages}/dotnet-ilverify/9.0.0/tools/net9.0/any/ILVerify.dll"""; yield "--verbose"; yield dllFilePath; yield! peverifierArgs ]
         let workingDirectory = Path.GetDirectoryName dllFilePath
-        let _, exitCode =
+        let exitCode, outputText, errorText =
             let peverifierCommandPath = Path.ChangeExtension(dllFilePath, ".peverifierCommandPath.cmd")
             let args = peverifyFullArgs |> Seq.fold(fun a acc -> $"{a} " + acc) ""
             File.WriteAllLines(peverifierCommandPath, [| $"{args}" |] )
             File.Copy(typeof<RequireQualifiedAccessAttribute>.Assembly.Location, Path.GetDirectoryName(dllFilePath) ++ "FSharp.Core.dll", true)
             exec config.DotNetExe peverifyFullArgs workingDirectory
-
-        // Grab output
-        let outputText = File.ReadAllText(Path.Combine(workingDirectory, "StandardOutput.txt"))
-        let errorText = File.ReadAllText(Path.Combine(workingDirectory, "StandardError.txt"))
 
         match exitCode with
         | 0 -> {Outcome = NoExitCode; StdOut = outputText; StdErr = errorText } 
