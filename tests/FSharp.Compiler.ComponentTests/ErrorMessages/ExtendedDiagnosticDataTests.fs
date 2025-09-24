@@ -12,7 +12,7 @@ let inline checkDiagnosticData
     (check: 'a -> unit)
     (checkResults: 'b when 'b: (member Diagnostics: FSharpDiagnostic[])) =
     match checkResults.Diagnostics |> Array.tryFind (fun d -> d.ErrorNumber = diagnosticNumber) with
-    | None -> failwith "Expected diagnostic not found"
+    | None -> failwith $"Expected diagnostic (number {diagnosticNumber}) not found"
     | Some diagnostic ->
 
     Assert.Equal(message, diagnostic.Message)
@@ -20,6 +20,7 @@ let inline checkDiagnosticData
     | Some(:? 'a as data) -> check data
     | _ -> failwith "Expected diagnostic extended data not found"
 
+    checkResults
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 01`` () =
@@ -187,7 +188,62 @@ let f2 (x: inref<'T>) = f1 &x
         Assert.Equal("outref<'T>", typeMismatch.ExpectedType.Format(displayContext))
         Assert.Equal("inref<'T>", typeMismatch.ActualType.Format(displayContext)))
 
-[<Theory>]
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 11`` () =
+    FSharp """
+type T() =
+    static member P1 = T.P2 + 1
+    static member P2 = ""
+"""
+    |> typecheckResults
+    // static member P1 = T.P2 ->+<- 1
+    |> checkDiagnosticData
+       (43, "The type 'int' does not match the type 'string'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+            let displayContext = typeMismatch.DisplayContext
+            Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+            Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+            Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
+    // static member P2 = ->""<-
+    |> checkDiagnosticData
+        (1, "The type 'string' does not match the type 'int'")
+        (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+             let displayContext = typeMismatch.DisplayContext
+             Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+             Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
+             Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 12`` () =
+    FSharp """
+let x: string = 1 + 1
+"""
+    |> typecheckResults
+    |> checkDiagnosticData
+       (1, "The type 'int' does not match the type 'string'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+            let displayContext = typeMismatch.DisplayContext
+            Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+            Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
+            Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 13`` () =
+    FSharp """
+let x: string -> string = id 
+let y: unit -> string = x 
+"""
+    |> typecheckResults
+    |> checkDiagnosticData
+       (1, "Type mismatch. Expecting a\n    'unit -> string'    \nbut given a\n    'string -> string'    \nThe type 'string' does not match the type 'unit'")
+       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
+            let displayContext = typeMismatch.DisplayContext
+            Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
+            Assert.Equal("unit -> string", typeMismatch.ExpectedType.Format(displayContext))
+            Assert.Equal("string -> string", typeMismatch.ActualType.Format(displayContext)))
+
+[<Theory>] 
 [<InlineData true>]
 [<InlineData false>]
 let ``ArgumentsInSigAndImplMismatchExtendedData 01`` useTransparentCompiler =
