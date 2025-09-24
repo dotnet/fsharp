@@ -820,6 +820,12 @@ type Exception with
                     e
 
                 else
+                    // Fix for https://github.com/dotnet/fsharp/issues/18905
+                    // If ty1 = ty2 after the type solving, then ty2 holds an actual type.
+                    // The order of expected and actual types in ConstraintSolverTypesNotInEqualityRelation can be arbitrary
+                    // due to type solving logic.
+                    // If ty1 = ty2 = ty2b, it means ty2b is also an actual type, and it needs to be swapped with ty1b
+                    // to be correctly used in the type mismatch error message based on ConstraintSolverTypesNotInEqualityRelation
                     match e with
                     | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when typeEquiv g ty2 ty2b ->
                         ConstraintSolverTypesNotInEqualityRelation(env, ty2b, ty1b, m, m2, contextInfo)
