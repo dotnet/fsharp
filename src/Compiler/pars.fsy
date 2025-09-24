@@ -5740,20 +5740,6 @@ recdExprCore:
       let l = rebindRanges (f, Some mEquals, Some $3) l $5
       (None, l) }
 
-/* handles case like {x with}  */
-  | appExpr WITH recdBinding recdExprBindings opt_seps_block
-     { let l = List.rev $4
-       let l = rebindRanges $3 l $5
-       (Some($1, None), l) }
-
-  | appExpr OWITH opt_seps_block OEND
-     { (Some($1, None), []) }
-
-  | appExpr OWITH recdBinding recdExprBindings opt_seps_block OEND
-     { let l = List.rev $4
-       let l = rebindRanges $3 l $5
-       (Some($1, None), l) }
-
 opt_seps_block:
   | seps_block
      { $1 }
