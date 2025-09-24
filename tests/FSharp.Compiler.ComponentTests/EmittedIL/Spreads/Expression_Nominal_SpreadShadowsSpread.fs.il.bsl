@@ -461,6 +461,8 @@
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class assembly/R1 spreadSrc@4
   .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .field static assembly int32 B@4
+  .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .method public specialname static class assembly/R1 get_r1() cil managed
   {
     
@@ -485,6 +487,14 @@
     IL_0005:  ret
   } 
 
+  .method assembly specialname static int32 get_B@4() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldsfld     int32 assembly::B@4
+    IL_0005:  ret
+  } 
+
   .method private specialname rtspecialname static void  .cctor() cil managed
   {
     
@@ -499,7 +509,7 @@
   .method assembly specialname static void staticInitialization@() cil managed
   {
     
-    .maxstack  8
+    .maxstack  4
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.2
     IL_0002:  newobj     instance void assembly/R1::.ctor(int32,
@@ -508,14 +518,16 @@
     IL_000c:  ldc.i4.s   99
     IL_000e:  newobj     instance void class '<>f__AnonymousType1722350077`1'<int32>::.ctor(!0)
     IL_0013:  stsfld     class assembly/R1 assembly::spreadSrc@4
-    IL_0018:  call       class assembly/R1 assembly::get_spreadSrc@4()
-    IL_001d:  call       instance !0 class '<>f__AnonymousType1722350077`1'<int32>::get_A()
-    IL_0022:  call       class assembly/R1 assembly::get_r1()
-    IL_0027:  ldfld      int32 assembly/R1::B@
-    IL_002c:  newobj     instance void assembly/R1::.ctor(int32,
+    IL_0018:  call       class assembly/R1 assembly::get_r1()
+    IL_001d:  ldfld      int32 assembly/R1::B@
+    IL_0022:  stsfld     int32 assembly::B@4
+    IL_0027:  call       class assembly/R1 assembly::get_spreadSrc@4()
+    IL_002c:  call       instance !0 class '<>f__AnonymousType1722350077`1'<int32>::get_A()
+    IL_0031:  call       int32 assembly::get_B@4()
+    IL_0036:  newobj     instance void assembly/R1::.ctor(int32,
                                                                                         int32)
-    IL_0031:  stsfld     class assembly/R1 assembly::'r1\'@4'
-    IL_0036:  ret
+    IL_003b:  stsfld     class assembly/R1 assembly::'r1\'@4'
+    IL_0040:  ret
   } 
 
   .property class assembly/R1
@@ -535,6 +547,11 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
     .get class assembly/R1 assembly::get_spreadSrc@4()
+  } 
+  .property int32 B@4()
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
+    .get int32 assembly::get_B@4()
   } 
 } 
 

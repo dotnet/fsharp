@@ -659,7 +659,7 @@ module NominalAndAnonymousRecords =
                 |> shouldFail
                 |> withDiagnostics [
                     Warning 3883, Line 4, Col 42, Line 4, Col 47, "Spread field 'A: int' shadows an explicitly declared field with the same name."
-                    Error 37, Line 4, Col 49, Line 4, Col 57, "Duplicate definition of field 'A'"
+                    Error 3522, Line 4, Col 49, Line 4, Col 57, "The field 'A' appears multiple times in this record expression."
                     Error 3522, Line 5, Col 31, Line 5, Col 71, "The field 'A' appears multiple times in this record expression."
                 ]
 
@@ -680,7 +680,7 @@ module NominalAndAnonymousRecords =
                 |> shouldFail
                 |> withDiagnostics [
                     Warning 3883, Line 5, Col 49, Line 5, Col 54, "Spread field 'A: int' shadows an explicitly declared field with the same name."
-                    Error 37, Line 5, Col 56, Line 5, Col 64, "Duplicate definition of field 'A'"
+                    Error 3522, Line 5, Col 56, Line 5, Col 64, "The field 'A' appears multiple times in this record expression."
                     Error 3522, Line 6, Col 31, Line 6, Col 78, "The field 'A' appears multiple times in this record expression."
                 ]
 
@@ -1206,7 +1206,7 @@ module NominalAndAnonymousRecords =
                     Error 37, Line 4, Col 46, Line 4, Col 51, "Duplicate definition of field 'A'"
                     Warning 3883, Line 4, Col 53, Line 4, Col 67, "Spread field 'A: int' shadows an explicitly declared field with the same name."
                     Error 37, Line 4, Col 69, Line 4, Col 74, "Duplicate definition of field 'A'"
-                    Error 668, Line 4, Col 69, Line 4, Col 70, "The field 'A' appears multiple times in this record expression or pattern"
+                    Error 668, Line 4, Col 59, Line 4, Col 60, "The field 'A' appears multiple times in this record expression or pattern"
                 ]
 
             /// Extra fields are ignored.

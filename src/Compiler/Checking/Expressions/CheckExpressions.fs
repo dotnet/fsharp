@@ -8074,13 +8074,17 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
             match fieldsAndSpreads with
             | [] ->
                 // If the target type is a known anonymous record type,
-                // keep only those fields that are present in that type.
+                // keep only those fields that are present in that type
+                // or that are explicitly defined in this one.
                 let checkedFields =
                     maybeAnonRecdTargetTy
                     |> ValueOption.map (fun (anonInfo, _) ->
                         let sortedNames = anonInfo.SortedNames
                         checkedFields
-                        |> Map.filter (fun fieldId _ -> Array.BinarySearch (sortedNames, fieldId) >= 0))
+                        |> Map.filter (fun fieldId field ->
+                            match field with
+                            | LeftwardExplicit, _ -> true
+                            | NoLeftwardExplicit, _ -> Array.BinarySearch (sortedNames, fieldId) >= 0))
                     |> ValueOption.defaultValue checkedFields
 
                 // We must emit let-bindings for the source expressions in their original order.
@@ -8122,7 +8126,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
                         //
                         // Keep both, but error.
                         | Some (LeftwardExplicit, dupes) ->
-                            errorR (Duplicate ("field", fieldId.idText, m))
+                            errorR (Error (FSComp.SR.tcAnonRecdDuplicateFieldId fieldId.idText, m))
                             Some (LeftwardExplicit, (i, fieldId, ty, expr) :: dupes)
 
                         // Rightward explicit field shadowing leftward spread field.
@@ -8334,7 +8338,8 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
             match fieldsAndSpreads with
             | [] ->
                 // If the target type is a known anonymous record type,
-                // keep only those fields that are present in that type.
+                // keep only those fields that are present in that type
+                // or that are explicitly defined in this one.
                 let shouldKeep =
                     match tryDestAnonRecdTy g overallTy with
                     | ValueSome (anonInfo, _) ->
@@ -8345,7 +8350,9 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
                 let fieldsInOriginalOrder =
                     flds
                     |> Map.toList
-                    |> List.collect (fun (fieldId, (_, dupes)) -> if shouldKeep fieldId then dupes else [])
+                    |> List.collect (function
+                        | _, (LeftwardExplicit, dupes) -> dupes
+                        | fieldId, (NoLeftwardExplicit, dupes) -> if shouldKeep fieldId then dupes else [])
                     |> List.sortBy (fun (i, _) -> i)
                     |> List.map (fun (_, field) -> field)
 
@@ -8375,7 +8382,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
                         //
                         // Keep both, but error.
                         | Some (LeftwardExplicit, dupes) ->
-                            errorR (Duplicate ("field", fieldId.idText, m))
+                            errorR (Error (FSComp.SR.tcAnonRecdDuplicateFieldId fieldId.idText, m))
                             Some (LeftwardExplicit, (i, field) :: dupes)
 
                         // Rightward explicit field shadowing leftward spread field.
