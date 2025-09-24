@@ -8,6 +8,8 @@ General guide:
 - Avoid external dependencies – the codebase is self-contained (do NOT add new NuGet packages)
 - Follow docs/coding-standards.md and docs/overview.md
 
+**Test‑First** (bugs / regressions): Add/adjust a minimal test that fails on current main → confirm it fails → implement fix → run core command and ensure test passes → only then continue.
+
 Plan your task:
 1. Write a 1–2 sentence intent (bug fix / API add / language tweak).  
 2. Identify domain: Language (`LanguageFeature.fsi` touched) vs `src/FSharp.Core/` vs `vsintegration/` vs compiler/service.  
