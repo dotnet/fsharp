@@ -215,7 +215,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
-let private finishPreprocessing lexbuf diagnosticOptions isScript submoduleRanges =
+let FinishPreprocessing lexbuf diagnosticOptions isScript submoduleRanges =
     WarnScopes.MergeInto diagnosticOptions isScript submoduleRanges lexbuf
     LineDirectives.add lexbuf.StartPos.FileIndex (LineDirectiveStore.GetLineDirectives lexbuf)
 
@@ -276,7 +276,7 @@ let PostParseModuleImpls
 
     let isScript = IsScript fileName
 
-    finishPreprocessing lexbuf diagnosticOptions isScript (getImplSubmoduleRanges impls)
+    FinishPreprocessing lexbuf diagnosticOptions isScript (getImplSubmoduleRanges impls)
 
     let trivia = collectParsedInputTrivia lexbuf
 
@@ -310,7 +310,7 @@ let PostParseModuleSpecs
         identifiers: Set<string>
     ) =
 
-    finishPreprocessing lexbuf diagnosticOptions false (getSpecSubmoduleRanges specs)
+    FinishPreprocessing lexbuf diagnosticOptions false (getSpecSubmoduleRanges specs)
 
     let trivia = collectParsedInputTrivia lexbuf
 
