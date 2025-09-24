@@ -188,7 +188,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
                        ty1, ty2
                    elif not (typeEquiv g ty1 ty2) then
                        ty1, ty2
-                   elif typeEquiv g ty1 ty2b then
+                   elif typeEquiv g ty2 ty2b then
                        ty1b, ty2b
                    else ty2b, ty1b
 
