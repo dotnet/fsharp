@@ -5,7 +5,6 @@ namespace FSharp.Test
 /// Test-only Visual Studio installation discovery infrastructure.
 /// Provides a centralized, robust, and graceful discovery mechanism for Visual Studio installations 
 /// used by integration/editor/unit tests under vsintegration/tests.
-[<CompilerMessage("This module is for test code only", 1204, IsHidden=true)>]
 module VSInstallDiscovery =
 
     open System
