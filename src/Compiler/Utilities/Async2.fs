@@ -45,11 +45,24 @@ module Async2Implementation =
         let inline unsafeOnCompleted (awaiter: ^Awaiter) (continuation: Action) : unit when ^Awaiter :> ICriticalNotifyCompletion =
             awaiter.UnsafeOnCompleted continuation
 
+    type DynamicState =
+        | Running
+        | SetResult
+        | SetException of ExceptionDispatchInfo
+        | Awaiting of ICriticalNotifyCompletion
+        | Bounce of DynamicState
+        | Immediate of DynamicState
+
     type Trampoline private () =
 
         let ownerThreadId = Thread.CurrentThread.ManagedThreadId
 
         static let holder = new ThreadLocal<_>(fun () -> Trampoline())
+
+        [<Literal>]
+        static let bindLimit = 100
+
+        let mutable bindCount = 0
 
         let mutable pending: Action voption = ValueNone
         let mutable running = false
@@ -70,6 +83,8 @@ module Async2Implementation =
             failIfNot (Thread.CurrentThread.ManagedThreadId = ownerThreadId) "Trampoline used from wrong thread"
             failIfNot pending.IsNone "Trampoline used while already pending"
 
+            bindCount <- 0
+
             if running then
                 pending <- ValueSome action
             else
@@ -83,35 +98,13 @@ module Async2Implementation =
 
         member this.Set action = set action
 
+        member this.Reset() = bindCount <- 0
+
+        member _.IncrementBindCount() =
+            bindCount <- bindCount + 1
+            bindCount >= bindLimit
+
         static member Current = holder.Value
-
-    type DynamicState =
-        | Running
-        | SetResult
-        | SetException of ExceptionDispatchInfo
-        | Awaiting of ICriticalNotifyCompletion
-        | Bounce of DynamicState
-        | Immediate of DynamicState
-
-    module BindContext =
-        [<Literal>]
-        let bindLimit = 100
-
-        let bindCount = new ThreadLocal<int>()
-
-        let inline ResetBindCount () = bindCount.Value <- 0
-
-        let inline IncrementBindCount () =
-            bindCount.Value <- bindCount.Value + 1
-
-            if bindCount.Value >= bindLimit then
-                ResetBindCount()
-                true
-            else
-                false
-
-        let inline IncrementBindCountDynamic next =
-            if IncrementBindCount() then Bounce next else Immediate next
 
     module ExceptionCache =
         let store = ConditionalWeakTable<exn, ExceptionDispatchInfo>()
@@ -217,7 +210,7 @@ module Async2Implementation =
 
         let inline yieldOnBindLimit () =
             Async2Code<_, _>(fun sm ->
-                if BindContext.IncrementBindCount() then
+                if Trampoline.Current.IncrementBindCount() then
                     let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
 
                     if not __stack_yield_fin then
@@ -334,12 +327,9 @@ module Async2Implementation =
                     // This is the start of a tail call chain. we need to return here when the entire chain is done.
                     let __stack_tcs = TaskCompletionSource<_>()
                     code.TailCall(__stack_ct, ValueSome __stack_tcs)
-                    //Trampoline.Current.Set(fun () -> code.TailCall(__stack_ct, ValueSome __stack_tcs))
                     this.BindAwaiter(__stack_tcs.Task.GetAwaiter(), this.Return).Invoke(&sm)
                 | ValueSome tcs ->
                     // We are already in a tail call chain.
-                    BindContext.ResetBindCount()
-                    //code.TailCall(__stack_ct, ValueSome tcs)
                     Trampoline.Current.Set(fun () -> code.TailCall(__stack_ct, ValueSome tcs))
                     false // Return false to abandon this state machine and continue on the next one.
             )
@@ -352,15 +342,20 @@ module Async2Implementation =
         static member inline RunDynamic(code: Async2Code<'T, 'T>) : Async2<'T> =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
 
+            let maybeBounce state =
+                if Trampoline.Current.IncrementBindCount() then
+                    Bounce state
+                else
+                    Immediate state
+
             let resumptionInfo () =
-                { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc,
-                                                      ResumptionData = (BindContext.IncrementBindCountDynamic Running)) with
+                { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc, ResumptionData = (maybeBounce Running)) with
                     member info.MoveNext(sm) =
 
                         let getCurrent () =
                             nonNull info.ResumptionData :?> DynamicState
 
-                        let setState state = info.ResumptionData <- box state
+                        let setState state = info.ResumptionData <- state
 
                         match getCurrent () with
                         | Immediate state ->
@@ -371,14 +366,11 @@ module Async2Implementation =
 
                             try
                                 if info.ResumptionFunc.Invoke(&sm) then
-                                    setState (BindContext.IncrementBindCountDynamic SetResult)
+                                    setState (maybeBounce SetResult)
                                 else
                                     keepGoing <- getCurrent () |> _.IsAwaiting
                             with exn ->
-                                setState (
-                                    BindContext.IncrementBindCountDynamic
-                                    <| SetException(ExceptionCache.CaptureOrRetrieve exn)
-                                )
+                                setState (maybeBounce <| SetException(ExceptionCache.CaptureOrRetrieve exn))
 
                             if keepGoing then
                                 info.MoveNext &sm
@@ -481,7 +473,7 @@ module Async2 =
         // Only bound computations can participate in trampolining, otherwise we risk sync over async deadlocks.
         // To prevent this, we reset the bind count here.
         // This computation will not initially bounce, even if it is nested inside another async2 computation.
-        BindContext.ResetBindCount()
+        Trampoline.Current.Reset()
         code.StartImmediate ct
 
     let run ct (code: Async2<'t>) =
