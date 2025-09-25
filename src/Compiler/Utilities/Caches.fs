@@ -101,24 +101,24 @@ module CacheMetrics =
         let nameColumnWidth =
             [ yield! statsByName.Keys; "Cache name" ] |> Seq.map String.length |> Seq.max
 
-        let ratioColumnWidth = "hit-ratio".Length
         let columns = allCounters |> List.map _.Name
         let columnWidths = columns |> List.map String.length |> List.map (max 8)
 
-        let totalWidth =
-            1 + nameColumnWidth :: ratioColumnWidth :: columnWidths
-            |> List.map ((+) 3)
-            |> List.sum
+        let header =
+            "| "
+            + String.concat
+                " | "
+                [
+                    "Cache name".PadRight nameColumnWidth
+                    "hit-ratio"
+                    for w, c in (columnWidths, columns) ||> List.zip do
+                        $"{c.PadLeft w}"
+                ]
+            + " |"
 
-        sw.WriteLine(String('-', totalWidth))
-        let cacheNameHeader = "Cache name".PadRight nameColumnWidth
-        sw.Write $"| {cacheNameHeader} | hit-ratio |"
-
-        for w, c in (columnWidths, columns) ||> List.zip do
-            sw.Write $" {c.PadLeft w} |"
-
-        sw.WriteLine()
-        sw.WriteLine(String('-', totalWidth))
+        sw.WriteLine(String('-', header.Length))
+        sw.WriteLine(header)
+        sw.WriteLine(header |> String.map (fun c -> if c = '|' then '|' else '-'))
 
         for kv in statsByName do
             let name = kv.Key
@@ -131,7 +131,7 @@ module CacheMetrics =
 
             sw.WriteLine()
 
-        sw.WriteLine(String('-', totalWidth))
+        sw.WriteLine(String('-', header.Length))
         string sw
 
     let CaptureStatsAndWriteToConsole () =
