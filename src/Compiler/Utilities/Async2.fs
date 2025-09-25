@@ -182,19 +182,23 @@ module Async2Implementation =
         interface Async2<'t> with
             member ts.StartImmediate ct = ts.Start(ct, ValueNone)
             member ts.TailCall(ct, tc) = ts.Start(ct, tc) |> ignore
-            member ts.GetAwaiter() = ts.Start(CancellationToken.None, ValueNone).Task.GetAwaiter()
+
+            member ts.GetAwaiter() =
+                ts.Start(CancellationToken.None, ValueNone).Task.GetAwaiter()
 
     [<NoComparison>]
     type Async2ImplDynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: unit -> 'm) =
 
         member ts.Start(ct, tc) =
-            let mutable copy = Async2Impl(StateMachine = getCopy())
+            let mutable copy = Async2Impl(StateMachine = getCopy ())
             copy.Start(ct, tc)
 
         interface Async2<'t> with
             member ts.StartImmediate ct = ts.Start(ct, ValueNone)
             member ts.TailCall(ct, tc) = ts.Start(ct, tc) |> ignore
-            member ts.GetAwaiter() = ts.Start(CancellationToken.None, ValueNone).Task.GetAwaiter()
+
+            member ts.GetAwaiter() =
+                ts.Start(CancellationToken.None, ValueNone).Task.GetAwaiter()
 
     [<AutoOpen>]
     module Async2Code =
@@ -302,25 +306,29 @@ module Async2Implementation =
                     Async2Builder.BindDynamic(&sm, awaiter, continuation))
 
         member inline this.BindCancellable
-            ([<InlineIfLambda>] binding: CancellableAwaiter<'U, 'Awaiter>, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>) : Async2Code<'Data, 'T> =
-            Async2Code(fun sm -> this.BindAwaiter(binding sm.Data.CancellationToken, continuation).Invoke(&sm) )
+            ([<InlineIfLambda>] binding: CancellableAwaiter<'U, 'Awaiter>, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>)
+            : Async2Code<'Data, 'T> =
+            Async2Code(fun sm -> this.BindAwaiter(binding sm.Data.CancellationToken, continuation).Invoke(&sm))
 
         member inline this.Bind(code: Async2<'U>, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>) : Async2Code<'Data, 'T> =
             Async2Code(fun sm -> this.BindCancellable((fun ct -> code.StartImmediate(ct).Task.GetAwaiter()), continuation).Invoke(&sm))
 
         member inline this.Bind(awaiter, [<InlineIfLambda>] continuation) = this.BindAwaiter(awaiter, continuation)
 
-        member inline this.Bind(cancellable, [<InlineIfLambda>] continuation) = this.BindCancellable(cancellable, continuation)
+        member inline this.Bind(cancellable, [<InlineIfLambda>] continuation) =
+            this.BindCancellable(cancellable, continuation)
 
         member inline this.ReturnFrom(code: Async2<'T>) : Async2Code<'T, 'T> = this.Bind(code, this.Return)
 
         member inline this.ReturnFrom(awaiter) = this.BindAwaiter(awaiter, this.Return)
 
-        member inline this.ReturnFrom(cancellable) = this.BindCancellable(cancellable, this.Return)
+        member inline this.ReturnFrom(cancellable) =
+            this.BindCancellable(cancellable, this.Return)
 
         member inline this.ReturnFromFinal(code: Async2<'T>) =
             Async2Code(fun sm ->
                 let __stack_ct = sm.Data.CancellationToken
+
                 match sm.Data.TailCallSource with
                 | ValueNone ->
                     // This is the start of a tail call chain. we need to return here when the entire chain is done.
@@ -338,32 +346,42 @@ module Async2Implementation =
 
         member inline this.ReturnFromFinal(awaiter) : Async2Code<'T, 'T> = this.BindAwaiter(awaiter, this.Return)
 
-        member inline this.ReturnFromFinal(cancellable) : Async2Code<'T, 'T> = this.BindCancellable(cancellable, this.Return)
+        member inline this.ReturnFromFinal(cancellable) : Async2Code<'T, 'T> =
+            this.BindCancellable(cancellable, this.Return)
 
         static member inline RunDynamic(code: Async2Code<'T, 'T>) : Async2<'T> =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
 
-            let resumptionInfo() =
-                { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc, ResumptionData = (BindContext.IncrementBindCountDynamic Running) ) with
+            let resumptionInfo () =
+                { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc,
+                                                      ResumptionData = (BindContext.IncrementBindCountDynamic Running)) with
                     member info.MoveNext(sm) =
 
-                        let getCurrent() = nonNull info.ResumptionData :?> DynamicState
+                        let getCurrent () =
+                            nonNull info.ResumptionData :?> DynamicState
+
                         let setState state = info.ResumptionData <- box state
 
-                        match getCurrent() with
+                        match getCurrent () with
                         | Immediate state ->
                             setState state
                             info.MoveNext &sm
                         | Running ->
                             let mutable keepGoing = true
+
                             try
                                 if info.ResumptionFunc.Invoke(&sm) then
-                                    setState (BindContext.IncrementBindCountDynamic SetResult)  
+                                    setState (BindContext.IncrementBindCountDynamic SetResult)
                                 else
-                                    keepGoing <- getCurrent() |> _.IsAwaiting
+                                    keepGoing <- getCurrent () |> _.IsAwaiting
                             with exn ->
-                                setState (BindContext.IncrementBindCountDynamic <| SetException(ExceptionCache.CaptureOrRetrieve exn))
-                            if keepGoing then info.MoveNext &sm
+                                setState (
+                                    BindContext.IncrementBindCountDynamic
+                                    <| SetException(ExceptionCache.CaptureOrRetrieve exn)
+                                )
+
+                            if keepGoing then
+                                info.MoveNext &sm
                         | Awaiting awaiter ->
                             setState Running
                             let mutable awaiter = awaiter
@@ -377,15 +395,14 @@ module Async2Implementation =
                             | _ -> sm.Data.MethodBuilder.SetResult sm.Data.Result
                         | SetException edi ->
                             match sm.Data.TailCallSource with
-                            | ValueSome tcs ->
-                                tcs.TrySetException(edi.SourceException) |> ignore
+                            | ValueSome tcs -> tcs.TrySetException(edi.SourceException) |> ignore
                             | _ -> sm.Data.MethodBuilder.SetException(edi.SourceException)
 
                     member _.SetStateMachine(sm, state) =
                         sm.Data.MethodBuilder.SetStateMachine(state)
                 }
 
-            Async2ImplDynamic<_, _>(fun () -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo()))
+            Async2ImplDynamic<_, _>(fun () -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo ()))
 
         member inline _.Run(code: Async2Code<'T, 'T>) : Async2<'T> =
             if __useResumableCode then
@@ -449,6 +466,7 @@ module Async2MediumPriority =
     type Async2Builder with
         member inline _.Source(task: Task) = task.ConfigureAwait(false).GetAwaiter()
         member inline _.Source(task: Task<_>) = task.ConfigureAwait(false).GetAwaiter()
+
         member inline this.Source(expr: Async<'T>) : CancellableAwaiter<_, _> =
             fun ct -> Async.StartAsTask(expr, cancellationToken = ct).GetAwaiter()
 
