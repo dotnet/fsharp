@@ -5709,7 +5709,7 @@ recdExprCore:
   | appExpr
     { let mExpr = rhs parseState 1
       reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
-      Some($1, BlockSeparator.Offside(mExpr.EndRange, None)), [] }
+      Some($1, (mExpr.EndRange, None)), [] }
 
 /*
     handles cases when identifier can start from the underscore
@@ -5743,15 +5743,15 @@ recdExprCore:
   | appExpr WITH recdBinding recdExprBindings opt_seps_block
      { let l = List.rev $4
        let l = rebindRanges $3 l $5
-       (Some($1, BlockSeparator.Offside(rhs parseState 2, None)), l) }
+       (Some($1, (rhs parseState 2, None)), l) }
 
   | appExpr OWITH opt_seps_block OEND
-     { (Some($1, BlockSeparator.Offside(rhs parseState 2, None)), []) }
+     { (Some($1, (rhs parseState 2, None)), []) }
 
   | appExpr OWITH recdBinding recdExprBindings opt_seps_block OEND
      { let l = List.rev $4
        let l = rebindRanges $3 l $5
-       (Some($1, BlockSeparator.Offside(rhs parseState 2, None)), l) }
+       (Some($1, (rhs parseState 2, None)), l) }
 
 opt_seps_block:
   | seps_block
@@ -5762,17 +5762,17 @@ opt_seps_block:
 
 seps_block:
   | OBLOCKSEP
-     { BlockSeparator.Offside((rhs parseState 1), None) }
+     { (rhs parseState 1), None }
 
   | SEMICOLON
      { let m = (rhs parseState 1)
-       BlockSeparator.Semicolon(m, Some m.End) }
+       m, Some m.End }
 
   | SEMICOLON OBLOCKSEP
-     { BlockSeparator.Semicolon((rhs2 parseState 1 2), Some (rhs parseState 1).End) }
+     { (rhs2 parseState 1 2), Some (rhs parseState 1).End }
 
   | OBLOCKSEP SEMICOLON
-     { BlockSeparator.Semicolon((rhs2 parseState 1 2), Some (rhs parseState 2).End) }
+     { (rhs2 parseState 1 2), Some (rhs parseState 2).End }
 
 
 /* identifier can start from the underscore */

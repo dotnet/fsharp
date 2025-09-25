@@ -12,8 +12,7 @@ ImplFile
                 (None, None,
                  [SynExprRecordField
                     ((SynLongIdent ([V], [], [None]), true), Some (2,4--2,5),
-                     Some (Ident v), (2,2--2,7),
-                     Some (Offside ((2,8--3,2), None)));
+                     Some (Ident v), (2,2--2,7), Some ((2,8--3,2), None));
                   SynExprRecordField
                     ((SynLongIdent ([X], [], [None]), true), Some (3,9--3,10),
                      Some
