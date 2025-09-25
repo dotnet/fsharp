@@ -138,7 +138,11 @@ type SynExprYieldOrReturnFromTrivia =
 type SynExprDoBangTrivia = { DoBangKeyword: range }
 
 [<NoEquality; NoComparison>]
-type SynExprRecdTrivia = { OpeningBraceRange: range; WithKeyword: range option }
+type SynExprRecdTrivia =
+    {
+        OpeningBraceRange: range
+        WithKeyword: range option
+    }
 
 [<NoEquality; NoComparison>]
 type SynExprSequentialTrivia =

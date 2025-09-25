@@ -136,7 +136,16 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                     | Some(exprWhenWith, sepOpt) -> Some(exprWhenWith, sepOpt)
                     | None -> None
 
-                SynExpr.AnonRecd(isStruct, copyInfoAnon, fields, outerFieldId.idRange, { OpeningBraceRange = range0; WithKeyword = None })
+                SynExpr.AnonRecd(
+                    isStruct,
+                    copyInfoAnon,
+                    fields,
+                    outerFieldId.idRange,
+                    {
+                        OpeningBraceRange = range0
+                        WithKeyword = None
+                    }
+                )
             | _ ->
                 let fields =
                     [
@@ -149,7 +158,16 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                         )
                     ]
 
-                SynExpr.Record(None, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = outerFieldId.idRange; WithKeyword = None })
+                SynExpr.Record(
+                    None,
+                    copyInfo outerFieldId,
+                    fields,
+                    outerFieldId.idRange,
+                    {
+                        OpeningBraceRange = outerFieldId.idRange
+                        WithKeyword = None
+                    }
+                )
 
     let access, fields =
         ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid
