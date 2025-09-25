@@ -8,21 +8,26 @@ open System.Reflection
 
 module AssemblyResolver =
     open System.Globalization
+    open FSharp.Test.VSInstallDiscovery
 
     let vsInstallDir =
-        // use the environment variable to find the VS installdir
-        let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
+        // Use centralized VS installation discovery with graceful fallback
+        match tryGetVSInstallDir () with
+        | Some dir -> dir
+        | None ->
+            // Fallback to legacy behavior for backward compatibility
+            let vsvar =
+                let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
 
-            if String.IsNullOrEmpty var then
-                Environment.GetEnvironmentVariable("VSAPPIDDIR")
-            else
-                var
+                if String.IsNullOrEmpty var then
+                    Environment.GetEnvironmentVariable("VSAPPIDDIR")
+                else
+                    var
 
-        if String.IsNullOrEmpty vsvar then
-            failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
+            if String.IsNullOrEmpty vsvar then
+                failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
 
-        Path.Combine(vsvar, "..")
+            Path.Combine(vsvar, "..")
 
     let probingPaths =
         [|
