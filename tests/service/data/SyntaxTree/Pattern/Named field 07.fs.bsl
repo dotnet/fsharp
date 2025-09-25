@@ -11,7 +11,9 @@ ImplFile
                     [SynExprRecordField
                        ((SynLongIdent ([A], [], [None]), true),
                         Some (3,10--3,11), Some (Const (Int32 1, (3,12--3,13))),
-                        (3,8--3,13), None)], (3,6--3,15)),
+                        (3,8--3,13), None)], (3,6--3,15),
+                    { OpeningBraceRange = (3,6--3,7)
+                      WithKeyword = None }),
                  [SynMatchClause
                     (Record
                        ([NamePatPairField

@@ -430,7 +430,7 @@ module Structure =
 
             | SynExpr.Paren(e, _, _, _) -> parseExpr e
 
-            | SynExpr.Record(recCtor, recCopy, recordFields, r) ->
+            | SynExpr.Record(recCtor, recCopy, recordFields, r, _) ->
                 match recCtor with
                 | Some(_, ctorArgs, _, _, _) -> parseExpr ctorArgs
                 | _ -> ()

@@ -8,7 +8,10 @@ ImplFile
                 (false,
                  [App
                     (NonAtomic, false, Ident async,
-                     Record (None, None, [], (2,6--2,7)), (2,0--2,7)); Ident y],
+                     Record
+                       (None, None, [], (2,6--2,7),
+                        { OpeningBraceRange = (2,6--2,7)
+                          WithKeyword = None }), (2,0--2,7)); Ident y],
                  [(3,15--3,16)], (2,0--3,18)), (2,0--3,18))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,18), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

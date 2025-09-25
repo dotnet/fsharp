@@ -7,7 +7,8 @@ ImplFile
           [Expr
              (AnonRecd
                 (false, Some (Ident F1, None), [], (3,0--3,5),
-                 { OpeningBraceRange = (3,0--3,2) }), (3,0--3,5));
+                 { OpeningBraceRange = (3,0--3,2)
+                   WithKeyword = None }), (3,0--3,5));
            Expr
              (App
                 (NonAtomic, false,

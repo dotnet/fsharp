@@ -19,8 +19,10 @@ ImplFile
                  [SynExprRecordField
                     ((SynLongIdent ([X], [], [None]), true), Some (2,28--2,29),
                      Some (Const (Int32 1, (2,30--2,31))), (2,26--2,31),
-                     Some (Semicolon (2,31--2,32)))], (2,0--2,34)), (2,0--2,34))],
-          PreXmlDocEmpty, [], None, (2,0--2,34), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                     Some (Semicolon (2,31--2,32)))], (2,0--2,34),
+                 { OpeningBraceRange = (2,0--2,1)
+                   WithKeyword = None }), (2,0--2,34))], PreXmlDocEmpty, [],
+          None, (2,0--2,34), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

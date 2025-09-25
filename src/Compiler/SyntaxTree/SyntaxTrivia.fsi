@@ -190,10 +190,12 @@ type SynExprYieldOrReturnFromTrivia =
 
 /// Represents additional information for SynExpr.AnonRecd
 [<NoEquality; NoComparison>]
-type SynExprAnonRecdTrivia =
+type SynExprRecdTrivia =
     {
         /// The syntax range of the `{|` token.
         OpeningBraceRange: range
+        /// The syntax range of the with keyword
+        WithKeyword: range option
     }
 
 /// Represents additional information for SynExpr.Sequential

@@ -49,7 +49,9 @@ ImplFile
                      Some
                        (Const
                           (String ("test", Regular, (9,6--9,12)), (9,6--9,12))),
-                     (9,2--9,12), None)], (3,0--10,1)), (3,0--10,1))],
+                     (9,2--9,12), None)], (3,0--10,1),
+                 { OpeningBraceRange = (3,0--3,1)
+                   WithKeyword = None }), (3,0--10,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--10,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

@@ -9,7 +9,9 @@ ImplFile
                 (None, None,
                  [SynExprRecordField
                     ((SynLongIdent ([A], [], [None]), true), Some (3,4--3,5),
-                     None, (3,2--3,5), None)], (3,0--3,7)), (3,0--3,7))],
+                     None, (3,2--3,5), None)], (3,0--3,7),
+                 { OpeningBraceRange = (3,0--3,1)
+                   WithKeyword = None }), (3,0--3,7))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,7), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

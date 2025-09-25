@@ -24,7 +24,8 @@ ImplFile
                                     [Some (OriginalNotation "=")]), None,
                                  (5,5--5,6)), Ident F3, (5,2--5,6)),
                            Const (Int32 3, (5,7--5,8)), (5,2--5,8))), (4,2--5,8),
-                     None)], (3,0--5,10)), (3,0--5,10))],
+                     None)], (3,0--5,10), { OpeningBraceRange = (3,0--3,1)
+                                            WithKeyword = None }), (3,0--5,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

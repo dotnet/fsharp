@@ -28,7 +28,8 @@ ImplFile
                       Const
                         (String ("test", Regular, (3,28--3,34)), (3,28--3,34)),
                       false, (3,24--3,38)))], (3,0--3,40),
-                 { OpeningBraceRange = (3,0--3,2) }), (3,0--3,40));
+                 { OpeningBraceRange = (3,0--3,2)
+                   WithKeyword = None }), (3,0--3,40));
            Expr
              (AnonRecd
                 (false, None,
@@ -53,7 +54,8 @@ ImplFile
                       Const
                         (String ("test", Regular, (5,27--5,33)), (5,27--5,33)),
                       false, (5,23--5,37)))], (5,0--5,40),
-                 { OpeningBraceRange = (5,0--5,2) }), (5,0--5,40));
+                 { OpeningBraceRange = (5,0--5,2)
+                   WithKeyword = None }), (5,0--5,40));
            Expr
              (AnonRecd
                 (false, None,
@@ -78,7 +80,8 @@ ImplFile
                       Const
                         (String ("test", Regular, (7,28--7,34)), (7,28--7,34)),
                       false, (7,24--7,38)))], (7,0--7,41),
-                 { OpeningBraceRange = (7,0--7,2) }), (7,0--7,41))],
+                 { OpeningBraceRange = (7,0--7,2)
+                   WithKeyword = None }), (7,0--7,41))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,41), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

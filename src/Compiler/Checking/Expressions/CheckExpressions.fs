@@ -5929,14 +5929,14 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let binds = unionBindingAndMembers binds members
         TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
-    | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->
+    | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr, _trivia) ->
         match withExprOpt with
         | None
         | Some(SynExpr.Ident _, _) ->
             TcNonControlFlowExpr env <| fun env ->
             TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
         | Some withExpr ->
-            BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.Record (inherits, withExpr, synRecdFields, mWholeExpr))
+            BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.Record (inherits, withExpr, synRecdFields, mWholeExpr, { OpeningBraceRange = mWholeExpr; WithKeyword = None }))
             |> TcExpr cenv overallTy env tpenv
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
@@ -8288,7 +8288,7 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
 
                 // async { }
                 // seq { }
-                | SynExpr.Record (None, None, [], _) when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> ()
+                | SynExpr.Record (None, None, [], _, _) when g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions -> ()
 
                 // expr[idx]
                 // expr[idx1, idx2]
@@ -8588,7 +8588,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
                 // seq { comp }
                 // seq { }
                 | SynExpr.ComputationExpr (false, comp, m)
-                | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m) when
+                | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, m, _) when
                         (match leftExpr with
                          | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) -> true
                          | _ -> false) ->
@@ -8637,7 +8637,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         // leftExpr { comp }
         // leftExpr { }
         | SynExpr.ComputationExpr (false, comp, _m)
-        | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, _m) ->
+        | SynExpr.Record (None, None, EmptyFieldListAsUnit comp, _m, _) ->
             let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mLeftExpr, leftExpr.Expr, exprTy, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 

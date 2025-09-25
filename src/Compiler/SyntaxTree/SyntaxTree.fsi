@@ -601,7 +601,7 @@ type SynExpr =
         copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: (SynLongIdent * range option * SynExpr) list *
         range: range *
-        trivia: SynExprAnonRecdTrivia
+        trivia: SynExprRecdTrivia
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
@@ -614,7 +614,8 @@ type SynExpr =
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: SynExprRecordField list *
-        range: range
+        range: range *
+        trivia: SynExprRecdTrivia
 
     /// F# syntax: new C(...)
     /// The flag is true if known to be 'family' ('protected') scope

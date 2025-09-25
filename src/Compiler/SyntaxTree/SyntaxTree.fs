@@ -544,7 +544,7 @@ type SynExpr =
         copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: (SynLongIdent * range option * SynExpr) list *
         range: range *
-        trivia: SynExprAnonRecdTrivia
+        trivia: SynExprRecdTrivia
 
     | ArrayOrList of isArray: bool * exprs: SynExpr list * range: range
 
@@ -552,7 +552,8 @@ type SynExpr =
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo: (SynExpr * BlockSeparator option) option *
         recordFields: SynExprRecordField list *
-        range: range
+        range: range *
+        trivia: SynExprRecdTrivia
 
     | New of isProtected: bool * targetType: SynType * expr: SynExpr * range: range
 

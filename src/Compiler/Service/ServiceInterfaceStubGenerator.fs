@@ -849,7 +849,7 @@ module InterfaceStubGenerator =
                 | SynExpr.Tuple(_, synExprList, _, _range)
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> List.tryPick walkExpr synExprList
 
-                | SynExpr.Record(_inheritOpt, _copyOpt, fields, _range) ->
+                | SynExpr.Record(_inheritOpt, _copyOpt, fields, _range, _) ->
                     List.tryPick (fun (SynExprRecordField(expr = e)) -> Option.bind walkExpr e) fields
 
                 | SynExpr.New(_, _synType, synExpr, _range) -> walkExpr synExpr

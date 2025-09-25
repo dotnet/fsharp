@@ -21,7 +21,8 @@ ImplFile
                          Seq ([Named ([m], (3,14--3,15))], (3,14--3,15)),
                          { LessRange = (3,13--3,14)
                            GreaterRange = (3,15--3,16) }), (3,12--3,16)))],
-                 (3,0--3,19), { OpeningBraceRange = (3,0--3,2) }), (3,0--3,19));
+                 (3,0--3,19), { OpeningBraceRange = (3,0--3,2)
+                                WithKeyword = None }), (3,0--3,19));
            Expr
              (AnonRecd
                 (false, None,
@@ -39,7 +40,8 @@ ImplFile
                          Seq ([Named ([m], (5,14--5,15))], (5,14--5,15)),
                          { LessRange = (5,13--5,14)
                            GreaterRange = (5,15--5,16) }), (5,12--5,16)))],
-                 (5,0--5,18), { OpeningBraceRange = (5,0--5,2) }), (5,0--5,18));
+                 (5,0--5,18), { OpeningBraceRange = (5,0--5,2)
+                                WithKeyword = None }), (5,0--5,18));
            Expr
              (AnonRecd
                 (false, None,
@@ -57,7 +59,8 @@ ImplFile
                          Seq ([Named ([m], (7,15--7,16))], (7,15--7,16)),
                          { LessRange = (7,14--7,15)
                            GreaterRange = (7,16--7,17) }), (7,13--7,17)))],
-                 (7,0--7,19), { OpeningBraceRange = (7,0--7,2) }), (7,0--7,19));
+                 (7,0--7,19), { OpeningBraceRange = (7,0--7,2)
+                                WithKeyword = None }), (7,0--7,19));
            Expr
              (AnonRecd
                 (false, None,
@@ -75,7 +78,8 @@ ImplFile
                          Seq ([Named ([m], (9,15--9,16))], (9,15--9,16)),
                          { LessRange = (9,14--9,15)
                            GreaterRange = (9,16--9,17) }), (9,13--9,17)))],
-                 (9,0--9,20), { OpeningBraceRange = (9,0--9,2) }), (9,0--9,20))],
+                 (9,0--9,20), { OpeningBraceRange = (9,0--9,2)
+                                WithKeyword = None }), (9,0--9,20))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--9,20), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

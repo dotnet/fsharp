@@ -7,7 +7,8 @@ ImplFile
           [Expr
              (AnonRecd
                 (false, Some (Ident F, None), [], (3,0--3,7),
-                 { OpeningBraceRange = (3,0--3,2) }), (3,0--3,7))],
+                 { OpeningBraceRange = (3,0--3,2)
+                   WithKeyword = None }), (3,0--3,7))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,7), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

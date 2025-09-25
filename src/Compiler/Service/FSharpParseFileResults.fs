@@ -629,7 +629,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.ArrayOrList(_, exprs, _)
                         | SynExpr.Tuple(_, exprs, _, _) -> yield! walkExprs exprs
 
-                        | SynExpr.Record(_, copyExprOpt, fs, _) ->
+                        | SynExpr.Record(_, copyExprOpt, fs, _, _) ->
                             match copyExprOpt with
                             | Some(e, _) -> yield! walkExpr true e
                             | None -> ()

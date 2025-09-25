@@ -36,9 +36,9 @@ let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) 
         | [ x ] -> x :: res
         | x :: y :: ys ->
             match x, y with
-            | (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))), (_, Some(SynExpr.Record(recordFields = fields2))) ->
+            | (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m, trivia))), (_, Some(SynExpr.Record(recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
+                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m, trivia)))
 
                 groupIfNested res (reducedRecd :: ys)
             | (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))), (_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
@@ -136,7 +136,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                     | Some(exprWhenWith, sepOpt) -> Some(exprWhenWith, sepOpt)
                     | None -> None
 
-                SynExpr.AnonRecd(isStruct, copyInfoAnon, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
+                SynExpr.AnonRecd(isStruct, copyInfoAnon, fields, outerFieldId.idRange, { OpeningBraceRange = range0; WithKeyword = None })
             | _ ->
                 let fields =
                     [
@@ -149,7 +149,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
                         )
                     ]
 
-                SynExpr.Record(None, copyInfo outerFieldId, fields, outerFieldId.idRange)
+                SynExpr.Record(None, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = outerFieldId.idRange; WithKeyword = None })
 
     let access, fields =
         ResolveNestedField cenv.tcSink cenv.nameResolver env.eNameResEnv env.eAccessRights overallTy lid

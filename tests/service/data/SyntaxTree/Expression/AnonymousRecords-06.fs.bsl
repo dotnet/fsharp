@@ -25,10 +25,11 @@ ImplFile
                        Const (String ("s", Regular, (1,26--1,29)), (1,26--1,29)));
                       (SynLongIdent ([A], [], [None]), Some (1,33--1,34),
                        Const (Int32 3, (1,35--1,36)))], (1,10--1,39),
-                     { OpeningBraceRange = (1,10--1,12) }), (1,4--1,7),
-                  NoneAtLet, { LeadingKeyword = Let (1,0--1,3)
-                               InlineKeyword = None
-                               EqualsRange = Some (1,8--1,9) })], (1,0--1,39))],
+                     { OpeningBraceRange = (1,10--1,12)
+                       WithKeyword = Some (1,15--1,19) }), (1,4--1,7), NoneAtLet,
+                  { LeadingKeyword = Let (1,0--1,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (1,8--1,9) })], (1,0--1,39))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

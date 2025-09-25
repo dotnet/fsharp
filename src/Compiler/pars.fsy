@@ -5552,14 +5552,16 @@ typarAlts:
 
 braceExpr:
   | LBRACE braceExprBody rbrace
-     { let m, r = $2
-       r (rhs2 parseState 1 3) }
+     { let mOpen = rhs parseState 1
+       let m, r = $2
+       r mOpen (rhs2 parseState 1 3) }
 
   | LBRACE braceExprBody recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace())
+       let mOpen = rhs parseState 1
        let m, r = $2
        // Note, we can't use 'exprFromParseError' because the extra syntax node interferes with some syntax-directed transformations for computation expressions
-       r (unionRanges (rhs parseState 1) m) }
+       r mOpen (unionRanges (rhs parseState 1) m) }
 
   | LBRACE error rbrace
      { // silent recovery
@@ -5568,15 +5570,16 @@ braceExpr:
   | LBRACE recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace())
        // Note, we can't use 'exprFromParseError' because the extra syntax node interferes with some syntax-directed transformations for computation expressions
-       SynExpr.Record(None, None, [], rhs parseState 1) }
+       SynExpr.Record(None, None, [], rhs parseState 1, { OpeningBraceRange = rhs parseState 1; WithKeyword = None }) }
 
   | LBRACE rbrace
-     { let m = rhs2 parseState 1 2
-       SynExpr.Record(None, None, [], m) }
+     { let mOpen = rhs parseState 1
+       let m = rhs2 parseState 1 2
+       SynExpr.Record(None, None, [], m, { OpeningBraceRange = mOpen; WithKeyword = None }) }
 
 braceExprBody:
   | recdExpr
-     { (lhs parseState), (fun m -> let a, b, c = $1 in SynExpr.Record(a, b, c, m)) }
+     { (lhs parseState), (fun mOpen m -> let a, b, c, mWith = $1 in SynExpr.Record(a, b, c, m, { OpeningBraceRange = mOpen; WithKeyword = mWith })) }
 
   | objExpr
      { $1 }
@@ -5600,7 +5603,7 @@ arrayExprElements:
 
 computationExpr:
   | sequentialExpr
-     { $1.Range, (fun mLhs -> SynExpr.ComputationExpr(false, $1, mLhs)) }
+     { $1.Range, (fun _ m -> SynExpr.ComputationExpr(false, $1, m)) }
 
 arrowThenExprR:
   | RARROW typedSequentialExprBlockR
@@ -5681,11 +5684,11 @@ recdExpr:
        let l = rebindRanges (dummyField, None, None) l $6
        let (SynExprRecordField(_, _, _, _, inheritsSep)) = List.head l
        let bindings = List.tail l
-       (Some($2, arg, rhs2 parseState 2 4, inheritsSep, rhs parseState 1), None, bindings) }
+       (Some($2, arg, rhs2 parseState 2 4, inheritsSep, rhs parseState 1), None, bindings, None) }
 
   | recdExprCore
-    { let a, b = $1
-      None, a, b }
+    { let a, b, mWith = $1
+      None, a, b, mWith }
 
 recdExprCore:
   | appExpr EQUALS declExprBlock recdExprBindings opt_seps_block
@@ -5695,7 +5698,7 @@ recdExprCore:
             let mEquals = rhs parseState 2
             let l = List.rev $4
             let l = rebindRanges (f, Some mEquals, Some $3) l $5
-            (None, l)
+            (None, l, None)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding()) }
 
   | appExpr EQUALS recover
@@ -5704,13 +5707,13 @@ recdExprCore:
             let f = mkRecdField f
             let mEquals = rhs parseState 2
             let l = rebindRanges (f, Some mEquals, None) [] None
-            None, l
+            (None, l, None)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding ()) }
 
   | appExpr
     { let mExpr = rhs parseState 1
       reportParseErrorAt mExpr (FSComp.SR.parsFieldBinding ())
-      (Some($1, None), []) }
+      (Some($1, None), [], None) }
 
 /*
     handles cases when identifier can start from the underscore
@@ -5721,7 +5724,7 @@ recdExprCore:
       reportParseErrorAt m (FSComp.SR.parsUnderscoreInvalidFieldName())
       reportParseErrorAt m (FSComp.SR.parsFieldBinding())
       let f = mkUnderscoreRecdField m
-      (None, [ SynExprRecordField(f, None, None, m, None)  ]) }
+      (None, [ SynExprRecordField(f, None, None, m, None)  ], None) }
 
   | UNDERSCORE EQUALS
     { let m = rhs parseState 1
@@ -5730,7 +5733,7 @@ recdExprCore:
       let mEquals = rhs parseState 2
       reportParseErrorAt (rhs2 parseState 1 2) (FSComp.SR.parsFieldBinding())
 
-      (None, [ SynExprRecordField(f, Some mEquals, None, (rhs2 parseState 1 2), None) ]) }
+      (None, [ SynExprRecordField(f, Some mEquals, None, (rhs2 parseState 1 2), None) ], None) }
 
   | UNDERSCORE EQUALS declExprBlock recdExprBindings opt_seps_block
     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnderscoreInvalidFieldName())
@@ -5738,7 +5741,24 @@ recdExprCore:
       let mEquals = rhs parseState 2
       let l = List.rev $4
       let l = rebindRanges (f, Some mEquals, Some $3) l $5
-      (None, l) }
+      (None, l, None) }
+
+/* handles case like {x with}  */
+  | appExpr WITH recdBinding recdExprBindings opt_seps_block
+     { let l = List.rev $4
+       let l = rebindRanges $3 l $5
+       let mWith = rhs parseState 2
+       (Some($1, $5), l, Some mWith) }
+
+  | appExpr OWITH opt_seps_block OEND
+     { let mWith = rhs parseState 2
+       (Some($1, $3), [], Some mWith) }
+
+  | appExpr OWITH recdBinding recdExprBindings opt_seps_block OEND
+     { let l = List.rev $4
+       let l = rebindRanges $3 l $5
+       let mWith = rhs parseState 2
+       (Some($1, $5), l, Some mWith) }
 
 opt_seps_block:
   | seps_block
@@ -5819,16 +5839,16 @@ objExpr:
      { let mNewExpr = rhs parseState 1
        let fullRange = match $4 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 4)
        let mWithKwd, bindings, members = $2
-       fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr(a, b, Some mWithKwd, bindings, members, $4, mNewExpr, m)) }
+       fullRange, (fun _ m -> let (a, b) = $1 in SynExpr.ObjExpr(a, b, Some mWithKwd, bindings, members, $4, mNewExpr, m)) }
 
   | objExprBaseCall opt_OBLOCKSEP objExprInterfaces
      { let mNewExpr = rhs parseState 1
        let fullRange = match $3 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 3)
-       fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr(a, b, None, [], [], $3, mNewExpr, m)) }
+       fullRange, (fun _ m -> let (a, b) = $1 in SynExpr.ObjExpr(a, b, None, [], [], $3, mNewExpr, m)) }
 
   | NEW atomTypeNonAtomicDeprecated
      { let mNewExpr = rhs parseState 1
-       (rhs2 parseState 1 2), (fun m -> let (a, b) = $2, None in SynExpr.ObjExpr(a, b, None, [], [], [], mNewExpr, m)) }
+       (rhs2 parseState 1 2), (fun _ m -> let (a, b) = $2, None in SynExpr.ObjExpr(a, b, None, [], [], [], mNewExpr, m)) }
 
 objExprBaseCall:
   | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
@@ -5904,7 +5924,7 @@ braceBarExpr:
 
 braceBarExprCore:
   | LBRACE_BAR recdExprCore bar_rbrace
-     { let orig, flds = $2
+     { let orig, flds, mWith = $2
        let flds =
            flds |> List.choose (function
              | SynExprRecordField((synLongIdent, _), mEquals, Some e, _, _) when orig.IsSome -> Some(synLongIdent, mEquals, e) // copy-and-update, long identifier signifies nesting
@@ -5915,11 +5935,11 @@ braceBarExprCore:
        let mRightBrace = rhs parseState 3
        (fun (mStruct: range option) ->
             let m = match mStruct with | None -> unionRanges mLeftBrace mRightBrace | Some mStruct -> unionRanges mStruct mRightBrace
-            SynExpr.AnonRecd(mStruct.IsSome, orig, flds, m, { OpeningBraceRange = mLeftBrace })) }
+            SynExpr.AnonRecd(mStruct.IsSome, orig, flds, m, { OpeningBraceRange = mLeftBrace; WithKeyword = mWith })) }
 
   | LBRACE_BAR recdExprCore recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBraceBar())
-       let orig, flds = $2
+       let orig, flds, mWith = $2
        let flds =
            flds |> List.map (function
              | SynExprRecordField((synLongIdent, _), mEquals, Some e, _, _) -> (synLongIdent, mEquals, e)
@@ -5928,7 +5948,7 @@ braceBarExprCore:
        let mExpr = rhs parseState 2
        (fun (mStruct: range option) ->
            let m = match mStruct with | None -> unionRanges mLeftBrace mExpr | Some mStruct -> unionRanges mStruct mExpr
-           SynExpr.AnonRecd(mStruct.IsSome, orig, flds, m, { OpeningBraceRange = mLeftBrace })) }
+           SynExpr.AnonRecd(mStruct.IsSome, orig, flds, m, { OpeningBraceRange = mLeftBrace; WithKeyword = mWith })) }
 
   | LBRACE_BAR error bar_rbrace
      { // silent recovery
@@ -5943,14 +5963,14 @@ braceBarExprCore:
        let mLeftBrace = rhs parseState 1
        (fun (mStruct: range option) ->
            let m = match mStruct with | None -> mLeftBrace | Some mStruct -> unionRanges mStruct mLeftBrace
-           SynExpr.AnonRecd(mStruct.IsSome, None, [], m, { OpeningBraceRange = mLeftBrace })) }
+           SynExpr.AnonRecd(mStruct.IsSome, None, [], m, { OpeningBraceRange = mLeftBrace; WithKeyword = None })) }
 
   | LBRACE_BAR bar_rbrace
      { let mLeftBrace = rhs parseState 1
        let mRightBrace = rhs parseState 2
        (fun (mStruct: range option) ->
            let m = match mStruct with | None -> unionRanges mLeftBrace mRightBrace | Some mStruct -> unionRanges mStruct mRightBrace
-           SynExpr.AnonRecd(mStruct.IsSome, None, [], m, { OpeningBraceRange = mLeftBrace })) }
+           SynExpr.AnonRecd(mStruct.IsSome, None, [], m, { OpeningBraceRange = mLeftBrace; WithKeyword = None })) }
 
 anonLambdaExpr:
   | FUN atomicPatterns RARROW typedSequentialExprBlock

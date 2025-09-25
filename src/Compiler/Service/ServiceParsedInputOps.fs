@@ -818,7 +818,7 @@ module ParsedInput =
 
             | SynExpr.MatchLambda(matchClauses = clauses) -> List.tryPick walkClause clauses
 
-            | SynExpr.Record(_, _, fields, r) ->
+            | SynExpr.Record(_, _, fields, r, _) ->
                 ifPosInRange r (fun _ ->
                     fields
                     |> List.tryPick (fun (SynExprRecordField(expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)))
@@ -1475,7 +1475,7 @@ module ParsedInput =
                             | PartOfParameterList pos precedingArgument args -> Some(CompletionContext.ParameterList args)
                             | _ -> defaultTraverse expr
 
-                        | SynExpr.Record(None, None, [], _) -> Some(CompletionContext.RecordField RecordContext.Empty)
+                        | SynExpr.Record(None, None, [], _, _) -> Some(CompletionContext.RecordField RecordContext.Empty)
 
                         // Unchecked.defaultof<str$>
                         | SynExpr.TypeApp(typeArgsRange = range) when rangeContainsPos range pos -> Some CompletionContext.Type
@@ -1501,7 +1501,7 @@ module ParsedInput =
                         | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(
                             typeInfo = SynComponentInfo(longId = [ id ]))) :: _ -> RecordContext.Constructor(id.idText)
 
-                        | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
+                        | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _, _)) :: _ ->
                             let isFirstField =
                                 match field, fields with
                                 | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range

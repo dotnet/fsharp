@@ -59,8 +59,9 @@ ImplFile
                               SynLongIdent
                                 ([args; DryRun], [(5,19--5,20)], [None; None]),
                               None, (5,15--5,26)), (2,12--5,26))), (2,2--5,26),
-                     None)], (2,0--5,28)), (2,0--5,28))], PreXmlDocEmpty, [],
-          None, (2,0--5,28), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                     None)], (2,0--5,28), { OpeningBraceRange = (2,0--2,1)
+                                            WithKeyword = None }), (2,0--5,28))],
+          PreXmlDocEmpty, [], None, (2,0--5,28), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))
