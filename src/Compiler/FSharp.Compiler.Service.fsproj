@@ -114,6 +114,8 @@
     </EmbeddedResource>
     <Compile Include="Utilities\Activity.fsi" />
     <Compile Include="Utilities\Activity.fs" />
+	<Compile Include="Utilities\Caches.fsi" />
+    <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\illib.fsi" />
     <Compile Include="Utilities\illib.fs" />
     <Compile Include="Utilities\sformat.fsi" />
@@ -147,8 +149,6 @@
     <Compile Include="Utilities\lib.fsi" />
     <Compile Include="Utilities\lib.fs" />
     <Compile Include="Utilities\DependencyGraph.fs" />
-    <Compile Include="Utilities\Caches.fsi" />
-    <Compile Include="Utilities\Caches.fs" />
     <Compile Include="Utilities\LruCache.fsi" />
     <Compile Include="Utilities\LruCache.fs" />
     <Compile Include="Utilities\ImmutableArray.fsi" />
