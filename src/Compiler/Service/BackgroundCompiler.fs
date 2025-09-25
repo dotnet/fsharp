@@ -494,7 +494,7 @@ type internal BackgroundCompiler
 
     let createAndGetBuilder (options, userOpName) =
         async2 {
-            let ct = Async2.CancellationToken
+            let! ct = Async2.CancellationToken
             let getBuilderNode = createBuilderNode (options, userOpName, ct)
             return! getBuilderNode.GetOrComputeValue()
         }
@@ -595,7 +595,7 @@ type internal BackgroundCompiler
                 | Some res -> return res
                 | None ->
                     Interlocked.Increment(&actualParseFileCount) |> ignore
-                    let ct = Async2.CancellationToken
+                    let! ct = Async2.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -615,7 +615,7 @@ type internal BackgroundCompiler
                     parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                     return res
             else
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
 
                 let parseDiagnostics, parseTree, anyErrors =
                     ParseAndCheckFile.parseFile (
@@ -907,7 +907,7 @@ type internal BackgroundCompiler
                         )
 
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
-                    let ct = Async2.CancellationToken
+                    let! ct = Async2.CancellationToken
 
                     let parseDiagnostics, parseTree, anyErrors =
                         ParseAndCheckFile.parseFile (
@@ -1415,7 +1415,7 @@ type internal BackgroundCompiler
 
         async2 {
 
-            let ct = Async2.CancellationToken
+            let! ct = Async2.CancellationToken
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This
             // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous
             // builder, but costs some time.

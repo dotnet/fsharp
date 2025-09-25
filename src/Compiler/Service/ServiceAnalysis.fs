@@ -305,7 +305,7 @@ module UnusedOpens =
             if checkFileResults.OpenDeclarations.Length = 0 then
                 return []
             else
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
                 let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
                 let symbolUses = filterSymbolUses getSourceLineStr symbolUses
                 let symbolUses = splitSymbolUses symbolUses
@@ -327,7 +327,7 @@ module SimplifyNames =
     let getSimplifiableNames (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) =
         async2 {
             let result = ResizeArray()
-            let ct = Async2.CancellationToken
+            let! ct = Async2.CancellationToken
 
             let symbolUses =
                 checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
@@ -465,7 +465,7 @@ module UnusedDeclarations =
 
     let getUnusedDeclarations (checkFileResults: FSharpCheckFileResults, isScriptFile: bool) =
         async2 {
-            let ct = Async2.CancellationToken
+            let! ct = Async2.CancellationToken
             let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
             return unusedRanges

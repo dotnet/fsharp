@@ -88,7 +88,7 @@ type DelayedILModuleReader =
         match box this.result with
         | null ->
             async2 {
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
 
                 return
                     lock this.gate (fun () ->
@@ -3951,7 +3951,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, tcConfig: TcConfig, tcGlobal
             let parsingOptions =
                 FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
 
-            let ct = Async2.CancellationToken
+            let! ct = Async2.CancellationToken
 
             let parseErrors, parsedInput, anyErrors =
                 ParseAndCheckFile.parseFile (

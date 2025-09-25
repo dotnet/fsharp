@@ -277,7 +277,7 @@ type FSharpChecker
             match braceMatchCache.TryGet(AnyCallerThread, (fileName, hash, options)) with
             | Some res -> return res
             | None ->
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
 
                 let res =
                     ParseAndCheckFile.matchBraces (sourceText, fileName, options, userOpName, suggestNamesForErrors, ct)

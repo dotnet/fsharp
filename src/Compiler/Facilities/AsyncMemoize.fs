@@ -52,7 +52,7 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
     let detachable (work: Task<'t>) =
         async2 {
             try
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
                 // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
                 // If the current async workflow is canceled, the 'work' task will continue running independently.
                 do! work.ContinueWith(ignore<Task<'t>>, ct)

@@ -1606,8 +1606,6 @@ type internal TransparentCompiler
         caches.ParseAndCheckFileInProject.Get(
             projectSnapshot.FileKeyWithExtraFileSnapshotVersion fileName,
             async2 {
-                use! _holder = Async2.UseTokenAsync()
-
                 use _ =
                     Activity.start "ComputeParseAndCheckFileInProject" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
 
@@ -1874,8 +1872,6 @@ type internal TransparentCompiler
                             Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                         |]
 
-                use! _holder = Async2.UseTokenAsync()
-
                 try
 
                     let availableOnDiskModifiedTime =
@@ -1922,8 +1918,6 @@ type internal TransparentCompiler
         caches.ParseAndCheckProject.Get(
             projectSnapshot.FullKey,
             async2 {
-                use! _holder = Async2.UseTokenAsync()
-
                 match! ComputeBootstrapInfo projectSnapshot with
                 | None, creationDiags ->
                     return FSharpCheckProjectResults(projectSnapshot.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
@@ -1996,8 +1990,6 @@ type internal TransparentCompiler
 
     let tryGetSink (fileName: string) (projectSnapshot: ProjectSnapshot) =
         async2 {
-            use! _holder = Async2.UseTokenAsync()
-
             match! ComputeBootstrapInfo projectSnapshot with
             | None, _ -> return None
             | Some bootstrapInfo, _creationDiags ->
@@ -2104,7 +2096,7 @@ type internal TransparentCompiler
         : Async2<FSharpParseFileResults> =
         let parseFileAsync =
             async2 {
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
 
                 let diagnostics, parsedInput, anyErrors =
                     ParseAndCheckFile.parseFile (sourceText, fileName, options, userOpName, false, flatErrors, false, ct)

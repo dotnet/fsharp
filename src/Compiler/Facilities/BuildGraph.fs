@@ -41,7 +41,7 @@ type internal GraphNode<'T> private (computation: Async2<'T>, cachedResult: Valu
             cachedResultNode
         else
             async2 {
-                let ct = Async2.CancellationToken
+                let! ct = Async2.CancellationToken
                 Interlocked.Increment(&requestCount) |> ignore
 
                 let mutable acquired = false

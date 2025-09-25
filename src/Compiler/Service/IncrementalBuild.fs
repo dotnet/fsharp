@@ -1179,7 +1179,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let setCurrentState state cache  =
         async2 {
-            let ct = Async2.CancellationToken
+            let! ct = Async2.CancellationToken
             do! semaphore.WaitAsync(ct)
             try
                 ct.ThrowIfCancellationRequested()
