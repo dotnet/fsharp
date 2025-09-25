@@ -1145,7 +1145,7 @@ module StaticAbstractBug =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'bool' does not match the type 'int'")
+            (Error 1, Line 14, Col 41, Line 14, Col 42, "The type 'int' does not match the type 'bool'")
             (Error 1, Line 16, Col 32, Line 16, Col 33, "This expression was expected to have type
     'bool'    
 but here has type
