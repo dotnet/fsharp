@@ -96,6 +96,33 @@ if not ERRORLEVEL 1 echo Error: PackageFSharpDesignTimeTools target should not h
 
 echo Redirect test passed
 
+echo.
+echo === Test 6: Issue Repro - Simple project with reference and pack --no-build ===
+pushd artifacts
+echo Creating eff project...
+dotnet new classlib --language F# --name eff -o eff
+if ERRORLEVEL 1 echo Error: Failed to create eff project && popd && goto :failure
+
+echo Creating gee project...
+dotnet new classlib --language F# --name gee -o gee
+if ERRORLEVEL 1 echo Error: Failed to create gee project && popd && goto :failure
+
+echo Adding reference from gee to eff...
+dotnet add gee/gee.fsproj reference eff/eff.fsproj
+if ERRORLEVEL 1 echo Error: Failed to add reference && popd && goto :failure
+
+echo Building gee project...
+dotnet build gee/gee.fsproj
+if ERRORLEVEL 1 echo Error: Failed to build gee project && popd && goto :failure
+
+echo Packing gee project with --no-build...
+dotnet pack gee/gee.fsproj --no-build
+if ERRORLEVEL 1 echo Error: Pack --no-build failed (NETSDK1085) && popd && goto :failure
+
+popd
+
+echo Issue repro test passed
+
 :success
 endlocal
 echo.
