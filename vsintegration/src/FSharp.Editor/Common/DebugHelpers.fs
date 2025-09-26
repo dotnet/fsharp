@@ -123,10 +123,12 @@ module FSharpServiceTelemetry =
     let periodicallyDisplayCacheStats =
         cancellableTask {
             use _ = CacheMetrics.ListenToAll()
+            use _ = FSharp.Compiler.DiagnosticsLogger.StackGuardMetrics.Listen()
 
             while true do
                 do! Task.Delay(TimeSpan.FromSeconds 10.0)
                 FSharpOutputPane.logMsg (CacheMetrics.StatsToString())
+                FSharpOutputPane.logMsg (FSharp.Compiler.DiagnosticsLogger.StackGuardMetrics.StatsToString())
         }
 
 #if DEBUG
