@@ -49,9 +49,21 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
   </PropertyGroup>
 
+  <!-- Gate inclusion of PackageFSharpDesignTimeTools target when design-time provider is present -->
   <PropertyGroup>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificContentInPackage Condition=" '$(IsFSharpDesignTimeProvider)' == 'true' ">$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
+
+  <!-- Check for design-time provider references and add target if needed -->
+  <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec;Pack" Condition=" '$(IsFSharpDesignTimeProvider)' != 'true' ">
+    <ItemGroup>
+      <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
+      <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
+    </ItemGroup>
+    <PropertyGroup Condition=" '@(_FSharpDesignTimeProviderProject)' != '' or '@(_FSharpDesignTimeProviderPackage)' != '' ">
+      <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+  </Target>
 
   <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
@@ -65,7 +77,8 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     </ItemGroup>
   </Target>
 
-  <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
+  <Target Name="PackageFSharpDesignTimeTools" AfterTargets="ResolveReferences">
+    <CallTarget Targets="_GetFrameworkAssemblyReferences" Condition="'@(ReferencePath)' == ''" />
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
       <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
