@@ -8,7 +8,7 @@
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>
     <MoreInfo>https://learn.microsoft.com/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
-  <Installation Experimental="true">
+  <Installation Experimental="true" ExtensionType="VSSDK+VisualStudio.Extensibility">
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[|%CurrentProject%;GetVSGeneralVersion|,)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
