@@ -459,15 +459,17 @@ val tryLanguageFeatureErrorOption:
 
 val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
+module StackGuardMetrics =
+    val Listen: unit -> IDisposable
+    val StatsToString: unit -> string
+
 type StackGuard =
     new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard:
         f: (unit -> 'T) *
-        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
-        [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
-        [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
+        [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string ->
             'T
 
     member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
