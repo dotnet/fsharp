@@ -11,6 +11,8 @@ open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
+open FSharp.Compiler.Caches
+
 [<Class>]
 type InterruptibleLazy<'T> private (value, valueFactory: unit -> 'T) =
     let syncObj = obj ()
@@ -950,10 +952,11 @@ type UniqueStampGenerator<'T when 'T: equality and 'T: not null>() =
     member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
-type MemoizationTable<'T, 'U when 'T: not null>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
+type MemoizationTable<'T, 'U when 'T: not null>(name, compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
 
-    let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
-    let computeFunc = Func<_, _>(fun key -> lazy (compute key))
+    let options = CacheOptions.getDefault keyComparer |> CacheOptions.withNoEviction
+    let table = new Cache<'T, Lazy<'U>>(options, name)
+    let computeFunc key = lazy compute key
 
     member t.Apply x =
         if

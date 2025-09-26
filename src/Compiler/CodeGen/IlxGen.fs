@@ -2334,6 +2334,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     // A memoization table for generating value types for big constant arrays
     let rawDataValueTypeGenerator =
         MemoizationTable<CompileLocation * int, ILTypeSpec>(
+            "rawDataValueTypeGenerator",
             (fun (cloc, size) ->
                 let name =
                     CompilerGeneratedName("T" + string (newUnique ()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
