@@ -412,11 +412,16 @@ type internal FSharpPackage() as this =
         )
 
 #if DEBUG
-    override _.RegisterOnAfterPackageLoadedAsyncWork (afterPackageLoadedTasks: PackageLoadTasks) = 
-        afterPackageLoadedTasks.AddTask(false, fun _ _ -> task {
-            DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayCacheStats
-            |> CancellableTask.start this.DisposalToken |> ignore
-        })
+    override _.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+        afterPackageLoadedTasks.AddTask(
+            false,
+            fun _ _ ->
+                task {
+                    DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayCacheStats
+                    |> CancellableTask.start this.DisposalToken
+                    |> ignore
+                }
+        )
 #endif
 
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
