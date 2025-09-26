@@ -55,7 +55,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <!-- Check for design-time provider references and add target if needed -->
-  <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec;Pack">
+  <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec;Pack" Condition=" '$(IsFSharpDesignTimeProvider)' != 'true' ">
     <ItemGroup>
       <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
       <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
