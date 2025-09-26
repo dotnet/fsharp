@@ -9,7 +9,7 @@ ImplFile
           false, AnonModule,
           [Expr
              (Record
-                (None, Some (Ident foo, Offside ((2,6--2,10), None)),
+                (None, Some (Ident foo, ((2,6--2,10), None)),
                  [SynExprRecordField
                     ((SynLongIdent ([X], [], [None]), true), Some (4,12--4,13),
                      Some (Const (Int32 12, (5,16--5,18))), (3,8--5,18), None)],

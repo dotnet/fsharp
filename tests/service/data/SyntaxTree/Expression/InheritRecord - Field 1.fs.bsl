@@ -40,11 +40,11 @@ ImplFile
                             (String ("message", Regular, (6,4--6,13)),
                              (6,4--6,13)), (4,4--6,13)), (3,19--3,20),
                        Some (7,2--7,3), (3,19--7,3)), (3,10--7,3),
-                    Some (Offside ((7,4--8,2), None)), (3,2--3,9)), None,
+                    Some ((7,4--8,2), None), (3,2--3,9)), None,
                  [SynExprRecordField
                     ((SynLongIdent ([X], [], [None]), true), Some (8,4--8,5),
                      Some (Const (Int32 42, (8,6--8,8))), (8,2--8,8),
-                     Some (Offside ((8,9--9,2), None)));
+                     Some ((8,9--9,2), None));
                   SynExprRecordField
                     ((SynLongIdent ([Y], [], [None]), true), Some (9,4--9,5),
                      Some
