@@ -4,11 +4,14 @@ open System
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+open FSharp.Core.CompilerServices.StateMachineHelpers
+open Microsoft.FSharp.Core.CompilerServices
 
 #nowarn 3513
 
 type IAsync2Invocation<'t> =
     abstract Task: Task<'t>
+    abstract GetAwaiter: unit -> TaskAwaiter<'t>
 
 and Async2<'t> =
     abstract StartImmediate: CancellationToken -> IAsync2Invocation<'t>
@@ -17,9 +20,6 @@ and Async2<'t> =
 
 module Async2Implementation =
 
-    open FSharp.Core.CompilerServices.StateMachineHelpers
-
-    open Microsoft.FSharp.Core.CompilerServices
     open System.Runtime.ExceptionServices
 
     let failIfNot condition message =
@@ -35,15 +35,16 @@ module Async2Implementation =
     type Awaitable<'Awaitable, 'Awaiter, 'TResult when 'Awaitable: (member GetAwaiter: unit -> Awaiter<'Awaiter, 'TResult>)> = 'Awaitable
 
     module Awaiter =
-        let inline isCompleted (awaiter: ^Awaiter) : bool when ^Awaiter: (member get_IsCompleted: unit -> bool) = awaiter.get_IsCompleted ()
+        let inline isCompleted (awaiter: Awaiter<_, _>) = awaiter.get_IsCompleted ()
 
-        let inline getResult (awaiter: ^Awaiter) : ^TResult when ^Awaiter: (member GetResult: unit -> ^TResult) = awaiter.GetResult()
+        let inline getResult (awaiter: Awaiter<_, _>) = awaiter.GetResult()
 
-        let inline onCompleted (awaiter: ^Awaiter) (continuation: Action) : unit when ^Awaiter :> INotifyCompletion =
-            awaiter.OnCompleted continuation
+        let inline onCompleted (awaiter: Awaiter<_, _>) continuation = awaiter.OnCompleted continuation
 
-        let inline unsafeOnCompleted (awaiter: ^Awaiter) (continuation: Action) : unit when ^Awaiter :> ICriticalNotifyCompletion =
-            awaiter.UnsafeOnCompleted continuation
+        let inline unsafeOnCompleted (awaiter: Awaiter<_, _>) continuation = awaiter.UnsafeOnCompleted continuation
+
+    module Awaitable =
+        let inline getAwaiter (awaitable: Awaitable<_, _, _>) = awaitable.GetAwaiter()
 
     type DynamicState =
         | Running
@@ -91,8 +92,8 @@ module Async2Implementation =
                 start action
 
         interface ICriticalNotifyCompletion with
-            member _.OnCompleted(continuation) = set continuation
-            member _.UnsafeOnCompleted(continuation) = set continuation
+            member _.OnCompleted continuation = set continuation
+            member _.UnsafeOnCompleted continuation = set continuation
 
         member this.Ref: ICriticalNotifyCompletion ref = ref this
 
@@ -155,7 +156,7 @@ module Async2Implementation =
     type Async2Code<'TOverall, 'T> = ResumableCode<Async2Data<'TOverall>, 'T>
 
     [<Struct; NoComparison>]
-    type Async2Impl<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>> =
+    type Async2<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>> =
         [<DefaultValue(false)>]
         val mutable StateMachine: 'm
 
@@ -172,26 +173,24 @@ module Async2Implementation =
         interface IAsync2Invocation<'t> with
             member ts.Task = ts.StateMachine.Data.MethodBuilder.Task
 
-        interface Async2<'t> with
-            member ts.StartImmediate ct = ts.Start(ct, ValueNone)
-            member ts.TailCall(ct, tc) = ts.Start(ct, tc) |> ignore
-
             member ts.GetAwaiter() =
-                ts.Start(CancellationToken.None, ValueNone).Task.GetAwaiter()
-
-    [<NoComparison>]
-    type Async2ImplDynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: unit -> 'm) =
-
-        member ts.Start(ct, tc) =
-            let mutable copy = Async2Impl(StateMachine = getCopy ())
-            copy.Start(ct, tc)
+                ts.StateMachine.Data.MethodBuilder.Task.GetAwaiter()
 
         interface Async2<'t> with
             member ts.StartImmediate ct = ts.Start(ct, ValueNone)
             member ts.TailCall(ct, tc) = ts.Start(ct, tc) |> ignore
 
             member ts.GetAwaiter() =
-                ts.Start(CancellationToken.None, ValueNone).Task.GetAwaiter()
+                ts.Start(CancellationToken.None, ValueNone).GetAwaiter()
+
+    type Async2Dynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: unit -> 'm) =
+        member ts.GetCopy() =
+            Async2(StateMachine = getCopy ()) :> Async2<_>
+
+        interface Async2<'t> with
+            member ts.StartImmediate ct = ts.GetCopy().StartImmediate(ct)
+            member ts.TailCall(ct, tc) = ts.GetCopy().TailCall(ct, tc) |> ignore
+            member ts.GetAwaiter() = ts.GetCopy().GetAwaiter()
 
     [<AutoOpen>]
     module Async2Code =
@@ -209,7 +208,7 @@ module Async2Implementation =
                 code.Invoke(&sm))
 
         let inline yieldOnBindLimit () =
-            Async2Code<_, _>(fun sm ->
+            Async2Code(fun sm ->
                 if Trampoline.Current.IncrementBindCount() then
                     let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
 
@@ -220,7 +219,41 @@ module Async2Implementation =
                 else
                     true)
 
-    type CancellableAwaiter<'t, 'a when Awaiter<'a, 't>> = CancellationToken -> 'a
+        let inline bindDynamic (sm: byref<Async2StateMachine<_>>, awaiter, [<InlineIfLambda>] continuation: _ -> Async2Code<_, _>) =
+            if Awaiter.isCompleted awaiter then
+                (Awaiter.getResult awaiter |> continuation).Invoke(&sm)
+            else
+                let resumptionFunc =
+                    Async2ResumptionFunc(fun sm ->
+                        let result = ExceptionCache.GetResultOrThrow awaiter
+                        (continuation result).Invoke(&sm))
+
+                sm.ResumptionDynamicInfo.ResumptionFunc <- resumptionFunc
+                sm.ResumptionDynamicInfo.ResumptionData <- Awaiting awaiter
+                false
+
+        let inline bindAwaiter (awaiter, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>) : Async2Code<'Data, 'T> =
+            Async2Code(fun sm ->
+                if __useResumableCode then
+                    if Awaiter.isCompleted awaiter then
+                        continuation(ExceptionCache.GetResultOrThrow awaiter).Invoke(&sm)
+                    else
+                        let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+
+                        if __stack_yield_fin then
+                            continuation(ExceptionCache.GetResultOrThrow awaiter).Invoke(&sm)
+                        else
+                            let mutable __stack_awaiter = awaiter
+                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&__stack_awaiter, &sm)
+                            false
+                else
+                    bindDynamic (&sm, awaiter, continuation))
+
+        [<NoEagerConstraintApplication>]
+        let inline bindCancellable
+            ([<InlineIfLambda>] cancellable, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>)
+            : Async2Code<'Data, 'T> =
+            Async2Code<'Data, 'T>(fun sm -> bindAwaiter(cancellable sm.Data.CancellationToken, continuation).Invoke(&sm))
 
     type Async2Builder() =
 
@@ -263,81 +296,6 @@ module Async2Implementation =
 
         member inline _.For(sequence: seq<'T>, [<InlineIfLambda>] body: 'T -> Async2Code<'TOverall, unit>) : Async2Code<'TOverall, unit> =
             ResumableCode.For(sequence, fun x -> body x |> throwIfCancellationRequested)
-
-        static member inline BindDynamic
-            (sm: byref<Async2StateMachine<_>>, awaiter, [<InlineIfLambda>] continuation: _ -> Async2Code<_, _>)
-            =
-            if Awaiter.isCompleted awaiter then
-                (Awaiter.getResult awaiter |> continuation).Invoke(&sm)
-            else
-                let resumptionFunc =
-                    Async2ResumptionFunc(fun sm ->
-                        let result = ExceptionCache.GetResultOrThrow awaiter
-                        (continuation result).Invoke(&sm))
-
-                sm.ResumptionDynamicInfo.ResumptionFunc <- resumptionFunc
-                sm.ResumptionDynamicInfo.ResumptionData <- Awaiting awaiter
-                false
-
-        member inline _.BindAwaiter
-            (awaiter: Awaiter<_, _>, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>)
-            : Async2Code<'Data, 'T> =
-            Async2Code(fun sm ->
-                if __useResumableCode then
-                    if Awaiter.isCompleted awaiter then
-                        continuation(ExceptionCache.GetResultOrThrow awaiter).Invoke(&sm)
-                    else
-                        let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
-
-                        if __stack_yield_fin then
-                            continuation(ExceptionCache.GetResultOrThrow awaiter).Invoke(&sm)
-                        else
-                            let mutable __stack_awaiter = awaiter
-                            sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&__stack_awaiter, &sm)
-                            false
-                else
-                    Async2Builder.BindDynamic(&sm, awaiter, continuation))
-
-        member inline this.BindCancellable
-            ([<InlineIfLambda>] binding: CancellableAwaiter<'U, 'Awaiter>, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>)
-            : Async2Code<'Data, 'T> =
-            Async2Code(fun sm -> this.BindAwaiter(binding sm.Data.CancellationToken, continuation).Invoke(&sm))
-
-        member inline this.Bind(code: Async2<'U>, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>) : Async2Code<'Data, 'T> =
-            Async2Code(fun sm -> this.BindCancellable((fun ct -> code.StartImmediate(ct).Task.GetAwaiter()), continuation).Invoke(&sm))
-
-        member inline this.Bind(awaiter, [<InlineIfLambda>] continuation) = this.BindAwaiter(awaiter, continuation)
-
-        member inline this.Bind(cancellable, [<InlineIfLambda>] continuation) =
-            this.BindCancellable(cancellable, continuation)
-
-        member inline this.ReturnFrom(code: Async2<'T>) : Async2Code<'T, 'T> = this.Bind(code, this.Return)
-
-        member inline this.ReturnFrom(awaiter) = this.BindAwaiter(awaiter, this.Return)
-
-        member inline this.ReturnFrom(cancellable) =
-            this.BindCancellable(cancellable, this.Return)
-
-        member inline this.ReturnFromFinal(code: Async2<'T>) =
-            Async2Code(fun sm ->
-                let __stack_ct = sm.Data.CancellationToken
-
-                match sm.Data.TailCallSource with
-                | ValueNone ->
-                    // This is the start of a tail call chain. we need to return here when the entire chain is done.
-                    let __stack_tcs = TaskCompletionSource<_>()
-                    code.TailCall(__stack_ct, ValueSome __stack_tcs)
-                    this.BindAwaiter(__stack_tcs.Task.GetAwaiter(), this.Return).Invoke(&sm)
-                | ValueSome tcs ->
-                    // We are already in a tail call chain.
-                    Trampoline.Current.Set(fun () -> code.TailCall(__stack_ct, ValueSome tcs))
-                    false // Return false to abandon this state machine and continue on the next one.
-            )
-
-        member inline this.ReturnFromFinal(awaiter) : Async2Code<'T, 'T> = this.BindAwaiter(awaiter, this.Return)
-
-        member inline this.ReturnFromFinal(cancellable) : Async2Code<'T, 'T> =
-            this.BindCancellable(cancellable, this.Return)
 
         static member inline RunDynamic(code: Async2Code<'T, 'T>) : Async2<'T> =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
@@ -394,7 +352,7 @@ module Async2Implementation =
                         sm.Data.MethodBuilder.SetStateMachine(state)
                 }
 
-            Async2ImplDynamic<_, _>(fun () -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo ()))
+            Async2Dynamic<_, _>(fun () -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo ()))
 
         member inline _.Run(code: Async2Code<'T, 'T>) : Async2<'T> =
             if __useResumableCode then
@@ -430,39 +388,72 @@ module Async2Implementation =
 
                     (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine state))
 
-                    (AfterCode<_, _>(fun sm -> Async2Impl<_, _>(StateMachine = sm) :> Async2<'T>))
+                    (AfterCode<_, _>(fun sm -> Async2<_, _>(StateMachine = sm) :> Async2<'T>))
             else
                 Async2Builder.RunDynamic(code)
 
-        member inline _.Source(code: Async2<_>) = code
+open Async2Implementation
+
+[<AutoOpen>]
+module LowPriority =
+    type Async2Builder with
+        [<NoEagerConstraintApplication>]
+        member inline this.Bind(awaitable, [<InlineIfLambda>] continuation) =
+            bindAwaiter (Awaitable.getAwaiter awaitable, continuation)
+
+        [<NoEagerConstraintApplication>]
+        member inline this.ReturnFrom(awaitable) = this.Bind(awaitable, this.Return)
+
+        [<NoEagerConstraintApplication>]
+        member inline this.ReturnFromFinal(awaitable) = this.ReturnFrom(awaitable)
+
+[<AutoOpen>]
+module MediumPriority =
+    type Async2Builder with
+        member inline this.Bind(expr: Async<_>, [<InlineIfLambda>] continuation) =
+            bindCancellable ((fun ct -> Async.StartAsTask(expr, cancellationToken = ct).GetAwaiter()), continuation)
+
+        member inline this.Bind(task: Task, [<InlineIfLambda>] continuation) =
+            bindAwaiter (task.ConfigureAwait(false).GetAwaiter(), continuation)
+
+        member inline this.Bind(task: Task<_>, [<InlineIfLambda>] continuation) =
+            bindAwaiter (task.ConfigureAwait(false).GetAwaiter(), continuation)
+
+        member inline this.ReturnFrom(task: Task) = this.Bind(task, this.Return)
+        member inline this.ReturnFrom(task: Task<_>) = this.Bind(task, this.Return)
+        member inline this.ReturnFrom(expr: Async<_>) = this.Bind(expr, this.Return)
+        member inline this.ReturnFromFinal(task: Task) = this.ReturnFrom(task)
+        member inline this.ReturnFromFinal(task: Task<_>) = this.ReturnFrom(task)
+        member inline this.ReturnFromFinal(expr: Async<_>) = this.ReturnFrom(expr)
+
+[<AutoOpen>]
+module HighPriority =
+
+    type Async2Builder with
+        member inline this.Bind(code: Async2<'U>, [<InlineIfLambda>] continuation) : Async2Code<'Data, 'T> =
+            bindCancellable ((fun ct -> code.StartImmediate(ct).GetAwaiter()), continuation)
+
+        member inline this.ReturnFrom(code: Async2<'T>) : Async2Code<'T, 'T> = this.Bind(code, this.Return)
+
+        member inline this.ReturnFromFinal(code: Async2<'T>) =
+            Async2Code(fun sm ->
+                match sm.Data.TailCallSource with
+                | ValueNone ->
+                    // This is the start of a tail call chain. we need to return here when the entire chain is done.
+                    let __stack_tcs = TaskCompletionSource<_>()
+                    code.TailCall(sm.Data.CancellationToken, ValueSome __stack_tcs)
+                    this.Bind(__stack_tcs.Task, this.Return).Invoke(&sm)
+                | ValueSome tcs ->
+                    // We are already in a tail call chain.
+                    let __stack_ct = sm.Data.CancellationToken
+                    Trampoline.Current.Set(fun () -> code.TailCall(__stack_ct, ValueSome tcs))
+                    false // Return false to abandon this state machine and continue on the next one.
+            )
 
 [<AutoOpen>]
 module Async2AutoOpens =
-    open Async2Implementation
 
     let async2 = Async2Builder()
-
-[<AutoOpen>]
-module Async2LowPriority =
-    open Async2Implementation
-
-    type Async2Builder with
-        member inline _.Source(awaitable: Awaitable<_, _, _>) = awaitable.GetAwaiter()
-
-        member inline _.Source(items: _ seq) : _ seq = upcast items
-
-[<AutoOpen>]
-module Async2MediumPriority =
-    open Async2Implementation
-
-    type Async2Builder with
-        member inline _.Source(task: Task) = task.ConfigureAwait(false).GetAwaiter()
-        member inline _.Source(task: Task<_>) = task.ConfigureAwait(false).GetAwaiter()
-
-        member inline this.Source(expr: Async<'T>) : CancellableAwaiter<_, _> =
-            fun ct -> Async.StartAsTask(expr, cancellationToken = ct).GetAwaiter()
-
-open Async2Implementation
 
 module Async2 =
 
