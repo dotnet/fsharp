@@ -376,13 +376,15 @@ module CompilerAssertHelpers =
         let setup = AppDomainSetup(ApplicationBase = thisAssemblyDirectory)
         let testCaseDomain = AppDomain.CreateDomain($"built app {assembly}", null, setup)
 
-        testCaseDomain.add_AssemblyResolve(fun _ args ->
+        let handler = ResolveEventHandler(fun _ args ->
             dependecies
             |> List.tryFind (fun path -> Path.GetFileNameWithoutExtension path = AssemblyName(args.Name).Name)
             |> Option.filter FileSystem.FileExistsShim
             |> Option.map Assembly.LoadFile
             |> Option.toObj
         )
+
+        testCaseDomain.add_AssemblyResolve handler
 
         let worker =
             (testCaseDomain.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
@@ -391,8 +393,8 @@ module CompilerAssertHelpers =
         // Replay streams captured in appdomain.
         printf $"{output}"
         eprintf $"{errors}"
-        
-        AppDomain.Unload testCaseDomain
+
+        testCaseDomain.remove_AssemblyResolve handler
         
         outcome, output, errors
 
@@ -627,8 +629,6 @@ module CompilerAssertHelpers =
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
 #endif
         let rc, output, errors = Commands.executeProcess fileName arguments (Path.GetDirectoryName(outputFilePath))
-        let output = String.Join(Environment.NewLine, output)
-        let errors = String.Join(Environment.NewLine, errors)
         ExitCode rc, output, errors
 
 open CompilerAssertHelpers

@@ -1722,20 +1722,36 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | ParentNone -> None
         | Parent p -> FSharpEntity(cenv, p) |> Some
 
-    member _.ApparentEnclosingEntity: FSharpEntity = 
+    member _.ApparentEnclosingEntity: FSharpEntity option = 
         let createEntity (ttype: TType) =
-            let tcref, tyargs = destAppTy cenv.g ttype
-            FSharpEntity(cenv, tcref, tyargs)
+            match tryAppTy cenv.g ttype with
+            | ValueSome(tcref, tyargs) -> Some(FSharpEntity(cenv, tcref, tyargs))
+            | _ -> None
 
         checkIsResolved()
-        match d with 
+
+        match d with
         | E e -> createEntity e.ApparentEnclosingType
         | P p -> createEntity p.ApparentEnclosingType
         | M m | C m -> createEntity m.ApparentEnclosingType
-        | V v -> 
-        match v.ApparentEnclosingEntity with 
-        | ParentNone -> invalidOp "the value or member doesn't have a logical parent" 
-        | Parent p -> FSharpEntity(cenv, p)
+        | V v ->
+
+        match v.ApparentEnclosingEntity with
+        | ParentNone -> invalidOp "the value or member doesn't have a logical parent"
+        | Parent p -> Some(FSharpEntity(cenv, p))
+
+    member _.ApparentEnclosingType: FSharpType =
+        checkIsResolved()
+
+        match d with
+        | E e -> FSharpType(cenv, e.ApparentEnclosingType)
+        | P p -> FSharpType(cenv, p.ApparentEnclosingType)
+        | M m | C m -> FSharpType(cenv, m.ApparentEnclosingType)
+        | V v ->
+
+        match v.ApparentEnclosingEntity with
+        | ParentNone -> invalidOp "the value or member doesn't have a logical parent"
+        | Parent p -> FSharpType(cenv, generalizedTyconRef cenv.g p)
 
     member _.GenericParameters = 
         checkIsResolved()
