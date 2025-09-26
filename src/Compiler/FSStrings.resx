@@ -238,10 +238,10 @@
     <value>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</value>
   </data>
   <data name="NonRigidTypar2" xml:space="preserve">
-    <value>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</value>
+    <value>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0}' has been constrained to be measure '{1}'.</value>
   </data>
   <data name="NonRigidTypar3" xml:space="preserve">
-    <value>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</value>
+    <value>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0}' has been constrained to be type '{1}'.</value>
   </data>
   <data name="Parser.TOKEN.IDENT" xml:space="preserve">
     <value>identifier</value>
