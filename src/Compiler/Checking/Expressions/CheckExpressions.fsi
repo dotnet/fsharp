@@ -895,6 +895,9 @@ val UnifyTupleTypeAndInferCharacteristics:
     'T list ->
         TupInfo * TTypes
 
+/// Helper used to check for duplicate fields in records.
+val CheckRecdExprDuplicateFields: elems: Ident list -> unit
+
 /// Helper used to check both record expressions and record patterns
 val BuildFieldMap:
     cenv: TcFileState ->

@@ -457,6 +457,14 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
+    let idents =
+        fieldPats
+        |> List.map (fun fieldPat ->
+            let (|FrontAndBack|) = List.frontAndBack
+            match fieldPat with
+            | NamePatPairField (fieldName = SynLongIdent (id = [fieldId]))
+            | NamePatPairField (fieldName = SynLongIdent (id = FrontAndBack (_, fieldId))) -> fieldId)
+
     let fieldPats =
         fieldPats 
         |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
@@ -464,6 +472,7 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
             | [id] -> ExplicitOrSpread.Explicit (([], id), pat)
             | lid -> ExplicitOrSpread.Explicit (List.frontAndBack lid, pat))
     
+    CheckRecdExprDuplicateFields idents
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->

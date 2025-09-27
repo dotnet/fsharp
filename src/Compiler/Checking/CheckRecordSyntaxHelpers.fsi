@@ -17,9 +17,9 @@ val TransformAstForNestedUpdates:
     env: TcEnv ->
     overallTy: TType ->
     lid: LongIdent ->
-    exprBeingAssigned: ExplicitOrSpread<SynExpr, 'Spread> ->
+    exprBeingAssigned: SynExpr ->
     withExpr: SynExpr * BlockSeparator ->
-        ExplicitOrSpread<(Ident list * Ident) * SynExpr option, (Ident list * Ident) * 'Spread option>
+        (Ident list * Ident) * SynExpr option
 
 val BindOriginalRecdExpr:
     withExpr: SynExpr * BlockSeparator -> mkRecdExpr: ((SynExpr * BlockSeparator) option -> SynExpr) -> SynExpr

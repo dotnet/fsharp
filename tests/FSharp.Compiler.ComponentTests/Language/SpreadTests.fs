@@ -1203,10 +1203,9 @@ module NominalAndAnonymousRecords =
                 |> typecheck
                 |> shouldFail
                 |> withDiagnostics [
-                    Error 37, Line 4, Col 46, Line 4, Col 51, "Duplicate definition of field 'A'"
+                    Error 668, Line 4, Col 46, Line 4, Col 51, "The field 'A' appears multiple times in this record expression or pattern"
                     Warning 3883, Line 4, Col 53, Line 4, Col 67, "Spread field 'A: int' shadows an explicitly declared field with the same name."
-                    Error 37, Line 4, Col 69, Line 4, Col 74, "Duplicate definition of field 'A'"
-                    Error 668, Line 4, Col 59, Line 4, Col 60, "The field 'A' appears multiple times in this record expression or pattern"
+                    Error 668, Line 4, Col 69, Line 4, Col 74, "The field 'A' appears multiple times in this record expression or pattern"
                 ]
 
             /// Extra fields are ignored.

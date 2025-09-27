@@ -151,11 +151,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
     match access, fields with
     | _, [] -> failwith "unreachable"
-    | accessIds, [ (fieldId, _) ] ->
-        match exprBeingAssigned with
-        | ExplicitOrSpread.Explicit exprBeingAssigned -> ExplicitOrSpread.Explicit((accessIds, fieldId), Some exprBeingAssigned)
-        | ExplicitOrSpread.Spread exprBeingAssigned -> ExplicitOrSpread.Spread((accessIds, fieldId), Some exprBeingAssigned)
-
+    | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), Some exprBeingAssigned
     | accessIds, (outerFieldId, item) :: rest ->
         checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
 
@@ -163,13 +159,8 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
         let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())
 
-        match exprBeingAssigned with
-        | ExplicitOrSpread.Explicit synExpr ->
-            ExplicitOrSpread.Explicit(
-                (accessIds, outerFieldId),
-                Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest synExpr)
-            )
-        | ExplicitOrSpread.Spread exprBeingAssigned -> ExplicitOrSpread.Spread((accessIds, outerFieldId), Some exprBeingAssigned)
+        (accessIds, outerFieldId),
+        Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
 
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update

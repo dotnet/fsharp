@@ -1918,11 +1918,6 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ExplicitOrSpread<(Ident l
     let ad = env.eAccessRights
 
     let allFields = flds |> List.map (fun (ExplicitOrSpread.Explicit ((_, ident), _) | ExplicitOrSpread.Spread ((_, ident), _)) -> ident)
-    if allFields.Length > 1 then
-        // In the case of nested record fields on the same level in record copy-and-update.
-        // We need to reverse the list to get the correct order of fields.
-        let idents = if isPartial then allFields |> List.rev else allFields
-        CheckRecdExprDuplicateFields idents
 
     let fldResolutions =
         flds
@@ -7804,11 +7799,15 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                         // we assume that parse errors were already reported
                         raise (ReportedError None)
 
-                    let ExplicitOrSpread.Explicit ((_, fieldId), _) | ExplicitOrSpread.Spread ((_, fieldId), _) as field =
+                    let isFromNestedUpdate, fieldId, field =
                         match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
-                        | _, [ id ], _ -> ExplicitOrSpread.Explicit (([], id), exprBeingAssigned)
-                        | Some (origExpr, blockSep), lid, Some exprBeingAssigned -> TransformAstForNestedUpdates cenv env overallTy lid (ExplicitOrSpread.Explicit exprBeingAssigned) (origExpr, blockSep)
-                        | _ -> ExplicitOrSpread.Explicit (List.frontAndBack synLongId.LongIdent, exprBeingAssigned)
+                        | _, [ id ], _ -> false, id, ExplicitOrSpread.Explicit (([], id), exprBeingAssigned)
+                        | Some (origExpr, blockSep), lid, Some exprBeingAssigned ->
+                            let _, id as longIdent, exprBeingAssigned = TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned (origExpr, blockSep)
+                            true, id, ExplicitOrSpread.Explicit (longIdent, exprBeingAssigned)
+                        | _ ->
+                            let _, id as longIdent = List.frontAndBack synLongId.LongIdent
+                            false, id, ExplicitOrSpread.Explicit (longIdent, exprBeingAssigned)
 
                     let flds =
                         flds |> Map.change fieldId.idText (function
@@ -7827,7 +7826,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                             //
                             // Keep both, but error.
                             | Some (LeftwardExplicit, dupes) ->
-                                errorR (Duplicate ("field", fieldId.idText, m))
+                                if not isFromNestedUpdate then
+                                    errorR (Error (FSComp.SR.tcMultipleFieldsInRecord fieldId.idText, m))
                                 Some (LeftwardExplicit, (i, field) :: dupes)
 
                             // Rightward explicit field shadowing leftward spread field.
@@ -8359,11 +8359,13 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
                 List.rev spreadSrcs, fieldsInOriginalOrder, tpenv
 
             | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = synLongIdent; expr = exprBeingAssigned; range = m), _) :: fieldsAndSpreads ->
-                let ExplicitOrSpread.Explicit ((_, fieldId), _) | ExplicitOrSpread.Spread ((_, fieldId), _) as field =
+                let isFromNestedUpdate, fieldId, field =
                     match synLongIdent.LongIdent with
                     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), mWholeExpr))
-                    | [ id ] -> ExplicitOrSpread.Explicit (([], id), Some exprBeingAssigned)
-                    | lid -> TransformAstForNestedUpdates cenv env origExprTy lid (ExplicitOrSpread.Explicit exprBeingAssigned) (origExpr, blockSeparator)
+                    | [ id ] -> false, id, ExplicitOrSpread.Explicit (([], id), Some exprBeingAssigned)
+                    | lid ->
+                        let _, id as longIdent, exprBeingAssigned = TransformAstForNestedUpdates cenv env origExprTy lid exprBeingAssigned (origExpr, blockSeparator)
+                        true, id, ExplicitOrSpread.Explicit (longIdent, exprBeingAssigned)
 
                 let flds =
                     flds |> Map.change fieldId.idText (function
@@ -8382,7 +8384,8 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
                         //
                         // Keep both, but error.
                         | Some (LeftwardExplicit, dupes) ->
-                            errorR (Error (FSComp.SR.tcAnonRecdDuplicateFieldId fieldId.idText, m))
+                            if not isFromNestedUpdate then
+                                errorR (Error (FSComp.SR.tcAnonRecdDuplicateFieldId fieldId.idText, m))
                             Some (LeftwardExplicit, (i, field) :: dupes)
 
                         // Rightward explicit field shadowing leftward spread field.
