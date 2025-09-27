@@ -16,7 +16,7 @@ module ActivityNames =
 
     val AllRelevantNames: string[]
 
-module Metrics =
+module internal Metrics =
     val Meter: Meter
 
 /// For activities following the dotnet distributed tracing concept
