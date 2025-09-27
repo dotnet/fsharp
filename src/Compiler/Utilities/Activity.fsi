@@ -2,7 +2,7 @@
 namespace FSharp.Compiler.Diagnostics
 
 open System
-open Internal.Utilities.Library
+open System.Diagnostics.Metrics
 
 /// For activities following the dotnet distributed tracing concept
 /// https://learn.microsoft.com/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
@@ -15,6 +15,9 @@ module ActivityNames =
     val ProfiledSourceName: string = "fsc_with_env_stats"
 
     val AllRelevantNames: string[]
+
+module Metrics =
+    val Meter: Meter
 
 /// For activities following the dotnet distributed tracing concept
 /// https://learn.microsoft.com/dotnet/core/diagnostics/distributed-tracing-concepts?source=recommendations
