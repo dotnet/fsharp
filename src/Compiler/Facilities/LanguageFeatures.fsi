@@ -96,6 +96,7 @@ type LanguageFeature =
     | ErrorOnInvalidDeclsInTypeDefinitions
     | AllowTypedLetUseAndBang
     | ReturnFromFinal
+    | RecordSpreads
 
 /// LanguageVersion management
 type LanguageVersion =

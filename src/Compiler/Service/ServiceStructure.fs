@@ -440,7 +440,9 @@ module Structure =
                 | _ -> ()
 
                 recordFields
-                |> List.choose (fun (SynExprRecordField(expr = e)) -> e)
+                |> List.choose (function
+                    | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = e)) -> e
+                    | _ -> None (* TODO. *) )
                 |> List.iter parseExpr
                 // exclude the opening `{` and closing `}` of the record from collapsing
                 let m = Range.modBoth 1 1 r
@@ -607,7 +609,7 @@ module Structure =
                     rcheck Scope.EnumCase Collapse.Below cr cr
                     parseAttributes attrs
 
-            | SynTypeDefnSimpleRepr.Record(_, fields, rr) ->
+            | SynTypeDefnSimpleRepr.Record(_, SynFields fields, rr) ->
                 rcheck Scope.RecordDefn Collapse.Same rr rr
 
                 for SynField(attributes = attrs; range = fr) in fields do

@@ -821,7 +821,9 @@ module ParsedInput =
             | SynExpr.Record(_, _, fields, r) ->
                 ifPosInRange r (fun _ ->
                     fields
-                    |> List.tryPick (fun (SynExprRecordField(expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)))
+                    |> List.tryPick (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)
+                        | _ -> None (* TODO. *) ))
 
             | SynExpr.ObjExpr(objType = ty; bindings = bindings; members = ms; extraImpls = ifaces) ->
                 let bindings = unionBindingAndMembers bindings ms
@@ -868,6 +870,8 @@ module ParsedInput =
         and walkField synField =
             let (SynField(attributes = Attributes attrs; fieldType = t)) = synField
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
+
+        and walkTypeSpread (SynTypeSpread(ty = ty)) = walkType ty
 
         and walkValSig synValSig =
             let (SynValSig(attributes = Attributes attrs; synType = t)) = synValSig
@@ -942,7 +946,12 @@ module ParsedInput =
             match synTypeDefn with
             | SynTypeDefnSimpleRepr.Enum(cases, _) -> List.tryPick walkEnumCase cases
             | SynTypeDefnSimpleRepr.Union(_, cases, _) -> List.tryPick walkUnionCase cases
-            | SynTypeDefnSimpleRepr.Record(_, fields, _) -> List.tryPick walkField fields
+            | SynTypeDefnSimpleRepr.Record(_, fields, _) ->
+                List.tryPick
+                    (function
+                    | SynFieldOrSpread.Field field -> walkField field
+                    | SynFieldOrSpread.Spread spread -> walkTypeSpread spread)
+                    fields
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> None
 
@@ -1504,7 +1513,9 @@ module ParsedInput =
                         | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
                             let isFirstField =
                                 match field, fields with
-                                | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
+                                | Some contextLid, SynExprRecordFieldOrSpread.Field(SynExprRecordField(fieldName = lid, _)) :: _ ->
+                                    contextLid.Range = lid.Range
+                                // TODO: spreads.
                                 | _ -> false
 
                             RecordContext.New(completionPath, isFirstField)
@@ -1793,13 +1804,19 @@ module ParsedInput =
 
                 member _.VisitRecordDefn(_, fields, range) =
                     fields
-                    |> List.tryPick (fun (SynField(idOpt = idOpt; range = fieldRange; fieldType = fieldType)) ->
-                        match idOpt, fieldType with
-                        | Some id, _ when rangeContainsPos id.idRange pos ->
-                            Some(CompletionContext.RecordField(RecordContext.Declaration true))
-                        | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
-                        | _, SynType.FromParseError _ -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
-                        | _ -> None)
+                    |> List.tryPick (function
+                        | SynFieldOrSpread.Field(SynField(idOpt = idOpt; range = fieldRange; fieldType = fieldType)) ->
+                            match idOpt, fieldType with
+                            | Some id, _ when rangeContainsPos id.idRange pos ->
+                                Some(CompletionContext.RecordField(RecordContext.Declaration true))
+                            | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                            | _, SynType.FromParseError _ -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                            | _ -> None
+                        | SynFieldOrSpread.Spread(SynTypeSpread(ty = ty)) ->
+                            if rangeContainsPos ty.Range pos then
+                                Some CompletionContext.Type
+                            else
+                                None)
                     // No completions in a record outside of all fields, except in attributes, which is established earlier in VisitAttributeApplication
                     |> Option.orElseWith (fun _ ->
                         if rangeContainsPos range pos then
@@ -2085,9 +2102,11 @@ module ParsedInput =
 
             | SynExpr.Record(recordFields = fields) ->
                 fields
-                |> List.iter (fun (SynExprRecordField(fieldName = (ident, _); expr = e)) ->
-                    addLongIdentWithDots ident
-                    e |> Option.iter walkExpr)
+                |> List.iter (function
+                    | SynExprRecordFieldOrSpread.Field(SynExprRecordField(fieldName = (ident, _); expr = e)) ->
+                        addLongIdentWithDots ident
+                        e |> Option.iter walkExpr
+                    | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> walkExpr e)
 
             | SynExpr.Ident ident -> addIdent ident
 
@@ -2210,6 +2229,8 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
 
+        and walkTypeSpread (SynTypeSpread(ty = ty)) = walkType ty
+
         and walkValSig (SynValSig(attributes = Attributes attrs; synType = t; arity = SynValInfo(argInfos, argInfo))) =
             List.iter walkAttribute attrs
             walkType t
@@ -2281,7 +2302,12 @@ module ParsedInput =
             match typeDefn with
             | SynTypeDefnSimpleRepr.Enum(cases, _) -> List.iter walkEnumCase cases
             | SynTypeDefnSimpleRepr.Union(_, cases, _) -> List.iter walkUnionCase cases
-            | SynTypeDefnSimpleRepr.Record(_, fields, _) -> List.iter walkField fields
+            | SynTypeDefnSimpleRepr.Record(_, fields, _) ->
+                List.iter
+                    (function
+                    | SynFieldOrSpread.Field field -> walkField field
+                    | SynFieldOrSpread.Spread spread -> walkTypeSpread spread)
+                    fields
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> ()
 

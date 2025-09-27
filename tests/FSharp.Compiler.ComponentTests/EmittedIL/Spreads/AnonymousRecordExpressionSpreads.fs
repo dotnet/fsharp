@@ -1,0 +1,59 @@
+module EmittedIL.AnonymousRecordExpressionSpreads
+
+open FSharp.Test
+open FSharp.Test.Compiler
+open Xunit
+
+let [<Literal>] SupportedLangVersion = "preview"
+
+let verifyCompilation compilation =
+    compilation
+    |> withLangVersion SupportedLangVersion
+    |> asExe
+    |> withEmbeddedPdb
+    |> withEmbedAllSource
+    |> ignoreWarnings
+    |> compile
+    |> verifyILBaseline
+
+[<Theory; FileInlineData("Expression_Anonymous_ExplicitShadowsSpread.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_ExplicitShadowsSpread_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
+
+[<Theory; FileInlineData("Expression_Anonymous_ExtraFieldsAreIgnored.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_ExtraFieldsAreIgnored_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
+
+[<Theory; FileInlineData("Expression_Anonymous_NoOverlap_Explicit_Spread.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_NoOverlap_Explicit_Spread_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
+
+[<Theory; FileInlineData("Expression_Anonymous_NoOverlap_Spread_Explicit.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_NoOverlap_Spread_Explicit_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
+
+[<Theory; FileInlineData("Expression_Anonymous_NoOverlap_Spread_Spread.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_NoOverlap_Spread_Spread_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
+
+[<Theory; FileInlineData("Expression_Anonymous_SpreadShadowsExplicit.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_SpreadShadowsExplicit_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
+
+[<Theory; FileInlineData("Expression_Anonymous_SpreadShadowsSpread.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Expression_Anonymous_SpreadShadowsSpread_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
