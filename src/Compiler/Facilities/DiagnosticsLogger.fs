@@ -16,6 +16,7 @@ open System.Runtime.InteropServices
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open System.Threading.Tasks
+open System.Collections.Concurrent
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -868,35 +869,74 @@ let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFea
     let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
+module StackGuardMetrics =
+
+    let meter = FSharp.Compiler.Diagnostics.Metrics.Meter
+
+    let jumpCounter =
+        meter.CreateCounter<int64>(
+            "stackguard-jumps",
+            description = "Tracks the number of times the stack guard has jumped to a new thread"
+        )
+
+    let countJump memberName =
+        let tags =
+            let mutable tags = TagList()
+            tags.Add(Activity.Tags.callerMemberName, memberName)
+            tags
+
+        jumpCounter.Add(1L, &tags)
+
+    // Used by the self-listener.
+    let jumpsByFunctionName = ConcurrentDictionary<string, int64 ref>()
+
+    let Listen () =
+        let listener = new Metrics.MeterListener()
+
+        listener.EnableMeasurementEvents jumpCounter
+
+        listener.SetMeasurementEventCallback(fun _ v tags _ ->
+            let memberName = nonNull tags[0].Value :?> string
+            let counter = jumpsByFunctionName.GetOrAdd(memberName, fun _ -> ref 0L)
+            Interlocked.Add(counter, v) |> ignore)
+
+        listener.Start()
+        listener :> IDisposable
+
+    let StatsToString () =
+        let entries =
+            jumpsByFunctionName
+            |> Seq.map (fun kvp -> $"{kvp.Key}: {kvp.Value.Value}")
+            |> String.concat ", "
+
+        if entries.Length > 0 then
+            $"StackGuard jumps: {entries} \n"
+        else
+            ""
+
+    let CaptureStatsAndWriteToConsole () =
+        let listener = Listen()
+
+        { new IDisposable with
+            member _.Dispose() =
+                listener.Dispose()
+                StatsToString() |> printfn "%s"
+        }
+
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
 type StackGuard(maxDepth: int, name: string) =
 
     let mutable depth = 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Guard
-        (
-            f,
-            [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
-            [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
-            [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
-        ) =
-
-        Activity.addEventWithTags
-            "DiagnosticsLogger.StackGuard.Guard"
-            (seq {
-                Activity.Tags.stackGuardName, box name
-                Activity.Tags.stackGuardCurrentDepth, depth
-                Activity.Tags.stackGuardMaxDepth, maxDepth
-                Activity.Tags.callerMemberName, memberName
-                Activity.Tags.callerFilePath, path
-                Activity.Tags.callerLineNumber, line
-            })
+    member _.Guard(f, [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) =
 
         depth <- depth + 1
 
         try
             if depth % maxDepth = 0 then
+
+                StackGuardMetrics.countJump memberName
 
                 async {
                     do! Async.SwitchToNewThread()

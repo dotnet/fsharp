@@ -10,7 +10,7 @@ open System.Diagnostics.Metrics
 open System.IO
 
 module CacheMetrics =
-    let Meter = new Meter("FSharp.Compiler.Cache")
+    let Meter = FSharp.Compiler.Diagnostics.Metrics.Meter
     let adds = Meter.CreateCounter<int64>("adds", "count")
     let updates = Meter.CreateCounter<int64>("updates", "count")
     let hits = Meter.CreateCounter<int64>("hits", "count")

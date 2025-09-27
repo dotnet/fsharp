@@ -18,6 +18,9 @@ module ActivityNames =
 
     let AllRelevantNames = [| FscSourceName; ProfiledSourceName |]
 
+module Metrics =
+    let Meter = new Metrics.Meter(ActivityNames.FscSourceName, "1.0.0")
+
 [<RequireQualifiedAccess>]
 module internal Activity =
 
