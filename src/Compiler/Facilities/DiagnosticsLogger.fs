@@ -870,7 +870,6 @@ let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFea
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
 module StackGuardMetrics =
-    open System.Diagnostics.Metrics
 
     let meter = FSharp.Compiler.Diagnostics.Metrics.Meter
 
@@ -883,7 +882,7 @@ module StackGuardMetrics =
     let countJump memberName =
         let tags =
             let mutable tags = TagList()
-            tags.Add("caller", memberName)
+            tags.Add(Activity.Tags.callerMemberName, memberName)
             tags
 
         jumpCounter.Add(1L, &tags)
@@ -892,7 +891,7 @@ module StackGuardMetrics =
     let jumpsByFunctionName = ConcurrentDictionary<string, int64 ref>()
 
     let Listen () =
-        let listener = new MeterListener()
+        let listener = new Metrics.MeterListener()
 
         listener.EnableMeasurementEvents jumpCounter
 
