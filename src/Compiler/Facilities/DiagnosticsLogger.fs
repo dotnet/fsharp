@@ -909,10 +909,6 @@ type StackGuard(maxDepth: int, name: string) =
         finally
             depth <- depth - 1
 
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member x.GuardCancellable(original: Cancellable<'T>) =
-        Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
-
     static member val DefaultDepth =
 #if DEBUG
         GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
@@ -926,7 +922,7 @@ type StackGuard(maxDepth: int, name: string) =
 // UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
 // We should probably adapt and reuse that code.
 module MultipleDiagnosticsLoggers =
-    let Parallel computations =
+    let Parallel (computations: Async2<_> seq) =
         let computationsWithLoggers, diagnosticsReady =
             [
                 for i, computation in computations |> Seq.indexed do
@@ -936,7 +932,7 @@ module MultipleDiagnosticsLoggers =
 
                     // Inject capturing logger into the computation. Signal the TaskCompletionSource when done.
                     let computationsWithLoggers =
-                        async {
+                        async2 {
                             SetThreadDiagnosticsLoggerNoUnwind logger
 
                             try
@@ -959,11 +955,11 @@ module MultipleDiagnosticsLoggers =
                     finishedLogger.CommitDelayedDiagnostics target
             }
 
-        async {
+        async2 {
             try
                 // We want to restore the current diagnostics context when finished.
                 use _ = new CompilationGlobalsScope()
-                let! results = Async.Parallel computationsWithLoggers
+                let! results = Async2.Parallel computationsWithLoggers
                 do! replayDiagnostics |> Async.AwaitTask
                 return results
             finally
@@ -978,8 +974,8 @@ module MultipleDiagnosticsLoggers =
                     replayDiagnostics.Wait()
         }
 
-    let Sequential computations =
-        async {
+    let Sequential (computations: Async2<_> seq) =
+        async2 {
             let results = ResizeArray()
 
             for computation in computations do
