@@ -4,6 +4,7 @@ open System
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.CompilerServices
 
@@ -15,16 +16,11 @@ type IAsync2Invocation<'t> =
 
 and Async2<'t> =
     abstract StartImmediate: CancellationToken -> IAsync2Invocation<'t>
+    abstract StartBound: CancellationToken -> TaskAwaiter<'t>
     abstract TailCall: CancellationToken * TaskCompletionSource<'t> voption -> unit
     abstract GetAwaiter: unit -> TaskAwaiter<'t>
 
 module Async2Implementation =
-
-    open System.Runtime.ExceptionServices
-
-    let failIfNot condition message =
-        if not condition then
-            failwith message
 
     /// A structure that looks like an Awaiter
     type Awaiter<'Awaiter, 'TResult
@@ -54,22 +50,30 @@ module Async2Implementation =
         | Bounce of DynamicState
         | Immediate of DynamicState
 
+    module BindContext =
+        let bindCount = new ThreadLocal<int>()
+
+        [<Literal>]
+        let bindLimit = 100
+
+        let IncrementBindCount () =
+            bindCount.Value <- bindCount.Value + 1
+            bindCount.Value >= bindLimit
+
+        let Reset () = bindCount.Value <- 0
+
     type Trampoline private () =
 
         let ownerThreadId = Thread.CurrentThread.ManagedThreadId
 
         static let holder = new ThreadLocal<_>(fun () -> Trampoline())
 
-        [<Literal>]
-        static let bindLimit = 100
-
-        let mutable bindCount = 0
-
         let mutable pending: Action voption = ValueNone
         let mutable running = false
 
         let start (action: Action) =
             try
+                BindContext.Reset()
                 running <- true
                 action.Invoke()
 
@@ -81,10 +85,10 @@ module Async2Implementation =
                 running <- false
 
         let set action =
-            failIfNot (Thread.CurrentThread.ManagedThreadId = ownerThreadId) "Trampoline used from wrong thread"
-            failIfNot pending.IsNone "Trampoline used while already pending"
+            assert (Thread.CurrentThread.ManagedThreadId = ownerThreadId) // "Trampoline used from wrong thread"
+            assert pending.IsNone // "Trampoline set while already pending"
 
-            bindCount <- 0
+            BindContext.Reset()
 
             if running then
                 pending <- ValueSome action
@@ -96,14 +100,6 @@ module Async2Implementation =
             member _.UnsafeOnCompleted continuation = set continuation
 
         member this.Ref: ICriticalNotifyCompletion ref = ref this
-
-        member this.Set action = set action
-
-        member this.Reset() = bindCount <- 0
-
-        member _.IncrementBindCount() =
-            bindCount <- bindCount + 1
-            bindCount >= bindLimit
 
         static member Current = holder.Value
 
@@ -148,6 +144,9 @@ module Async2Implementation =
         [<DefaultValue(false)>]
         val mutable CancellationToken: CancellationToken
 
+        [<DefaultValue(false)>]
+        val mutable IsBound: bool
+
     type Async2StateMachine<'TOverall> = ResumableStateMachine<Async2Data<'TOverall>>
     type IAsync2StateMachine<'TOverall> = IResumableStateMachine<Async2Data<'TOverall>>
     type Async2ResumptionFunc<'TOverall> = ResumptionFunc<Async2Data<'TOverall>>
@@ -160,11 +159,12 @@ module Async2Implementation =
         [<DefaultValue(false)>]
         val mutable StateMachine: 'm
 
-        member ts.Start(ct, tc) =
+        member ts.Start(ct, tailCallSource, isBound) =
             let mutable copy = ts
             let mutable data = Async2Data()
             data.CancellationToken <- ct
-            data.TailCallSource <- tc
+            data.TailCallSource <- tailCallSource
+            data.IsBound <- isBound
             data.MethodBuilder <- AsyncTaskMethodBuilder<'t>.Create()
             copy.StateMachine.Data <- data
             copy.StateMachine.Data.MethodBuilder.Start(&copy.StateMachine)
@@ -177,29 +177,39 @@ module Async2Implementation =
                 ts.StateMachine.Data.MethodBuilder.Task.GetAwaiter()
 
         interface Async2<'t> with
-            member ts.StartImmediate ct = ts.Start(ct, ValueNone)
-            member ts.TailCall(ct, tc) = ts.Start(ct, tc) |> ignore
+            member ts.StartImmediate ct = ts.Start(ct, ValueNone, false)
+
+            member ts.StartBound ct =
+                ts.Start(ct, ValueNone, true).GetAwaiter()
+
+            member ts.TailCall(ct, tc) = ts.Start(ct, tc, true) |> ignore
 
             member ts.GetAwaiter() =
-                ts.Start(CancellationToken.None, ValueNone).GetAwaiter()
+                ts.Start(CancellationToken.None, ValueNone, true).GetAwaiter()
 
-    type Async2Dynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: unit -> 'm) =
-        member ts.GetCopy() =
-            Async2(StateMachine = getCopy ()) :> Async2<_>
+    type Async2Dynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: bool -> 'm) =
+        member ts.GetCopy isBound =
+            Async2(StateMachine = getCopy isBound) :> Async2<_>
 
         interface Async2<'t> with
-            member ts.StartImmediate ct = ts.GetCopy().StartImmediate(ct)
-            member ts.TailCall(ct, tc) = ts.GetCopy().TailCall(ct, tc) |> ignore
-            member ts.GetAwaiter() = ts.GetCopy().GetAwaiter()
+            member ts.StartImmediate ct = ts.GetCopy(false).StartImmediate(ct)
+            member ts.StartBound ct = ts.GetCopy(true).StartBound(ct)
+
+            member ts.TailCall(ct, tc) =
+                ts.GetCopy(true).TailCall(ct, tc) |> ignore
+
+            member ts.GetAwaiter() = ts.GetCopy(true).GetAwaiter()
 
     [<AutoOpen>]
     module Async2Code =
         let inline filterCancellation ([<InlineIfLambda>] catch: exn -> Async2Code<_, _>) (exn: exn) =
             Async2Code(fun sm ->
-                let ct = sm.Data.CancellationToken
-
                 match exn with
-                | :? OperationCanceledException as oce when ct.IsCancellationRequested || oce.CancellationToken = ct -> raise exn
+                | :? OperationCanceledException as oce when
+                    sm.Data.CancellationToken.IsCancellationRequested
+                    || oce.CancellationToken = sm.Data.CancellationToken
+                    ->
+                    raise exn
                 | _ -> (catch exn).Invoke(&sm))
 
         let inline throwIfCancellationRequested (code: Async2Code<_, _>) =
@@ -209,7 +219,7 @@ module Async2Implementation =
 
         let inline yieldOnBindLimit () =
             Async2Code(fun sm ->
-                if Trampoline.Current.IncrementBindCount() then
+                if BindContext.IncrementBindCount() then
                     let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
 
                     if not __stack_yield_fin then
@@ -249,7 +259,6 @@ module Async2Implementation =
                 else
                     bindDynamic (&sm, awaiter, continuation))
 
-        [<NoEagerConstraintApplication>]
         let inline bindCancellable
             ([<InlineIfLambda>] cancellable, [<InlineIfLambda>] continuation: 'U -> Async2Code<'Data, 'T>)
             : Async2Code<'Data, 'T> =
@@ -301,13 +310,15 @@ module Async2Implementation =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
 
             let maybeBounce state =
-                if Trampoline.Current.IncrementBindCount() then
+                if BindContext.IncrementBindCount() then
                     Bounce state
                 else
                     Immediate state
 
-            let resumptionInfo () =
-                { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc, ResumptionData = (maybeBounce Running)) with
+            let resumptionInfo isBound =
+                let initialState = if isBound then maybeBounce Running else Immediate Running
+
+                { new Async2ResumptionDynamicInfo<'T>(initialResumptionFunc, ResumptionData = initialState) with
                     member info.MoveNext(sm) =
 
                         let getCurrent () =
@@ -352,7 +363,7 @@ module Async2Implementation =
                         sm.Data.MethodBuilder.SetStateMachine(state)
                 }
 
-            Async2Dynamic<_, _>(fun () -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo ()))
+            Async2Dynamic<_, _>(fun isBound -> Async2StateMachine(ResumptionDynamicInfo = resumptionInfo isBound))
 
         member inline _.Run(code: Async2Code<'T, 'T>) : Async2<'T> =
             if __useResumableCode then
@@ -362,7 +373,7 @@ module Async2Implementation =
                         __resumeAt sm.ResumptionPoint
                         let mutable error = ValueNone
 
-                        let __stack_go1 = yieldOnBindLimit().Invoke(&sm)
+                        let __stack_go1 = not sm.Data.IsBound || yieldOnBindLimit().Invoke(&sm)
 
                         if __stack_go1 then
                             try
@@ -431,7 +442,7 @@ module HighPriority =
 
     type Async2Builder with
         member inline this.Bind(code: Async2<'U>, [<InlineIfLambda>] continuation) : Async2Code<'Data, 'T> =
-            bindCancellable ((fun ct -> code.StartImmediate(ct).GetAwaiter()), continuation)
+            bindCancellable (code.StartBound, continuation)
 
         member inline this.ReturnFrom(code: Async2<'T>) : Async2Code<'T, 'T> = this.Bind(code, this.Return)
 
@@ -446,7 +457,7 @@ module HighPriority =
                 | ValueSome tcs ->
                     // We are already in a tail call chain.
                     let __stack_ct = sm.Data.CancellationToken
-                    Trampoline.Current.Set(fun () -> code.TailCall(__stack_ct, ValueSome tcs))
+                    code.TailCall(__stack_ct, ValueSome tcs)
                     false // Return false to abandon this state machine and continue on the next one.
             )
 
@@ -459,12 +470,8 @@ module Async2 =
 
     let CheckAndThrowToken = AsyncLocal<CancellationToken>()
 
-    let inline start (code: Async2<_>) ct =
+    let inline start ct (code: Async2<_>) =
         CheckAndThrowToken.Value <- ct
-        // Only bound computations can participate in trampolining, otherwise we risk sync over async deadlocks.
-        // To prevent this, we reset the bind count here.
-        // This computation will not initially bounce, even if it is nested inside another async2 computation.
-        Trampoline.Current.Reset()
         code.StartImmediate ct
 
     let run ct (code: Async2<'t>) =
@@ -473,25 +480,22 @@ module Async2 =
             isNull SynchronizationContext.Current
             && TaskScheduler.Current = TaskScheduler.Default
         then
-            start code ct |> _.Task.GetAwaiter().GetResult()
+            start ct code |> _.GetAwaiter().GetResult()
         else
-            Task.Run<'t>(fun () -> start code ct |> _.Task).GetAwaiter().GetResult()
+            Task.Run<'t>(fun () -> start ct code |> _.Task).GetAwaiter().GetResult()
 
     let runWithoutCancellation code = run CancellationToken.None code
 
-    let startAsTaskWithoutCancellation code = start code CancellationToken.None
-
-    let startAsTask ct code = start code ct |> _.Task
-
-    let queue ct code = Task.Run(fun () -> start code ct)
+    let startAsTaskWithoutCancellation code =
+        start CancellationToken.None code |> _.Task
 
     let queueTask ct code =
-        Task.Run<'t>(fun () -> startAsTask ct code)
+        Task.Run<'t>(fun () -> start ct code |> _.Task)
 
     let toAsync (code: Async2<'t>) =
         async {
             let! ct = Async.CancellationToken
-            let task = startAsTask ct code
+            let task = start ct code |> _.Task
             return! Async.AwaitTask task
         }
 
@@ -517,7 +521,7 @@ type Async2 =
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.startAsTask ct computation
+        Async2.start ct computation |> _.Task
 
     static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
@@ -567,7 +571,7 @@ type Async2 =
     static member TryCancelled(computation: Async2<'T>, compensation) =
         async2 {
             let! ct = Async2.CancellationToken
-            let task = computation |> Async2.startAsTask ct
+            let task = computation |> Async2.start ct |> _.Task
 
             try
                 return! task
