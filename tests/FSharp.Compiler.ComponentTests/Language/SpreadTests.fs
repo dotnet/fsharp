@@ -533,6 +533,118 @@ module NominalAndAnonymousRecords =
                 |> shouldFail
                 |> withSingleDiagnostic (Error 3879, Line 2, Col 32, Line 2, Col 47, "The source type of a spread into a record type definition must itself be a nominal or anonymous record type.")
 
+        module Recursion =
+            [<Fact>]
+            let ``Mutually recursive type spreads → error`` () =
+                let src =
+                    """
+                    type R = { A : int; ...S; B : int }
+                    and  S = { C : int; ...R; D : int }
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> typecheck
+                |> shouldFail
+                |> withDiagnostics [
+                    Error 3886, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
+                ]
+
+            [<Fact>]
+            let ``Mutually recursive type spreads with some indirection → error`` () =
+                let src =
+                    """
+                    type R = { A : int; ...S }
+                    and  S = { B : int; ...T }
+                    and  T = { C : int; ...U }
+                    and  U = { D : int; ...R }
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> typecheck
+                |> shouldFail
+                |> withDiagnostics [
+                    Error 3886, Line 2, Col 26, Line 2, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 3, Col 26, Line 3, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
+                ]
+
+            [<Fact>]
+            let ``Mutually recursive type spreads in recursive module → error`` () =
+                let src =
+                    """
+                    module rec M
+
+                    type R = { A : int; ...S; B : int }
+                    type S = { C : int; ...R; D : int }
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> typecheck
+                |> shouldFail
+                |> withDiagnostics [
+                    Error 3886, Line 4, Col 26, Line 4, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 5, Col 26, Line 5, Col 27, "This type definition involves a cyclic reference through a spread."
+                ]
+
+            [<Fact>]
+            let ``Complex mutually recursive type spreads → error`` () =
+                let src =
+                    """
+                    module rec M
+
+                    [<AutoOpen>]
+                    module N =
+                        type R = { A : int; ...O.S }
+
+                        module O =
+                            type S = { B : int; ...T }
+
+                    type T = { C : int; ...U }
+
+                    [<AutoOpen>]
+                    module P =
+                        [<AutoOpen>]
+                        module Q =
+                            type U = { D : int; ...R }
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> typecheck
+                |> shouldFail
+                |> withDiagnostics [
+                    Error 3886, Line 6, Col 30, Line 6, Col 31, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 9, Col 34, Line 9, Col 35, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 11, Col 26, Line 11, Col 27, "This type definition involves a cyclic reference through a spread."
+                    Error 3886, Line 17, Col 34, Line 17, Col 35, "This type definition involves a cyclic reference through a spread."
+                ]
+
+            [<Fact>]
+            let ``Mutually recursive type defns with spreads, no cycles → success`` () =
+                let src =
+                    """
+                    module M =
+                        type R = { α : int }
+                        and  S = { β : int }
+                        and  T = { γ : int }
+                        and  U = { δ : int }
+
+                    type R = { A : int; ...M.S }
+                    and  S = { B : int; ...M.T }
+                    and  T = { C : int; ...M.U }
+                    and  U = { D : int; ...M.R }
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> typecheck
+                |> shouldSucceed
+
     module AnonymousRecordExpressionSpreads =
         module Algebra =
             /// No overlap, spread ⊕ field.

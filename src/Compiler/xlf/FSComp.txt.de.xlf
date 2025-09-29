@@ -1837,6 +1837,11 @@
         <target state="translated">Ein Merkmal darf keine Argumente für „optional“, „in“, „out“, „ParamArray“", „CallerInfo“ oder „Quote“ angeben.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDefinitionIsCyclicThroughSpreads">
+        <source>This type definition involves a cyclic reference through a spread.</source>
+        <target state="new">This type definition involves a cyclic reference through a spread.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualification.</source>
         <target state="new">The type '{0}' does not support a nullness qualification.</target>

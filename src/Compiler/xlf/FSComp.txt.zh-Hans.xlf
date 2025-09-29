@@ -1837,6 +1837,11 @@
         <target state="translated">特征不能指定 option、in、out、ParamArray、CallerInfo 或 Quote 参数</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDefinitionIsCyclicThroughSpreads">
+        <source>This type definition involves a cyclic reference through a spread.</source>
+        <target state="new">This type definition involves a cyclic reference through a spread.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualification.</source>
         <target state="new">The type '{0}' does not support a nullness qualification.</target>

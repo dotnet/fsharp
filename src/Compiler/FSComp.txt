@@ -1821,4 +1821,5 @@ featureReturnFromFinal,"Support for ReturnFromFinal/YieldFromFinal in computatio
 3883,tcRecordExprSpreadFieldShadowsExplicitField,"Spread field '%s' shadows an explicitly declared field with the same name."
 3884,parsMissingSpreadSrcExpr,"Missing spread source expression after '...'."
 3885,parsMissingSpreadSrcTy,"Missing spread source type after '...'."
+3886,tcTypeDefinitionIsCyclicThroughSpreads,"This type definition involves a cyclic reference through a spread."
 featureRecordSpreads,"record type and expression spreads"

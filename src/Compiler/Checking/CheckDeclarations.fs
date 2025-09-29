@@ -2617,6 +2617,8 @@ module EstablishTypeDefinitionCores =
         let m = tycon.Range
         let env = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) env
         let env = MakeInnerEnvForTyconRef env thisTyconRef false 
+        let ad = env.AccessRights
+        let spreadSrcTys = ResizeArray ()
         [ match synTyconRepr with 
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
@@ -2660,13 +2662,62 @@ module EstablishTypeDefinitionCores =
                           errorR(Error(FSComp.SR.tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly(), m))   
                       yield (ty, m)
 
-          | SynTypeDefnSimpleRepr.Record (_, SynFields fields, _) -> 
-              for SynField(fieldType = ty; range = m) in fields do 
-                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
-                  yield (tyR, m)
+          | SynTypeDefnSimpleRepr.Record (_, fieldsAndSpreads, _) ->
+              let (|LeftwardExplicit|NoLeftwardExplicit|) hasLeftwardExplicit = if hasLeftwardExplicit then LeftwardExplicit else NoLeftwardExplicit
+              let LeftwardExplicit = true
+              let NoLeftwardExplicit = false
+
+              // We must apply the spread shadowing logic here to get
+              // the correct set of field types.
+              let rec collectTys tys fieldsAndSpreads =
+                  match fieldsAndSpreads with
+                  | [] ->
+                      tys
+                      |> Map.toList
+                      |> List.collect (fun (_, (_, dupes)) -> dupes)
+
+                  | SynFieldOrSpread.Field (SynField (idOpt = None)) :: fieldsAndSpreads ->
+                      collectTys tys fieldsAndSpreads
+
+                  | SynFieldOrSpread.Field (SynField (idOpt = Some fieldId; fieldType = ty; range = m)) :: fieldsAndSpreads ->
+                      let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+                      let tys =
+                          tys |> Map.change fieldId.idText (function
+                              | None -> Some (LeftwardExplicit, [tyR, m])
+                              | Some (LeftwardExplicit, dupes) -> Some (LeftwardExplicit, (tyR, m) :: dupes)
+                              | Some (NoLeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [tyR, m]))
+
+                      collectTys tys fieldsAndSpreads
+
+                  | SynFieldOrSpread.Spread (SynTypeSpread (ty = ty; range = m)) :: fieldsAndSpreads ->
+                      let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
+
+                      let fieldsFromSpread =
+                          if isRecdTy g spreadSrcTy then
+                              spreadSrcTys.Add spreadSrcTy
+                              ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
+                              |> List.choose (function
+                                  | Item.RecdField field -> Some (field.RecdField.Id.idText, (FreshenRecdFieldRef cenv.nameResolver m field.RecdFieldRef).FieldType, m)
+                                  | _ -> None)
+                          else
+                              match tryDestAnonRecdTy g spreadSrcTy with
+                              | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> anonInfo.SortedNames[i], ty, m)
+                              | ValueNone -> []
+
+                      let tys =
+                          (tys, fieldsFromSpread)
+                          ||> List.fold (fun tys (fieldId, ty, m) ->
+                              tys |> Map.change fieldId (function
+                                  | None -> Some (NoLeftwardExplicit, [ty, m])
+                                  | Some (LeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [ty, m])
+                                  | Some (NoLeftwardExplicit, _dupes) -> Some (NoLeftwardExplicit, [ty, m])))
+
+                      collectTys tys fieldsAndSpreads
+
+              yield! collectTys Map.empty fieldsAndSpreads
 
           | _ ->
-              () ]
+              () ], spreadSrcTys
 
     let ComputeModuleOrNamespaceKind g isModule typeNames attribs nm = 
         if not isModule then (Namespace true)
@@ -4317,14 +4368,43 @@ module EstablishTypeDefinitionCores =
         // be satisfied, so we have to do this prior to checking any constraints.
         //
         // First find all the field types in all the structural types
-        let tyconsWithStructuralTypes = 
-            (envMutRecPrelim, withEnvs) 
-            ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
-                   match origInfo, tyconOpt with 
-                   | (typeDefCore, _, _), Some tycon -> Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
-                   | _ -> None) 
-            |> MutRecShapes.collectTycons 
-            |> List.choose id
+        let tyconsWithStructuralTypes =
+            let all =
+                (envMutRecPrelim, withEnvs) 
+                ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
+                       match origInfo, tyconOpt with 
+                       | (typeDefCore, _, _), Some tycon -> Some (tycon, GetStructuralElementsOfTyconDefn cenv envForDecls tpenv typeDefCore tycon)
+                       | _ -> None) 
+                |> MutRecShapes.collectTycons 
+                |> List.choose id
+
+            // Check for cyclic spreads.
+            do
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.RecordSpreads then
+                    let (|PotentiallyRecursiveTycon|_|) ty =
+                        tryTcrefOfAppTy cenv.g ty
+                        |> ValueOption.bind _.TryDeref
+
+                    let edges =
+                        [
+                            for dst, (_, spreadSrcs) in all do
+                                for src in spreadSrcs do
+                                    match src with
+                                    | PotentiallyRecursiveTycon src -> dst, src
+                                    | _ -> ()
+                        ]
+
+                    let tycons =
+                        [
+                            for dst, src in edges do
+                                yield dst
+                                yield src
+                        ]
+
+                    let graph = Graph<Tycon, Stamp> (_.Stamp, tycons, edges)
+                    graph.IterateCycles (fun path -> errorR (Error (FSComp.SR.tcTypeDefinitionIsCyclicThroughSpreads (), (List.head path).Range)))
+
+            [for tycon, (tys, _) in all -> tycon, tys]
         
         let scSet = TyconConstraintInference.InferSetOfTyconsSupportingComparable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
         let seSet = TyconConstraintInference.InferSetOfTyconsSupportingEquatable cenv envMutRecPrelim.DisplayEnv tyconsWithStructuralTypes
