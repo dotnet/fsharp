@@ -120,7 +120,7 @@ module FSharpServiceTelemetry =
 
         ActivitySource.AddActivityListener(listener)
 
-    let periodicallyDisplayCacheStats =
+    let periodicallyDisplayMetrics =
         cancellableTask {
             use _ = CacheMetrics.ListenToAll()
             use _ = FSharp.Compiler.DiagnosticsLogger.StackGuardMetrics.Listen()
