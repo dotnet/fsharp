@@ -2113,7 +2113,7 @@ let rUpdate = { r1 with  }
     hasRecordField "Field1" declarations
     hasRecordField "Field2" declarations
 
-[<Fact(Skip = "Current fails to suggest any record fields")>]
+[<Fact>]
 let ``Record fields are completed in update record with partial field name`` () =
     let parseResults, checkResults =
         getParseAndCheckResults """
