@@ -7,10 +7,11 @@ ImplFile
           [Expr
              (Record
                 (None, None,
-                 [SynExprRecordField
-                    ((SynLongIdent ([A], [(3,3--3,4)], [None]), true),
-                     Some (3,5--3,6), Some (Const (Int32 1, (3,7--3,8))),
-                     (3,2--3,8), None)], (3,0--3,10)), (3,0--3,10))],
+                 [Field
+                    (SynExprRecordField
+                       ((SynLongIdent ([A], [(3,3--3,4)], [None]), true),
+                        Some (3,5--3,6), Some (Const (Int32 1, (3,7--3,8))),
+                        (3,2--3,8), None))], (3,0--3,10)), (3,0--3,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
