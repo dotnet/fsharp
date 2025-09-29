@@ -536,7 +536,7 @@ module SyntaxTraversal =
                                     //   { r with
                                     //       Field1$
                                     //   }
-                                    let isCaretAfterFieldNameWithoutValue = (e.IsNone && posGeq pos field.Range.End)
+                                    let isCaretAfterFieldNameWithoutValue = (e.IsNone && posEq pos field.Range.End)
 
                                     if rangeContainsPos field.Range pos || isCaretAfterFieldNameWithoutValue then
                                         visitor.VisitRecordField r
