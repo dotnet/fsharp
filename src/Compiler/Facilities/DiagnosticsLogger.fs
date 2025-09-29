@@ -879,16 +879,17 @@ module StackGuardMetrics =
             description = "Tracks the number of times the stack guard has jumped to a new thread"
         )
 
-    let countJump memberName =
+    let countJump memberName location =
         let tags =
             let mutable tags = TagList()
             tags.Add(Activity.Tags.callerMemberName, memberName)
+            tags.Add("source", location)
             tags
 
         jumpCounter.Add(1L, &tags)
 
     // Used by the self-listener.
-    let jumpsByFunctionName = ConcurrentDictionary<string, int64 ref>()
+    let jumpsByFunctionName = ConcurrentDictionary<_, int64 ref>()
 
     let Listen () =
         let listener = new Metrics.MeterListener()
@@ -897,19 +898,21 @@ module StackGuardMetrics =
 
         listener.SetMeasurementEventCallback(fun _ v tags _ ->
             let memberName = nonNull tags[0].Value :?> string
-            let counter = jumpsByFunctionName.GetOrAdd(memberName, fun _ -> ref 0L)
+            let source = nonNull tags[1].Value :?> string
+            let counter = jumpsByFunctionName.GetOrAdd((memberName, source), fun _ -> ref 0L)
             Interlocked.Add(counter, v) |> ignore)
 
         listener.Start()
         listener :> IDisposable
 
     let StatsToString () =
-        let headers = [ "Caller"; "Jumps" ]
+        let headers = [ "caller"; "source"; "jumps" ]
 
         let data =
             [
                 for kvp in jumpsByFunctionName do
-                    [ kvp.Key; string kvp.Value.Value ]
+                    let (memberName, source) = kvp.Key
+                    [ memberName; source; string kvp.Value.Value ]
             ]
 
         if List.isEmpty data then
@@ -947,7 +950,7 @@ type StackGuard(maxDepth: int, name: string) =
 
                 let fileName = System.IO.Path.GetFileName(path)
 
-                StackGuardMetrics.countJump $"{memberName} ({fileName}:{line})"
+                StackGuardMetrics.countJump memberName $"{fileName}:{line}"
 
                 async {
                     do! Async.SwitchToNewThread()
