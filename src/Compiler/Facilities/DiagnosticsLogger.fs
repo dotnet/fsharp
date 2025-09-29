@@ -904,15 +904,18 @@ module StackGuardMetrics =
         listener :> IDisposable
 
     let StatsToString () =
-        let entries =
-            jumpsByFunctionName
-            |> Seq.map (fun kvp -> $"{kvp.Key}: {kvp.Value.Value}")
-            |> String.concat ", "
+        let headers = [ "Caller"; "Jumps" ]
 
-        if entries.Length > 0 then
-            $"StackGuard jumps: {entries} \n"
-        else
+        let data =
+            [
+                for kvp in jumpsByFunctionName do
+                    [ kvp.Key; string kvp.Value.Value ]
+            ]
+
+        if List.isEmpty data then
             ""
+        else
+            $"StackGuard jumps:\n{Metrics.printTable headers data}"
 
     let CaptureStatsAndWriteToConsole () =
         let listener = Listen()
@@ -929,14 +932,22 @@ type StackGuard(maxDepth: int, name: string) =
     let mutable depth = 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Guard(f, [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string) =
+    member _.Guard
+        (
+            f,
+            [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string,
+            [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
+            [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
+        ) =
 
         depth <- depth + 1
 
         try
             if depth % maxDepth = 0 then
 
-                StackGuardMetrics.countJump memberName
+                let fileName = System.IO.Path.GetFileName(path)
+
+                StackGuardMetrics.countJump $"{memberName} ({fileName}:{line})"
 
                 async {
                     do! Async.SwitchToNewThread()
