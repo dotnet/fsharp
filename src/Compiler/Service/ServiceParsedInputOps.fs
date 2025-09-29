@@ -823,7 +823,7 @@ module ParsedInput =
                     fields
                     |> List.tryPick (function
                         | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)
-                        | _ -> None (* TODO. *) ))
+                        | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> walkExprWithKind parentKind e))
 
             | SynExpr.ObjExpr(objType = ty; bindings = bindings; members = ms; extraImpls = ifaces) ->
                 let bindings = unionBindingAndMembers bindings ms

@@ -463,9 +463,8 @@ module SyntaxTraversal =
                             | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(field, _, x, _), _) ->
                                 yield dive () field.Range (fun () -> visitor.VisitRecordField(path, copyOpt |> Option.map fst, Some field))
                                 yield dive x x.Range traverseSynExpr
-                            | SynExprAnonRecordFieldOrSpread.Spread _ ->
-                                // TODO.
-                                ()
+                            | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = expr)) ->
+                                yield dive expr expr.Range traverseSynExpr
                     ]
                     |> pick expr
 
@@ -919,7 +918,7 @@ module SyntaxTraversal =
             |> List.tryPick (function
                 | SynFieldOrSpread.Field(SynField(attributes = attributes)) ->
                     attributeApplicationDives path attributes |> pick m attributes
-                | SynFieldOrSpread.Spread _ -> None) // TODO.
+                | SynFieldOrSpread.Spread _ -> None)
             |> Option.orElseWith (fun () -> visitor.VisitRecordDefn(path, fieldsAndSpreads, m))
 
         and traverseEnumDefn path cases m =

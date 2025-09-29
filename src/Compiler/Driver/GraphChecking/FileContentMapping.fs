@@ -408,9 +408,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
                         | SynExprRecordFieldOrSpread.Field(SynExprRecordField(fieldName = (si, _); expr = expr)) ->
                             yield! visitSynLongIdent si
                             yield! collectFromOption visitSynExpr expr
-                        | SynExprRecordFieldOrSpread.Spread _ ->
-                            // TODO.
-                            ()
+                        | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = expr)) -> yield! visitSynExpr expr
                 ]
 
             match baseInfo, copyInfo with

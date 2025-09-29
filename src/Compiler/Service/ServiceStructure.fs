@@ -442,7 +442,7 @@ module Structure =
                 recordFields
                 |> List.choose (function
                     | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = e)) -> e
-                    | _ -> None (* TODO. *) )
+                    | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> Some e)
                 |> List.iter parseExpr
                 // exclude the opening `{` and closing `}` of the record from collapsing
                 let m = Range.modBoth 1 1 r

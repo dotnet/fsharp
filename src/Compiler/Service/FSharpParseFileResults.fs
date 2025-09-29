@@ -639,7 +639,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                     fs
                                     |> List.choose (function
                                         | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = e)) -> e
-                                        | _ -> None (* TODO. *) )
+                                        | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> Some e)
                                 )
 
                         | SynExpr.AnonRecd(copyInfo = copyExprOpt; recordFields = fs) ->
@@ -650,9 +650,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield!
                                 walkExprs (
                                     fs
-                                    |> List.choose (function
-                                        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _) -> Some e
-                                        | SynExprAnonRecordFieldOrSpread.Spread _ -> None (* TODO. *) )
+                                    |> List.map (function
+                                        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                                        | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> e)
                                 )
 
                         | SynExpr.ObjExpr(argOptions = args; bindings = bs; members = ms; extraImpls = is) ->

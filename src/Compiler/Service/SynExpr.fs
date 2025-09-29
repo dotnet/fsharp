@@ -1114,7 +1114,6 @@ module SynExpr =
                     | SynExprRecordFieldOrSpread.Field(SynExprRecordField(
                         expr = Some(SynExpr.Paren(expr = Is inner)); blockSeparator = Some _)) :: SynExprRecordFieldOrSpread.Field(SynExprRecordField(
                           fieldName = SynLongIdent(id = id :: _), _)) :: _ -> problematic inner.Range id.idRange
-                    // TODO: Spreads?
                     | _ :: recordFields -> loop recordFields
 
                 loop recordFields
