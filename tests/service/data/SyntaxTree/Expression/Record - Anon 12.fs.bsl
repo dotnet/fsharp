@@ -6,8 +6,8 @@ ImplFile
          ([Module], false, NamedModule,
           [Expr
              (AnonRecd
-                (false, Some (Ident F1, Offside ((3,5--3,5), None)), [],
-                 (3,0--3,5), { OpeningBraceRange = (3,0--3,2) }), (3,0--3,5));
+                (false, Some (Ident F1, ((3,5--3,5), None)), [], (3,0--3,5),
+                 { OpeningBraceRange = (3,0--3,2) }), (3,0--3,5));
            Expr
              (App
                 (NonAtomic, false,
