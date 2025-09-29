@@ -870,26 +870,10 @@ type SynExpr =
         | _ -> false
 
 [<NoEquality; NoComparison>]
-type SynTypeSpread = SynTypeSpread of spreadRange: range * ty: SynType * without: SynTypeWithout option * range: range
+type SynTypeSpread = SynTypeSpread of spreadRange: range * ty: SynType * range: range
 
 [<NoEquality; NoComparison>]
-type SynTypeWithout = SynTypeWithout of withoutKeywordRange: range * without: SynTypeSpreadOrLongIdent list
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynTypeSpreadOrLongIdent =
-    | SynTypeSpread of spread: SynTypeSpread * separator: range option
-    | SynTypeLongIdent of longIdent: SynLongIdent * separator: range option
-
-[<NoEquality; NoComparison>]
-type SynExprSpread = SynExprSpread of spreadRange: range * expr: SynExpr * without: SynExprWithout option * range: range
-
-[<NoEquality; NoComparison>]
-type SynExprWithout = SynExprWithout of withoutKeywordRange: range * without: SynExprSpreadOrIdent list
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynExprSpreadOrIdent =
-    | SynExprSpread of spread: SynExprSpread * separator: range option
-    | SynExprIdent of ident: Ident * separator: range option
+type SynExprSpread = SynExprSpread of spreadRange: range * expr: SynExpr * range: range
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
@@ -916,7 +900,7 @@ type SynExprAnonRecordFieldOrSpread =
     member this.Range =
         match this with
         | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, _, m), _)
-        | SynExprAnonRecordFieldOrSpread.Spread(SynExprSpread(_, _, _, m), _) -> m
+        | SynExprAnonRecordFieldOrSpread.Spread(SynExprSpread(_, _, m), _) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =

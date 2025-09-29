@@ -980,51 +980,13 @@ type SynExpr =
 ///
 /// type Ty2 = { ...Ty1 }
 [<NoEquality; NoComparison>]
-type SynTypeSpread = SynTypeSpread of spreadRange: range * ty: SynType * without: SynTypeWithout option * range: range
-
-/// Represents the optional without component of a type spread.
-///
-/// ...Ty without A; B; C
-///
-/// ...Ty1 without ...Ty2
-[<NoEquality; NoComparison>]
-type SynTypeWithout = SynTypeWithout of withoutKeywordRange: range * without: SynTypeSpreadOrLongIdent list
-
-/// Represents either a type spread or a member identifier.
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynTypeSpreadOrLongIdent =
-    /// Represents a type spread in the without component of an outer type spread.
-    | SynTypeSpread of spread: SynTypeSpread * separator: range option
-
-    /// Represents a member identifier in the without component of a type spread.
-    | SynTypeLongIdent of longIdent: SynLongIdent * separator: range option
+type SynTypeSpread = SynTypeSpread of spreadRange: range * ty: SynType * range: range
 
 /// Represents a spread expression.
 ///
 /// ...expr
-///
-/// ...expr without A; B; C
-///
-/// ...expr1 without ...expr2
 [<NoEquality; NoComparison>]
-type SynExprSpread = SynExprSpread of spreadRange: range * expr: SynExpr * without: SynExprWithout option * range: range
-
-/// Represents the optional without component of a spread expression.
-///
-/// ...expr without A; B; C
-///
-/// ...expr1 without ...expr2
-[<NoEquality; NoComparison>]
-type SynExprWithout = SynExprWithout of withoutKeywordRange: range * without: SynExprSpreadOrIdent list
-
-/// Represents either a spread expression or a member identifier.
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynExprSpreadOrIdent =
-    /// Represents a spread expression in the without component of an outer spread expression.
-    | SynExprSpread of spread: SynExprSpread * separator: range option
-
-    /// Represents a member identifier in the without component of a spread expression.
-    | SynExprIdent of ident: Ident * separator: range option
+type SynExprSpread = SynExprSpread of spreadRange: range * expr: SynExpr * range: range
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =

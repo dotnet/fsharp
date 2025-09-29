@@ -572,7 +572,7 @@ module SyntaxTraversal =
                                             diveIntoSeparator offsideColumn scPosOpt copyOpt)
                                 | None -> ()
 
-                            | SynExprRecordFieldOrSpread.Spread(SynExprSpread(spreadRange = spreadRange; expr = expr; without = _todo),
+                            | SynExprRecordFieldOrSpread.Spread(SynExprSpread(spreadRange = spreadRange; expr = expr),
                                                                 sepOpt) ->
                                 yield dive expr expr.Range traverseSynExpr
 

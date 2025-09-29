@@ -7841,7 +7841,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
 
                     loopFieldsAndSpreads spreadSrcs flds (i + 1) tpenv fieldsAndSpreads
 
-                | SynExprRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; without = _without; range = m), _) :: fieldsAndSpreads ->
+                | SynExprRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; range = m), _) :: fieldsAndSpreads ->
                     checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
 
                     let flex = false
@@ -8144,7 +8144,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
             //     let a = {| A = 3 |}
             //     let b = {| A = "4" |}
             //     let c = {| ...a; ...b |} → {| A = "4" |}
-            | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; without = _without; range = m), _) :: fieldsAndSpreads ->
+            | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; range = m), _) :: fieldsAndSpreads ->
                 checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
 
                 let flex = false
@@ -8399,7 +8399,7 @@ and TcCopyAndUpdateAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, (or
 
                 collectFields spreadSrcs flds (i + 1) tpenv fieldsAndSpreads
 
-            | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; without = _without; range = m), _) :: fieldsAndSpreads ->
+            | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; range = m), _) :: fieldsAndSpreads ->
                 checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
 
                 let flex = false

@@ -2973,12 +2973,12 @@ recdFieldDecl:
 
   | DOT_DOT_DOT typ
     { let m = rhs2 parseState 1 2
-      SynFieldOrSpread.Spread (SynTypeSpread (rhs parseState 1, $2, None, m)) }
+      SynFieldOrSpread.Spread (SynTypeSpread (rhs parseState 1, $2, m)) }
 
   | DOT_DOT_DOT
     { let m = rhs parseState 1
       reportParseErrorAt m (FSComp.SR.parsMissingSpreadSrcTy ())
-      SynFieldOrSpread.Spread (SynTypeSpread (m, SynType.FromParseError m, None, m)) }
+      SynFieldOrSpread.Spread (SynTypeSpread (m, SynType.FromParseError m, m)) }
 
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl:
@@ -5725,18 +5725,16 @@ recdExprCore:
 
   | DOT_DOT_DOT declExprBlock recdExprBindings opt_seps_block
      { let mSpread = rhs parseState 1
-       let without = None // TODO.
        let m = rhs2 parseState 1 2
        let l = List.rev $3
-       let l = rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, $2, without, m))) l $4
+       let l = rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, $2, m))) l $4
        None, l }
 
   | DOT_DOT_DOT
      { let mSpread = rhs parseState 1
-       let without = None // TODO.
        let m = mSpread
        reportParseErrorAt m (FSComp.SR.parsMissingSpreadSrcExpr ())
-       None, rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), without, m))) [] None }
+       None, rebindRanges (RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), m))) [] None }
 
 /*
     handles cases when identifier can start from the underscore
@@ -5822,9 +5820,8 @@ recdExprBindings:
 recdBinding:
   | DOT_DOT_DOT declExprBlock
      { let mSpread = rhs parseState 1
-       let without = None // TODO.
        let m = rhs2 parseState 1 2
-       RecordBinding.Spread (SynExprSpread (mSpread, $2, without, m)) }
+       RecordBinding.Spread (SynExprSpread (mSpread, $2, m)) }
 
   | pathOrUnderscore EQUALS declExprBlock
      { let mEquals = rhs parseState 2
@@ -5851,9 +5848,8 @@ recdBinding:
   | DOT_DOT_DOT
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsMissingSpreadSrcExpr ())
        let mSpread = rhs parseState 1
-       let without = None // TODO.
        let m = mSpread
-       RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), without, m)) }
+       RecordBinding.Spread (SynExprSpread (mSpread, arbExpr ("spreadSrcExpr", m), m)) }
 
 /* There is a minor conflict between
        seq { new ty() }  // sequence expression with one very odd 'action' expression
