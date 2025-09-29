@@ -2144,3 +2144,41 @@ let rUpdate = { r1 with Fi }
 
     hasRecordField "Field1" declarations
     hasRecordField "Field2" declarations
+
+[<Fact>]
+let ``Multiline record fields are completed in update record with partial field name`` () =
+    let parseResults, checkResults =
+        getParseAndCheckResults """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate2 =
+    { r1 with
+        Fi
+    }
+"""
+
+    let declarations =
+        checkResults.GetDeclarationListSymbols(
+            Some parseResults,
+            10,
+            "let rUpdate2 =
+                { r1 with
+                    Fi
+                }",
+            {
+                EndColumn = 14
+                LastDotPos = None
+                PartialIdent = "Fi"
+                QualifyingIdents = []
+            },
+            fun _ -> List.empty
+        )
+        |> List.concat
+
+    hasRecordField "Field1" declarations
+    hasRecordField "Field2" declarations
