@@ -38,7 +38,7 @@
     <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Extensions.fs" />
     <Compile Include="Common\Error.fs" />
-    <Compile Include="Common\Logging.fs" />
+    <Compile Include="Common\DebugHelpers.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\FSharpCodeAnalysisExtensions.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />

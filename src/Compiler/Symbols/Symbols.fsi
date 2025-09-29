@@ -74,6 +74,11 @@ type FSharpDisplayContext =
     /// for example `int list`
     member WithSuffixGenericParameters: unit -> FSharpDisplayContext
 
+    /// Causes type signatures to be formatted with prefix-style generic parameters for a top level type
+    /// while nested types inherit generic parameters style from the current `FSharpDisplayContext` instance,
+    /// for example, `int list seq` becomes `seq<int list>`
+    member WithTopLevelPrefixGenericParameters: unit -> FSharpDisplayContext
+
 /// Represents a symbol in checked F# source code or a compiled .NET component.
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
@@ -789,7 +794,10 @@ type FSharpMemberOrFunctionOrValue =
     member DeclaringEntity: FSharpEntity option
 
     /// Get the logical enclosing entity, which for an extension member is type being extended
-    member ApparentEnclosingEntity: FSharpEntity
+    member ApparentEnclosingEntity: FSharpEntity option
+
+    /// Get the logical enclosing type, which for an extension member is type being extended
+    member ApparentEnclosingType: FSharpType
 
     /// Get the declaration location of the member, function or value
     member DeclarationLocation: range

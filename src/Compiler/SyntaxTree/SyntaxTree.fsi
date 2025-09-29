@@ -354,26 +354,9 @@ type SeqExprOnly =
     /// Indicates if a for loop is 'for x in e1 -> e2', only valid in sequence expressions
     | SeqExprOnly of bool
 
-/// Represents the location of the separator block and optional position of the semicolon (used for tooling support)
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type BlockSeparator =
-    /// A separator consisting of a semicolon ';'
-    /// range is the range of the semicolon
-    /// position is the position of the semicolon (if available)
-    | Semicolon of range: range * position: pos option
-    /// A separator consisting of a comma ','
-    /// range is the range of the comma
-    /// position is the position of the comma (if available)
-    | Comma of range: range * position: pos option
-
-    // A separator consisting of a newline
-    /// range is the range of the newline
-    /// position is the position of the newline (if available)
-    | Offside of range: range * position: pos option
-
-    member Range: range
-
-    member Position: pos option
+/// Represents the location of the separator block + optional position
+/// of the semicolon (used for tooling support)
+type BlockSeparator = range * pos option
 
 /// Represents a record field name plus a flag indicating if given record field name is syntactically
 /// correct and can be used in name resolution.
