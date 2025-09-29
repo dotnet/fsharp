@@ -19,7 +19,7 @@ module ActivityNames =
     let AllRelevantNames = [| FscSourceName; ProfiledSourceName |]
 
 module Metrics =
-    let Meter = new Metrics.Meter(ActivityNames.FscSourceName, "1.0.0")
+    let Meter = new Metrics.Meter(ActivityNames.FscSourceName)
 
     let formatTable headers rows =
         let columnWidths =
