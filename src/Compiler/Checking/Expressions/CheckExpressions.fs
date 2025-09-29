@@ -7802,8 +7802,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, m
                     let isFromNestedUpdate, fieldId, field =
                         match withExprOpt, synLongId.LongIdent, exprBeingAssigned with
                         | _, [ id ], _ -> false, id, ExplicitOrSpread.Explicit (([], id), exprBeingAssigned)
-                        | Some (origExpr, blockSep), lid, Some exprBeingAssigned ->
-                            let _, id as longIdent, exprBeingAssigned = TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned (origExpr, blockSep)
+                        | Some withExpr, lid, Some exprBeingAssigned ->
+                            let _, id as longIdent, exprBeingAssigned = TransformAstForNestedUpdates cenv env overallTy lid exprBeingAssigned withExpr
                             true, id, ExplicitOrSpread.Explicit (longIdent, exprBeingAssigned)
                         | _ ->
                             let _, id as longIdent = List.frontAndBack synLongId.LongIdent

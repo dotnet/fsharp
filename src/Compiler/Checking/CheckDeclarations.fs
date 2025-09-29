@@ -2697,7 +2697,7 @@ module EstablishTypeDefinitionCores =
                               spreadSrcTys.Add spreadSrcTy
                               ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad spreadSrcTy false
                               |> List.choose (function
-                                  | Item.RecdField field -> Some (field.RecdField.Id.idText, (FreshenRecdFieldRef cenv.nameResolver m field.RecdFieldRef).FieldType, m)
+                                  | Item.RecdField field -> Some (field.RecdField.Id.idText, field.FieldType, m)
                                   | _ -> None)
                           else
                               match tryDestAnonRecdTy g spreadSrcTy with

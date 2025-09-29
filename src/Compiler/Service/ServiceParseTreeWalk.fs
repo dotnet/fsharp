@@ -445,12 +445,12 @@ module SyntaxTraversal =
                 | SynExpr.AnonRecd(copyInfo = copyOpt; recordFields = fields) ->
                     [
                         match copyOpt with
-                        | Some(expr, blockSep) ->
+                        | Some(expr, (withRange, _)) ->
                             yield dive expr expr.Range traverseSynExpr
 
                             yield
-                                dive () blockSep.Range (fun () ->
-                                    if posGeq pos blockSep.Range.End then
+                                dive () withRange (fun () ->
+                                    if posGeq pos withRange.End then
                                         // special case: caret is after WITH
                                         // { x with $ }
                                         visitor.VisitRecordField(path, Some expr, None)
@@ -503,24 +503,24 @@ module SyntaxTraversal =
                                         traverseSynExpr expr)
 
                             match sepOpt with
-                            | Some blockSep ->
+                            | Some(sep, scPosOpt) ->
                                 yield
-                                    dive () blockSep.Range (fun () ->
+                                    dive () sep (fun () ->
                                         // special case: caret is below 'inherit' + one or more fields are already defined
                                         // inherit A()
                                         // $
                                         // field1 = 5
-                                        diveIntoSeparator inheritRange.StartColumn blockSep.Position None)
+                                        diveIntoSeparator inheritRange.StartColumn scPosOpt None)
                             | None -> ()
                         | _ -> ()
 
                         match copyOpt with
-                        | Some(expr, blockSep) ->
+                        | Some(expr, (withRange, _)) ->
                             yield dive expr expr.Range traverseSynExpr
 
                             yield
-                                dive () blockSep.Range (fun () ->
-                                    if posGeq pos blockSep.Range.End then
+                                dive () withRange (fun () ->
+                                    if posGeq pos withRange.End then
                                         // special case: caret is after WITH
                                         // { x with $ }
                                         visitor.VisitRecordField(path, Some expr, None)
@@ -563,14 +563,14 @@ module SyntaxTraversal =
                                 | None -> ()
 
                                 match sepOpt with
-                                | Some blockSep ->
+                                | Some(sep, scPosOpt) ->
                                     yield
-                                        dive () blockSep.Range (fun () ->
+                                        dive () sep (fun () ->
                                             // special case: caret is between field bindings
                                             // field1 = 5
                                             // $
                                             // field2 = 5
-                                            diveIntoSeparator offsideColumn blockSep.Position copyOpt)
+                                            diveIntoSeparator offsideColumn scPosOpt copyOpt)
                                 | None -> ()
 
                             | SynExprRecordFieldOrSpread.Spread(SynExprSpread(spreadRange = spreadRange; expr = expr; without = _todo),
@@ -578,15 +578,15 @@ module SyntaxTraversal =
                                 yield dive expr expr.Range traverseSynExpr
 
                                 match sepOpt with
-                                | Some blockSep ->
+                                | Some(sep, scPosOpt) ->
                                     yield
-                                        dive () blockSep.Range (fun () ->
+                                        dive () sep (fun () ->
                                             // special case: caret is between field bindings
                                             // field1 = 5
                                             // $
                                             // field2 = 5
                                             let offsideColumn = spreadRange.StartColumn
-                                            diveIntoSeparator offsideColumn blockSep.Position copyOpt)
+                                            diveIntoSeparator offsideColumn scPosOpt copyOpt)
                                 | None -> ()
                     ]
                     |> pick expr

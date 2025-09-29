@@ -12,13 +12,13 @@ val GroupUpdatesToNestedFields:
     fields: (ExplicitOrSpread<(Ident list * Ident) * SynExpr option, (Ident list * Ident) * 'Spread>) list ->
         (ExplicitOrSpread<(Ident list * Ident) * SynExpr option, (Ident list * Ident) * 'Spread>) list
 
-val TransformAstForNestedUpdates:
+val TransformAstForNestedUpdates<'a> :
     cenv: TcFileState ->
     env: TcEnv ->
     overallTy: TType ->
     lid: LongIdent ->
     exprBeingAssigned: SynExpr ->
-    withExpr: SynExpr * BlockSeparator ->
+    withExpr: SynExpr * (range * 'a) ->
         (Ident list * Ident) * SynExpr option
 
 val BindOriginalRecdExpr:
