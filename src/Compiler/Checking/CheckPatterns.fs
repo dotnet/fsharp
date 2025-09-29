@@ -460,10 +460,10 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let idents =
         fieldPats
         |> List.map (fun fieldPat ->
-            let (|FrontAndBack|) = List.frontAndBack
+            let (|Last|) = List.last
             match fieldPat with
             | NamePatPairField (fieldName = SynLongIdent (id = [fieldId]))
-            | NamePatPairField (fieldName = SynLongIdent (id = FrontAndBack (_, fieldId))) -> fieldId)
+            | NamePatPairField (fieldName = SynLongIdent (id = Last fieldId)) -> fieldId)
 
     let fieldPats =
         fieldPats 
