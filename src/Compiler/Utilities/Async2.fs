@@ -52,6 +52,8 @@ module Async2Implementation =
 
     module BindContext =
         let bindCount = new ThreadLocal<int>()
+        // Used to prevent sync over async deadlocks.
+        let started = new AsyncLocal<bool>()
 
         [<Literal>]
         let bindLimit = 100
@@ -193,6 +195,7 @@ module Async2Implementation =
 
         interface Async2<'t> with
             member ts.StartImmediate ct = ts.GetCopy(false).StartImmediate(ct)
+
             member ts.StartBound ct = ts.GetCopy(true).StartBound(ct)
 
             member ts.TailCall(ct, tc) =
@@ -371,6 +374,7 @@ module Async2Implementation =
 
                     (MoveNextMethodImpl<_>(fun sm ->
                         __resumeAt sm.ResumptionPoint
+
                         let mutable error = ValueNone
 
                         let __stack_go1 = not sm.Data.IsBound || yieldOnBindLimit().Invoke(&sm)
@@ -471,13 +475,21 @@ module Async2 =
     let CheckAndThrowToken = AsyncLocal<CancellationToken>()
 
     let inline start ct (code: Async2<_>) =
-        CheckAndThrowToken.Value <- ct
-        code.StartImmediate ct
+        let oldCt = CheckAndThrowToken.Value
+
+        try
+            BindContext.started.Value <- true
+            CheckAndThrowToken.Value <- ct
+            code.StartImmediate ct
+        finally
+            CheckAndThrowToken.Value <- oldCt
+            BindContext.started.Value <- false
 
     let run ct (code: Async2<'t>) =
 
         if
-            isNull SynchronizationContext.Current
+            not BindContext.started.Value // should this be an assert fail or even an exception instead?
+            && isNull SynchronizationContext.Current
             && TaskScheduler.Current = TaskScheduler.Default
         then
             start ct code |> _.GetAwaiter().GetResult()
