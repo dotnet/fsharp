@@ -13,7 +13,7 @@ ImplFile
                           ([NamePatPairField
                               (SynLongIdent ([a], [], [None]), Some (4,6--4,7),
                                (4,4--4,9), Wild (4,8--4,9),
-                               Some (Semicolon ((4,9--4,10), Some (4,10))));
+                               Some ((4,9--4,10), Some (4,10)));
                             NamePatPairField
                               (SynLongIdent ([b], [], [None]), Some (4,13--4,14),
                                (4,11--4,16), Wild (4,15--4,16), None)],

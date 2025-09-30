@@ -136,6 +136,9 @@ val ParseInputFiles:
     retryLocked: bool ->
         (ParsedInput * string) list
 
+/// Process collected directives
+val FinishPreprocessing: Lexbuf -> FSharpDiagnosticOptions -> bool -> range list -> unit
+
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
 val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
