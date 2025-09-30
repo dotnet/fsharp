@@ -406,10 +406,6 @@ type internal FSharpPackage() as this =
                     globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 
                     globalOptions.BlockForCompletionItems <- false
-
-                    DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayCacheStats this.DisposalToken
-                    |> ignore
-
                 }
                 |> CancellableTask.startAsTask cancellationToken)
         )
