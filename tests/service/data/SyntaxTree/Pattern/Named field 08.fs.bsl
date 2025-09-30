@@ -17,7 +17,7 @@ ImplFile
                        ([NamePatPairField
                            (SynLongIdent ([A], [], [None]), None, (4,4--4,5),
                             FromParseError (Wild (4,5--4,5), (4,5--4,5)),
-                            Some (Semicolon ((4,6--4,7), Some (4,7))));
+                            Some ((4,6--4,7), Some (4,7)));
                          NamePatPairField
                            (SynLongIdent ([B], [], [None]), Some (4,10--4,11),
                             (4,8--4,13), Const (Int32 3, (4,12--4,13)), None)],
