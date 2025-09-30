@@ -383,17 +383,17 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             let continuations =
                 match copyInfo with
                 | None ->
-                    List.choose
+                    List.map
                         (function
-                        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _) -> Some(visit e)
-                        | SynExprAnonRecordFieldOrSpread.Spread _ -> None (* TODO. *) )
+                        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                        | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> visit e)
                         recordFields
                 | Some(cp, _) ->
                     visit cp
-                    :: List.choose
+                    :: List.map
                         (function
-                        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _) -> Some(visit e)
-                        | SynExprAnonRecordFieldOrSpread.Spread _ -> None (* TODO. *) )
+                        | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                        | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> visit e)
                         recordFields
 
             Continuation.concatenate continuations continuation
