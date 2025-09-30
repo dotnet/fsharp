@@ -486,6 +486,7 @@ module Async2 =
         try
             BindContext.started.Value <- true
             CheckAndThrowToken.Value <- ct
+
             if immediate then
                 code.StartImmediate ct |> _.Task
             else
@@ -494,15 +495,15 @@ module Async2 =
             CheckAndThrowToken.Value <- oldCt
             BindContext.started.Value <- oldStarted
 
-    let run ct (code: Async2<'t>) = start ct code |> _.GetAwaiter().GetResult()
+    let run ct (code: Async2<'t>) =
+        start ct code |> _.GetAwaiter().GetResult()
 
     let runWithoutCancellation code = run CancellationToken.None code
 
     //let queueTask ct code =
     //    Task.Run<'t>(fun () -> start ct code)
 
-    let startAsTaskWithoutCancellation code =
-        start CancellationToken.None code
+    let startAsTaskWithoutCancellation code = start CancellationToken.None code
 
     let toAsync (code: Async2<'t>) =
         async {

@@ -12532,12 +12532,11 @@ Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Asyn
 Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.Async2`1[System.Threading.CancellationToken] CancellationToken
 Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.Async2`1[System.Threading.CancellationToken] get_CancellationToken()
 Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.Async2`1[t] fromValue[t](t)
-Internal.Utilities.Library.Async2Module: Internal.Utilities.Library.IAsync2Invocation`1[a] start[a](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[a])
 Internal.Utilities.Library.Async2Module: Microsoft.FSharp.Control.FSharpAsync`1[t] toAsync[t](Internal.Utilities.Library.Async2`1[t])
 Internal.Utilities.Library.Async2Module: System.Threading.AsyncLocal`1[System.Threading.CancellationToken] CheckAndThrowToken
 Internal.Utilities.Library.Async2Module: System.Threading.AsyncLocal`1[System.Threading.CancellationToken] get_CheckAndThrowToken()
 Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[a] startAsTaskWithoutCancellation[a](Internal.Utilities.Library.Async2`1[a])
-Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[t] queueTask[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
+Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[t] start[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
 Internal.Utilities.Library.Async2Module: a runWithoutCancellation[a](Internal.Utilities.Library.Async2`1[a])
 Internal.Utilities.Library.Async2Module: t run[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
 Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] StartImmediate(System.Threading.CancellationToken)
