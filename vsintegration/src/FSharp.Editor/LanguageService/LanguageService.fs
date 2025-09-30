@@ -417,7 +417,7 @@ type internal FSharpPackage() as this =
             false,
             fun _ _ ->
                 task {
-                    DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayCacheStats
+                    DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayMetrics
                     |> CancellableTask.start this.DisposalToken
                     |> ignore
                 }
