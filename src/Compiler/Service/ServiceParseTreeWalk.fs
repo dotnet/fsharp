@@ -528,7 +528,17 @@ module SyntaxTraversal =
                         for SynExprRecordField(fieldName = (field, _); expr = e; blockSeparator = sepOpt) in fields do
                             yield
                                 dive (path, copyOpt, Some field) field.Range (fun r ->
-                                    if rangeContainsPos field.Range pos then
+                                    // Treat the caret placed right after the field name (before '=' or a value) as "inside" the field,
+                                    // but only if the field does not yet have a value.
+                                    //
+                                    // Examples (the '$' marks the caret):
+                                    //   { r with Field1$ }
+                                    //   { r with
+                                    //       Field1$
+                                    //   }
+                                    let isCaretAfterFieldNameWithoutValue = (e.IsNone && posEq pos field.Range.End)
+
+                                    if rangeContainsPos field.Range pos || isCaretAfterFieldNameWithoutValue then
                                         visitor.VisitRecordField r
                                     else
                                         None)
