@@ -3,7 +3,7 @@ neg107.fsx(25,48,25,59): typecheck error FS0406: The byref-typed variable 'a' is
 
 neg107.fsx(26,69,26,80): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(27,13,27,25): typecheck error FS3301: The function or method has an invalid return type '(unit -> Span<int>)'. This is not permitted by the rules of Common IL.
+neg107.fsx(27,13,27,25): typecheck error FS3301: The function or method has an invalid return type 'unit -> Span<int>'. This is not permitted by the rules of Common IL.
 
 neg107.fsx(27,43,27,59): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
@@ -17,7 +17,7 @@ neg107.fsx(27,57,27,58): typecheck error FS0418: The byref typed value 'a' canno
 
 neg107.fsx(27,47,27,58): typecheck error FS0425: The type of a first-class function cannot contain byrefs
 
-neg107.fsx(28,13,28,25): typecheck error FS3301: The function or method has an invalid return type '(unit -> ReadOnlySpan<int>)'. This is not permitted by the rules of Common IL.
+neg107.fsx(28,13,28,25): typecheck error FS3301: The function or method has an invalid return type 'unit -> ReadOnlySpan<int>'. This is not permitted by the rules of Common IL.
 
 neg107.fsx(28,51,28,67): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 

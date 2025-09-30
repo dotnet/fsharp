@@ -7,6 +7,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
@@ -196,16 +197,15 @@ val mkClassMemberLocalBindings:
     isStatic: bool * initialRangeOpt: range option * attrs: SynAttributes * vis: SynAccess option * BindingSet ->
         SynMemberDefn
 
-/// Creates either SynExpr.LetOrUse or SynExpr.LetOrUseBang based on isBang parameter
+/// Creates SynExpr.LetOrUse based on isBang parameter
 /// Handles all four cases: 'let', 'let!', 'use', and 'use!'
 val mkLetExpression:
     isBang: bool *
-    mKeyword: range *
     mIn: range option *
     mWhole: range *
     body: SynExpr *
-    bindingInfo: (bool * BindingSet) option *
-    bangInfo: (SynPat * SynExpr * SynBinding list * range option * bool) option ->
+    bindingInfo: BindingSet option *
+    bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option ->
         SynExpr
 
 val mkAndBang:

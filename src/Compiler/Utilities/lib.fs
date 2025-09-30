@@ -9,6 +9,7 @@ open System.Text
 open System.Threading.Tasks
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open System.Runtime.CompilerServices
 
 let debug = false
 
@@ -458,3 +459,17 @@ module Async =
             let! a = a
             return f a
         }
+
+module WeakMap =
+    /// Provides association of lazily-created values with arbitrary key objects.
+    /// The associated value is created on first request and kept alive only while the key
+    /// is strongly referenced elsewhere (backed by ConditionalWeakTable).
+    ///
+    /// Usage:
+    ///   let getValueFor = WeakMap.getOrCreate (fun key -> expensiveInit key)
+    ///   let v = getValueFor someKey
+    let getOrCreate valueFactory =
+        let table = ConditionalWeakTable<_, _>()
+        // Cached factory to avoid allocating a new lambda per lookup.
+        let factory = ConditionalWeakTable.CreateValueCallback(fun k -> valueFactory k)
+        fun (key: 'Key when 'Key: not null) -> table.GetValue(key, factory)

@@ -44,8 +44,7 @@ module FSharp.Test.SurfaceArea
     let private appendNewLine str = str + System.Environment.NewLine
 
     // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
-    let verify assembly baselinePath outFileName : unit =
-
+    let verify assembly baselinePath outFilePath : unit =
         let expected =
             File.ReadAllLines(baselinePath)
             |> String.concat System.Environment.NewLine
@@ -62,24 +61,23 @@ module FSharp.Test.SurfaceArea
 
         let expected = normalize expected
 
-        let logFile =
-            Path.Combine(Path.GetDirectoryName(assembly.Location), outFileName)
-
-        File.WriteAllText(logFile, actual)
-
         match Assert.shouldBeSameMultilineStringSets expected actual with
-        | None -> ()
+        | None ->
+            File.Delete(outFilePath)
+
         | Some diff ->
-            // Update baselines here
             match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
-            | null -> ()
-            | _ -> File.Copy(logFile, baselinePath, true)
-                
-            let msg = $"""Assembly: %A{asm}
+            | null ->
+                File.WriteAllText(outFilePath, actual)
 
-              Expected and actual surface area don't match. To see the delta, run:
-                  windiff {baselinePath} {logFile}
+                let msg = $"""Assembly: %A{asm}
 
-              {diff}"""
+                  Expected and actual surface area don't match. To see the delta, run:
+                      windiff {baselinePath} {outFilePath}
 
-            failwith msg
+                  {diff}"""
+
+                failwith msg
+            | _ ->
+                File.Delete(outFilePath)
+                File.WriteAllText(baselinePath, actual)

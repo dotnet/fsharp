@@ -28,24 +28,34 @@ ImplFile
                     InlineKeyword = None
                     EqualsRange = Some (3,19--3,20) })], (3,0--3,22));
            Expr
-             (LetOrUseBang
-                (Yes (5,0--5,40), false, true,
-                 Typed
-                   (As
-                      (LongIdent
-                         (SynLongIdent ([Even], [], [None]), None, None, Pats [],
-                          None, (5,5--5,9)),
-                       Named (SynIdent (x, None), false, None, (5,13--5,14)),
-                       (5,5--5,14)),
-                    LongIdent (SynLongIdent ([int], [], [None])), (5,5--5,19)),
-                 App
-                   (NonAtomic, false, Ident async,
-                    ComputationExpr
-                      (false,
-                       YieldOrReturn
-                         ((false, true), Const (Int32 2, (5,37--5,38)),
-                          (5,30--5,38), { YieldOrReturnKeyword = (5,30--5,36) }),
-                       (5,28--5,40)), (5,22--5,40)), [],
+             (LetOrUse
+                (false, false, true, true,
+                 [SynBinding
+                    (None, Normal, false, false, [], PreXmlDocEmpty,
+                     SynValData
+                       (None, SynValInfo ([], SynArgInfo ([], false, None)),
+                        None),
+                     Typed
+                       (As
+                          (LongIdent
+                             (SynLongIdent ([Even], [], [None]), None, None,
+                              Pats [], None, (5,5--5,9)),
+                           Named (SynIdent (x, None), false, None, (5,13--5,14)),
+                           (5,5--5,14)),
+                        LongIdent (SynLongIdent ([int], [], [None])),
+                        (5,5--5,19)), None,
+                     App
+                       (NonAtomic, false, Ident async,
+                        ComputationExpr
+                          (false,
+                           YieldOrReturn
+                             ((false, true), Const (Int32 2, (5,37--5,38)),
+                              (5,30--5,38),
+                              { YieldOrReturnKeyword = (5,30--5,36) }),
+                           (5,28--5,40)), (5,22--5,40)), (5,0--5,40),
+                     Yes (5,0--5,40), { LeadingKeyword = Let (5,0--5,4)
+                                        InlineKeyword = None
+                                        EqualsRange = Some (5,20--5,21) })],
                  ImplicitZero (5,40--5,40), (5,0--5,40),
                  { LetOrUseKeyword = (5,0--5,4)
                    InKeyword = None

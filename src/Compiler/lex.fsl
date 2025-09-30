@@ -812,13 +812,12 @@ rule token (args: LexArgs) (skip: bool) = parse
                 | '"' -> String.sub s start (n-start)
                 | _ -> parseFile start (n+1)
 
-            // Call the parser
             let line, file = parseLeadingDirective 1
 
-            // Construct the new position
             if args.applyLineDirectives then
                 let fileIndex = match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex
                 LineDirectiveStore.SaveLineDirective(lexbuf, fileIndex, line)
+
             // we consumed a newline getting here
             incrLine lexbuf
 

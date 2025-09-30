@@ -14,6 +14,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
+exception NoConstructorsAvailableForType of TType * DisplayEnv * range
+
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
 

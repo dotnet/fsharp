@@ -7,6 +7,7 @@ open System
 open System.IO
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Text
 open Microsoft.FSharp.Core.Printf
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras.Bits
@@ -261,6 +262,9 @@ module FileIndex =
     let startupFileName = "startup"
     let commandLineArgsFileName = "commandLineArgs"
 
+    let mutable testSources: ConcurrentDictionary<string, string> =
+        ConcurrentDictionary()
+
 [<RequireQualifiedAccess>]
 module internal LineDirectives =
 
@@ -268,10 +272,10 @@ module internal LineDirectives =
     // The key is the index of the original file. Each line directive is represented
     // by the line number of the directive and the file index and line number of the target.
     let mutable store: Map<FileIndex, (int * (FileIndex * int)) list> = Map.empty
+    let storeLock = obj ()
 
-    let add originalFileIndex lineDirectives =
-        lock lineDirectives
-        <| fun () -> store <- store.Add(originalFileIndex, lineDirectives)
+    let add fileIndex lineDirectives =
+        lock storeLock <| fun () -> store <- store.Add(fileIndex, lineDirectives)
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
@@ -329,6 +333,9 @@ type Range(code1: int64, code2: int64) =
 
     member m.FileName = fileOfFileIndex m.FileIndex
 
+    member internal m.ShortFileName =
+        Path.GetFileName(fileOfFileIndex m.FileIndex) |> nonNull
+
     member m.ApplyLineDirectives() =
         match LineDirectives.store.TryFind m.FileIndex with
         | None -> m
@@ -376,32 +383,42 @@ type Range(code1: int64, code2: int64) =
     member _.Code2 = code2
 
     member m.DebugCode =
-        let name = m.FileName
+        let getRangeSubstring (m: range) (stream: Stream) =
+            let endCol = m.EndColumn - 1
+            let startCol = m.StartColumn - 1
 
-        if
-            name = unknownFileName
-            || name = startupFileName
-            || name = commandLineArgsFileName
-        then
-            name
-        else
+            stream.ReadLines()
+            |> Seq.skip (m.StartLine - 1)
+            |> Seq.take (m.EndLine - m.StartLine + 1)
+            |> String.concat "\n"
+            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
 
-            try
-                let endCol = m.EndColumn - 1
-                let startCol = m.StartColumn - 1
+        match testSources.TryGetValue(m.FileName) with
+        | true, source ->
+            use stream = new MemoryStream(Encoding.UTF8.GetBytes(source + "\n"))
+            getRangeSubstring m stream
+        | _ ->
 
-                if FileSystem.IsInvalidPathShim m.FileName then
-                    "path invalid: " + m.FileName
-                elif not (FileSystem.FileExistsShim m.FileName) then
-                    "nonexistent file: " + m.FileName
-                else
-                    FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
-                    |> Seq.skip (m.StartLine - 1)
-                    |> Seq.take (m.EndLine - m.StartLine + 1)
-                    |> String.concat "\n"
-                    |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
-            with e ->
-                e.ToString()
+            let name = m.FileName
+
+            if
+                name = unknownFileName
+                || name = startupFileName
+                || name = commandLineArgsFileName
+            then
+                name
+            else
+
+                try
+                    if FileSystem.IsInvalidPathShim m.FileName then
+                        "path invalid: " + m.FileName
+                    elif not (FileSystem.FileExistsShim m.FileName) then
+                        "nonexistent file: " + m.FileName
+                    else
+                        use stream = FileSystem.OpenFileForReadShim(m.FileName)
+                        getRangeSubstring m stream
+                with e ->
+                    e.ToString()
 
     member _.Equals(m2: range) =
         let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
@@ -613,3 +630,6 @@ module Range =
                     | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
         with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
+
+    let internal setTestSource path (source: string) =
+        testSources.GetOrAdd(path, source) |> ignore

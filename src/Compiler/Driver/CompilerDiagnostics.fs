@@ -44,34 +44,24 @@ open FSharp.Compiler.TypedTreeOps
 let showAssertForUnexpectedException = ref true
 #endif
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashReferenceNotAllowedInNonScript of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedSourceHasIssues of informationals: exn list * warnings: exn list * errors: exn list * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedScriptConsideredSource of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception HashDirectiveNotAllowedInNonScript of range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionFull of string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionForHtmlDoc of string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionSuggestAlternative of string * string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception DeprecatedCommandLineOptionNoDescription of string * range
 
-/// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
 type Exception with
@@ -207,7 +197,9 @@ type Exception with
         | MSBuildReferenceResolutionError(_, _, m)
         | AssemblyNotResolved(_, m)
         | HashLoadedSourceHasIssues(_, _, _, m)
-        | HashLoadedScriptConsideredSource m -> Some m
+        | HashLoadedScriptConsideredSource m
+        | NoConstructorsAvailableForType(_, _, m) -> Some m
+
         // Strip TargetInvocationException wrappers
         | :? System.Reflection.TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticRange
 #if !NO_TYPEPROVIDERS
@@ -336,6 +328,7 @@ type Exception with
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
         | Failure _ -> 192
         | DefinitionsInSigAndImplNotCompatibleAbbreviationsDiffer _ -> 318
+        | NoConstructorsAvailableForType _ -> 1133
         | ArgumentsInSigAndImplMismatch _ -> 3218
 
         // Strip TargetInvocationException wrappers
@@ -616,6 +609,8 @@ module OldStyleMessages =
     let InvalidAttributeTargetForLanguageElement1E () = Message("InvalidAttributeTargetForLanguageElement1", "%s%s")
     let InvalidAttributeTargetForLanguageElement2E () = Message("InvalidAttributeTargetForLanguageElement2", "")
 
+    let NoConstructorsAvailableForTypeE () = Message("NoConstructorsAvailableForType", "%s")
+
 #if DEBUG
 let mutable showParserStackOnParseError = false
 #endif
@@ -738,21 +733,15 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
 
-        | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as ty1), (TType_measure _ as ty2), m, m2, _) ->
-            // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-
-            os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1 ty2)
-
-            if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
-
         | ConstraintSolverTypesNotInEqualityRelation(denv, ty1, ty2, m, m2, contextInfo) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let ty1str, ty2str, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun _ ->
-                os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1 ty2))
+            match ty1, ty2 with
+            | TType_measure _, TType_measure _ -> os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1str ty2str)
+            | _ ->
+                OutputTypesNotInEqualityRelationContextInfo contextInfo ty1str ty2str m os (fun _ ->
+                    os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1str ty2str))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
@@ -821,11 +810,26 @@ type Exception with
                     os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
-            if not (typeEquiv g ty1 ty2) then
-                let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let e =
+                if not (typeEquiv g ty1 ty2) then
+                    let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-                if ty1 <> ty2 + tpcs then
-                    os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+                    if ty1 <> ty2 + tpcs then
+                        os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+
+                    e
+
+                else
+                    // Fix for https://github.com/dotnet/fsharp/issues/18905
+                    // If ty1 = ty2 after the type solving, then ty2 holds an actual type.
+                    // The order of expected and actual types in ConstraintSolverTypesNotInEqualityRelation can be arbitrary
+                    // due to type solving logic.
+                    // If ty1 = ty2 = ty2b, it means ty2b is also an actual type, and it needs to be swapped with ty1b
+                    // to be correctly used in the type mismatch error message based on ConstraintSolverTypesNotInEqualityRelation
+                    match e with
+                    | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when typeEquiv g ty2 ty2b ->
+                        ConstraintSolverTypesNotInEqualityRelation(env, ty2b, ty1b, m, m2, contextInfo)
+                    | _ -> e
 
             e.Output(os, suggestNames)
 
@@ -1944,6 +1948,9 @@ type Exception with
                 let elementTargets = String.concat ", " elementTargets
                 let allowedTargets = allowedTargets |> String.concat ", "
                 os.AppendString(InvalidAttributeTargetForLanguageElement1E().Format elementTargets allowedTargets)
+
+        | NoConstructorsAvailableForType(t, denv, _) ->
+            os.AppendString(NoConstructorsAvailableForTypeE().Format(NicePrint.minimalStringOfType denv t))
 
         // Strip TargetInvocationException wrappers
         | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).Output(os, suggestNames)

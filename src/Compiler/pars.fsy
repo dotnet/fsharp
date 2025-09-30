@@ -1271,6 +1271,9 @@ moduleDefnsOrExpr:
 
 /* A sequence of definitions in a namespace or module */
 moduleDefns:
+  | moduleDefnOrDirective moduleDefnOrDirective
+      { $1 @ $2 }
+
   | moduleDefnOrDirective moduleDefns
       { $1 @ $2 }
 
@@ -3654,15 +3657,24 @@ conjPatternElements:
      { $3 :: $1 :: [] }
 
 namePatPairs:
-   | namePatPair opt_seps
-     { [$1] }
+   | namePatPair opt_seps_block
+     { let (id: Ident), mEq, (pat: SynPat) = $1
+       let m = unionRanges id.idRange pat.Range
+       let lid = SynLongIdent([id], [], [None])
+       [ NamePatPairField(lid, mEq, m, pat, $2) ] }
 
-   | namePatPair seps namePatPairs
-     { $1 :: $3 }
+   | namePatPair seps_block namePatPairs
+     { let (id: Ident), mEq, (pat: SynPat) = $1
+       let m = unionRanges id.idRange pat.Range
+       let lid = SynLongIdent([id], [], [None])
+       NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
 
-   | namePatPair seps seps namePatPairs
+   | namePatPair seps_block seps_block namePatPairs
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
-        ($1 :: $4) }
+        let (id: Ident), mEq, (pat: SynPat) = $1
+        let m = unionRanges id.idRange pat.Range
+        let lid = SynLongIdent([id], [], [None])
+        NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
 
 namePatPair:
    | ident EQUALS parenPattern
@@ -3995,28 +4007,33 @@ conjParenPatternElements:
       { $3 :: $1 :: [] }
 
 recordPatternElementsAux:
-  | recordPatternElement opt_seps
-      { [$1] }
+  | recordPatternElement opt_seps_block
+      { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
+        let m = unionRanges lid.Range pat.Range
+        [ NamePatPairField(lid, mEq, m, pat, $2) ] }
 
-  | recordPatternElement seps recordPatternElementsAux
-      { $1 :: $3 }
+  | recordPatternElement seps_block recordPatternElementsAux
+      { let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
+        let m = unionRanges lid.Range pat.Range
+        NamePatPairField(lid, mEq, m, pat, Some $2) :: $3 }
+
+  | recordPatternElement seps_block seps_block recordPatternElementsAux
+      { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectingPattern ())
+        let (lid: SynLongIdent), mEq, (pat: SynPat) = $1
+        let m = unionRanges lid.Range pat.Range
+        NamePatPairField(lid, mEq, m, pat, Some $2) :: $4 }
 
 recordPatternElement:
   | path EQUALS parenPattern
-    { let mPath = $1.Range
-      let mEquals = rhs parseState 2
-      let mPat = $3.Range
-      List.frontAndBack $1.LongIdent, Some mEquals, $3 }
+    { let mEquals = rhs parseState 2
+      $1, Some mEquals, $3 }
 
   | path EQUALS recover
-    { let mPath = $1.Range
-      let mEquals = rhs parseState 2
-      let pat = SynPat.Wild(mEquals.EndRange)
-      List.frontAndBack $1.LongIdent, Some mEquals, pat }
+    { let mEquals = rhs parseState 2
+      $1, Some mEquals, patFromParseError (SynPat.Wild mEquals.EndRange) }
 
   | path recover
-    { let pat = SynPat.Wild($1.Range.EndRange)
-      List.frontAndBack $1.LongIdent, None, pat }
+    { $1, None, patFromParseError (SynPat.Wild $1.Range.EndRange) }
 
 listPatternElements:
   | /* EMPTY */
@@ -4111,8 +4128,7 @@ sequentialExpr:
        let usedKeyword = if isUse then "use" else "let"
        reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedExpressionAfterLet(usedKeyword, usedKeyword))
        let fauxRange = m.EndRange // zero width range at end of m
-       let isRec = match bindingSet with BindingSetPreAttrs(_, isRec, _, _, _) -> isRec
-       mkLetExpression(false, mLetKwd, mIn, m, arbExpr ("seqExpr", fauxRange), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, m, arbExpr ("seqExpr", fauxRange), Some bindingSet, None) }
 
 /* Use this as the last terminal when performing error recovery */
 /* The contract for using this is that (a) if EOF occurs then the */
@@ -4164,15 +4180,13 @@ declExpr:
      { let mIn = rhs parseState 2 |> Some
        let mWhole = unionRanges (rhs2 parseState 1 2) $3.Range
        let bindingSet = $1
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, $3, Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, $3, Some bindingSet, None) }
 
   | defnBindings IN error %prec expr_let
      { let mIn = rhs parseState 2 |> Some
        let mWhole = rhs2 parseState 1 2
        let bindingSet = $1
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, arbExpr ("declExpr1", (rhs parseState 3)), Some bindingSet, None) }
 /*
     FSComp.SR.parsNoMatchingInForLet() -- leave this in for now - it's an unused error string
 */
@@ -4180,27 +4194,23 @@ declExpr:
   | hardwhiteLetBindings typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $2.Range
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, $2, Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, $2, Some bindingSet, None) }
 
   | hardwhiteLetBindings error %prec expr_let
      { let bindingSet, m, mIn = $1
        reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, m, arbExpr ("declExpr2", (rhs parseState 2)), Some bindingSet, None) }
 
   | hardwhiteLetBindings OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let bindingSet, m, mIn = $1
        let mWhole = unionRanges m $3.Range
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, $3, Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, $3, Some bindingSet, None) }
 
   | hardwhiteLetBindings OBLOCKSEP error %prec expr_let
      { let bindingSet, m, mIn = $1
        //reportParseErrorAt (match bindingSet with (BindingSetPreAttrs(m, _, _, _, _)) -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        let mWhole = unionRanges m (rhs parseState 3)
-       let mKeyword, isRec = match bindingSet with BindingSetPreAttrs(m, isRec, _, _, _) -> m, isRec
-       mkLetExpression(false, mKeyword, mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), Some(isRec, bindingSet), None) }
+       mkLetExpression(false, mIn, mWhole, arbExpr ("declExpr3", (rhs parseState 3)), Some bindingSet, None) }
 
   | hardwhiteDoBinding %prec expr_let
      { let (BindingSetPreAttrs(_, _, _, _, m)), e = $1
@@ -4543,7 +4553,7 @@ declExpr:
        // $1 contains the actual keyword ("let" or "use")
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, mKeyword, None, m, $8, None, Some(pat, $4, $7, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Offside-sensitive version of let!/use! binding
@@ -4561,7 +4571,7 @@ declExpr:
        
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, mKeyword, None, m, $8, None, Some(pat, $4, $7, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // Error recovery for incomplete let!/use! bindings
@@ -4580,7 +4590,7 @@ declExpr:
        let isUse = ($1 = "use")
        
        // Use ImplicitZero as the continuation expression for error recovery
-       mkLetExpression(true, mKeyword, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mEquals, isUse)) }
+       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mKeyword, mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
@@ -5667,7 +5677,7 @@ optInlineAssemblyReturnTypes:
      { [] }
 
 recdExpr:
-  | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_recd
+  | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_block
      { let arg = match $4 with None -> mkSynUnit (lhs parseState) | Some e -> e
        let l = List.rev $5
        let dummyField = mkRecdField (SynLongIdent([], [], [])) // dummy identifier, it will be discarded
@@ -5681,7 +5691,7 @@ recdExpr:
       None, a, b }
 
 recdExprCore:
-  | appExpr EQUALS declExprBlock recdExprBindings opt_seps_recd
+  | appExpr EQUALS declExprBlock recdExprBindings opt_seps_block
      { match $1 with
        | LongOrSingleIdent(false, (SynLongIdent _ as f), None, m) ->
             let f = mkRecdField f
@@ -5725,7 +5735,7 @@ recdExprCore:
 
       (None, [ SynExprRecordField(f, Some mEquals, None, (rhs2 parseState 1 2), None) ]) }
 
-  | UNDERSCORE EQUALS declExprBlock recdExprBindings opt_seps_recd
+  | UNDERSCORE EQUALS declExprBlock recdExprBindings opt_seps_block
     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnderscoreInvalidFieldName())
       let f = mkUnderscoreRecdField (rhs parseState 1)
       let mEquals = rhs parseState 2
@@ -5734,27 +5744,27 @@ recdExprCore:
       (None, l) }
 
 /* handles case like {x with}  */
-  | appExpr WITH recdBinding recdExprBindings opt_seps_recd
+  | appExpr WITH recdBinding recdExprBindings opt_seps_block
      { let l = List.rev $4
        let l = rebindRanges $3 l $5
        (Some($1, (rhs parseState 2, None)), l) }
 
-  | appExpr OWITH opt_seps_recd OEND
+  | appExpr OWITH opt_seps_block OEND
      { (Some($1, (rhs parseState 2, None)), []) }
 
-  | appExpr OWITH recdBinding recdExprBindings opt_seps_recd OEND
+  | appExpr OWITH recdBinding recdExprBindings opt_seps_block OEND
      { let l = List.rev $4
        let l = rebindRanges $3 l $5
        (Some($1, (rhs parseState 2, None)), l) }
 
-opt_seps_recd:
-  | seps_recd
+opt_seps_block:
+  | seps_block
      { Some $1 }
 
   | /* EMPTY */
      { None }
 
-seps_recd:
+seps_block:
   | OBLOCKSEP
      { (rhs parseState 1), None }
 
@@ -5780,7 +5790,7 @@ pathOrUnderscore :
       mkUnderscoreRecdField m }
 
 recdExprBindings:
-  | recdExprBindings seps_recd recdBinding
+  | recdExprBindings seps_block recdBinding
      { ($3, Some $2) :: $1 }
 
   | /* EMPTY */

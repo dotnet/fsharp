@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net9.0</LocalFSharpBuildBinPath>    
+    <LocalFSharpBuildBinPath>$(MSBuildThisFileDirectory)../../../../artifacts/bin/fsc/Release/net10.0</LocalFSharpBuildBinPath>    
     <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile> 
     <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</DotnetFscCompilerPath>
     <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>  

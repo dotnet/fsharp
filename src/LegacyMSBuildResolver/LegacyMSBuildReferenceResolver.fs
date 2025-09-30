@@ -69,8 +69,23 @@ let private Net472 = "v4.7.2"
 [<Literal>]
 let private Net48 = "v4.8"
 
+[<Literal>]
+let private Net481 = "v4.8.1"
+
 let SupportedDesktopFrameworkVersions =
-    [ Net48; Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
+    [
+        Net481
+        Net48
+        Net472
+        Net471
+        Net47
+        Net462
+        Net461
+        Net46
+        Net452
+        Net451
+        Net45
+    ]
 
 /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
 /// This is only used to specify the "last resort" path for assembly resolution.
@@ -87,6 +102,7 @@ let GetPathToDotNetFrameworkImplementationAssemblies v : string list =
         | Net471 -> Some TargetDotNetFrameworkVersion.Version471
         | Net472 -> Some TargetDotNetFrameworkVersion.Version472
         | Net48 -> Some TargetDotNetFrameworkVersion.Version48
+        | Net481 -> Some TargetDotNetFrameworkVersion.Version481
         | _ ->
             assert false
             None
@@ -114,7 +130,9 @@ let GetPathToDotNetFrameworkReferenceAssemblies version =
 let HighestInstalledRefAssembliesOrDotNETFramework () =
     let getHighestInstalledDotNETFramework () =
         try
-            if not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)))) then
+            if not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version481)))) then
+                Net481
+            elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)))) then
                 Net48
             elif not (isNull (box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)))) then
                 Net472

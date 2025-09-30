@@ -2,11 +2,11 @@
 // Negative tests on :>
 // Cast to a class that is not parent
 
-//<Expects id="FS0193" span="(20,12-20,20)" status="error">Type constraint mismatch\. The type</Expects>
+//<Expects id="FS0193" span="(20,19-20,20)" status="error">Type constraint mismatch\. The type</Expects>
 
-//<Expects id="FS0193" span="(21,12-21,18)" status="error">Type constraint mismatch\. The type</Expects>
+//<Expects id="FS0193" span="(21,12-21,13)" status="error">Type constraint mismatch\. The type</Expects>
 
-//<Expects id="FS0193" span="(22,12-22,19)" status="error">Type constraint mismatch\. The type</Expects>
+//<Expects id="FS0193" span="(22,12-22,13)" status="error">Type constraint mismatch\. The type</Expects>
 
 
 

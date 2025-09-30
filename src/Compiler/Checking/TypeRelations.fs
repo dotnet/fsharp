@@ -7,6 +7,7 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.TypeHashing.StructuralUtilities
 
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
@@ -18,6 +19,26 @@ open FSharp.Compiler.TypeHierarchy
 open Import
 
 #nowarn "3391"
+
+[<Struct; NoComparison>]
+type CanCoerce =
+    | CanCoerce
+    | NoCoerce
+
+[<Struct; NoComparison>]
+type TTypeCacheKey =
+    | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
+    static member FromStrippedTypes(ty1, ty2, canCoerce) =
+        TTypeCacheKey(getTypeStructure ty1, getTypeStructure ty2, canCoerce)
+
+let getTypeSubsumptionCache =
+    let factory (g: TcGlobals) =
+        let options =
+            match g.compilationMode with
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
+        new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
+    Extras.WeakMap.getOrCreate factory     
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -101,20 +122,6 @@ let TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
 let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
-let inline TryGetCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key =
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
-        match amap.TypeSubsumptionCache.TryGetValue(key) with
-        | true, subsumes ->
-            ValueSome subsumes
-        | false, _ ->
-            ValueNone
-    else
-        ValueNone
-
-let inline UpdateCachedTypeSubsumption (g: TcGlobals) (amap: ImportMap) key subsumes : unit =
-    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
-        amap.TypeSubsumptionCache.TryAdd(key, subsumes) |> ignore
-
 /// The feasible coercion relation. Part of the language spec.
 let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: TType) (canCoerce: CanCoerce) (ty2: TType) =
 
@@ -124,41 +131,36 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
 
-    // Check if language feature supported
-    let key = TTypeCacheKey.FromStrippedTypes (ty1, ty2, canCoerce)
+    let checkSubsumes ty1 ty2 =
+        match ty1, ty2 with
+        | TType_measure _, TType_measure _
+        | TType_var _, _ | _, TType_var _ ->
+            true
 
-    match TryGetCachedTypeSubsumption g amap key with
-    | ValueSome subsumes ->
-        subsumes
-    | ValueNone ->
-        let subsumes =
-            match ty1, ty2 with
-            | TType_measure _, TType_measure _
-            | TType_var _, _ | _, TType_var _ ->
-                true
+        | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
+            List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
 
-            | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
-                List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
+        | TType_tuple _, TType_tuple _
+        | TType_anon _, TType_anon _
+        | TType_fun _, TType_fun _ ->
+            TypesFeasiblyEquiv ndeep g amap m ty1 ty2
 
-            | TType_tuple _, TType_tuple _
-            | TType_anon _, TType_anon _
-            | TType_fun _, TType_fun _ ->
-                TypesFeasiblyEquiv ndeep g amap m ty1 ty2
+        | _ ->
+            // F# reference types are subtypes of type 'obj'
+                if isObjTyAnyNullness g ty1 && (canCoerce = CanCoerce || isRefTy g ty2) then
+                    true
+                elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
+                    true
+                else
+                    let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
+                    // See if any interface in type hierarchy of ty2 is a supertype of ty1
+                    List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
 
-            | _ ->
-                // F# reference types are subtypes of type 'obj'
-                    if isObjTyAnyNullness g ty1 && (canCoerce = CanCoerce || isRefTy g ty2) then
-                        true
-                    elif isAppTy g ty2 && (canCoerce = CanCoerce || isRefTy g ty2) && TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 then
-                        true
-                    else
-                        let interfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
-                        // See if any interface in type hierarchy of ty2 is a supertype of ty1
-                        List.exists (TypeFeasiblySubsumesType (ndeep + 1) g amap m ty1 NoCoerce) interfaces
-
-        UpdateCachedTypeSubsumption g amap key subsumes
-
-        subsumes
+    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+        let key = TTypeCacheKey.FromStrippedTypes(ty1, ty2, canCoerce)
+        (getTypeSubsumptionCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
+    else
+        checkSubsumes ty1 ty2
 
 and TypeFeasiblySubsumesTypeWithSupertypeCheck g amap m ndeep ty1 ty2 =
     match GetSuperTypeOfType g amap m ty2 with

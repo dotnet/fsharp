@@ -1464,11 +1464,12 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
         | ByrefTy g inst ->
             GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg inst (PassByRef(inst, currDfltVal)) eCallerMemberName mMethExpr
         | _ ->
+            let mLineDirectivesApplied = mMethExpr.ApplyLineDirectives()
             match calledArg.CallerInfo, eCallerMemberName with
             | CallerLineNumber, _ when typeEquiv g currCalledArgTy g.int_ty ->
-                emptyPreBinder, Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
+                emptyPreBinder, Expr.Const (Const.Int32(mLineDirectivesApplied.StartLine), mMethExpr, currCalledArgTy)
             | CallerFilePath, _ when typeEquiv g currCalledArgTy g.string_ty ->
-                let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
+                let fileName = mLineDirectivesApplied.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
                 emptyPreBinder, Expr.Const (Const.String fileName, mMethExpr, currCalledArgTy)
             | CallerMemberName, Some callerName when (typeEquiv g currCalledArgTy g.string_ty) ->
                 emptyPreBinder, Expr.Const (Const.String callerName, mMethExpr, currCalledArgTy)
@@ -1504,13 +1505,14 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) =
     let calledArgTy = calledArg.CalledArgumentType
     let calledNonOptTy = tryDestOptionalTy g calledArgTy
+    let mLineDirectivesApplied = mMethExpr.ApplyLineDirectives()
 
     match calledArg.CallerInfo, eCallerMemberName with
     | CallerLineNumber, _ when typeEquiv g calledNonOptTy g.int_ty ->
-        let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
+        let lineExpr = Expr.Const(Const.Int32 mLineDirectivesApplied.StartLine, mMethExpr, calledNonOptTy)
         mkOptionalSome g calledArgTy calledNonOptTy lineExpr mMethExpr
     | CallerFilePath, _ when typeEquiv g calledNonOptTy g.string_ty ->
-        let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
+        let fileName = mLineDirectivesApplied.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
         let filePathExpr = Expr.Const (Const.String(fileName), mMethExpr, calledNonOptTy)
         mkOptionalSome g calledArgTy calledNonOptTy filePathExpr mMethExpr
     | CallerMemberName, Some(callerName) when typeEquiv g calledNonOptTy g.string_ty ->

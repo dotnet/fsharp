@@ -14,7 +14,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
@@ -221,7 +221,7 @@ module internal RoslynHelpers =
                 try
                     return! computation
                 with e ->
-                    logExceptionWithContext (e, context)
+                    FSharpOutputPane.logExceptionWithContext (e, context)
                     return Unchecked.defaultof<_>
             }
 

@@ -74,6 +74,7 @@ launchSettings.json
 *.jrs
 *.chk
 *.bak
+*.out
 *.vserr
 *.err
 *.orig
@@ -141,7 +142,9 @@ positive.exe
 
 # Test result files
 tests/**/TestResults/*.trx
+TestResults/*.trx
 
 # Standard output/error files in root directory
 StandardOutput.txt
 StandardError.txt
+**/TestResults/

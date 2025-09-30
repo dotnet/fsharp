@@ -3216,7 +3216,7 @@ let ``Test Project22 IList contents`` () =
     set [ for x in ilistTypeDefn.AllInterfaces -> x.TypeDefinition.DisplayName, attribsOfSymbol x.TypeDefinition ]
        |> shouldEqual
               (set [("IList", ["interface"]); ("ICollection", ["interface"]);
-                    ("IEnumerable", ["interface"]); ("IEnumerable", ["interface"])])
+                    ("IEnumerable", ["interface"]); ("seq", ["abbrev"])])
 
     arrayTypes |> shouldEqual [|("[]", 1); ("[,,]", 3)|]
 
@@ -3317,9 +3317,9 @@ let ``Test Project23 property`` () =
         extensionProps
         |> Array.collect (fun f ->
             [|  if f.HasGetterMethod then
-                    yield (f.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.GetterMethod.CompiledName, f.GetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
+                    yield (f.DeclaringEntity.Value.FullName, tryGetEntityFullName f.ApparentEnclosingEntity, f.GetterMethod.CompiledName, f.GetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
                 if f.HasSetterMethod then
-                    yield (f.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.SetterMethod.CompiledName, f.SetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
+                    yield (f.DeclaringEntity.Value.FullName, tryGetEntityFullName f.ApparentEnclosingEntity, f.SetterMethod.CompiledName, f.SetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
             |])
         |> Array.toList
 
@@ -3362,9 +3362,9 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
         match x.Symbol with
         | :? FSharpMemberOrFunctionOrValue as f ->
             if f.HasGetterMethod then
-                yield (f.DeclaringEntity.Value.FullName, f.GetterMethod.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.GetterMethod.ApparentEnclosingEntity.FullName, attribsOfSymbol f)
+                yield (f.DeclaringEntity.Value.FullName, f.GetterMethod.DeclaringEntity.Value.FullName, tryGetEntityFullName f.ApparentEnclosingEntity, tryGetEntityFullName f.GetterMethod.ApparentEnclosingEntity, attribsOfSymbol f)
             if f.HasSetterMethod then
-                yield (f.DeclaringEntity.Value.FullName, f.SetterMethod.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.SetterMethod.ApparentEnclosingEntity.FullName, attribsOfSymbol f)
+                yield (f.DeclaringEntity.Value.FullName, f.SetterMethod.DeclaringEntity.Value.FullName, tryGetEntityFullName f.ApparentEnclosingEntity, tryGetEntityFullName f.SetterMethod.ApparentEnclosingEntity, attribsOfSymbol f)
         | _ -> ()
         |])
     |> Array.toList
@@ -5370,7 +5370,7 @@ let x = (1 = 3.0)
     let args = mkProjectCommandLineArgs (dllName, [])
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives active`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunImmediate
@@ -5388,7 +5388,7 @@ let ``Test diagnostics with line directives active`` () =
         let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [10, 10, "Test.fsy"]
 
-[<Fact>]
+[<Fact; RunTestCasesInSequence>]
 let ``Test diagnostics with line directives ignored`` () =
 
     // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
@@ -5397,7 +5397,7 @@ let ``Test diagnostics with line directives ignored`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     [ for e in wholeProjectResults.Diagnostics ->
-        let m = e.Range.ApplyLineDirectives() in m.StartLine, m.EndLine, m.FileName ]
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
     let checkResults =
@@ -5409,7 +5409,7 @@ let ``Test diagnostics with line directives ignored`` () =
         printfn "ProjectLineDirectives checkResults error file: <<<%s>>>" e.Range.FileName
 
     [ for e in checkResults.Diagnostics ->
-        let m = e.Range.ApplyLineDirectives() in m.StartLine, m.EndLine, m.FileName ]
+        let m = e.Range in m.StartLine, m.EndLine, m.FileName ]
     |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
@@ -5805,7 +5805,8 @@ let checkContentAsScript content =
     | FSharpCheckFileAnswer.Succeeded r -> r
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
-module ScriptClosureCacheUse =
+module ScriptClosureCacheUse =    
+
     [<Fact>]
     let ``References from #r nuget are included in script project options`` () =
         let checkResults = checkContentAsScript """

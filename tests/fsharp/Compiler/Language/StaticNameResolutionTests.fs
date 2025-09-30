@@ -49,7 +49,7 @@ let res3 : bool = torch.cuda().cuda().isAvailable2()
             |> MetadataReference.CreateFromFile
 
         let cs =
-            CompilationUtil.CreateCSharpCompilation(csSrc, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31, additionalReferences = ImmutableArray.CreateRange [fsharpCoreAssembly])
+            CompilationUtil.CreateCSharpCompilation(csSrc, CSharpLanguageVersion.CSharp8, TargetFramework.Current, additionalReferences = ImmutableArray.CreateRange [fsharpCoreAssembly])
             |> CompilationReference.Create
 
         let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| |], cmplRefs = [cs])

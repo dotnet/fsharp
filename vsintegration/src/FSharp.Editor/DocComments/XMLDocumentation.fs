@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
@@ -288,27 +289,26 @@ module internal XmlDocumentation =
     /// Provide Xml Documentation
     type Provider(xmlIndexService: IVsXMLMemberIndexService) =
         /// Index of assembly name to xml member index.
-        let cache = Dictionary<string, IVsXMLMemberIndex>()
+        let cache = ConcurrentDictionary<string, IVsXMLMemberIndex>()
 
         do Events.SolutionEvents.OnAfterCloseSolution.Add(fun _ -> cache.Clear())
 
         /// Retrieve the preexisting xml index or None
         let GetMemberIndexOfAssembly (assemblyName) =
-            match cache.TryGetValue(assemblyName) with
-            | true, memberIndex -> Some(memberIndex)
-            | false, _ ->
-                let ok, memberIndex = xmlIndexService.CreateXMLMemberIndex(assemblyName)
+            let memberIndex =
+                cache.GetOrAdd(
+                    assemblyName,
+                    fun name ->
+                        let ok, memberIndex = xmlIndexService.CreateXMLMemberIndex(name)
 
-                if Com.Succeeded(ok) then
-                    let ok = memberIndex.BuildMemberIndex()
+                        if Com.Succeeded(ok) then
+                            let ok = memberIndex.BuildMemberIndex()
+                            if Com.Succeeded(ok) then memberIndex else null
+                        else
+                            null
+                )
 
-                    if Com.Succeeded(ok) then
-                        cache.Add(assemblyName, memberIndex)
-                        Some(memberIndex)
-                    else
-                        None
-                else
-                    None
+            if memberIndex <> null then Some(memberIndex) else None
 
         let AppendMemberData
             (

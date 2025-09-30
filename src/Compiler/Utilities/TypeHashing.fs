@@ -1,6 +1,7 @@
 module internal Internal.Utilities.TypeHashing
 
 open Internal.Utilities.Rational
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -8,6 +9,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open System.Collections.Immutable
 
 type ObserverVisibility =
     | PublicOnly
@@ -357,68 +359,111 @@ module HashTastMemberOrVals =
             hashNonMemberVal (g, obs) (tps, vref.Deref, tau, cxs)
         | Some _ -> hashMember (g, obs) emptyTyparInst vref.Deref
 
-/// Practical TType comparer strictly for the use with cache keys.
-module HashStamps =
-    let rec typeInstStampsEqual (tys1: TypeInst) (tys2: TypeInst) =
-        tys1.Length = tys2.Length && (tys1, tys2) ||> Seq.forall2 stampEquals
+/// <summary>
+/// StructuralUtilities: produce a conservative structural fingerprint of <c>TType</c>.
+///
+/// Current (sole) usage:
+///   Key in the typeSubsumptionCache. The key must never give a false positive
+///   (two non-subsuming types producing identical token sequences). False negatives
+///   are acceptable and simply reduce cache hit rate.
+///
+/// Properties:
+///   * Uses per-compilation stamps (entities, typars, anon records, measures).
+///   * Emits shape for union cases (declaring type stamp + case name), tuple structness,
+///     function arrows, forall binders, nullness, measures, generic arguments.
+///   * Unknown/variable nullness => NeverEqual token to force inequality (avoid unsound hits).
+///
+/// Non-goals:
+///   * Cross-compilation stability.
+///   * Perfect canonicalisation or alpha-equivalence collapsing.
+///
+/// </summary>
+module StructuralUtilities =
+    [<Struct; CustomEquality; NoComparison>]
+    type NeverEqual =
+        struct
+            interface System.IEquatable<NeverEqual> with
+                member _.Equals _ = false
 
-    and inline typarStampEquals (t1: Typar) (t2: Typar) = t1.Stamp = t2.Stamp
+            override _.Equals _ = false
+            override _.GetHashCode() = 0
+        end
 
-    and typarsStampsEqual (tps1: Typars) (tps2: Typars) =
-        tps1.Length = tps2.Length && (tps1, tps2) ||> Seq.forall2 typarStampEquals
+        static member Singleton = NeverEqual()
 
-    and measureStampEquals (m1: Measure) (m2: Measure) =
-        match m1, m2 with
-        | Measure.Var(mv1), Measure.Var(mv2) -> mv1.Stamp = mv2.Stamp
-        | Measure.Const(t1, _), Measure.Const(t2, _) -> t1.Stamp = t2.Stamp
-        | Measure.Prod(m1, m2, _), Measure.Prod(m3, m4, _) -> measureStampEquals m1 m3 && measureStampEquals m2 m4
-        | Measure.Inv m1, Measure.Inv m2 -> measureStampEquals m1 m2
-        | Measure.One _, Measure.One _ -> true
-        | Measure.RationalPower(m1, r1), Measure.RationalPower(m2, r2) -> r1 = r2 && measureStampEquals m1 m2
-        | _ -> false
+    [<Struct; NoComparison; RequireQualifiedAccess>]
+    type TypeToken =
+        | Stamp of stamp: Stamp
+        | UCase of name: string
+        | Nullness of nullness: NullnessInfo
+        | TupInfo of b: bool
+        | MeasureOne
+        | MeasureRational of int * int
+        | NeverEqual of never: NeverEqual
 
-    and nullnessEquals (n1: Nullness) (n2: Nullness) =
-        match n1, n2 with
-        | Nullness.Known k1, Nullness.Known k2 -> k1 = k2
-        | Nullness.Variable _, Nullness.Variable _ -> true
-        | _ -> false
+    type TypeStructure = TypeStructure of ImmutableArray<TypeToken>
 
-    and stampEquals ty1 ty2 =
-        match ty1, ty2 with
-        | TType_ucase(u, tys1), TType_ucase(v, tys2) -> u.CaseName = v.CaseName && typeInstStampsEqual tys1 tys2
-        | TType_app(tcref1, tinst1, n1), TType_app(tcref2, tinst2, n2) ->
-            tcref1.Stamp = tcref2.Stamp
-            && nullnessEquals n1 n2
-            && typeInstStampsEqual tinst1 tinst2
-        | TType_anon(info1, tys1), TType_anon(info2, tys2) -> info1.Stamp = info2.Stamp && typeInstStampsEqual tys1 tys2
-        | TType_tuple(c1, tys1), TType_tuple(c2, tys2) -> c1 = c2 && typeInstStampsEqual tys1 tys2
-        | TType_forall(tps1, tau1), TType_forall(tps2, tau2) -> stampEquals tau1 tau2 && typarsStampsEqual tps1 tps2
-        | TType_var(r1, n1), TType_var(r2, n2) -> r1.Stamp = r2.Stamp && nullnessEquals n1 n2
-        | TType_measure m1, TType_measure m2 -> measureStampEquals m1 m2
-        | _ -> false
+    let inline toNullnessToken (n: Nullness) =
+        match n.TryEvaluate() with
+        | ValueSome k -> TypeToken.Nullness k
+        | _ -> TypeToken.NeverEqual NeverEqual.Singleton
 
-    let inline hashStamp (x: Stamp) : Hash = uint x * 2654435761u |> int
+    let rec private accumulateMeasure (m: Measure) =
+        seq {
+            match m with
+            | Measure.Var mv -> TypeToken.Stamp mv.Stamp
+            | Measure.Const(tcref, _) -> TypeToken.Stamp tcref.Stamp
+            | Measure.Prod(m1, m2, _) ->
+                yield! accumulateMeasure m1
+                yield! accumulateMeasure m2
+            | Measure.Inv m1 -> yield! accumulateMeasure m1
+            | Measure.One _ -> TypeToken.MeasureOne
+            | Measure.RationalPower(m1, r) ->
+                yield! accumulateMeasure m1
+                TypeToken.MeasureRational(GetNumerator r, GetDenominator r)
+        }
 
-    // The idea is to keep the illusion of immutability of TType.
-    // This hash must be stable during compilation, otherwise we won't be able to find keys or evict from the cache.
-    let rec hashTType ty : Hash =
-        match ty with
-        | TType_ucase(u, tinst) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hash u.CaseName)
-        | TType_app(tcref, tinst, Nullness.Known n) ->
-            tinst
-            |> hashListOrderMatters (hashTType)
-            |> pipeToHash (hashStamp tcref.Stamp)
-            |> pipeToHash (hash n)
-        | TType_app(tcref, tinst, Nullness.Variable _) -> tinst |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp tcref.Stamp)
-        | TType_anon(info, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hashStamp info.Stamp)
-        | TType_tuple(c, tys) -> tys |> hashListOrderMatters (hashTType) |> pipeToHash (hash c)
-        | TType_forall(tps, tau) ->
-            tps
-            |> Seq.map _.Stamp
-            |> hashListOrderMatters (hashStamp)
-            |> pipeToHash (hashTType tau)
-        | TType_fun(d, r, Nullness.Known n) -> hashTType d |> pipeToHash (hashTType r) |> pipeToHash (hash n)
-        | TType_fun(d, r, Nullness.Variable _) -> hashTType d |> pipeToHash (hashTType r)
-        | TType_var(r, Nullness.Known n) -> hashStamp r.Stamp |> pipeToHash (hash n)
-        | TType_var(r, Nullness.Variable _) -> hashStamp r.Stamp
-        | TType_measure _ -> 0
+    let rec private accumulateTType (ty: TType) =
+        seq {
+            match ty with
+            | TType_ucase(u, tinst) ->
+                TypeToken.Stamp u.TyconRef.Stamp
+                TypeToken.UCase u.CaseName
+
+                for arg in tinst do
+                    yield! accumulateTType arg
+
+            | TType_app(tcref, tinst, n) ->
+                TypeToken.Stamp tcref.Stamp
+                toNullnessToken n
+
+                for arg in tinst do
+                    yield! accumulateTType arg
+            | TType_anon(info, tys) ->
+                TypeToken.Stamp info.Stamp
+
+                for arg in tys do
+                    yield! accumulateTType arg
+            | TType_tuple(tupInfo, tys) ->
+                TypeToken.TupInfo(evalTupInfoIsStruct tupInfo)
+
+                for arg in tys do
+                    yield! accumulateTType arg
+            | TType_forall(tps, tau) ->
+                for tp in tps do
+                    TypeToken.Stamp tp.Stamp
+
+                yield! accumulateTType tau
+            | TType_fun(d, r, n) ->
+                yield! accumulateTType d
+                yield! accumulateTType r
+                toNullnessToken n
+            | TType_var(r, n) ->
+                TypeToken.Stamp r.Stamp
+                toNullnessToken n
+            | TType_measure m -> yield! accumulateMeasure m
+        }
+
+    /// Get the full structure of a type as a sequence of tokens, suitable for equality
+    let getTypeStructure =
+        Extras.WeakMap.getOrCreate (fun ty -> accumulateTType ty |> ImmutableArray.ofSeq |> TypeStructure)

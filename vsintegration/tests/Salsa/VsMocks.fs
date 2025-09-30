@@ -1375,6 +1375,7 @@ module internal VsMocks =
     let vsTargetFrameworkAssemblies40 = vsTargetFrameworkAssembliesN 0x40000u
     let vsTargetFrameworkAssemblies45 = vsTargetFrameworkAssembliesN 0x40005u
     let vsTargetFrameworkAssemblies46 = vsTargetFrameworkAssembliesN 0x40006u
+    let vsTargetFrameworkAssemblies472 = vsTargetFrameworkAssembliesN 0x40007u
     
     let vsFrameworkMultiTargeting =
         { new IVsFrameworkMultiTargeting with
@@ -1599,6 +1600,11 @@ module internal VsMocks =
     let MakeMockServiceProviderAndConfigChangeNotifier46() =
         let sp, ccn = MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService()
         sp.AddService(typeof<SVsTargetFrameworkAssemblies>, box vsTargetFrameworkAssemblies46, false)
+        sp.AddService(typeof<SVsFrameworkMultiTargeting>, box vsFrameworkMultiTargeting, false)
+        sp, ccn
+    let MakeMockServiceProviderAndConfigChangeNotifier472() =
+        let sp, ccn = MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService()
+        sp.AddService(typeof<SVsTargetFrameworkAssemblies>, box vsTargetFrameworkAssemblies472, false)
         sp.AddService(typeof<SVsFrameworkMultiTargeting>, box vsFrameworkMultiTargeting, false)
         sp, ccn
 

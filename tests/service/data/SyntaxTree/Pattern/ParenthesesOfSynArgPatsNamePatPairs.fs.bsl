@@ -11,11 +11,14 @@ ImplFile
                     (LongIdent
                        (SynLongIdent ([OnePartData], [], [None]), None, None,
                         NamePatPairs
-                          ([(part1, Some (4,10--4,11),
-                             Named
-                               (SynIdent (p1, None), false, None, (4,12--4,14)))],
-                           (4,4--5,13), { ParenRange = (3,13--5,13) }), None,
-                        (3,2--5,13)), None, Ident p1, (3,2--5,19), Yes,
+                          ([NamePatPairField
+                              (SynLongIdent ([part1], [], [None]),
+                               Some (4,10--4,11), (4,4--4,14),
+                               Named
+                                 (SynIdent (p1, None), false, None, (4,12--4,14)),
+                               None)], (4,4--5,13),
+                           { ParenRange = (3,13--5,13) }), None, (3,2--5,13)),
+                     None, Ident p1, (3,2--5,19), Yes,
                      { ArrowRange = Some (5,14--5,16)
                        BarRange = Some (3,0--3,1) });
                   SynMatchClause

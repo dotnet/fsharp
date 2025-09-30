@@ -1,3 +1,9 @@
 <Project>
+ <PropertyGroup>
+      <NoWarn>$(NoWarn);NU1603</NoWarn> 
+    <!-- error NU1603: Warning As Error: Equality depends on Microsoft.NET.ILLink.Tasks 
+    (>= 10.0.0-preview.7.25322.101) but Microsoft.NET.ILLink.Tasks 10.0.0-preview.7.25322.101 was not found.
+     Microsoft.NET.ILLink.Tasks 10.0.0-preview.7.25380.108 was resolved instead. -->
+ </PropertyGroup>
   <!-- empty to prevent directory crawling -->
 </Project>

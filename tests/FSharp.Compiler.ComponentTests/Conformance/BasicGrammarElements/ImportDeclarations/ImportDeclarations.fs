@@ -60,6 +60,7 @@ module ImportDeclarations =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
+            (Error 58, Line 7, Col 5, Line 7, Col 9, "'open' declarations must appear at module level, not inside types.")
             (Error 10, Line 7, Col 5, Line 7, Col 9, "Unexpected keyword 'open' in member definition")
         ]
 

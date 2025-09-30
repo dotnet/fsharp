@@ -7,21 +7,218 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Diagnostics
 open System.Diagnostics.Metrics
+open System.IO
+
+module CacheMetrics =
+    let Meter = new Meter("FSharp.Compiler.Cache")
+    let adds = Meter.CreateCounter<int64>("adds", "count")
+    let updates = Meter.CreateCounter<int64>("updates", "count")
+    let hits = Meter.CreateCounter<int64>("hits", "count")
+    let misses = Meter.CreateCounter<int64>("misses", "count")
+    let evictions = Meter.CreateCounter<int64>("evictions", "count")
+    let evictionFails = Meter.CreateCounter<int64>("eviction-fails", "count")
+
+    let allCounters = [ adds; updates; hits; misses; evictions; evictionFails ]
+
+    let creations = Meter.CreateCounter<int64>("creations", "count")
+    let disposals = Meter.CreateCounter<int64>("disposals", "count")
+
+    let mutable private nextCacheId = 0
+
+    let mkTags (name: string) =
+        let cacheId = Interlocked.Increment &nextCacheId
+        // Avoid TagList(ReadOnlySpan<...>) to support net472 runtime
+        let mutable tags = TagList()
+        tags.Add("name", box name)
+        tags.Add("cacheId", box cacheId)
+        tags
+
+    let Add (tags: inref<TagList>) = adds.Add(1L, &tags)
+    let Update (tags: inref<TagList>) = updates.Add(1L, &tags)
+    let Hit (tags: inref<TagList>) = hits.Add(1L, &tags)
+    let Miss (tags: inref<TagList>) = misses.Add(1L, &tags)
+    let Eviction (tags: inref<TagList>) = evictions.Add(1L, &tags)
+    let EvictionFail (tags: inref<TagList>) = evictionFails.Add(1L, &tags)
+    let Created (tags: inref<TagList>) = creations.Add(1L, &tags)
+    let Disposed (tags: inref<TagList>) = disposals.Add(1L, &tags)
+
+    type Stats() =
+        let totals = Map [ for counter in allCounters -> counter.Name, ref 0L ]
+        let total key = totals[key].Value
+
+        let mutable ratio = Double.NaN
+
+        let updateRatio () =
+            ratio <- float (total hits.Name) / float (total hits.Name + total misses.Name)
+
+        member _.Incr key v =
+            assert (totals.ContainsKey key)
+            Interlocked.Add(totals[key], v) |> ignore
+
+            if key = hits.Name || key = misses.Name then
+                updateRatio ()
+
+        member _.GetTotals() =
+            [ for k in totals.Keys -> k, total k ] |> Map.ofList
+
+        member _.Ratio = ratio
+
+        override _.ToString() =
+            let parts =
+                [
+                    for kv in totals do
+                        yield $"{kv.Key}={kv.Value.Value}"
+                    if not (Double.IsNaN ratio) then
+                        yield $"hit-ratio={ratio:P2}"
+                ]
+
+            String.Join(", ", parts)
+
+    let statsByName = ConcurrentDictionary<string, Stats>()
+
+    let getStatsByName name =
+        statsByName.GetOrAdd(name, fun _ -> Stats())
+
+    let ListenToAll () =
+        let listener = new MeterListener()
+
+        for instrument in allCounters do
+            listener.EnableMeasurementEvents instrument
+
+        listener.SetMeasurementEventCallback(fun instrument v tags _ ->
+            match tags[0].Value with
+            | :? string as name ->
+                let stats = getStatsByName name
+                stats.Incr instrument.Name v
+            | _ -> assert false)
+
+        listener.Start()
+        listener :> IDisposable
+
+    let StatsToString () =
+        use sw = new StringWriter()
+
+        let nameColumnWidth =
+            [ yield! statsByName.Keys; "Cache name" ] |> Seq.map String.length |> Seq.max
+
+        let columns = allCounters |> List.map _.Name
+        let columnWidths = columns |> List.map String.length |> List.map (max 8)
+
+        let header =
+            "| "
+            + String.concat
+                " | "
+                [
+                    "Cache name".PadRight nameColumnWidth
+                    "hit-ratio"
+                    for w, c in (columnWidths, columns) ||> List.zip do
+                        $"{c.PadLeft w}"
+                ]
+            + " |"
+
+        sw.WriteLine(String('-', header.Length))
+        sw.WriteLine(header)
+        sw.WriteLine(header |> String.map (fun c -> if c = '|' then '|' else '-'))
+
+        for kv in statsByName do
+            let name = kv.Key
+            let stats = kv.Value
+            let totals = stats.GetTotals()
+            sw.Write $"| {name.PadLeft nameColumnWidth} | {stats.Ratio, 9:P2} |"
+
+            for w, c in (columnWidths, columns) ||> List.zip do
+                sw.Write $" {totals[c].ToString().PadLeft(w)} |"
+
+            sw.WriteLine()
+
+        sw.WriteLine(String('-', header.Length))
+        string sw
+
+    let CaptureStatsAndWriteToConsole () =
+        let listener = ListenToAll()
+
+        { new IDisposable with
+            member _.Dispose() =
+                listener.Dispose()
+                Console.WriteLine(StatsToString())
+        }
+
+    // Currently the Cache emits telemetry for raw cache events: hits, misses, evictions etc.
+    // This type observes those counters and keeps a snapshot of readings. It is used in tests and can be used to print cache stats in debug mode.
+    type CacheMetricsListener(cacheTags: TagList) =
+
+        let stats = Stats()
+        let listener = new MeterListener()
+
+        do
+            for instrument in allCounters do
+                listener.EnableMeasurementEvents instrument
+
+            listener.SetMeasurementEventCallback(fun instrument v tags _ ->
+                let tagsMatch = tags[0] = cacheTags[0] && tags[1] = cacheTags[1]
+
+                if tagsMatch then
+                    stats.Incr instrument.Name v)
+
+            listener.Start()
+
+        interface IDisposable with
+            member _.Dispose() = listener.Dispose()
+
+        member _.GetTotals() = stats.GetTotals()
+
+        member _.Ratio = stats.Ratio
+
+        override _.ToString() = stats.ToString()
+
+[<RequireQualifiedAccess>]
+type EvictionMode =
+    | NoEviction
+    | Immediate
+    | MailboxProcessor
 
 [<Struct; RequireQualifiedAccess; NoComparison; NoEquality>]
-type CacheOptions =
+type CacheOptions<'Key> =
     {
         /// Total capacity, determines the size of the underlying store.
         TotalCapacity: int
 
         /// Safety margin size as a percentage of TotalCapacity.
         HeadroomPercentage: int
+
+        /// Mechanism to use for evicting items from the cache.
+        EvictionMode: EvictionMode
+
+        /// Comparer to use for keys.
+        Comparer: IEqualityComparer<'Key>
     }
 
-    static member Default =
+module CacheOptions =
+    let forceImmediate =
+        try
+            Environment.GetEnvironmentVariable("FSharp_CacheEvictionImmediate") <> null
+        with _ ->
+            false
+
+    let defaultEvictionMode =
+        if forceImmediate then
+            EvictionMode.Immediate
+        else
+            EvictionMode.MailboxProcessor
+
+    let getDefault comparer =
         {
-            TotalCapacity = 128
-            HeadroomPercentage = 50
+            CacheOptions.TotalCapacity = 1024
+            CacheOptions.HeadroomPercentage = 50
+            CacheOptions.EvictionMode = defaultEvictionMode
+            CacheOptions.Comparer = comparer
+        }
+
+    let getReferenceIdentity () = getDefault HashIdentity.Reference
+
+    let withNoEviction options =
+        { options with
+            CacheOptions.EvictionMode = EvictionMode.NoEviction
         }
 
 // It is important that this is not a struct, because LinkedListNode holds a reference to it,
@@ -41,264 +238,218 @@ type CachedEntity<'Key, 'Value> =
     member this.Key = this.key
     member this.Value = this.value
 
+    member this.UpdateValue(value: 'Value) = this.value <- value
+
     static member Create(key: 'Key, value: 'Value) =
         let entity = CachedEntity(key, value)
-        // The contract is that each CachedEntity produced by the EntityPool always has Node referencing itself.
+        // The contract is that each CachedEntity always has a LinkedListNode referencing itself.
         entity.node <- LinkedListNode(entity)
         entity
 
-    member this.ReUse(key, value) =
-        this.key <- key
-        this.value <- value
-        this
-
     override this.ToString() = $"{this.Key}"
 
-// Currently the Cache itself exposes Metrics.Counters that count raw cache events: hits, misses, evictions etc.
-// This class observes those counters and keeps a snapshot of readings. For now this is used only to print cache stats in debug mode.
-// TODO: We could add some System.Diagnostics.Metrics.Gauge instruments to this class, to get computed stats also exposed as metrics.
-type CacheMetrics(cacheId) =
-    static let meter = new Meter("FSharp.Compiler.Cache")
-
-    static let observedCaches = ConcurrentDictionary<string, CacheMetrics>()
-
-    let readings = ConcurrentDictionary<string, int64 ref>()
-
-    let listener = new MeterListener()
-
-    do
-        listener.InstrumentPublished <-
-            fun i l ->
-                if i.Meter = meter && i.Description = cacheId then
-                    l.EnableMeasurementEvents(i)
-
-        listener.SetMeasurementEventCallback<int64>(fun k v _ _ -> Interlocked.Add(readings.GetOrAdd(k.Name, ref 0L), v) |> ignore)
-        listener.Start()
-
-    member this.Dispose() = listener.Dispose()
-
-    member val CacheId = cacheId
-
-    static member val Meter = meter
-
-    member val RecentStats = "-" with get, set
-
-    member this.TryUpdateStats(clearCounts) =
-        let ratio =
-            try
-                float readings["hits"].Value
-                / float (readings["hits"].Value + readings["misses"].Value)
-                * 100.0
-            with _ ->
-                Double.NaN
-
-        let stats =
-            [
-                for name in readings.Keys do
-                    let v = readings[name].Value
-
-                    if v > 0 then
-                        $"{name}: {v}"
-            ]
-            |> String.concat ", "
-            |> sprintf "%s | hit ratio: %s %s" this.CacheId (if Double.IsNaN(ratio) then "-" else $"%.1f{ratio}%%")
-
-        if clearCounts then
-            for r in readings.Values do
-                Interlocked.Exchange(r, 0L) |> ignore
-
-        if stats <> this.RecentStats then
-            this.RecentStats <- stats
-            true
-        else
-            false
-
-    // TODO: Should return a Map, not a string
-    static member GetStats(cacheId) =
-        observedCaches[cacheId].TryUpdateStats(false) |> ignore
-        observedCaches[cacheId].RecentStats
-
-    static member GetStatsUpdateForAllCaches(clearCounts) =
-        [
-            for i in observedCaches.Values do
-                if i.TryUpdateStats(clearCounts) then
-                    i.RecentStats
-        ]
-        |> String.concat "\n"
-
-    static member AddInstrumentation(cacheId) =
-        if observedCaches.ContainsKey cacheId then
-            invalidArg "cacheId" $"cache with name {cacheId} already exists"
-
-        observedCaches[cacheId] <- new CacheMetrics(cacheId)
-
-    static member RemoveInstrumentation(cacheId) =
-        observedCaches[cacheId].Dispose()
-        observedCaches.TryRemove(cacheId) |> ignore
-
-// Creates and after reclaiming holds entities for reuse.
-// More than totalCapacity can be created, but it will hold for reuse at most totalCapacity.
-type EntityPool<'Key, 'Value>(totalCapacity, cacheId) =
-    let pool = ConcurrentBag<CachedEntity<'Key, 'Value>>()
-
-    let created = CacheMetrics.Meter.CreateCounter<int64>("created", "count", cacheId)
-
-    member _.Acquire(key, value) =
-        match pool.TryTake() with
-        | true, entity -> entity.ReUse(key, value)
-        | _ ->
-            created.Add 1L
-            CachedEntity.Create(key, value)
-
-    member _.Reclaim(entity: CachedEntity<'Key, 'Value>) =
-        if pool.Count < totalCapacity then
-            pool.Add(entity)
-
-module Cache =
-    // During testing a lot of compilations are started in app domains and subprocesses.
-    // This is a reliable way to pass the override to all of them.
-    [<Literal>]
-    let private overrideVariable = "FSHARP_CACHE_OVERRIDE"
-
-    /// Use for testing purposes to reduce memory consumption in testhost and its subprocesses.
-    let OverrideCapacityForTesting () =
-        Environment.SetEnvironmentVariable(overrideVariable, "4096", EnvironmentVariableTarget.Process)
-
-    let applyOverride (capacity: int) =
-        match Int32.TryParse(Environment.GetEnvironmentVariable(overrideVariable)) with
-        | true, n when capacity > n -> n
-        | _ -> capacity
-
 [<Struct>]
-type EvictionQueueMessage<'Key, 'Value> =
-    | Add of CachedEntity<'Key, 'Value>
-    | Update of CachedEntity<'Key, 'Value>
+type EvictionQueueMessage<'Entity, 'Target> =
+    | Add of 'Entity * 'Target
+    | Update of 'Entity
 
 [<Sealed; NoComparison; NoEquality>]
-[<DebuggerDisplay("{GetStats()}")>]
-type Cache<'Key, 'Value when 'Key: not null and 'Key: equality> internal (totalCapacity, headroom, ?name, ?observeMetrics) =
-
-    let instanceId = defaultArg name (Guid.NewGuid().ToString())
-
-    let observeMetrics = defaultArg observeMetrics false
+[<DebuggerDisplay("{DebugDisplay()}")>]
+type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Key>, ?name) =
 
     do
-        if observeMetrics then
-            CacheMetrics.AddInstrumentation instanceId
-
-    let meter = CacheMetrics.Meter
-    let hits = meter.CreateCounter<int64>("hits", "count", instanceId)
-    let misses = meter.CreateCounter<int64>("misses", "count", instanceId)
-    let evictions = meter.CreateCounter<int64>("evictions", "count", instanceId)
-
-    let evictionFails =
-        meter.CreateCounter<int64>("eviction-fails", "count", instanceId)
-
-    let pool = EntityPool<'Key, 'Value>(totalCapacity, instanceId)
-
-    let store =
-        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, totalCapacity)
-
-    let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
-
-    // Non-evictable capacity.
-    let capacity = totalCapacity - headroom
-
-    let evicted = Event<_>()
-
-    let cts = new CancellationTokenSource()
-
-    let evictionProcessor =
-        MailboxProcessor.Start(
-            (fun mb ->
-                let rec processNext () =
-                    async {
-                        match! mb.Receive() with
-                        | EvictionQueueMessage.Add entity ->
-                            evictionQueue.AddLast(entity.Node)
-
-                            // Evict one immediately if necessary.
-                            if evictionQueue.Count > capacity then
-                                let first = nonNull evictionQueue.First
-
-                                match store.TryRemove(first.Value.Key) with
-                                | true, removed ->
-                                    evictionQueue.Remove(first)
-                                    pool.Reclaim(removed)
-                                    evictions.Add 1L
-                                    evicted.Trigger()
-                                | _ -> evictionFails.Add 1L
-
-                        // Store updates are not synchronized. It is possible the entity is no longer in the queue.
-                        | EvictionQueueMessage.Update entity when isNull entity.Node.List -> ()
-
-                        | EvictionQueueMessage.Update entity ->
-                            // Just move this node to the end of the list.
-                            evictionQueue.Remove(entity.Node)
-                            evictionQueue.AddLast(entity.Node)
-
-                        return! processNext ()
-                    }
-
-                processNext ()),
-            cts.Token
-        )
-
-    member val Evicted = evicted.Publish
-
-    member val Name = instanceId
-
-    member _.TryGetValue(key: 'Key, value: outref<'Value>) =
-        match store.TryGetValue(key) with
-        | true, entity ->
-            hits.Add 1L
-            evictionProcessor.Post(EvictionQueueMessage.Update entity)
-            value <- entity.Value
-            true
-        | _ ->
-            misses.Add 1L
-            value <- Unchecked.defaultof<'Value>
-            false
-
-    member _.TryAdd(key: 'Key, value: 'Value) =
-        let entity = pool.Acquire(key, value)
-
-        let added = store.TryAdd(key, entity)
-
-        if added then
-            evictionProcessor.Post(EvictionQueueMessage.Add entity)
-        else
-            pool.Reclaim(entity)
-
-        added
-
-    interface IDisposable with
-        member this.Dispose() =
-            cts.Cancel()
-            cts.Dispose()
-            evictionProcessor.Dispose()
-            store.Clear()
-
-            if observeMetrics then
-                CacheMetrics.RemoveInstrumentation instanceId
-
-    member this.Dispose() = (this :> IDisposable).Dispose()
-
-    member this.GetStats() = CacheMetrics.GetStats(this.Name)
-
-    static member Create<'Key, 'Value>(options: CacheOptions, ?name, ?observeMetrics) =
         if options.TotalCapacity < 0 then
             invalidArg "Capacity" "Capacity must be positive"
 
         if options.HeadroomPercentage < 0 then
             invalidArg "HeadroomPercentage" "HeadroomPercentage must be positive"
 
-        let totalCapacity = Cache.applyOverride options.TotalCapacity
-        // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
-        let headroom =
-            int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
+    let name = defaultArg name (Guid.NewGuid().ToString())
 
-        let cache =
-            new Cache<_, _>(totalCapacity, headroom, ?name = name, ?observeMetrics = observeMetrics)
+    // Determine evictable headroom as the percentage of total capcity, since we want to not resize the dictionary.
+    let headroom =
+        int (float options.TotalCapacity * float options.HeadroomPercentage / 100.0)
 
-        cache
+    // Non-evictable capacity.
+    let capacity = options.TotalCapacity - headroom
+
+    let mutable store =
+        ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+
+    let evictionQueue = LinkedList<CachedEntity<'Key, 'Value>>()
+
+    let evicted = Event<_>()
+    let evictionFailed = Event<_>()
+
+    let tags = CacheMetrics.mkTags name
+
+    // Track disposal state (0 = not disposed, 1 = disposed)
+    let mutable disposed = 0
+
+    let mutable deadKeysCount = 0
+
+    // Keys with unreliable identity can prevent eviction, taking up space in the cache.
+    // In such case we rebuild the store to remove dead keys.
+    let rebuildStore () =
+        let newStore =
+            ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>(Environment.ProcessorCount, capacity, options.Comparer)
+
+        for entity in evictionQueue do
+            newStore.TryAdd(entity.Key, entity) |> ignore
+
+        Interlocked.Exchange(&store, newStore) |> ignore
+
+    let processEvictionMessage msg =
+        match msg with
+        | EvictionQueueMessage.Add(entity: CachedEntity<_, _>, target) when isNull entity.Node.List ->
+            evictionQueue.AddLast(entity.Node)
+            // store has been rebuilt while this message was in the queue.
+            if store <> target then
+                store.TryAdd(entity.Key, entity) |> ignore
+
+            // Evict one immediately if necessary.
+            if evictionQueue.Count > capacity then
+                let first = nonNull evictionQueue.First
+                evictionQueue.Remove(first)
+
+                match store.TryRemove(first.Value.Key) with
+                | true, _ ->
+                    CacheMetrics.Eviction &tags
+                    evicted.Trigger()
+                | _ ->
+                    CacheMetrics.EvictionFail &tags
+                    evictionFailed.Trigger()
+                    deadKeysCount <- deadKeysCount + 1
+
+                    if deadKeysCount > headroom / 2 then
+                        rebuildStore ()
+
+        | EvictionQueueMessage.Update entity when entity.Node.List = evictionQueue ->
+            // Just move this node to the end of the list.
+            evictionQueue.Remove(entity.Node)
+            evictionQueue.AddLast(entity.Node)
+
+        // Store updates are not synchronized with evictionQueue. It is possible the entity is no longer in the queue or already added.
+        | _ -> ()
+
+    let startEvictionProcessor ct =
+        MailboxProcessor.Start(
+            (fun mb ->
+                let rec processNext () =
+                    async {
+                        let! message = mb.Receive()
+                        processEvictionMessage message
+                        return! processNext ()
+                    }
+
+                processNext ()),
+            ct
+        )
+
+    let immediate msg =
+        lock evictionQueue <| fun () -> processEvictionMessage msg
+
+    let post, disposeEvictionProcessor =
+        match options.EvictionMode with
+        | EvictionMode.NoEviction -> ignore, ignore
+        | EvictionMode.Immediate -> immediate, ignore
+        | EvictionMode.MailboxProcessor ->
+            let cts = new CancellationTokenSource()
+            let evictionProcessor = startEvictionProcessor cts.Token
+            let post = evictionProcessor.Post
+
+            let dispose () =
+                cts.Cancel()
+                cts.Dispose()
+                evictionProcessor.Dispose()
+
+            post, dispose
+
+#if DEBUG
+    let debugListener = new CacheMetrics.CacheMetricsListener(tags)
+#endif
+
+    do CacheMetrics.Created &tags
+
+    member val Evicted = evicted.Publish
+    member val EvictionFailed = evictionFailed.Publish
+
+    member _.TryGetValue(key: 'Key, value: outref<'Value>) =
+        match store.TryGetValue(key) with
+        | true, entity ->
+            CacheMetrics.Hit &tags
+            post (EvictionQueueMessage.Update entity)
+            value <- entity.Value
+            true
+        | _ ->
+            CacheMetrics.Miss &tags
+            value <- Unchecked.defaultof<'Value>
+            false
+
+    member _.TryAdd(key: 'Key, value: 'Value) =
+        let entity = CachedEntity.Create(key, value)
+
+        let added = store.TryAdd(key, entity)
+
+        if added then
+            CacheMetrics.Add &tags
+            post (EvictionQueueMessage.Add(entity, store))
+
+        added
+
+    member _.GetOrAdd(key, valueFactory) =
+        let mutable wasMiss = false
+
+        let makeEntity key =
+            wasMiss <- true
+            let entity = CachedEntity.Create(key, valueFactory key)
+            entity
+
+        let result = store.GetOrAdd(key, makeEntity)
+
+        if wasMiss then
+            post (EvictionQueueMessage.Add(result, store))
+            CacheMetrics.Add &tags
+            CacheMetrics.Miss &tags
+        else
+            post (EvictionQueueMessage.Update result)
+            CacheMetrics.Hit &tags
+
+        result.Value
+
+    member _.AddOrUpdate(key, value) =
+        let addValue = CachedEntity.Create(key, value)
+
+        let updateValue (_: 'Key) (oldEntity: CachedEntity<_, _>) =
+            oldEntity.UpdateValue(value)
+            oldEntity
+
+        let result = store.AddOrUpdate(key, addValue, updateValue)
+
+        // Returned value tells us if the entity was added or updated.
+        if Object.ReferenceEquals(addValue, result) then
+            CacheMetrics.Add &tags
+            post (EvictionQueueMessage.Add(addValue, store))
+        else
+            CacheMetrics.Update &tags
+            post (EvictionQueueMessage.Update result)
+
+    member _.CreateMetricsListener() =
+        new CacheMetrics.CacheMetricsListener(tags)
+
+    member _.Dispose() =
+        if Interlocked.Exchange(&disposed, 1) = 0 then
+            disposeEvictionProcessor ()
+            CacheMetrics.Disposed &tags
+
+    interface IDisposable with
+        member this.Dispose() =
+            this.Dispose()
+            GC.SuppressFinalize(this)
+
+    // Finalizer to ensure eviction loop is cancelled if Dispose wasn't called.
+    override this.Finalize() = this.Dispose()
+
+#if DEBUG
+    member _.DebugDisplay() = debugListener.ToString()
+#endif

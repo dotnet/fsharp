@@ -4,16 +4,21 @@
 open FSharp.Compiler.Text
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Diagnostics.ExtendedData
-open FSharp.Test
+open FSharp.Test.Assert
 open FSharp.Test.Compiler
 open Xunit
 
-let inline checkDiagnostic
+let checkTypes (diagnosticData: TypeMismatchDiagnosticExtendedData) expected actual =
+    {| ExpectedType = expected; ActualType = actual |}
+    |> shouldBe {| ExpectedType = diagnosticData.ExpectedType.Format(diagnosticData.DisplayContext)
+                   ActualType = diagnosticData.ActualType.Format(diagnosticData.DisplayContext) |}
+
+let inline checkDiagnosticData
     (diagnosticNumber, message)
     (check: 'a -> unit)
     (checkResults: 'b when 'b: (member Diagnostics: FSharpDiagnostic[])) =
     match checkResults.Diagnostics |> Array.tryFind (fun d -> d.ErrorNumber = diagnosticNumber) with
-    | None -> failwith "Expected diagnostic not found"
+    | None -> failwith $"Expected diagnostic (number {diagnosticNumber}) not found"
     | Some diagnostic ->
 
     Assert.Equal(message, diagnostic.Message)
@@ -21,6 +26,29 @@ let inline checkDiagnostic
     | Some(:? 'a as data) -> check data
     | _ -> failwith "Expected diagnostic extended data not found"
 
+    checkResults
+    
+let inline checkExpectedActualTypesInContext
+    diagnosticNumber
+    expectedType actualType
+    message
+    context
+    checkResults =
+
+    checkResults
+    |> checkDiagnosticData (diagnosticNumber, message)
+       (fun (data: TypeMismatchDiagnosticExtendedData) ->
+        checkTypes data expectedType actualType
+        Assert.Equal(context, data.ContextInfo))
+
+let inline checkExpectedActualTypes
+    diagnosticNumber
+    expectedType actualType
+    message
+    checkResults =
+
+    checkResults
+    |> checkExpectedActualTypesInContext diagnosticNumber expectedType actualType message DiagnosticContextInfo.NoContext
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 01`` () =
@@ -28,13 +56,10 @@ let ``TypeMismatchDiagnosticExtendedData 01`` () =
 let x, y, z = 1, 2
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "Type mismatch. Expecting a tuple of length 3 of type\n    'a * 'b * 'c    \nbut given a tuple of length 2 of type\n    int * int    \n")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal("obj * obj * obj", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("int * int", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypes 1
+       "obj * obj * obj"
+       "int * int"
+       "Type mismatch. Expecting a tuple of length 3 of type\n    'a * 'b * 'c    \nbut given a tuple of length 2 of type\n    int * int    \n"
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 02`` () =
@@ -42,13 +67,10 @@ let ``TypeMismatchDiagnosticExtendedData 02`` () =
 let x, y = 1
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "This expression was expected to have type\n    ''a * 'b'    \nbut here has type\n    'int'    ")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
-        Assert.Equal("obj * obj", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypes 1
+       "obj * obj"
+       "int"
+       "This expression was expected to have type\n    ''a * 'b'    \nbut here has type\n    'int'    "
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 03`` () =
@@ -56,13 +78,11 @@ let ``TypeMismatchDiagnosticExtendedData 03`` () =
 if true then 5
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'int'.")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.OmittedElseBranch, typeMismatch.ContextInfo)
-        Assert.Equal("unit", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypesInContext 1
+       "unit"
+       "int"
+       "This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type 'int'."
+       DiagnosticContextInfo.OmittedElseBranch
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 04`` () =
@@ -70,13 +90,10 @@ let ``TypeMismatchDiagnosticExtendedData 04`` () =
 1 :> string
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (193, "Type constraint mismatch. The type \n    'int'    \nis not compatible with type\n    'string'    \n")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.NoContext, typeMismatch.ContextInfo)
-        Assert.Equal("string", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("int", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypes 193
+       "string"
+       "int"
+       "Type constraint mismatch. The type \n    'int'    \nis not compatible with type\n    'string'    \n"
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 05`` () =
@@ -86,13 +103,11 @@ match 0 with
 | 1 -> "a"
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'int'. This branch returns a value of type 'string'.")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.FollowingPatternMatchClause, typeMismatch.ContextInfo)
-        Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypesInContext 1
+       "int"
+       "string"
+       "All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'int'. This branch returns a value of type 'string'."
+       DiagnosticContextInfo.FollowingPatternMatchClause
 
 //TODO: FollowingPatternMatchClause should be provided for type equation diagnostics come from a return type only
 [<Fact>]
@@ -107,13 +122,11 @@ match 0 with
     1
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.FollowingPatternMatchClause, typeMismatch.ContextInfo) //Should be NoContext
-        Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypesInContext 1
+       "int"
+       "string"
+       "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    "
+       DiagnosticContextInfo.FollowingPatternMatchClause //Should be NoContext
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 06`` () =
@@ -122,13 +135,11 @@ let _: bool =
     if true then "a" else "b"
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "The 'if' expression needs to have type 'bool' to satisfy context type requirements. It currently has type 'string'.")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.IfExpression, typeMismatch.ContextInfo)
-        Assert.Equal("bool", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypesInContext 1
+       "bool"
+       "string"
+       "The 'if' expression needs to have type 'bool' to satisfy context type requirements. It currently has type 'string'."
+       DiagnosticContextInfo.IfExpression
 
 [<Fact>]
 let ``TypeMismatchDiagnosticExtendedData 07`` () =
@@ -136,15 +147,93 @@ let ``TypeMismatchDiagnosticExtendedData 07`` () =
 if true then 1 else "a"
 """
     |> typecheckResults
-    |> checkDiagnostic
-       (1, "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'int'. This branch returns a value of type 'string'.")
-       (fun (typeMismatch: TypeMismatchDiagnosticExtendedData) ->
-        let displayContext = typeMismatch.DisplayContext
-        Assert.Equal(DiagnosticContextInfo.ElseBranchResult, typeMismatch.ContextInfo)
-        Assert.Equal("int", typeMismatch.ExpectedType.Format(displayContext))
-        Assert.Equal("string", typeMismatch.ActualType.Format(displayContext)))
+    |> checkExpectedActualTypesInContext 1
+       "int"
+       "string"
+       "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'int'. This branch returns a value of type 'string'."
+       DiagnosticContextInfo.ElseBranchResult
 
-[<Theory>]
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 08`` () =
+    FSharp """
+type R = { Field1: int }
+let f (x: R) = "" + x.Field1
+"""
+    |> typecheckResults
+    |> checkExpectedActualTypes 1
+       "string"
+       "int"
+       "The type 'int' does not match the type 'string'"
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 09`` () =
+    FSharp """
+let x: string = 1
+"""
+    |> typecheckResults
+    |> checkExpectedActualTypes 1
+       "string"
+       "int"
+       "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    "
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 10`` () =
+    FSharp """
+let f1 (x: outref<'T>) = 1
+let f2 (x: inref<'T>) = f1 &x
+"""
+    |> typecheckResults
+    |> checkExpectedActualTypes 1
+       "outref<'T>"
+       "inref<'T>"
+       // TODO: wrong additional generic parameters mismatch message,
+       //  should be "The type 'ByRefKinds.In' does not match the type 'ByRefKinds.Out'"
+       "Type mismatch. Expecting a\n    'outref<'T>'    \nbut given a\n    'inref<'T>'    \nThe type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'"
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 11`` () =
+    FSharp """
+type T() =
+    static member P1 = T.P2 + 1
+    static member P2 = ""
+"""
+    |> typecheckResults
+    // static member P1 = T.P2 ->+<- 1
+    |> checkExpectedActualTypes 43
+       "string"
+       "int"
+       "The type 'int' does not match the type 'string'"
+
+    // static member P2 = ->""<-
+    |> checkExpectedActualTypes 1
+       "int"
+       "string"
+       "The type 'string' does not match the type 'int'"
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 12`` () =
+    FSharp """
+let x: string = 1 + 1
+"""
+    |> typecheckResults
+    |> checkExpectedActualTypes 1
+       "string"
+       "int"
+       "The type 'int' does not match the type 'string'"
+
+[<Fact>]
+let ``TypeMismatchDiagnosticExtendedData 13`` () =
+    FSharp """
+let x: string -> string = id 
+let y: unit -> string = x
+"""
+    |> typecheckResults
+    |> checkExpectedActualTypes 1
+       "unit -> string"
+       "string -> string"
+       "Type mismatch. Expecting a\n    'unit -> string'    \nbut given a\n    'string -> string'    \nThe type 'string' does not match the type 'unit'"
+
+[<Theory>] 
 [<InlineData true>]
 [<InlineData false>]
 let ``ArgumentsInSigAndImplMismatchExtendedData 01`` useTransparentCompiler =
@@ -161,7 +250,7 @@ let f (y: int) = ()
     encodeFsi
     |> withAdditionalSourceFile encodeFs
     |> typecheckProject true useTransparentCompiler
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (3218, "The argument names in the signature 'x' and implementation 'y' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling.")
        (fun (argsMismatch: ArgumentsInSigAndImplMismatchExtendedData) ->
         Assert.Equal("x", argsMismatch.SignatureName)
@@ -188,7 +277,7 @@ type A =
     encodeFsi
     |> withAdditionalSourceFile encodeFs
     |> typecheckProject true useTransparentCompiler
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (193, "The module contains the field\n    myStatic: int    \nbut its signature specifies\n    myStatic: int    \nthe accessibility specified in the signature is more than that specified in the implementation")
        (fun (fieldsData: FieldNotContainedDiagnosticExtendedData) ->
         Assert.True(fieldsData.SignatureField.Accessibility.IsPublic)
@@ -202,7 +291,7 @@ module Test
 id
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (193, "This expression is a function value, i.e. is missing arguments. Its type is 'a -> 'a.")
        (fun (wrongType: ExpressionIsAFunctionExtendedData) ->
         Assert.Equal("type 'a -> 'a", wrongType.ActualType.ToString()))
@@ -236,7 +325,7 @@ type  Foo = {| bar: int; x: int |}
     signature
     |> withAdditionalSourceFile implementation
     |> typecheckProject true useTransparentCompiler
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (318, "The type definitions for type 'Foo' in the signature and implementation are not compatible because the abbreviations differ:\n    {| bar: int; x: int |}\nversus\n    {| bar: int |}")
        (fun (fieldsData: DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData) ->
         assertRange (4,5) (4,8) fieldsData.SignatureRange
@@ -253,7 +342,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -269,7 +358,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -285,7 +374,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -301,7 +390,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -333,7 +422,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Use something else")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -364,7 +453,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Use something else")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -395,7 +484,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated. Use something else")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -426,7 +515,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -442,7 +531,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -473,7 +562,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (44, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -489,7 +578,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -505,7 +594,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -521,7 +610,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated. Message")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(None, obsoleteDiagnostic.DiagnosticId)
@@ -537,7 +626,7 @@ type MyClass() = class end
 let x = MyClass()
 """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (101, "This construct is deprecated")
        (fun (obsoleteDiagnostic: ObsoleteDiagnosticExtendedData) ->
         Assert.Equal(Some "FS222", obsoleteDiagnostic.DiagnosticId)
@@ -569,7 +658,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (57, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal(Some "FS222", experimental.DiagnosticId)
@@ -602,7 +691,7 @@ let text = Class1.Test();
 
     app
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (57, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal(Some "FS222", experimental.DiagnosticId)
@@ -620,7 +709,7 @@ type Class1() =
 let text = Class1.Test();
     """
     |> typecheckResults
-    |> checkDiagnostic
+    |> checkDiagnosticData
        (57, """This construct is experimental. Use with caution. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
        (fun (experimental: ExperimentalExtendedData) ->
         Assert.Equal(None, experimental.DiagnosticId)

@@ -9,25 +9,40 @@ ImplFile
                 (NonAtomic, false, Ident async,
                  ComputationExpr
                    (false,
-                    LetOrUseBang
-                      (Yes (4,4--4,61), false, true,
-                       Paren
-                         (Typed
-                            (Record
-                               ([(([], Name), Some (4,17--4,18),
-                                  Named
-                                    (SynIdent (name, None), false, None,
-                                     (4,19--4,23)));
-                                 (([], Age), Some (4,29--4,30),
-                                  Named
-                                    (SynIdent (age, None), false, None,
-                                     (4,31--4,34)))], (4,10--4,36)),
-                             LongIdent (SynLongIdent ([Person], [], [None])),
-                             (4,10--4,44)), (4,9--4,45)),
-                       App
-                         (Atomic, false, Ident asyncPerson,
-                          Const (Unit, (4,59--4,61)), (4,48--4,61)),
+                    LetOrUse
+                      (false, false, true, true,
                        [SynBinding
+                          (None, Normal, false, false, [], PreXmlDocEmpty,
+                           SynValData
+                             (None,
+                              SynValInfo ([], SynArgInfo ([], false, None)),
+                              None),
+                           Paren
+                             (Typed
+                                (Record
+                                   ([NamePatPairField
+                                       (SynLongIdent ([Name], [], [None]),
+                                        Some (4,17--4,18), (4,12--4,23),
+                                        Named
+                                          (SynIdent (name, None), false, None,
+                                           (4,19--4,23)),
+                                        Some ((4,23--4,24), Some (4,24)));
+                                     NamePatPairField
+                                       (SynLongIdent ([Age], [], [None]),
+                                        Some (4,29--4,30), (4,25--4,34),
+                                        Named
+                                          (SynIdent (age, None), false, None,
+                                           (4,31--4,34)), None)], (4,10--4,36)),
+                                 LongIdent (SynLongIdent ([Person], [], [None])),
+                                 (4,10--4,44)), (4,9--4,45)), None,
+                           App
+                             (Atomic, false, Ident asyncPerson,
+                              Const (Unit, (4,59--4,61)), (4,48--4,61)),
+                           (4,4--4,61), Yes (4,4--4,61),
+                           { LeadingKeyword = Let (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,46--4,47) });
+                        SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
                              (None,
@@ -35,10 +50,12 @@ ImplFile
                               None),
                            Typed
                              (Record
-                                ([(([], Id), Some (5,14--5,15),
-                                   Named
-                                     (SynIdent (id, None), false, None,
-                                      (5,16--5,18)))], (5,9--5,20)),
+                                ([NamePatPairField
+                                    (SynLongIdent ([Id], [], [None]),
+                                     Some (5,14--5,15), (5,11--5,18),
+                                     Named
+                                       (SynIdent (id, None), false, None,
+                                        (5,16--5,18)), None)], (5,9--5,20)),
                               LongIdent (SynLongIdent ([User], [], [None])),
                               (5,9--5,26)), None,
                            App

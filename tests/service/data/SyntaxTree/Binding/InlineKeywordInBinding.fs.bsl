@@ -22,7 +22,7 @@ ImplFile
                         Named (SynIdent (z, None), false, None, (2,15--2,16))],
                      None, (2,11--2,16)), None,
                   LetOrUse
-                    (false, false,
+                    (false, false, true, false,
                      [SynBinding
                         (None, Normal, true, false, [],
                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
