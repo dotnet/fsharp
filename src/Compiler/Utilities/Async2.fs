@@ -498,16 +498,16 @@ module Async2 =
 
     let runWithoutCancellation code = run CancellationToken.None code
 
-    let startAsTaskWithoutCancellation code =
-        start CancellationToken.None code |> _.Task
-
     let queueTask ct code =
         Task.Run<'t>(fun () -> start ct code |> _.Task)
+
+    let startAsTaskWithoutCancellation code =
+        queueTask CancellationToken.None code
 
     let toAsync (code: Async2<'t>) =
         async {
             let! ct = Async.CancellationToken
-            let task = start ct code |> _.Task
+            let task = queueTask ct code
             return! Async.AwaitTask task
         }
 
@@ -533,7 +533,7 @@ type Async2 =
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.start ct computation |> _.Task
+        Async2.queueTask ct computation
 
     static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
@@ -583,12 +583,12 @@ type Async2 =
     static member TryCancelled(computation: Async2<'T>, compensation) =
         async2 {
             let! ct = Async2.CancellationToken
-            let task = computation |> Async2.start ct |> _.Task
+            let invocation = Async2.start ct computation
 
             try
-                return! task
+                return! invocation
             finally
-                if task.IsCanceled then
+                if invocation.Task.IsCanceled then
                     compensation ()
         }
 
