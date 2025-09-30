@@ -476,38 +476,38 @@ module Async2 =
 
     let inline start ct (code: Async2<_>) =
         let oldCt = CheckAndThrowToken.Value
+        let oldStarted = BindContext.started.Value
+
+        let immediate =
+            not oldStarted
+            && isNull SynchronizationContext.Current
+            && TaskScheduler.Current = TaskScheduler.Default
 
         try
             BindContext.started.Value <- true
             CheckAndThrowToken.Value <- ct
-            code.StartImmediate ct
+            if immediate then
+                code.StartImmediate ct |> _.Task
+            else
+                Task.Run<'t>(fun () -> code.StartImmediate ct |> _.Task)
         finally
             CheckAndThrowToken.Value <- oldCt
-            BindContext.started.Value <- false
+            BindContext.started.Value <- oldStarted
 
-    let run ct (code: Async2<'t>) =
-
-        if
-            not BindContext.started.Value // should this be an assert fail or even an exception instead?
-            && isNull SynchronizationContext.Current
-            && TaskScheduler.Current = TaskScheduler.Default
-        then
-            start ct code |> _.GetAwaiter().GetResult()
-        else
-            Task.Run<'t>(fun () -> start ct code |> _.Task).GetAwaiter().GetResult()
+    let run ct (code: Async2<'t>) = start ct code |> _.GetAwaiter().GetResult()
 
     let runWithoutCancellation code = run CancellationToken.None code
 
-    let queueTask ct code =
-        Task.Run<'t>(fun () -> start ct code |> _.Task)
+    //let queueTask ct code =
+    //    Task.Run<'t>(fun () -> start ct code)
 
     let startAsTaskWithoutCancellation code =
-        queueTask CancellationToken.None code
+        start CancellationToken.None code
 
     let toAsync (code: Async2<'t>) =
         async {
             let! ct = Async.CancellationToken
-            let task = queueTask ct code
+            let task = start ct code
             return! Async.AwaitTask task
         }
 
@@ -529,11 +529,11 @@ type Async2 =
 
     static member Start(computation: Async2<_>, ?cancellationToken: CancellationToken) : unit =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.queueTask ct computation |> ignore
+        Async2.start ct computation |> ignore
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.queueTask ct computation
+        Async2.start ct computation
 
     static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
@@ -554,7 +554,7 @@ type Async2 =
                                 lcts.Cancel()
                                 return raise exn
                         }
-                        |> Async2.queueTask lcts.Token
+                        |> Async2.start lcts.Token
                 }
 
             return! Task.WhenAll tasks
@@ -583,25 +583,25 @@ type Async2 =
     static member TryCancelled(computation: Async2<'T>, compensation) =
         async2 {
             let! ct = Async2.CancellationToken
-            let invocation = Async2.start ct computation
+            let task = Async2.start ct computation
 
             try
-                return! invocation
+                return! task
             finally
-                if invocation.Task.IsCanceled then
+                if task.IsCanceled then
                     compensation ()
         }
 
     static member StartChild(computation: Async2<'T>) : Async2<Async2<'T>> =
         async2 {
             let! ct = Async2.CancellationToken
-            return async2 { return! computation |> Async2.queueTask ct }
+            return async2 { return! computation |> Async2.start ct }
         }
 
     static member StartChildAsTask(computation: Async2<'T>) : Async2<Task<'T>> =
         async2 {
             let! ct = Async2.CancellationToken
-            let task = computation |> Async2.queueTask ct
+            let task = computation |> Async2.start ct
             return task
         }
 
