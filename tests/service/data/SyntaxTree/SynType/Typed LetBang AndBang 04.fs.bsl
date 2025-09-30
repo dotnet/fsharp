@@ -25,8 +25,7 @@ ImplFile
                                      Named
                                        (SynIdent (name, None), false, None,
                                         (4,18--4,22)),
-                                     Some
-                                       (Semicolon ((4,22--4,23), Some (4,23))));
+                                     Some ((4,22--4,23), Some (4,23)));
                                   NamePatPairField
                                     (SynLongIdent ([Age], [], [None]),
                                      Some (4,28--4,29), (4,24--4,33),

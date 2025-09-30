@@ -19,11 +19,11 @@ ImplFile
                               ([Foo; Bar; A], [(4,7--4,8); (4,11--4,12)],
                                [None; None; None]), Some (4,14--4,15),
                             (4,4--4,17), Const (Int32 1, (4,16--4,17)),
-                            Some (Semicolon ((4,17--4,18), Some (4,18))));
+                            Some ((4,17--4,18), Some (4,18)));
                          NamePatPairField
                            (SynLongIdent ([B], [], [None]), Some (4,21--4,22),
                             (4,19--4,24), Const (Int32 2, (4,23--4,24)),
-                            Some (Semicolon ((4,24--4,25), Some (4,25))));
+                            Some ((4,24--4,25), Some (4,25)));
                          NamePatPairField
                            (SynLongIdent ([C], [], [None]), Some (4,28--4,29),
                             (4,26--4,31), Const (Int32 3, (4,30--4,31)), None)],
