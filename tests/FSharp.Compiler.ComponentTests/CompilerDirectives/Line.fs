@@ -350,3 +350,26 @@ namespace CSharpLib
         |> compileExeAndRun
         |> shouldSucceed
     
+    let sourceIdSource = """
+#line 100 "/temp/target.fs"
+let dir = __SOURCE_DIRECTORY__
+let d = dir[dir.Length - 4 ..]
+printf $"{__LINE__} in {__SOURCE_FILE__} in {d}"
+"""    
+
+    [<Fact>]
+    let ``LineDirectivesAreAppliedToSourceIdentifiers`` () =
+        let result = 
+            sourceIdSource
+            |> FSharp
+            |> withFileName "original.fs"
+            |> compileExeAndRun
+            |> shouldSucceed
+        let expected = "102 in target.fs in temp"
+        match result.RunOutput with
+        | Some (ExecutionOutput r) ->
+            Assert.Equal(expected, r.StdOut)
+        | _ ->
+            Assert.Fail "unexpected: no execution output"
+
+        

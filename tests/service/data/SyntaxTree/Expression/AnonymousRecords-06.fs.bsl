@@ -19,7 +19,7 @@ ImplFile
                      Pats [Named (SynIdent (x, None), false, None, (1,6--1,7))],
                      None, (1,4--1,7)), None,
                   AnonRecd
-                    (false, Some (Ident x, Offside ((1,15--1,19), None)),
+                    (false, Some (Ident x, ((1,15--1,19), None)),
                      [(SynLongIdent ([R; D], [(1,21--1,22)], [None; None]),
                        Some (1,24--1,25),
                        Const (String ("s", Regular, (1,26--1,29)), (1,26--1,29)));

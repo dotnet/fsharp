@@ -1,5 +1,23 @@
 # Cross-platform PowerShell script to verify the integrity of the produced dlls, using dotnet-ilverify.
 
+function Normalize-IlverifyOutputLine {
+    param(
+        [string]$line
+    )
+    # Remove F# closure suffixes: +clo@NNN-NNN, +clo@NNN, +NAME@NNN-NNN, +NAME@NNN
+    $line = $line -replace '(\+\w+)@\d+(-\d+)?', '$1'
+    # Remove patterns like "Pipe #1 stage #1 at line 1782@1782"
+    $line = $line -replace 'Pipe #\d+ stage #\d+ at line \d+@\d+', ''
+    # Remove function suffixes like NAME@NNN or NAME@NNN-NNN in method names
+    $line = $line -replace '(\w+)@\d+(-\d+)?', '$1'
+    # Remove 'at line NNNN'
+    $line = $line -replace 'at line \d+', ''
+    # Remove leftover double spaces, stray "+" etc.
+    $line = $line -replace '\s+', ' '
+    $line = $line.Trim()
+    return $line
+}
+
 # Set build script based on which OS we're running on - Windows (build.cmd), Linux or macOS (build.sh)
 
 Write-Host "Checking whether running on Windows: $IsWindows"
@@ -116,11 +134,14 @@ foreach ($project in $projects.Keys) {
             $ilverify_output = $ilverify_output | ForEach-Object {
                 if ($_ -match "\[IL\]: Error \[") {
                     $parts = $_ -split " "
-                    "$($parts[0]) $($parts[1]) $($parts[2]) $($parts[4..$parts.Length])"
+                    $normalized_line = "$($parts[0]) $($parts[1]) $($parts[2]) $($parts[4..$parts.Length])"
+                    # Apply additional normalization to remove auto-generated numeric suffixes
+                    Normalize-IlverifyOutputLine $normalized_line
                 } elseif ($_ -match "Error\(s\) Verifying") {
                     # do nothing
                 } else {
-                    $_
+                    # Apply normalization to all other lines too
+                    Normalize-IlverifyOutputLine $_
                 }
             }
 
@@ -141,8 +162,8 @@ foreach ($project in $projects.Keys) {
                 continue
             }
 
-            # Read baseline file into string array
-            [string[]] $baseline = Get-Content $baseline_file
+            # Read baseline file into string array and normalize it
+            [string[]] $baseline = Get-Content $baseline_file # | ForEach-Object { Normalize-IlverifyOutputLine $_ }
 
             if ($baseline.Length -eq 0) {
                 Write-Host "Baseline file is empty: $baseline_file"

@@ -15,13 +15,13 @@ ImplFile
                                (4,4--4,9),
                                Named
                                  (SynIdent (a, None), false, None, (4,8--4,9)),
-                               Some (Semicolon ((4,9--4,10), Some (4,10))));
+                               Some ((4,9--4,10), Some (4,10)));
                             NamePatPairField
                               (SynLongIdent ([b], [], [None]), Some (4,13--4,14),
                                (4,11--4,16),
                                Named
                                  (SynIdent (b, None), false, None, (4,15--4,16)),
-                               Some (Semicolon ((4,16--4,17), Some (4,17))));
+                               Some ((4,16--4,17), Some (4,17)));
                             NamePatPairField
                               (SynLongIdent ([c], [], [None]), Some (4,20--4,21),
                                (4,18--4,23),

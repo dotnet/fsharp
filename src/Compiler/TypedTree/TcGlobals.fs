@@ -687,7 +687,7 @@ type TcGlobals(
 
   // Build the memoization table for files
   let v_memoize_file =
-      MemoizationTable<int, ILSourceDocument>(compute, keyComparer = HashIdentity.Structural)
+      MemoizationTable<int, ILSourceDocument>("v_memoize_file", compute, keyComparer = HashIdentity.Structural)
 
   let v_and_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&"                      , None                 , None          , [],         mk_rel_sig v_bool_ty)
   let v_addrof_info =                makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&"                     , None                 , None          , [vara],     ([[varaTy]], mkByrefTy varaTy))

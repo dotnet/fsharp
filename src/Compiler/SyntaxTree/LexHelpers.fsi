@@ -13,8 +13,6 @@ open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
 open FSharp.Compiler.Text
 
-val stdinMockFileName: string
-
 /// Lexer args: status of #light processing.  Mutated when a #light
 /// directive is processed. This alters the behaviour of the lexfilter.
 [<Sealed>]
