@@ -1,5 +1,8 @@
+[<NoEquality; NoComparison; DefaultAugmentation(false)>]
 type R1 = { A : int; B : int }
+[<NoEquality; NoComparison; DefaultAugmentation(false)>]
 type R2 = { C : int; D : int }
+[<NoEquality; NoComparison; DefaultAugmentation(false)>]
 type R3 = { A : int; B : int; C : int; D : int }
 
 let r1 = { A = 1; B = 2 }
