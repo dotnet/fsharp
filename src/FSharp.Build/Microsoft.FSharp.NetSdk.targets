@@ -50,20 +50,9 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <!-- Gate inclusion of PackageFSharpDesignTimeTools target when design-time provider is present -->
-  <PropertyGroup>
-    <TargetsForTfmSpecificContentInPackage Condition=" '$(IsFSharpDesignTimeProvider)' == 'true' ">$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
+  <PropertyGroup Condition=" '$(IsFSharpDesignTimeProvider)' == 'true' ">
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-
-  <!-- Check for design-time provider references and add target if needed -->
-  <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec;Pack" Condition=" '$(IsFSharpDesignTimeProvider)' != 'true' ">
-    <ItemGroup>
-      <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
-      <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
-    </ItemGroup>
-    <PropertyGroup Condition=" '@(_FSharpDesignTimeProviderProject)' != '' or '@(_FSharpDesignTimeProviderPackage)' != '' ">
-      <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
-    </PropertyGroup>
-  </Target>
 
   <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
