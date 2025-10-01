@@ -8,8 +8,6 @@
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
-    <IsTestProject>true</IsTestProject>
     <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
