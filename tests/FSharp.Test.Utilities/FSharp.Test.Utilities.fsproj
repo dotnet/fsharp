@@ -12,6 +12,8 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <!--Extra xUnit customizations, not required for the test suite to work, but can speed up local test runs and help with debugging.-->
     <DefineConstants>XUNIT_EXTRAS</DefineConstants>
+    <!-- This is a test utilities library, not a test project -->
+    <ExcludeFromTestPackageReferences>true</ExcludeFromTestPackageReferences>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
@@ -103,6 +105,10 @@
     <PackageReference Include="Microsoft.NETCore.App.Ref" Version="6.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
+    <!-- xUnit3 extensibility packages for custom test utilities -->
+    <PackageReference Include="xunit.v3.assert" Version="$(XunitVersion)" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />
+    <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 
 	<ItemGroup>

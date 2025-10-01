@@ -2,25 +2,40 @@
 
 ## Executive Summary
 
-**Status**: Preparatory work completed. Blocked on stable xUnit3 release.
+**Status**: Migration IN PROGRESS - Package versions exist, API migration underway.
 
-The migration guide provided targets xUnit3 versions (3.1.0, 3.0.1) that do not currently exist in stable form. xUnit3 is still in preview (latest: 3.2.0-pre.10). This document describes preparatory work that has been completed and remaining work blocked on the stable release.
+The xUnit3 packages (3.1.0) and required dependencies are now available on nuget.org. Active work is proceeding on migrating the custom test extensibility code to the new xUnit3 APIs.
 
-## Current Package Versions (Stable)
+## Current Package Versions (Original)
 
 - **xunit**: 2.9.0  
 - **xunit.runner.console**: 2.8.2 (property: XUnitRunnerVersion)
 - **FsCheck**: 2.16.5
 - **Microsoft.NET.Test.Sdk**: 17.11.1
 
-## Target Package Versions (When Stable)
+## Target Package Versions (NOW AVAILABLE)
 
-- **xunit.v3**: 3.1.0+ (currently: 3.2.0-pre.10 preview)
-- **xunit.v3.runner.console**: 3.0.1+ (currently: 3.0.0-pre.25 preview)
-- **FsCheck**: 3.3.1+ (currently: 3.0.0-alpha5 alpha)
-- **Microsoft.TestPlatform**: 17.14.1 (available)
+- **xunit.v3**: 3.1.0 ✅ Available on nuget.org
+- **xunit.v3.runner.console**: 3.1.0 ✅ Available on nuget.org
+- **xunit.runner.visualstudio**: 3.1.5 ✅ Available on nuget.org
+- **FsCheck**: 3.3.1 ✅ Available on nuget.org
+- **Microsoft.TestPlatform**: 17.14.1 ✅ Available
 
-## Completed Preparatory Work
+## Migration Progress
+
+### Phase 1: Infrastructure Setup ✅ COMPLETED
+
+1. ✅ Added nuget.org to NuGet.config as package source
+2. ✅ Updated `eng/Versions.props` with xUnit3 package versions
+3. ✅ Updated `tests/Directory.Build.props` with xUnit3 package references
+4. ✅ Updated `Directory.Build.targets` to reference xunit.v3 packages
+5. ✅ Configured FSharp.Test.Utilities to use extensibility packages
+
+### Phase 2: API Migration 🚧 IN PROGRESS
+
+**Current Status**: Identifying and updating xUnit SDK API changes
+
+**Files Requiring API Updates**:
 
 ### 1. Test Project Configuration Cleanup ✅
 
