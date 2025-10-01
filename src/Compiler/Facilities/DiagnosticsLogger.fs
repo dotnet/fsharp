@@ -952,12 +952,15 @@ type StackGuard(maxDepth: int, name: string) =
 
                 StackGuardMetrics.countJump memberName $"{fileName}:{line}"
 
-                async2 {
-                    do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
-                    return f ()
-                }
-                |> Async2.RunImmediate
+                if Environment.Version.Major > 4 then
+                    async2 { return f() } |> Async2.runWithoutCancellation
+                else
+                    async {
+                        do! Async.SwitchToNewThread()
+                        Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
+                        return f ()
+                    }
+                    |> Async.RunImmediate
             else
                 f ()
         finally
