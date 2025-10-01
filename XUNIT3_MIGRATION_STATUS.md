@@ -33,9 +33,24 @@ The xUnit3 packages (3.1.0) and required dependencies are now available on nuget
 
 ### Phase 2: API Migration 🚧 IN PROGRESS
 
-**Current Status**: Identifying and updating xUnit SDK API changes
+**Current Status**: API migration requirements documented, implementation in progress
 
-**Files Requiring API Updates**:
+**Detailed Migration Guide**: See `XUNIT3_API_MIGRATION_GUIDE.md` for complete step-by-step instructions
+
+**Files Requiring API Updates:**
+1. ✅ **Compiler.fs** (2088 lines) - Removed unused `Xunit.Abstractions` import
+2. 🚧 **XunitHelpers.fs** (279 lines) - Custom test runners, parallelization, batch traits
+3. 🚧 **DirectoryAttribute.fs** (33 lines) - Custom data attribute for directory-based tests
+4. 🚧 **FileInlineDataAttribute.fs** (179 lines) - File-based test data provider
+5. ⏳ **XunitSetup.fs** (14 lines) - Framework registration (likely minimal changes)
+
+**Key Findings:**
+- xUnit3 removed `DataAttribute` base class - need to use ClassData/MemberData patterns
+- `Xunit.Abstractions` namespace removed - types moved to `Xunit.Sdk`
+- Test runner extensibility model significantly redesigned
+- Serialization APIs changed
+
+**Estimated Remaining Effort**: 6-14 hours depending on approach (detailed in migration guide)
 
 ### 1. Test Project Configuration Cleanup ✅
 
