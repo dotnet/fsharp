@@ -12455,8 +12455,6 @@ Internal.Utilities.Library.Async2Implementation+Awaiter: b getResult$W[a,b](Micr
 Internal.Utilities.Library.Async2Implementation+Awaiter: b getResult[a,b](a)
 Internal.Utilities.Library.Async2Implementation+BindContext: Boolean IncrementBindCount()
 Internal.Utilities.Library.Async2Implementation+BindContext: Int32 bindLimit
-Internal.Utilities.Library.Async2Implementation+BindContext: System.Threading.ThreadLocal`1[System.Boolean] get_started()
-Internal.Utilities.Library.Async2Implementation+BindContext: System.Threading.ThreadLocal`1[System.Boolean] started
 Internal.Utilities.Library.Async2Implementation+BindContext: System.Threading.ThreadLocal`1[System.Int32] bindCount
 Internal.Utilities.Library.Async2Implementation+BindContext: System.Threading.ThreadLocal`1[System.Int32] get_bindCount()
 Internal.Utilities.Library.Async2Implementation+BindContext: Void Reset()
@@ -12514,6 +12512,8 @@ Internal.Utilities.Library.Async2Implementation+ExceptionCache: System.Runtime.E
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: a Throw[a](System.Exception)
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow[a,b](a)
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean Running
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean get_Running()
 Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] Ref
 Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] get_Ref()
 Internal.Utilities.Library.Async2Implementation+Trampoline: Trampoline Current
@@ -12536,7 +12536,8 @@ Internal.Utilities.Library.Async2Module: Microsoft.FSharp.Control.FSharpAsync`1[
 Internal.Utilities.Library.Async2Module: System.Threading.AsyncLocal`1[System.Threading.CancellationToken] CheckAndThrowToken
 Internal.Utilities.Library.Async2Module: System.Threading.AsyncLocal`1[System.Threading.CancellationToken] get_CheckAndThrowToken()
 Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[a] startAsTaskWithoutCancellation[a](Internal.Utilities.Library.Async2`1[a])
-Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[t] start[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
+Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[a] start[a](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[a])
+Internal.Utilities.Library.Async2Module: System.Threading.Tasks.Task`1[t] startInThreadPool[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
 Internal.Utilities.Library.Async2Module: a runWithoutCancellation[a](Internal.Utilities.Library.Async2`1[a])
 Internal.Utilities.Library.Async2Module: t run[t](System.Threading.CancellationToken, Internal.Utilities.Library.Async2`1[t])
 Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] StartImmediate(System.Threading.CancellationToken)
