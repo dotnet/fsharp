@@ -17,7 +17,37 @@ open FSharp.Compiler.TypeRelations
 
 type env = | NoEnv
 
-let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
+type [<NoEquality; NoComparison>] WorkItem =
+    | WExpr of env * Expr
+    | WBind of env * Binding
+    | WBinds of env * Binding list
+    | WVal of env * Val
+    | WTy of env * range * TType
+    | WTypeInst of env * range * TType list
+    | WOp of env * TOp * TType list * Expr list * range
+    | WTraitInfo of env * range * TraitConstraintInfo
+    | WLambdas of env * ValReprInfo * Expr * TType
+    | WExprs of env * Expr list
+    | WTargets of env * range * TType * DecisionTreeTarget array
+    | WTarget of env * range * TType * DecisionTreeTarget
+    | WDTree of env * DecisionTree
+    | WSwitch of env * Expr * DecisionTreeCase list * DecisionTree option * range
+    | WDiscrim of env * DecisionTreeTest * range
+    | WAttrib of env * Attrib
+    | WAttribs of env * Attribs
+    | WValReprInfo of env * ValReprInfo
+    | WArgReprInfo of env * ArgReprInfo
+    | WTyconRecdField of env * Tycon * RecdField
+    | WTycon of env * Tycon
+    | WTycons of env * Tycon list
+    | WModuleOrNamespaceDefs of env * ModuleOrNamespaceContents list
+    | WModuleOrNamespaceDef of env * ModuleOrNamespaceContents
+    | WModuleOrNamespaceBinds of env * ModuleOrNamespaceBinding list
+    | WModuleOrNamespaceBind of env * ModuleOrNamespaceBinding
+    | WMethods of env * Val option * ObjExprMethod list
+    | WMethod of env * Val option * ObjExprMethod
+    | WIntfImpls of env * Val option * range * (TType * ObjExprMethod list) list
+    | WIntfImpl of env * Val option * range * TType * ObjExprMethod list
 
 /// The environment and collector
 type cenv =
@@ -25,7 +55,7 @@ type cenv =
       amap: Import.ImportMap
       denv: DisplayEnv
       mutable unsolved: Typars
-      stackGuard: StackGuard }
+      stack: ResizeArray<WorkItem> }
 
     override _.ToString() = "<cenv>"
 
@@ -39,288 +69,336 @@ let accTy cenv _env (mFallback: range) ty =
             | _ -> ()
             cenv.unsolved <- tp :: cenv.unsolved)
 
-/// Walk type arguments, collecting type variables
+/// Push type arguments onto work stack
 let accTypeInst cenv env mFallback tyargs =
-    tyargs |> List.iter (accTy cenv env mFallback)
+    for ty in tyargs do
+        cenv.stack.Add(WTy(env, mFallback, ty))
 
-/// Walk expressions, collecting type variables
-let rec accExpr (cenv: cenv) (env: env) expr =
-    cenv.stackGuard.Guard <| fun () ->
+/// Push expressions onto work stack
+let accExprs cenv env exprs =
+    for expr in exprs do
+        cenv.stack.Add(WExpr(env, expr))
 
-    let expr = stripExpr expr
-    match expr with
-    | Expr.Sequential (e1, e2, _, _) ->
-        accExpr cenv env e1
-        accExpr cenv env e2
+/// Process work items with explicit stack
+let processWorkItem cenv workItem =
+    match workItem with
+    | WExpr (env, expr) ->
+        let expr = stripExpr expr
+        match expr with
+        | Expr.Sequential (e1, e2, _, _) ->
+            cenv.stack.Add(WExpr(env, e2))
+            cenv.stack.Add(WExpr(env, e1))
 
-    | Expr.Let (bind, body, _, _) ->
-        accBind cenv env bind
-        accExpr cenv env body
+        | Expr.Let (bind, body, _, _) ->
+            cenv.stack.Add(WExpr(env, body))
+            cenv.stack.Add(WBind(env, bind))
 
-    | Expr.Const (_, r, ty) ->
-        accTy cenv env r ty
+        | Expr.Const (_, r, ty) ->
+            accTy cenv env r ty
 
-    | Expr.Val (_v, _vFlags, _m) -> ()
+        | Expr.Val (_v, _vFlags, _m) -> ()
 
-    | Expr.Quote (ast, _, _, m, ty) ->
-        accExpr cenv env ast
-        accTy cenv env m ty
+        | Expr.Quote (ast, _, _, m, ty) ->
+            accTy cenv env m ty
+            cenv.stack.Add(WExpr(env, ast))
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) ->
-        accTy cenv env m ty
-        accExpr cenv env basecall
-        accMethods cenv env basev overrides
-        accIntfImpls cenv env basev m iimpls
+        | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) ->
+            cenv.stack.Add(WIntfImpls(env, basev, m, iimpls))
+            cenv.stack.Add(WMethods(env, basev, overrides))
+            cenv.stack.Add(WExpr(env, basecall))
+            accTy cenv env m ty
 
-    | LinearOpExpr (_op, tyargs, argsHead, argLast, m) ->
-        // Note, LinearOpExpr doesn't include any of the "special" cases for accOp
+        | LinearOpExpr (_op, tyargs, argsHead, argLast, m) ->
+            cenv.stack.Add(WExpr(env, argLast))
+            accExprs cenv env argsHead
+            accTypeInst cenv env m tyargs
+
+        | Expr.Op (c, tyargs, args, m) ->
+            cenv.stack.Add(WOp(env, c, tyargs, args, m))
+
+        | Expr.App (f, fty, tyargs, argsl, m) ->
+            accExprs cenv env argsl
+            cenv.stack.Add(WExpr(env, f))
+            accTypeInst cenv env m tyargs
+            accTy cenv env m fty
+
+        | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, bodyTy) ->
+            let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
+            let ty = mkMultiLambdaTy cenv.g m argvs bodyTy
+            cenv.stack.Add(WLambdas(env, valReprInfo, expr, ty))
+
+        | Expr.TyLambda (_, tps, _body, m, bodyTy)  ->
+            let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
+            let ty = mkForallTyIfNeeded tps bodyTy
+            cenv.stack.Add(WLambdas(env, valReprInfo, expr, ty))
+            accTy cenv env m bodyTy
+
+        | Expr.TyChoose (_tps, e1, _m)  ->
+            cenv.stack.Add(WExpr(env, e1))
+
+        | Expr.Match (_, _exprm, dtree, targets, m, ty) ->
+            cenv.stack.Add(WTargets(env, m, ty, targets))
+            cenv.stack.Add(WDTree(env, dtree))
+            accTy cenv env m ty
+
+        | Expr.LetRec (binds, e, _m, _) ->
+            cenv.stack.Add(WExpr(env, e))
+            cenv.stack.Add(WBinds(env, binds))
+
+        | Expr.StaticOptimization (constraints, e2, e3, m) ->
+            for constr in constraints do
+                match constr with
+                | TTyconEqualsTycon(ty1, ty2) ->
+                    accTy cenv env m ty1
+                    accTy cenv env m ty2
+                | TTyconIsStruct(ty1) ->
+                    accTy cenv env m ty1
+            cenv.stack.Add(WExpr(env, e3))
+            cenv.stack.Add(WExpr(env, e2))
+
+        | Expr.WitnessArg (traitInfo, m) ->
+            cenv.stack.Add(WTraitInfo(env, m, traitInfo))
+
+        | Expr.Link eref ->
+            cenv.stack.Add(WExpr(env, eref.Value))
+
+        | Expr.DebugPoint (_, innerExpr) ->
+            cenv.stack.Add(WExpr(env, innerExpr))
+
+    | WBind (env, bind) ->
+        let valReprInfo =
+            match bind.Var.ValReprInfo with
+            | Some info ->
+                info
+            | _ ->
+                ValReprInfo.emptyValData
+        cenv.stack.Add(WLambdas(env, valReprInfo, bind.Expr, bind.Var.Type))
+        cenv.stack.Add(WVal(env, bind.Var))
+
+    | WBinds (env, binds) ->
+        for bind in binds do
+            cenv.stack.Add(WBind(env, bind))
+
+    | WVal (env, v) ->
+        accTy cenv env v.Range v.Type
+
+        if Option.isSome v.ValReprInfo then
+            cenv.stack.Add(WValReprInfo(env, v.ValReprInfo.Value))
+
+        cenv.stack.Add(WAttribs(env, v.Attribs))
+
+    | WTy (env, mFallback, ty) ->
+        accTy cenv env mFallback ty
+
+    | WTypeInst (env, mFallback, tyargs) ->
+        accTypeInst cenv env mFallback tyargs
+
+    | WOp (env, op, tyargs, args, m) ->
+        match op with
+        | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeInst, methInst, retTys) ->
+            accTypeInst cenv env m retTys
+            accTypeInst cenv env m methInst
+            accTypeInst cenv env m enclTypeInst
+        | TOp.TraitCall traitInfo ->
+            cenv.stack.Add(WTraitInfo(env, m, traitInfo))
+        | TOp.ILAsm (_, retTys) ->
+            accTypeInst cenv env m retTys
+        | _ -> ()
+        accExprs cenv env args
         accTypeInst cenv env m tyargs
-        accExprs cenv env argsHead
-        // tailcall
-        accExpr cenv env argLast
 
-    | Expr.Op (c, tyargs, args, m) ->
-        accOp cenv env (c, tyargs, args, m)
+    | WTraitInfo (env, mFallback, TTrait(tys=tys; objAndArgTys=argTys; returnTyOpt=retTy)) ->
+        for ty in tys do
+            accTy cenv env mFallback ty
 
-    | Expr.App (f, fty, tyargs, argsl, m) ->
-        accTy cenv env m fty
-        accTypeInst cenv env m tyargs
-        accExpr cenv env f
-        accExprs cenv env argsl
+        if Option.isSome retTy then
+            accTy cenv env mFallback retTy.Value
 
-    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, bodyTy) ->
-        let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
-        let ty = mkMultiLambdaTy cenv.g m argvs bodyTy
-        accLambdas cenv env valReprInfo expr ty
+        accTypeInst cenv env mFallback argTys
 
-    | Expr.TyLambda (_, tps, _body, m, bodyTy)  ->
-        let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
-        accTy cenv env m bodyTy
-        let ty = mkForallTyIfNeeded tps bodyTy
-        accLambdas cenv env valReprInfo expr ty
+    | WLambdas (env, valReprInfo, expr, exprTy) ->
+        match stripDebugPoints expr with
+        | Expr.TyChoose (_tps, bodyExpr, _m) ->
+            cenv.stack.Add(WLambdas(env, valReprInfo, bodyExpr, exprTy))
+        | Expr.Lambda (range = range)
+        | Expr.TyLambda (range = range) ->
+            let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo cenv.g cenv.amap valReprInfo (expr, exprTy)
 
-    | Expr.TyChoose (_tps, e1, _m)  ->
-        accExpr cenv env e1
+            cenv.stack.Add(WExpr(env, body))
 
-    | Expr.Match (_, _exprm, dtree, targets, m, ty) ->
-        accTy cenv env m ty
-        accDTree cenv env dtree
-        accTargets cenv env m ty targets
+            if Option.isSome ctorThisValOpt then
+                cenv.stack.Add(WVal(env, ctorThisValOpt.Value))
 
-    | Expr.LetRec (binds, e, _m, _) ->
-        accBinds cenv env binds
-        accExpr cenv env e
+            if Option.isSome baseValOpt then
+                cenv.stack.Add(WVal(env, baseValOpt.Value))
 
-    | Expr.StaticOptimization (constraints, e2, e3, m) ->
-        accExpr cenv env e2
-        accExpr cenv env e3
-        constraints |> List.iter (function
-            | TTyconEqualsTycon(ty1, ty2) ->
-                accTy cenv env m ty1
-                accTy cenv env m ty2
-            | TTyconIsStruct(ty1) ->
-                accTy cenv env m ty1)
+            for vs in vsl do
+                for v in vs do
+                    cenv.stack.Add(WVal(env, v))
 
-    | Expr.WitnessArg (traitInfo, m) ->
-        accTraitInfo cenv env m traitInfo
+            accTy cenv env range bodyTy
+        | _ ->
+            cenv.stack.Add(WExpr(env, expr))
 
-    | Expr.Link eref ->
-        accExpr cenv env eref.Value
+    | WExprs (env, exprs) ->
+        accExprs cenv env exprs
 
-    | Expr.DebugPoint (_, innerExpr) ->
-        accExpr cenv env innerExpr
+    | WTargets (env, m, ty, targets) ->
+        for target in targets do
+            cenv.stack.Add(WTarget(env, m, ty, target))
 
-/// Walk methods, collecting type variables
-and accMethods cenv env baseValOpt l =
-    List.iter (accMethod cenv env baseValOpt) l
+    | WTarget (env, _m, _ty, TTarget(_vs, e, _)) ->
+        cenv.stack.Add(WExpr(env, e))
 
-/// Walk a method, collecting type variables
-and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig, _attribs, _tps, vs, bodyExpr, _m)) =
-    vs |> List.iterSquared (accVal cenv env)
-    accExpr cenv env bodyExpr
+    | WDTree (env, dtree) ->
+        match dtree with
+        | TDSuccess (es, _n) ->
+            accExprs cenv env es
+        | TDBind(bind, rest) ->
+            cenv.stack.Add(WDTree(env, rest))
+            cenv.stack.Add(WBind(env, bind))
+        | TDSwitch (e, cases, dflt, m) ->
+            cenv.stack.Add(WSwitch(env, e, cases, dflt, m))
 
-/// Walk interface implementations, collecting type variables
-and accIntfImpls cenv env baseValOpt (mFallback: range) l =
-    List.iter (accIntfImpl cenv env baseValOpt mFallback) l
+    | WSwitch (env, e, cases, dflt, m) ->
 
-/// Walk an interface implementation, collecting type variables
-and accIntfImpl cenv env (baseValOpt: Val option) (mFallback: range) (ty, overrides) =
-    accTy cenv env mFallback ty
-    accMethods cenv env baseValOpt overrides
+        if Option.isSome dflt then
+            cenv.stack.Add(WDTree(env, dflt.Value))
 
-/// Walk an operation, collecting type variables
-and accOp cenv env (op, tyargs, args, m) =
-    // Special cases
-    accTypeInst cenv env m tyargs
-    accExprs cenv env args
-    match op with
-    // Handle these as special cases since mutables are allowed inside their bodies
-    | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeInst, methInst, retTys) ->
-        accTypeInst cenv env m enclTypeInst
-        accTypeInst cenv env m methInst
-        accTypeInst cenv env m retTys
-    | TOp.TraitCall traitInfo ->
-        accTraitInfo cenv env m traitInfo
+        for (TCase(discrim, e)) in cases do
+            cenv.stack.Add(WDTree(env, e))
+            cenv.stack.Add(WDiscrim(env, discrim, m))
 
-    | TOp.ILAsm (_, retTys) ->
-        accTypeInst cenv env m retTys
-    | _ ->    ()
+        cenv.stack.Add(WExpr(env, e))
 
-/// Walk a trait call, collecting type variables
-and accTraitInfo cenv env (mFallback : range) (TTrait(tys=tys; objAndArgTys=argTys; returnTyOpt=retTy)) =
-    argTys |> accTypeInst cenv env mFallback
-    retTy |> Option.iter (accTy cenv env mFallback)
-    tys |> List.iter (accTy cenv env mFallback)
+    | WDiscrim (env, d, mFallback) ->
+        match d with
+        | DecisionTreeTest.UnionCase(_ucref, tinst) ->
+            accTypeInst cenv env mFallback tinst
+        | DecisionTreeTest.ArrayLength(_, ty) ->
+            accTy cenv env mFallback ty
+        | DecisionTreeTest.Const _
+        | DecisionTreeTest.IsNull -> ()
+        | DecisionTreeTest.IsInst (srcTy, tgtTy) ->
+            accTy cenv env mFallback tgtTy
+            accTy cenv env mFallback srcTy
+        | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) ->
+            accTypeInst cenv env mFallback tys
+            cenv.stack.Add(WExpr(env, exp))
+        | DecisionTreeTest.Error _ -> ()
 
-/// Walk lambdas, collecting type variables
-and accLambdas cenv env valReprInfo expr exprTy =
-    match stripDebugPoints expr with
-    | Expr.TyChoose (_tps, bodyExpr, _m)  -> accLambdas cenv env valReprInfo bodyExpr exprTy
-    | Expr.Lambda (range = range)
-    | Expr.TyLambda (range = range) ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo cenv.g cenv.amap valReprInfo (expr, exprTy)
-        accTy cenv env range bodyTy
-        vsl |> List.iterSquared (accVal cenv env)
-        baseValOpt |> Option.iter (accVal cenv env)
-        ctorThisValOpt |> Option.iter (accVal cenv env)
-        accExpr cenv env body
-    | _ ->
-        accExpr cenv env expr
+    | WAttrib (env, Attrib(_, _k, args, props, _, _, m)) ->
+        for (AttribNamedArg(_nm, ty, _flg, AttribExpr(expr, expr2))) in props do
+            accTy cenv env m ty
+            cenv.stack.Add(WExpr(env, expr2))
+            cenv.stack.Add(WExpr(env, expr))
+        for (AttribExpr(expr1, expr2)) in args do
+            cenv.stack.Add(WExpr(env, expr2))
+            cenv.stack.Add(WExpr(env, expr1))
 
-/// Walk a list of expressions, collecting type variables
-and accExprs cenv env exprs =
-    exprs |> List.iter (accExpr cenv env)
+    | WAttribs (env, attribs) ->
+        for attrib in attribs do
+            cenv.stack.Add(WAttrib(env, attrib))
 
-/// Walk match targets, collecting type variables
-and accTargets cenv env m ty targets =
-    Array.iter (accTarget cenv env m ty) targets
+    | WValReprInfo (env, ValReprInfo(_, args, ret)) ->
+        cenv.stack.Add(WArgReprInfo(env, ret))
 
-/// Walk a match target, collecting type variables
-and accTarget cenv env _m _ty (TTarget(_vs, e, _)) =
-    accExpr cenv env e
+        for argInfos in args do
+            for argInfo in argInfos do
+                cenv.stack.Add(WArgReprInfo(env, argInfo))
 
-/// Walk a decision tree, collecting type variables
-and accDTree cenv env dtree =
-    match dtree with
-    | TDSuccess (es, _n) -> accExprs cenv env es
-    | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest
-    | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
+    | WArgReprInfo (env, argInfo) ->
+        cenv.stack.Add(WAttribs(env, argInfo.Attribs))
 
-/// Walk a switch, collecting type variables
-and accSwitch cenv env (e, cases, dflt, m) =
-    accExpr cenv env e
-    cases |> List.iter (fun (TCase(discrim, e)) -> accDiscrim cenv env discrim m; accDTree cenv env e)
-    dflt |> Option.iter (accDTree cenv env)
+    | WTyconRecdField (env, _tycon, rfield) ->
+        cenv.stack.Add(WAttribs(env, rfield.FieldAttribs))
+        cenv.stack.Add(WAttribs(env, rfield.PropertyAttribs))
 
-/// Walk a discriminator, collecting type variables
-and accDiscrim cenv env d mFallback =
-    match d with
-    | DecisionTreeTest.UnionCase(_ucref, tinst) -> accTypeInst cenv env mFallback tinst
-    | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env mFallback ty
-    | DecisionTreeTest.Const _
-    | DecisionTreeTest.IsNull -> ()
-    | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accTy cenv env mFallback srcTy; accTy cenv env mFallback tgtTy
-    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) ->
-        accExpr cenv env exp
-        accTypeInst cenv env mFallback tys
-    | DecisionTreeTest.Error _ -> ()
+    | WTycon (env, tycon) ->
+        if tycon.IsUnionTycon then
+            for uc in tycon.UnionCasesArray do
+                for rf in uc.RecdFieldsArray do
+                    cenv.stack.Add(WTyconRecdField(env, tycon, rf))
+                cenv.stack.Add(WAttribs(env, uc.Attribs))
 
-/// Walk an attribute, collecting type variables
-and accAttrib cenv env (Attrib(_, _k, args, props, _, _, m)) =
-    args |> List.iter (fun (AttribExpr(expr1, expr2)) ->
-        accExpr cenv env expr1
-        accExpr cenv env expr2)
-    props |> List.iter (fun (AttribNamedArg(_nm, ty, _flg, AttribExpr(expr, expr2))) ->
-        accExpr cenv env expr
-        accExpr cenv env expr2
-        accTy cenv env m ty)
+        for rf in tycon.AllFieldsArray do
+            cenv.stack.Add(WTyconRecdField(env, tycon, rf))
 
-/// Walk a list of attributes, collecting type variables
-and accAttribs cenv env attribs =
-    List.iter (accAttrib cenv env) attribs
+        for v in abstractSlotValsOfTycons [tycon] do
+            cenv.stack.Add(WVal(env, v))
 
-/// Walk a value representation info, collecting type variables
-and accValReprInfo cenv env (ValReprInfo(_, args, ret)) =
-    args |> List.iterSquared (accArgReprInfo cenv env)
-    ret |> accArgReprInfo cenv env
+        cenv.stack.Add(WAttribs(env, tycon.Attribs))
 
-/// Walk an argument representation info, collecting type variables
-and accArgReprInfo cenv env (argInfo: ArgReprInfo) =
-    accAttribs cenv env argInfo.Attribs
+    | WTycons (env, tycons) ->
+        for tycon in tycons do
+            cenv.stack.Add(WTycon(env, tycon))
 
-/// Walk a value, collecting type variables
-and accVal cenv env v =
-    v.Attribs |> accAttribs cenv env
-    v.ValReprInfo |> Option.iter (accValReprInfo cenv env)
-    v.Type |> accTy cenv env v.Range
+    | WModuleOrNamespaceDefs (env, defs) ->
+        for def in defs do
+            cenv.stack.Add(WModuleOrNamespaceDef(env, def))
 
-/// Walk a binding, collecting type variables
-and accBind cenv env (bind: Binding) =
-    accVal cenv env bind.Var
-    let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
-    accLambdas cenv env valReprInfo bind.Expr bind.Var.Type
+    | WModuleOrNamespaceDef (env, def) ->
+        match def with
+        | TMDefRec(_, _opens, tycons, mbinds, _m) ->
+            cenv.stack.Add(WModuleOrNamespaceBinds(env, mbinds))
+            cenv.stack.Add(WTycons(env, tycons))
+        | TMDefLet(bind, _m) ->
+            cenv.stack.Add(WBind(env, bind))
+        | TMDefDo(e, _m) ->
+            cenv.stack.Add(WExpr(env, e))
+        | TMDefOpens _ -> ()
+        | TMDefs defs ->
+            cenv.stack.Add(WModuleOrNamespaceDefs(env, defs))
 
-/// Walk a list of bindings, collecting type variables
-and accBinds cenv env binds =
-    binds |> List.iter (accBind cenv env)
+    | WModuleOrNamespaceBinds (env, xs) ->
+        for x in xs do
+            cenv.stack.Add(WModuleOrNamespaceBind(env, x))
 
-/// Walk a record field of a type constructor, collecting type variables
-let accTyconRecdField cenv env _tycon (rfield:RecdField) =
-    accAttribs cenv env rfield.PropertyAttribs
-    accAttribs cenv env rfield.FieldAttribs
+    | WModuleOrNamespaceBind (env, x) ->
+        match x with
+        | ModuleOrNamespaceBinding.Binding bind ->
+            cenv.stack.Add(WBind(env, bind))
+        | ModuleOrNamespaceBinding.Module(mspec, rhs) ->
+            cenv.stack.Add(WModuleOrNamespaceDef(env, rhs))
+            cenv.stack.Add(WTycon(env, mspec))
 
-/// Walk a type constructor, collecting type variables
-let accTycon cenv env (tycon:Tycon) =
-    accAttribs cenv env tycon.Attribs
-    abstractSlotValsOfTycons [tycon] |> List.iter (accVal cenv env)
-    tycon.AllFieldsArray |> Array.iter (accTyconRecdField cenv env tycon)
-    if tycon.IsUnionTycon then                             (* This covers finite unions. *)
-      tycon.UnionCasesArray |> Array.iter (fun uc ->
-          accAttribs cenv env uc.Attribs
-          uc.RecdFieldsArray |> Array.iter (accTyconRecdField cenv env tycon))
+    | WMethods (env, baseValOpt, l) ->
+        for m in l do
+            cenv.stack.Add(WMethod(env, baseValOpt, m))
 
-/// Walk a list of type constructors, collecting type variables
-let accTycons cenv env tycons =
-    List.iter (accTycon cenv env) tycons
+    | WMethod (env, _baseValOpt, TObjExprMethod(_slotsig, _attribs, _tps, vs, bodyExpr, _m)) ->
+        cenv.stack.Add(WExpr(env, bodyExpr))
 
-/// Walk a list of module or namespace definitions, collecting type variables
-let rec accModuleOrNamespaceDefs cenv env defs =
-    List.iter (accModuleOrNamespaceDef cenv env) defs
+        for vsList in vs do
+            for v in vsList do
+                cenv.stack.Add(WVal(env, v))
 
-/// Walk a module or namespace definition, collecting type variables
-and accModuleOrNamespaceDef cenv env def =
-    match def with
-    | TMDefRec(_, _opens, tycons, mbinds, _m) ->
-        accTycons cenv env tycons
-        accModuleOrNamespaceBinds cenv env mbinds
-    | TMDefLet(bind, _m)  -> accBind cenv env bind
-    | TMDefDo(e, _m)  -> accExpr cenv env e
-    | TMDefOpens _ -> ()
-    | TMDefs defs -> accModuleOrNamespaceDefs cenv env defs
+    | WIntfImpls (env, baseValOpt, mFallback, l) ->
+        for impl in l do
+            let (ty, overrides) = impl
+            cenv.stack.Add(WIntfImpl(env, baseValOpt, mFallback, ty, overrides))
 
-/// Walk a list of module or namespace bindings, collecting type variables
-and accModuleOrNamespaceBinds cenv env xs =
-    List.iter (accModuleOrNamespaceBind cenv env) xs
-
-/// Walk a module or namespace binding, collecting type variables
-and accModuleOrNamespaceBind cenv env x =
-    match x with
-    | ModuleOrNamespaceBinding.Binding bind ->
-        accBind cenv env bind
-    | ModuleOrNamespaceBinding.Module(mspec, rhs) ->
-        accTycon cenv env mspec
-        accModuleOrNamespaceDef cenv env rhs
+    | WIntfImpl (env, baseValOpt, mFallback, ty, overrides) ->
+        cenv.stack.Add(WMethods(env, baseValOpt, overrides))
+        accTy cenv env mFallback ty
 
 /// Find all unsolved inference variables after type inference for an entire file
 let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
+    let stack = ResizeArray<WorkItem>()
     let cenv =
-        { g =g
-          amap=amap
-          denv=denv
+        { g = g
+          amap = amap
+          denv = denv
           unsolved = []
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
-    accModuleOrNamespaceDef cenv NoEnv mdef
-    accAttribs cenv NoEnv extraAttribs
+          stack = stack }
+
+    stack.Add(WAttribs(NoEnv, extraAttribs))
+    stack.Add(WModuleOrNamespaceDef(NoEnv, mdef))
+
+    while stack.Count > 0 do
+        let lastIndex = stack.Count - 1
+        let workItem = stack.[lastIndex]
+        stack.RemoveAt(lastIndex)
+        processWorkItem cenv workItem
+
     List.rev cenv.unsolved
-
-
