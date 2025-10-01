@@ -7,7 +7,6 @@
     <IsPackable>false</IsPackable>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
-    <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>

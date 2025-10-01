@@ -12,7 +12,6 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
-    <UnitTestType>xunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
 

@@ -4,9 +4,7 @@
 		<TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
 		<IsPackable>false</IsPackable>
 		<GenerateProgramFile>false</GenerateProgramFile>
-		<IsTestProject>true</IsTestProject>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-		<UnitTestType>xunit</UnitTestType>
 		<ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
 		<Optimize>false</Optimize>
 		<Tailcalls>false</Tailcalls>
