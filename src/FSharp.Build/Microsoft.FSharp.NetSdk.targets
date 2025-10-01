@@ -54,6 +54,20 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
+  <!-- Check for design-time provider references and add target if needed -->
+  <!-- This target attempts to update TargetsForTfmSpecificContentInPackage based on reference metadata -->
+  <!-- NOTE: This is experimental - MSBuild target scheduling happens at graph construction time, -->
+  <!-- so updating the property here may be too late. Testing to see how MSBuild reacts. -->
+  <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec;Pack" Condition=" '$(IsFSharpDesignTimeProvider)' != 'true' ">
+    <ItemGroup>
+      <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
+      <_FSharpDesignTimeProviderPackage Include="@(PackageReference)" Condition="'%(PackageReference.IsFSharpDesignTimeProvider)' == 'true'" />
+    </ItemGroup>
+    <PropertyGroup Condition=" '@(_FSharpDesignTimeProviderProject)' != '' or '@(_FSharpDesignTimeProviderPackage)' != '' ">
+      <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+  </Target>
+
   <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
   </PropertyGroup>
