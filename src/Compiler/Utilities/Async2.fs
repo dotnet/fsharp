@@ -52,8 +52,6 @@ module Async2Implementation =
 
     module BindContext =
         let bindCount = new ThreadLocal<int>()
-        // Used to prevent sync over async deadlocks.
-        let started = new AsyncLocal<bool>()
 
         [<Literal>]
         let bindLimit = 100
@@ -102,6 +100,8 @@ module Async2Implementation =
             member _.UnsafeOnCompleted continuation = set continuation
 
         member this.Ref: ICriticalNotifyCompletion ref = ref this
+
+        member _.Running = running
 
         static member Current = holder.Value
 
@@ -474,36 +474,40 @@ module Async2 =
 
     let CheckAndThrowToken = AsyncLocal<CancellationToken>()
 
+    let startInThreadPool ct (code: Async2<_>) =
+        Task.Run<'t>(fun () ->
+            CheckAndThrowToken.Value <- ct
+            code.StartImmediate ct |> _.Task)
+
     let inline start ct (code: Async2<_>) =
-        let oldCt = CheckAndThrowToken.Value
-        let oldStarted = BindContext.started.Value
 
         let immediate =
-            not oldStarted
+            not Trampoline.Current.Running // prevent deadlock, TODO: better solution?
             && isNull SynchronizationContext.Current
             && TaskScheduler.Current = TaskScheduler.Default
 
-        try
-            BindContext.started.Value <- true
-            CheckAndThrowToken.Value <- ct
+        if immediate then
+            let oldCt = CheckAndThrowToken.Value
 
-            if immediate then
+            try
+                CheckAndThrowToken.Value <- ct
                 code.StartImmediate ct |> _.Task
-            else
-                Task.Run<'t>(fun () -> code.StartImmediate ct |> _.Task)
-        finally
-            CheckAndThrowToken.Value <- oldCt
-            BindContext.started.Value <- oldStarted
+
+            finally
+                CheckAndThrowToken.Value <- oldCt
+        else
+            startInThreadPool ct code
 
     let run ct (code: Async2<'t>) =
-        start ct code |> _.GetAwaiter().GetResult()
+        startInThreadPool ct code |> _.GetAwaiter().GetResult()
 
     let runWithoutCancellation code = run CancellationToken.None code
 
     //let queueTask ct code =
     //    Task.Run<'t>(fun () -> start ct code)
 
-    let startAsTaskWithoutCancellation code = start CancellationToken.None code
+    let startAsTaskWithoutCancellation code =
+        startInThreadPool CancellationToken.None code
 
     let toAsync (code: Async2<'t>) =
         async {
@@ -530,15 +534,15 @@ type Async2 =
 
     static member Start(computation: Async2<_>, ?cancellationToken: CancellationToken) : unit =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.start ct computation |> ignore
+        Async2.startInThreadPool ct computation |> ignore
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.start ct computation
+        Async2.startInThreadPool ct computation
 
     static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.run ct computation
+        Async2.start ct computation |> _.GetAwaiter().GetResult()
 
     static member Parallel(computations: Async2<_> seq) =
         async2 {
@@ -555,7 +559,7 @@ type Async2 =
                                 lcts.Cancel()
                                 return raise exn
                         }
-                        |> Async2.start lcts.Token
+                        |> Async2.startInThreadPool lcts.Token
                 }
 
             return! Task.WhenAll tasks
@@ -584,25 +588,25 @@ type Async2 =
     static member TryCancelled(computation: Async2<'T>, compensation) =
         async2 {
             let! ct = Async2.CancellationToken
-            let task = Async2.start ct computation
+            let invocation = computation.StartImmediate ct
 
             try
-                return! task
+                return! invocation
             finally
-                if task.IsCanceled then
+                if invocation.Task.IsCanceled then
                     compensation ()
         }
 
     static member StartChild(computation: Async2<'T>) : Async2<Async2<'T>> =
         async2 {
             let! ct = Async2.CancellationToken
-            return async2 { return! computation |> Async2.start ct }
+            return async2 { return! computation |> Async2.startInThreadPool ct }
         }
 
     static member StartChildAsTask(computation: Async2<'T>) : Async2<Task<'T>> =
         async2 {
             let! ct = Async2.CancellationToken
-            let task = computation |> Async2.start ct
+            let task = computation |> Async2.startInThreadPool ct
             return task
         }
 
