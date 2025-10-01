@@ -18,7 +18,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>10</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>100</FSBuildVersion>
+    <FSBuildVersion>200</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -41,7 +41,7 @@
     <FSharpLibrariesChangelogVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSharpLibrariesChangelogVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>9.0.300</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>9.0.303</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
