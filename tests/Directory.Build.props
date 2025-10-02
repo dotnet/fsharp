@@ -18,7 +18,6 @@
     <PackageReference Include="xunit.v3.runner.console" Version="$(XunitRunnerConsoleVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
     <PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" />
-    <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 
   <PropertyGroup>
