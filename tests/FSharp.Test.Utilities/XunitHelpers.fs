@@ -24,10 +24,14 @@ type RunTestCasesInSequenceAttribute() = inherit Attribute()
 // Helper for stress testing.
 // Runs a test case many times in parallel.
 // Example usage: [<Theory; Stress(Count = 1000)>]
+// NOTE: Temporarily disabled due to xUnit3 DataAttribute resolution issue with F# compiler
+// TODO: Convert to MemberData pattern or resolve DataAttribute accessibility
+(*
 type StressAttribute([<ParamArray>] data: obj array) =
     inherit DataAttribute()
     member val Count = 1 with get, set
     override this.GetData _ = Seq.init this.Count (fun i -> [| yield! data; yield box i |])
+*)
 
 #if XUNIT_EXTRAS
 

@@ -31,6 +31,9 @@ type BooleanOptions =
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a file, relative to current test suite's root.
 /// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
+/// NOTE: Temporarily disabled due to xUnit3 DataAttribute resolution issue with F# compiler
+/// TODO: Convert to ClassData pattern or resolve DataAttribute accessibility
+(*
 [<NoComparison; NoEquality>]
 type FileInlineData(filename: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
     inherit DataAttribute()
@@ -77,10 +80,12 @@ type FileInlineData(filename: string, realsig: BooleanOptions option, optimize: 
             |]
 
         results
+*)
 
-// realsig and optimized are boxed so null = not set, true or false = set
-and [<NoComparison; NoEquality; AutoOpen>]
-    CompilationHelper internal (filename: obj, directory: obj, realsig: obj, optimize: obj) =
+// realsig and optimized are boxed so null = not set, true or false = set  
+// Keeping CompilationHelper as it may be used elsewhere
+[<NoComparison; NoEquality; AutoOpen>]
+type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, optimize: obj) =
 
     let mutable filename = filename
     let mutable directory = directory
