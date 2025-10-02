@@ -6,7 +6,6 @@ namespace FSharp.Test
 
 open System
 open Xunit.Sdk
-open Xunit.Abstractions
 
 open TestFramework
 
@@ -32,31 +31,10 @@ type StressAttribute([<ParamArray>] data: obj array) =
 
 #if XUNIT_EXTRAS
 
-// To use xUnit means to customize it. The following abomination adds 2 features:
-// - Capturing full console output individually for each test case, viewable in Test Explorer as test stdout.
+// To use xUnit means to customize it. The following features are added:
 // - Internally parallelize test classes and theories. Test cases and theory cases included in a single class or F# module can execute simultaneously
-
-/// Passes captured console output to xUnit.
-type ConsoleCapturingTestRunner(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, skipReason, beforeAfterAttributes, aggregator, cancellationTokenSource) =
-    inherit XunitTestRunner(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, skipReason, beforeAfterAttributes, aggregator, cancellationTokenSource)
-
-    member _.BaseInvokeTestMethodAsync aggregator = base.InvokeTestMethodAsync aggregator
-    override this.InvokeTestAsync (aggregator: ExceptionAggregator) =
-        task {
-            use capture = new TestConsole.ExecutionCapture()
-            use _ = Activity.startNoTags test.DisplayName
-            let! executionTime = this.BaseInvokeTestMethodAsync aggregator
-            let output =
-                seq {
-                    capture.OutText
-                    if not (String.IsNullOrEmpty capture.ErrorText) then
-                        ""
-                        "=========== Standard Error ==========="
-                        ""
-                        capture.ErrorText
-                } |> String.concat Environment.NewLine
-            return executionTime, output
-        }
+// - Add batch traits for CI multi-agent testing support
+// Note: Console output capturing is now handled by xUnit3's built-in [<assembly: CaptureTrace>] attribute
 
 module TestCaseCustomizations =
     // Internally parallelize test classes and theories.
@@ -110,18 +88,10 @@ module TestCaseCustomizations =
 
 type CustomTestCase =
     inherit XunitTestCase
-    // xUinit demands this constructor for deserialization.
+    // xUnit demands this constructor for deserialization.
     new() = { inherit XunitTestCase() }
     
     new(sink: IMessageSink, md, mdo, testMethod, testMethodArgs) = { inherit XunitTestCase(sink, md, mdo, testMethod, testMethodArgs) }
-
-    override testCase.RunAsync (_, bus, args, aggregator, cts) =
-        let  runner : XunitTestCaseRunner =
-            { new XunitTestCaseRunner(testCase, testCase.DisplayName, testCase.SkipReason, args, testCase.TestMethodArguments, bus, aggregator, cts) with
-                override this.CreateTestRunner(test, bus, testCase, args, testMethod, methodArgs, skipReason, attrs, aggregator, cts) =
-                    ConsoleCapturingTestRunner(test, bus, testCase, args, testMethod, methodArgs, skipReason, attrs, aggregator, cts)
-            }
-        runner.RunAsync()
 
     // Initialize is ensured by xUnit to run once before any property access.
     override testCase.Initialize () =
@@ -134,14 +104,6 @@ type CustomTheoryTestCase =
     new() = { inherit XunitTheoryTestCase() }
     
     new(sink: IMessageSink, md, mdo, testMethod) = { inherit XunitTheoryTestCase(sink, md, mdo, testMethod) }
-
-    override testCase.RunAsync (sink, bus, args, aggregator, cts) =
-        let  runner : XunitTestCaseRunner =
-            { new XunitTheoryTestCaseRunner(testCase, testCase.DisplayName, testCase.SkipReason, args, sink, bus, aggregator, cts) with
-                override this.CreateTestRunner(test, bus, testCase, args, testMethod, methodArgs, skipReason, attrs, aggregator, cts) =
-                    ConsoleCapturingTestRunner(test, bus, testCase, args, testMethod, methodArgs, skipReason, attrs, aggregator, cts)
-            }
-        runner.RunAsync()
 
     override testCase.Initialize () =
         base.Initialize()
@@ -239,7 +201,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
         }
 
 #if XUNIT_EXTRAS
-    // Rewrites discovered test cases to support extra parallelization and capturing console as test output.
+    // Rewrites discovered test cases to support extra parallelization and batch trait injection.
     override this.CreateDiscoverer (assemblyInfo) =
         { new XunitTestFrameworkDiscoverer(assemblyInfo, this.SourceInformationProvider, this.DiagnosticMessageSink) with
             override _.FindTestsForType (testClass, includeSourceInformation, messageBus, options) =

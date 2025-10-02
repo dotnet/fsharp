@@ -9,7 +9,6 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
 open Xunit
-open Xunit.Abstractions
 open Xunit.Sdk
 
 open FSharp.Compiler.IO
