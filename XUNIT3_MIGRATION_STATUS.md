@@ -33,34 +33,49 @@ The xUnit3 packages (3.1.0) and required dependencies are now available on nuget
 
 ### Phase 2: API Migration 🚧 IN PROGRESS
 
-**Current Status**: API analysis complete, DataAttribute confirmed available in xUnit3
+**Current Status**: Console capturing removed, fixing remaining xUnit3 API changes
+
+**Latest Progress (Commit 9b8347e)**:
+- ✅ Added `[<assembly: CaptureTrace>]` for automatic console capturing
+- ✅ Removed ConsoleCapturingTestRunner (~60 lines)
+- ✅ Removed Xunit.Abstractions imports
+- ✅ Simplified test case classes
 
 **Detailed Migration Guide**: See `XUNIT3_API_MIGRATION_GUIDE.md` for complete step-by-step instructions
 
-**Key Discovery**: 
-- ✅ `DataAttribute` DOES exist in xUnit3 (Xunit.Sdk namespace in xunit.v3.extensibility.core)
-- ✅ Located in xunit.v3.core.dll assembly  
-- ⚠️ F# compiler currently not finding types - likely assembly reference configuration issue
-- 🔍 Need to verify MSBuild package resolution is loading xunit.v3.core.dll correctly
+**Files Status:**
+1. ✅ **Compiler.fs** - Removed unused `Xunit.Abstractions` import  
+2. ✅ **XunitSetup.fs** - Added `[<assembly: CaptureTrace>]`
+3. 🚧 **XunitHelpers.fs** - Simplified, fixing API changes (~85 errors remaining)
+4. 🚧 **DirectoryAttribute.fs** - DataAttribute resolution issues
+5. 🚧 **FileInlineDataAttribute.fs** - DataAttribute resolution issues
 
-**Files Requiring API Updates:**
-1. ✅ **Compiler.fs** (2088 lines) - Removed unused `Xunit.Abstractions` import  
-2. 🚧 **XunitHelpers.fs** (279 lines) - Custom test runners, parallelization (complex)
-3. 🚧 **DirectoryAttribute.fs** (33 lines) - Data attribute (should be straightforward once resolution fixed)
-4. 🚧 **FileInlineDataAttribute.fs** (179 lines) - Data attribute (should be straightforward once resolution fixed)
-5. ⏳ **XunitSetup.fs** (14 lines) - Framework registration (likely minimal changes)
+**Build Errors**: ~90 errors, primarily:
+- **DataAttribute** type not resolved by F# compiler despite being in xunit.v3.core.dll
+  - Confirmed exists via ILSpy
+  - Package references configured
+  - Explicit DLL reference added
+  - **BLOCKER**: F# compiler still cannot resolve the type
+- XunitTestCase, TestCollection, TestClass, TestMethod - concrete types removed in xUnit3
+- Test case creation model changed
+- Trait API changes
 
-**Build Errors**: ~50 errors, primarily:
-- DataAttribute type not resolved by F# compiler
-- Some extensibility API changes (test runners, test case model)
+**Current Investigation**:
+- DataAttribute is confirmed to exist in xunit.v3.core.dll (Xunit.Sdk namespace)
+- Added explicit Reference to xunit.v3.core.dll
+- Added xunit.v3.common package reference
+- F# compiler still reports "The type 'DataAttribute' is not defined"
+- May be visibility issue, assembly loading issue, or F# compiler/MSBuild bug
 
 **Next Actions**:
-1. Investigate MSBuild assembly reference resolution
-2. Ensure xunit.v3.core.dll is properly loaded
-3. Once types resolve, implement remaining API updates
+1. **CRITICAL**: Resolve DataAttribute visibility/loading issue
+   - May need to check xUnit3 source code for visibility modifiers
+   - May need alternative approach (use ClassData/MemberData instead)
+2. Update custom test case logic for xUnit3 model (may need to simplify/remove)
+3. Fix trait injection API
 4. Test and validate
 
-**Estimated Remaining Effort**: 4-8 hours (reduced from 6-14 as DataAttribute exists)
+**Estimated Remaining Effort**: 4-6 hours (increased due to DataAttribute blocker)
 
 ### 1. Test Project Configuration Cleanup ✅
 
