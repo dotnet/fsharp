@@ -63,3 +63,9 @@ let Type_SpreadShadowsExplicit_fs compilation =
     compilation
     |> getCompilation
     |> verifyCompilation
+
+[<Theory; FileInlineData("Type_AttributesAreShadowed.fs", Realsig = BooleanOptions.True, Optimize = BooleanOptions.True)>]
+let Type_Type_AttributesAreShadowed_fs compilation =
+    compilation
+    |> getCompilation
+    |> verifyCompilation
