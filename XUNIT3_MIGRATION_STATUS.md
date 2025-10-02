@@ -85,25 +85,38 @@ Given the persistent blocker and time invested, two options:
 3. If that doesn't work, disable XUNIT_EXTRAS temporarily to unblock other tests
 4. Update remaining API issues once DataAttribute resolved
 
-**Status**: FSharp.Test.Utilities builds successfully! ✅
+**Status**: Test projects updated for xUnit3 OutputType requirement ✅
 
-**Current Blocker**: xUnit3 test projects must have `<OutputType>Exe</OutputType>`
+**Current Blocker**: Tests using DirectoryAttribute/FileInlineDataAttribute cannot compile
 
 **Remaining Work**:
-1. **CRITICAL**: Update all test projects to set `<OutputType>Exe</OutputType>` (xUnit3 requirement)
+1. **CRITICAL**: Re-enable or replace DirectoryAttribute/FileInlineDataAttribute (~100 errors in ComponentTests)
+   - Option A: Fix DataAttribute resolution issue with F# compiler
+   - Option B: Convert all tests to use ClassData/MemberData patterns
 2. Test projects may have FsCheck 3.x API compatibility issues (separate from xUnit3)
-3. Tests using DirectoryAttribute/FileInlineDataAttribute need conversion
-4. Re-evaluate batch trait injection for CI if needed
+3. Re-evaluate batch trait injection for CI if needed
 
 **Recent Changes**:
 - ✅ Removed nuget.org from NuGet.config (reverted to original sources)
+- ✅ Updated all test projects to `<OutputType>Exe</OutputType>` (xUnit3 requirement)
 - ⚠️ xUnit3 packages available from existing Azure DevOps feeds
 
+**Test Projects Updated** (9 projects):
+- FSharp.Compiler.ComponentTests
+- FSharp.Compiler.Service.Tests
+- FSharp.Build.UnitTests
+- FSharp.Core.UnitTests
+- FSharp.Compiler.Private.Scripting.UnitTests
+- FSharpSuite.Tests
+- FSharp.Compiler.LanguageServer.Tests
+- BasicProvider.Tests
+- ComboProvider.Tests
+
 **Estimated Remaining Effort**: 
-- Update OutputType in test projects: 1-2 hours
+- Re-enable DirectoryAttribute (if F# issue resolved): 1-2 hours
+- OR Convert all tests to ClassData: 8-12 hours
 - Fix FsCheck API issues: 2-4 hours (separate task)
-- Convert custom data attribute tests: 4-6 hours (if needed)
-- Total xUnit3 core migration: 80% complete (XUNIT_EXTRAS disabled, OutputType fix needed)
+- Total xUnit3 core migration: 85% complete (OutputType fixed, DataAttribute blocker remains)
 
 ### 1. Test Project Configuration Cleanup ✅
 
