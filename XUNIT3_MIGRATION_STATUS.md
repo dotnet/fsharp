@@ -60,22 +60,32 @@ The xUnit3 packages (3.1.0) and required dependencies are now available on nuget
 - Test case creation model changed
 - Trait API changes
 
-**Current Investigation**:
-- DataAttribute is confirmed to exist in xunit.v3.core.dll (Xunit.Sdk namespace)
-- Added explicit Reference to xunit.v3.core.dll
-- Added xunit.v3.common package reference
-- F# compiler still reports "The type 'DataAttribute' is not defined"
-- May be visibility issue, assembly loading issue, or F# compiler/MSBuild bug
+**Current Investigation - DataAttribute Blocker**:
+- ✅ DataAttribute confirmed to exist in xunit.v3.core.dll (verified via ILSpy)
+- ✅ Located in Xunit.Sdk namespace  
+- ✅ Added explicit Reference to xunit.v3.core.dll
+- ✅ Added xunit.v3.common package reference
+- ❌ F# compiler reports "The type 'DataAttribute' is not defined in 'Xunit.Sdk'"
+- ❌ Tested with fully qualified name: same error
+- **CONCLUSION**: DataAttribute exists in DLL but is not accessible to F# compiler
+- **POSSIBLE CAUSES**: 
+  1. Type visibility issue in xUnit3 (internal/private)
+  2. Assembly not properly loaded by F# compiler/MSBuild
+  3. xUnit3/F# compatibility issue
+  4. Need different package (xunit.v3 test framework vs extensibility)
+
+**Recommended Path Forward**:
+Given the persistent blocker and time invested, two options:
+1. **Alternative Pattern**: Convert to ClassData/MemberData (xUnit3 recommended)
+2. **Community Help**: File issue with xUnit3 team about F# compatibility
 
 **Next Actions**:
-1. **CRITICAL**: Resolve DataAttribute visibility/loading issue
-   - May need to check xUnit3 source code for visibility modifiers
-   - May need alternative approach (use ClassData/MemberData instead)
-2. Update custom test case logic for xUnit3 model (may need to simplify/remove)
-3. Fix trait injection API
-4. Test and validate
+1. Document findings and current state
+2. Try ClassData/MemberData conversion as workaround
+3. If that doesn't work, disable XUNIT_EXTRAS temporarily to unblock other tests
+4. Update remaining API issues once DataAttribute resolved
 
-**Estimated Remaining Effort**: 4-6 hours (increased due to DataAttribute blocker)
+**Estimated Remaining Effort**: 3-5 hours if ClassData works, 6-8 hours if need xUnit3 team help
 
 ### 1. Test Project Configuration Cleanup ✅
 
