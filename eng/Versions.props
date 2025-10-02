@@ -147,7 +147,7 @@
     <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
     <MicrosoftVisualStudioTextDataVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextDataVersion>
     <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
-    <MicrosoftVisualStudioComponentModelHostVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioComponentModelHostVersion>
+    <MicrosoftVisualStudioComponentModelHostVersion>18.0.2551-preview.1</MicrosoftVisualStudioComponentModelHostVersion>
     <NuGetSolutionRestoreManagerInteropVersion>5.6.0</NuGetSolutionRestoreManagerInteropVersion>
     <MicrosoftVisualStudioExtensibilityTestingVersion>0.1.800-beta</MicrosoftVisualStudioExtensibilityTestingVersion>
     <MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>$(MicrosoftVisualStudioExtensibilityTestingVersion)</MicrosoftVisualStudioExtensibilityTestingSourceGeneratorVersion>
@@ -180,8 +180,8 @@
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
     <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
-    <MicrosoftCompositionVersion>17.13.50</MicrosoftCompositionVersion>
-    <MicrosoftNetCompilersVersion>4.12.0</MicrosoftNetCompilersVersion>
+    <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
+    <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
     <MicrosoftNETCoreILDAsmVersion>6.0.0-rtm.21518.12</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>9.0.0-rc.2.24462.10</MicrosoftNETCoreILAsmVersion>

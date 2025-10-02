@@ -104,8 +104,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Interop" Version="$(MicrosoftVisualStudioInteropVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Imaging.Interop.14.0.DesignTime" Version="$(MicrosoftVisualStudioImagingInterop140DesignTimeVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <!-- <PackageReference Include="Microsoft.VisualStudio.Interop" Version="$(MicrosoftVisualStudioInteropVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" /> -->
+    <!-- <PackageReference Include="Microsoft.VisualStudio.Imaging.Interop.14.0.DesignTime" Version="$(MicrosoftVisualStudioImagingInterop140DesignTimeVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" /> -->
     <PackageReference Include="Microsoft.VisualStudio.CoreUtility" Version="$(MicrosoftVisualStudioCoreUtilityVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ImageCatalog" Version="$(MicrosoftVisualStudioImageCatalogVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
