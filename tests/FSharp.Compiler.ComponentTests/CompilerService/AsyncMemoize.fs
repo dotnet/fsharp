@@ -37,7 +37,9 @@ let rec awaitEvents next condition =
     async {
         match! next () with
         | events when condition events -> return events
-        | _ -> return! awaitEvents next condition
+        | _ ->
+            do! Async.Sleep 1
+            return! awaitEvents next condition
     }
 
 let rec eventsWhen next condition =
@@ -395,7 +397,7 @@ let ``Stress test`` () =
     Assert.True ((float completed) > ((float started) * 0.1), "Less than 10 % completed jobs")
 
 
-[<Fact(Skip="fix later")>]
+[<Fact>]
 let ``Cancel running jobs with the same key`` () =
     let cache = AsyncMemoize(cancelUnawaitedJobs = false, cancelDuplicateRunningJobs = true)
 

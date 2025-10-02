@@ -101,8 +101,6 @@ module Async2Implementation =
 
         member this.Ref: ICriticalNotifyCompletion ref = ref this
 
-        member _.Running = running
-
         static member Current = holder.Value
 
     module ExceptionCache =
@@ -482,8 +480,7 @@ module Async2 =
     let inline start ct (code: Async2<_>) =
 
         let immediate =
-            not Trampoline.Current.Running // prevent deadlock, TODO: better solution?
-            && isNull SynchronizationContext.Current
+            isNull SynchronizationContext.Current
             && TaskScheduler.Current = TaskScheduler.Default
 
         if immediate then
@@ -538,7 +535,7 @@ type Async2 =
 
     static member StartAsTask(computation: Async2<_>, ?cancellationToken: CancellationToken) : Task<_> =
         let ct = defaultArg cancellationToken CancellationToken.None
-        Async2.startInThreadPool ct computation
+        Async2.start ct computation
 
     static member RunImmediate(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
         let ct = defaultArg cancellationToken CancellationToken.None
@@ -593,7 +590,7 @@ type Async2 =
             try
                 return! invocation
             finally
-                if invocation.Task.IsCanceled then
+                if ct.IsCancellationRequested && invocation.Task.IsCanceled then
                     compensation ()
         }
 
