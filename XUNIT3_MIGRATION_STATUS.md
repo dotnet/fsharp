@@ -85,7 +85,17 @@ Given the persistent blocker and time invested, two options:
 3. If that doesn't work, disable XUNIT_EXTRAS temporarily to unblock other tests
 4. Update remaining API issues once DataAttribute resolved
 
-**Estimated Remaining Effort**: 3-5 hours if ClassData works, 6-8 hours if need xUnit3 team help
+**Status**: FSharp.Test.Utilities builds successfully! ✅
+
+**Remaining Work**:
+1. Test projects may have FsCheck 3.x API compatibility issues (separate from xUnit3)
+2. Tests using DirectoryAttribute/FileInlineDataAttribute need conversion
+3. Re-evaluate batch trait injection for CI if needed
+
+**Estimated Remaining Effort**: 
+- Fix FsCheck API issues: 2-4 hours (separate task)
+- Convert custom data attribute tests: 4-6 hours (if needed)
+- Total xUnit3 core migration: Complete (with XUNIT_EXTRAS disabled)
 
 ### 1. Test Project Configuration Cleanup ✅
 
