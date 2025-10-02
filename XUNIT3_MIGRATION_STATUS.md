@@ -50,7 +50,7 @@ The xUnit3 packages (3.1.0) and required dependencies are now available on nuget
 4. 🚧 **DirectoryAttribute.fs** - DataAttribute resolution issues
 5. 🚧 **FileInlineDataAttribute.fs** - DataAttribute resolution issues
 
-**Build Errors**: ~90 errors, primarily:
+**Build Errors**: 74 errors (down from 90, was 126 initially), primarily:
 - **DataAttribute** type not resolved by F# compiler despite being in xunit.v3.core.dll
   - Confirmed exists via ILSpy
   - Package references configured

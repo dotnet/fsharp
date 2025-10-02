@@ -179,6 +179,9 @@ module OneTimeSetup =
         init.Force()
 
 /// `XunitTestFramework` providing parallel console support and conditionally enabling optional xUnit customizations.
+/// NOTE: Temporarily disabled due to xUnit3 API incompatibilities
+/// TODO: Reimplement for xUnit3 if OneTimeSetup, OpenTelemetry, or cleanup functionality is needed
+(*
 type FSharpXunitFramework(sink: IMessageSink) =
     inherit XunitTestFramework(sink)
 
@@ -203,6 +206,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
 
                 cleanUpTemporaryDirectoryOfThisTestRun ()
         }
+*)
 
 #if XUNIT_EXTRAS
     // Rewrites discovered test cases to support extra parallelization and batch trait injection.

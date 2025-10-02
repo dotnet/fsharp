@@ -9,6 +9,8 @@ type NotThreadSafeResourceCollection = class end
 
 module XUnitSetup =
 
-    [<assembly: TestFramework("FSharp.Test.FSharpXunitFramework", "FSharp.Test.Utilities")>]
+    // NOTE: Custom TestFramework temporarily disabled due to xUnit3 API incompatibilities
+    // TODO: Reimplement FSharpXunitFramework for xUnit3 if needed
+    // [<assembly: TestFramework("FSharp.Test.FSharpXunitFramework", "FSharp.Test.Utilities")>]
     [<assembly: CaptureTrace>]
     do ()
