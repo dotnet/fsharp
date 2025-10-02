@@ -19,7 +19,14 @@
     <FSMajorVersion>10</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
     <FSBuildVersion>200</FSBuildVersion>
-    <FSRevisionVersion>0</FSRevisionVersion>
+<FSharpPreReleaseIteration>1</FSharpPreReleaseIteration>
+<PreReleaseVersionLabel>alpha$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
+<!-- These have to be in sync with latest release branch -->
+<!-- F# Version components -->
+<FSMajorVersion>11</FSMajorVersion>
+<FSMinorVersion>0</FSMinorVersion>
+    <FSBuildVersion>0</FSBuildVersion>
+<FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
