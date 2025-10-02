@@ -87,15 +87,23 @@ Given the persistent blocker and time invested, two options:
 
 **Status**: FSharp.Test.Utilities builds successfully! ✅
 
+**Current Blocker**: xUnit3 test projects must have `<OutputType>Exe</OutputType>`
+
 **Remaining Work**:
-1. Test projects may have FsCheck 3.x API compatibility issues (separate from xUnit3)
-2. Tests using DirectoryAttribute/FileInlineDataAttribute need conversion
-3. Re-evaluate batch trait injection for CI if needed
+1. **CRITICAL**: Update all test projects to set `<OutputType>Exe</OutputType>` (xUnit3 requirement)
+2. Test projects may have FsCheck 3.x API compatibility issues (separate from xUnit3)
+3. Tests using DirectoryAttribute/FileInlineDataAttribute need conversion
+4. Re-evaluate batch trait injection for CI if needed
+
+**Recent Changes**:
+- ✅ Removed nuget.org from NuGet.config (reverted to original sources)
+- ⚠️ xUnit3 packages available from existing Azure DevOps feeds
 
 **Estimated Remaining Effort**: 
+- Update OutputType in test projects: 1-2 hours
 - Fix FsCheck API issues: 2-4 hours (separate task)
 - Convert custom data attribute tests: 4-6 hours (if needed)
-- Total xUnit3 core migration: Complete (with XUNIT_EXTRAS disabled)
+- Total xUnit3 core migration: 80% complete (XUNIT_EXTRAS disabled, OutputType fix needed)
 
 ### 1. Test Project Configuration Cleanup ✅
 
