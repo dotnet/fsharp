@@ -94,23 +94,22 @@
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <!-- Versions for package groups -->
-    <RoslynVersion>5.0.0-1.25276.102</RoslynVersion>
     <VisualStudioEditorPackagesVersion>17.14.188</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>17.14.40268</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.14.79</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>17.14.40254</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.14.15</MicrosoftVisualStudioThreadingPackagesVersion>
     <!-- Roslyn packages -->
-    <MicrosoftCodeAnalysisFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisFeaturesVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>5.0.0-1.25275.2</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
-    <MicrosoftCodeAnalysisVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVersion>
-    <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
-    <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
+    <MicrosoftCodeAnalysisFeaturesVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisFeaturesVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisEditorFeaturesVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion> <!-- This was isolated before as 5.0.0-1.25275. --> 
+    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
+    <MicrosoftCodeAnalysisVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisVersion>
+    <MicrosoftCodeAnalysisCSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisCSharpVersion>
+    <MicrosoftVisualStudioLanguageServicesVersion>5.0.0-2.25480.7</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
-    <MicrosoftCodeAnalysisCompilersVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCompilersVersion>
+    <MicrosoftCodeAnalysisCompilersVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisCompilersVersion>
     <!-- -->
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
