@@ -31,8 +31,11 @@ type BooleanOptions =
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a file, relative to current test suite's root.
 /// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
-/// NOTE: Temporarily disabled due to xUnit3 DataAttribute resolution issue with F# compiler
-/// TODO: Convert to ClassData pattern or resolve DataAttribute accessibility
+/// 
+/// CRITICAL BLOCKER FOR XUNIT3 MIGRATION:
+/// Same issue as DirectoryAttribute - F# compiler cannot resolve DataAttribute from xunit.v3.core.dll
+/// See DirectoryAttribute.fs for full details and workaround attempts.
+/// Temporarily disabled to unblock other xUnit3 migration work.
 (*
 [<NoComparison; NoEquality>]
 type FileInlineData(filename: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =

@@ -87,18 +87,49 @@ Given the persistent blocker and time invested, two options:
 
 **Status**: Test projects updated for xUnit3 OutputType requirement ✅
 
-**Current Blocker**: Tests using DirectoryAttribute/FileInlineDataAttribute cannot compile
+**CRITICAL BLOCKER**: F# Compiler Cannot Resolve DataAttribute from xUnit3
+
+The F# compiler reports:
+```
+error FS0039: The type 'DataAttribute' is not defined in 'Xunit.Sdk'
+error FS0039: The type 'IDataAttribute' is not defined
+```
+
+Despite:
+- ✅ Explicit package reference to `xunit.v3.extensibility.core` (3.1.0)
+- ✅ Direct DLL reference to `xunit.v3.core.dll`
+- ✅ Types confirmed to exist in DLL via ILSpy inspection
+- ✅ `open Xunit.Sdk` statement in source files
+
+**Workaround Attempts (All Failed)**:
+1. ❌ Inherit from `DataAttribute` directly - F# cannot find type
+2. ❌ Implement `IDataAttribute` interface - F# cannot find interface  
+3. ❌ Inherit from `InlineDataAttribute` - sealed type in xUnit3
+4. ❌ Create C# helper base class - F# projects cannot compile C# files
+5. ❌ Compile C# separately with MSBuild Csc task - execution format error on Linux
+6. ❌ Compile C# with dotnet csc command - command doesn't exist
+7. ❌ Use `MemberDataAttribute` - incompatible pattern (expects member on test class)
+
+**Root Cause Analysis**:
+This appears to be an F# compiler issue with type resolution from xUnit3 assemblies. The F# compiler may be:
+- Not properly loading the xunit.v3.core.dll assembly
+- Not recognizing the type forwarding in xUnit3
+- Having assembly version conflicts
+- Missing some metadata or type provider support
 
 **Remaining Work**:
-1. **CRITICAL**: Re-enable or replace DirectoryAttribute/FileInlineDataAttribute (~100 errors in ComponentTests)
-   - Option A: Fix DataAttribute resolution issue with F# compiler
-   - Option B: Convert all tests to use ClassData/MemberData patterns
+1. **CRITICAL**: Fix F# compiler's inability to see xUnit3 types
+   - Requires F# compiler team investigation
+   - OR wait for xUnit3/F# compatibility improvements
+   - OR convert all ~100 tests to ClassData/MemberData patterns (8-12 hours)
 2. Test projects may have FsCheck 3.x API compatibility issues (separate from xUnit3)
 3. Re-evaluate batch trait injection for CI if needed
 
 **Recent Changes**:
 - ✅ Removed nuget.org from NuGet.config (reverted to original sources)
-- ✅ Updated all test projects to `<OutputType>Exe</OutputType>` (xUnit3 requirement)
+- ✅ Updated all 9 test projects to `<OutputType>Exe</OutputType>` (xUnit3 requirement)
+- ✅ Removed FsCheck from FSharp.Test.Utilities (not needed there)
+- ✅ Documented extensive workaround attempts in source files
 - ⚠️ xUnit3 packages available from existing Azure DevOps feeds
 
 **Test Projects Updated** (9 projects):
@@ -113,10 +144,10 @@ Given the persistent blocker and time invested, two options:
 - ComboProvider.Tests
 
 **Estimated Remaining Effort**: 
-- Re-enable DirectoryAttribute (if F# issue resolved): 1-2 hours
-- OR Convert all tests to ClassData: 8-12 hours
+- Fix F# compiler type resolution: Unknown (requires compiler team)
+- OR Convert all tests to ClassData: 8-12 hours  
 - Fix FsCheck API issues: 2-4 hours (separate task)
-- Total xUnit3 core migration: 85% complete (OutputType fixed, DataAttribute blocker remains)
+- Total xUnit3 core migration: 85% complete (OutputType fixed, **F# compiler blocker remains**)
 
 ### 1. Test Project Configuration Cleanup ✅
 

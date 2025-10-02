@@ -110,7 +110,6 @@
     <PackageReference Include="xunit.v3.common" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.v3.assert" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" GeneratePathProperty="true" />
-    <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 
   <!-- Explicit reference to xunit.v3.core.dll to ensure F# compiler finds types -->
