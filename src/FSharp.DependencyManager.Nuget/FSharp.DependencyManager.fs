@@ -11,6 +11,7 @@ open FSharp.DependencyManager.Nuget
 open FSharp.DependencyManager.Nuget.Utilities
 open FSharp.DependencyManager.Nuget.ProjectFile
 open FSDependencyManager
+open Internal.Utilities.FSharpEnvironment
 
 module FSharpDependencyManager =
 
@@ -302,7 +303,7 @@ type ResolveDependenciesResult
     member _.Roots = roots
 
 [<DependencyManager>]
-type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool) =
+type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool, sdkDirOverride: string option) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
@@ -377,7 +378,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             directiveLines: (string * string) seq,
             targetFrameworkMoniker: string,
             runtimeIdentifier: string,
-            timeout: int
+            timeout: int,
+            dotnetHostPath: string option
         ) : PackageBuildResolutionResult =
         let scriptExt =
             match scriptExt with
@@ -395,7 +397,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             |> Seq.concat
 
         let generatedNugetSources =
-            generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
+            generateSourcesFromNugetConfigs dotnetHostPath scriptDirectory projectDirectory.Value timeout
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
@@ -424,7 +426,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
             writeFile projectPath generateProjectFile
             writeFile nugetPath generateProjectNugetConfigFile
-            buildProject projectPath binLogPath timeout
+            buildProject dotnetHostPath projectPath binLogPath timeout
 
         generateAndBuildProjectArtifacts
 
@@ -463,6 +465,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
 
+    new(outputDirectory: string option, useResultsCache: bool) = FSharpDependencyManager(outputDirectory, useResultsCache, None)
     new(outputDirectory: string option) = FSharpDependencyManager(outputDirectory, true)
 
     member _.Name = name
@@ -502,6 +505,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
             | ".csx" -> "#r \""
             | _ -> "#r @\""
 
+        let dotnetHostPath = getDotnetHostPath sdkDirOverride
+
         let generateAndBuildProjectArtifacts =
             let resolutionHash =
                 FSharpDependencyManager.computeHashForResolutionInputs (
@@ -522,7 +527,8 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                         packageManagerTextLines,
                         targetFrameworkMoniker,
                         runtimeIdentifier,
-                        timeout
+                        timeout,
+                        dotnetHostPath
                     )
 
             match resolutionResult.resolutionsFile with
