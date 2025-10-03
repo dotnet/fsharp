@@ -190,8 +190,8 @@
     <StreamJsonRpcVersion>2.22.11</StreamJsonRpcVersion>
     <NerdbankStreamsVersion>2.12.87</NerdbankStreamsVersion>
     <XunitVersion>3.1.0</XunitVersion>
-    <XunitRunnerConsoleVersion>3.1.0</XunitRunnerConsoleVersion>
-    <XunitRunnerVisualStudioVersion>3.1.5</XunitRunnerVisualStudioVersion>
+    <XunitRunnerConsoleVersion>3.0.0-pre.25</XunitRunnerConsoleVersion>
+    <XunitRunnerVisualStudioVersion>3.1.4</XunitRunnerVisualStudioVersion>
     <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->

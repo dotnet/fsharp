@@ -123,6 +123,7 @@ type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, op
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a file, relative to current test suite's root.
 /// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
+[<AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)>]
 [<NoComparison; NoEquality>]
 type FileInlineData(filenameArg: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
     inherit Attribute()
