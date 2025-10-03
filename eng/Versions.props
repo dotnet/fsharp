@@ -95,9 +95,9 @@
     <!-- Versions for package groups -->
     <VisualStudioEditorPackagesVersion>18.0.332-preview</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioShellPackagesVersion>18.0.2101-preview.1</MicrosoftVisualStudioShellPackagesVersion>
-    <VisualStudioProjectSystemPackagesVersion>17.14.79</VisualStudioProjectSystemPackagesVersion>
+    <VisualStudioProjectSystemPackagesVersion>18.0.1237-pre</VisualStudioProjectSystemPackagesVersion>
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
-    <MicrosoftVisualStudioThreadingPackagesVersion>17.15.20-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
+    <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
   
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisFeaturesVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisFeaturesVersion>
