@@ -29,11 +29,11 @@ variables:
   # The future "product" gets developed in main, so should be main in main.
   # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
   - name: FSharpReleaseBranchName
-    value: main
+    value: release/dev18.0
   # VS Insertion branch name (NOT the same as F# branch)
   # ( for main we insert into VS main and for all *previous* releases we insert into corresponding VS release),
   - name: VSInsertionTargetBranchName
-    value: main
+    value: rel/d18.0
   - name: _TeamName
     value: FSharp
   - name: TeamName
