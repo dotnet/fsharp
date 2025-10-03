@@ -10,6 +10,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open System.Collections.Immutable
+open System
 
 type ObserverVisibility =
     | PublicOnly
@@ -382,7 +383,7 @@ module StructuralUtilities =
     [<Struct; CustomEquality; NoComparison>]
     type NeverEqual =
         struct
-            interface System.IEquatable<NeverEqual> with
+            interface IEquatable<NeverEqual> with
                 member _.Equals _ = false
 
             override _.Equals _ = false
