@@ -5902,6 +5902,16 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
             TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
                 TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
             )
+        | Some(SynExpr.LongIdent (_, lId, _, _), _) as Some withExpr ->
+            let lIds = lId.LongIdent
+            if lIds |> List.tryFind (fun id -> id.idText = BindIdText) |> _.IsSome then
+                TcNonControlFlowExpr env <| fun env ->
+                TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+                    TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
+                )
+            else
+                BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.AnonRecd (isStruct, withExpr, unsortedFieldExprs, mWholeExpr, trivia))
+                |> TcExpr cenv overallTy env tpenv
         | Some withExpr ->
             BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.AnonRecd (isStruct, withExpr, unsortedFieldExprs, mWholeExpr, trivia))
             |> TcExpr cenv overallTy env tpenv
@@ -5935,6 +5945,14 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         | Some(SynExpr.Ident _, _) ->
             TcNonControlFlowExpr env <| fun env ->
             TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
+        | Some(SynExpr.LongIdent (_, lId, _, _), _) as Some withExpr ->
+            let lIds = lId.LongIdent
+            if lIds |> List.tryFind (fun id -> id.idText = "bind@") |> _.IsSome then
+                TcNonControlFlowExpr env <| fun env ->
+                TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
+            else
+                BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.Record (inherits, withExpr, synRecdFields, mWholeExpr))
+                |> TcExpr cenv overallTy env tpenv
         | Some withExpr ->
             BindOriginalRecdExpr withExpr (fun withExpr -> SynExpr.Record (inherits, withExpr, synRecdFields, mWholeExpr))
             |> TcExpr cenv overallTy env tpenv
