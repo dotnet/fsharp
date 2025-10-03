@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' == 'True'">../../../../UseLocalCompiler.Directory.Build.props</DirectoryBuildPropsPath>
+    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' != 'True'"></DirectoryBuildPropsPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="LibBuildInfo.fs" />
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <Target Name="GenerateLibBuildInfo" BeforeTargets="BeforeCompile">
+    <PropertyGroup>
+      <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' == 'True'">true</IsLocalBuildValue>
+      <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' != 'True'">false</IsLocalBuildValue>
+      <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' != ''">$(DotnetFscCompilerPath.Replace('&quot;', ''))</CleanDotnetFscCompilerPath>
+      <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">N/A</CleanDotnetFscCompilerPath>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="LibBuildInfo.fs"
+      Overwrite="true"
+      Lines="namespace CompilerCompatLib
+module LibBuildInfo =
+    let sdkVersion = &quot;$(NETCoreSdkVersion)&quot;
+    let fsharpCompilerPath = &quot;$(FscToolPath)\$(FscToolExe)&quot;
+    let dotnetFscCompilerPath = &quot;$(CleanDotnetFscCompilerPath)&quot;
+    let isLocalBuild = $(IsLocalBuildValue)" />
+  </Target>
+
+</Project>
