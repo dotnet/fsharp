@@ -7787,6 +7787,7 @@ let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, un
     let core = Expr.Op (TOp.Recd (lnk, tcref), tinst, sortedArgExprs, m)
     mkLetsBind m unsortedArgBinds core
 
+// TODO: We'll have already sorted things while keeping track of the original order, so we _could_ simplify this.
 let mkAnonRecd (_g: TcGlobals) m (anonInfo: AnonRecdTypeInfo) (unsortedIds: Ident[]) (unsortedFieldExprs: Expr list) unsortedArgTys =
     let sortedRecdFields = unsortedFieldExprs |> List.indexed |> Array.ofList |> Array.sortBy (fun (i,_) -> unsortedIds[i].idText)
     let sortedArgTys = unsortedArgTys |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds[i].idText) |> List.map snd
