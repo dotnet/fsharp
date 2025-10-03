@@ -4,11 +4,9 @@ namespace FSharp.DependencyManager.Nuget
 open System
 open System.Diagnostics
 open System.IO
-open System.Reflection
 open System.Security.Cryptography
 open System.Text.RegularExpressions
 open FSDependencyManager
-open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class, AllowMultiple = false)>]
 type DependencyManagerAttribute() =
