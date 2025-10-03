@@ -67,9 +67,17 @@ type DependencyManagerInteractiveTests() =
         let errors = script.Eval(code) |> getErrors
         Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
 *)
-    [<Fact>]
-    member _.``Use Dependency Manager to resolve dependency FSharp.Data``() =
+    static member SdkDirOverrideTestData = [|
+        [| None |]
+        [| Path.Combine(__SOURCE_DIRECTORY__, "..", "..", ".dotnet", "sdk")
+        |> Directory.GetDirectories
+        |> Seq.head
+        |> Some |]
+    |]
 
+    [<Theory>]
+    [<MemberData(nameof DependencyManagerInteractiveTests.SdkDirOverrideTestData)>]
+    member _.``Use Dependency Manager to resolve dependency FSharp.Data`` (sdkDirOverride: string option) =
         let nativeProbingRoots () = Seq.empty<string>
 
         use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
@@ -80,7 +88,7 @@ type DependencyManagerInteractiveTests() =
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
 
-        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", None, reportError, "nuget")
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", sdkDirOverride, reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"|], reportError, "net472")
