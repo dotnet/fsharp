@@ -27,7 +27,7 @@ module internal ProjectFile =
             |> Seq.fold (fun acc r -> acc + poundRprefix + r + "\"" + Environment.NewLine) ""
 
         let dotnetHostPath = Option.defaultValue "???" dotnetHostPath
-        let actualSdkPath = dotnetHostPath.Replace(dotnet, "") + "\\" + tfm
+        let actualSdkPath = dotnetHostPath.Replace(dotnet, "") + tfm
 
         let projectTemplate =
             $"""
