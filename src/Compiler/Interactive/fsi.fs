@@ -4678,7 +4678,7 @@ type FsiEvaluationSession
                 unresolvedReferences,
                 fsiOptions.DependencyProvider
             )
-            |> Async.RunImmediate
+            |> Async2.RunImmediate
         with e ->
             stopProcessingRecovery e range0
             failwithf "Error creating evaluation session: %A" e
@@ -4797,7 +4797,7 @@ type FsiEvaluationSession
 
     member _.ParseAndCheckInteraction(code) =
         fsiInteractionProcessor.ParseAndCheckInteraction(legacyReferenceResolver, fsiInteractionProcessor.CurrentState, code)
-        |> Cancellable.runWithoutCancellation
+        |> Async2.runWithoutCancellation
 
     member _.InteractiveChecker = checker
 
