@@ -462,7 +462,9 @@ type internal FSharpLanguageService(package: FSharpPackage) =
         let outliningManagerService =
             this.Package.ComponentModel.GetService<IOutliningManagerService>()
 
-        let wpfTextView = this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>().GetWpfTextView(textView)
+        let wpfTextView =
+            this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>().GetWpfTextView(textView)
+
         let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
 
         if not (isNull outliningManager) then
