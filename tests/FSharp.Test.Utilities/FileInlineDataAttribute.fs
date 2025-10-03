@@ -7,9 +7,14 @@ open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open System.Threading.Tasks
 
 open Xunit
+open Xunit.v3
 open Xunit.Sdk
+
+// TheoryDataRow is in the Xunit namespace
+open type Xunit.TheoryDataRow
 
 open FSharp.Compiler.IO
 open FSharp.Test.Compiler
@@ -27,63 +32,6 @@ type BooleanOptions =
     | False = 2
     | Both = 3
     | None = 0
-
-/// Attribute to use with Xunit's TheoryAttribute.
-/// Takes a file, relative to current test suite's root.
-/// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
-/// 
-/// CRITICAL BLOCKER FOR XUNIT3 MIGRATION:
-/// Same issue as DirectoryAttribute - F# compiler cannot resolve DataAttribute from xunit.v3.core.dll
-/// See DirectoryAttribute.fs for full details and workaround attempts.
-/// Temporarily disabled to unblock other xUnit3 migration work.
-(*
-[<NoComparison; NoEquality>]
-type FileInlineData(filename: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
-    inherit DataAttribute()
-
-    let mutable directory: string = directory
-    let mutable filename: string = filename
-    let mutable optimize: BooleanOptions option = optimize
-    let mutable realsig: BooleanOptions option = realsig
-
-    static let computeBoolValues opt =
-        match opt with
-        | Some BooleanOptions.True -> [|Some true|]
-        | Some BooleanOptions.False -> [|Some false|]
-        | Some BooleanOptions.Both -> [|Some true; Some false|]
-        | _ -> [|None|]
-
-    static let convertToBoxed opt =
-        match opt with
-        | None -> null
-        | Some opt -> box opt
-
-    new (filename: string, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) = FileInlineData(filename, None, None, directory)
-
-    member _.Directory with set v = directory <- v
-
-    member _.Optimize with set v = optimize <- Some v
-
-    member _.Realsig with set v = realsig <- Some v
-
-    override _.GetData _ =
-
-        let getOptions realsig optimize =
-
-            let compilationHelper = CompilationHelper(filename, directory, convertToBoxed realsig, convertToBoxed optimize)
-            [| box (compilationHelper) |]
-
-        let results =
-            let rsValues = computeBoolValues realsig
-            let optValues = computeBoolValues optimize
-            [|
-                for r in rsValues do
-                    for o in optValues do
-                        getOptions r o
-            |]
-
-        results
-*)
 
 // realsig and optimized are boxed so null = not set, true or false = set  
 // Keeping CompilationHelper as it may be used elsewhere
@@ -172,15 +120,63 @@ type CompilationHelper internal (filename: obj, directory: obj, realsig: obj, op
             | _ -> ""
         file + realsig + optimize
 
-    interface IXunitSerializable with
-        member _.Serialize(info: IXunitSerializationInfo) =
-            info.AddValue("filename", filename)
-            info.AddValue("directory", directory)
-            info.AddValue("realsig", realsig)
-            info.AddValue("optimize", optimize)
+/// Attribute to use with Xunit's TheoryAttribute.
+/// Takes a file, relative to current test suite's root.
+/// Returns a CompilationUnit with encapsulated source code, error baseline and IL baseline (if any).
+[<NoComparison; NoEquality>]
+type FileInlineData(filenameArg: string, realsig: BooleanOptions option, optimize: BooleanOptions option, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) =
+    inherit Attribute()
+    
+    let mutable directory: string = directory
+    let mutable filename: string = filenameArg
+    let mutable optimize: BooleanOptions option = optimize
+    let mutable realsig: BooleanOptions option = realsig
 
-        member _.Deserialize(info: IXunitSerializationInfo) =
-            filename <- info.GetValue<string>("filename")
-            directory <- info.GetValue<string>("directory")
-            realsig <- info.GetValue<obj>("realsig")
-            optimize <- info.GetValue<obj>("optimize")
+    static let computeBoolValues opt =
+        match opt with
+        | Some BooleanOptions.True -> [|Some true|]
+        | Some BooleanOptions.False -> [|Some false|]
+        | Some BooleanOptions.Both -> [|Some true; Some false|]
+        | _ -> [|None|]
+
+    static let convertToBoxed opt =
+        match opt with
+        | None -> null
+        | Some opt -> box opt
+
+    new (filename: string, [<CallerFilePath; Optional; DefaultParameterValue("")>]directory: string) = FileInlineData(filename, None, None, directory)
+
+    member _.Directory with set v = directory <- v
+
+    member _.Optimize with set v = optimize <- Some v
+
+    member _.Realsig with set v = realsig <- Some v
+
+    interface IDataAttribute with
+        member _.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
+            let getOptions realsig optimize =
+                let compilationHelper = CompilationHelper(filename, directory, convertToBoxed realsig, convertToBoxed optimize)
+                [| box (compilationHelper) |]
+
+            let results =
+                let rsValues = computeBoolValues realsig
+                let optValues = computeBoolValues optimize
+                [|
+                    for r in rsValues do
+                        for o in optValues do
+                            getOptions r o
+                |]
+
+            let rows = results |> Seq.map (fun row -> Xunit.TheoryDataRow(row) :> Xunit.ITheoryDataRow) |> Seq.toArray :> Collections.Generic.IReadOnlyCollection<_>
+            ValueTask.FromResult(rows)
+        
+        member _.Explicit = Nullable()
+        member _.Label = null
+        member _.Skip = null
+        member _.SkipType = null
+        member _.SkipUnless = null
+        member _.SkipWhen = null
+        member _.TestDisplayName = null
+        member _.Timeout = Nullable()
+        member _.Traits = null
+        member _.SupportsDiscoveryEnumeration() = true

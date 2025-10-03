@@ -5,7 +5,10 @@
 namespace FSharp.Test
 
 open System
+open System.Reflection
+open System.Threading.Tasks
 open Xunit.Sdk
+open Xunit.v3
 
 open TestFramework
 
@@ -24,14 +27,25 @@ type RunTestCasesInSequenceAttribute() = inherit Attribute()
 // Helper for stress testing.
 // Runs a test case many times in parallel.
 // Example usage: [<Theory; Stress(Count = 1000)>]
-// Same blocker as DirectoryAttribute - F# compiler cannot resolve DataAttribute from xunit.v3.core.dll
-// Temporarily disabled to unblock other xUnit3 migration work.
-(*
 type StressAttribute([<ParamArray>] data: obj array) =
-    inherit DataAttribute()
+    inherit Attribute()
     member val Count = 1 with get, set
-    override this.GetData _ = Seq.init this.Count (fun i -> [| yield! data; yield box i |])
-*)
+    interface IDataAttribute with
+        member this.GetData(_testMethod: MethodInfo, _disposalTracker: DisposalTracker) =
+            let results = Seq.init this.Count (fun i -> [| yield! data; yield box i |])
+            let rows = results |> Seq.map (fun row -> Xunit.TheoryDataRow(row) :> Xunit.ITheoryDataRow) |> Seq.toArray :> Collections.Generic.IReadOnlyCollection<_>
+            ValueTask.FromResult(rows)
+        
+        member _.Explicit = Nullable()
+        member _.Label = null
+        member _.Skip = null
+        member _.SkipType = null
+        member _.SkipUnless = null
+        member _.SkipWhen = null
+        member _.TestDisplayName = null
+        member _.Timeout = Nullable()
+        member _.Traits = null
+        member _.SupportsDiscoveryEnumeration() = true
 
 #if XUNIT_EXTRAS
 
