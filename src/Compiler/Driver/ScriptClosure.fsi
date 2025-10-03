@@ -28,7 +28,9 @@ type LoadClosureInput =
 
       ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
-      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
+      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+
+      SourceText: ISourceText option }
 
 [<RequireQualifiedAccess>]
 type LoadClosure =
