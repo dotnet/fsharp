@@ -883,6 +883,14 @@ val TcRuntimeTypeTest:
     srcTy: TType ->
         unit
 
+val TcOpenDecl:
+    cenv: TcFileState ->
+    mOpenDecl: range ->
+    scopem: range ->
+    env: TcEnv ->
+    target: SynOpenDeclTarget ->
+        TcEnv * OpenDeclaration list
+
 /// Allow the inference of structness from the known type, e.g.
 ///    let (x: struct (int * int)) = (3,4)
 val UnifyTupleTypeAndInferCharacteristics:

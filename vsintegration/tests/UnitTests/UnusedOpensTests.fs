@@ -851,3 +851,23 @@ printfn "%A" MyModule.Thingy.Thing
     """
     => [6, (10, 25)]
 
+
+[<Fact>]
+let ``unused open C# type in expression scoped``() =
+    """
+let f() =
+    open type System.Console
+    printfn "%s" "Hello World"
+    """
+    => [3, (14, 28)]
+    
+[<Fact>]
+let ``expression-scoped open declaration duplication in module is unused``() =
+    """
+module TopModule
+open System.IO
+let _ = 
+    open System.IO
+    File.Create ""
+"""
+    => [ 5, (9, 18) ]

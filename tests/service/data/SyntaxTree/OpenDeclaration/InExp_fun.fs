@@ -1,0 +1,1 @@
+let fun1 = fun x -> open System; x + 1
