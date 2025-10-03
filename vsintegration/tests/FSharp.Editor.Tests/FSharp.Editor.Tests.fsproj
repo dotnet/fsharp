@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <UnitTestType>xunit</UnitTestType>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
