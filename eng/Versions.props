@@ -161,7 +161,7 @@
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
 
     <!-- Misc. Visual Studio packages -->
-    <MicrosoftVSSDKBuildToolsVersion>17.13.1100801-preview</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>17.14.4-preview1</MicrosoftVSSDKBuildToolsVersion>
     <MicrosoftVisualStudioRpcContractsVersion>17.15.25-pre</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <MicrosoftVisualStudioValidationVersion>17.8.8</MicrosoftVisualStudioValidationVersion>
