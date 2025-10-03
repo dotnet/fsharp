@@ -176,7 +176,7 @@
     <!-- -->
     <!-- other packages -->
     <BenchmarkDotNetVersion>0.13.10</BenchmarkDotNetVersion>
-    <FsCheckVersion>3.3.1</FsCheckVersion>
+    <FsCheckVersion>2.16.6</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
