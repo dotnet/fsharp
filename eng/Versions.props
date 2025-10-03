@@ -12,13 +12,12 @@
   <PropertyGroup>
     <!-- Don't use the built in support for pre-release iteration. The nuget repack task doesn't support
          the iteration format at the moment. https://github.com/dotnet/arcade/issues/15919 -->
-    <FSharpPreReleaseIteration>2</FSharpPreReleaseIteration>
-    <PreReleaseVersionLabel>rc$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
-    <!-- These have to be in sync with latest release branch -->
+    <FSharpPreReleaseIteration>1</FSharpPreReleaseIteration>
+    <PreReleaseVersionLabel>alpha$(FSharpPreReleaseIteration)</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>10</FSMajorVersion>
+    <FSMajorVersion>11</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>100</FSBuildVersion>
+    <FSBuildVersion>0</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -41,7 +40,7 @@
     <FSharpLibrariesChangelogVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSharpLibrariesChangelogVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>9.0.300</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>9.0.303</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
@@ -183,8 +182,9 @@
     <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
-    <MicrosoftNETCoreILDAsmVersion>6.0.0-rtm.21518.12</MicrosoftNETCoreILDAsmVersion>
-    <MicrosoftNETCoreILAsmVersion>9.0.0-rc.2.24462.10</MicrosoftNETCoreILAsmVersion>
+     <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
+    <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
+    <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>17.11.1</MicrosoftNETTestSdkVersion>
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
