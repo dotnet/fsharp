@@ -45,6 +45,10 @@ type ResolveDependenciesResult =
 
 [<DependencyManager>]
 type FSharpDependencyManager =
+    new:
+        outputDirectory: string option * useResultsCache: bool * sdkDirOverride: string option ->
+            FSharpDependencyManager
+
     new: outputDirectory: string option * useResultsCache: bool -> FSharpDependencyManager
     new: outputDirectory: string option -> FSharpDependencyManager
 
