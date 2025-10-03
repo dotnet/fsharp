@@ -175,7 +175,7 @@ type OpenTelemetryExport(testRunName, enable) =
 
             // Configure OpenTelemetry metrics export. Metrics can be viewed in Prometheus or other compatible tools.
             OpenTelemetry.Sdk.CreateMeterProviderBuilder()
-                .AddMeter(CacheMetrics.Meter.Name)
+                .AddMeter(ActivityNames.FscSourceName)
                 .AddMeter("System.Runtime")
                 .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
                 .AddOtlpExporter(fun e m ->
@@ -202,6 +202,7 @@ module OneTimeSetup =
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
     #endif
+        log $"Server GC enabled: {System.Runtime.GCSettings.IsServerGC}"
         log "Installing TestConsole redirection"
         TestConsole.install()
 

@@ -26,17 +26,16 @@ ImplFile
               (4,0--4,12));
            Expr
              (AnonRecd
-                (false, Some (Null (5,3--5,7), Offside ((5,7--5,7), None)), [],
+                (false, Some (Null (5,3--5,7), ((5,7--5,7), None)), [],
                  (5,0--5,10), { OpeningBraceRange = (5,0--5,2) }), (5,0--5,10));
            Expr
              (AnonRecd
-                (true, Some (Null (6,10--6,14), Offside ((6,14--6,14), None)),
-                 [], (6,0--6,17), { OpeningBraceRange = (6,7--6,9) }),
-              (6,0--6,17))], PreXmlDocEmpty, [], None, (1,0--6,17),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                (true, Some (Null (6,10--6,14), ((6,14--6,14), None)), [],
+                 (6,0--6,17), { OpeningBraceRange = (6,7--6,9) }), (6,0--6,17))],
+          PreXmlDocEmpty, [], None, (1,0--6,17), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))
 
 (5,3)-(5,7) parse error Field bindings must have the form 'id = expr;'
 (6,10)-(6,14) parse error Field bindings must have the form 'id = expr;'

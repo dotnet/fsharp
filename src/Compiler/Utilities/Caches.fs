@@ -10,7 +10,7 @@ open System.Diagnostics.Metrics
 open System.IO
 
 module CacheMetrics =
-    let Meter = new Meter("FSharp.Compiler.Cache")
+    let Meter = FSharp.Compiler.Diagnostics.Metrics.Meter
     let adds = Meter.CreateCounter<int64>("adds", "count")
     let updates = Meter.CreateCounter<int64>("updates", "count")
     let hits = Meter.CreateCounter<int64>("hits", "count")
@@ -96,43 +96,24 @@ module CacheMetrics =
         listener :> IDisposable
 
     let StatsToString () =
-        use sw = new StringWriter()
+        let headers = [ "Cache name"; "hit-ratio" ] @ (allCounters |> List.map _.Name)
 
-        let nameColumnWidth =
-            [ yield! statsByName.Keys; "Cache name" ] |> Seq.map String.length |> Seq.max
+        let rows =
+            [
+                for kv in statsByName do
+                    let name = kv.Key
+                    let stats = kv.Value
+                    let totals = stats.GetTotals()
 
-        let columns = allCounters |> List.map _.Name
-        let columnWidths = columns |> List.map String.length |> List.map (max 8)
+                    [
+                        yield name
+                        yield $"{stats.Ratio:P2}"
+                        for c in allCounters do
+                            yield $"{totals[c.Name]}"
+                    ]
+            ]
 
-        let header =
-            "| "
-            + String.concat
-                " | "
-                [
-                    "Cache name".PadRight nameColumnWidth
-                    "hit-ratio"
-                    for w, c in (columnWidths, columns) ||> List.zip do
-                        $"{c.PadLeft w}"
-                ]
-            + " |"
-
-        sw.WriteLine(String('-', header.Length))
-        sw.WriteLine(header)
-        sw.WriteLine(header |> String.map (fun c -> if c = '|' then '|' else '-'))
-
-        for kv in statsByName do
-            let name = kv.Key
-            let stats = kv.Value
-            let totals = stats.GetTotals()
-            sw.Write $"| {name.PadLeft nameColumnWidth} | {stats.Ratio, 9:P2} |"
-
-            for w, c in (columnWidths, columns) ||> List.zip do
-                sw.Write $" {totals[c].ToString().PadLeft(w)} |"
-
-            sw.WriteLine()
-
-        sw.WriteLine(String('-', header.Length))
-        string sw
+        FSharp.Compiler.Diagnostics.Metrics.printTable headers rows
 
     let CaptureStatsAndWriteToConsole () =
         let listener = ListenToAll()
@@ -194,12 +175,23 @@ type CacheOptions<'Key> =
     }
 
 module CacheOptions =
+    let forceImmediate =
+        try
+            Environment.GetEnvironmentVariable("FSharp_CacheEvictionImmediate") <> null
+        with _ ->
+            false
+
+    let defaultEvictionMode =
+        if forceImmediate then
+            EvictionMode.Immediate
+        else
+            EvictionMode.MailboxProcessor
 
     let getDefault comparer =
         {
             CacheOptions.TotalCapacity = 1024
             CacheOptions.HeadroomPercentage = 50
-            CacheOptions.EvictionMode = EvictionMode.MailboxProcessor
+            CacheOptions.EvictionMode = defaultEvictionMode
             CacheOptions.Comparer = comparer
         }
 
