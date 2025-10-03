@@ -21,13 +21,13 @@ module internal ProjectFile =
 
     let csxExt = ".csx"
 
-    let makeScriptFromReferences (references: string seq) poundRprefix dotnetHostPath tfmMoniker =
+    let makeScriptFromReferences (references: string seq) poundRprefix dotnetHostPath tfm =
         let expandReferences =
             references
             |> Seq.fold (fun acc r -> acc + poundRprefix + r + "\"" + Environment.NewLine) ""
 
         let dotnetHostPath = Option.defaultValue "???" dotnetHostPath
-        let actualSdkPath = dotnetHostPath.Replace(dotnet, "") + "\\" + tfmMoniker
+        let actualSdkPath = dotnetHostPath.Replace(dotnet, "") + "\\" + tfm
 
         let projectTemplate =
             $"""

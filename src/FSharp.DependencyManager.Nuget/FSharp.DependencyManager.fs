@@ -541,7 +541,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 // We have succeeded to gather information -- generate script and copy the results to the cache
                 if not (fromCache) then
                     let generatedScriptBody =
-                        makeScriptFromReferences resolutionResult.references poundRprefix
+                        makeScriptFromReferences resolutionResult.references poundRprefix dotnetHostPath targetFrameworkMoniker
 
                     emitFile generatedScriptPath generatedScriptBody
 
