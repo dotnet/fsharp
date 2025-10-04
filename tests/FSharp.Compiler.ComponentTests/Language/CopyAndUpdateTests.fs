@@ -524,7 +524,6 @@ let getTest () =
 
 [<EntryPoint>]
 let main argv =
-    let a = 1
     let a = {|
          getTest () with
             X.Y.Z = 1 
