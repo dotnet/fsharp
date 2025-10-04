@@ -19,13 +19,40 @@ type env = | NoEnv
 
 let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
 
+type WorkList<'t>(maxDepth) =
+    let mutable stack = System.Collections.Generic.Stack<'t>()
+    let mutable depth = -1
+    let mutable running = false
+
+    member _.Guard(i, f) =
+        depth <- depth + 1
+        try
+            if depth % maxDepth = 0 then
+                stack.Push i
+            else
+                f i
+        finally
+            depth <- depth - 1
+
+        if not running then
+            running <- true
+            try
+                while stack.Count > 0 do
+                    let i = stack.Pop()
+                    f i
+            finally
+                running <- false
+
+module WorkList =
+    let Guard (wl: WorkList<_>) i f = wl.Guard(i, f)
+
 /// The environment and collector
 type cenv =
     { g: TcGlobals
       amap: Import.ImportMap
       denv: DisplayEnv
       mutable unsolved: Typars
-      stackGuard: StackGuard }
+      workList: WorkList<Expr> }
 
     override _.ToString() = "<cenv>"
 
@@ -45,7 +72,7 @@ let accTypeInst cenv env mFallback tyargs =
 
 /// Walk expressions, collecting type variables
 let rec accExpr (cenv: cenv) (env: env) expr =
-    cenv.stackGuard.Guard <| fun () ->
+    WorkList.Guard cenv.workList expr <| fun expr ->
 
     let expr = stripExpr expr
     match expr with
@@ -318,7 +345,7 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
           amap=amap
           denv=denv
           unsolved = []
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
+          workList = WorkList FindUnsolvedStackGuardDepth }
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved
