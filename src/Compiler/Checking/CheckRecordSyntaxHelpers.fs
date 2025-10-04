@@ -156,12 +156,27 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
         (accessIds, outerFieldId),
         Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
 
+let BindIdText = "bind@"
+
+let IsNoneOrSimpleOrBindedExpr (withExprOpt: (SynExpr * BlockSeparator) option) = 
+   match withExprOpt with
+   | None -> true
+   | Some (expr, _) ->
+       match expr with
+       | SynExpr.LongIdent (_, lIds, _, _) ->
+           lIds.LongIdent 
+           |> List.tryFind (fun id -> id.idText = BindIdText) 
+           |> _.IsSome
+
+       | SynExpr.Ident _ -> true
+       | _ -> false
+
 /// When the original expression in copy-and-update is more complex than `{ x with ... }`, like `{ f () with ... }`,
 /// we bind it first, so that it's not evaluated multiple times during a nested update
 let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
     let originalExpr, blockSep = withExpr
     let mOrigExprSynth = originalExpr.Range.MakeSynthetic()
-    let id = mkSynId mOrigExprSynth "bind@"
+    let id = mkSynId mOrigExprSynth BindIdText
     let withExpr = SynExpr.Ident id, blockSep
 
     let binding =
