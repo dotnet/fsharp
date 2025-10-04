@@ -19,13 +19,42 @@ type env = | NoEnv
 
 let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
 
+type SyncStackGuard(maxDepth) =
+    let mutable stack = Unchecked.defaultof<_>
+    let mutable depth = 0
+    let mutable running = false
+
+    let run f =
+        running <- true
+        try
+            stack <- System.Collections.Generic.Stack<_>()
+            stack.Push f
+            while stack.Count > 0 do
+                let f = stack.Pop()
+                f()
+        finally
+            running <- false
+
+    let push f =
+        if not running then run f else stack.Push f
+
+    member _.Guard f =
+        depth <- depth + 1
+        try
+            if depth % maxDepth = 0 then
+                push f
+            else
+                f()
+        finally
+            depth <- depth - 1
+
 /// The environment and collector
 type cenv =
     { g: TcGlobals
       amap: Import.ImportMap
       denv: DisplayEnv
       mutable unsolved: Typars
-      stackGuard: StackGuard }
+      stackGuard: SyncStackGuard }
 
     override _.ToString() = "<cenv>"
 
@@ -318,7 +347,7 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
           amap=amap
           denv=denv
           unsolved = []
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
+          stackGuard = SyncStackGuard FindUnsolvedStackGuardDepth }
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved
