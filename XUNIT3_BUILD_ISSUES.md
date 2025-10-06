@@ -2,32 +2,32 @@
 
 ## Issues to Resolve
 
-### 1. VisualFSharp.Salsa.fsproj - Missing OutputType ❌
+### 1. VisualFSharp.Salsa.fsproj - Missing OutputType ✅ RESOLVED
 **Error**: `xUnit.net v3 test projects must be executable (set project property 'OutputType')`
 **Location**: `vsintegration/tests/Salsa/VisualFSharp.Salsa.fsproj`
-**Fix Needed**: Add `<OutputType>Exe</OutputType>` property
-**Status**: PENDING
+**Fix Applied**: Changed `<OutputType>Library</OutputType>` to `<OutputType>Exe</OutputType>`
+**Status**: FIXED in commit 3c1f0f4
 
-### 2. FSharp.Editor.IntegrationTests.csproj - Missing Main Entry Point ❌
+### 2. FSharp.Editor.IntegrationTests.csproj - Missing Main Entry Point ✅ RESOLVED
 **Error**: `CS5001: Program does not contain a static 'Main' method suitable for an entry point`
 **Location**: `vsintegration/tests/FSharp.Editor.IntegrationTests/FSharp.Editor.IntegrationTests.csproj`
-**Fix Needed**: Add `<GenerateProgramFile>false</GenerateProgramFile>` for xUnit3 or investigate entry point requirement
-**Status**: PENDING
+**Fix Applied**: Created Program.cs with Main entry point for xUnit3
+**Status**: FIXED - Program.cs created
 
-### 3. FSharp.Test.Utilities - ValueTask.FromResult not available on net472 ❌
+### 3. FSharp.Test.Utilities - ValueTask.FromResult not available on net472 ✅ RESOLVED
 **Error**: `The type 'ValueTask' does not define the field, constructor or member 'FromResult'`
 **Location**: Multiple files in `tests/FSharp.Test.Utilities/`
 - DirectoryAttribute.fs (line 44)
 - FileInlineDataAttribute.fs (line 172)
 - XunitHelpers.fs (line 37)
-**Fix Needed**: Use `new ValueTask<T>(result)` constructor instead of `ValueTask.FromResult()` for net472 compatibility
-**Status**: PENDING
+**Fix Applied**: Changed `ValueTask.FromResult(rows)` to `ValueTask<T>(rows)` constructor for net472 compatibility
+**Status**: FIXED in commit 3c1f0f4
 
-### 4. FSharp.Compiler.LanguageServer.Tests - Missing Module/Namespace Declaration ❌
+### 4. FSharp.Compiler.LanguageServer.Tests - Missing Module/Namespace Declaration ✅ RESOLVED
 **Error**: `FS0222: Files in libraries or multiple-file applications must begin with a namespace or module declaration`
 **Location**: `tests/FSharp.Compiler.LanguageServer.Tests/Program.fs`
-**Fix Needed**: Change OutputType to Exe doesn't work with current file structure; needs proper entry point or module
-**Status**: PENDING
+**Fix Applied**: Removed `module Program =` wrapper, changed to top-level `[<EntryPoint>]` for proper executable structure
+**Status**: FIXED in commit 3c1f0f4
 
 ### 5. Test Execution - .NET 10 RC Not Found ⚠️
 **Error**: Test process trying to use .NET 10.0.0-rc.1.25411.109 which is not installed
