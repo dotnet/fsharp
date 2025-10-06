@@ -93,8 +93,8 @@
 </PropertyGroup>
   <ItemGroup>
     <!-- NU1510: Project is explicitly referencing the runtime assembly 'System.Collections.Immutable', however, if we remove it, it tries to find it on the wrong path .
-     TEST IF WE CAN ELIMINATE THIS DIRECT REFERENCE
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true" ExcludeAssets="all" /> --> 
+     TEST IF WE CAN ELIMINATE THIS DIRECT REFERENCE -->
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true" ExcludeAssets="all" />  
 
     <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)">
