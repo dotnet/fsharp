@@ -86,7 +86,7 @@
     <SystemMemoryVersion>4.6.0</SystemMemoryVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.1.0</SystemRuntimeCompilerServicesUnsafeVersion>
   </PropertyGroup>
-  <PropertyGroup>
+  <PropertyGroup Name="PackageVersions">
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
