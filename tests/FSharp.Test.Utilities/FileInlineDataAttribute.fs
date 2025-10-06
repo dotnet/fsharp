@@ -169,7 +169,8 @@ type FileInlineData(filenameArg: string, realsig: BooleanOptions option, optimiz
                 |]
 
             let rows = results |> Seq.map (fun row -> Xunit.TheoryDataRow(row) :> Xunit.ITheoryDataRow) |> Seq.toArray :> Collections.Generic.IReadOnlyCollection<_>
-            ValueTask.FromResult(rows)
+            // Use ValueTask constructor for net472 compatibility (ValueTask.FromResult not available)
+            ValueTask<Collections.Generic.IReadOnlyCollection<Xunit.ITheoryDataRow>>(rows)
         
         member _.Explicit = Nullable()
         member _.Label = null

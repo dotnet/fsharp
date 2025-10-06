@@ -1,3 +1,3 @@
-module Program =
-    [<EntryPoint>]
-    let main _ = 0
+// Entry point for xUnit3 test project
+[<EntryPoint>]
+let main _ = 0

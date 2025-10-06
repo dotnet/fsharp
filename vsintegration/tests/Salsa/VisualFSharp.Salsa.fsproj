@@ -3,7 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);44;45;47;52;58;75</NoWarn>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
