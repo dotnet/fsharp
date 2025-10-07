@@ -45,10 +45,8 @@ open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
-let IlxGenStackGuardDepth = StackGuard.GetDepthOption "IlxGen"
-
 let getEmptyStackGuard () =
-    StackGuard(IlxGenStackGuardDepth, "IlxAssemblyGenerator")
+    StackGuard("IlxAssemblyGenerator")
 
 let IsNonErasedTypar (tp: Typar) = not tp.IsErased
 

@@ -937,9 +937,7 @@ module StackGuardMetrics =
         }
 
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int, name: string) =
-
-    do ignore maxDepth
+type StackGuard(name: string) =
 
     let depth = new ThreadLocal<int>()
 
@@ -979,15 +977,6 @@ type StackGuard(maxDepth: int, name: string) =
     member x.GuardCancellable(original: Cancellable<'T>) =
         Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
 
-    static member val DefaultDepth =
-#if DEBUG
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
-#else
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 100
-#endif
-
-    static member GetDepthOption(name: string) =
-        GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
 // UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
 // We should probably adapt and reuse that code.
