@@ -890,7 +890,7 @@ module StackGuardMetrics =
         jumpCounter.Add(1L, &tags)
 
     // Used by the self-listener.
-    let jumpsByFunctionName = ConcurrentDictionary<_, int64 ref>()
+    let dataByFunctionName = ConcurrentDictionary<_, int64 ref * int ref>()
 
     let Listen () =
         let listener = new Metrics.MeterListener()
@@ -900,20 +900,26 @@ module StackGuardMetrics =
         listener.SetMeasurementEventCallback(fun _ v tags _ ->
             let memberName = nonNull tags[0].Value :?> string
             let source = nonNull tags[1].Value :?> string
-            let counter = jumpsByFunctionName.GetOrAdd((memberName, source), fun _ -> ref 0L)
-            Interlocked.Add(counter, v) |> ignore)
+            let depth = nonNull tags[2].Value :?> int
+
+            let counter, minDepth =
+                dataByFunctionName.GetOrAdd((memberName, source), fun _ -> ref 0L, ref Int32.MaxValue)
+
+            counter.Value <- counter.Value + v
+            minDepth.Value <- min depth minDepth.Value)
 
         listener.Start()
         listener :> IDisposable
 
     let StatsToString () =
-        let headers = [ "caller"; "source"; "jumps" ]
+        let headers = [ "caller"; "source"; "jumps"; "min depth" ]
 
         let data =
             [
-                for kvp in jumpsByFunctionName do
+                for kvp in dataByFunctionName do
                     let (memberName, source) = kvp.Key
-                    [ memberName; source; string kvp.Value.Value ]
+                    let jumps, depth = kvp.Value
+                    [ memberName; source; string jumps.Value; string depth.Value ]
             ]
 
         if List.isEmpty data then
@@ -935,7 +941,7 @@ type StackGuard(maxDepth: int, name: string) =
 
     do ignore maxDepth
 
-    let mutable depth = 0
+    let depth = new ThreadLocal<int>()
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Guard
@@ -946,7 +952,7 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
 
-        depth <- depth + 1
+        depth.Value <- depth.Value + 1
 
         try
             try
@@ -956,17 +962,18 @@ type StackGuard(maxDepth: int, name: string) =
                 // If we hit the execution stack limit, jump to a new thread regardless of depth.
 
                 let fileName = System.IO.Path.GetFileName(path)
-                
-                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depth
+                let depthWhenJump = depth.Value
+
+                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
                     return f ()
                 }
                 |> Async.RunImmediate
         finally
-            depth <- depth - 1
+            depth.Value <- depth.Value - 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member x.GuardCancellable(original: Cancellable<'T>) =
