@@ -879,11 +879,12 @@ module StackGuardMetrics =
             description = "Tracks the number of times the stack guard has jumped to a new thread"
         )
 
-    let countJump memberName location =
+    let countJump memberName location depth =
         let tags =
             let mutable tags = TagList()
             tags.Add(Activity.Tags.callerMemberName, memberName)
             tags.Add("source", location)
+            tags.Add("depth", depth)
             tags
 
         jumpCounter.Add(1L, &tags)
@@ -932,7 +933,9 @@ module StackGuardMetrics =
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
 type StackGuard(maxDepth: int, name: string) =
 
-    let mutable depth = 1
+    do ignore maxDepth
+
+    let mutable depth = 0
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Guard
@@ -946,11 +949,15 @@ type StackGuard(maxDepth: int, name: string) =
         depth <- depth + 1
 
         try
-            if depth % maxDepth = 0 then
+            try
+                RuntimeHelpers.EnsureSufficientExecutionStack()
+                f ()
+            with :? InsufficientExecutionStackException ->
+                // If we hit the execution stack limit, jump to a new thread regardless of depth.
 
                 let fileName = System.IO.Path.GetFileName(path)
-
-                StackGuardMetrics.countJump memberName $"{fileName}:{line}"
+                
+                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depth
 
                 async {
                     do! Async.SwitchToNewThread()
@@ -958,8 +965,6 @@ type StackGuard(maxDepth: int, name: string) =
                     return f ()
                 }
                 |> Async.RunImmediate
-            else
-                f ()
         finally
             depth <- depth - 1
 
