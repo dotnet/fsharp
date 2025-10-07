@@ -11,10 +11,17 @@ open Microsoft.CodeAnalysis
 
 module OptionalInteropTests =
 
+    open System.Reflection
+
+    let showImmutableVersion () =
+        let asm = typeof<System.Collections.Immutable.ImmutableArray>.Assembly
+        printfn "Loaded System.Collections.Immutable version: %s" (asm.GetName().Version.ToString())
+
     [<Theory>]
     [<InlineData("5.0")>]
     [<InlineData("preview")>]
     let ``C# method with an optional parameter and called with an option type should compile`` langVersion =
+        showImmutableVersion()
         let csSrc =
             """
 using Microsoft.FSharp.Core;
