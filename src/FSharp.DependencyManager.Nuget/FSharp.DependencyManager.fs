@@ -4,6 +4,7 @@ namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Text
@@ -303,10 +304,20 @@ type ResolveDependenciesResult
     member _.Roots = roots
 
 [<DependencyManager>]
-type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool, sdkDirOverride: string option) =
+type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool, additionalParams: IDictionary<string, obj>) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
+
+    let sdkDirOverride =
+        if isNull additionalParams then
+            None
+        else
+            match additionalParams.TryGetValue("sdkDirOverride") with
+            | true, (:? (string option) as sdkDirOverride) -> sdkDirOverride
+            | _ ->
+                Debug.Assert(false, "FSharpDependencyManager: 'sdkDirOverride: string option' is required.")
+                None
 
     let generatedScripts = ConcurrentDictionary<string, string>()
 
@@ -465,7 +476,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
 
     do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
 
-    new(outputDirectory: string option, useResultsCache: bool) = FSharpDependencyManager(outputDirectory, useResultsCache, None)
+    new(outputDirectory: string option, useResultsCache: bool) = FSharpDependencyManager(outputDirectory, useResultsCache, null)
     new(outputDirectory: string option) = FSharpDependencyManager(outputDirectory, true)
 
     member _.Name = name

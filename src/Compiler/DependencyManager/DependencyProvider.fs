@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.DependencyManager
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
@@ -161,11 +162,13 @@ type ReflectionDependencyManagerProvider
             [|
                 typeof<string option>, outputDir
                 typeof<bool>, useResultsCache
-                typeof<string option>, sdkDirOverride
+                typeof<IDictionary<string, obj>>, dict [ "sdkDirOverride", sdkDirOverride ]
             |]
 
         let n = arguments.Length
 
+        // Searches for the most suitable constructor,
+        // starting from the latest version (with more parameters) and falling back to earlier ones.
         seq { for i in n - 1 .. -1 .. 0 -> arguments[0..i] }
         |> Seq.map Array.unzip
         |> Seq.tryFind (fun (types, _) -> isNotNull (theType.GetConstructor(types)))
