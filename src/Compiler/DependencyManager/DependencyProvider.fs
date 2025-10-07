@@ -162,7 +162,7 @@ type ReflectionDependencyManagerProvider
             [|
                 typeof<string option>, outputDir
                 typeof<bool>, useResultsCache
-                typeof<IDictionary<string, obj>>, dict [ "sdkDirOverride", sdkDirOverride ]
+                typeof<IDictionary<string, obj>>, dict [ "sdkDirOverride", sdkDirOverride :> obj ]
             |]
 
         let n = arguments.Length
