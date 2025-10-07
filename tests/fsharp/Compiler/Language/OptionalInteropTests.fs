@@ -14,6 +14,8 @@ module OptionalInteropTests =
     open System.Reflection
 
     let showImmutableVersion () =
+        let x = System.Collections.Immutable.ImmutableArray.Create<int>(System.ReadOnlySpan.op_Implicit([|1;2;3|]))
+        printfn "Created ImmutableArray with length: %d ;; %A" x.Length x
         let asm = typeof<System.Collections.Immutable.ImmutableArray>.Assembly
         printfn "Loaded System.Collections.Immutable version: %s" (asm.GetName().Version.ToString())
 
