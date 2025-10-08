@@ -9,6 +9,7 @@
     <GenerateProgramFile>false</GenerateProgramFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>VSTHRD200;CS1591</NoWarn>
+    <TestRunnerName>XUnit</TestRunnerName>
   </PropertyGroup>
 
   <ItemGroup>

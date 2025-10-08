@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFrameworks>$(FSharpNetCoreProductTargetFramework);net472</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
     <PackageId>Microsoft.FSharp.Core.UnitTests</PackageId>
@@ -14,7 +14,6 @@
     <LangVersion>preview</LangVersion>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

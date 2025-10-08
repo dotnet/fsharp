@@ -5,10 +5,9 @@
   <PropertyGroup>
     <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <Optimize>false</Optimize>

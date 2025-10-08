@@ -8,6 +8,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <NoWarn>$(NoWarn);FS3511</NoWarn> <!-- This state machine is not statically compilable. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>

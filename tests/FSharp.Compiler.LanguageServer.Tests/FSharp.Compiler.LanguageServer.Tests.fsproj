@@ -12,6 +12,7 @@
 		<Tailcalls>false</Tailcalls>
 		<OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
 		<NoWarn>$(NoWarn);FS0988</NoWarn>
+		<OutputType>Exe</OutputType>
 	</PropertyGroup>
 
 	<ItemGroup>

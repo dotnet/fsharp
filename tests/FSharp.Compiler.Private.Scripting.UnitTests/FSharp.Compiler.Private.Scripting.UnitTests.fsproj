@@ -4,9 +4,8 @@
   <PropertyGroup>
     <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
     <ExcludeFromSourceOnlyBuild>true</ExcludeFromSourceOnlyBuild>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
   </PropertyGroup>
