@@ -941,6 +941,20 @@ type StackGuard(name: string) =
 
     let depth = new ThreadLocal<int>()
 
+    static member inline IsStackSufficient() =
+
+        // We single out netstandard2.0 because it lacks the non-throwing TryEnsureSufficientExecutionStack
+        // TODO: Get rid of this throwing version as soon as we can.
+#if NETSTANDARD2_0
+        try
+            RuntimeHelpers.EnsureSufficientExecutionStack()
+            true
+        with :? InsufficientExecutionStackException ->
+            false
+#else
+        RuntimeHelpers.TryEnsureSufficientExecutionStack()
+#endif
+
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Guard
         (
@@ -953,12 +967,9 @@ type StackGuard(name: string) =
         depth.Value <- depth.Value + 1
 
         try
-            try
-                RuntimeHelpers.EnsureSufficientExecutionStack()
+            if StackGuard.IsStackSufficient() then
                 f ()
-            with :? InsufficientExecutionStackException ->
-                // If we hit the execution stack limit, jump to a new thread regardless of depth.
-
+            else
                 let fileName = System.IO.Path.GetFileName(path)
                 let depthWhenJump = depth.Value
 
