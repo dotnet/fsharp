@@ -11296,6 +11296,42 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
         | _ -> ()
     | _ -> ()
 
+    // Report duplicate bound names across curried argument patterns in non-recursive bindings
+    let reportDuplicateAcrossArgs (declPattern: SynPat) =
+        let rec collect acc (p: SynPat) =
+            match p with
+            | SynPat.FromParseError(p, _)
+            | SynPat.Paren(p, _) -> collect acc p
+            | SynPat.Tuple(_, ps, _, _)
+            | SynPat.ArrayOrList(_, ps, _) -> List.fold collect acc ps
+            | SynPat.As(lhs, rhs, _) ->
+                let acc = collect acc lhs
+                collect acc rhs
+            | SynPat.Named(SynIdent(id, _), _, _, _) -> id :: acc
+            | SynPat.LongIdent(argPats = SynArgPats.Pats ps) -> List.fold collect acc ps
+            | SynPat.Or(p1, p2, _, _) -> collect (collect acc p1) p2
+            | SynPat.Ands(pats, _) -> List.fold collect acc pats
+            | SynPat.Record(fieldPats = fields) ->
+                (acc, fields)
+                ||> List.fold (fun acc (NamePatPairField(_, _, _, pat, _)) -> collect acc pat)
+            | SynPat.ListCons(lhsPat = l; rhsPat = r) -> collect (collect acc l) r
+            | SynPat.OptionalVal(id, _) -> id :: acc
+            | _ -> acc
+        match declPattern with
+        | SynPat.LongIdent(argPats = SynArgPats.Pats argPats) ->
+            let seen = System.Collections.Generic.HashSet<string>()
+            for pat in argPats do
+                let names = collect [] pat
+                for id in List.rev names do
+                    if not (System.String.IsNullOrEmpty id.idText) then
+                        if not (seen.Add id.idText) then
+                            errorR (VarBoundTwice id)
+            ()
+        | _ -> ()
+
+    match binding with
+    | SynBinding(headPat = pat) -> reportDuplicateAcrossArgs pat
+
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
     TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
