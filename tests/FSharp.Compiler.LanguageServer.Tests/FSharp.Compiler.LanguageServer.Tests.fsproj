@@ -2,11 +2,11 @@
 
 	<PropertyGroup>
 		<TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
+		<!-- xUnit3 requires test projects to be executable -->
+		<OutputType>Exe</OutputType>
 		<IsPackable>false</IsPackable>
 		<GenerateProgramFile>false</GenerateProgramFile>
-		<IsTestProject>true</IsTestProject>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-		<UnitTestType>xunit</UnitTestType>
 		<ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
 		<Optimize>false</Optimize>
 		<Tailcalls>false</Tailcalls>
