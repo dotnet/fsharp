@@ -85,12 +85,14 @@ module TestCaseCustomizations =
                 let hash = sha.ComputeHash(bytes)
                 System.Guid(hash.[0..15])  // Take first 16 bytes for GUID
 
+            let newDisplayName = $"{oldTestCollection.DisplayName}_{collectionId:N}"
+
             // Create a new collection with a unique id for the test case.
             let newTestCollection =
                     new TestCollection(
                         oldTestCollection.TestAssembly,
                         oldTestCollection.CollectionDefinition,
-                        oldTestCollection.DisplayName,
+                        newDisplayName,
                         collectionId
                     )
 
