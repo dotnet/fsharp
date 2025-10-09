@@ -77,13 +77,21 @@ module TestCaseCustomizations =
             let oldTestClass = oldTestMethod.TestClass
             let oldTestCollection = oldTestMethod.TestClass.TestCollection
 
+            // Create a DETERMINISTIC collection ID based on the test case's unique ID
+            // This ensures the same test case always gets the same collection ID
+            let collectionId = 
+                use sha = System.Security.Cryptography.SHA256.Create()
+                let bytes = System.Text.Encoding.UTF8.GetBytes(testCase.UniqueID)
+                let hash = sha.ComputeHash(bytes)
+                System.Guid(hash.[0..15])  // Take first 16 bytes for GUID
+
             // Create a new collection with a unique id for the test case.
             let newTestCollection =
                     new TestCollection(
                         oldTestCollection.TestAssembly,
                         oldTestCollection.CollectionDefinition,
                         oldTestCollection.DisplayName,
-                        Guid.NewGuid()
+                        collectionId
                     )
 
             let newTestClass = new TestClass(newTestCollection, oldTestClass.Class)
