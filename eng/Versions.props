@@ -106,6 +106,8 @@
     <MicrosoftCodeAnalysisCSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>5.0.0-2.25480.7</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
+	<!-- Roslyn for when we need to compile C# in tests. .dll hell caused by vstest makes newer version fail at runtime -->
+	<RoslynForTestingButNotForVSLayer>4.14.0</RoslynForTestingButNotForVSLayer>
     <!-- -->
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
@@ -157,10 +159,10 @@
      <!-- Making diff way too large, update separately later. e.g. to 6.0.0-rtm.21518.12 and 9.0.0-rc.2.24462.10 or via darc -->
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftNETTestSdkVersion>17.11.1</MicrosoftNETTestSdkVersion>
+    <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
     <NewtonsoftJsonVersion>13.0.3</NewtonsoftJsonVersion>
     <XUnitVersion>2.9.0</XUnitVersion>
-    <XUnitRunnerVersion>2.8.2</XUnitRunnerVersion>
+    <XUnitRunnerVersion>3.1.4</XUnitRunnerVersion>
     <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
     <!-- -->
   </PropertyGroup>
