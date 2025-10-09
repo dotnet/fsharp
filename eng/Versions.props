@@ -1,8 +1,6 @@
 <Project>
   <Import Project="Version.Details.props" Condition="Exists('Version.Details.props')" />
   <PropertyGroup>
-    <!-- opt-out properties -->
-    <UsingToolXUnit>false</UsingToolXUnit>
     <!-- opt-in properties -->
     <UsingToolNuGetRepack>true</UsingToolNuGetRepack>
     <UsingToolSymbolUploader>true</UsingToolSymbolUploader>
@@ -188,9 +186,7 @@
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StreamJsonRpcVersion>2.22.11</StreamJsonRpcVersion>
     <NerdbankStreamsVersion>2.12.87</NerdbankStreamsVersion>
-    <XUnitVersion>2.9.0</XUnitVersion>
-    <XUnitRunnerVersion>2.8.2</XUnitRunnerVersion>
-    <XunitXmlTestLoggerVersion>3.1.17</XunitXmlTestLoggerVersion>
+    <XunitXmlTestLoggerVersion>7.0.1</XunitXmlTestLoggerVersion>
     <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
     <!-- -->
   </PropertyGroup>

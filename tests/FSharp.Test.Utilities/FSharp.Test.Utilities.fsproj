@@ -6,9 +6,8 @@
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>xunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
     <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

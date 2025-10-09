@@ -6,7 +6,6 @@ namespace FSharp.Test
 
 open System
 open Xunit.Sdk
-open Xunit.Abstractions
 
 open TestFramework
 
@@ -16,6 +15,7 @@ open FSharp.Compiler.Diagnostics
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 open OpenTelemetry.Metrics
+open Xunit.v3
 
 /// Disables custom internal parallelization added with XUNIT_EXTRAS.
 /// Execute test cases in a class or a module one by one instead of all at once. Allow other collections to run simultaneously.

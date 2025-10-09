@@ -10,6 +10,7 @@ open FSharp.Compiler.IO
 open FSharp.Test.Compiler
 open FSharp.Test.Utilities
 open TestFramework
+open Xunit.v3
 
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a directory, relative to current test suite's root.
