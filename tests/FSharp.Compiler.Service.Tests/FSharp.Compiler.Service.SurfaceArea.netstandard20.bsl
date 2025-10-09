@@ -12512,8 +12512,6 @@ Internal.Utilities.Library.Async2Implementation+ExceptionCache: System.Runtime.E
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: a Throw[a](System.Exception)
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow[a,b](a)
-Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean Running
-Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean get_Running()
 Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] Ref
 Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] get_Ref()
 Internal.Utilities.Library.Async2Implementation+Trampoline: Trampoline Current

@@ -14,8 +14,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Xml
 
-let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
-
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
 //
@@ -943,7 +941,7 @@ let passImplFile penv assembly =
           PreInterceptBinding = None
           PostTransform = postTransformExpr penv
           RewriteQuotations = false
-          StackGuard = StackGuard(DetupleRewriteStackGuardDepth, "RewriteImplFile") }
+          StackGuard = StackGuard("RewriteImplFile") }
 
     assembly |> RewriteImplFile rwenv
 

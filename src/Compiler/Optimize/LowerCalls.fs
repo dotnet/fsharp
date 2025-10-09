@@ -7,8 +7,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-let LowerCallsRewriteStackGuardDepth = StackGuard.GetDepthOption "LowerCallsRewrite"
-
 //----------------------------------------------------------------------------
 // Expansion of calls to methods with statically known arity
 
@@ -49,5 +47,5 @@ let LowerImplFile g assembly =
           PreInterceptBinding=None
           PostTransform= (fun _ -> None)
           RewriteQuotations=false
-          StackGuard = StackGuard(LowerCallsRewriteStackGuardDepth, "LowerCallsRewriteStackGuardDepth") }
+          StackGuard = StackGuard("LowerCallsRewriteStackGuardDepth") }
     assembly |> RewriteImplFile rwenv
