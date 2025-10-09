@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests
 
+open System
 open System.Collections.Immutable
 open Xunit
 open FSharp.Test
@@ -11,19 +12,10 @@ open Microsoft.CodeAnalysis
 
 module OptionalInteropTests =
 
-    open System.Reflection
-
-    let showImmutableVersion () =
-        let x = System.Collections.Immutable.ImmutableArray.Create<int>(System.ReadOnlySpan.op_Implicit([|1;2;3|]))
-        printfn "Created ImmutableArray with length: %d ;; %A" x.Length x
-        let asm = typeof<System.Collections.Immutable.ImmutableArray>.Assembly
-        printfn "Loaded System.Collections.Immutable version: %s" (asm.GetName().Version.ToString())
-
     [<Theory>]
     [<InlineData("5.0")>]
     [<InlineData("preview")>]
     let ``C# method with an optional parameter and called with an option type should compile`` langVersion =
-        showImmutableVersion()
         let csSrc =
             """
 using Microsoft.FSharp.Core;

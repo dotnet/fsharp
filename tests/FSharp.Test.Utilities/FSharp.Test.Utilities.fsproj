@@ -69,8 +69,22 @@
 
   <!-- Runtime dependencies. Beware. -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
-    <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
+	<PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)">
+		<IncludeAssets>runtime; native</IncludeAssets>
+		<PrivateAssets>all</PrivateAssets>
+	</PackageReference>
+	<PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)">
+		<IncludeAssets>runtime; native</IncludeAssets>
+		<PrivateAssets>all</PrivateAssets>
+	</PackageReference>
+	<PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)">
+		<IncludeAssets>runtime; native</IncludeAssets>
+		<PrivateAssets>all</PrivateAssets>
+	</PackageReference>
+	<PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)">
+		<PrivateAssets>all</PrivateAssets>
+		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -83,8 +97,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
   </ItemGroup>
@@ -93,13 +105,8 @@
 </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" GeneratePathProperty="true"  />
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
-    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(RoslynForTestingButNotForVSLayer)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynForTestingButNotForVSLayer)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
