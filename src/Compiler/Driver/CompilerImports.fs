@@ -2291,7 +2291,7 @@ and [<Sealed>] TcImports
                 let phase2 () =
                     [ tcImports.FindCcuInfo(ctok, m, ilShortAssemName, lookupOnly = true) ]
 
-                phase2
+                async { return phase2 () }
             else
                 let dllinfo =
                     {
@@ -2321,7 +2321,7 @@ and [<Sealed>] TcImports
                     else
                         tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
 
-                phase2
+                async { return phase2 () }
 
         async {
             CheckDisposed()
@@ -2333,13 +2333,13 @@ and [<Sealed>] TcImports
 
             fixupOrphanCcus ()
 
-            let ccuinfos = phase2s |> List.collect (fun phase2 -> phase2 ())
+            let! ccuinfos = phase2s |> MultipleDiagnosticsLoggers.Parallel
 
             if importsBase.IsSome then
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
 
-            return ccuinfos
+            return ccuinfos |> List.concat
         }
 
     /// Note that implicit loading is not used for compilations from MSBuild, which passes ``--noframework``
