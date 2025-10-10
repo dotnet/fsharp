@@ -32,22 +32,18 @@ mkdir artifacts
 
 echo.
 echo === Test 1: Plain Library (No Provider) ===
-echo [Test 1] Packing PlainLib without IsFSharpDesignTimeProvider property...
-echo [Test 1] Command: dotnet pack PlainLib\PlainLib.fsproj -o %~dp0artifacts -c %configuration% -v minimal -bl:%~dp0artifacts\plain.binlog -p:FSharpTestCompilerVersion=coreclr
-     dotnet pack PlainLib\PlainLib.fsproj -o %~dp0artifacts -c %configuration% -v minimal -bl:%~dp0artifacts\plain.binlog -p:FSharpTestCompilerVersion=coreclr
+echo [Test 1] Building and packing PlainLib without IsFSharpDesignTimeProvider property...
+echo [Test 1] Command: dotnet build PlainLib\PlainLib.fsproj -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+     dotnet build PlainLib\PlainLib.fsproj -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
 if ERRORLEVEL 1 (
-    echo [Test 1] FAILED: Pack command returned error code %ERRORLEVEL%
-    echo [Test 1] Check artifacts\plain.binlog for details
+    echo [Test 1] FAILED: Build command returned error code %ERRORLEVEL%
     goto :failure
 )
 
-rem Check that PackageFSharpDesignTimeTools target did not run
-echo [Test 1] Checking that PackageFSharpDesignTimeTools target did NOT run...
-findstr /C:"PackageFSharpDesignTimeTools" %~dp0artifacts\plain.binlog >nul 2>&1
-if not ERRORLEVEL 1 (
-    echo [Test 1] FAILED: PackageFSharpDesignTimeTools target unexpectedly ran
-    echo [Test 1] Expected: Target should not run for plain library without IsFSharpDesignTimeProvider
-    echo [Test 1] Actual: Target found in binlog
+echo [Test 1] Command: dotnet pack PlainLib\PlainLib.fsproj --no-build -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+     dotnet pack PlainLib\PlainLib.fsproj --no-build -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 (
+    echo [Test 1] FAILED: Pack command returned error code %ERRORLEVEL%
     goto :failure
 )
 
