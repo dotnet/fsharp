@@ -32,8 +32,8 @@ mkdir -p artifacts
 echo
 echo "=== Test 1: Plain Library (No Provider) ==="
 echo "[Test 1] Packing PlainLib without IsFSharpDesignTimeProvider property..."
-echo "[Test 1] Command: dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog"
-if ! dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog; then
+echo "[Test 1] Command: dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog -p:FSharpTestCompilerVersion=coreclr"
+if ! dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 1] FAILED: Pack command returned error code $?"
     echo "[Test 1] Check artifacts/plain.binlog for details"
     exit 1
@@ -62,8 +62,8 @@ echo "[Test 1] PASSED: Plain library test passed"
 echo
 echo "=== Test 2: Provider Project (Direct Flag) ==="
 echo "[Test 2] Packing Provider with IsFSharpDesignTimeProvider=true..."
-echo "[Test 2] Command: dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog"
-if ! dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog; then
+echo "[Test 2] Command: dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog -p:FSharpTestCompilerVersion=coreclr"
+if ! dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 2] FAILED: Pack command returned error code $?"
     echo "[Test 2] Check artifacts/provider.binlog for details"
     exit 1
@@ -93,8 +93,8 @@ echo
 echo "=== Test 3: Host with ProjectReference to Provider ==="
 echo "[Test 3] Packing Host with ProjectReference to Provider..."
 echo "[Test 3] Note: This tests experimental execution-time reference checking"
-echo "[Test 3] Command: dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog"
-if ! dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog; then
+echo "[Test 3] Command: dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog -p:FSharpTestCompilerVersion=coreclr"
+if ! dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 3] FAILED: Pack command returned error code $?"
     echo "[Test 3] Check artifacts/host.binlog for details"
     exit 1
@@ -115,8 +115,8 @@ if ! dotnet build PlainLib/PlainLib.fsproj -c $configuration; then
 fi
 
 echo "[Test 4] Packing with --no-build flag..."
-echo "[Test 4] Command: dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog"
-if ! dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog; then
+echo "[Test 4] Command: dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog -p:FSharpTestCompilerVersion=coreclr"
+if ! dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 4] FAILED: Pack --no-build returned error code $?"
     echo "[Test 4] This indicates NETSDK1085 or similar issue - early target execution"
     echo "[Test 4] Check artifacts/nobuild.binlog for details"
@@ -128,8 +128,8 @@ echo "[Test 4] PASSED: No-build test passed"
 echo
 echo "=== Test 5: Binding Redirect / App.config Interaction ==="
 echo "[Test 5] Testing with AutoGenerateBindingRedirects (MSB3030/app.config regression test)..."
-echo "[Test 5] Command: dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog"
-if ! dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog; then
+echo "[Test 5] Command: dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog -p:FSharpTestCompilerVersion=coreclr"
+if ! dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 5] FAILED: Pack command returned error code $?"
     echo "[Test 5] Check artifacts/redirect.binlog for MSB3030 or binding redirect issues"
     exit 1
