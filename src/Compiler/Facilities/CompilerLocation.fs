@@ -301,45 +301,60 @@ module internal FSharpEnvironment =
             // Can't find it --- give up
             None
 
-    let getDotnetHostPath () =
-        // How to find dotnet.exe --- woe is me; probing rules make me sad.
-        // Algorithm:
-        // 1. Look for DOTNET_HOST_PATH environment variable
-        //    this is the main user programmable override .. provided by user to find a specific dotnet.exe
-        // 2. Probe for are we part of an .NetSDK install
-        //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
-        //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
-        // 3. We are loaded in-process to some other application ... Eg. try .net
-        //    See if the host is dotnet.exe ... from net5.0 on this is fairly unlikely
-        // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
-        // Use the path to search for dotnet.exe
-        let probePathForDotnetHost () =
-            let paths =
-                let p = Environment.GetEnvironmentVariable("PATH")
+    let getDotnetHostPath sdkDirOverride =
+        let dotnetHostPathOverride =
+            sdkDirOverride
+            |> Option.bind (fun sdkDirOverride ->
+                let dotnetHostPath =
+                    Path.GetFullPath(Path.Combine(sdkDirOverride, "..", "..", dotnet))
 
-                match p with
-                | null -> [||]
-                | p -> p.Split(Path.PathSeparator)
+                if fileExists dotnetHostPath then
+                    Some dotnetHostPath
+                else
+                    None)
 
-            paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
+        match dotnetHostPathOverride with
+        | Some _ -> dotnetHostPathOverride
+        | None ->
 
-        match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
-        // Value set externally
-        | NonEmptyString value when fileExists value -> Some value
-        | _ ->
-            // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
-            let candidate =
-                let assemblyLocation =
-                    Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+            // How to find dotnet.exe --- woe is me; probing rules make me sad.
+            // Algorithm:
+            // 1. Look for DOTNET_HOST_PATH environment variable
+            //    this is the main user programmable override .. provided by user to find a specific dotnet.exe
+            // 2. Probe for are we part of an .NetSDK install
+            //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
+            //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
+            // 3. We are loaded in-process to some other application ... Eg. try .net
+            //    See if the host is dotnet.exe ... from net5.0 on this is fairly unlikely
+            // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
+            // Use the path to search for dotnet.exe
+            let probePathForDotnetHost () =
+                let paths =
+                    let p = Environment.GetEnvironmentVariable("PATH")
 
-                Path.GetFullPath(Path.Combine(!!assemblyLocation, "..", "..", "..", dotnet))
+                    match p with
+                    | null -> [||]
+                    | p -> p.Split(Path.PathSeparator)
 
-            if fileExists candidate then
-                Some candidate
-            else
-                match probePathForDotnetHost () with
-                | Some f -> Some(Path.Combine(f, dotnet))
-                | None -> getDotnetGlobalHostPath ()
+                paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
+
+            match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
+            // Value set externally
+            | NonEmptyString value when fileExists value -> Some value
+            | _ ->
+                // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
+                let candidate =
+                    let assemblyLocation =
+                        Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+
+                    Path.GetFullPath(Path.Combine(!!assemblyLocation, "..", "..", "..", dotnet))
+
+                if fileExists candidate then
+                    Some candidate
+                else
+                    match probePathForDotnetHost () with
+                    | Some f -> Some(Path.Combine(f, dotnet))
+                    | None -> getDotnetGlobalHostPath ()
 
     let getDotnetHostDirectories () =
         let isDotnetMultilevelLookup =
@@ -348,7 +363,7 @@ module internal FSharpEnvironment =
             <> 0
 
         [|
-            match getDotnetHostPath (), getDotnetGlobalHostPath () with
+            match getDotnetHostPath None, getDotnetGlobalHostPath () with
             | Some hostPath, Some globalHostPath ->
                 yield !!Path.GetDirectoryName(hostPath)
 

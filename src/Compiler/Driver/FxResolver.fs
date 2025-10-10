@@ -112,7 +112,7 @@ type internal FxResolver
         desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(
             projectDir,
             (fun _ ->
-                match getDotnetHostPath () with
+                match getDotnetHostPath None with
                 | Some dotnetHostPath ->
                     try
                         let workingDir =

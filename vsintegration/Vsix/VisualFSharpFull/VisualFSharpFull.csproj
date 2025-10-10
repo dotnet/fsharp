@@ -9,7 +9,9 @@
     <IsShipping>true</IsShipping>
     <DependencyTargetFramework>net472</DependencyTargetFramework>
     <!-- locally you should deploy VisualFSharpDebug.vsix instead -->
-    <DeployExtension>false</DeployExtension>
+    <DeployExtension>false</DeployExtension>    
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
 
   <Import Project="VisualFSharp.Core.targets" />

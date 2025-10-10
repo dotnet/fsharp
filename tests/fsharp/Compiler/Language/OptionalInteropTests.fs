@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests
 
+open System
 open System.Collections.Immutable
 open Xunit
 open FSharp.Test

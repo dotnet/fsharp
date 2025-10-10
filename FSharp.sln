@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32113.165
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11104.47 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{DED3BBD7-53F4-428A-8C9F-27968E768605}"
 EndProject
@@ -164,6 +164,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".VisualStudio", ".VisualStu
 	ProjectSection(SolutionItems) = preProject
 		docs\release-notes\.VisualStudio\17.10.md = docs\release-notes\.VisualStudio\17.10.md
 		docs\release-notes\.VisualStudio\17.9.md = docs\release-notes\.VisualStudio\17.9.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eng", "eng", "{79E058E4-79E9-4178-AFA4-A87C45373379}"
+	ProjectSection(SolutionItems) = preProject
+		eng\Version.Details.props = eng\Version.Details.props
+		eng\Version.Details.xml = eng\Version.Details.xml
+		eng\Versions.props = eng\Versions.props
 	EndProjectSection
 EndProject
 Global

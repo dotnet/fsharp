@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Diagnostics
 open System.Reflection
+open System.Xml.Linq
 open Scripting
 open Xunit
 open FSharp.Compiler.IO
@@ -269,8 +270,31 @@ let requireFile dir path =
         | Some _ -> fullPathLower
         | None -> failwith (sprintf "Couldn't find \"%s\" on the following paths: \"%s\", \"%s\". Running 'build test' once might solve this issue" path fullPath fullPathLower)
 
+let SCRIPT_ROOT = __SOURCE_DIRECTORY__
+let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
+
+let loadVersionsProps () =
+    let versionsPropsPath = repoRoot ++ "eng" ++ "Versions.props"
+    if not (File.Exists versionsPropsPath) then
+        failwithf "Versions.props file not found at %s" versionsPropsPath
+    XDocument.Load(versionsPropsPath)
+
+let getMsbuildPropValue (xdoc: XDocument) (propName: string) =
+    xdoc.Descendants "PropertyGroup"
+        |> Seq.collect (fun pg -> pg.Elements())
+        |> Seq.tryFind (fun el -> el.Name.LocalName = propName)
+        |> function
+            | Some el -> el.Value
+            | None -> failwithf "Property '%s' not found in Versions.props" propName
+
+// Usage example:
+let versionsPropsDoc = loadVersionsProps ()
+let cscVersion = getMsbuildPropValue versionsPropsDoc "MicrosoftNetCompilersVersion"
+let ildasmVersion = getMsbuildPropValue versionsPropsDoc "MicrosoftNETCoreILDAsmVersion"
+let ilasmVersion = getMsbuildPropValue versionsPropsDoc "MicrosoftNETCoreILAsmVersion"
+
 let config configurationName envVars =
-    let SCRIPT_ROOT = __SOURCE_DIRECTORY__
+
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
@@ -284,10 +308,8 @@ let config configurationName envVars =
     let fsiArchitecture = dotnetArchitecture
     //let peverifyArchitecture = dotnetArchitecture
 #endif
-    let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
-    let coreClrRuntimePackageVersion = "5.0.0-preview.7.20364.11"
     let csc_flags = "/nologo"
     let vbc_flags = "/nologo"
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US" 
@@ -298,12 +320,12 @@ let config configurationName envVars =
     let packagesDir = getPackagesDir ()
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
-    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "csc.exe")
-    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "vbc.exe")
+    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ cscVersion ++ "tools" ++ "csc.exe")
+    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ cscVersion ++ "tools" ++ "vbc.exe")
     let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
-    let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
+    let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ ildasmVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
-    let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
+    let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ ilasmVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
     //let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
     let PEVERIFY = "ilverify" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"

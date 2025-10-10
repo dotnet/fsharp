@@ -34,7 +34,6 @@ module internal rec Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
 open System
 open System.Collections.Concurrent
-open System.ComponentModel.Composition
 open System.IO
 open System.Diagnostics
 open Microsoft.VisualStudio

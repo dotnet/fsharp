@@ -1084,7 +1084,13 @@ type TcConfigBuilder =
                 | ErrorReportType.Error -> errorR (Error(error, m)))
 
         let dm =
-            dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, output, reportError, path)
+            dependencyProvider.TryFindDependencyManagerInPath(
+                tcConfigB.compilerToolPaths,
+                output,
+                tcConfigB.sdkDirOverride,
+                reportError,
+                path
+            )
 
         match dm with
         // #r "Assembly"
