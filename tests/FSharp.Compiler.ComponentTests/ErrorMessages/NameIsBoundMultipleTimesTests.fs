@@ -164,7 +164,7 @@ let f (unitVar, ()) = ()
         |> shouldSucceed
 
     [<Fact>]
-    let ``Name is bound multiple times is reported for combined snippet f1,f2,f3``() =
+    let ``Name is bound multiple times is reported for combined bindings``() =
         Fsx """
 let f1 a a = ()
 let f2 (a, b as c) c = ()
@@ -176,4 +176,26 @@ let f3 (a, b as c) a = ()
             (Error 38, Line 2, Col 10, Line 2, Col 11, "'a' is bound twice in this pattern");
             (Error 38, Line 3, Col 20, Line 3, Col 21, "'c' is bound twice in this pattern");
             (Error 38, Line 4, Col 20, Line 4, Col 21, "'a' is bound twice in this pattern")
+        ]
+
+    [<Fact>]
+    let ``Name is bound multiple times is reported for combined bindings unitVar``() =
+        Fsx """
+let f1 unitVar unitVar = ()
+let f2 (unitVar, b as c) c = ()
+let f3 (a, unitVar as c) a = ()
+let f4 (a, b as c) unitVar = ()
+let f5 (unitVar, b as c) unitVar = ()
+let f6 (a, unitVar as c) unitVar = ()
+let f7 (a, b as unitVar) unitVar = ()
+"""
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 38, Line 2, Col 16, Line 2, Col 23, "'unitVar' is bound twice in this pattern")
+            (Error 38, Line 3, Col 26, Line 3, Col 27, "'c' is bound twice in this pattern")
+            (Error 38, Line 4, Col 26, Line 4, Col 27, "'a' is bound twice in this pattern")
+            (Error 38, Line 6, Col 26, Line 6, Col 33, "'unitVar' is bound twice in this pattern")
+            (Error 38, Line 7, Col 26, Line 7, Col 33, "'unitVar' is bound twice in this pattern")
+            (Error 38, Line 8, Col 26, Line 8, Col 33, "'unitVar' is bound twice in this pattern")
         ]

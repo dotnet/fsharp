@@ -181,7 +181,14 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
         match synSimplePats with
         | SynSimplePats.SimplePats ([], _, m) ->
-            // Unit (): synthesize a hidden name and unify with unit
+            // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
+            // syntactic translation when building bindings. This is done because the
+            // use of "()" has special significance for arity analysis and argument counting.
+            //
+            // Here we give a name to the single argument implied by those patterns.
+            // This is a little awkward since it would be nice if this was
+            // uniform with the process where we give names to other (more complex)
+            // patterns used in argument position, e.g. "let f (D(x)) = ..."
             let id = ident("unitVar" + string takenNames.Count, m)
             UnifyTypes cenv env m ty g.unit_ty
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, true)
