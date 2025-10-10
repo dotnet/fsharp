@@ -138,3 +138,27 @@ let h x =
             (Error 38, Line 4, Col 30, Line 4, Col 31, "'c' is bound twice in this pattern")
             (Error 38, Line 4, Col 33, Line 4, Col 34, "'e' is bound twice in this pattern")
         ]
+
+    [<Fact>]
+    let ``unitVar as user identifier in tuple binding does not clash with synthesized unit parameter name`` () =
+        Fsx """
+let (unitVar, ()) = 1, ()
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``unitVar as user identifier in function parameters does not clash with synthesized unit parameter name`` () =
+        Fsx """
+let f unitVar () = ()
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``unitVar as user identifier in function tuple parameter does not clash with synthesized unit parameter name`` () =
+        Fsx """
+let f (unitVar, ()) = ()
+"""
+        |> typecheck
+        |> shouldSucceed
