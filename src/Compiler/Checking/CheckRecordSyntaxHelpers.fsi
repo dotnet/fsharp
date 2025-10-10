@@ -21,7 +21,7 @@ val TransformAstForNestedUpdates<'a> :
 
 val BindIdText: string
 
-val IsNoneOrSimpleOrBindedExpr: 
+val IsNoneOrSimpleOrBoundExpr: 
     withExprOpt: (SynExpr * BlockSeparator) option -> bool
 
 val BindOriginalRecdExpr:

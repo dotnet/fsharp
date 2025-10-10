@@ -158,7 +158,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
 
 let BindIdText = "bind@"
 
-let IsNoneOrSimpleOrBindedExpr (withExprOpt: (SynExpr * BlockSeparator) option) = 
+let IsNoneOrSimpleOrBoundExpr (withExprOpt: (SynExpr * BlockSeparator) option) = 
    match withExprOpt with
    | None -> true
    | Some (expr, _) ->

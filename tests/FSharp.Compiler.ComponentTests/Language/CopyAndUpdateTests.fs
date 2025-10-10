@@ -509,7 +509,6 @@ let main argv =
     printfn "%i" a.X.Y.Z |> ignore
     0
     """
-    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
     |> verifyOutput "1"
@@ -531,7 +530,6 @@ let main argv =
     printfn "%i" a.X.Y.Z |> ignore
     0
     """
-    |> withLangVersion80
     |> typecheck
     |> shouldSucceed
     |> verifyOutput "1"
