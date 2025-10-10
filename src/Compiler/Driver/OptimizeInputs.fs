@@ -510,15 +510,14 @@ let ApplyAllOptimizations
     let phases = phases.ToArray()
 
     let results, optEnvFirstLoop =
-        match tcConfig.optSettings.processingMode with
         // Parallel optimization breaks determinism - turn it off in deterministic builds.
-        | Optimizer.OptimizationProcessingMode.Parallel when (not tcConfig.deterministic) ->
+        if tcConfig.deterministic then
+            optimizeFilesSequentially optEnv phases implFiles
+        else
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv phases implFiles
 
             results |> Array.toList, optEnvFirstPhase
-        | Optimizer.OptimizationProcessingMode.Parallel
-        | Optimizer.OptimizationProcessingMode.Sequential -> optimizeFilesSequentially optEnv phases implFiles
 
 #if DEBUG
     if tcConfig.showOptimizationData then
