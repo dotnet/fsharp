@@ -31,73 +31,120 @@ mkdir -p artifacts
 
 echo
 echo "=== Test 1: Plain Library (No Provider) ==="
-echo "dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog"
-dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog
+echo "[Test 1] Packing PlainLib without IsFSharpDesignTimeProvider property..."
+echo "[Test 1] Command: dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog"
+if ! dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/plain.binlog; then
+    echo "[Test 1] FAILED: Pack command returned error code $?"
+    echo "[Test 1] Check artifacts/plain.binlog for details"
+    exit 1
+fi
 
 # Check that PackageFSharpDesignTimeTools target did not run
+echo "[Test 1] Checking that PackageFSharpDesignTimeTools target did NOT run..."
 if strings artifacts/plain.binlog | grep -q "PackageFSharpDesignTimeTools"; then
-    echo "Error: PackageFSharpDesignTimeTools target should not have run for plain library"
+    echo "[Test 1] FAILED: PackageFSharpDesignTimeTools target unexpectedly ran"
+    echo "[Test 1] Expected: Target should not run for plain library without IsFSharpDesignTimeProvider"
+    echo "[Test 1] Actual: Target found in binlog"
     exit 1
 fi
 
 # Check that no tools folder exists in nupkg
+echo "[Test 1] Checking that package does not contain tools/fsharp41 folder..."
 if unzip -l artifacts/PlainLib.1.0.0.nupkg | grep -q "tools/fsharp41/"; then
-    echo "Error: Plain library should not contain tools/fsharp41 folder"
+    echo "[Test 1] FAILED: Package unexpectedly contains tools/fsharp41 folder"
+    echo "[Test 1] Expected: No tools folder for plain library"
+    echo "[Test 1] Actual: tools/fsharp41 folder found in PlainLib.1.0.0.nupkg"
     exit 1
 fi
 
-echo "Plain library test passed"
+echo "[Test 1] PASSED: Plain library test passed"
 
 echo
 echo "=== Test 2: Provider Project (Direct Flag) ==="
-echo "dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog"
-dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog
+echo "[Test 2] Packing Provider with IsFSharpDesignTimeProvider=true..."
+echo "[Test 2] Command: dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog"
+if ! dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog; then
+    echo "[Test 2] FAILED: Pack command returned error code $?"
+    echo "[Test 2] Check artifacts/provider.binlog for details"
+    exit 1
+fi
 
 # Check that PackageFSharpDesignTimeTools target ran
+echo "[Test 2] Checking that PackageFSharpDesignTimeTools target DID run..."
 if ! strings artifacts/provider.binlog | grep -q "PackageFSharpDesignTimeTools"; then
-    echo "Error: PackageFSharpDesignTimeTools target should have run for provider"
+    echo "[Test 2] FAILED: PackageFSharpDesignTimeTools target did not run"
+    echo "[Test 2] Expected: Target should run for provider with IsFSharpDesignTimeProvider=true"
+    echo "[Test 2] Actual: Target not found in binlog"
     exit 1
 fi
 
 # Check that tools folder exists in nupkg
+echo "[Test 2] Checking that package contains tools/fsharp41 folder..."
 if ! unzip -l artifacts/Provider.1.0.0.nupkg | grep -q "tools/fsharp41/"; then
-    echo "Error: Provider should contain tools/fsharp41 folder"
+    echo "[Test 2] FAILED: Package does not contain tools/fsharp41 folder"
+    echo "[Test 2] Expected: tools/fsharp41 folder should be present in provider package"
+    echo "[Test 2] Actual: No tools/fsharp41 folder found in Provider.1.0.0.nupkg"
     exit 1
 fi
 
-echo "Provider test passed"
+echo "[Test 2] PASSED: Provider test passed"
 
 echo
 echo "=== Test 3: Host with ProjectReference to Provider ==="
-echo "dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog"
-dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog
-
-# Note: This test may not work as expected due to MSBuild evaluation phase limitations
-# The current implementation only checks IsFSharpDesignTimeProvider property directly
-echo "Host test completed (implementation limitation noted)"
-
-echo
-echo "=== Test 4: Pack with --no-build (No Provider) ==="
-echo "dotnet build PlainLib/PlainLib.fsproj -c $configuration"
-dotnet build PlainLib/PlainLib.fsproj -c $configuration
-
-echo "dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog"
-dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog
-
-echo "No-build test passed"
-
-echo
-echo "=== Test 5: Binding Redirect / App.config Interaction ==="
-echo "dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog"
-dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog
-
-# Check that PackageFSharpDesignTimeTools target did not run
-if strings artifacts/redirect.binlog | grep -q "PackageFSharpDesignTimeTools"; then
-    echo "Error: PackageFSharpDesignTimeTools target should not have run for redirect library"
+echo "[Test 3] Packing Host with ProjectReference to Provider..."
+echo "[Test 3] Note: This tests experimental execution-time reference checking"
+echo "[Test 3] Command: dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog"
+if ! dotnet pack Host/Host.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/host.binlog; then
+    echo "[Test 3] FAILED: Pack command returned error code $?"
+    echo "[Test 3] Check artifacts/host.binlog for details"
     exit 1
 fi
 
-echo "Redirect test passed"
+# Note: This test may not work as expected due to MSBuild evaluation phase limitations
+# The current implementation only checks IsFSharpDesignTimeProvider property directly
+echo "[Test 3] PASSED: Host test completed (implementation limitation noted - may not check references correctly)"
+
+echo
+echo "=== Test 4: Pack with --no-build (No Provider) ==="
+echo "[Test 4] Testing pack --no-build scenario (NETSDK1085 regression test)..."
+echo "[Test 4] Building PlainLib first..."
+echo "[Test 4] Command: dotnet build PlainLib/PlainLib.fsproj -c $configuration"
+if ! dotnet build PlainLib/PlainLib.fsproj -c $configuration; then
+    echo "[Test 4] FAILED: Build command returned error code $?"
+    exit 1
+fi
+
+echo "[Test 4] Packing with --no-build flag..."
+echo "[Test 4] Command: dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog"
+if ! dotnet pack PlainLib/PlainLib.fsproj --no-build -o artifacts -c $configuration -v minimal -bl:artifacts/nobuild.binlog; then
+    echo "[Test 4] FAILED: Pack --no-build returned error code $?"
+    echo "[Test 4] This indicates NETSDK1085 or similar issue - early target execution"
+    echo "[Test 4] Check artifacts/nobuild.binlog for details"
+    exit 1
+fi
+
+echo "[Test 4] PASSED: No-build test passed"
+
+echo
+echo "=== Test 5: Binding Redirect / App.config Interaction ==="
+echo "[Test 5] Testing with AutoGenerateBindingRedirects (MSB3030/app.config regression test)..."
+echo "[Test 5] Command: dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog"
+if ! dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/redirect.binlog; then
+    echo "[Test 5] FAILED: Pack command returned error code $?"
+    echo "[Test 5] Check artifacts/redirect.binlog for MSB3030 or binding redirect issues"
+    exit 1
+fi
+
+# Check that PackageFSharpDesignTimeTools target did not run
+echo "[Test 5] Checking that PackageFSharpDesignTimeTools target did NOT run..."
+if strings artifacts/redirect.binlog | grep -q "PackageFSharpDesignTimeTools"; then
+    echo "[Test 5] FAILED: PackageFSharpDesignTimeTools target unexpectedly ran"
+    echo "[Test 5] Expected: Target should not run for library without IsFSharpDesignTimeProvider"
+    echo "[Test 5] Actual: Target found in binlog - may cause binding redirect issues"
+    exit 1
+fi
+
+echo "[Test 5] PASSED: Redirect test passed"
 
 echo
 echo "=== All DesignTimeProviderPackaging tests PASSED ==="
