@@ -28,12 +28,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeProviders
 #endif
 
-#if DEBUG
-let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 40
-#else
-let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
-#endif
-
 /// The ValReprInfo for a value, except the number of typars is not yet inferred
 type PrelimValReprInfo =
     | PrelimValReprInfo of
@@ -353,7 +347,7 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          stackGuard = StackGuard(TcStackGuardDepth, "TcFileState")
+          stackGuard = StackGuard("TcFileState")
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript

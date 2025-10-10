@@ -18,6 +18,54 @@ module ActivityNames =
 
     let AllRelevantNames = [| FscSourceName; ProfiledSourceName |]
 
+module Metrics =
+    let Meter = new Metrics.Meter(ActivityNames.FscSourceName)
+
+    let formatTable headers rows =
+        let columnWidths =
+            headers :: rows
+            |> List.transpose
+            |> List.map (List.map String.length >> List.max)
+
+        let center width (cell: string) =
+            String.replicate ((width - cell.Length) / 2) " " + cell |> _.PadRight(width)
+
+        let headers = (columnWidths, headers) ||> List.map2 center
+
+        let printRow (row: string list) =
+            row
+            |> List.mapi (fun i (cell: string) ->
+                if i = 0 then
+                    cell.PadRight(columnWidths[i])
+                else
+                    cell.PadLeft(columnWidths[i]))
+            |> String.concat " | "
+            |> sprintf "| %s |"
+
+        let headerRow = printRow headers
+
+        let divider = headerRow |> String.map (fun c -> if c = '|' then c else '-')
+        let hl = String.replicate divider.Length "-"
+
+        use sw = new StringWriter()
+
+        sw.WriteLine hl
+        sw.WriteLine headerRow
+        sw.WriteLine divider
+
+        for row in rows do
+            sw.WriteLine(printRow row)
+
+        sw.WriteLine hl
+
+        string sw
+
+    let printTable headers rows =
+        try
+            formatTable headers rows
+        with exn ->
+            $"Error formatting table: {exn}"
+
 [<RequireQualifiedAccess>]
 module internal Activity =
 
