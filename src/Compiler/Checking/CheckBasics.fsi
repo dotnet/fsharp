@@ -295,6 +295,8 @@ type TcFileState =
                 -> TcEnv
                 -> TcPatLinearEnv
                 -> SynSimplePats
+                -> (SynPat list * SynExpr) option
+                -> bool
                 -> string list * TcPatLinearEnv
 
         // forward call
@@ -345,6 +347,8 @@ type TcFileState =
                 -> TcEnv
                 -> TcPatLinearEnv
                 -> SynSimplePats
+                -> (SynPat list * SynExpr) option
+                -> bool
                 -> string list * TcPatLinearEnv) *
         tcSequenceExpressionEntry:
             (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *

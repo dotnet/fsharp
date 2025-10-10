@@ -6484,10 +6484,10 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
-            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
+            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats parsedData isFirst
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
@@ -11296,41 +11296,7 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
         | _ -> ()
     | _ -> ()
 
-    // Report duplicate bound names across curried argument patterns in non-recursive bindings
-    let reportDuplicateAcrossArgs (declPattern: SynPat) =
-        let rec collect acc (p: SynPat) =
-            match p with
-            | SynPat.FromParseError(p, _)
-            | SynPat.Paren(p, _) -> collect acc p
-            | SynPat.Tuple(_, ps, _, _)
-            | SynPat.ArrayOrList(_, ps, _) -> List.fold collect acc ps
-            | SynPat.As(lhs, rhs, _) ->
-                let acc = collect acc lhs
-                collect acc rhs
-            | SynPat.Named(SynIdent(id, _), _, _, _) -> id :: acc
-            | SynPat.LongIdent(argPats = SynArgPats.Pats ps) -> List.fold collect acc ps
-            | SynPat.Or(p1, p2, _, _) -> collect (collect acc p1) p2
-            | SynPat.Ands(pats, _) -> List.fold collect acc pats
-            | SynPat.Record(fieldPats = fields) ->
-                (acc, fields)
-                ||> List.fold (fun acc (NamePatPairField(_, _, _, pat, _)) -> collect acc pat)
-            | SynPat.ListCons(lhsPat = l; rhsPat = r) -> collect (collect acc l) r
-            | SynPat.OptionalVal(id, _) -> id :: acc
-            | _ -> acc
-        match declPattern with
-        | SynPat.LongIdent(argPats = SynArgPats.Pats argPats) ->
-            let seen = System.Collections.Generic.HashSet<string>()
-            for pat in argPats do
-                let names = collect [] pat
-                for id in List.rev names do
-                    if not (System.String.IsNullOrEmpty id.idText) then
-                        if not (seen.Add id.idText) then
-                            errorR (VarBoundTwice id)
-            ()
-        | _ -> ()
 
-    match binding with
-    | SynBinding(headPat = pat) -> reportDuplicateAcrossArgs pat
 
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
@@ -11779,7 +11745,7 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTyR'. They get re-typechecked later.
-        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat)
+        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat None false)
         ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
 
 /// Check if the type annotations and inferred type information in a value give a
