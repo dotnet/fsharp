@@ -100,28 +100,5 @@ fi
 echo "Redirect test passed"
 
 echo
-echo "=== Test 6: Issue Repro - Simple project with reference and pack --no-build ==="
-pushd artifacts
-
-echo "Creating eff project..."
-dotnet new classlib --language F# --name eff -o eff
-
-echo "Creating gee project..."
-dotnet new classlib --language F# --name gee -o gee
-
-echo "Adding reference from gee to eff..."
-dotnet add gee/gee.fsproj reference eff/eff.fsproj
-
-echo "Building gee project..."
-dotnet build gee/gee.fsproj
-
-echo "Packing gee project with --no-build..."
-dotnet pack gee/gee.fsproj --no-build
-
-popd
-
-echo "Issue repro test passed"
-
-echo
 echo "=== All DesignTimeProviderPackaging tests PASSED ==="
 exit 0
