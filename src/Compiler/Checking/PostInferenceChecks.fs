@@ -57,8 +57,6 @@ open Import
 //     b) a lambda expression - rejected.
 //     c) none of the above - rejected as when checking outmost expressions.
 
-let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChecks" 50
-
 //--------------------------------------------------------------------------
 // check environment
 //--------------------------------------------------------------------------
@@ -2691,7 +2689,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           reportErrors = reportErrors
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural)
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural)
-          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
+          stackGuard = StackGuard("CheckImplFile")
           potentialUnboundUsesOfVals = Map.empty
           anonRecdTypes = StampMap.Empty
           usesQuotations = false

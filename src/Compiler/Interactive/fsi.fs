@@ -1200,7 +1200,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
     do
         if tcConfigB.clearResultsCache then
-            dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
+            dependencyProvider.ClearResultsCache(
+                tcConfigB.compilerToolPaths,
+                getOutputDir tcConfigB,
+                tcConfigB.sdkDirOverride,
+                reportError rangeCmdArgs
+            )
 
     do
         let firstArg =
@@ -1245,6 +1250,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                 dependencyProvider.GetRegisteredDependencyManagerHelpText(
                     tcConfigB.compilerToolPaths,
                     getOutputDir tcConfigB,
+                    tcConfigB.sdkDirOverride,
                     reportError m
                 ) do
                 fsiConsoleOutput.uprintfn "%s" msg
@@ -2704,6 +2710,7 @@ type internal FsiDynamicCompiler
                         fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(
                             tcConfigB.compilerToolPaths,
                             getOutputDir tcConfigB,
+                            tcConfigB.sdkDirOverride,
                             reportError m,
                             packageManagerKey
                         )
@@ -2713,6 +2720,7 @@ type internal FsiDynamicCompiler
                             fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfigB.compilerToolPaths,
                                 outputDir,
+                                tcConfigB.sdkDirOverride,
                                 packageManagerKey,
                                 reportError m
                             )
@@ -2792,6 +2800,7 @@ type internal FsiDynamicCompiler
             fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(
                 tcConfigB.compilerToolPaths,
                 getOutputDir tcConfigB,
+                tcConfigB.sdkDirOverride,
                 reportError m,
                 path
             )
