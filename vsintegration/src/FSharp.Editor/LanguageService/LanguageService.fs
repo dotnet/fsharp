@@ -407,7 +407,6 @@ type internal FSharpPackage() as this =
                     globalOptions.SetBackgroundAnalysisScope(openFilesOnly = not solutionAnalysis)
 
                     globalOptions.BlockForCompletionItems <- false
-
                 }
                 |> CancellableTask.startAsTask cancellationToken)
         )
