@@ -199,3 +199,48 @@ let f7 (a, b as unitVar) unitVar = ()
             (Error 38, Line 7, Col 26, Line 7, Col 33, "'unitVar' is bound twice in this pattern")
             (Error 38, Line 8, Col 26, Line 8, Col 33, "'unitVar' is bound twice in this pattern")
         ]
+        
+    [<Fact>]
+    let ``Name is bound multiple times in lambdas with 'as' across groups; unitVar vs () not conflated`` () =
+        Fsx """
+let bad1 = fun (a, () as unitVar) unitVar -> ()
+let bad2 = fun a ((() as unitVar)) unitVar -> ()
+    """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 38, Line 2, Col 35, Line 2, Col 42, "'unitVar' is bound twice in this pattern")
+            (Error 38, Line 3, Col 36, Line 3, Col 43, "'unitVar' is bound twice in this pattern")
+        ]
+
+    [<Fact>]
+    let ``'as' across groups and unitVar vs () do not clash`` () =
+        Fsx """
+let f1 unitVar () = ()
+let f2 () unitVar = ()
+let f4 (unitVar, ()) a = ()
+let f5 ((), unitVar) = ()
+let f6 (unitVar, ()) () = ()
+let f7 (unitVar, b) () = ()
+let f8 (a, (unitVar as ())) () = ()
+let f9 (a, () as unitVar) () = ()
+let f10 (a, (() as unitVar)) () = ()
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``unitVar vs () do not clash in lambdas and matches`` () =
+        Fsx """
+let l1 = fun unitVar () -> ()
+let l2 = fun () unitVar -> ()
+let l3 = fun (unitVar, ()) -> ()
+let l4 = fun ((), unitVar) -> ()
+let l5 = fun (unitVar, b) () -> ()
+let structLam = fun struct (unitVar, ()) -> ()
+let okMatch x =
+    match x with
+    | (unitVar, ()) -> ()
+    """
+        |> typecheck
+        |> shouldSucceed
