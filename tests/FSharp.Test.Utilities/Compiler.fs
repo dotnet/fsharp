@@ -1833,15 +1833,18 @@ Actual:
                 let expectedContent = File.ReadAllText(path) |> normalizeNewLines
                 let actualErrors = renderToString result
 
-                match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
-                | null -> ()
-                | _ when expectedContent = actualErrors -> ()
-                | _ -> File.WriteAllText(path, actualErrors)
-                //File.WriteAllText(path, actualErrors)
-
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()
-                | Some diff -> Assert.True(String.IsNullOrEmpty(diff), path)
+                | Some diff ->
+                    if Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null then
+                        File.WriteAllText(path, actualErrors)
+
+                    printfn $"{Path.GetFullPath path} \n {diff}"
+                    printfn "==========================EXPECTED==========================="
+                    printfn "%s" expectedContent
+                    printfn "===========================ACTUAL============================"
+                    printfn "%s" actualErrors
+                    Assert.True(String.IsNullOrEmpty(diff), path)
 
                 result
 
