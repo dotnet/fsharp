@@ -2,11 +2,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+	<TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
-    <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
@@ -112,27 +111,9 @@
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" >
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-  </ItemGroup>
-
-  <!-- Runtime dependencies. Beware. -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
-    <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
   </ItemGroup>
 
 </Project>

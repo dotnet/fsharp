@@ -2,6 +2,8 @@
 
 namespace FSharp.DependencyManager.Nuget
 
+open System.Collections.Generic
+
 module internal FSharpDependencyManager =
     val formatPackageReference: PackageReference -> seq<string>
 
@@ -45,6 +47,10 @@ type ResolveDependenciesResult =
 
 [<DependencyManager>]
 type FSharpDependencyManager =
+    new:
+        outputDirectory: string option * useResultsCache: bool * additionalParams: IDictionary<string, obj> ->
+            FSharpDependencyManager
+
     new: outputDirectory: string option * useResultsCache: bool -> FSharpDependencyManager
     new: outputDirectory: string option -> FSharpDependencyManager
 

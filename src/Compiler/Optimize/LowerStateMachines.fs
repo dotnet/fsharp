@@ -14,8 +14,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
-let LowerStateMachineStackGuardDepth = StackGuard.GetDepthOption "LowerStateMachines"
-
 type StateMachineConversionFirstPhaseResult =
    {
      /// Represents the expanded expression prior to decisions about labels
@@ -356,7 +354,7 @@ type LowerStateMachine(g: TcGlobals) =
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
-          StackGuard = StackGuard(LowerStateMachineStackGuardDepth, "LowerStateMachineStackGuardDepth") }
+          StackGuard = StackGuard("LowerStateMachineStackGuardDepth") }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr
