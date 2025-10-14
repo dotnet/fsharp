@@ -32,7 +32,7 @@ namespace FSharp.VisualStudio.Extension
             ExtensionChoice,
             defaultValue: UNSET)
         {
-            Description = "%Which extension should be used to provide diagnostics%",
+            Description = "%FSharpSettings.GetDiagnosticsFrom.Description%",
         };
 
         public static Setting<string>[] AllStringSettings { get; } =

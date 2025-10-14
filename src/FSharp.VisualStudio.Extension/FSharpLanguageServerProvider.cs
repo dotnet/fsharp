@@ -47,14 +47,14 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = true,
+            SupportsDiagnosticRequests = config.EnabledFeatures.Diagnostics,
             ProjectContextProvider = true,
             DiagnosticProvider =
                 config.EnabledFeatures.Diagnostics ?
 
             new()
             {
-                SupportsMultipleContextsDiagnostics = true,
+                SupportsMultipleContextsDiagnostics = false,
                 DiagnosticKinds = [
                         // Support a specialized requests dedicated to task-list items.  This way the client can ask just
                         // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
