@@ -39,6 +39,5 @@ val TcSimplePats:
     env: TcEnv ->
     patEnv: TcPatLinearEnv ->
     synSimplePats: SynSimplePats ->
-    parsedData: (SynPat list * SynExpr) option ->
-    isFirst: bool ->
+    parsedPatterns: SynPat list * bool ->
         string list * TcPatLinearEnv

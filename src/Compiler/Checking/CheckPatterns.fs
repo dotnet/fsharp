@@ -146,7 +146,7 @@ and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
 
 
 /// Bind the patterns used in the argument position for a function, method or lambda.
-and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synSimplePats (parsedData: (SynPat list * SynExpr) option) (isFirst: bool) =
+and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synSimplePats (parsedPatterns: SynPat list * bool) =
 
     let rec collectBoundIdTextsFromPat (acc: string list) (p: SynPat) : string list =
         match p with
@@ -166,9 +166,9 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         | SynPat.ListCons(lhsPat = l; rhsPat = r) -> collectBoundIdTextsFromPat (collectBoundIdTextsFromPat acc l) r
         | _ -> acc
 
-    let augmentTakenNamesFromFirstGroup (isFirst: bool) (parsedData: (SynPat list * SynExpr) option) (patEnvOut: TcPatLinearEnv) : TcPatLinearEnv =
-        match isFirst, parsedData, patEnvOut with
-        | true, Some(pats, _), TcPatLinearEnv(tpenvR, namesR, takenNamesR) ->
+    let augmentTakenNamesFromFirstGroup (parsedData: SynPat list * bool) (patEnvOut: TcPatLinearEnv) : TcPatLinearEnv =
+        match parsedData, patEnvOut with
+        | (pats ,true), TcPatLinearEnv(tpenvR, namesR, takenNamesR) ->
             match pats with
             | pat :: _ ->
                 let extra = collectBoundIdTextsFromPat [] pat |> Set.ofList
@@ -213,7 +213,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
     let namesOut, patEnvOut = bindCurriedGroup synSimplePats
 
     // 3) post-augment takenNames for later groups (using the original first-group pattern)
-    let patEnvOut = augmentTakenNamesFromFirstGroup isFirst parsedData patEnvOut
+    let patEnvOut = augmentTakenNamesFromFirstGroup parsedPatterns patEnvOut
 
     namesOut, patEnvOut
 
@@ -222,7 +222,7 @@ and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env t
     let argTy = NewInferenceType g
     let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)
     let spats, _ = SimplePatsOfPat cenv.synArgNameGenerator pat
-    let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats None false
+    let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats ([], false)
     names, patEnv, spats
 
 and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPatValFlags) (names, takenNames: Set<string>) =
