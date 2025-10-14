@@ -25,7 +25,10 @@ type internal FileInProject =
         ParsedInput: ParsedInput
     }
 
-    member x.IsScript = match x.ParsedInput with ParsedInput.ImplFile impl -> impl.IsScript | _ -> false
+    member x.IsScript =
+        match x.ParsedInput with
+        | ParsedInput.ImplFile impl -> impl.IsScript
+        | _ -> false
 
 /// There is a subtle difference between a module and namespace.
 /// A namespace does not necessarily expose a set of dependent files.
@@ -179,9 +182,12 @@ type internal FilePairMap(files: FileInProject array) =
 
     member x.TryGetWrongOrderSignatureToImplementationIndex(index: FileIndex) =
         let input = files[index].ParsedInput
-        files |> Array.truncate index
-        |> Array.tryFindIndex (fun f -> f.ParsedInput.IsImplFile && f.ParsedInput.QualifiedName.Text = input.QualifiedName.Text)
 
+        files
+        |> Array.truncate index
+        |> Array.tryFindIndex (fun f ->
+            f.ParsedInput.IsImplFile
+            && f.ParsedInput.QualifiedName.Text = input.QualifiedName.Text)
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
 type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)
