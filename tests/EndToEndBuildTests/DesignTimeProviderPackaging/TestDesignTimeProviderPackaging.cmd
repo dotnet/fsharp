@@ -70,16 +70,6 @@ if ERRORLEVEL 1 (
     goto :failure
 )
 
-rem Check that PackageFSharpDesignTimeTools target ran
-echo [Test 2] Checking that PackageFSharpDesignTimeTools target DID run...
-findstr /C:"PackageFSharpDesignTimeTools" %~dp0artifacts\provider.binlog >nul 2>&1
-if ERRORLEVEL 1 (
-    echo [Test 2] FAILED: PackageFSharpDesignTimeTools target did not run
-    echo [Test 2] Expected: Target should run for provider with IsFSharpDesignTimeProvider=true
-    echo [Test 2] Actual: Target not found in binlog
-    goto :failure
-)
-
 rem Check that tools folder exists in nupkg
 echo [Test 2] Checking that package contains tools/fsharp41 folder...
 powershell -command "& { Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead('%~dp0artifacts\Provider.1.0.0.nupkg'); $hasTools = $zip.Entries | Where-Object { $_.FullName -like 'tools/fsharp41/*' }; if ($hasTools) { exit 0 } else { exit 1 } }"
@@ -142,13 +132,13 @@ if ERRORLEVEL 1 (
     goto :failure
 )
 
-rem Check that PackageFSharpDesignTimeTools target did not run
-echo [Test 5] Checking that PackageFSharpDesignTimeTools target did NOT run...
-findstr /C:"PackageFSharpDesignTimeTools" %~dp0artifacts\redirect.binlog >nul 2>&1
-if not ERRORLEVEL 1 (
-    echo [Test 5] FAILED: PackageFSharpDesignTimeTools target unexpectedly ran
-    echo [Test 5] Expected: Target should not run for library without IsFSharpDesignTimeProvider
-    echo [Test 5] Actual: Target found in binlog - may cause binding redirect issues
+rem Check that no tools folder exists in nupkg (target should not have run)
+echo [Test 5] Checking that package does not contain tools/fsharp41 folder...
+powershell -command "& { Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead('%~dp0artifacts\RedirectLib.1.0.0.nupkg'); $hasTools = $zip.Entries | Where-Object { $_.FullName -like 'tools/fsharp41/*' }; if ($hasTools) { exit 1 } else { exit 0 } }"
+if ERRORLEVEL 1 (
+    echo [Test 5] FAILED: Package unexpectedly contains tools/fsharp41 folder
+    echo [Test 5] Expected: No tools folder for library without IsFSharpDesignTimeProvider
+    echo [Test 5] Actual: tools/fsharp41 folder found - may indicate unwanted target execution
     goto :failure
 )
 

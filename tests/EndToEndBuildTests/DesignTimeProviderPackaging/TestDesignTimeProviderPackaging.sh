@@ -39,15 +39,6 @@ if ! dotnet pack PlainLib/PlainLib.fsproj -o artifacts -c $configuration -v mini
     exit 1
 fi
 
-# Check that PackageFSharpDesignTimeTools target did not run
-echo "[Test 1] Checking that PackageFSharpDesignTimeTools target did NOT run..."
-if strings artifacts/plain.binlog | grep -q "PackageFSharpDesignTimeTools"; then
-    echo "[Test 1] FAILED: PackageFSharpDesignTimeTools target unexpectedly ran"
-    echo "[Test 1] Expected: Target should not run for plain library without IsFSharpDesignTimeProvider"
-    echo "[Test 1] Actual: Target found in binlog"
-    exit 1
-fi
-
 # Check that no tools folder exists in nupkg
 echo "[Test 1] Checking that package does not contain tools/fsharp41 folder..."
 if unzip -l artifacts/PlainLib.1.0.0.nupkg | grep -q "tools/fsharp41/"; then
@@ -66,15 +57,6 @@ echo "[Test 2] Command: dotnet pack Provider/Provider.fsproj -o artifacts -c $co
 if ! dotnet pack Provider/Provider.fsproj -o artifacts -c $configuration -v minimal -bl:artifacts/provider.binlog -p:FSharpTestCompilerVersion=coreclr; then
     echo "[Test 2] FAILED: Pack command returned error code $?"
     echo "[Test 2] Check artifacts/provider.binlog for details"
-    exit 1
-fi
-
-# Check that PackageFSharpDesignTimeTools target ran
-echo "[Test 2] Checking that PackageFSharpDesignTimeTools target DID run..."
-if ! strings artifacts/provider.binlog | grep -q "PackageFSharpDesignTimeTools"; then
-    echo "[Test 2] FAILED: PackageFSharpDesignTimeTools target did not run"
-    echo "[Test 2] Expected: Target should run for provider with IsFSharpDesignTimeProvider=true"
-    echo "[Test 2] Actual: Target not found in binlog"
     exit 1
 fi
 
@@ -135,12 +117,12 @@ if ! dotnet pack RedirectLib/RedirectLib.fsproj -o artifacts -c $configuration -
     exit 1
 fi
 
-# Check that PackageFSharpDesignTimeTools target did not run
-echo "[Test 5] Checking that PackageFSharpDesignTimeTools target did NOT run..."
-if strings artifacts/redirect.binlog | grep -q "PackageFSharpDesignTimeTools"; then
-    echo "[Test 5] FAILED: PackageFSharpDesignTimeTools target unexpectedly ran"
-    echo "[Test 5] Expected: Target should not run for library without IsFSharpDesignTimeProvider"
-    echo "[Test 5] Actual: Target found in binlog - may cause binding redirect issues"
+# Check that no tools folder exists in nupkg (target should not have run)
+echo "[Test 5] Checking that package does not contain tools/fsharp41 folder..."
+if unzip -l artifacts/RedirectLib.1.0.0.nupkg | grep -q "tools/fsharp41/"; then
+    echo "[Test 5] FAILED: Package unexpectedly contains tools/fsharp41 folder"
+    echo "[Test 5] Expected: No tools folder for library without IsFSharpDesignTimeProvider"
+    echo "[Test 5] Actual: tools/fsharp41 folder found - may indicate unwanted target execution"
     exit 1
 fi
 
