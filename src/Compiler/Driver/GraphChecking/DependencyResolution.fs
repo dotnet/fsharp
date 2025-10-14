@@ -206,6 +206,12 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         if file.Idx = 0 then
             // First file cannot have any dependencies.
             Array.empty
+
+        elif file.IsScript then
+            // Script files are not supported for dependency resolution.
+            // They can reference any file in the project, so we just link to all previous files.
+            [| 0 .. file.Idx - 1 |]
+
         else
             let fileContent = fileContents[file.Idx]
 
@@ -235,11 +241,19 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 | None -> Array.empty
                 | Some sigIdx -> Array.singleton sigIdx
 
+            let wrongOrderSignature =
+                if file.ParsedInput.IsSigFile then
+                    match filePairs.TryGetWrongOrderSignatureToImplementationIndex file.Idx with
+                    | Some idx -> Array.singleton idx
+                    | None -> Array.empty
+                else Array.empty
+
             let allDependencies =
                 [|
                     yield! depsResult.FoundDependencies
                     yield! ghostDependencies
                     yield! signatureDependency
+                    yield! wrongOrderSignature
                 |]
                 |> Array.distinct
 
