@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Conformance.Constraints
 
@@ -95,7 +95,7 @@ test (ValueSome (struct {|Field = Some 42|}))
         |> withDiagnostics [
                 Error 1, Line 3, Col 17, Line 3, Col 22, "A generic construct requires that the type 'string' is an unmanaged type"
                 Error 1, Line 4, Col 28, Line 4, Col 33, "A generic construct requires that the type 'string' is an unmanaged type"
-                Error 1, Line 5, Col 35, Line 5, Col 42, "A generic construct requires that the type ''a option' is an unmanaged type" ]
+                Error 1, Line 5, Col 18, Line 5, Col 44, "A generic construct requires that the type 'int option' is an unmanaged type" ]
 
     [<Fact>]
     let ``Option not considered unmanaged`` () = 

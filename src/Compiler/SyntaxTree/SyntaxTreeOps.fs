@@ -922,13 +922,24 @@ let rec synExprContainsError inpExpr =
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
+            || walkExprs (
+                List.choose
+                    (function
+                    | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _) -> Some e
+                    | SynExprAnonRecordFieldOrSpread.Spread _ -> None (* TODO. *) )
+                    flds
+            )
 
         | SynExpr.Record(_, origExpr, fs, _) ->
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
+            || (let flds =
+                    fs
+                    |> List.choose (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = v)) -> v
+                        | SynExprRecordFieldOrSpread.Spread(SynExprSpread(expr = e), _) -> Some e)
+
                 walkExprs flds)
 
         | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
@@ -1212,3 +1223,15 @@ let addEmptyMatchClause (mBar1: range) (mBar2: range) (clauses: SynMatchClause l
     | SynMatchClause(pat, whenExpr, resultExpr, range, debugPoint, trivia) :: restClauses ->
         SynMatchClause(addOrPat pat, whenExpr, resultExpr, range, debugPoint, trivia)
         :: restClauses
+
+let (|SynFields|) (synFieldsAndSpreads: SynFieldOrSpread list) =
+    synFieldsAndSpreads
+    |> List.choose (function
+        | SynFieldOrSpread.Field field -> Some field
+        | SynFieldOrSpread.Spread _ -> None)
+
+let (|SynSpreads|) (synFieldsAndSpreads: SynFieldOrSpread list) =
+    synFieldsAndSpreads
+    |> List.choose (function
+        | SynFieldOrSpread.Field _ -> None
+        | SynFieldOrSpread.Spread spread -> Some spread)
