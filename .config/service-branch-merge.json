@@ -1,4 +1,11 @@
 {
+    "excludePaths": [
+        "eng/**",
+        "global.json",
+        "es-metadata.yml",
+        "azure-pipelines.yml",
+        "azure-pipelines-PR.yml"
+    ],
     "merge-flow-configurations": {
         // regular branch flow
         "release/dev17.12": {
