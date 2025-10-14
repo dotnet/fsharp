@@ -1786,7 +1786,7 @@ let CheckMultipleInputsUsingGraphMode
                 (idx, friendlyFileName))
             |> Graph.writeMermaidToFile graphFile)
 
-    let _ = ctok // TODO Use it
+    ignore ctok // TODO Use it
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
@@ -1880,8 +1880,11 @@ let CheckMultipleInputsUsingGraphMode
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
+        if
+            not tcConfig.deterministic
+            && not tcConfig.isInteractive
+            && not tcConfig.compilingFSharpCore
+        then
             CheckMultipleInputsUsingGraphMode(
                 ctok,
                 checkForErrors,
@@ -1893,7 +1896,8 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
                 eagerFormat,
                 inputs
             )
-        | _ -> CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+        else
+            CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
         CheckMultipleInputsFinish(results, tcState)
