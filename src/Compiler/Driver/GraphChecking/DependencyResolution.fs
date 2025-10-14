@@ -207,11 +207,6 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
             // First file cannot have any dependencies.
             Array.empty
 
-        elif file.IsScript then
-            // Script files are not supported for dependency resolution.
-            // They can reference any file in the project, so we just link to all previous files.
-            [| 0 .. file.Idx - 1 |]
-
         else
             let fileContent = fileContents[file.Idx]
 
@@ -260,10 +255,22 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
 
             allDependencies
 
-    let graph =
+    // If there is a script in the project, we just process sequentially all the files that may have been added as part of the script closure.
+    // That means all files up to the last script file.
+    let scriptCompilationLength =
+        files |> Array.tryFindIndexBack (fun f -> f.IsScript) |> Option.map (fun idx -> idx + 1) |> Option.defaultValue 0
+
+    let sequentialPartForScriptCompilation =
         files
+        |> Array.take scriptCompilationLength
+        |> Array.map (fun file -> file.Idx, [| if file.Idx > 0 then file.Idx - 1 |])
+
+    let normalPart =
+        files
+        |> Array.skip scriptCompilationLength
         |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
-        |> readOnlyDict
+
+    let graph = Array.append sequentialPartForScriptCompilation normalPart |> readOnlyDict
 
     let trie = trie |> Array.last |> snd
 
