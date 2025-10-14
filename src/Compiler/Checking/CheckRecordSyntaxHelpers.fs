@@ -156,18 +156,19 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
         (accessIds, outerFieldId),
         Some(synExprRecd (recdExprCopyInfo (fields |> List.map fst) withExpr) outerFieldId rest exprBeingAssigned)
 
+/// This name is used when a complex expression is bound for use as a binding in a copy-and-update expression.
+/// For example, in `{ f () with ... }`, `f ()` is replaced by `let bind@ = f ()`
 let BindIdText = "bind@"
 
-let IsNoneOrSimpleOrBoundExpr (withExprOpt: (SynExpr * BlockSeparator) option) = 
+/// Finding the 'bind@' identifier is the only way to detect that an expression has already been bound.
+let inline (|IsSimpleOrBoundExpr|_|) (withExprOpt: (SynExpr * BlockSeparator) option) = 
    match withExprOpt with
    | None -> true
    | Some (expr, _) ->
        match expr with
        | SynExpr.LongIdent (_, lIds, _, _) ->
            lIds.LongIdent 
-           |> List.tryFind (fun id -> id.idText = BindIdText) 
-           |> _.IsSome
-
+           |> List.exists (fun id -> id.idText = BindIdText) 
        | SynExpr.Ident _ -> true
        | _ -> false
 
