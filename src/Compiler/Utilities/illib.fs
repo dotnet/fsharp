@@ -96,13 +96,13 @@ module internal PervasiveAutoOpens =
 
     type String with
 
-        member inline x.StartsWithOrdinal (value:string) =
+        member inline x.StartsWithOrdinal(value: string) =
             x.StartsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinal (value:string) =
+        member inline x.EndsWithOrdinal(value: string) =
             x.EndsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinalIgnoreCase (value:string) =
+        member inline x.EndsWithOrdinalIgnoreCase(value: string) =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
         member inline x.IndexOfOrdinal(value: string) =
