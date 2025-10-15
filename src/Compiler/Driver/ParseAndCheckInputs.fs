@@ -1881,7 +1881,11 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
+        | TypeCheckingMode.Graph when
+            (not tcConfig.isInteractive
+             && not tcConfig.compilingFSharpCore
+             && not tcConfig.deterministic)
+            ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,
                 checkForErrors,

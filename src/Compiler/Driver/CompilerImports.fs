@@ -2341,6 +2341,7 @@ and [<Sealed>] TcImports
             fixupOrphanCcus ()
 
             let! ccuinfos = phase2s |> runMethod
+
             if importsBase.IsSome then
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
