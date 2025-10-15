@@ -16,6 +16,7 @@ open System.Runtime.InteropServices
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open System.Threading.Tasks
+open System.Collections.Concurrent
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -868,10 +869,91 @@ let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFea
     let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
-/// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int, name: string) =
+module StackGuardMetrics =
 
-    let mutable depth = 1
+    let meter = FSharp.Compiler.Diagnostics.Metrics.Meter
+
+    let jumpCounter =
+        meter.CreateCounter<int64>(
+            "stackguard-jumps",
+            description = "Tracks the number of times the stack guard has jumped to a new thread"
+        )
+
+    let countJump memberName location depth =
+        let tags =
+            let mutable tags = TagList()
+            tags.Add(Activity.Tags.callerMemberName, memberName)
+            tags.Add("source", location)
+            tags.Add("depth", depth)
+            tags
+
+        jumpCounter.Add(1L, &tags)
+
+    // Used by the self-listener.
+    let dataByFunctionName = ConcurrentDictionary<_, int64 ref * int ref>()
+
+    let Listen () =
+        let listener = new Metrics.MeterListener()
+
+        listener.EnableMeasurementEvents jumpCounter
+
+        listener.SetMeasurementEventCallback(fun _ v tags _ ->
+            let memberName = nonNull tags[0].Value :?> string
+            let source = nonNull tags[1].Value :?> string
+            let depth = nonNull tags[2].Value :?> int
+
+            let counter, minDepth =
+                dataByFunctionName.GetOrAdd((memberName, source), fun _ -> ref 0L, ref Int32.MaxValue)
+
+            counter.Value <- counter.Value + v
+            minDepth.Value <- min depth minDepth.Value)
+
+        listener.Start()
+        listener :> IDisposable
+
+    let StatsToString () =
+        let headers = [ "caller"; "source"; "jumps"; "min depth" ]
+
+        let data =
+            [
+                for kvp in dataByFunctionName do
+                    let (memberName, source) = kvp.Key
+                    let jumps, depth = kvp.Value
+                    [ memberName; source; string jumps.Value; string depth.Value ]
+            ]
+
+        if List.isEmpty data then
+            ""
+        else
+            $"StackGuard jumps:\n{Metrics.printTable headers data}"
+
+    let CaptureStatsAndWriteToConsole () =
+        let listener = Listen()
+
+        { new IDisposable with
+            member _.Dispose() =
+                listener.Dispose()
+                StatsToString() |> printfn "%s"
+        }
+
+/// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+type StackGuard(name: string) =
+
+    let depth = new ThreadLocal<int>()
+
+    static member inline IsStackSufficient() =
+
+        // We single out netstandard2.0 because it lacks the non-throwing TryEnsureSufficientExecutionStack
+        // TODO: Get rid of this throwing version as soon as we can.
+#if NETSTANDARD2_0
+        try
+            RuntimeHelpers.EnsureSufficientExecutionStack()
+            true
+        with :? InsufficientExecutionStackException ->
+            false
+#else
+        RuntimeHelpers.TryEnsureSufficientExecutionStack()
+#endif
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member _.Guard
@@ -882,46 +964,29 @@ type StackGuard(maxDepth: int, name: string) =
             [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int
         ) =
 
-        Activity.addEventWithTags
-            "DiagnosticsLogger.StackGuard.Guard"
-            (seq {
-                Activity.Tags.stackGuardName, box name
-                Activity.Tags.stackGuardCurrentDepth, depth
-                Activity.Tags.stackGuardMaxDepth, maxDepth
-                Activity.Tags.callerMemberName, memberName
-                Activity.Tags.callerFilePath, path
-                Activity.Tags.callerLineNumber, line
-            })
-
-        depth <- depth + 1
+        depth.Value <- depth.Value + 1
 
         try
-            if depth % maxDepth = 0 then
+            if StackGuard.IsStackSufficient() then
+                f ()
+            else
+                let fileName = System.IO.Path.GetFileName(path)
+                let depthWhenJump = depth.Value
+
+                StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
                     return f ()
                 }
                 |> Async.RunImmediate
-            else
-                f ()
         finally
-            depth <- depth - 1
+            depth.Value <- depth.Value - 1
 
     [<DebuggerHidden; DebuggerStepThrough>]
     member x.GuardCancellable(original: Cancellable<'T>) =
         Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
-
-    static member val DefaultDepth =
-#if DEBUG
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
-#else
-        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 100
-#endif
-
-    static member GetDepthOption(name: string) =
-        GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
 
 // UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
 // We should probably adapt and reuse that code.

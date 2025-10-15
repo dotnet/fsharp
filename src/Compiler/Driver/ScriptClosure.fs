@@ -347,6 +347,7 @@ module ScriptPreprocessClosure =
                         dependencyProvider.TryFindDependencyManagerByKey(
                             tcConfig.compilerToolPaths,
                             outputDir,
+                            tcConfig.sdkDirOverride,
                             reportError m,
                             packageManagerKey
                         )
@@ -357,6 +358,7 @@ module ScriptPreprocessClosure =
                             dependencyProvider.CreatePackageManagerUnknownError(
                                 tcConfig.compilerToolPaths,
                                 outputDir,
+                                tcConfig.sdkDirOverride,
                                 packageManagerKey,
                                 reportError m
                             )
