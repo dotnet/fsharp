@@ -269,6 +269,9 @@ type public FSharpCheckFileResults =
     /// in the documentation for compiler service.
     member DependencyFiles: string[]
 
+    member TryGetCapturedType: range -> FSharpType option
+    member TryGetCapturedDisplayContext: range -> FSharpDisplayContext option
+
     /// <summary>Get the items for a declaration list</summary>
     ///
     /// <param name="parsedFileResults">

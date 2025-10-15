@@ -1,11 +1,9 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor.Logging
+﻿namespace Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 
 open System
 open System.Diagnostics
-open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.FSharp.Editor
 
 open FSharp.Compiler.Diagnostics
 
@@ -32,75 +30,46 @@ module Config =
 open Config
 open System.Diagnostics.Metrics
 open System.Text
+open Microsoft.VisualStudio.Threading
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
-[<Export>]
-type Logger [<ImportingConstructor>] ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
-    let outputWindow =
-        serviceProvider.GetService<SVsOutputWindow, IVsOutputWindow>() |> Option.ofObj
+module FSharpOutputPane =
 
-    let createPane () =
-        outputWindow
-        |> Option.iter (fun x ->
-            x.CreatePane(ref fsharpOutputGuid, "F# Language Service", Convert.ToInt32 true, Convert.ToInt32 false)
-            |> ignore)
+    let private pane =
+        AsyncLazy(
+            fun () ->
+                task {
+                    do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+                    let! window = AsyncServiceProvider.GlobalProvider.GetServiceAsync<SVsOutputWindow, IVsOutputWindow>()
 
-    do createPane ()
+                    window.CreatePane(ref fsharpOutputGuid, "F# Language Service", Convert.ToInt32 true, Convert.ToInt32 false)
+                    |> ignore
 
-    let getPane () =
-        match outputWindow |> Option.map (fun x -> x.GetPane(ref fsharpOutputGuid)) with
-        | Some(0, pane) ->
-            pane.Activate() |> ignore
-            Some pane
-        | _ -> None
-
-    static let mutable globalServiceProvider: IServiceProvider option = None
-
-    static member GlobalServiceProvider
-        with get () =
-            globalServiceProvider
-            |> Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
-        and set v = globalServiceProvider <- Some v
-
-    member _.FSharpLoggingPane =
-        getPane ()
-        |> function
-            | Some pane -> Some pane
-            | None ->
-                createPane ()
-                getPane ()
-
-    member self.Log(msgType: LogType, msg: string) =
-        let time = DateTime.Now.ToString("hh:mm:ss tt")
-
-        match self.FSharpLoggingPane, msgType with
-        | None, _ -> ()
-        | Some pane, LogType.Message ->
-            String.Format("[{0}{1}] {2}{3}", "", time, msg, Environment.NewLine)
-            |> pane.OutputString
-            |> ignore
-        | Some pane, LogType.Info ->
-            String.Format("[{0}{1}] {2}{3}", "INFO ", time, msg, Environment.NewLine)
-            |> pane.OutputString
-            |> ignore
-        | Some pane, LogType.Warn ->
-            String.Format("[{0}{1}] {2}{3}", "WARN ", time, msg, Environment.NewLine)
-            |> pane.OutputString
-            |> ignore
-        | Some pane, LogType.Error ->
-            String.Format("[{0}{1}] {2}{3}", "ERROR ", time, msg, Environment.NewLine)
-            |> pane.OutputString
-            |> ignore
-
-[<AutoOpen>]
-module Logging =
+                    match window.GetPane(ref fsharpOutputGuid) with
+                    | 0, pane -> return pane
+                    | _ -> return failwith "Could not get F# output pane"
+                }
+            , ThreadHelper.JoinableTaskFactory
+        )
 
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
-    let private logger = lazy Logger(Logger.GlobalServiceProvider)
-
     let private log logType msg =
-        logger.Value.Log(logType, msg)
-        System.Diagnostics.Trace.TraceInformation(msg)
+        task {
+            System.Diagnostics.Trace.TraceInformation(msg)
+            let! pane = pane.GetValueAsync()
+
+            do! ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync()
+
+            match logType with
+            | LogType.Message -> $"{msg}"
+            | LogType.Info -> $"[INFO] {msg}"
+            | LogType.Warn -> $"[WARN] {msg}"
+            | LogType.Error -> $"[ERROR] {msg}"
+            |> pane.OutputStringThreadSafe
+            |> ignore
+        }
+        |> ignore
 
     let logMsg msg = log LogType.Message msg
     let logInfo msg = log LogType.Info msg
@@ -122,6 +91,7 @@ module Logging =
 
 module FSharpServiceTelemetry =
     open FSharp.Compiler.Caches
+    open System.Threading.Tasks
 
     let listen filter =
         let indent (activity: Activity) =
@@ -145,10 +115,21 @@ module FSharpServiceTelemetry =
                             ActivitySamplingResult.AllData
                         else
                             ActivitySamplingResult.None),
-                ActivityStarted = (fun a -> logMsg $"{indent a}{a.OperationName}     {collectTags a}")
+                ActivityStarted = (fun a -> FSharpOutputPane.logMsg $"{indent a}{a.OperationName}     {collectTags a}")
             )
 
         ActivitySource.AddActivityListener(listener)
+
+    let periodicallyDisplayMetrics =
+        cancellableTask {
+            use _ = CacheMetrics.ListenToAll()
+            use _ = FSharp.Compiler.DiagnosticsLogger.StackGuardMetrics.Listen()
+
+            while true do
+                do! Task.Delay(TimeSpan.FromSeconds 10.0)
+                FSharpOutputPane.logMsg (CacheMetrics.StatsToString())
+                FSharpOutputPane.logMsg (FSharp.Compiler.DiagnosticsLogger.StackGuardMetrics.StatsToString())
+        }
 
 #if DEBUG
     open OpenTelemetry.Resources

@@ -169,9 +169,10 @@ module internal PrintUtilities =
 
     let usePrefix (denv: DisplayEnv) (tcref: TyconRef) =
         match denv.genericParameterStyle with
-        | GenericParameterStyle.Implicit -> tcref.IsPrefixDisplay
-        | GenericParameterStyle.Prefix -> true
-        | GenericParameterStyle.Suffix -> false
+        | GenericParameterStyle.Implicit -> tcref.IsPrefixDisplay, denv
+        | GenericParameterStyle.Prefix -> true, denv
+        | GenericParameterStyle.Suffix -> false, denv
+        | GenericParameterStyle.TopLevelPrefix nested -> true, denv.UseGenericParameterStyle(nested) 
 
     /// <summary>
     /// Creates a layout for TyconRef.
@@ -187,7 +188,7 @@ module internal PrintUtilities =
     /// </param>
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) (demangledPath: string list option) =
 
-        let prefix = usePrefix denv tcref
+        let prefix, denv = usePrefix denv tcref
         let isArray = not prefix && isArrayTyconRef denv.g tcref
         let demangled = 
             if isArray then
@@ -744,12 +745,8 @@ module PrintTypes =
         | Some typarConstraintTy ->
             if Zset.contains typar env.singletons then
                 let tyLayout =
-                    match typarConstraintTy with
-                    | TType_app (tyconRef = tc; typeInstantiation = ti)
-                        when ti.Length > 0 && not (usePrefix denv tc) ->
-                        layoutTypeWithInfo denv env typarConstraintTy
-                        |> bracketL
-                    | _ -> layoutTypeWithInfo denv env typarConstraintTy
+                    let denv = denv.UseTopLevelPrefixGenericParameterStyle()
+                    layoutTypeWithInfo denv env typarConstraintTy
 
                 leftL (tagPunctuation "#") ^^ tyLayout
             else
@@ -975,10 +972,10 @@ module PrintTypes =
 
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args) ->
-            let prefix = usePrefix denv tc
+            let prefix, denv = usePrefix denv tc
             layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefImpl false denv tc None) prec prefix args
         | TType_app (tc, args, nullness) ->
-            let prefix = usePrefix denv tc
+            let prefix, denv = usePrefix denv tc
             let demangledCompilationPathOpt, args =
                 if not denv.includeStaticParametersInTypeNames then
                     None, args
@@ -2047,6 +2044,7 @@ module TastDefinitionPrinting =
                 GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
 
         let iimplsLs =
+            let denv = denv.UseTopLevelPrefixGenericParameterStyle()
             iimpls
             |> List.map (fun intfTy -> (if isInterfaceTy g ty then WordL.keywordInherit else WordL.keywordInterface) -* layoutType denv intfTy)
 
@@ -2181,7 +2179,8 @@ module TastDefinitionPrinting =
                 | _ -> ()
             ]
 
-        let inheritsL = 
+        let inheritsL =
+            let denv = denv.UseTopLevelPrefixGenericParameterStyle()
             inherits
             |> List.map (fun super -> WordL.keywordInherit ^^ (layoutType denv super))
 

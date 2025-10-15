@@ -17,8 +17,6 @@ open FSharp.Compiler.TypeRelations
 
 type env = | NoEnv
 
-let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
-
 /// The environment and collector
 type cenv =
     { g: TcGlobals
@@ -318,7 +316,7 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
           amap=amap
           denv=denv
           unsolved = []
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
+          stackGuard = StackGuard("UnsolvedTyparsOfModuleDef") }
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved

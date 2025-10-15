@@ -130,15 +130,15 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
                 yield ms.Symbol.DisplayName, extractCurriedParams ms ]
             |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
         let expected =
-            [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
-             ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
+            [("Concat", [("values", "'T seq")]);
 #if NETCOREAPP
              ("Concat", [("args", "ReadOnlySpan<obj>")]);
              ("Concat", [("values", "ReadOnlySpan<string>")]);
 #endif
              ("Concat", [("arg0", "obj")]);
              ("Concat", [("args", "obj array")]);
-             ("Concat", [("values", "string array")]);
+             ("Concat", [("values", "string array")])
+             ("Concat", [("values", "string seq")])
 #if NETCOREAPP
              ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
 #endif
@@ -1937,6 +1937,15 @@ let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
         | _ -> false
     )
     |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
+    
+let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
+    let itemNames = completionInfo.Items |> Array.map _.NameInCode |> set
+
+    for name in names do
+        Assert.True(Set.contains name itemNames = contains)
+
+let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
+    assertItemsWithNames true names completionInfo
 
 [<Fact>]
 let ``Record fields are completed via type name usage`` () =
@@ -2113,10 +2122,9 @@ let rUpdate = { r1 with  }
     hasRecordField "Field1" declarations
     hasRecordField "Field2" declarations
 
-[<Fact(Skip = "Current fails to suggest any record fields")>]
+[<Fact>]
 let ``Record fields are completed in update record with partial field name`` () =
-    let parseResults, checkResults =
-        getParseAndCheckResults """
+    let info = Checker.getCompletionInfo """
 module Module
 
 type R1 =
@@ -2124,23 +2132,53 @@ type R1 =
 
 let r1 = { Field1 = 1; Field2 = 2 }
 
-let rUpdate = { r1 with Fi }
+let rUpdate = { r1 with Fi{caret} }
 """
 
-    let declarations =
-        checkResults.GetDeclarationListSymbols(
-            Some parseResults,
-            9,
-            "let rUpdate = { r1 with Fi }",
-            {
-                EndColumn = 26
-                LastDotPos = None
-                PartialIdent = "Fi"
-                QualifyingIdents = []
-            },
-            fun _ -> List.empty
-        )
-        |> List.concat
+    assertHasItemWithNames ["Field1"; "Field2"] info
 
-    hasRecordField "Field1" declarations
-    hasRecordField "Field2" declarations
+[<Fact>]
+let ``Multiline record fields are completed in update record with partial field name`` () =
+    let info = Checker.getCompletionInfo """
+module Module
+
+type R1 =
+    { Field1: int; Field2: int }
+
+let r1 = { Field1 = 1; Field2 = 2 }
+
+let rUpdate =
+    { r1 with
+        Fi{caret}
+    }
+"""
+
+    assertHasItemWithNames ["Field1"; "Field2"] info
+    
+[<Fact>]
+let ``No record field completion after '=' with missing value in first binding (after =;)`` () =
+    let info = Checker.getCompletionInfo """
+module M
+
+type X =
+   val field1: int
+   val field2: string
+
+let x = new X()
+let _ = { field1 =; {caret} }
+"""
+    assertItemsWithNames false ["field1"; "field2"] info
+
+[<Fact>]
+let ``No record field completion after '=' with missing value in first binding (after =; f)`` () =
+    let info = Checker.getCompletionInfo """
+module M
+
+type X =
+   val field1: int
+   val field2: string
+
+let x = new X()
+let _ = { field1 =; f{caret} }
+"""
+    assertItemsWithNames false ["field1"; "field2"] info

@@ -368,6 +368,8 @@ module rec Compiler =
     let loadSourceFromFile path = getSource(TestType.Path path)
 
     let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+        source.GetSourceText |> Option.iter (Range.setTestSource source.GetSourceFileName)
+
         {
             Source            = source
             AdditionalSources = []
@@ -1308,7 +1310,7 @@ Actual:
     /// After compile, rebuild and print FSharpDiagnostic[] exactly as before,
     /// then diff against your existing .err.bsl files (few lines will shift).
     let verifyBaseline (cResult: CompilationResult) : CompilationResult =
-        // 1) Grab the ErrorInfo list from the compile result…
+        // 1) Grab the ErrorInfo list from the compilation result
         let errorInfos =
             match cResult with
             | CompilationResult.Success o
@@ -1831,15 +1833,18 @@ Actual:
                 let expectedContent = File.ReadAllText(path) |> normalizeNewLines
                 let actualErrors = renderToString result
 
-                match Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") with
-                | null -> ()
-                | _ when expectedContent = actualErrors -> ()
-                | _ -> File.WriteAllText(path, actualErrors)
-                //File.WriteAllText(path, actualErrors)
-
                 match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
                 | None -> ()
-                | Some diff -> Assert.True(String.IsNullOrEmpty(diff), path)
+                | Some diff ->
+                    if Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null then
+                        File.WriteAllText(path, actualErrors)
+
+                    printfn $"{Path.GetFullPath path} \n {diff}"
+                    printfn "==========================EXPECTED==========================="
+                    printfn "%s" expectedContent
+                    printfn "===========================ACTUAL============================"
+                    printfn "%s" actualErrors
+                    Assert.True(String.IsNullOrEmpty(diff), path)
 
                 result
 

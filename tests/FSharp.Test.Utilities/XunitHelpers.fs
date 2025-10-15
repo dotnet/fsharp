@@ -77,13 +77,23 @@ module TestCaseCustomizations =
             let oldTestClass = oldTestMethod.TestClass
             let oldTestCollection = oldTestMethod.TestClass.TestCollection
 
+            // Create a DETERMINISTIC collection ID based on the test case's unique ID
+            // This ensures the same test case always gets the same collection ID
+            let collectionId = 
+                use sha = System.Security.Cryptography.SHA256.Create()
+                let bytes = System.Text.Encoding.UTF8.GetBytes(testCase.UniqueID)
+                let hash = sha.ComputeHash(bytes)
+                System.Guid(hash.[0..15])  // Take first 16 bytes for GUID
+
+            let newDisplayName = $"{oldTestCollection.DisplayName}_{collectionId:N}"
+
             // Create a new collection with a unique id for the test case.
             let newTestCollection =
                     new TestCollection(
                         oldTestCollection.TestAssembly,
                         oldTestCollection.CollectionDefinition,
-                        oldTestCollection.DisplayName,
-                        Guid.NewGuid()
+                        newDisplayName,
+                        collectionId
                     )
 
             let newTestClass = new TestClass(newTestCollection, oldTestClass.Class)
@@ -175,7 +185,7 @@ type OpenTelemetryExport(testRunName, enable) =
 
             // Configure OpenTelemetry metrics export. Metrics can be viewed in Prometheus or other compatible tools.
             OpenTelemetry.Sdk.CreateMeterProviderBuilder()
-                .AddMeter(CacheMetrics.Meter.Name)
+                .AddMeter(ActivityNames.FscSourceName)
                 .AddMeter("System.Runtime")
                 .ConfigureResource(fun r -> r.AddService(testRunName) |> ignore)
                 .AddOtlpExporter(fun e m ->
@@ -202,6 +212,7 @@ module OneTimeSetup =
         log "Adding AssemblyResolver"
         AssemblyResolver.addResolver ()
     #endif
+        log $"Server GC enabled: {System.Runtime.GCSettings.IsServerGC}"
         log "Installing TestConsole redirection"
         TestConsole.install()
 

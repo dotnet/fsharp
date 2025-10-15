@@ -27,7 +27,7 @@ ImplFile
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (3,36--3,38)), (3,25--3,38)),
-                           (3,4--4,16), Yes (3,4--3,38),
+                           (3,4--3,38), Yes (3,4--3,38),
                            { LeadingKeyword = Let (3,4--3,8)
                              InlineKeyword = None
                              EqualsRange = Some (3,23--3,24) })],

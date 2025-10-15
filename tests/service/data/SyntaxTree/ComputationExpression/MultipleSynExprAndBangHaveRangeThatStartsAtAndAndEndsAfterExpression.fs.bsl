@@ -26,7 +26,7 @@ ImplFile
                            App
                              (NonAtomic, false, Ident getBar,
                               Const (Unit, (3,22--3,24)), (3,15--3,24)),
-                           (3,4--6,14), Yes (3,4--3,24),
+                           (3,4--3,24), Yes (3,4--3,24),
                            { LeadingKeyword = Let (3,4--3,8)
                              InlineKeyword = None
                              EqualsRange = Some (3,13--3,14) });
