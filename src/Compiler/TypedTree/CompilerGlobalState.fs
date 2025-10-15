@@ -40,7 +40,7 @@ type NiceNameGenerator() =
 type StableNiceNameGenerator() = 
 
     let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
-    let innerGenerator = new NiceNameGenerator()
+    let innerGenerator = NiceNameGenerator()
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name

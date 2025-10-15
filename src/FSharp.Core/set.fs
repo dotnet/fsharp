@@ -936,14 +936,14 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
     interface ICollection<'T> with
         member s.Add x =
             ignore x
-            raise (new NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Clear() =
-            raise (new NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Remove x =
             ignore x
-            raise (new NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Contains x =
             SetTree.mem s.Comparer x s.Tree

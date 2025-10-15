@@ -599,7 +599,7 @@ module Seq =
         mkSeq (fun () -> unfold f x)
 
     let inline indexNotFound () =
-        raise (new KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+        raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
     [<CompiledName("Delay")>]
     let delay generator =

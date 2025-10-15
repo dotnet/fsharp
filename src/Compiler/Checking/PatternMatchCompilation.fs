@@ -992,7 +992,7 @@ let CompilePatternBasic
     // Add the incomplete or rethrow match clause on demand,
     // printing a warning if necessary (only if it is ever exercised).
     let mutable firstIncompleteMatchClauseWithThrowExpr = None
-    let warningsGenerated = new ResizeArray<CounterExampleType>(2)
+    let warningsGenerated = ResizeArray<CounterExampleType>(2)
     let getIncompleteMatchClause refuted =
         // Emit the incomplete match warning.
         if warnOnIncomplete then

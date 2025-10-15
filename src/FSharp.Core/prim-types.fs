@@ -61,8 +61,8 @@ namespace Microsoft.FSharp.Core
     type SealedAttribute(value:bool) =
         inherit Attribute()
         member _.Value = value
-        new() = new SealedAttribute(true)
-      
+        new() = SealedAttribute(true)
+
     [<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
     [<Sealed>]
     type AbstractClassAttribute() =
@@ -83,8 +83,8 @@ namespace Microsoft.FSharp.Core
     type AllowNullLiteralAttribute(value: bool) =
         inherit Attribute()
         member _.Value = value
-        new () = new AllowNullLiteralAttribute(true)
-      
+        new () = AllowNullLiteralAttribute(true)
+
     [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type VolatileFieldAttribute() =
@@ -117,7 +117,7 @@ namespace Microsoft.FSharp.Core
     type DefaultValueAttribute(check:bool) = 
         inherit Attribute()
         member _.Check = check
-        new() = new DefaultValueAttribute(true)
+        new() = DefaultValueAttribute(true)
 
     [<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
     [<Sealed>]
@@ -665,13 +665,13 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             let inline (~&)  (obj : 'T) : byref<'T> = 
                 ignore obj // pretend the variable is used
-                let e = new ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = ArgumentException(ErrorStrings.AddressOpNotFirstClassString)
                 (# "throw" (e :> System.Exception) : byref<'T> #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
                 ignore obj // pretend the variable is used
-                let e = new ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = ArgumentException(ErrorStrings.AddressOpNotFirstClassString)
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
 
         open IntrinsicOperators
@@ -934,8 +934,8 @@ namespace Microsoft.FSharp.Core
                     if (System.Threading.Interlocked.CompareExchange(&(x.nodeCount), sz, 0) = 0) then 
                         x
                     else
-                        new CountLimitedHasherPER(sz)
-                
+                        CountLimitedHasherPER(sz)
+
                 interface IEqualityComparer 
 
             /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
@@ -1069,7 +1069,7 @@ namespace Microsoft.FSharp.Core
             //------------------------------------------------------------------------- 
 
             let FailGenericComparison (obj: obj) = 
-                raise (new ArgumentException(String.Format(SR.GetString(SR.genericCompareFail1), obj.GetType().ToString())))
+                raise (ArgumentException(String.Format(SR.GetString(SR.genericCompareFail1), obj.GetType().ToString())))
             
                
             /// This type has two instances - fsComparerER and fsComparerThrow.
@@ -1081,8 +1081,8 @@ namespace Microsoft.FSharp.Core
 
             /// The unique exception object that is thrown locally when NaNs are compared in PER mode (by fsComparerPER)
             /// This exception should never be observed by user code.
-            let NaNException = new Exception()                                                 
-                    
+            let NaNException = Exception()
+
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
             let rec GenericCompare (comp:GenericComparer) (xobj:objnull, yobj:objnull) = 
@@ -2538,7 +2538,7 @@ namespace Microsoft.FSharp.Core
         
         let inline UIntPtrWithMeasure (f : unativeint) : unativeint<'Measure> = retype f
 
-        let inline formatError() = raise (new FormatException(SR.GetString(SR.badFormatString)))
+        let inline formatError() = raise (FormatException(SR.GetString(SR.badFormatString)))
 
         // Parse formats
         //      DDDDDDDD
@@ -2591,7 +2591,7 @@ namespace Microsoft.FSharp.Core
 
         let ParseUInt32 (s:string) = 
             if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+                raise(ArgumentNullException("s"))
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2608,7 +2608,7 @@ namespace Microsoft.FSharp.Core
 
         let ParseInt32 (s:string) = 
             if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+                raise(ArgumentNullException("s"))
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2623,7 +2623,7 @@ namespace Microsoft.FSharp.Core
 
         let ParseInt64 (s:string) = 
             if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+                raise(ArgumentNullException("s"))
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2638,7 +2638,7 @@ namespace Microsoft.FSharp.Core
 
         let ParseUInt64     (s:string) : uint64 = 
             if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
+                raise(ArgumentNullException("s"))
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -4033,7 +4033,7 @@ namespace Microsoft.FSharp.Core
         | Some : Value:'T -> 'T option 
 
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
-        member x.Value = match x with Some x -> x | None -> raise (new InvalidOperationException("Option.Value"))
+        member x.Value = match x with Some x -> x | None -> raise (InvalidOperationException("Option.Value"))
 
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member x.IsNone = match x with None -> true | _ -> false
@@ -4074,7 +4074,9 @@ namespace Microsoft.FSharp.Core
         | ValueNone : 'T voption
         | ValueSome : Item: 'T -> 'T voption
 
-        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new InvalidOperationException("ValueOption.Value"))
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (
+                                                                          InvalidOperationException("ValueOption.Value")
+                                                                          )
 
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         static member None : 'T voption = ValueNone
@@ -4217,9 +4219,9 @@ namespace Microsoft.FSharp.Collections
 
     module PrivateListHelpers = 
 
-        let notStarted() = raise (new InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+        let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
 
-        let alreadyFinished() = raise (new InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+        let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 
         let outOfRange() = raise (IndexOutOfRangeException(SR.GetString(SR.indexOutOfBounds)))
 
@@ -4282,9 +4284,9 @@ namespace Microsoft.FSharp.Collections
 
         let rec nth l n = 
             match l with 
-            | [] -> raise (new ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
+            | [] -> raise (ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
             | h :: t -> 
-                if n < 0 then raise (new ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
+                if n < 0 then raise (ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                 elif n = 0 then h
                 else nth t (n - 1)
 
@@ -4480,15 +4482,15 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NullArgCheck")>]
         let inline nullArgCheck (argumentName:string) (value: 'T | null when 'T : not null and 'T : not struct) = 
             match value with 
-            | null -> raise (new ArgumentNullException(argumentName))        
+            | null -> raise (ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
 
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) =
             (# "throw" exn : 'T #)
 
-        let Failure message = new Exception(message)
-        
+        let Failure message = Exception(message)
+
         [<CompiledName("FailurePattern")>]
         let (|Failure|_|) (error: exn) = if Type.op_Equality(error.GetType(), typeof<Exception>) then Some error.Message else None
 
@@ -4518,11 +4520,11 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("InvalidArg")>]
         let inline invalidArg (argumentName:string) (message:string) = 
-            raise (new ArgumentException(message,argumentName))
+            raise (ArgumentException(message,argumentName))
 
         [<CompiledName("NullArg")>]
         let inline nullArg (argumentName:string) = 
-            raise (new ArgumentNullException(argumentName))        
+            raise (ArgumentNullException(argumentName))        
 
         [<CompiledName("InvalidOp")>]
         let inline invalidOp message = raise (InvalidOperationException(message))
@@ -5866,8 +5868,8 @@ namespace Microsoft.FSharp.Core
 
             open System.Collections
 
-            let notStarted() = raise (new InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-            let alreadyFinished() = raise (new InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+            let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+            let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
 
             // Notes on "inline" with range ienumerable generation.
             // "inline" is used to ensure that primitive ops like add,sub etc. are direct calls.

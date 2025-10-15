@@ -1329,7 +1329,7 @@ let mkClassUnionDef
                 |> Array.tryFindIndex (fun t -> t.IsNullary)
                 |> Option.defaultValue -1
 
-            let fieldsEmitted = new HashSet<_>()
+            let fieldsEmitted = HashSet<_>()
 
             for cidx, alt in Array.indexed cud.UnionCases do
                 if

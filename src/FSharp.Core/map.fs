@@ -727,11 +727,11 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     static member Create(ie: IEnumerable<_>) : Map<'Key, 'Value> =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofSeq comparer ie)
+        Map<_, _>(comparer, MapTree.ofSeq comparer ie)
 
     new(elements: seq<_>) =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofSeq comparer elements)
+        Map<_, _>(comparer, MapTree.ofSeq comparer elements)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member internal m.Comparer = comparer
@@ -837,7 +837,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     static member ofList l : Map<'Key, 'Value> =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofList comparer l)
+        Map<_, _>(comparer, MapTree.ofList comparer l)
 
     member this.ComputeHashCode() =
         let combineHash x y =
@@ -1256,7 +1256,7 @@ module Map =
     [<CompiledName("OfArray")>]
     let ofArray (elements: ('Key * 'Value) array) =
         let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-        new Map<_, _>(comparer, MapTree.ofArray comparer elements)
+        Map<_, _>(comparer, MapTree.ofArray comparer elements)
 
     [<CompiledName("ToList")>]
     let toList (table: Map<_, _>) =

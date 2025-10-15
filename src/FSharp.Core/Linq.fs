@@ -562,7 +562,7 @@ module LeafExpressionConverter =
             
             // Detect the F# quotation encoding of decimal literals
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
-                Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
+                Expression.Constant (System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
 
             | NegQ (_, _, [x]) -> transUnaryOp isLinqExpressionsArithmeticTypeButNotUnsignedInt inp env x Expression.Negate (methodhandleof (LanguagePrimitives.UnaryNegationDynamic))
             | PlusQ (_, _, [x1; x2]) -> transBinOp isLinqExpressionsArithmeticType inp env false x1 x2 false Expression.Add (methodhandleof (fun (x, y) -> LanguagePrimitives.AdditionDynamic x y))
@@ -793,7 +793,9 @@ module LeafExpressionConverter =
             failConvert inp
 
     and failConvert inp =
-        raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%s\n-------------\n" (inp.ToString())))
+        raise (
+            NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%s\n-------------\n" (inp.ToString()))
+            )
 
     /// Translate a unary operator
     and transUnaryOp linqExpressionsCondition inp env x (exprErasedConstructor: _ * _ -> _) fallback =

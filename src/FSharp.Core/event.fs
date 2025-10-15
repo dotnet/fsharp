@@ -186,7 +186,7 @@ type Event<'T> =
                   Atomic.setWith (fun value -> Delegate.Remove(value, d) :?> Handler<'T>) &x.multicast
           interface IObservable<'T> with
               member e.Subscribe(observer) =
-                  let h = new Handler<_>(fun sender args -> observer.OnNext(args))
+                  let h = Handler<_>(fun sender args -> observer.OnNext(args))
                   (e :?> IEvent<_, _>).AddHandler(h)
 
                   { new IDisposable with

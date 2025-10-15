@@ -12,17 +12,17 @@ module internal DetailedExceptions =
     /// takes an argument, a formatting string, a param array to splice into the formatting string
     let inline invalidArgFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
-        raise (new ArgumentException (msg, arg))
+        raise (ArgumentException(msg, arg))
 
     /// takes an argument, a formatting string, a param array to splice into the formatting string
     let inline invalidArgOutOfRangeFmt (arg:string) (format:string) paramArray =
         let msg = String.Format (format, paramArray)
-        raise (new ArgumentOutOfRangeException (arg, msg))
+        raise (ArgumentOutOfRangeException(arg, msg))
 
     /// takes a formatting string and a param array to splice into the formatting string
     let inline invalidOpFmt (format:string) paramArray =
         let msg = String.Format (format, paramArray)
-        raise (new InvalidOperationException(msg))
+        raise (InvalidOperationException(msg))
 
     /// throws an invalid argument exception and returns the difference between the lists' lengths
     let invalidArgDifferentListLength (arg1:string) (arg2:string) (diff:int) =

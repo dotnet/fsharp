@@ -16,9 +16,9 @@ open Microsoft.FSharp.Collections
 
 module internal IEnumerator =
 
-    let noReset() = raise (new NotSupportedException(SR.GetString(SR.resetNotSupported)))
-    let notStarted() = raise (new InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-    let alreadyFinished() = raise (new InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+    let noReset() = raise (NotSupportedException(SR.GetString(SR.resetNotSupported)))
+    let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+    let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
     let check started = if not started then notStarted()
     let dispose (r : IDisposable) = r.Dispose()
 
@@ -529,7 +529,7 @@ type GeneratedSequenceBase<'T>() =
         [<DebuggerStepThrough>]
         member x.MoveNext() = x.MoveNextImpl()
 
-        member _.Reset() = raise <| new NotSupportedException()
+        member _.Reset() = raise <| NotSupportedException()
 
 [<Struct; NoEquality; NoComparison>]
 type ListCollector<'T> =

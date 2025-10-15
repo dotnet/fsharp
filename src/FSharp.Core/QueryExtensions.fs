@@ -112,7 +112,7 @@ module internal Adapters =
     let anonObjectTypes = tupleTypes |> Array.map snd
 
     let tupleToAnonTypeMap =
-        let t = new Dictionary<Type, Type>()
+        let t = Dictionary<Type, Type>()
 
         for (k, v) in tupleTypes do
             t.[k] <- v
@@ -120,7 +120,7 @@ module internal Adapters =
         t
 
     let anonToTupleTypeMap =
-        let t = new Dictionary<Type, Type>()
+        let t = Dictionary<Type, Type>()
 
         for (k, v) in tupleTypes do
             t.[v] <- k

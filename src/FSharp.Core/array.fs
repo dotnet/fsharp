@@ -2460,13 +2460,13 @@ module Array =
             (array: 'T array)
             =
             let counts =
-                new ConcurrentDictionary<_, _>(
+                ConcurrentDictionary<_, _>(
                     concurrencyLevel = maxPartitions,
                     capacity = Operators.min (array.Length) 1_000,
                     comparer = comparer
-                )
+                    )
 
-            let valueFactory = new Func<_, _>(fun _ -> ref 0)
+            let valueFactory = Func<_, _>(fun _ -> ref 0)
 
             let projectedValues =
                 Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
@@ -2493,7 +2493,7 @@ module Array =
             let mutable finalIdx = 0
 
             let finalResultsLookup =
-                new Dictionary<'SafeKey, int ref * 'T array>(capacity = counts.Count, comparer = comparer)
+                Dictionary<'SafeKey, int ref * 'T array>(capacity = counts.Count, comparer = comparer)
 
             for kvp in counts do
                 let arrayForThisGroup =
@@ -2678,8 +2678,8 @@ module Array =
             while cmpWithPivot rightIdx <= 0 && rightIdx < lastIdx do
                 rightIdx <- rightIdx + 1
 
-            new ArraySegment<_>(orig.Array, offset = orig.Offset, count = leftIdx - orig.Offset + 1),
-            new ArraySegment<_>(orig.Array, offset = rightIdx, count = lastIdx - rightIdx + 1)
+            ArraySegment<_>(orig.Array, offset = orig.Offset, count = leftIdx - orig.Offset + 1),
+            ArraySegment<_>(orig.Array, offset = rightIdx, count = lastIdx - rightIdx + 1)
 
         let partitionIntoTwoUsingComparer
             (cmp: 'T -> 'T -> int)
@@ -2745,7 +2745,7 @@ module Array =
                         sortChunk right (freeWorkers - workersForLeftTask)
                         leftTask.Wait()
 
-            let bigSegment = new ArraySegment<_>(array, 0, array.Length)
+            let bigSegment = ArraySegment<_>(array, 0, array.Length)
             sortChunk bigSegment maxPartitions
 
         let sortInPlaceWithHelper

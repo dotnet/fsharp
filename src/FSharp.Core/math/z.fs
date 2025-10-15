@@ -28,8 +28,8 @@ module NumericLiterals =
 
     module NumericLiteralI =
 
-        let tab64 = new System.Collections.Generic.Dictionary<int64, objnull>()
-        let tabParse = new System.Collections.Generic.Dictionary<string, objnull>()
+        let tab64 = System.Collections.Generic.Dictionary<int64, objnull>()
+        let tabParse = System.Collections.Generic.Dictionary<string, objnull>()
 
         let FromInt64Dynamic (value: int64) : objnull =
             lock tab64 (fun () ->

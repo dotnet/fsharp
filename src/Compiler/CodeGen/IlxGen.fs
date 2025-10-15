@@ -220,7 +220,7 @@ let CountCallFuncInstructions = NewCounter "callfunc instructions (indirect call
 type IlxGenIntraAssemblyInfo(staticFieldInfo: ConcurrentDictionary<ILMethodRef, ILFieldSpec>) =
 
     static member Create() =
-        new IlxGenIntraAssemblyInfo(new ConcurrentDictionary<_, _>(HashIdentity.Structural))
+        IlxGenIntraAssemblyInfo(ConcurrentDictionary<_, _>(HashIdentity.Structural))
 
     member _.GetOrAddStaticFieldInfo(info: ILMethodRef, f: System.Func<ILMethodRef, ILFieldSpec>) = staticFieldInfo.GetOrAdd(info, f)
 
@@ -2326,7 +2326,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
     // The definitions of top level values, as quotations
     let reflectedDefinitions =
-        new StampedDictionary<Val, string * Expr>(HashIdentity.Reference)
+        StampedDictionary<Val, string * Expr>(HashIdentity.Reference)
 
     // A memoization table for generating value types for big constant arrays
     let rawDataValueTypeGenerator =

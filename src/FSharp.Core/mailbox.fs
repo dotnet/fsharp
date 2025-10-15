@@ -369,7 +369,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
 
     let mutable defaultTimeout = Timeout.Infinite
     let mutable started = false
-    let errorEvent = new Event<Exception>()
+    let errorEvent = Event<Exception>()
 
     new(body, ?cancellationToken: CancellationToken) =
         match cancellationToken with
@@ -394,7 +394,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     /// marked as started in this method, be sure to subsequently start the agent after calling this method.
     member private x.PrepareToStart() =
         if started then
-            raise (new InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
+            raise (InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
         else
             started <- true
 
@@ -425,7 +425,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
 
         let msg =
             buildMessage (
-                new AsyncReplyChannel<_>(fun reply ->
+                AsyncReplyChannel<_>(fun reply ->
                     // Note the ResultCell may have been disposed if the operation
                     // timed out. In this case RegisterResult drops the result on the floor.
                     resultCell.RegisterResult(reply, reuseThread = false) |> ignore)
@@ -445,7 +445,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
 
         let msg =
             buildMessage (
-                new AsyncReplyChannel<_>(fun reply ->
+                AsyncReplyChannel<_>(fun reply ->
                     // Note the ResultCell may have been disposed if the operation
                     // timed out. In this case RegisterResult drops the result on the floor.
                     resultCell.RegisterResult(reply, reuseThread = false) |> ignore)

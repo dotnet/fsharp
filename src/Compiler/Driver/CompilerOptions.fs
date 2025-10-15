@@ -172,7 +172,7 @@ let getPublicOptions heading opts width =
         + (opts |> List.map (fun t -> getCompilerOption t width) |> String.concat "")
 
 let GetCompilerOptionBlocks blocks width =
-    let sb = new StringBuilder()
+    let sb = StringBuilder()
 
     let publicBlocks =
         blocks

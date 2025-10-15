@@ -485,7 +485,7 @@ type PortablePdbGenerator
             | true, h -> h
 
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
-    let importScopesTable = new Dictionary<PdbImports, ImportScopeHandle>()
+    let importScopesTable = Dictionary<PdbImports, ImportScopeHandle>()
 
     let serializeImport (writer: BlobBuilder) (import: PdbImport) =
         match import with
@@ -561,7 +561,7 @@ type PortablePdbGenerator
     //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
 
     let serializeImportsBlob (imports: PdbImport[]) =
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
 
         for import in imports do
             serializeImport writer import
@@ -570,7 +570,7 @@ type PortablePdbGenerator
 
     // Define the empty global imports scope for the whole assembly,it gets index #1 (the first entry in the table)
     let defineModuleImportScope () =
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
         let blob = metadata.GetOrAddBlob writer
 
         let rid =

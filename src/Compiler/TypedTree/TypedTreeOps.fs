@@ -9465,7 +9465,7 @@ let mkIsInstConditional g m tgtTy vinputExpr v e2 e3 =
 
 (* match inp with DU(_) -> true | _ -> false *)
 let mkUnionCaseTest (g: TcGlobals) (e1, cref: UnionCaseRef, tinst, m) =
-    let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+    let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
     let tg2 = mbuilder.AddResultTarget(Expr.Const(Const.Bool true, m, g.bool_ty))
     let tg3 = mbuilder.AddResultTarget(Expr.Const(Const.Bool false, m, g.bool_ty))
     let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.UnionCase(cref, tinst), tg2)], Some tg3, m)

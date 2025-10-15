@@ -106,7 +106,7 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
         let mutable lastStamp = -1L // first value retrieved will be 0
         fun () -> System.Threading.Interlocked.Increment &lastStamp
 
-    static let globals = new Dictionary<(string * Type), Var>(11)
+    static let globals = Dictionary<(string * Type), Var>(11)
 
     let stamp = getStamp ()
     let isMutable = defaultArg isMutable false
@@ -130,7 +130,7 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
             if ok then
                 res
             else
-                let res = new Var(name, typ)
+                let res = Var(name, typ)
                 globals.[(name, typ)] <- res
                 res)
 
@@ -483,10 +483,10 @@ module Patterns =
             res
 
     let E t =
-        new Expr(t, [])
+        Expr(t, [])
 
     let EA (t, attribs) =
-        new Expr(t, attribs)
+        Expr(t, attribs)
 
     let (|E|) (e: Expr) =
         e.Tree
@@ -1131,7 +1131,7 @@ module Patterns =
     // Discriminated unions
     let mkNewUnionCase (unionCase: UnionCaseInfo, args: Expr list) =
         if Unchecked.defaultof<UnionCaseInfo> = unionCase then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         let sargs = unionCase.GetFields()
 
@@ -1148,7 +1148,7 @@ module Patterns =
 
     let mkUnionCaseTest (unionCase: UnionCaseInfo, expr) =
         if Unchecked.defaultof<UnionCaseInfo> = unionCase then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkTypesSR unionCase.DeclaringType (typeOf expr) "UnionCaseTagTest" (SR.GetString(SR.QtmmExprTypeMismatch))
         mkFE1 (UnionCaseTestOp unionCase) expr
@@ -1165,7 +1165,7 @@ module Patterns =
 
     let mkInstanceFieldGet (obj, finfo: FieldInfo) =
         if Unchecked.defaultof<FieldInfo> = finfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         match finfo.IsStatic with
         | false ->
@@ -1175,7 +1175,7 @@ module Patterns =
 
     let mkStaticFieldGet (finfo: FieldInfo) =
         if Unchecked.defaultof<FieldInfo> = finfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         match finfo.IsStatic with
         | true -> mkFE0 (StaticFieldGetOp finfo)
@@ -1183,7 +1183,7 @@ module Patterns =
 
     let mkStaticFieldSet (finfo: FieldInfo, value: Expr) =
         if Unchecked.defaultof<FieldInfo> = finfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkTypesSR (typeOf value) finfo.FieldType "value" (SR.GetString(SR.QtmmBadFieldType))
 
@@ -1193,7 +1193,7 @@ module Patterns =
 
     let mkInstanceFieldSet (obj, finfo: FieldInfo, value: Expr) =
         if Unchecked.defaultof<FieldInfo> = finfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkTypesSR (typeOf value) finfo.FieldType "value" (SR.GetString(SR.QtmmBadFieldType))
 
@@ -1205,7 +1205,7 @@ module Patterns =
 
     let mkCtorCall (ci: ConstructorInfo, args: Expr list) =
         if Unchecked.defaultof<ConstructorInfo> = ci then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkArgs (ci.GetParameters()) args
         mkFEN (NewObjectOp ci) args
@@ -1215,7 +1215,7 @@ module Patterns =
 
     let mkStaticPropGet (pinfo: PropertyInfo, args: Expr list) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         if (not pinfo.CanRead) then
             invalidArg "pinfo" (SR.GetString(SR.QreadingSetOnly))
@@ -1228,7 +1228,7 @@ module Patterns =
 
     let mkInstancePropGet (obj, pinfo: PropertyInfo, args: Expr list) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         if (not pinfo.CanRead) then
             invalidArg "pinfo" (SR.GetString(SR.QreadingSetOnly))
@@ -1243,7 +1243,7 @@ module Patterns =
 
     let mkStaticPropSet (pinfo: PropertyInfo, args: Expr list, value: Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         if (not pinfo.CanWrite) then
             invalidArg "pinfo" (SR.GetString(SR.QwritingGetOnly))
@@ -1256,7 +1256,7 @@ module Patterns =
 
     let mkInstancePropSet (obj, pinfo: PropertyInfo, args: Expr list, value: Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         if (not pinfo.CanWrite) then
             invalidArg "pinfo" (SR.GetString(SR.QwritingGetOnly))
@@ -1271,7 +1271,7 @@ module Patterns =
 
     let mkInstanceMethodCall (obj, minfo: MethodInfo, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkArgs (minfo.GetParameters()) args
 
@@ -1283,7 +1283,7 @@ module Patterns =
 
     let mkInstanceMethodCallW (obj, minfo: MethodInfo, minfoW: MethodInfo, nWitnesses: int, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkArgs (minfoW.GetParameters()) args
 
@@ -1295,7 +1295,7 @@ module Patterns =
 
     let mkStaticMethodCall (minfo: MethodInfo, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkArgs (minfo.GetParameters()) args
 
@@ -1305,7 +1305,7 @@ module Patterns =
 
     let mkStaticMethodCallW (minfo: MethodInfo, minfoW: MethodInfo, nWitnesses: int, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then
-            raise (new ArgumentNullException())
+            raise (ArgumentNullException())
 
         checkArgs (minfoW.GetParameters()) args
 
@@ -1586,7 +1586,7 @@ module Patterns =
 
     let inline checkNonNullResult (arg: string, err: string) y =
         match box y with
-        | null -> raise (new ArgumentNullException(arg, err))
+        | null -> raise (ArgumentNullException(arg, err))
         | _ -> y
 
     let inst (tyargs: Type list) (i: Instantiable<'T>) =
@@ -1801,7 +1801,7 @@ module Patterns =
             let phase2data =
                 let st2 =
                     {
-                        is = new ByteStream(phase2bytes, 0, phase2bytes.Length)
+                        is = ByteStream(phase2bytes, 0, phase2bytes.Length)
                         istrings = [||]
                         localAssembly = localAssembly
                         referencedTypeDefs = referencedTypeDefs
@@ -1813,7 +1813,7 @@ module Patterns =
 
             let st1 =
                 {
-                    is = new ByteStream(phase1bytes, 0, phase1bytes.Length)
+                    is = ByteStream(phase1bytes, 0, phase1bytes.Length)
                     istrings = Array.ofList stringTab
                     localAssembly = localAssembly
                     referencedTypeDefs = referencedTypeDefs
@@ -2334,7 +2334,7 @@ module Patterns =
         res
 
     let decodedTopResources =
-        new Dictionary<Assembly * string, int>(10, HashIdentity.Structural)
+        Dictionary<Assembly * string, int>(10, HashIdentity.Structural)
 
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey =
@@ -2347,7 +2347,7 @@ module Patterns =
     type ReflectedDefinitionTableEntry = Entry of Bindable<Expr>
 
     let reflectedDefinitionTable =
-        new Dictionary<ReflectedDefinitionTableKey, ReflectedDefinitionTableEntry>(10, HashIdentity.Structural)
+        Dictionary<ReflectedDefinitionTableKey, ReflectedDefinitionTableEntry>(10, HashIdentity.Structural)
 
     let registerReflectedDefinitions (assem, resourceName, bytes, referencedTypes) =
         let defns = unpickleReflectedDefns assem referencedTypes bytes
