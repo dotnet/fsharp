@@ -2326,15 +2326,21 @@ and [<Sealed>] TcImports
         async {
             CheckDisposed()
 
-            let! assemblyData = nms |> List.map tryGetAssemblyData |> MultipleDiagnosticsLoggers.Parallel
+            let tcConfig = tcConfigP.Get ctok
+
+            let runMethod computations =
+                match tcConfig.parallelReferenceResolution with
+                | ParallelReferenceResolution.On -> MultipleDiagnosticsLoggers.Parallel computations
+                | ParallelReferenceResolution.Off -> MultipleDiagnosticsLoggers.Sequential computations
+
+            let! assemblyData = nms |> List.map tryGetAssemblyData |> runMethod
 
             // Preserve determinicstic order of references, because types from later assemblies may shadow earlier ones.
             let phase2s = assemblyData |> Seq.choose id |> Seq.map registerDll |> List.ofSeq
 
             fixupOrphanCcus ()
 
-            let! ccuinfos = phase2s |> MultipleDiagnosticsLoggers.Parallel
-
+            let! ccuinfos = phase2s |> runMethod
             if importsBase.IsSome then
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
