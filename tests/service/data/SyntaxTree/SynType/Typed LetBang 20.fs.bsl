@@ -44,16 +44,18 @@ ImplFile
                                 (None,
                                  SynValInfo ([], SynArgInfo ([], false, None)),
                                  None),
-                              Typed
-                                (As
-                                   (LongIdent
-                                      (SynLongIdent ([Even], [], [None]), None,
-                                       None, Pats [], None, (5,9--5,13)),
-                                    Named
-                                      (SynIdent (x, None), false, None,
-                                       (5,17--5,18)), (5,9--5,18)),
-                                 LongIdent (SynLongIdent ([int], [], [None])),
-                                 (5,9--5,23)), None,
+                              As
+                                (LongIdent
+                                   (SynLongIdent ([Even], [], [None]), None,
+                                    None, Pats [], None, (5,9--5,13)),
+                                 Named
+                                   (SynIdent (x, None), false, None,
+                                    (5,17--5,18)), (5,9--5,18)),
+                              Some
+                                (SynBindingReturnInfo
+                                   (LongIdent (SynLongIdent ([int], [], [None])),
+                                    (5,20--5,23), [],
+                                    { ColonRange = Some (5,18--5,19) })),
                               App
                                 (NonAtomic, false, Ident async,
                                  ComputationExpr
