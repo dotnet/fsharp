@@ -868,7 +868,9 @@ let mkClassMemberLocalBindings
     SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole)
 
 /// Creates a SynExprAndBang node for and! bindings in computation expressions
-let mkAndBang (mKeyword: range, pat: SynPat, returnInfo: SynBindingReturnInfo option, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option) =
+let mkAndBang
+    (mKeyword: range, pat: SynPat, returnInfo: SynBindingReturnInfo option, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option)
+    =
     let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
     let trivia: SynBindingTrivia =

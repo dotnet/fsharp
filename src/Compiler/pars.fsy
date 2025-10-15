@@ -3531,7 +3531,7 @@ ceBindingCore:
       let isInline = Option.isSome $1
       let isMutable = Option.isSome $2
 
-      let ty =
+      let returnInfo =
           match tyOpt with
           | Some(colonRangeOpt, SynReturnInfo((ty, _), tym)) ->
               parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
@@ -3539,7 +3539,7 @@ ceBindingCore:
           | None ->
               None
 
-      pat, mPat, isInline, isMutable, ty }
+      pat, mPat, isInline, isMutable, returnInfo }
 
 opt_simplePatterns:
   | simplePatterns
