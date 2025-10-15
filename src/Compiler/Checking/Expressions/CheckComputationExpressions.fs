@@ -1381,7 +1381,7 @@ let rec TryTranslateComputationExpression
 
                     let condBinding =
                         mkSynBinding
-                            (Xml.PreXmlDoc.Empty, patCond)
+                            (PreXmlDoc.Empty, patCond)
                             (None,
                              false,
                              true,
@@ -1545,7 +1545,7 @@ let rec TryTranslateComputationExpression
                 // and so we use a more specific error message for clarity.
                 | SynExpr.Const(SynConst.Unit, mUnit) when
                     cenv.g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions
-                    && Range.equals mUnit range0
+                    && equals mUnit range0
                     ->
                     error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), ceenv.mWhole))
                 | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod ("Zero"), m))

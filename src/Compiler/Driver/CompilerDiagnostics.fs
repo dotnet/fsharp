@@ -201,7 +201,7 @@ type Exception with
         | NoConstructorsAvailableForType(_, _, m) -> Some m
 
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticRange
+        | :? TargetInvocationException as e when isNotNull e.InnerException -> (!!e.InnerException).DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Range |> Some
 #endif
@@ -2207,7 +2207,7 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                         let content =
                             m.FileName
                             |> FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir
-                            |> System.IO.File.ReadAllLines
+                            |> File.ReadAllLines
 
                         if m.StartLine = m.EndLine then
                             $"\n  {m.StartLine} | {content[m.StartLine - 1]}\n"

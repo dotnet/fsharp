@@ -28,8 +28,8 @@ module private Atomic =
                 exchanged <- true
 
 [<CompiledName("FSharpDelegateEvent`1")>]
-type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() =
-    let mutable multicast: System.Delegate = null
+type DelegateEvent<'Delegate when 'Delegate :> Delegate>() =
+    let mutable multicast: Delegate = null
 
     member x.Trigger(args: objnull array) =
         match multicast with
@@ -39,13 +39,13 @@ type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() =
     member x.Publish =
         { new IDelegateEvent<'Delegate> with
             member x.AddHandler(d) =
-                Atomic.setWith (fun value -> System.Delegate.Combine(value, d)) &multicast
+                Atomic.setWith (fun value -> Delegate.Combine(value, d)) &multicast
 
             member x.RemoveHandler(d) =
-                Atomic.setWith (fun value -> System.Delegate.Remove(value, d)) &multicast
+                Atomic.setWith (fun value -> Delegate.Remove(value, d)) &multicast
         }
 
-type EventDelegee<'Args>(observer: System.IObserver<'Args>) =
+type EventDelegee<'Args>(observer: IObserver<'Args>) =
     static let makeTuple =
         if Microsoft.FSharp.Reflection.FSharpType.IsTuple(typeof<'Args>) then
             Microsoft.FSharp.Reflection.FSharpValue.PreComputeTupleConstructor(typeof<'Args>)
@@ -81,7 +81,7 @@ type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args ->
 
 [<CompiledName("FSharpEvent`2")>]
 type Event<'Delegate, 'Args
-    when 'Delegate: delegate<'Args, unit> and 'Delegate :> System.Delegate and 'Delegate: not struct>() =
+    when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct>() =
 
     let mutable multicast: 'Delegate = Unchecked.defaultof<_>
 
@@ -146,11 +146,11 @@ type Event<'Delegate, 'Args
                 "<published event>"
           interface IEvent<'Delegate, 'Args> with
               member e.AddHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> 'Delegate) &multicast
+                  Atomic.setWith (fun value -> Delegate.Combine(value, d) :?> 'Delegate) &multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> 'Delegate) &multicast
-          interface System.IObservable<'Args> with
+                  Atomic.setWith (fun value -> Delegate.Remove(value, d) :?> 'Delegate) &multicast
+          interface IObservable<'Args> with
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
 
@@ -158,7 +158,7 @@ type Event<'Delegate, 'Args
 
                   (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 
-                  { new System.IDisposable with
+                  { new IDisposable with
                       member x.Dispose() =
                           (e :?> IDelegateEvent<'Delegate>).RemoveHandler(h)
                   }
@@ -180,16 +180,16 @@ type Event<'T> =
                 "<published event>"
           interface IEvent<'T> with
               member e.AddHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> Handler<'T>) &x.multicast
+                  Atomic.setWith (fun value -> Delegate.Combine(value, d) :?> Handler<'T>) &x.multicast
 
               member e.RemoveHandler(d) =
-                  Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> Handler<'T>) &x.multicast
-          interface System.IObservable<'T> with
+                  Atomic.setWith (fun value -> Delegate.Remove(value, d) :?> Handler<'T>) &x.multicast
+          interface IObservable<'T> with
               member e.Subscribe(observer) =
                   let h = new Handler<_>(fun sender args -> observer.OnNext(args))
                   (e :?> IEvent<_, _>).AddHandler(h)
 
-                  { new System.IDisposable with
+                  { new IDisposable with
                       member x.Dispose() =
                           (e :?> IEvent<_, _>).RemoveHandler(h)
                   }

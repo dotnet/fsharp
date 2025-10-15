@@ -201,7 +201,7 @@ type cenv =
 
       g: TcGlobals
 
-      amap: Import.ImportMap
+      amap: ImportMap
 
       /// For reading metadata
       infoReader: InfoReader

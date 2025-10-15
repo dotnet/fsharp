@@ -115,7 +115,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
 
     member _.inbox =
         match inboxStore with
-        | null -> inboxStore <- new System.Collections.Generic.List<'Msg>(1)
+        | null -> inboxStore <- new List<'Msg>(1)
         | _ -> ()
 
         inboxStore
@@ -333,7 +333,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
             | Some res -> return res
         }
 
-    interface System.IDisposable with
+    interface IDisposable with
         member _.Dispose() =
             lock syncRoot (fun () ->
                 if isNotNull inboxStore then
@@ -367,7 +367,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     let mailbox =
         new Mailbox<'Msg>(cancellationSupported, isThrowExceptionAfterDisposed)
 
-    let mutable defaultTimeout = Threading.Timeout.Infinite
+    let mutable defaultTimeout = Timeout.Infinite
     let mutable started = false
     let errorEvent = new Event<Exception>()
 
@@ -454,7 +454,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
         mailbox.Post msg
 
         match timeout with
-        | Threading.Timeout.Infinite when not cancellationSupported ->
+        | Timeout.Infinite when not cancellationSupported ->
             async {
                 let! result = resultCell.AwaitResult_NoDirectCancelOrTimeout
                 return Some result
@@ -478,7 +478,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
         let timeout = defaultArg timeout defaultTimeout
 
         match timeout with
-        | Threading.Timeout.Infinite when not cancellationSupported ->
+        | Timeout.Infinite when not cancellationSupported ->
             // Nothing to dispose, no wait handles used
             let resultCell = new ResultCell<_>()
 
@@ -515,7 +515,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     member x.Dispose() =
         (x :> IDisposable).Dispose()
 
-    interface System.IDisposable with
+    interface IDisposable with
         member _.Dispose() =
             (mailbox :> IDisposable).Dispose()
 

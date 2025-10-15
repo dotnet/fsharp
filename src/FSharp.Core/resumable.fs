@@ -22,7 +22,7 @@ open Microsoft.FSharp.Collections
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = false)>]
 [<Sealed>]
 type NoEagerConstraintApplicationAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
 
 type IResumableStateMachine<'Data> =
     abstract ResumptionPoint: int

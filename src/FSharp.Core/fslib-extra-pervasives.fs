@@ -29,7 +29,7 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("CreateSet")>]
     let set elements =
-        Collections.Set.ofSeq elements
+        Set.ofSeq elements
 
     let dummyArray = [||]
 
@@ -360,24 +360,24 @@ type MeasureOne = class end
 
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false)>]
 type TypeProviderAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
 
 [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple = false)>]
 type TypeProviderAssemblyAttribute(assemblyName: string) =
-    inherit System.Attribute()
+    inherit Attribute()
     new() = TypeProviderAssemblyAttribute(null)
 
     member _.AssemblyName = assemblyName
 
 [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
 type TypeProviderXmlDocAttribute(commentText: string) =
-    inherit System.Attribute()
+    inherit Attribute()
 
     member _.CommentText = commentText
 
 [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
 type TypeProviderDefinitionLocationAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
     let mutable filePath: string = null
     let mutable line: int = 0
     let mutable column: int = 0
@@ -400,7 +400,7 @@ type TypeProviderDefinitionLocationAttribute() =
                  ||| AttributeTargets.Delegate,
                  AllowMultiple = false)>]
 type TypeProviderEditorHideMethodsAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
 
 /// <summary>Additional type attribute flags related to provided types</summary>
 type TypeProviderTypeAttributes =
@@ -415,7 +415,7 @@ type TypeProviderConfig
     let mutable temporaryFolder: string = null
     let mutable isInvalidationSupported: bool = false
     let mutable useResolutionFolderAtRuntime: bool = false
-    let mutable systemRuntimeAssemblyVersion: System.Version = null
+    let mutable systemRuntimeAssemblyVersion: Version = null
 
     new(systemRuntimeContainsType) = TypeProviderConfig(systemRuntimeContainsType, getReferencedAssembliesOption = None)
 
@@ -471,7 +471,7 @@ type IProvidedNamespace =
     abstract ResolveTypeName: typeName: string -> (Type | null)
 
 type ITypeProvider =
-    inherit System.IDisposable
+    inherit IDisposable
 
     abstract GetNamespaces: unit -> IProvidedNamespace array
 
@@ -483,9 +483,9 @@ type ITypeProvider =
     abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr array -> Expr
 
     [<CLIEvent>]
-    abstract Invalidate: IEvent<System.EventHandler, System.EventArgs>
+    abstract Invalidate: IEvent<EventHandler, EventArgs>
 
-    abstract GetGeneratedAssemblyContents: assembly: System.Reflection.Assembly -> byte array
+    abstract GetGeneratedAssemblyContents: assembly: Assembly -> byte array
 
 type ITypeProvider2 =
     abstract GetStaticParametersForMethod: methodWithoutArguments: MethodBase -> ParameterInfo array

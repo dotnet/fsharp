@@ -550,7 +550,7 @@ let emEnv0 =
         delayedFieldInits = []
     }
 
-let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type MaybeNull, typB, typeDef) =
+let envBindTypeRef emEnv (tref: ILTypeRef) (typT: Type MaybeNull, typB, typeDef) =
     match typT with
     | Null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
     | NonNull typT ->

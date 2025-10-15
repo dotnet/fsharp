@@ -74,7 +74,7 @@ type internal BootstrapInfo =
       TcImports: TcImports
       TcGlobals: TcGlobals
       InitialTcInfo: TcInfo
-      LoadedSources: (range * ProjectSnapshot.FSharpFileSnapshot) list
+      LoadedSources: (range * FSharpFileSnapshot) list
       LoadClosure: LoadClosure option
       LastFileName: string
       ImportsInvalidatedByTypeProvider: Event<unit> }
@@ -95,7 +95,7 @@ type internal Extensions =
 
     [<System.Runtime.CompilerServices.Extension>]
     static member Key:
-        fileSnapshots: #ProjectSnapshot.IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
+        fileSnapshots: #IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
             ICacheKey<(DependencyGraphType option * byte array), string>
 
 [<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]
@@ -165,7 +165,7 @@ type internal CompilerCaches =
     member ParseAndCheckProject: AsyncMemoize<FSharpProjectIdentifier, string, FSharpCheckProjectResults>
 
     member ParseFile:
-        AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
+        AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), FSharpParsedFile>
 
     member ParseFileWithoutProject: AsyncMemoize<string, string, FSharpParseFileResults>
 

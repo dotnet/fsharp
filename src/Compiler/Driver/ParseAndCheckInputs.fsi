@@ -180,7 +180,7 @@ val CheckOneInput:
     tcImports: TcImports *
     tcGlobals: TcGlobals *
     prefixPathOpt: LongIdent option *
-    tcSink: NameResolution.TcResultsSink *
+    tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
@@ -248,7 +248,7 @@ val CheckOneInputAndFinish:
     tcImports: TcImports *
     tcGlobals: TcGlobals *
     prefixPathOpt: LongIdent option *
-    tcSink: NameResolution.TcResultsSink *
+    tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>

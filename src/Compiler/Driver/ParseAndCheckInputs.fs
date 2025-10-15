@@ -469,10 +469,10 @@ let ParseInput
 
         // Call the appropriate parser - for signature files or implementation files
         if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            let impl = Parser.implementationFile lexer lexbuf
+            let impl = implementationFile lexer lexbuf
             PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, diagnosticOptions, Set identStore)
         elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-            let intfs = Parser.signatureFile lexer lexbuf
+            let intfs = signatureFile lexer lexbuf
             PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, diagnosticOptions, Set identStore)
         else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
             error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
@@ -485,7 +485,7 @@ let ParseInput
 
         delayLogger.CommitDelayedDiagnostics filteringDiagnosticsLogger
 
-type Tokenizer = unit -> Parser.token
+type Tokenizer = unit -> token
 
 // Show all tokens in the stream, for testing purposes
 let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
@@ -508,7 +508,7 @@ let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter:
             | _ -> indent
 
         match t with
-        | Parser.EOF _ -> exiter.Exit 0
+        | EOF _ -> exiter.Exit 0
         | _ -> ()
 
         if lexbuf.IsPastEndOfStream then
@@ -517,7 +517,7 @@ let ShowAllTokensAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter:
 // Test one of the parser entry points, just for testing purposes
 let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
-        match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
+        match (interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
 
     exiter.Exit 0

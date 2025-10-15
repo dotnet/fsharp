@@ -754,7 +754,7 @@ module AsyncPrimitives =
     ///   - Run 'disposeFunction' with exception protection (see CreateTryFinallyAsync)
     let CreateUsingAsync (resource: 'T :> IDisposable | null) (computation: 'T -> Async<'a>) : Async<'a> =
         let disposeFunction () =
-            Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
+            LanguagePrimitives.IntrinsicFunctions.Dispose resource
 
         CreateTryFinallyAsync disposeFunction (CreateCallAsync computation resource)
 
@@ -954,7 +954,7 @@ module AsyncPrimitives =
         member x.GetWaitHandle() =
             lock syncRoot (fun () ->
                 if disposed then
-                    raise (System.ObjectDisposedException("ResultCell"))
+                    raise (ObjectDisposedException("ResultCell"))
 
                 match resEvent with
                 | null ->
@@ -1059,7 +1059,7 @@ module AsyncPrimitives =
                 | Some _ as r -> r
                 | None ->
                     // OK, let's really wait for the Set signal. This may block.
-                    let timeout = defaultArg timeout Threading.Timeout.Infinite
+                    let timeout = defaultArg timeout Timeout.Infinite
                     let ok = resHandle.WaitOne(millisecondsTimeout = timeout, exitContext = true)
 
                     if ok then
@@ -1129,7 +1129,7 @@ module AsyncPrimitives =
             if innerCTS.IsSome then
                 innerCTS.Value.Dispose()
 
-            raise (System.TimeoutException())
+            raise (TimeoutException())
         | Some res ->
             match innerCTS with
             | Some subSource -> subSource.Dispose()
@@ -1304,7 +1304,7 @@ module AsyncPrimitives =
         | None -> ()
 
     [<Sealed; AutoSerializable(false)>]
-    type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state: objnull) =
+    type AsyncIAsyncResult<'T>(callback: AsyncCallback, state: objnull) =
         // This gets set to false if the result is not available by the
         // time the IAsyncResult is returned to the caller of Begin
         let mutable completedSynchronously = true
@@ -1322,7 +1322,7 @@ module AsyncPrimitives =
             | null -> ()
             | d ->
                 // The IASyncResult becomes observable here
-                d.Invoke(s :> System.IAsyncResult)
+                d.Invoke(s :> IAsyncResult)
 
         member s.GetResult() =
             match result.TryWaitForResultSynchronously(-1) with
@@ -1348,13 +1348,13 @@ module AsyncPrimitives =
             if not result.ResultAvailable then
                 completedSynchronously <- false
 
-        interface System.IAsyncResult with
+        interface IAsyncResult with
             member _.IsCompleted = result.ResultAvailable
             member _.CompletedSynchronously = completedSynchronously
             member _.AsyncWaitHandle = result.GetWaitHandle()
             member _.AsyncState = state
 
-        interface System.IDisposable with
+        interface IDisposable with
             member x.Dispose() =
                 x.Close()
 
@@ -1379,7 +1379,7 @@ module AsyncPrimitives =
             match iar with
             | :? AsyncIAsyncResult<'T> as aiar ->
                 if aiar.IsClosed then
-                    raise (System.ObjectDisposedException("AsyncResult"))
+                    raise (ObjectDisposedException("AsyncResult"))
                 else
                     let res = aiar.GetResult()
                     aiar.Close()
@@ -1511,24 +1511,24 @@ type Async =
             | Some token when not token.CanBeCanceled -> timeout, token
             | Some token -> None, token
 
-        AsyncPrimitives.RunSynchronously cancellationToken computation timeout
+        RunSynchronously cancellationToken computation timeout
 
     static member Start(computation, ?cancellationToken) =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        AsyncPrimitives.Start cancellationToken computation
+        Start cancellationToken computation
 
     static member StartAsTask(computation, ?taskCreationOptions, ?cancellationToken) =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        AsyncPrimitives.StartAsTask cancellationToken computation taskCreationOptions
+        StartAsTask cancellationToken computation taskCreationOptions
 
     static member StartChildAsTask(computation, ?taskCreationOptions) =
         async {
             let! cancellationToken = cancellationTokenAsync
-            return AsyncPrimitives.StartAsTask cancellationToken computation taskCreationOptions
+            return StartAsTask cancellationToken computation taskCreationOptions
         }
 
     static member Parallel(computations: seq<Async<'T>>) =
@@ -1538,7 +1538,7 @@ type Async =
         match maxDegreeOfParallelism with
         | Some x when x < 1 ->
             raise (
-                System.ArgumentException(
+                ArgumentException(
                     String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), x),
                     "maxDegreeOfParallelism"
                 )
@@ -1745,7 +1745,7 @@ type Async =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        AsyncPrimitives.StartWithContinuations
+        StartWithContinuations
             cancellationToken
             computation
             continuation
@@ -1784,7 +1784,7 @@ type Async =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        AsyncPrimitives.StartWithContinuations cancellationToken computation id (fun edi -> edi.ThrowAny()) ignore
+        StartWithContinuations cancellationToken computation id (fun edi -> edi.ThrowAny()) ignore
 
     static member Sleep(millisecondsDueTime: int64) : Async<unit> =
         MakeAsyncWithCancelCheck(fun ctxt ->
@@ -1847,7 +1847,7 @@ type Async =
     /// Wait for a wait handle. Both timeout and cancellation are supported
     static member AwaitWaitHandle(waitHandle: WaitHandle, ?millisecondsTimeout: int) =
         MakeAsyncWithCancelCheck(fun ctxt ->
-            let millisecondsTimeout = defaultArg millisecondsTimeout Threading.Timeout.Infinite
+            let millisecondsTimeout = defaultArg millisecondsTimeout Timeout.Infinite
 
             if millisecondsTimeout = 0 then
                 let ok = waitHandle.WaitOne(0, exitContext = false)
@@ -1940,7 +1940,7 @@ type Async =
                     let res = resultCell.GrabResult()
                     return res.Commit()
                 else
-                    return raise (System.TimeoutException())
+                    return raise (TimeoutException())
             }
         | _ ->
             async {
@@ -1963,7 +1963,7 @@ type Async =
                             innerCTS.Cancel()
                             // wait for computation to quiesce
                             let! _ = Async.AwaitWaitHandle(resultCell.GetWaitHandle())
-                            return raise (System.TimeoutException())
+                            return raise (TimeoutException())
                 finally
                     resultCell.Close()
             }
@@ -2049,9 +2049,9 @@ type Async =
     static member AsBeginEnd<'Arg, 'T>
         (computation: ('Arg -> Async<'T>))
         // The 'Begin' member
-        : ('Arg * System.AsyncCallback * objnull -> System.IAsyncResult) *
-          (System.IAsyncResult -> 'T) *
-          (System.IAsyncResult -> unit)
+        : ('Arg * AsyncCallback * objnull -> IAsyncResult) *
+          (IAsyncResult -> 'T) *
+          (IAsyncResult -> unit)
         =
         let beginAction =
             fun (a1, callback, state) -> AsBeginEndHelpers.beginAction ((computation a1), callback, state)
@@ -2194,7 +2194,7 @@ type Async =
                 |> Some
 
             let disposer =
-                { new System.IDisposable with
+                { new IDisposable with
                     member _.Dispose() =
                         // dispose CancellationTokenRegistration only if cancellation was not requested.
                         // otherwise - do nothing, disposal will be performed by the handler itself

@@ -352,7 +352,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
 
 /// An InfoReader is an object to help us read and cache infos. 
 /// We create one of these for each file we typecheck. 
-type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
+type InfoReader(g: TcGlobals, amap: ImportMap) as this =
 
     /// Get the declared IL fields of a type, not including inherited fields
     let GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty =

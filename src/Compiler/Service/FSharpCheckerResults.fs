@@ -3570,7 +3570,7 @@ type FSharpCheckFileResults
                     | _ -> AccessibleFromSomewhere
 
                 let layout =
-                    NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
+                    layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
 
                 match pageWidth with
                 | None -> layout

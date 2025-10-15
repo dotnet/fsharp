@@ -460,7 +460,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
         ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
 
-    member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Quotations.Var(name, x))
+    member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Var(name, x))
 
     static member Create ctxt x : ProvidedType MaybeNull = 
         match x with 
@@ -479,7 +479,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
 
     static member CreateNoContext (x:Type) = ProvidedType.CreateNonNull ProvidedTypeContext.Empty x
 
-    static member Void = ProvidedType.CreateNoContext typeof<System.Void>
+    static member Void = ProvidedType.CreateNoContext typeof<Void>
 
     member _.Handle = x
 
@@ -1024,7 +1024,7 @@ type ProvidedVar (x: Var, ctxt) =
 
 /// Get the provided invoker expression for a particular use of a method.
 let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
-    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
+    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
 
 /// Compute the Name or FullName property of a provided type, reporting appropriate errors
 let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =

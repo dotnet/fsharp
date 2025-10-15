@@ -1062,7 +1062,7 @@ module internal Impl =
             invalidArg argName msg
 
 [<Sealed>]
-type UnionCaseInfo(typ: System.Type, tag: int) =
+type UnionCaseInfo(typ: Type, tag: int) =
 
     // Cache the tag -> name map
     let mutable names = None

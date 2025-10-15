@@ -80,7 +80,7 @@ open FSharp.Compiler.TypeProviders
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
    
-let compgenId = mkSynId Range.range0 unassignedTyparName
+let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
     Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 

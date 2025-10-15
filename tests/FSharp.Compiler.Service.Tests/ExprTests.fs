@@ -787,13 +787,13 @@ let ``Test Unoptimized Declarations Project1`` () =
     printfn "let expected2 =\n%A" (printDeclarations None (List.ofSeq file2.Declarations) |> Seq.toList)
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected)
+      |> filterHack
+      |> shouldEqual (filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected2)
+      |> filterHack
+      |> shouldEqual (filterHack expected2)
 
     ()
 
@@ -926,13 +926,13 @@ let ``Test Optimized Declarations Project1`` () =
     printfn "let expected2 =\n%A" (printDeclarations None (List.ofSeq file2.Declarations) |> Seq.toList)
     printDeclarations None (List.ofSeq file1.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected)
+      |> filterHack
+      |> shouldEqual (filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations)
       |> Seq.toList
-      |> Utils.filterHack
-      |> shouldEqual (Utils.filterHack expected2)
+      |> filterHack
+      |> shouldEqual (filterHack expected2)
 
     ()
 

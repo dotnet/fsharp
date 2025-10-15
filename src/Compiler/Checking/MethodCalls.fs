@@ -1107,7 +1107,7 @@ let rec MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args static
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
-        let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
+        let ilMethodRef = ImportProvidedMethodBaseAsILMethodRef amap m mi
         let isConstructor = mi.PUntaint((fun c -> c.IsConstructor), m)
         let isStruct = mi.PUntaint((fun c -> (nonNull<ProvidedType> c.DeclaringType).IsValueType), m)
         let actualTypeInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
@@ -1120,9 +1120,9 @@ let rec MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args static
 
 #if !NO_TYPEPROVIDERS
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
-let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
+let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
-    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
+    let declaringType = ImportProvidedType amap m (mbase.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
@@ -1197,7 +1197,7 @@ let rec BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst 
                     let vExpr, vExprTy = tcVal fsValRef valUseFlags (minfo.DeclaringTypeInst @ minst) m
                     BuildFSharpMethodApp g m fsValRef vExpr vExprTy allArgs
             | None -> 
-                let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
+                let ilMethRef = ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
                 let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
                 let actualTypeInst = 
                     if isRefTupleTy g enclTy then argsOfAppTy g (mkCompiledTupleTy g false (destRefTupleTy g enclTy))  // provided expressions can include method calls that get properties of tuple types
@@ -1779,7 +1779,7 @@ module ProvidedMethodCalls =
 
     let private convertConstExpr g amap m (constant : Tainted<objnull * ProvidedType>) =
         let obj, objTy = constant.PApply2(id, m)
-        let ty = Import.ImportProvidedType amap m objTy
+        let ty = ImportProvidedType amap m objTy
         let normTy = normalizeEnumTy g ty
         obj.PUntaint((fun v ->
             let fail() = raise (TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m))
@@ -1836,7 +1836,7 @@ module ProvidedMethodCalls =
                 let isGeneric = st.PUntaint((fun st -> st.IsGenericType), m)
                 let headType = if isGeneric then st.PApply((fun st -> st.GetGenericTypeDefinition()), m) else st
                 // We import in order to use IsProvidedErasedTycon, to make sure we at least don't reinvent that 
-                let headTypeAsFSharpType = Import.ImportProvidedNamedType amap m headType
+                let headTypeAsFSharpType = ImportProvidedNamedType amap m headType
                 if headTypeAsFSharpType.IsProvidedErasedTycon then 
                     let baseType = 
                         st.PApply((fun st -> 
@@ -1892,14 +1892,14 @@ module ProvidedMethodCalls =
             | ProvidedTypeAsExpr (expr, targetTy) ->
                 let expr, targetTy = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
-                let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
-                let sourceTy = Import.ImportProvidedType amap m (expr.PApply ((fun e -> e.Type), m)) 
+                let targetTy = ImportProvidedType amap m (targetTy.PApply(id, m)) 
+                let sourceTy = ImportProvidedType amap m (expr.PApply ((fun e -> e.Type), m)) 
                 let exprR = mkCoerceIfNeeded g targetTy sourceTy srcExpr
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedTypeTestExpr (expr, targetTy) ->
                 let expr, targetTy = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
-                let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
+                let targetTy = ImportProvidedType amap m (targetTy.PApply(id, m)) 
                 let exprR = mkCallTypeTest g m targetTy srcExpr
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedIfThenElseExpr (test, thenBranch, elseBranch) ->
@@ -1922,7 +1922,7 @@ module ProvidedMethodCalls =
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedNewArrayExpr (ty, elems) ->
                 let ty, elems = exprType.PApply2((fun _ -> (ty, elems)), m)
-                let tyR = Import.ImportProvidedType amap m ty
+                let tyR = ImportProvidedType amap m ty
                 let elems = elems.PApplyArray(id, "GetInvokerExpression", m)
                 let elemsR = elems |> Array.map exprToExpr |> Array.toList
                 let exprR = Expr.Op (TOp.Array, [tyR], elemsR, m)
@@ -1979,7 +1979,7 @@ module ProvidedMethodCalls =
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedNewDelegateExpr (delegateTy, boundVars, delegateBodyExpr) ->
                 let delegateTy, boundVars, delegateBodyExpr = exprType.PApply3((fun _ -> (delegateTy, boundVars, delegateBodyExpr)), m)
-                let delegateTyR = Import.ImportProvidedType amap m delegateTy
+                let delegateTyR = ImportProvidedType amap m delegateTy
                 let vs = boundVars.PApplyArray(id, "GetInvokerExpression", m) |> Array.toList 
                 let vsT = List.map addVar vs
                 let delegateBodyExprR = exprToExpr delegateBodyExpr
@@ -1990,7 +1990,7 @@ module ProvidedMethodCalls =
                 let exprR = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyR
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedDefaultExpr pty ->
-                let ty = Import.ImportProvidedType amap m (exprType.PApply((fun _ -> pty), m))
+                let ty = ImportProvidedType amap m (exprType.PApply((fun _ -> pty), m))
                 let exprR = mkDefault (m, ty)
                 None, (exprR, tyOfExpr g exprR)
             | ProvidedCallExpr (e1, e2, e3) ->
@@ -2036,7 +2036,7 @@ module ProvidedMethodCalls =
             let nm = v.PUntaint ((fun v -> v.Name), m)
             let mut = v.PUntaint ((fun v -> v.IsMutable), m)
             let vRaw = v.PUntaint (id, m)
-            let tyR = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type), m))
+            let tyR = ImportProvidedType amap m (v.PApply ((fun v -> v.Type), m))
             let vR, vTe = if mut then mkMutableCompGenLocal m nm tyR else mkCompGenLocal m nm tyR
             varConv[vRaw] <- (Some vR, vTe)
             vR
@@ -2059,7 +2059,7 @@ module ProvidedMethodCalls =
                     meth.PApplyArray((fun m -> m.GetGenericArguments()), "GetGenericArguments", m)  
                 else 
                     [| |]
-            let replacementGenericArguments = genericArguments |> Array.map (fun t->Import.ImportProvidedType amap m t) |> List.ofArray
+            let replacementGenericArguments = genericArguments |> Array.map (fun t->ImportProvidedType amap m t) |> List.ofArray
 
             let mut         = if top then mut else PossiblyMutates
             let isSuperInit = if top then isSuperInit else ValUseFlag.NormalValUse
@@ -2169,7 +2169,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     match extOpt with 
                     | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
                     | Some ilActualTypeRef -> 
-                        let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
+                        let actualTyconRef = ImportILTypeRef amap m ilActualTypeRef 
                         MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
                 Choice1Of5 (ilMethInfo, minst, staticTyOpt)
 

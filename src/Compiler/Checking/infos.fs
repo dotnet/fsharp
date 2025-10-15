@@ -471,7 +471,7 @@ type ILTypeInfo =
             let tref = mkRefForNestedILTypeDef scoref (enc, tdef)
             ILTypeInfo(g, ty, tref, tdef)
         else
-            failwith ("ILTypeInfo.FromType - no IL metadata for type" + System.Environment.StackTrace)
+            failwith ("ILTypeInfo.FromType - no IL metadata for type" + Environment.StackTrace)
 
 [<NoComparison; NoEquality>]
 type ILMethParentTypeInfo =

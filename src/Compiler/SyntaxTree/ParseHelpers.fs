@@ -687,7 +687,7 @@ let mkSynTypeTuple (elementTypes: SynTupleTypeSegment list) : SynType =
 
 #if DEBUG
 let debugPrint s =
-    if Internal.Utilities.Text.Parsing.Flags.debug then
+    if Flags.debug then
         printfn "\n%s" s
 #else
 let debugPrint s = ignore s
@@ -1143,7 +1143,7 @@ let mkLetExpression
             let mIn' =
                 mIn
                 |> Option.bind (fun (mIn: range) ->
-                    if Position.posEq mIn.Start body.Range.Start then
+                    if posEq mIn.Start body.Range.Start then
                         None
                     else
                         Some mIn)

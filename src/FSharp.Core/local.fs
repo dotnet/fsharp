@@ -1097,7 +1097,7 @@ module internal Array =
         let places = zeroCreateUnchecked len
         for i = 0 to len - 1 do
             places.[i] <- i
-        System.Array.Sort<_, _>(keys, places, cFast)
+        Array.Sort<_, _>(keys, places, cFast)
         // 'array2' is a copy of the original values
         let array2 = (array.Clone() :?> 'T array)
 

@@ -56,7 +56,7 @@ module LeafExpressionConverter =
 
     let StringConcat =
        methodhandleof (fun (x:objnull, y:objnull) -> String.Concat (x, y))
-       |> System.Reflection.MethodInfo.GetMethodFromHandle
+       |> MethodInfo.GetMethodFromHandle
        :?> MethodInfo
 
     let SubstHelperRaw (q:Expr, x:Var array, y:objnull array) : Expr =
@@ -232,7 +232,7 @@ module LeafExpressionConverter =
             return (source.IsArray || dest.IsArray) && StrictHasReferenceConversionTo(source, dest, true);
 *)
         hasReferenceConversionTo source dest
-    let SpecificCallToMethodInfo (minfo: System.Reflection.MethodInfo) =
+    let SpecificCallToMethodInfo (minfo: MethodInfo) =
         let isg1 = minfo.IsGenericMethod
         let gmd = if isg1 then minfo.GetGenericMethodDefinition() else null
         (fun tm ->
@@ -247,7 +247,7 @@ module LeafExpressionConverter =
             | _ -> None)
 
     let (|SpecificCallToMethod|_|) (mhandle: RuntimeMethodHandle) =
-        let minfo = (System.Reflection.MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
+        let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
         SpecificCallToMethodInfo minfo
     let (|GenericArgs|) (minfo: MethodInfo) = minfo.GetGenericArguments()
 
@@ -328,22 +328,22 @@ module LeafExpressionConverter =
     let (|CheckedMinusQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> Checked.( - ) x y))
     let (|CheckedMultiplyQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> Checked.( * ) x y))
 
-    let (|ConvCharQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.char))
-    let (|ConvDecimalQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.decimal))
-    let (|ConvFloatQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.float))
-    let (|ConvFloat32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.float32))
-    let (|ConvSByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.sbyte))
+    let (|ConvCharQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (char))
+    let (|ConvDecimalQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (decimal))
+    let (|ConvFloatQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (float))
+    let (|ConvFloat32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (float32))
+    let (|ConvSByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (sbyte))
 
-    let (|ConvInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.int16))
-    let (|ConvInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.int32))
-    let (|ConvIntQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.int))
-    let (|ConvInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.int64))
-    let (|ConvByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.byte))
-    let (|ConvUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.uint16))
-    let (|ConvUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.uint32))
-    let (|ConvUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.uint64))
-    let (|ConvIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.nativeint))
-    let (|ConvUIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (Operators.unativeint))
+    let (|ConvInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (int16))
+    let (|ConvInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (int32))
+    let (|ConvIntQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (int))
+    let (|ConvInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (int64))
+    let (|ConvByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (byte))
+    let (|ConvUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (uint16))
+    let (|ConvUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (uint32))
+    let (|ConvUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (uint64))
+    let (|ConvIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (nativeint))
+    let (|ConvUIntPtrQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (unativeint))
 
     let (|ConvInt8Q|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToSByte"))
     let (|ConvUInt8Q|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToByte"))
@@ -394,19 +394,19 @@ module LeafExpressionConverter =
     //let (|ArrayTypeQ|_|) (ty:System.Type) = if ty.IsArray && ty.GetArrayRank() = 1 then Some (ty.GetElementType()) else None
     let substHelperMeth =
         methodhandleof (fun (x:Expr, y:Var array, z:objnull array) -> SubstHelper<obj> (x, y, z))
-        |> System.Reflection.MethodInfo.GetMethodFromHandle
+        |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let substHelperRawMeth =
         methodhandleof (fun (x:Expr, y:Var array, z:objnull array) -> SubstHelperRaw (x, y, z))
-        |> System.Reflection.MethodInfo.GetMethodFromHandle
+        |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
-    let (-->) ty1 ty2 = Reflection.FSharpType.MakeFunctionType(ty1, ty2)
+    let (-->) ty1 ty2 = FSharpType.MakeFunctionType(ty1, ty2)
 
     /// Extract member initialization expression stored in 'MemberInitializationHelper' (by QueryExtensions.fs)
     let rec (|Sequentials|) = function
-        | Patterns.Sequential(a, Sequentials (b, c)) -> (a :: b, c)
+        | Sequential(a, Sequentials (b, c)) -> (a :: b, c)
         | a -> [], a
 
     let (|MemberInitializationQ|_|) = function
@@ -415,7 +415,7 @@ module LeafExpressionConverter =
 
     /// Extract construction of anonymous object noted by use of in 'NewAnonymousObjectHelper' (by QueryExtensions.fs)
     let (|NewAnonymousObjectQ|_|) = function
-        | NewAnonymousObjectHelperQ (None, _, [ Patterns.NewObject(ctor, args) ]) -> Some (ctor, args)
+        | NewAnonymousObjectHelperQ (None, _, [ NewObject(ctor, args) ]) -> Some (ctor, args)
         | _ -> None
 
     /// Extract nullable constructions
@@ -431,23 +431,23 @@ module LeafExpressionConverter =
         match inp with
 
         // Generic cases
-        | Patterns.Var v ->
+        | Var v ->
             try
                 Map.find v env.varEnv
             with
             |   :? KeyNotFoundException -> invalidOp ("The variable '"+ v.Name + "' was not found in the translation context'")
 
-        | DerivedPatterns.AndAlso(x1, x2) ->
+        | AndAlso(x1, x2) ->
             Expression.AndAlso(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 
-        | DerivedPatterns.OrElse(x1, x2) ->
+        | OrElse(x1, x2) ->
             Expression.OrElse(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
 
-        | Patterns.Value(x, ty) ->
+        | Value(x, ty) ->
             Expression.Constant(x, ty) |> asExpr
 
         | UnboxGeneric(_, GenericArgs [|toTy|], [x])
-        | Patterns.Coerce(x, toTy) ->
+        | Coerce(x, toTy) ->
             let converted = ConvExprToLinqInContext env x
 
             // Most of conversion scenarios in C# are covered by Expression.Convert
@@ -455,27 +455,27 @@ module LeafExpressionConverter =
             elif not (x.Type.IsValueType || toTy.IsValueType) && toTy.IsAssignableFrom x.Type then converted // converting reference type to supertype - do nothing
             else Expression.Convert(converted, toTy) |> asExpr // emit Expression.Convert
 
-        | Patterns.TypeTest(x, toTy) ->
+        | TypeTest(x, toTy) ->
             Expression.TypeIs(ConvExprToLinqInContext env x, toTy) |> asExpr
 
         | TypeTestGeneric(_, GenericArgs [|toTy|], [x]) ->
             Expression.TypeIs(ConvExprToLinqInContext env x, toTy) |> asExpr
 
         // Expr.*Get
-        | Patterns.FieldGet(objOpt, fieldInfo) ->
+        | FieldGet(objOpt, fieldInfo) ->
             Expression.Field(ConvObjArg env objOpt None, fieldInfo) |> asExpr
 
-        | Patterns.TupleGet(arg, n) ->
+        | TupleGet(arg, n) ->
              let argP = ConvExprToLinqInContext env arg
              let rec build ty argP n =
-                 match Reflection.FSharpValue.PreComputeTuplePropertyInfo(ty, n) with
+                 match FSharpValue.PreComputeTuplePropertyInfo(ty, n) with
                  | propInfo, None ->
                      Expression.Property(argP, propInfo) |> asExpr
                  | propInfo, Some (nestedTy, n2) ->
                      build nestedTy (Expression.Property(argP, propInfo) |> asExpr) n2
              build arg.Type argP n
 
-        | Patterns.PropertyGet(objOpt, propInfo, args) ->
+        | PropertyGet(objOpt, propInfo, args) ->
             let coerceTo =
                 if objOpt.IsSome && FSharpType.IsUnion propInfo.DeclaringType && FSharpType.IsUnion propInfo.DeclaringType.BaseType then
                     Some propInfo.DeclaringType
@@ -489,7 +489,7 @@ module LeafExpressionConverter =
                 Expression.Call(ConvObjArg env objOpt coerceTo, propInfo.GetGetMethod(true), argsP) |> asExpr
 
         // Expr.(Call, Application)
-        | Patterns.Call(objOpt, minfo, args) ->
+        | Call(objOpt, minfo, args) ->
 
             match inp with
             // Special cases for this translation
@@ -499,7 +499,7 @@ module LeafExpressionConverter =
                 let bindings =
                   [| for p in propInfos ->
                       match p with
-                      | Patterns.PropertySet(_, pinfo, args, assign) ->
+                      | PropertySet(_, pinfo, args, assign) ->
                           if args <> [] then raise (NotSupportedException "Parameterized properties not supported in member initialization.")
                           Expression.Bind(pinfo, ConvExprToLinqInContext env assign) :> MemberBinding
                       | _ ->
@@ -642,7 +642,7 @@ module LeafExpressionConverter =
 
 #if !NO_CURRIED_FUNCTION_OPTIMIZATIONS
         // f x1 x2 x3 x4 --> InvokeFast4
-        | Patterns.Application(Patterns.Application(Patterns.Application(Patterns.Application(f, arg1), arg2), arg3), arg4) ->
+        | Application(Application(Application(Application(f, arg1), arg2), arg3), arg4) ->
             // TODO: amortize this computation based on f.Type
             let meth =
                 let domainTy1, rangeTy = getFunctionType f.Type
@@ -655,7 +655,7 @@ module LeafExpressionConverter =
             Expression.Call((null:Expression), meth, argsP) |> asExpr
 
         // f x1 x2 x3 --> InvokeFast3
-        | Patterns.Application(Patterns.Application(Patterns.Application(f, arg1), arg2), arg3) ->
+        | Application(Application(Application(f, arg1), arg2), arg3) ->
             // TODO: amortize this computation based on f.Type
             let meth =
                 let domainTy1, rangeTy = getFunctionType f.Type
@@ -667,7 +667,7 @@ module LeafExpressionConverter =
             Expression.Call((null:Expression), meth, argsP) |> asExpr
 
         // f x1 x2 --> InvokeFast2
-        | Patterns.Application(Patterns.Application(f, arg1), arg2) ->
+        | Application(Application(f, arg1), arg2) ->
             // TODO: amortize this computation based on f.Type
             let meth =
                 let domainTy1, rangeTy = getFunctionType f.Type
@@ -679,7 +679,7 @@ module LeafExpressionConverter =
 #endif
 
         // f x1 --> Invoke
-        | Patterns.Application(f, arg) ->
+        | Application(f, arg) ->
             let fP = ConvExprToLinqInContext env f
             let argP = ConvExprToLinqInContext env arg
             // TODO: amortize this computation based on f.Type
@@ -687,24 +687,24 @@ module LeafExpressionConverter =
             Expression.Call(fP, meth, [| argP |]) |> asExpr
 
         // Expr.New*
-        | Patterns.NewRecord(recdTy, args) ->
-            let ctorInfo = Reflection.FSharpValue.PreComputeRecordConstructorInfo(recdTy, showAll)
+        | NewRecord(recdTy, args) ->
+            let ctorInfo = FSharpValue.PreComputeRecordConstructorInfo(recdTy, showAll)
             Expression.New(ctorInfo, ConvExprsToLinq env args) |> asExpr
 
-        | Patterns.NewArray(ty, args) ->
+        | NewArray(ty, args) ->
             Expression.NewArrayInit(ty, ConvExprsToLinq env args) |> asExpr
 
-        | Patterns.DefaultValue ty ->
+        | DefaultValue ty ->
             Expression.New ty |> asExpr
 
-        | Patterns.NewUnionCase(unionCaseInfo, args) ->
-            let methInfo = Reflection.FSharpValue.PreComputeUnionConstructorInfo(unionCaseInfo, showAll)
+        | NewUnionCase(unionCaseInfo, args) ->
+            let methInfo = FSharpValue.PreComputeUnionConstructorInfo(unionCaseInfo, showAll)
             let argsR = ConvExprsToLinq env args
             Expression.Call((null:Expression), methInfo, argsR) |> asExpr
 
 #if !NO_PATTERN_MATCHING_IN_INPUT_LANGUAGE
-        | Patterns.UnionCaseTest(e, unionCaseInfo) ->
-            let methInfo = Reflection.FSharpValue.PreComputeUnionTagMemberInfo(unionCaseInfo.DeclaringType, showAll)
+        | UnionCaseTest(e, unionCaseInfo) ->
+            let methInfo = FSharpValue.PreComputeUnionTagMemberInfo(unionCaseInfo.DeclaringType, showAll)
             let obj = ConvExprToLinqInContext env e
             let tagE =
                 match methInfo with
@@ -716,39 +716,39 @@ module LeafExpressionConverter =
             Expression.Equal(tagE, Expression.Constant(unionCaseInfo.Tag)) |> asExpr
 #endif
 
-        | (Patterns.NewObject(ctorInfo, args) as x) ->
+        | (NewObject(ctorInfo, args) as x) ->
             match x with
             // LINQ providers prefer C# "Nullable x" to be "Convert x", since that's what C# uses
             // to construct nullable values.
             | NullableConstruction arg -> Expression.Convert(ConvExprToLinqInContext env arg, x.Type) |> asExpr
             | _ -> Expression.New(ctorInfo, ConvExprsToLinq env args) |> asExpr
 
-        | Patterns.NewDelegate(delegateTy, vs, b) ->
+        | NewDelegate(delegateTy, vs, b) ->
             let vsP = List.map ConvVarToLinq vs
             let env = { varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
             let bodyP = ConvExprToLinqInContext env b
             Expression.Lambda(delegateTy, bodyP, vsP) |> asExpr
 
-        | Patterns.NewTuple args ->
+        | NewTuple args ->
              let tupTy = 
                 let argTypes = args |> List.map (fun arg -> arg.Type) |> Array.ofList
                 if inp.Type.IsValueType then 
-                    Reflection.FSharpType.MakeStructTupleType(inp.Type.Assembly, argTypes)
+                    FSharpType.MakeStructTupleType(inp.Type.Assembly, argTypes)
                 else
-                    Reflection.FSharpType.MakeTupleType(argTypes)
+                    FSharpType.MakeTupleType(argTypes)
              let argsP = ConvExprsToLinq env args
              let rec build ty (argsP: Expression array) =
-                 match Reflection.FSharpValue.PreComputeTupleConstructorInfo ty with
+                 match FSharpValue.PreComputeTupleConstructorInfo ty with
                  | ctorInfo, None -> Expression.New(ctorInfo, argsP) |> asExpr
                  | ctorInfo, Some (nestedTy) ->
                      let n = ctorInfo.GetParameters().Length - 1
                      Expression.New(ctorInfo, Array.append argsP.[0..n-1] [| build nestedTy argsP.[n..] |]) |> asExpr
              build tupTy argsP
 
-        | Patterns.IfThenElse(g, t, e) ->
+        | IfThenElse(g, t, e) ->
             Expression.Condition(ConvExprToLinqInContext env g, ConvExprToLinqInContext env t, ConvExprToLinqInContext env e) |> asExpr
 
-        | Patterns.QuoteTyped x ->
+        | QuoteTyped x ->
             let fvs = x.GetFreeVars()
 
             Expression.Call(substHelperMeth.MakeGenericMethod [| x.Type |],
@@ -757,7 +757,7 @@ module LeafExpressionConverter =
                                (Expression.NewArrayInit(typeof<obj>, [| for fv in fvs -> Expression.Convert(env.varEnv.[fv], typeof<obj>) |> asExpr |]) |> asExpr) |])
                     |> asExpr
 
-        | Patterns.QuoteRaw x ->
+        | QuoteRaw x ->
             let fvs = x.GetFreeVars()
 
             Expression.Call(substHelperRawMeth,
@@ -766,7 +766,7 @@ module LeafExpressionConverter =
                                (Expression.NewArrayInit(typeof<obj>, [| for fv in fvs -> Expression.Convert(env.varEnv.[fv], typeof<obj>) |> asExpr |]) |> asExpr) |])
                     |> asExpr
 
-        | Patterns.Let (v, e, b) ->
+        | Let (v, e, b) ->
             let vP = ConvVarToLinq v
             let envinner = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext envinner b
@@ -775,12 +775,12 @@ module LeafExpressionConverter =
             let lam = Expression.Lambda(ty, bodyP, [| vP |]) |> asExpr
             Expression.Call(lam, ty.GetMethod("Invoke", instanceBindingFlags), [| eP |]) |> asExpr
 
-        | Patterns.Lambda(v, body) ->
+        | Lambda(v, body) ->
             let vP = ConvVarToLinq v
             let env = { varEnv = Map.add v (vP |> asExpr) env.varEnv }
             let bodyP = ConvExprToLinqInContext env body
             let lambdaTy, tyargs =
-                if bodyP.Type = typeof<System.Void> then
+                if bodyP.Type = typeof<Void> then
                     let tyargs = [| vP.Type |]
                     typedefof<Action<_>>, tyargs
                 else
@@ -801,7 +801,7 @@ module LeafExpressionConverter =
         if linqExpressionsCondition e.Type then
             exprErasedConstructor(e, null)
         else
-            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            let method = MethodInfo.GetMethodFromHandle fallback :?> MethodInfo
             exprErasedConstructor(e, method.MakeGenericMethod [| getNonNullableType x.Type; getNonNullableType inp.Type |])
         |> asExpr
 
@@ -814,7 +814,7 @@ module LeafExpressionConverter =
         if e1.Type = e2.Type && isLinqExpressionsSimpleShift e1.Type e2.Type then
             exprErasedConstructor(e1, e2, null)
         else
-            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            let method = MethodInfo.GetMethodFromHandle fallback :?> MethodInfo
             exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
 
@@ -827,7 +827,7 @@ module LeafExpressionConverter =
         if e1.Type = e2.Type && linqExpressionsCondition e1.Type then
             exprErasedConstructor(e1, e2, null)
         else
-            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            let method = MethodInfo.GetMethodFromHandle fallback :?> MethodInfo
             exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
 
@@ -854,7 +854,7 @@ module LeafExpressionConverter =
             // The false for (liftToNull: bool) indicates whether equality operators return a Nullable<bool> like in VB.NET (null when either argument is null) instead of bool like in C# (nulls equate to nulls). F# follows C# here.
             exprErasedConstructor(e1, e2, false, null)
         else
-            let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
+            let method = MethodInfo.GetMethodFromHandle fallback :?> MethodInfo
             exprErasedConstructor(e1, e2, false, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
 
@@ -865,7 +865,7 @@ module LeafExpressionConverter =
         if isLinqExpressionsConvertible e.Type inp.Type then
             exprErasedConstructor(e, inp.Type, null)
         else
-            let method = Reflection.MethodInfo.GetMethodFromHandle (if isChecked then methodhandleof (LanguagePrimitives.CheckedExplicitDynamic) else methodhandleof (LanguagePrimitives.ExplicitDynamic)) :?> Reflection.MethodInfo
+            let method = MethodInfo.GetMethodFromHandle (if isChecked then methodhandleof (LanguagePrimitives.CheckedExplicitDynamic) else methodhandleof (LanguagePrimitives.ExplicitDynamic)) :?> MethodInfo
             exprErasedConstructor(e, inp.Type, method.MakeGenericMethod [| getNonNullableType x.Type; getNonNullableType inp.Type |])
         |> asExpr
 
@@ -888,14 +888,14 @@ module LeafExpressionConverter =
 
     let ConvExprToLinq (e: Expr) = ConvExprToLinqInContext { varEnv = Map.empty } e
 
-    let QuotationToExpression (e: Microsoft.FSharp.Quotations.Expr) = ConvExprToLinq e
+    let QuotationToExpression (e: Expr) = ConvExprToLinq e
     let QuotationToLambdaExpression (e: Microsoft.FSharp.Quotations.Expr<'T>) =  (ConvExprToLinq e) :?> Expression<'T>
 
     // This contorted compilation is used because LINQ's "Compile" is only allowed on lambda expressions, and LINQ
     // provides no other way to evaluate the expression.
     //
     // REVIEW: It is possible it is just better to interpret the expression in many common cases, e.g. property-gets, values etc.
-    let EvaluateQuotation (e: Microsoft.FSharp.Quotations.Expr) : objnull =
+    let EvaluateQuotation (e: Expr) : objnull =
 #if FX_NO_QUOTATIONS_COMPILE
        raise (new NotSupportedException())
 #else
@@ -908,6 +908,6 @@ module LeafExpressionConverter =
        let d = linqExpr.Compile ()
        try
            d.DynamicInvoke [| box () |]
-       with :? System.Reflection.TargetInvocationException as exn ->
+       with :? TargetInvocationException as exn ->
            raise exn.InnerException
 #endif

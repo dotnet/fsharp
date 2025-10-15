@@ -76,7 +76,7 @@ let rec private evalFSharpAttribArg g attribExpr =
 
 type AttribInfo = 
     | FSAttribInfo of TcGlobals * Attrib
-    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
+    | ILAttribInfo of TcGlobals * ImportMap * ILScopeRef * ILAttribute * range
 
     member x.Range = 
          match x with 

@@ -47,7 +47,7 @@ module NumericLiterals =
             FromInt64Dynamic(int64 x32)
 
         let inline isOX s =
-            not (System.String.IsNullOrEmpty(s))
+            not (String.IsNullOrEmpty(s))
             && s.Length > 2
             && s.[0] = '0'
             && s.[1] = 'x'

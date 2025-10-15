@@ -483,8 +483,8 @@ module DiagnosticsLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             // Don't send ThreadAbortException down the error channel
-            | :? System.Threading.ThreadAbortException
-            | WrappedError(:? System.Threading.ThreadAbortException, _) -> ()
+            | :? ThreadAbortException
+            | WrappedError(:? ThreadAbortException, _) -> ()
             | ReportedError _
             | WrappedError(ReportedError _, _) -> ()
             | StopProcessing

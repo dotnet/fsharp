@@ -96,7 +96,7 @@ module Parser =
         with _ ->
             None
 
-    let getTexts (node: Xml.XmlNode) =
+    let getTexts (node: XmlNode) =
         seq {
             for child in node.ChildNodes do
                 if child.Name = "#text" then

@@ -1538,7 +1538,7 @@ type TILObjectReprData =
 type TProvidedTypeInfo = 
     { 
       /// The parameters given to the provider that provided to this type.
-      ResolutionEnvironment: TypeProviders.ResolutionEnvironment
+      ResolutionEnvironment: ResolutionEnvironment
 
       /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
       /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
@@ -2189,7 +2189,7 @@ let private (|Public|Internal|Private|) (TAccess p) =
     | _ when List.forall isInternalCompPath p -> Internal 
     | _ -> Private
 
-let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> TypedTree.SyntaxAccess.Unknown
+let getSyntaxAccessForCompPath (TAccess a) = match a with | CompPath(_, sa, _) :: _ -> sa | _ -> SyntaxAccess.Unknown
 
 let updateSyntaxAccessForCompPath access syntaxAccess =
     match access with
@@ -2213,9 +2213,9 @@ type Accessibility =
 
     member x.AsILMemberAccess () =
         match getSyntaxAccessForCompPath x with
-        | TypedTree.SyntaxAccess.Public -> ILMemberAccess.Public
-        | TypedTree.SyntaxAccess.Internal -> ILMemberAccess.Assembly
-        | TypedTree.SyntaxAccess.Private -> ILMemberAccess.Private
+        | SyntaxAccess.Public -> ILMemberAccess.Public
+        | SyntaxAccess.Internal -> ILMemberAccess.Assembly
+        | SyntaxAccess.Private -> ILMemberAccess.Private
         | _ ->
             if x.IsPublic then ILMemberAccess.Public
             elif x.IsInternal then ILMemberAccess.Assembly
@@ -5593,14 +5593,14 @@ type NamedDebugPointKey =
 
     override x.Equals(yobj: objnull) = 
         match yobj with 
-        | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
+        | :? NamedDebugPointKey as y -> equals x.Range y.Range && x.Name = y.Name
         | _ -> false
 
     interface IComparable with
         member x.CompareTo(yobj: obj) =
            match yobj with 
            | :? NamedDebugPointKey as y ->  
-               let c = Range.rangeOrder.Compare(x.Range, y.Range) 
+               let c = rangeOrder.Compare(x.Range, y.Range) 
                if c <> 0 then c else
                compare x.Name y.Name
            | _ -> -1

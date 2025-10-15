@@ -351,7 +351,7 @@ let GetNotNullWhenTrueAttribute (g: TcGlobals) (propNames: string array) =
         []
     )
 
-let GetNullableAttribute (g: TcGlobals) (nullnessInfos: TypedTree.NullnessInfo list) =
+let GetNullableAttribute (g: TcGlobals) (nullnessInfos: NullnessInfo list) =
     let tref = g.attrib_NullableAttribute.TypeRef
 
     g.TryEmbedILType(tref, (fun () -> mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g, tref.Name, "NullableFlags")))

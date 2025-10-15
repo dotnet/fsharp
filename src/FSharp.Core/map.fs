@@ -635,7 +635,7 @@ module MapTree =
 
         { new IEnumerator<_> with
             member _.Current = current i
-          interface System.Collections.IEnumerator with
+          interface IEnumerator with
               member _.Current = box (current i)
 
               member _.MoveNext() =
@@ -643,7 +643,7 @@ module MapTree =
 
               member _.Reset() =
                   i <- mkIterator m
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   ()
         }
@@ -674,18 +674,18 @@ module MapTree =
             else
                 rightmost nd.Right
 
-[<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
-[<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
+[<DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
+[<DebuggerDisplay("Count = {Count}")>]
 [<Sealed>]
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonConditionalOn>] 'Value when 'Key: comparison>
     (comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // This type is logically immutable. This field is only mutated during deserialization.
     let mutable comparer = comparer
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // This type is logically immutable. This field is only mutated during deserialization.
     let mutable tree = tree
 
@@ -957,7 +957,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
         member m.Count = m.Count
 
-    interface System.IComparable with
+    interface IComparable with
         member m.CompareTo(obj: objnull) =
             match obj with
             | :? Map<'Key, 'Value> as m2 ->

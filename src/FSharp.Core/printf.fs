@@ -91,7 +91,7 @@ module internal PrintfImpl =
     [<Literal>]
     let NotSpecifiedValue = -2
 
-    [<System.Diagnostics.DebuggerDisplayAttribute("{ToString()}")>]
+    [<DebuggerDisplayAttribute("{ToString()}")>]
     [<NoComparison; NoEquality>]
     type FormatSpecifier =
         {
@@ -125,7 +125,7 @@ module internal PrintfImpl =
 
         override spec.ToString() = 
             let valueOf n = match n with StarValue -> "*" | NotSpecifiedValue -> "-" | n -> n.ToString()
-            System.String.Format
+            String.Format
                 (
                     "'{0}', Precision={1}, Width={2}, Flags={3}", 
                     spec.TypeChar, 
@@ -146,7 +146,7 @@ module internal PrintfImpl =
             padChar, prefix    
 
         member spec.IsGFormat = 
-            spec.IsDecimalFormat || System.Char.ToLower(spec.TypeChar) = 'g'
+            spec.IsDecimalFormat || Char.ToLower(spec.TypeChar) = 'g'
 
     
     /// Set of helpers to parse format string
@@ -681,7 +681,7 @@ module internal PrintfImpl =
         /// - negative numbers, -7 should be printed as '-007', not '00-7'
         /// - positive numbers when prefix for positives is set: 7 should be '+007', not '00+7'
         let rightJustifyWithZeroAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
-            System.Diagnostics.Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
+            Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
             if isNumber then
                 if isPositive then
                     prefixForPositives + (if w = 0 then str else str.PadLeft(w - prefixForPositives.Length, '0')) // save space to 
@@ -696,7 +696,7 @@ module internal PrintfImpl =
         
         /// handler right justification when pad char = ' '
         let rightJustifyWithSpaceAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
-            System.Diagnostics.Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
+            Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
             (if isNumber && isPositive then prefixForPositives + str else str).PadLeft(w, ' ')
         
         /// handles left justification with formatting with 'G'\'g' - either for decimals or with 'g'\'G' is explicitly set 
@@ -803,7 +803,7 @@ module internal PrintfImpl =
                     fun (w: int) (v: objnull) ->
                         GenericNumber.rightJustifyWithZeroAsPadChar (f v) true true w prefixForPositives
                 else
-                    System.Diagnostics.Debug.Assert((padChar = ' '))
+                    Debug.Assert((padChar = ' '))
                     fun (w: int) (v: objnull) ->
                         GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true true w prefixForPositives
             else
@@ -812,7 +812,7 @@ module internal PrintfImpl =
                         GenericNumber.rightJustifyWithZeroAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
 
                 else
-                    System.Diagnostics.Debug.Assert((padChar = ' '))
+                    Debug.Assert((padChar = ' '))
                     fun (w: int) v ->
                         GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
 
@@ -896,7 +896,7 @@ module internal PrintfImpl =
                 fun (fmt: string) (w: int) (v: obj) ->
                     GenericNumber.rightJustifyWithZeroAsPadChar (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefixForPositives
             else
-                System.Diagnostics.Debug.Assert((padChar = ' '))
+                Debug.Assert((padChar = ' '))
                 fun (fmt: string) (w: int) (v: obj) ->
                     GenericNumber.rightJustifyWithSpaceAsPadChar (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefixForPositives
 
@@ -1012,7 +1012,7 @@ module internal PrintfImpl =
             raise (ArgumentException(SR.GetString(SR.printfBadFormatSpecifier)))
     
     let extractCurriedArguments (ty: Type) n = 
-        System.Diagnostics.Debug.Assert(n = 1 || n = 2 || n = 3, "n = 1 || n = 2 || n = 3")
+        Debug.Assert(n = 1 || n = 2 || n = 3, "n = 1 || n = 2 || n = 3")
         let buf = Array.zeroCreate n
         let rec go (ty: Type) i = 
             if i < n then
@@ -1022,7 +1022,7 @@ module internal PrintfImpl =
                     go retTy (i + 1)
                 | _ -> failwith (String.Format("Expected function with {0} arguments", n))
             else 
-                System.Diagnostics.Debug.Assert((i = n), "i = n")
+                Debug.Assert((i = n), "i = n")
                 (buf, ty)
         go ty 0    
 
@@ -1072,13 +1072,13 @@ module internal PrintfImpl =
             LargeStringPrintfEnv(id, blockSize) :> PrintfEnv<_,_,_>
 
     let StringBuilderPrintfEnv<'Result>(k, buf) = 
-        { new PrintfEnv<Text.StringBuilder, unit, 'Result>(buf) with
+        { new PrintfEnv<StringBuilder, unit, 'Result>(buf) with
             override _.Finish() : 'Result = k ()
             override _.Write(s: string) = ignore(buf.Append s)
             override _.WriteT(()) = () }
 
-    let TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
-        { new PrintfEnv<IO.TextWriter, unit, 'Result>(tw) with 
+    let TextWriterPrintfEnv<'Result>(k, tw: TextWriter) =
+        { new PrintfEnv<TextWriter, unit, 'Result>(tw) with 
             override _.Finish() : 'Result = k()
             override _.Write(s: string) = tw.Write s
             override _.WriteT(()) = () }

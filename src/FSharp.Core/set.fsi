@@ -231,7 +231,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     interface ICollection<'T>
     interface IEnumerable<'T>
     interface System.Collections.IEnumerable
-    interface System.IComparable
+    interface IComparable
     interface System.Collections.IStructuralEquatable
     interface IReadOnlyCollection<'T>
 
@@ -247,7 +247,7 @@ and [<CompilerMessage("This type is for compiler use and should not be used dire
     ///
     /// <returns>A set containing the specified items.</returns>
     [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
-    static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T> -> Set<'T>
+    static member Create: [<System.Runtime.CompilerServices.ScopedRef>] items: ReadOnlySpan<'T> -> Set<'T>
 #endif
 
 namespace Microsoft.FSharp.Collections

@@ -153,7 +153,7 @@ type internal RawFSharpAssemblyDataBackedByLanguageService =
         outfile: string *
         topAttrs: TopAttribs *
         assemblyName: string *
-        ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
+        ilAssemRef: IL.ILAssemblyRef ->
             RawFSharpAssemblyDataBackedByLanguageService
 
     interface IRawFSharpAssemblyData

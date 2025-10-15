@@ -2623,7 +2623,7 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
 
 let ilMethodBodyThrowNull =
-    let ilCode = IL.buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
+    let ilCode = buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
     mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None, None)
 
 let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
@@ -4166,7 +4166,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             [| hCode
                hData
                match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
-               | true, Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
+               | true, Some impliedSigHash -> BitConverter.GetBytes(impliedSigHash)
                | _ -> sha.ComputeHash metadata |] 
             |> Array.collect id 
             |> sha.ComputeHash

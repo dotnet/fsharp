@@ -45,7 +45,7 @@ type FilePath = string
 type ProjectPath = string
 type FileVersion = int
 
-type FSharpProjectSnapshot = FSharp.Compiler.CodeAnalysis.ProjectSnapshot.FSharpProjectSnapshot
+type FSharpProjectSnapshot = ProjectSnapshot.FSharpProjectSnapshot
 
 type internal IBackgroundCompiler =
 
@@ -80,22 +80,22 @@ type internal IBackgroundCompiler =
     abstract member FindReferencesInFile:
         fileName: string *
         options: FSharpProjectOptions *
-        symbol: FSharp.Compiler.Symbols.FSharpSymbol *
+        symbol: FSharpSymbol *
         canInvalidateProject: bool *
         userOpName: string ->
-            Async<seq<FSharp.Compiler.Text.range>>
+            Async<seq<range>>
 
     abstract member FindReferencesInFile:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharp.Compiler.Symbols.FSharpSymbol * userOpName: string ->
-            Async<seq<FSharp.Compiler.Text.range>>
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * userOpName: string ->
+            Async<seq<range>>
 
     abstract member GetAssemblyData:
         options: FSharpProjectOptions * outputFileName: string * userOpName: string ->
-            Async<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+            Async<ProjectAssemblyDataResult>
 
     abstract member GetAssemblyData:
         projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string ->
-            Async<FSharp.Compiler.CompilerConfig.ProjectAssemblyDataResult>
+            Async<ProjectAssemblyDataResult>
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     abstract member GetBackgroundCheckResultsForFileInProject:
@@ -114,7 +114,7 @@ type internal IBackgroundCompiler =
         sourceText: ISourceText *
         caret: Position option *
         previewEnabled: bool option *
-        loadedTimeStamp: System.DateTime option *
+        loadedTimeStamp: DateTime option *
         otherFlags: string array option *
         useFsiAuxLib: bool option *
         useSdkRefs: bool option *
@@ -122,7 +122,7 @@ type internal IBackgroundCompiler =
         assumeDotNetFramework: bool option *
         optionsStamp: int64 option *
         userOpName: string ->
-            Async<FSharpProjectOptions * FSharp.Compiler.Diagnostics.FSharpDiagnostic list>
+            Async<FSharpProjectOptions * FSharpDiagnostic list>
 
     abstract GetProjectSnapshotFromScript:
         fileName: string *
@@ -130,7 +130,7 @@ type internal IBackgroundCompiler =
         caret: Position option *
         documentSource: DocumentSource *
         previewEnabled: bool option *
-        loadedTimeStamp: System.DateTime option *
+        loadedTimeStamp: DateTime option *
         otherFlags: string array option *
         useFsiAuxLib: bool option *
         useSdkRefs: bool option *

@@ -18,7 +18,7 @@ module internal IEnumerator =
 
     [<Sealed>]
     type EmptyEnumerator<'T> =
-        interface System.IDisposable
+        interface IDisposable
         interface IEnumerator
         interface IEnumerator<'T>
         new: unit -> EmptyEnumerator<'T>
@@ -34,7 +34,7 @@ module internal IEnumerator =
 
     [<SealedAttribute>]
     type Singleton<'T> =
-        interface System.IDisposable
+        interface IDisposable
         interface IEnumerator
         interface IEnumerator<'T>
         new: v: 'T -> Singleton<'T>

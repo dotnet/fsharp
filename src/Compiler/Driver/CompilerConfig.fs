@@ -346,7 +346,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
+        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -564,7 +564,7 @@ type TcConfigBuilder =
         mutable doTLR: bool (* run TLR pass? *)
         mutable doFinalSimplify: bool (* do final simplification pass *)
         mutable optsOn: bool (* optimizations are turned on *)
-        mutable optSettings: Optimizer.OptimizationSettings
+        mutable optSettings: OptimizationSettings
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable parallelParsing: bool

@@ -345,7 +345,7 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member val ParseFile =
         AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
-        : AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), ProjectSnapshot.FSharpParsedFile>
+        : AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), FSharpParsedFile>
 
     member val ParseFileWithoutProject =
         AsyncMemoize<string, string, FSharpParseFileResults>(
@@ -2493,7 +2493,7 @@ type internal TransparentCompiler
 
         member this.GetSemanticClassificationForFile
             (fileName: string, options: FSharpProjectOptions, userOpName: string)
-            : Async<EditorServices.SemanticClassificationView option> =
+            : Async<SemanticClassificationView option> =
             async {
                 ignore userOpName
 

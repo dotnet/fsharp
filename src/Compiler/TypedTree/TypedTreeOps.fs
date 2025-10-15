@@ -2711,7 +2711,7 @@ type TraitConstraintInfo with
         match traitInfo.MemberFlags.MemberKind with
         | SynMemberKind.PropertyGet
         | SynMemberKind.PropertySet ->
-            match PrettyNaming.TryChopPropertyName traitName0 with
+            match TryChopPropertyName traitName0 with
             | Some nm -> nm
             | None -> traitName0
         | _ -> traitName0
@@ -3274,8 +3274,8 @@ type DisplayEnv =
                escapeKeywordNames = true
                includeStaticParametersInTypeNames = true }
         denv.SetOpenPaths
-            [ FSharpLib.RootPath
-              FSharpLib.CorePath
+            [ RootPath
+              CorePath
               CollectionsPath
               ControlPath
               (splitNamespace ExtraTopLevelOperatorsName) ]
@@ -4404,12 +4404,12 @@ module DebugPrint =
             | Const.UIntPtr x -> (x |> string)+"un"
             | Const.Single d -> 
                 (let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                 if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
+                 if String.forall (fun c -> Char.IsDigit c || c = '-') s 
                  then s + ".0" 
                  else s) + "f"
             | Const.Double d -> 
                 let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
+                if String.forall (fun c -> Char.IsDigit c || c = '-') s 
                 then s + ".0" 
                 else s
             | Const.Char c -> "'" + c.ToString() + "'" 
@@ -8045,7 +8045,7 @@ let tryMkCallCoreFunctionAsBuiltInWitness (g: TcGlobals) info tyargs argExprs m 
 let TryEliminateDesugaredConstants g m c = 
     match c with 
     | Const.Decimal d -> 
-        match System.Decimal.GetBits d with 
+        match Decimal.GetBits d with 
         | [| lo;med;hi; signExp |] -> 
             let scale = (min (((signExp &&& 0xFF0000) >>> 16) &&& 0xFF) 28) |> byte
             let isNegative = (signExp &&& 0x80000000) <> 0
@@ -8236,10 +8236,10 @@ let mkReraise m returnTy = Expr.Op (TOp.Reraise, [returnTy], [], m) (* could sup
 // CompilationMappingAttribute, SourceConstructFlags
 //----------------------------------------------------------------------------
 
-let tnameCompilationSourceNameAttr = FSharpLib.Core + ".CompilationSourceNameAttribute"
-let tnameCompilationArgumentCountsAttr = FSharpLib.Core + ".CompilationArgumentCountsAttribute"
-let tnameCompilationMappingAttr = FSharpLib.Core + ".CompilationMappingAttribute"
-let tnameSourceConstructFlags = FSharpLib.Core + ".SourceConstructFlags"
+let tnameCompilationSourceNameAttr = Core + ".CompilationSourceNameAttribute"
+let tnameCompilationArgumentCountsAttr = Core + ".CompilationArgumentCountsAttribute"
+let tnameCompilationMappingAttr = Core + ".CompilationMappingAttribute"
+let tnameSourceConstructFlags = Core + ".SourceConstructFlags"
 
 let tref_CompilationArgumentCountsAttr (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationArgumentCountsAttr)
 let tref_CompilationMappingAttr (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationMappingAttr)
@@ -8300,7 +8300,7 @@ let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull op
 // FSharpInterfaceDataVersionAttribute
 //----------------------------------------------------------------------------
 
-let tname_SignatureDataVersionAttr = FSharpLib.Core + ".FSharpInterfaceDataVersionAttribute"
+let tname_SignatureDataVersionAttr = Core + ".FSharpInterfaceDataVersionAttribute"
 
 let tref_SignatureDataVersionAttr fsharpCoreAssemblyScopeRef = mkILTyRef(fsharpCoreAssemblyScopeRef, tname_SignatureDataVersionAttr)
 
@@ -8312,7 +8312,7 @@ let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo)  =
           ILAttribElem.Int32 (int32 version.Minor) 
           ILAttribElem.Int32 (int32 version.Build)], [])
 
-let tname_AutoOpenAttr = FSharpLib.Core + ".AutoOpenAttribute"
+let tname_AutoOpenAttr = Core + ".AutoOpenAttribute"
 
 let IsSignatureDataVersionAttr cattr = isILAttribByName ([], tname_SignatureDataVersionAttr) cattr
 
@@ -9047,7 +9047,7 @@ let buildAccessPath (cp: CompilationPath option) =
     match cp with
     | Some cp ->
         let ap = cp.AccessPath |> List.map fst |> List.toArray
-        System.String.Join(".", ap)      
+        String.Join(".", ap)      
     | None -> "Extension Type"
 
 let prependPath path name = if String.IsNullOrEmpty(path) then name else !!path + "." + name
@@ -10121,7 +10121,7 @@ let EvalArithShiftOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUI
         | Expr.Const (Const.UInt32 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt32 (opUInt32 x1 shift), m, ty)
         | Expr.Const (Const.UInt64 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt64 (opUInt64 x1 shift), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
-    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+    with :? OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) =
     // At compile-time we check arithmetic
@@ -10139,7 +10139,7 @@ let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt3
         | Expr.Const (Const.Single x1, _, ty) -> Expr.Const (Const.Single (opSingle x1), m, ty)
         | Expr.Const (Const.Double x1, _, ty) -> Expr.Const (Const.Double (opDouble x1), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
-    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+    with :? OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble, opDecimal) (arg1: Expr) (arg2: Expr) =
     // At compile-time we check arithmetic
@@ -10158,7 +10158,7 @@ let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt
         | Expr.Const (Const.Double x1, _, ty), Expr.Const (Const.Double x2, _, _) -> Expr.Const (Const.Double (opDouble x1 x2), m, ty)
         | Expr.Const (Const.Decimal x1, _, ty), Expr.Const (Const.Decimal x2, _, _) -> Expr.Const (Const.Decimal (opDecimal x1 x2), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
-    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+    with :? OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 // See also PostTypeCheckSemanticChecks.CheckAttribArgExpr, which must match this precisely
 let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) = 
@@ -10635,10 +10635,10 @@ let (|IntegralRange|_|) g expr =
     | ValApp g g.range_uint16_op_vref ([], [start; step; finish], _) -> ValueSome (g.uint16_ty, (start, step, finish))
     | ValApp g g.range_sbyte_op_vref ([], [start; step; finish], _) -> ValueSome (g.sbyte_ty, (start, step, finish))
     | ValApp g g.range_byte_op_vref ([], [start; step; finish], _) -> ValueSome (g.byte_ty, (start, step, finish))
-    | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', Text.Range.range0, g.char_ty), finish))
-    | ValApp g g.range_op_vref (ty :: _, [start; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', range0, g.char_ty), finish))
+    | ValApp g g.range_op_vref (ty :: _, [start; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, mkTypedOne g range0 ty, finish))
     | ValApp g g.range_step_op_vref ([ty; ty2], [start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
-    | ValApp g g.range_generic_op_vref ([ty; ty2], [_one; _add; start; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_generic_op_vref ([ty; ty2], [_one; _add; start; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, mkTypedOne g range0 ty, finish))
     | ValApp g g.range_step_generic_op_vref ([ty; ty2], [_zero; _add; start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
     | _ -> ValueNone
 

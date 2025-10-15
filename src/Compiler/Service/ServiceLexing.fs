@@ -1286,7 +1286,7 @@ module FSharpKeywords =
             | false, _ -> None
             | true, desc -> Some desc
 
-    let KeywordNames = Lexhelp.Keywords.keywordNames
+    let KeywordNames = Keywords.keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =

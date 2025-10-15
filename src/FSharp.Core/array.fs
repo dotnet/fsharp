@@ -67,7 +67,7 @@ module Array =
         let array: 'T array =
             Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
 
-        for i = 0 to Operators.Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
+        for i = 0 to Checked.(-) array.Length 1 do // use checked arithmetic here to satisfy FxCop
             array.[i] <- value
 
         array
@@ -891,7 +891,7 @@ module Array =
 
                     if batchCount <> 0 then
                         let batchSize = batchCount * 0x20
-                        System.Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
+                        Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
                         dstIdx <- dstIdx + batchSize
                         batchCount <- 0
 
@@ -1027,7 +1027,7 @@ module Array =
             if batchCount <> 0 then
                 let srcIdx = maskArray.Length * 0x20
                 let batchSize = batchCount * 0x20
-                System.Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
+                Array.Copy(src, srcIdx - batchSize, dst, dstIdx, batchSize)
                 dstIdx <- dstIdx + batchSize
 
             dstIdx
@@ -2215,7 +2215,7 @@ module Array =
         [<CompiledName("TryPick")>]
         let tryPick chooser (array: _ array) =
             checkNonNull "array" array
-            let allChosen = System.Collections.Concurrent.ConcurrentDictionary()
+            let allChosen = ConcurrentDictionary()
 
             let pResult =
                 Parallel.For(
@@ -2258,7 +2258,7 @@ module Array =
                         isChosen.[i] <- true
                         results.[i] <- v
                         count + 1),
-                Action<int>(fun x -> System.Threading.Interlocked.Add(&outputLength, x) |> ignore)
+                Action<int>(fun x -> Interlocked.Add(&outputLength, x) |> ignore)
             )
             |> ignore
 
@@ -2402,7 +2402,7 @@ module Array =
             if array.Length = 0 then
                 LanguagePrimitives.GenericZero
             else
-                array |> reduceBy projection Operators.Checked.(+)
+                array |> reduceBy projection Checked.(+)
 
         [<CompiledName("Sum")>]
         let inline sum (array: ^T array) : ^T =
@@ -2421,7 +2421,7 @@ module Array =
 
         [<CompiledName("AverageBy")>]
         let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
-            let sum = array |> reduceBy projection Operators.Checked.(+)
+            let sum = array |> reduceBy projection Checked.(+)
             LanguagePrimitives.DivideByInt sum (array.Length)
 
         [<CompiledName("Average")>]
@@ -2587,7 +2587,7 @@ module Array =
                         trueCount + 1
                     else
                         trueCount),
-                Action<int>(fun x -> System.Threading.Interlocked.Add(&trueLength, x) |> ignore)
+                Action<int>(fun x -> Interlocked.Add(&trueLength, x) |> ignore)
             )
             |> ignore
 

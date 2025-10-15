@@ -193,7 +193,7 @@ module internal Adapters =
         match expr with
         | Patterns.PropertyGet(Some(Patterns.NewRecord(typ, els)), propInfo, []) ->
             let fields =
-                Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(
+                FSharpType.GetRecordFields(
                     typ,
                     BindingFlags.Public ||| BindingFlags.NonPublic
                 )

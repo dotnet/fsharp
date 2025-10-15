@@ -993,7 +993,7 @@ let rec synExprContainsError inpExpr =
     walkExpr inpExpr
 
 let longIdentToString (ident: SynLongIdent) =
-    System.String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
+    String.Join(".", ident.LongIdent |> List.map (fun ident -> ident.idText.ToString()))
 
 /// The "mock" file name used by fsi.exe when reading from stdin.
 /// Has special treatment, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -1133,9 +1133,9 @@ let (|MultiDimensionArrayType|_|) (t: SynType) =
         if System.Text.RegularExpressions.Regex.IsMatch(identifier.idText, "^array\d\d?d$") then
             let rank =
                 identifier.idText
-                |> Seq.filter System.Char.IsDigit
+                |> Seq.filter Char.IsDigit
                 |> Seq.toArray
-                |> System.String
+                |> String
                 |> int
 
             ValueSome(rank, elementType, m)
@@ -1158,7 +1158,7 @@ let (|Get_OrSet_Ident|_|) (ident: Ident) =
     elif ident.idText.StartsWithOrdinal("set_") then ValueSome()
     else ValueNone
 
-let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.LanguageVersion) =
+let getGetterSetterAccess synValSigAccess memberKind (langVersion: LanguageVersion) =
     match synValSigAccess with
     | SynValSigAccess.Single(access) -> access, access
     | SynValSigAccess.GetSet(access, getterAccess, setterAccess) ->
@@ -1171,7 +1171,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
             | Some x, None ->
                 checkLanguageFeatureAndRecover
                     langVersion
-                    Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+                    LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
                     x.Range
 
                 accessBeforeGetSet
@@ -1184,7 +1184,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: Features.Lang
             | None, (_, Some x) ->
                 checkLanguageFeatureAndRecover
                     langVersion
-                    Features.LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
+                    LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
                     x.Range
 
                 getterAccess, setterAccess

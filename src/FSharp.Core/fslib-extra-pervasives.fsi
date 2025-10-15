@@ -387,7 +387,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// <summary>Place on a class that implements ITypeProvider to extend the compiler</summary>
     [<AttributeUsageAttribute(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false)>]
     type TypeProviderAttribute =
-        inherit System.Attribute
+        inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>TypeProviderAttribute</returns>
@@ -402,7 +402,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// assembly that contains a type provider. Runtime and design-time assembly may be the same. </summary>
     [<AttributeUsageAttribute(AttributeTargets.Assembly, AllowMultiple = false)>]
     type TypeProviderAssemblyAttribute = 
-        inherit System.Attribute
+        inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>TypeProviderAssemblyAttribute</returns>
@@ -420,7 +420,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// a provided type or member.</summary>
     [<AttributeUsageAttribute(AttributeTargets.All, AllowMultiple = false)>]
     type TypeProviderXmlDocAttribute = 
-        inherit System.Attribute
+        inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>TypeProviderXmlDocAttribute</returns>
@@ -432,7 +432,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// <summary>A type provider may provide an instance of this attribute to indicate the definition location for a provided type or member.</summary>
     [<AttributeUsageAttribute(AttributeTargets.All, AllowMultiple = false)>]
     type TypeProviderDefinitionLocationAttribute = 
-        inherit System.Attribute
+        inherit Attribute
         new : unit -> TypeProviderDefinitionLocationAttribute
 
         /// <summary>Gets or sets the file path for the definition location.</summary>
@@ -447,7 +447,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// <summary>Indicates that a code editor should hide all System.Object methods from the intellisense menus for instances of a provided type</summary>
     [<AttributeUsageAttribute(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate, AllowMultiple = false)>]
     type TypeProviderEditorHideMethodsAttribute = 
-        inherit System.Attribute
+        inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>TypeProviderEditorHideMethodsAttribute</returns>
@@ -482,7 +482,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         member IsHostedExecution : bool with get,set
 
         /// version of referenced system runtime assembly
-        member SystemRuntimeAssemblyVersion : System.Version with get,set
+        member SystemRuntimeAssemblyVersion : Version with get,set
 
         /// Checks if given type exists in target system runtime library
         member SystemRuntimeContainsType : string -> bool
@@ -515,7 +515,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// Represents an instantiation of a type provider component.
     /// </summary>
     type ITypeProvider =
-        inherit System.IDisposable
+        inherit IDisposable
 
         /// <summary>
         /// Gets the namespaces provided by the type provider.
@@ -558,7 +558,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// Triggered when an assumption changes that invalidates the resolutions so far reported by the provider
         /// </summary>
         [<CLIEvent>]
-        abstract Invalidate : IEvent<System.EventHandler, System.EventArgs>
+        abstract Invalidate : IEvent<EventHandler, EventArgs>
 
         /// <summary>
         /// Get the physical contents of the given logical provided assembly.

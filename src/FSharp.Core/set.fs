@@ -557,7 +557,7 @@ module internal SetTree =
 
               member _.Reset() =
                   i <- mkIterator s
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   ()
         }
@@ -706,11 +706,11 @@ module internal SetTree =
 [<DebuggerDisplay("Count = {Count}")>]
 type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // NOTE: This type is logically immutable. This field is only mutated during deserialization.
     let mutable comparer = comparer
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // NOTE: This type is logically immutable. This field is only mutated during deserialization.
     let mutable tree = tree
 
@@ -903,7 +903,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             loop ()
         | _ -> false
 
-    interface System.IComparable with
+    interface IComparable with
         member this.CompareTo(that: objnull) =
             SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
 
@@ -936,14 +936,14 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
     interface ICollection<'T> with
         member s.Add x =
             ignore x
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (new NotSupportedException("ReadOnlyCollection"))
 
         member s.Clear() =
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (new NotSupportedException("ReadOnlyCollection"))
 
         member s.Remove x =
             ignore x
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (new NotSupportedException("ReadOnlyCollection"))
 
         member s.Contains x =
             SetTree.mem s.Comparer x s.Tree
@@ -1026,7 +1026,7 @@ and [<CompilerMessage("This type is for compiler use and should not be used dire
       AbstractClass;
       CompiledName("FSharpSet")>] Set =
     [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
-    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T>) =
+    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: ReadOnlySpan<'T>) =
         let comparer = LanguagePrimitives.FastGenericComparer<'T>
         let mutable acc = SetTree.empty
 

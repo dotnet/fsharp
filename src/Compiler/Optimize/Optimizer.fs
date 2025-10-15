@@ -833,7 +833,7 @@ let inline IntegerBinaryOp g f8 f16 f32 f64 fu8 fu16 fu32 fu64 a b =
          | _ -> None
      | _ -> None
 
-module Unchecked = Microsoft.FSharp.Core.Operators
+module Unchecked = Operators
          
 /// Evaluate primitives based on interpretation of IL instructions. 
 ///
@@ -957,98 +957,98 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
 
     | [ AI_conv DT_U1 ], [a], [ty] when typeEquiv g ty g.byte_ty -> 
         match stripValue a with
-        | ConstValue(Const.SByte a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.Int16 a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.Int32 a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.Int64 a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.Byte a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.UInt16 a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.UInt32 a, _) -> mkUInt8Val g (Unchecked.byte a)
-        | ConstValue(Const.UInt64 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.SByte a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.Byte a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt8Val g (byte a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt8Val g (byte a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_U2 ], [a], [ty] when typeEquiv g ty g.uint16_ty -> 
         match stripValue a with
-        | ConstValue(Const.SByte a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.Int16 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.Int32 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.Int64 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.Byte a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.UInt16 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.UInt32 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-        | ConstValue(Const.UInt64 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.SByte a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.Byte a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt16Val g (uint16 a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt16Val g (uint16 a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_U4 ], [a], [ty] when typeEquiv g ty g.uint32_ty -> 
         match stripValue a with
-        | ConstValue(Const.SByte a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.Int16 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.Int32 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.Int64 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.Byte a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.UInt16 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.UInt32 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-        | ConstValue(Const.UInt64 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.SByte a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.Byte a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt32Val g (uint32 a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt32Val g (uint32 a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_U8 ], [a], [ty] when typeEquiv g ty g.uint64_ty -> 
         match stripValue a with
-        | ConstValue(Const.SByte a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.Int16 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.Int32 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.Int64 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.Byte a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.UInt16 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.UInt32 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-        | ConstValue(Const.UInt64 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.SByte a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.Byte a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt64Val g (uint64 a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt64Val g (uint64 a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_I1 ], [a], [ty] when typeEquiv g ty g.sbyte_ty -> 
         match stripValue a with
-        | ConstValue(Const.SByte a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.Int16 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.Int32 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.Int64 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.Byte a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.UInt16 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.UInt32 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-        | ConstValue(Const.UInt64 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.SByte a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.Int16 a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.Int32 a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.Int64 a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.Byte a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt8Val g (sbyte a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt8Val g (sbyte a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_I2 ], [a], [ty] when typeEquiv g ty g.int16_ty -> 
         match stripValue a with
-        | ConstValue(Const.Int32 a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.Int16 a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.SByte a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.Int64 a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.UInt32 a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.UInt16 a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.Byte a, _) -> mkInt16Val g (Unchecked.int16 a)
-        | ConstValue(Const.UInt64 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.Int32 a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.Int16 a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.SByte a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.Int64 a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.Byte a, _) -> mkInt16Val g (int16 a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt16Val g (int16 a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_I4 ], [a], [ty] when typeEquiv g ty g.int32_ty -> 
         match stripValue a with
-        | ConstValue(Const.Int32 a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.Int16 a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.SByte a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.Int64 a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.UInt32 a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.UInt16 a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.Byte a, _) -> mkInt32Val g (Unchecked.int32 a)
-        | ConstValue(Const.UInt64 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.Int32 a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.Int16 a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.SByte a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.Int64 a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.Byte a, _) -> mkInt32Val g (int32 a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt32Val g (int32 a)
         | _ -> UnknownValue
 
     | [ AI_conv DT_I8 ], [a], [ty] when typeEquiv g ty g.int64_ty -> 
         match stripValue a with
-        | ConstValue(Const.Int32 a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.Int16 a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.SByte a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.Int64 a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.UInt32 a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.UInt16 a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.Byte a, _) -> mkInt64Val g (Unchecked.int64 a)
-        | ConstValue(Const.UInt64 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.Int32 a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.Int16 a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.SByte a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.Int64 a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.Byte a, _) -> mkInt64Val g (int64 a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt64Val g (int64 a)
         | _ -> UnknownValue
 
     | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
@@ -1262,37 +1262,37 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
             else UnknownValue
          | ConstValue(Const.SByte a, _) ->
             if typeEquiv g ty g.sbyte_ty then v
-            elif typeEquiv g ty g.int16_ty then mkInt16Val g (Unchecked.int16 a)
-            elif typeEquiv g ty g.int32_ty then mkInt32Val g (Unchecked.int32 a)
+            elif typeEquiv g ty g.int16_ty then mkInt16Val g (int16 a)
+            elif typeEquiv g ty g.int32_ty then mkInt32Val g (int32 a)
             else UnknownValue
          | ConstValue(Const.Byte a, _) ->
             if typeEquiv g ty g.byte_ty then v
-            elif typeEquiv g ty g.uint16_ty then mkUInt16Val g (Unchecked.uint16 a)
-            elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (Unchecked.uint32 a)
+            elif typeEquiv g ty g.uint16_ty then mkUInt16Val g (uint16 a)
+            elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (uint32 a)
             else UnknownValue
          | ConstValue(Const.Int16 a, _) ->
             if typeEquiv g ty g.int16_ty then v
-            elif typeEquiv g ty g.int32_ty then mkInt32Val g (Unchecked.int32 a)
+            elif typeEquiv g ty g.int32_ty then mkInt32Val g (int32 a)
             else UnknownValue
          | ConstValue(Const.UInt16 a, _) ->
             if typeEquiv g ty g.uint16_ty then v
-            elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (Unchecked.uint32 a)
+            elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (uint32 a)
             else UnknownValue
          | ConstValue(Const.Int32 a, _) ->
             if typeEquiv g ty g.int32_ty then v
-            elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (Unchecked.uint32 a)
+            elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (uint32 a)
             else UnknownValue
          | ConstValue(Const.UInt32 a, _) ->
             if typeEquiv g ty g.uint32_ty then v
-            elif typeEquiv g ty g.int32_ty then mkInt32Val g (Unchecked.int32 a)
+            elif typeEquiv g ty g.int32_ty then mkInt32Val g (int32 a)
             else UnknownValue
          | ConstValue(Const.Int64 a, _) ->
             if typeEquiv g ty g.int64_ty then v
-            elif typeEquiv g ty g.uint64_ty then mkUInt64Val g (Unchecked.uint64 a)
+            elif typeEquiv g ty g.uint64_ty then mkUInt64Val g (uint64 a)
             else UnknownValue
          | ConstValue(Const.UInt64 a, _) ->
             if typeEquiv g ty g.uint64_ty then v
-            elif typeEquiv g ty g.int64_ty then mkInt64Val g (Unchecked.int64 a)
+            elif typeEquiv g ty g.int64_ty then mkInt64Val g (int64 a)
             else UnknownValue
          | _ -> UnknownValue
     | _ -> UnknownValue

@@ -103,7 +103,7 @@ module internal Utilities =
     let getAnyToLayoutCall (ty: Type) =
         if ty.IsPointer then
             let pointerToNativeInt (o: obj) : nativeint =
-                System.Reflection.Pointer.Unbox o
+                Pointer.Unbox o
                 |> NativeInterop.NativePtr.ofVoidPtr<nativeptr<byte>>
                 |> NativeInterop.NativePtr.toNativeInt
 
@@ -306,7 +306,7 @@ type ILMultiInMemoryAssemblyEmitEnv
     let internalTypes = HashSet<ILTypeRef>(HashIdentity.Structural)
     let internalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
     let internalFields = HashSet<ILFieldRef>(HashIdentity.Structural)
-    let dynamicCcuScopeRef = ILScopeRef.Assembly(IL.mkSimpleAssemblyRef dynamicCcuName)
+    let dynamicCcuScopeRef = ILScopeRef.Assembly(mkSimpleAssemblyRef dynamicCcuName)
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
     let convAssemblyRef (aref: ILAssemblyRef) =
@@ -322,7 +322,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         | None -> ()
         | Some version -> asmName.Version <- Version(int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
 
-        asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
+        asmName.CultureInfo <- CultureInfo.InvariantCulture
         asmName
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
@@ -485,7 +485,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         fref.DeclaringTypeRef.Scope.IsLocalRef && internalFields.Contains(fref)
 
 type ILAssemblyEmitEnv =
-    | SingleRefEmitAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
+    | SingleRefEmitAssembly of cenv * ILDynamicAssemblyEmitEnv
     | MultipleInMemoryAssemblies of ILMultiInMemoryAssemblyEmitEnv
 
 type internal FsiValuePrinterMode =
@@ -881,7 +881,7 @@ type internal FsiConsoleOutput(tcConfigB, outWriter: TextWriter, errorWriter: Te
         out.uprintfnn fmt
 
     /// clear screen
-    member _.Clear() = System.Console.Clear()
+    member _.Clear() = Console.Clear()
 
     member _.Out = outWriter
 
@@ -1924,7 +1924,7 @@ type internal FsiDynamicCompiler
                                             null,
                                             null,
                                             [||],
-                                            Globalization.CultureInfo.InvariantCulture
+                                            CultureInfo.InvariantCulture
                                         )
                                     )
 
@@ -3044,7 +3044,7 @@ type internal FsiDynamicCompiler
                         tryFindSysILTypeRef = tcGlobals.TryFindSysILTypeRef
                     }
 
-                let emEnv = ILDynamicAssemblyWriter.emEnv0
+                let emEnv = emEnv0
                 SingleRefEmitAssembly(cenv, emEnv)
 
         let ccuName = dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit)
@@ -4636,7 +4636,7 @@ type FsiEvaluationSession
             warning (e)
 
     let restoreEncoding =
-        if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
+        if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
             let previousEncoding = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
 

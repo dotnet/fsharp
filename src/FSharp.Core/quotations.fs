@@ -142,14 +142,14 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
 
     override v.Equals(obj: objnull) =
         match obj with
-        | :? Var as v2 -> System.Object.ReferenceEquals(v, v2)
+        | :? Var as v2 -> Object.ReferenceEquals(v, v2)
         | _ -> false
 
-    interface System.IComparable with
+    interface IComparable with
         member v.CompareTo(obj: objnull) =
             match obj with
             | :? Var as v2 ->
-                if System.Object.ReferenceEquals(v, v2) then
+                if Object.ReferenceEquals(v, v2) then
                     0
                 else
                     let c = compare v.Name v2.Name
@@ -502,7 +502,7 @@ module Patterns =
 
     let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()
     let exprTyC = typedefof<Expr<int>>
-    let voidTy = typeof<System.Void>
+    let voidTy = typeof<Void>
     let unitTy = typeof<unit>
 
     let removeVoid a =
@@ -1032,10 +1032,10 @@ module Patterns =
     let mkValueWithDefn (v, ty, defn) =
         mkFE1 (WithValueOp(v, ty)) defn
 
-    let mkLiftedValueOpG (v, ty: System.Type) =
+    let mkLiftedValueOpG (v, ty: Type) =
         let obj =
             if ty.IsEnum then
-                System.Enum.ToObject(ty, box v)
+                Enum.ToObject(ty, box v)
             else
                 box v
 
@@ -1673,7 +1673,7 @@ module Patterns =
             {
                 is: ByteStream
                 istrings: string array
-                localAssembly: System.Reflection.Assembly
+                localAssembly: Assembly
                 referencedTypeDefs: Type array
             }
 
@@ -1741,10 +1741,10 @@ module Patterns =
             uint64 (u_int64 st)
 
         let u_double st =
-            System.BitConverter.ToDouble(System.BitConverter.GetBytes(u_int64 st), 0)
+            BitConverter.ToDouble(BitConverter.GetBytes(u_int64 st), 0)
 
         let u_float32 st =
-            System.BitConverter.ToSingle(System.BitConverter.GetBytes(u_int32 st), 0)
+            BitConverter.ToSingle(BitConverter.GetBytes(u_int32 st), 0)
 
         let u_char st =
             char (int32 (u_uint16 st))
@@ -1854,7 +1854,7 @@ module Patterns =
     let decodeNamedTy genericType tsR =
         mkNamedType (genericType, tsR)
 
-    let mscorlib = typeof<System.Int32>.Assembly
+    let mscorlib = typeof<Int32>.Assembly
 
     let u_assemblyRef st =
         u_string st
@@ -1865,7 +1865,7 @@ module Patterns =
         elif a = "." then
             st.localAssembly
         else
-            match System.Reflection.Assembly.Load a with
+            match Assembly.Load a with
             | null -> invalidOp (String.Format(SR.GetString(SR.QfailedToBindAssembly), a.ToString()))
             | assembly -> assembly
 
@@ -1874,7 +1874,7 @@ module Patterns =
         let mutable idx = 0
         // From FSharp.Core for F# 4.0+ (4.4.0.0+), referenced type definitions can be integer indexes into a table of type definitions provided on quotation
         // deserialization, avoiding the need for System.Reflection.Assembly.Load
-        if System.Int32.TryParse(a, &idx) && b = "" then
+        if Int32.TryParse(a, &idx) && b = "" then
             st.referencedTypeDefs.[idx]
         else
             // escape commas found in type name, which are not already escaped
@@ -2075,7 +2075,7 @@ module Patterns =
             match u_ModuleDefn None st with
             | Unique(StaticMethodCallOp minfo) -> (minfo :> MethodBase)
             | Unique(StaticPropGetOp pinfo) -> (pinfo.GetGetMethod true :> MethodBase)
-            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
+            | Ambiguous(_) -> raise (AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 ->
             let ((genericType, _, _, methName, _) as data) = u_MethodInfoData st
@@ -2098,7 +2098,7 @@ module Patterns =
             | Unique(StaticMethodCallOp(minfo)) -> (minfo :> MethodBase)
             | Unique(StaticMethodCallWOp(_minfo, minfoW, _)) -> (minfoW :> MethodBase)
             | Unique(StaticPropGetOp(pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
-            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
+            | Ambiguous(_) -> raise (AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | _ -> failwith "u_MethodBase"
 
@@ -2883,7 +2883,7 @@ module DerivedPatterns =
     let private new_decimal_info =
         methodhandleof (fun (low, medium, high, isNegative, scale) ->
             LanguagePrimitives.IntrinsicFunctions.MakeDecimal low medium high isNegative scale)
-        |> System.Reflection.MethodInfo.GetMethodFromHandle
+        |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     [<CompiledName("DecimalPattern")>]
@@ -2901,11 +2901,11 @@ module DerivedPatterns =
         Expr.TryGetReflectedDefinition methodBase
 
     [<CompiledName("PropertyGetterWithReflectedDefinitionPattern")>]
-    let (|PropertyGetterWithReflectedDefinition|_|) (propertyInfo: System.Reflection.PropertyInfo) =
+    let (|PropertyGetterWithReflectedDefinition|_|) (propertyInfo: PropertyInfo) =
         Expr.TryGetReflectedDefinition(propertyInfo.GetGetMethod true)
 
     [<CompiledName("PropertySetterWithReflectedDefinitionPattern")>]
-    let (|PropertySetterWithReflectedDefinition|_|) (propertyInfo: System.Reflection.PropertyInfo) =
+    let (|PropertySetterWithReflectedDefinition|_|) (propertyInfo: PropertyInfo) =
         Expr.TryGetReflectedDefinition(propertyInfo.GetSetMethod true)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

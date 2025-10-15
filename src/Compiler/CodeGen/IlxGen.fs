@@ -1748,7 +1748,7 @@ let AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
                         ILDebugImport.ImportType(mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
 
                 for t in openDecl.Types do
-                    let m = defaultArg openDecl.Range Range.range0
+                    let m = defaultArg openDecl.Range range0
                     ILDebugImport.ImportType(GenType cenv m TypeReprEnv.Empty t)
         |]
 
@@ -2004,7 +2004,7 @@ and TypeDefsBuilder() =
     let tdefs =
         ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
 
-    let mutable countDown = System.Int32.MaxValue
+    let mutable countDown = Int32.MaxValue
     let mutable countUp = -1
 
     member b.Close(g: TcGlobals) =
@@ -2502,7 +2502,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
         Dictionary<_, _>(10)
 
     let rec lab2pc n lbl =
-        if n = System.Int32.MaxValue then
+        if n = Int32.MaxValue then
             error (InternalError("recursive label graph", m))
 
         match codeLabelToCodeLabel.TryGetValue lbl with
@@ -2520,7 +2520,7 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
         for ty in pushes do
             stack <- ty :: stack
             nstack <- nstack + 1
-            maxStack <- Operators.max maxStack nstack
+            maxStack <- max maxStack nstack
 
     member _.DoPops(n: Pops) =
         for i = 0 to n - 1 do
@@ -2945,7 +2945,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             let others =
                 [
                     for k in cenv.namedDebugPointsForInlinedCode.Keys do
-                        if Range.equals m k.Range then
+                        if equals m k.Range then
                             yield k.Name
                 ]
                 |> String.concat ","
@@ -3308,9 +3308,9 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
                 // see https://github.com/dotnet/fsharp/pull/3620
                 // and https://github.com/dotnet/fsharp/issue/8683
                 // and https://github.com/dotnet/roslyn/blob/98f12bb/src/Compilers/Core/Portable/CodeGen/ILBuilderEmit.cs#L679
-                if i >= int64 System.Int32.MinValue && i <= int64 System.Int32.MaxValue then
+                if i >= int64 Int32.MinValue && i <= int64 Int32.MaxValue then
                     CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
-                elif i >= int64 System.UInt32.MinValue && i <= int64 System.UInt32.MaxValue then
+                elif i >= int64 UInt32.MinValue && i <= int64 UInt32.MaxValue then
                     CG.EmitInstrs cgbuf (pop 0) (Push [ ilTy ]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
                 else
                     CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (iLdcInt64 i)
@@ -5713,7 +5713,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
                 elif
                     nm.Length >= 1
                     && nm[0] = 'T'
-                    && (nm.Length = 1 || not (System.Char.IsLower nm[1]))
+                    && (nm.Length = 1 || not (Char.IsLower nm[1]))
                 then
                     nm
                 else
@@ -7881,8 +7881,8 @@ and GenDecisionTreeSwitch
 
                         (i, label.CodeLabel))
 
-                let mn = List.foldBack (fst >> Operators.min) dests (fst (List.head dests))
-                let mx = List.foldBack (fst >> Operators.max) dests (fst (List.head dests))
+                let mn = List.foldBack (fst >> min) dests (fst (List.head dests))
+                let mx = List.foldBack (fst >> max) dests (fst (List.head dests))
                 // Check if it's worth using a switch
                 // REVIEW: this is using switches even for single integer matches!
                 if mx - mn = (List.length dests - 1) then
@@ -8578,7 +8578,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                               optShadowLocal) ->
         let mut = vspec.IsMutable
 
-        let canTarget (targets, goal: System.AttributeTargets) =
+        let canTarget (targets, goal: AttributeTargets) =
             match targets with
             | None -> true
             | Some tgts -> 0 <> int (tgts &&& goal)
@@ -8617,7 +8617,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
             let ilAttribs =
                 if not hasLiteralAttr then
                     vspec.Attribs
-                    |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Field))
+                    |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget (targets, AttributeTargets.Field))
                     |> GenAttrs cenv eenv // backing field only gets attributes that target fields
                 else
                     GenAttrs cenv eenv vspec.Attribs // literals have no property, so preserve all the attributes on the field itself
@@ -8628,7 +8628,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 if isDecimalConstant then
                     match vref.LiteralValue with
                     | Some(Const.Decimal d) ->
-                        match System.Decimal.GetBits d with
+                        match Decimal.GetBits d with
                         | [| lo; med; hi; signExp |] ->
                             let scale = (min (((signExp &&& 0xFF0000) >>> 16) &&& 0xFF) 28) |> byte
                             let sign = if (signExp &&& 0x80000000) <> 0 then 1uy else 0uy
@@ -8701,7 +8701,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         else
             let ilAttribs =
                 vspec.Attribs
-                |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget (targets, System.AttributeTargets.Property))
+                |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget (targets, AttributeTargets.Property))
                 |> GenAttrs cenv eenv // property only gets attributes that target properties
                 |> List.append (GenAdditionalAttributesForTy g vspec.Type)
 

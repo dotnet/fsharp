@@ -1220,7 +1220,7 @@ let codePageFlag (tcConfigB: TcConfigBuilder) =
         tagInt,
         OptionInt(fun n ->
             try
-                System.Text.Encoding.GetEncoding n |> ignore
+                Encoding.GetEncoding n |> ignore
             with :? ArgumentException as err ->
                 error (Error(FSComp.SR.optsProblemWithCodepage (n, err.Message), rangeCmdArgs))
 

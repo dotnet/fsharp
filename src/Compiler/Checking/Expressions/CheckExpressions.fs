@@ -4967,7 +4967,7 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
 
     let argsInStaticParameterOrderIncludingDefaults =
         staticParameters |> Array.mapi (fun i sp ->
-            let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
+            let spKind = ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
             let spName = sp.PUntaint((fun sp -> sp.Name), m)
             if i < unnamedArgs.Length then
                 let v = unnamedArgs[i]
@@ -5050,7 +5050,7 @@ and TcProvidedTypeApp (cenv: cenv) env tpenv tcref args m =
     if hasNoArgs then
         mkWoNullAppTy tcref [], tpenv
     else
-        let ty = Import.ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
+        let ty = ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
         ty, tpenv
 #endif
 
@@ -6603,11 +6603,11 @@ and ExpandIndexArgs (cenv: cenv) (synLeftExprOpt: SynExpr option) indexArgs =
 
     let mkSynSomeExpr (m: range) x =
         let m = m.MakeSynthetic()
-        SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m FSharpLib.CorePath "Some", x, m)
+        SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m CorePath "Some", x, m)
 
     let mkSynNoneExpr (m: range) =
         let m = m.MakeSynthetic()
-        mkSynLidGet m FSharpLib.CorePath "None"
+        mkSynLidGet m CorePath "None"
 
     let expandedIndexArgs =
         indexArgs
@@ -10445,7 +10445,7 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
             let tcVal = LightweightTcValForUsingInBuildMethodCall g
-            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let argExprPrebinder, argExpr = AdjustCallerArgExpr tcVal g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let mut = (if isStructTy g (tyOfExpr g objExpr) then DefinitelyMutates else PossiblyMutates)
             let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] propStaticTyOpt |> fst
             argExprPrebinder, action, Item.Property (pinfo.PropertyName, [pinfo], None)
@@ -10455,7 +10455,7 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
             ILFieldInstanceChecks g cenv.amap ad m finfo
             let calledArgTy = finfo.FieldType (cenv.amap, m)
             let tcVal = LightweightTcValForUsingInBuildMethodCall g
-            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let argExprPrebinder, argExpr = AdjustCallerArgExpr tcVal g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildILFieldSet g m objExpr finfo argExpr
             argExprPrebinder, action, Item.ILField finfo
 
@@ -10464,7 +10464,7 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
             let calledArgTy = rfinfo.FieldType
             CheckRecdFieldMutation m denv rfinfo
             let tcVal = LightweightTcValForUsingInBuildMethodCall g
-            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let argExprPrebinder, argExpr = AdjustCallerArgExpr tcVal g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildRecdFieldSet g m objExpr rfinfo argExpr
             argExprPrebinder, action, Item.RecdField rfinfo
 

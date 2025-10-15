@@ -33,7 +33,7 @@ module Helpers =
 
     let checkThenBySource (source: seq<'T>) =
         match source with
-        | :? System.Linq.IOrderedEnumerable<'T> as source -> source
+        | :? IOrderedEnumerable<'T> as source -> source
         | _ -> invalidArg "source" (SR.GetString(SR.thenByError))
 
 // used so we can define the implementation of QueryBuilder before the Query module (so in Query we can safely use methodhandleof)
@@ -69,7 +69,7 @@ type QueryBuilder() =
     member _.Source (source: IQueryable<'T>) =
         QuerySource source
 
-    member _.Source (source: IEnumerable<'T>) : QuerySource<'T, System.Collections.IEnumerable> =
+    member _.Source (source: IEnumerable<'T>) : QuerySource<'T, IEnumerable> =
         QuerySource source
 
     member _.Contains (source: QuerySource<'T, 'Q>, key) =
@@ -254,7 +254,7 @@ type QueryBuilder() =
 
     member _.RunQueryAsEnumerable (q: Quotations.Expr<QuerySource<'T, IEnumerable>>) : IEnumerable<'T> =
         let queryAfterEliminatingNestedQueries = ForwardDeclarations.Query.EliminateNestedQueries q
-        let queryAfterCleanup = Microsoft.FSharp.Linq.RuntimeHelpers.Adapters.CleanupLeaf queryAfterEliminatingNestedQueries
+        let queryAfterCleanup = Adapters.CleanupLeaf queryAfterEliminatingNestedQueries
         (LeafExpressionConverter.EvaluateQuotation queryAfterCleanup :?> QuerySource<'T, IEnumerable>).Source
 
     member _.RunQueryAsQueryable (q: Quotations.Expr<QuerySource<'T, IQueryable>>) : IQueryable<'T> =
@@ -370,22 +370,22 @@ module Query =
     let GetGenericMethodDefinition (methInfo:MethodInfo) =
         if methInfo.IsGenericMethod then methInfo.GetGenericMethodDefinition() else methInfo
 
-    let CallGenericStaticMethod (methHandle:System.RuntimeMethodHandle) =
-        let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
+    let CallGenericStaticMethod (methHandle:RuntimeMethodHandle) =
+        let methInfo = methHandle |> MethodInfo.GetMethodFromHandle :?> MethodInfo
         fun (tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(null, Array.ofList args)
-            with :? System.Reflection.TargetInvocationException as exn ->
+            with :? TargetInvocationException as exn ->
               raise exn.InnerException
 
-    let CallGenericInstanceMethod (methHandle:System.RuntimeMethodHandle) =
-        let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
+    let CallGenericInstanceMethod (methHandle:RuntimeMethodHandle) =
+        let methInfo = methHandle |> MethodInfo.GetMethodFromHandle :?> MethodInfo
         fun (objExpr:obj, tyargs: Type list, args: objnull list) ->
             let methInfo = if methInfo.IsGenericMethod then methInfo.MakeGenericMethod(Array.ofList tyargs) else methInfo
             try
                methInfo.Invoke(objExpr, Array.ofList args)
-            with :? System.Reflection.TargetInvocationException as exn ->
+            with :? TargetInvocationException as exn ->
               raise exn.InnerException
 
     let BindGenericStaticMethod (methInfo:MethodInfo) tyargs =
@@ -394,17 +394,17 @@ module Query =
         else
             methInfo
 
-    let MakeGenericStaticMethod (methHandle:System.RuntimeMethodHandle) =
-        let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
+    let MakeGenericStaticMethod (methHandle:RuntimeMethodHandle) =
+        let methInfo = methHandle |> MethodInfo.GetMethodFromHandle :?> MethodInfo
         (fun (tyargs: Type list, args: Expr list) -> Expr.Call (BindGenericStaticMethod methInfo tyargs, args))
 
-    let MakeGenericInstanceMethod (methHandle:System.RuntimeMethodHandle) =
-        let methInfo = methHandle |> System.Reflection.MethodInfo.GetMethodFromHandle :?> MethodInfo
+    let MakeGenericInstanceMethod (methHandle:RuntimeMethodHandle) =
+        let methInfo = methHandle |> MethodInfo.GetMethodFromHandle :?> MethodInfo
         (fun (obj: Expr, tyargs: Type list, args: Expr list) -> Expr.Call (obj, BindGenericStaticMethod methInfo tyargs, args))
 
     let ImplicitExpressionConversionHelperMethodInfo =
-        methodhandleof (LeafExpressionConverter.ImplicitExpressionConversionHelper)
-        |> System.Reflection.MethodInfo.GetMethodFromHandle
+        methodhandleof (ImplicitExpressionConversionHelper)
+        |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let MakeImplicitExpressionConversion (x: Expr) = Expr.Call (ImplicitExpressionConversionHelperMethodInfo.MakeGenericMethod [| x.Type |], [ x ])
@@ -433,24 +433,24 @@ module Query =
 
     let MakeIQueryableTy dty= IQueryableTypeDef.MakeGenericType [| dty|]
 
-    let IsQuerySourceTy (ty: System.Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = QuerySourceTypeDef
+    let IsQuerySourceTy (ty: Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = QuerySourceTypeDef
 
-    let IsIQueryableTy (ty: System.Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = IQueryableTypeDef
+    let IsIQueryableTy (ty: Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = IQueryableTypeDef
 
-    let IsIEnumerableTy (ty: System.Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = IEnumerableTypeDef
+    let IsIEnumerableTy (ty: Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = IEnumerableTypeDef
 
     // Check a tag type on QuerySource is IQueryable
-    let qTyIsIQueryable (ty : System.Type) = not (Type.op_Equality(ty, typeof<IEnumerable>))
+    let qTyIsIQueryable (ty : Type) = not (Type.op_Equality(ty, typeof<IEnumerable>))
 
     let FuncExprToDelegateExpr (srcTy, targetTy, v, body) =
-        Expr.NewDelegate (Linq.Expressions.Expression.GetFuncType [| srcTy; targetTy |], [v], body)
+        Expr.NewDelegate (Expression.GetFuncType [| srcTy; targetTy |], [v], body)
 
     /// Project F# function expressions to Linq LambdaExpression nodes
     let FuncExprToLinqFunc2Expression (srcTy, targetTy, v, body) =
-        FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> LeafExpressionConverter.QuotationToExpression
+        FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> QuotationToExpression
 
     let FuncExprToLinqFunc2 (srcTy, targetTy, v, body) =
-        FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> LeafExpressionConverter.EvaluateQuotation
+        FuncExprToDelegateExpr(srcTy, targetTy, v, body) |> EvaluateQuotation
 
     let MakersCallers F = CallGenericStaticMethod F, MakeGenericStaticMethod F
 
@@ -468,18 +468,18 @@ module Query =
                 ME ([srcItemTy], [src; key])
 
         let Call (isIQ, srcItemTy, src:objnull, key: Expr) =
-            let key = key |> LeafExpressionConverter.EvaluateQuotation
+            let key = key |> EvaluateQuotation
             let C = if isIQ then CQ else CE
             C ([srcItemTy], [src; box key])
         Make, Call
 
     let MakeContains, CallContains =
-        let FQ = methodhandleof (fun (x, y) -> System.Linq.Queryable.Contains(x, y))
+        let FQ = methodhandleof (fun (x, y) -> Queryable.Contains(x, y))
         let FE = methodhandleof (fun (x, y) -> Enumerable.Contains(x, y))
         MakeOrCallContainsOrElementAt FQ FE
 
     let MakeElementAt, CallElementAt =
-        let FQ = methodhandleof (fun (x, y) -> System.Linq.Queryable.ElementAt(x, y))
+        let FQ = methodhandleof (fun (x, y) -> Queryable.ElementAt(x, y))
         let FE = methodhandleof (fun (x, y) -> Enumerable.ElementAt(x, y))
         MakeOrCallContainsOrElementAt FQ FE
 
@@ -506,24 +506,24 @@ module Query =
         Make, Call
 
     let (MakeMinBy: bool * Expr * Var * Expr -> Expr), (CallMinBy : bool * Type * Type * objnull * Type * Var * Expr -> obj) =
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Min(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Min(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Min(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
 
     let MakeMaxBy, CallMaxBy =
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Max(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Max(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Max(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
 
     let MakeMinByNullable, CallMinByNullable =
         // Note there is no separate LINQ overload for Min on nullables - the one implementation just magically skips nullable elements
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Min(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Min(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Min(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
 
     let MakeMaxByNullable, CallMaxByNullable =
         // Note there is no separate LINQ overload for Max on nullables - the one implementation just magically skips nullable elements
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Max(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Max(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, 'Result>) -> Enumerable.Max(x, y))
         MakeOrCallMinByOrMaxBy FQ FE
 
@@ -549,17 +549,17 @@ module Query =
         Make, Call
 
     let MakeAny, CallAny =
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Any(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Any(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.Any(x, y))
         MakeOrCallAnyOrAllOrFirstFind FQ FE
 
     let MakeAll, CallAll =
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.All(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.All(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.All(x, y))
         MakeOrCallAnyOrAllOrFirstFind FQ FE
 
     let MakeFirstFind, CallFirstFind =
-        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.First(x, y))
+        let FQ = methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.First(x, y))
         let FE = methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.First(x, y))
         MakeOrCallAnyOrAllOrFirstFind FQ FE
 
@@ -646,20 +646,20 @@ module Query =
                     let srcE =
                         try
                            ctor.Invoke [|src|]
-                        with :? System.Reflection.TargetInvocationException as exn ->
+                        with :? TargetInvocationException as exn ->
                            raise exn.InnerException
 
                     // The F# implementation needs an FSharpFunc as a parameter.
-                    let selectorE = Expr.Lambda (v, res) |> LeafExpressionConverter.EvaluateQuotation
+                    let selectorE = Expr.Lambda (v, res) |> EvaluateQuotation
                     CE (qb, [srcItemTy; qTy; resTy], [srcE; selectorE])
         Make, Call
 
     let MakeAverageBy, CallAverageBy =
-        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, double>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, single>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, decimal>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, int32>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, int64>>) -> System.Linq.Queryable.Average(x, y))
+        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, double>>) -> Queryable.Average(x, y))
+        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, single>>) -> Queryable.Average(x, y))
+        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, decimal>>) -> Queryable.Average(x, y))
+        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, int32>>) -> Queryable.Average(x, y))
+        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, int64>>) -> Queryable.Average(x, y))
         let FE_double = methodhandleof (fun (x, y: Func<_, double>) -> Enumerable.Average(x, y))
         let FE_single = methodhandleof (fun (x, y: Func<_, single>) -> Enumerable.Average(x, y))
         let FE_decimal = methodhandleof (fun (x, y: Func<_, decimal>) -> Enumerable.Average(x, y))
@@ -669,11 +669,11 @@ module Query =
         MakeOrCallAverageByOrSumByGeneric (false, FQ_double, FQ_single, FQ_decimal, FQ_int32, FQ_int64, FE_double, FE_single, FE_decimal, FE_int32, FE_int64, FE)
 
     let MakeAverageByNullable, CallAverageByNullable =
-        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, Nullable<double>>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, Nullable<single>>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, Nullable<decimal>>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int32>>>) -> System.Linq.Queryable.Average(x, y))
-        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int64>>>) -> System.Linq.Queryable.Average(x, y))
+        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, Nullable<double>>>) -> Queryable.Average(x, y))
+        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, Nullable<single>>>) -> Queryable.Average(x, y))
+        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, Nullable<decimal>>>) -> Queryable.Average(x, y))
+        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int32>>>) -> Queryable.Average(x, y))
+        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int64>>>) -> Queryable.Average(x, y))
         let FE_double = methodhandleof (fun (x, y: Func<_, Nullable<double>>) -> Enumerable.Average(x, y))
         let FE_single = methodhandleof (fun (x, y: Func<_, Nullable<single>>) -> Enumerable.Average(x, y))
         let FE_decimal = methodhandleof (fun (x, y: Func<_, Nullable<decimal>>) -> Enumerable.Average(x, y))
@@ -684,11 +684,11 @@ module Query =
 
 
     let MakeSumBy, CallSumBy =
-        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, double>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, single>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, decimal>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, int32>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, int64>>) -> System.Linq.Queryable.Sum(x, y))
+        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, double>>) -> Queryable.Sum(x, y))
+        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, single>>) -> Queryable.Sum(x, y))
+        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, decimal>>) -> Queryable.Sum(x, y))
+        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, int32>>) -> Queryable.Sum(x, y))
+        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, int64>>) -> Queryable.Sum(x, y))
         let FE_double = methodhandleof (fun (x, y: Func<_, double>) -> Enumerable.Sum(x, y))
         let FE_single = methodhandleof (fun (x, y: Func<_, single>) -> Enumerable.Sum(x, y))
         let FE_decimal = methodhandleof (fun (x, y: Func<_, decimal>) -> Enumerable.Sum(x, y))
@@ -698,11 +698,11 @@ module Query =
         MakeOrCallAverageByOrSumByGeneric (false, FQ_double, FQ_single, FQ_decimal, FQ_int32, FQ_int64, FE_double, FE_single, FE_decimal, FE_int32, FE_int64, FE)
 
     let MakeSumByNullable, CallSumByNullable =
-        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, Nullable<double>>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, Nullable<single>>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, Nullable<decimal>>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int32>>>) -> System.Linq.Queryable.Sum(x, y))
-        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int64>>>) -> System.Linq.Queryable.Sum(x, y))
+        let FQ_double = methodhandleof (fun (x, y: Expression<Func<_, Nullable<double>>>) -> Queryable.Sum(x, y))
+        let FQ_single = methodhandleof (fun (x, y: Expression<Func<_, Nullable<single>>>) -> Queryable.Sum(x, y))
+        let FQ_decimal = methodhandleof (fun (x, y: Expression<Func<_, Nullable<decimal>>>) -> Queryable.Sum(x, y))
+        let FQ_int32 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int32>>>) -> Queryable.Sum(x, y))
+        let FQ_int64 = methodhandleof (fun (x, y: Expression<Func<_, Nullable<int64>>>) -> Queryable.Sum(x, y))
         let FE_double = methodhandleof (fun (x, y: Func<_, Nullable<double>>) -> Enumerable.Sum(x, y))
         let FE_single = methodhandleof (fun (x, y: Func<_, Nullable<single>>) -> Enumerable.Sum(x, y))
         let FE_decimal = methodhandleof (fun (x, y: Func<_, Nullable<decimal>>) -> Enumerable.Sum(x, y))
@@ -722,19 +722,19 @@ module Query =
             (if isIQ then CQ else CE) ([srcItemTy], [src])
         Make, Call
 
-    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.First)) (methodhandleof (Enumerable.First))
+    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (Queryable.First)) (methodhandleof (Enumerable.First))
 
-    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.FirstOrDefault)) (methodhandleof (Enumerable.FirstOrDefault))
+    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (Queryable.FirstOrDefault)) (methodhandleof (Enumerable.FirstOrDefault))
 
-    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Last)) (methodhandleof (Enumerable.Last))
+    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (Queryable.Last)) (methodhandleof (Enumerable.Last))
 
-    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.LastOrDefault)) (methodhandleof (Enumerable.LastOrDefault))
+    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (Queryable.LastOrDefault)) (methodhandleof (Enumerable.LastOrDefault))
 
-    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Single)) (methodhandleof (Enumerable.Single))
+    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (Queryable.Single)) (methodhandleof (Enumerable.Single))
 
-    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.SingleOrDefault)) (methodhandleof (Enumerable.SingleOrDefault))
+    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (Queryable.SingleOrDefault)) (methodhandleof (Enumerable.SingleOrDefault))
 
-    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (System.Linq.Queryable.Count)) (methodhandleof (Enumerable.Count))
+    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (Queryable.Count)) (methodhandleof (Enumerable.Count))
 
     let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (Enumerable.DefaultIfEmpty))
 
@@ -746,13 +746,13 @@ module Query =
         | No = 1
 
     let MakeSelect =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Select(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Select(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.Select(x, y)))
         fun (canElim, isIQ, src: Expr, v: Var, f: Expr) ->
 
             // Eliminate degenerate 'Select(x => x)', except for the very outer-most cases
             match f with
-            |  Patterns.Var v2 when v = v2 && canElim = CanEliminate.Yes -> src
+            |  Var v2 when v = v2 && canElim = CanEliminate.Yes -> src
             | _ ->
             let srcItemTy = v.Type
             let targetTy = f.Type
@@ -766,7 +766,7 @@ module Query =
                 FE ([srcItemTy; targetTy], [src; selector])
 
     let MakeAppend =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y) -> System.Linq.Queryable.Concat(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y) -> Queryable.Concat(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y) -> Enumerable.Concat(x, y)))
         fun (isIQ, srcItemTy, src1: Expr, src2: Expr) ->
             if isIQ then
@@ -775,7 +775,7 @@ module Query =
                FE ([srcItemTy], [src1; src2])
 
     let MakeAsQueryable =
-        let F = MakeGenericStaticMethod (methodhandleof (fun (x:seq<_>) -> System.Linq.Queryable.AsQueryable x))
+        let F = MakeGenericStaticMethod (methodhandleof (fun (x:seq<_>) -> Queryable.AsQueryable x))
         fun (ty, src) ->
             F ([ty], [src])
 
@@ -789,7 +789,7 @@ module Query =
             MakeAsQueryable (ty, MakeEnumerableEmpty ty)
 
     let MakeSelectMany =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x: IQueryable<_>, y: Expression<Func<_, _>>, z: Expression<Func<_, _, _>>) -> System.Linq.Queryable.SelectMany(x, y, z)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x: IQueryable<_>, y: Expression<Func<_, _>>, z: Expression<Func<_, _, _>>) -> Queryable.SelectMany(x, y, z)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x: IEnumerable<_>, y: Func<_, _>, z: Func<_, _, _>) -> Enumerable.SelectMany(x, y, z)))
         fun (isIQ, resTy: Type, src: Expr, srcItemVar: Var, interimSelectorBody: Expr, interimVar: Var, targetSelectorBody: Expr) ->
             let srcItemTy = srcItemVar.Type
@@ -805,7 +805,7 @@ module Query =
                 FE ([srcItemTy; interimTy; resTy], [src; interimSelector; targetSelector])
 
     let MakeWhere =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.Where(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.Where(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.Where(x, y)))
         fun (isIQ, src: Expr, v: Var, f) ->
             let selector = Expr.NewDelegate (MakeQueryFuncTy(v.Type, typeof<bool>), [v], f)
@@ -828,22 +828,22 @@ module Query =
                 FE ([srcItemTy; keyItemTy], [src; selector])
 
     let MakeOrderBy =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.OrderBy(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.OrderBy(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.OrderBy(x, y)))
         MakeOrderByOrThenBy FQ FE
 
     let MakeOrderByDescending =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.OrderByDescending(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.OrderByDescending(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.OrderByDescending(x, y)))
         MakeOrderByOrThenBy FQ FE
 
     let MakeThenBy =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.ThenBy(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.ThenBy(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.ThenBy(x, y)))
         MakeOrderByOrThenBy FQ FE
 
     let MakeThenByDescending =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.ThenByDescending(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.ThenByDescending(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.ThenByDescending(x, y)))
         MakeOrderByOrThenBy FQ FE
 
@@ -879,26 +879,26 @@ module Query =
 
     let MakeSkip =
         MakeSkipOrTake
-            (methodhandleof (fun (x, y) -> System.Linq.Queryable.Skip (x, y)))
+            (methodhandleof (fun (x, y) -> Queryable.Skip (x, y)))
             (methodhandleof (fun (x, y) -> Enumerable.Skip (x, y)))
 
     let MakeTake =
         MakeSkipOrTake
-            (methodhandleof (fun (x, y) -> System.Linq.Queryable.Take (x, y)))
+            (methodhandleof (fun (x, y) -> Queryable.Take (x, y)))
             (methodhandleof (fun (x, y) -> Enumerable.Take (x, y)))
 
     let MakeSkipWhile =
         GenMakeSkipWhileOrTakeWhile
-            (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.SkipWhile(x, y)))
+            (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.SkipWhile(x, y)))
             (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.SkipWhile(x, y)))
 
     let MakeTakeWhile =
         GenMakeSkipWhileOrTakeWhile
-            (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.TakeWhile(x, y)))
+            (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.TakeWhile(x, y)))
             (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.TakeWhile(x, y)))
 
     let MakeDistinct =
-        let FQ = MakeGenericStaticMethod (methodhandleof (System.Linq.Queryable.Distinct))
+        let FQ = MakeGenericStaticMethod (methodhandleof (Queryable.Distinct))
         let FE = MakeGenericStaticMethod (methodhandleof (Enumerable.Distinct))
         fun (isIQ, srcItemTy, src: Expr) ->
             if isIQ then
@@ -907,7 +907,7 @@ module Query =
                 FE ([srcItemTy], [src])
 
     let MakeGroupBy =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> System.Linq.Queryable.GroupBy(x, y)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>) -> Queryable.GroupBy(x, y)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.GroupBy(x, y)))
         fun (isIQ, src: Expr, v: Var, keySelector: Expr) ->
             let srcItemTy = v.Type
@@ -921,7 +921,7 @@ module Query =
                 FE ([srcItemTy; keyTy], [src; keySelector])
 
     let MakeGroupValBy =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>, z: Expression<Func<_, _>>) -> System.Linq.Queryable.GroupBy(x, y, z)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (x, y: Expression<Func<_, _>>, z: Expression<Func<_, _>>) -> Queryable.GroupBy(x, y, z)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (x, y: Func<_, _>, z: Func<_, _>) -> Enumerable.GroupBy(x, y, z)))
         fun (isIQ, srcItemTy, keyTy, elementTy, src: Expr, v1, keySelector, v2, elementSelector) ->
             let keySelector = Expr.NewDelegate (MakeQueryFuncTy(srcItemTy, keyTy), [v1], keySelector)
@@ -935,7 +935,7 @@ module Query =
                 FE ([srcItemTy; keyTy; elementTy], [src; keySelector; elementSelector])
 
     let MakeJoin =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3: Expression<Func<_, _>>, a4: Expression<Func<_, _>>, a5: Expression<Func<_, _, _>>) -> System.Linq.Queryable.Join(a1, a2, a3, a4, a5)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3: Expression<Func<_, _>>, a4: Expression<Func<_, _>>, a5: Expression<Func<_, _, _>>) -> Queryable.Join(a1, a2, a3, a4, a5)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3: Func<_, _>, a4: Func<_, _>, a5: Func<_, _, _>) -> Enumerable.Join(a1, a2, a3, a4, a5)))
         fun (isIQ, outerSourceTy, innerSourceTy, keyTy, resTy, outerSource: Expr, innerSource: Expr, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultKeyVar, innerResultKeyVar, elementSelector) ->
             let outerKeySelector = Expr.NewDelegate (MakeQueryFuncTy(outerSourceTy, keyTy), [outerKeyVar], outerKeySelector)
@@ -951,7 +951,7 @@ module Query =
                 FE ([outerSourceTy; innerSourceTy; keyTy; resTy], [outerSource; innerSource; outerKeySelector; innerKeySelector; elementSelector])
 
     let MakeGroupJoin =
-        let FQ = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3: Expression<Func<_, _>>, a4: Expression<Func<_, _>>, a5: Expression<Func<_, _, _>>) -> System.Linq.Queryable.GroupJoin(a1, a2, a3, a4, a5)))
+        let FQ = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3: Expression<Func<_, _>>, a4: Expression<Func<_, _>>, a5: Expression<Func<_, _, _>>) -> Queryable.GroupJoin(a1, a2, a3, a4, a5)))
         let FE = MakeGenericStaticMethod (methodhandleof (fun (a1, a2, a3: Func<_, _>, a4: Func<_, _>, a5: Func<_, _, _>) -> Enumerable.GroupJoin(a1, a2, a3, a4, a5)))
         fun (isIQ, outerSourceTy, innerSourceTy, keyTy, resTy, outerSource: Expr, innerSource: Expr, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultKeyVar, innerResultGroupVar, elementSelector) ->
             let outerKeySelector = Expr.NewDelegate (MakeQueryFuncTy(outerSourceTy, keyTy), [outerKeyVar], outerKeySelector)
@@ -1041,23 +1041,23 @@ module Query =
             | MacroReduction reduced -> Some (walk reduced)
             | _ -> None)
 
-    let (|CallQueryBuilderRunQueryable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run v))
+    let (|CallQueryBuilderRunQueryable|_|) : Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run v))
 
-    let (|CallQueryBuilderRunValue|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<'a>) -> b.Run v) : 'a)
+    let (|CallQueryBuilderRunValue|_|) : Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<'a>) -> b.Run v) : 'a)
 
-    let (|CallQueryBuilderRunEnumerable|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<QuerySource<_, IEnumerable>> ) -> b.Run v))
+    let (|CallQueryBuilderRunEnumerable|_|) : Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v: Expr<QuerySource<_, IEnumerable>> ) -> b.Run v))
 
-    let (|CallQueryBuilderFor|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, source: QuerySource<int, _>, body) -> b.For(source, body)))
+    let (|CallQueryBuilderFor|_|) : Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, source: QuerySource<int, _>, body) -> b.For(source, body)))
 
-    let (|CallQueryBuilderYield|_|) : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value) -> b.Yield value))
+    let (|CallQueryBuilderYield|_|) : Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value) -> b.Yield value))
 
-    let (|CallQueryBuilderYieldFrom|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, values) -> b.YieldFrom values))
+    let (|CallQueryBuilderYieldFrom|_|) : Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder, values) -> b.YieldFrom values))
 
-    let (|CallQueryBuilderZero|_|) : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder) -> b.Zero()))
+    let (|CallQueryBuilderZero|_|) : Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder) -> b.Zero()))
 
-    let (|CallQueryBuilderSourceIQueryable|_|) : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value: IQueryable<_>) -> b.Source value))
+    let (|CallQueryBuilderSourceIQueryable|_|) : Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value: IQueryable<_>) -> b.Source value))
 
-    let (|CallQueryBuilderSourceIEnumerable|_|) : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value: IEnumerable<_>) -> b.Source value))
+    let (|CallQueryBuilderSourceIEnumerable|_|) : Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder, value: IEnumerable<_>) -> b.Source value))
 
     let (|CallSortBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2) -> query.SortBy(arg1, arg2)))
 
@@ -1141,7 +1141,7 @@ module Query =
 
     let (|ZeroOnElseBranch|_|) = function
         // This is the shape for 'match e with ... -> ... | _ -> ()'
-        | Patterns.Sequential(Patterns.Value(null, _), CallQueryBuilderZero _)
+        | Sequential(Value(null, _), CallQueryBuilderZero _)
         // This is the shape for from 'if/then'
         | CallQueryBuilderZero _ ->  Some()
         | _ -> None
@@ -1173,7 +1173,7 @@ module Query =
 
         | GroupingConv (immutKeyTy, immutElemTy, conv) ->
 
-            assert (mutExpr.Type.GetGenericTypeDefinition() = typedefof<System.Linq.IGrouping<_, _>>)
+            assert (mutExpr.Type.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>)
             let mutElemTy = mutExpr.Type.GetGenericArguments().[1]
             let immutIGroupingTy = typedefof<IGrouping<_, _>>.MakeGenericType [| immutKeyTy; immutElemTy |]
             let immutGroupingTy = typedefof<Grouping<_, _>>.MakeGenericType [| immutKeyTy; immutElemTy |]
@@ -1248,7 +1248,7 @@ module Query =
             // We eliminate the Select here to keep the information in 'mutSource' available, i.e. whether
             // the mutSource is a TransInnerResult.Source after elimination
             match mutSelectorBody with
-            |  Patterns.Var v2 when mutSelectorVar = v2 && canElim = CanEliminate.Yes -> mutSource
+            |  Var v2 when mutSelectorVar = v2 && canElim = CanEliminate.Yes -> mutSource
             | _ -> Select(canElim, isQTy, mutSource, mutSelectorVar, mutSelectorBody)
 
 
@@ -1812,7 +1812,7 @@ module Query =
 
         let result =
            try
-              LeafExpressionConverter.EvaluateQuotation linqQueryAfterEliminatingNestedQueries
+              EvaluateQuotation linqQueryAfterEliminatingNestedQueries
            with e ->
 //#if DEBUG
 //              debug()

@@ -102,7 +102,7 @@ type Var =
     /// </example>
     static member Global: name: string * typ: Type -> Var
 
-    interface System.IComparable
+    interface IComparable
 
 /// <summary>Quoted expressions annotated with System.Type values. </summary>
 [<CompiledName("FSharpExpr")>]
