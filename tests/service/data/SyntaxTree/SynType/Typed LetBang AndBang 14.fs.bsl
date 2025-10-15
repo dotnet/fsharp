@@ -17,21 +17,23 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (ArrayOrList
-                                (true,
-                                 [Named
-                                    (SynIdent (first, None), false, None,
-                                     (4,12--4,17));
-                                  Named
-                                    (SynIdent (second, None), false, None,
-                                     (4,19--4,25))], (4,9--4,28)),
-                              App
-                                (LongIdent (SynLongIdent ([array], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (4,30--4,39)), (4,9--4,39)),
-                           None,
+                           ArrayOrList
+                             (true,
+                              [Named
+                                 (SynIdent (first, None), false, None,
+                                  (4,12--4,17));
+                               Named
+                                 (SynIdent (second, None), false, None,
+                                  (4,19--4,25))], (4,9--4,28)),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([array], [], [None])), None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (4,30--4,39)), (4,30--4,39), [],
+                                 { ColonRange = Some (4,28--4,29) })),
                            App
                              (Atomic, false, Ident asyncArray,
                               Const (Unit, (4,52--4,54)), (4,42--4,54)),
@@ -45,21 +47,22 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (ListCons
-                                (Named
-                                   (SynIdent (head, None), false, None,
-                                    (5,9--5,13)),
-                                 Named
-                                   (SynIdent (tail, None), false, None,
-                                    (5,17--5,21)), (5,9--5,21),
-                                 { ColonColonRange = (5,14--5,16) }),
-                              App
-                                (LongIdent (SynLongIdent ([list], [], [None])),
-                                 None,
-                                 [LongIdent
-                                    (SynLongIdent ([string], [], [None]))], [],
-                                 None, true, (5,23--5,34)), (5,9--5,34)), None,
+                           ListCons
+                             (Named
+                                (SynIdent (head, None), false, None, (5,9--5,13)),
+                              Named
+                                (SynIdent (tail, None), false, None,
+                                 (5,17--5,21)), (5,9--5,21),
+                              { ColonColonRange = (5,14--5,16) }),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([list], [], [None])), None,
+                                    [LongIdent
+                                       (SynLongIdent ([string], [], [None]))],
+                                    [], None, true, (5,23--5,34)), (5,23--5,34),
+                                 [], { ColonRange = Some (5,21--5,22) })),
                            App
                              (Atomic, false, Ident asyncList,
                               Const (Unit, (5,46--5,48)), (5,37--5,48)),
