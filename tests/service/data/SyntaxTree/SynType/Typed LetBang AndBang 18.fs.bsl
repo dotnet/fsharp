@@ -17,17 +17,19 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
-                                (As
-                                   (Named
-                                      (SynIdent (x, None), false, None,
-                                       (4,10--4,11)),
-                                    Named
-                                      (SynIdent (y, None), false, None,
-                                       (4,15--4,16)), (4,10--4,16)), (4,9--4,17)),
-                              LongIdent (SynLongIdent ([int], [], [None])),
-                              (4,9--4,22)), None,
+                           Paren
+                             (As
+                                (Named
+                                   (SynIdent (x, None), false, None,
+                                    (4,10--4,11)),
+                                 Named
+                                   (SynIdent (y, None), false, None,
+                                    (4,15--4,16)), (4,10--4,16)), (4,9--4,17)),
+                           Some
+                             (SynBindingReturnInfo
+                                (LongIdent (SynLongIdent ([int], [], [None])),
+                                 (4,19--4,22), [],
+                                 { ColonRange = Some (4,17--4,18) })),
                            App
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (4,33--4,35)), (4,25--4,35)),
@@ -41,16 +43,18 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
-                                (As
-                                   (Named
-                                      (SynIdent (a, None), false, None,
-                                       (5,10--5,11)),
-                                    Named
-                                      (SynIdent (b, None), false, None,
-                                       (5,15--5,16)), (5,10--5,16)), (5,9--5,17)),
-                              FromParseError (5,18--5,18), (5,9--5,18)), None,
+                           Paren
+                             (As
+                                (Named
+                                   (SynIdent (a, None), false, None,
+                                    (5,10--5,11)),
+                                 Named
+                                   (SynIdent (b, None), false, None,
+                                    (5,15--5,16)), (5,10--5,16)), (5,9--5,17)),
+                           Some
+                             (SynBindingReturnInfo
+                                (FromParseError (5,18--5,18), (5,18--5,18), [],
+                                 { ColonRange = Some (5,17--5,18) })),
                            App
                              (Atomic, false, Ident asyncString,
                               Const (Unit, (5,32--5,34)), (5,21--5,34)),

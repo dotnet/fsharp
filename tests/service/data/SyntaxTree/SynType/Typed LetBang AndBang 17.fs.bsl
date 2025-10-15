@@ -17,27 +17,29 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
+                           Paren
+                             (Tuple
+                                (false,
+                                 [Named
+                                    (SynIdent (x, None), false, None,
+                                     (4,10--4,11));
+                                  Named
+                                    (SynIdent (y, None), false, None,
+                                     (4,13--4,14))], [(4,11--4,12)],
+                                 (4,10--4,14)), (4,9--4,15)),
+                           Some
+                             (SynBindingReturnInfo
                                 (Tuple
                                    (false,
-                                    [Named
-                                       (SynIdent (x, None), false, None,
-                                        (4,10--4,11));
-                                     Named
-                                       (SynIdent (y, None), false, None,
-                                        (4,13--4,14))], [(4,11--4,12)],
-                                    (4,10--4,14)), (4,9--4,15)),
-                              Tuple
-                                (false,
-                                 [Type
-                                    (LongIdent
-                                       (SynLongIdent ([int], [], [None])));
-                                  Star (4,21--4,22);
-                                  Type
-                                    (LongIdent
-                                       (SynLongIdent ([int], [], [None])))],
-                                 (4,17--4,26)), (4,9--4,26)), None,
+                                    [Type
+                                       (LongIdent
+                                          (SynLongIdent ([int], [], [None])));
+                                     Star (4,21--4,22);
+                                     Type
+                                       (LongIdent
+                                          (SynLongIdent ([int], [], [None])))],
+                                    (4,17--4,26)), (4,17--4,26), [],
+                                 { ColonRange = Some (4,15--4,16) })),
                            App
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (4,37--4,39)), (4,29--4,39)),
@@ -51,27 +53,29 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
+                           Paren
+                             (Tuple
+                                (false,
+                                 [Named
+                                    (SynIdent (x, None), false, None,
+                                     (5,10--5,11));
+                                  Named
+                                    (SynIdent (y, None), false, None,
+                                     (5,13--5,14))], [(5,11--5,12)],
+                                 (5,10--5,14)), (5,9--5,15)),
+                           Some
+                             (SynBindingReturnInfo
                                 (Tuple
                                    (false,
-                                    [Named
-                                       (SynIdent (x, None), false, None,
-                                        (5,10--5,11));
-                                     Named
-                                       (SynIdent (y, None), false, None,
-                                        (5,13--5,14))], [(5,11--5,12)],
-                                    (5,10--5,14)), (5,9--5,15)),
-                              Tuple
-                                (false,
-                                 [Type
-                                    (LongIdent
-                                       (SynLongIdent ([int], [], [None])));
-                                  Star (5,21--5,22);
-                                  Type
-                                    (LongIdent
-                                       (SynLongIdent ([int], [], [None])))],
-                                 (5,17--5,26)), (5,9--5,26)), None,
+                                    [Type
+                                       (LongIdent
+                                          (SynLongIdent ([int], [], [None])));
+                                     Star (5,21--5,22);
+                                     Type
+                                       (LongIdent
+                                          (SynLongIdent ([int], [], [None])))],
+                                    (5,17--5,26)), (5,17--5,26), [],
+                                 { ColonRange = Some (5,15--5,16) })),
                            App
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (5,37--5,39)), (5,29--5,39)),
