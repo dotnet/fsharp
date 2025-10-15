@@ -100,11 +100,6 @@
     <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
   
     <!-- Roslyn packages -->
-    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
-    <MicrosoftCodeAnalysisVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisVersion>
-    <MicrosoftCodeAnalysisCSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisCSharpVersion>
-    <MicrosoftVisualStudioLanguageServicesVersion>5.0.0-2.25480.7</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
 	<!-- Roslyn for when we need to compile C# in tests. .dll hell caused by vstest makes newer version fail at runtime -->
 	<RoslynForTestingButNotForVSLayer>4.14.0</RoslynForTestingButNotForVSLayer>
