@@ -1142,11 +1142,7 @@ let mkLetExpression
 
             let mIn' =
                 mIn
-                |> Option.bind (fun (mIn: range) ->
-                    if posEq mIn.Start body.Range.Start then
-                        None
-                    else
-                        Some mIn)
+                |> Option.bind (fun (mIn: range) -> if posEq mIn.Start body.Range.Start then None else Some mIn)
 
             let mLetOrUse =
                 match decls with

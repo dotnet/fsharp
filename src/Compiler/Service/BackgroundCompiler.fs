@@ -64,24 +64,17 @@ type internal IBackgroundCompiler =
     abstract member DownsizeCaches: unit -> unit
 
     abstract member FindReferencesInFile:
-        fileName: string *
-        options: FSharpProjectOptions *
-        symbol: FSharpSymbol *
-        canInvalidateProject: bool *
-        userOpName: string ->
+        fileName: string * options: FSharpProjectOptions * symbol: FSharpSymbol * canInvalidateProject: bool * userOpName: string ->
             Async<seq<range>>
 
     abstract member FindReferencesInFile:
-        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * userOpName: string ->
-            Async<seq<range>>
+        fileName: string * projectSnapshot: FSharpProjectSnapshot * symbol: FSharpSymbol * userOpName: string -> Async<seq<range>>
 
     abstract member GetAssemblyData:
-        options: FSharpProjectOptions * outputFileName: string * userOpName: string ->
-            Async<ProjectAssemblyDataResult>
+        options: FSharpProjectOptions * outputFileName: string * userOpName: string -> Async<ProjectAssemblyDataResult>
 
     abstract member GetAssemblyData:
-        projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string ->
-            Async<ProjectAssemblyDataResult>
+        projectSnapshot: FSharpProjectSnapshot * outputFileName: string * userOpName: string -> Async<ProjectAssemblyDataResult>
 
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     abstract member GetBackgroundCheckResultsForFileInProject:

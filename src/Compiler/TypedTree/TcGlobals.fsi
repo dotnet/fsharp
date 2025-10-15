@@ -16,12 +16,7 @@ val internal DummyFileNameForRangesWithoutASpecificLocation: string
 /// Represents an intrinsic value from FSharp.Core known to the compiler
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type internal IntrinsicValRef =
-    | IntrinsicValRef of
-        TypedTree.NonLocalEntityRef *
-        string *
-        bool *
-        TypedTree.TType *
-        TypedTree.ValLinkageFullKey
+    | IntrinsicValRef of TypedTree.NonLocalEntityRef * string * bool * TypedTree.TType * TypedTree.ValLinkageFullKey
 
     /// For debugging
     override ToString: unit -> string
@@ -200,8 +195,7 @@ type internal TcGlobals =
 
     /// Find an FSharp.Core LanguagePrimitives dynamic function that corresponds to a trait witness, e.g.
     /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
-    member MakeBuiltInWitnessInfo:
-        t: TypedTree.TraitConstraintInfo -> IntrinsicValRef * TypedTree.TType list
+    member MakeBuiltInWitnessInfo: t: TypedTree.TraitConstraintInfo -> IntrinsicValRef * TypedTree.TType list
 
     member MakeInternalsVisibleToAttribute: simpleAssemName: string -> FSharp.Compiler.AbstractIL.IL.ILAttribute
 
@@ -228,14 +222,10 @@ type internal TcGlobals =
             (IntrinsicValRef * TypedTree.TType list * 'a list) option
 
     member decompileType:
-        tcref: TypedTree.EntityRef ->
-        tinst: TypedTree.TypeInst ->
-            (TypedTree.Nullness -> TypedTree.TType)
+        tcref: TypedTree.EntityRef -> tinst: TypedTree.TypeInst -> (TypedTree.Nullness -> TypedTree.TType)
 
     member improveType:
-        tcref: TypedTree.EntityRef ->
-        tinst: TypedTree.TType list ->
-            (TypedTree.Nullness -> TypedTree.TType)
+        tcref: TypedTree.EntityRef -> tinst: TypedTree.TType list -> (TypedTree.Nullness -> TypedTree.TType)
 
     /// Memoization table to help minimize the number of ILSourceDocument objects we create
     member memoize_file: x: int -> FSharp.Compiler.AbstractIL.IL.ILSourceDocument
@@ -257,8 +247,7 @@ type internal TcGlobals =
 
     member tryRemoveEmbeddedILTypeDefs: unit -> FSharp.Compiler.AbstractIL.IL.ILTypeDef list
 
-    member unionCaseRefEq:
-        x: TypedTree.UnionCaseRef -> y: TypedTree.UnionCaseRef -> bool
+    member unionCaseRefEq: x: TypedTree.UnionCaseRef -> y: TypedTree.UnionCaseRef -> bool
 
     member valRefEq: x: TypedTree.ValRef -> y: TypedTree.ValRef -> bool
 
@@ -839,10 +828,7 @@ type internal TcGlobals =
     member knownFSharpCoreModules: System.Collections.Generic.IDictionary<string, TypedTree.EntityRef>
 
     member knownIntrinsics:
-        System.Collections.Concurrent.ConcurrentDictionary<
-            (string * string option * string * int),
-            TypedTree.ValRef
-         >
+        System.Collections.Concurrent.ConcurrentDictionary<(string * string option * string * int), TypedTree.ValRef>
 
     member knownWithNull: TypedTree.Nullness
 

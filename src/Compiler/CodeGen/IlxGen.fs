@@ -5710,11 +5710,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | _ ->
                 if nm.TrimEnd([| '0' .. '9' |]).Length = 1 then
                     nm
-                elif
-                    nm.Length >= 1
-                    && nm[0] = 'T'
-                    && (nm.Length = 1 || not (Char.IsLower nm[1]))
-                then
+                elif nm.Length >= 1 && nm[0] = 'T' && (nm.Length = 1 || not (Char.IsLower nm[1])) then
                     nm
                 else
                     "T" + (String.capitalize nm)

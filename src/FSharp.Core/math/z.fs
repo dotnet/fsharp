@@ -46,10 +46,7 @@ module NumericLiterals =
             FromInt64Dynamic(int64 x32)
 
         let inline isOX s =
-            not (String.IsNullOrEmpty(s))
-            && s.Length > 2
-            && s.[0] = '0'
-            && s.[1] = 'x'
+            not (String.IsNullOrEmpty(s)) && s.Length > 2 && s.[0] = '0' && s.[1] = 'x'
 
         let FromZero () : 'T =
             (get32 0 :?> 'T) when 'T: BigInteger = BigInteger.Zero

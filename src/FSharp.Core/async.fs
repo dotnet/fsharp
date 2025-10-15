@@ -1745,12 +1745,7 @@ type Async =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        StartWithContinuations
-            cancellationToken
-            computation
-            continuation
-            exceptionContinuation
-            cancellationContinuation
+        StartWithContinuations cancellationToken computation continuation exceptionContinuation cancellationContinuation
 
     static member StartWithContinuations
         (computation: Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken)
@@ -2049,10 +2044,7 @@ type Async =
     static member AsBeginEnd<'Arg, 'T>
         (computation: ('Arg -> Async<'T>))
         // The 'Begin' member
-        : ('Arg * AsyncCallback * objnull -> IAsyncResult) *
-          (IAsyncResult -> 'T) *
-          (IAsyncResult -> unit)
-        =
+        : ('Arg * AsyncCallback * objnull -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit) =
         let beginAction =
             fun (a1, callback, state) -> AsBeginEndHelpers.beginAction ((computation a1), callback, state)
 

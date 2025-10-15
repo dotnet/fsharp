@@ -1132,11 +1132,7 @@ let (|MultiDimensionArrayType|_|) (t: SynType) =
     | SynType.App(StripParenTypes(SynType.LongIdent(SynLongIdent([ identifier ], _, _))), _, [ elementType ], _, _, true, m) ->
         if System.Text.RegularExpressions.Regex.IsMatch(identifier.idText, "^array\d\d?d$") then
             let rank =
-                identifier.idText
-                |> Seq.filter Char.IsDigit
-                |> Seq.toArray
-                |> String
-                |> int
+                identifier.idText |> Seq.filter Char.IsDigit |> Seq.toArray |> String |> int
 
             ValueSome(rank, elementType, m)
         else
@@ -1169,10 +1165,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: LanguageVersi
                 errorR (Error(FSComp.SR.parsMultipleAccessibilitiesForGetSet (), x.Range))
                 None
             | Some x, None ->
-                checkLanguageFeatureAndRecover
-                    langVersion
-                    LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-                    x.Range
+                checkLanguageFeatureAndRecover langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
 
                 accessBeforeGetSet
 
@@ -1182,10 +1175,7 @@ let getGetterSetterAccess synValSigAccess memberKind (langVersion: LanguageVersi
             | _, (None, None) -> access, access
             | None, (Some x, _)
             | None, (_, Some x) ->
-                checkLanguageFeatureAndRecover
-                    langVersion
-                    LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters
-                    x.Range
+                checkLanguageFeatureAndRecover langVersion LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters x.Range
 
                 getterAccess, setterAccess
             | _, (Some x, _)

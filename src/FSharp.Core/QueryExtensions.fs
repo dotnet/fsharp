@@ -190,10 +190,7 @@ module internal Adapters =
         match expr with
         | Patterns.PropertyGet(Some(Patterns.NewRecord(typ, els)), propInfo, []) ->
             let fields =
-                FSharpType.GetRecordFields(
-                    typ,
-                    BindingFlags.Public ||| BindingFlags.NonPublic
-                )
+                FSharpType.GetRecordFields(typ, BindingFlags.Public ||| BindingFlags.NonPublic)
 
             match fields |> Array.tryFindIndex (fun p -> p = propInfo) with
             | None -> None

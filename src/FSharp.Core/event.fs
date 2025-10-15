@@ -77,8 +77,8 @@ type EventDelegee<'Args>(observer: IObserver<'Args>) =
 type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args -> unit
 
 [<CompiledName("FSharpEvent`2")>]
-type Event<'Delegate, 'Args
-    when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct>() =
+type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> Delegate and 'Delegate: not struct>()
+    =
 
     let mutable multicast: 'Delegate = Unchecked.defaultof<_>
 

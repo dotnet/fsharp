@@ -2462,7 +2462,7 @@ module Array =
                     concurrencyLevel = maxPartitions,
                     capacity = Operators.min (array.Length) 1_000,
                     comparer = comparer
-                    )
+                )
 
             let valueFactory = Func<_, _>(fun _ -> ref 0)
 
