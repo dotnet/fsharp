@@ -2847,7 +2847,8 @@ module DerivedPatterns =
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | Lambdas(_, Call(_, minfo1, _)) | Call(_, minfo1, _) ->
+        | Lambdas(_, Call(_, minfo1, _))
+        | Call(_, minfo1, _) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =

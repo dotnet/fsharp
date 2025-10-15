@@ -2361,8 +2361,7 @@ type ILPropertyDef
                  | Some attrs -> attrs)
         )
 
-    member x.IsSpecialName =
-        (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_> 0
+    member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_> 0
 
     member x.IsRTSpecialName =
         (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_> 0

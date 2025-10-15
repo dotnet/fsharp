@@ -909,7 +909,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        | FSharpDiagnosticSeverity.Warning | FSharpDiagnosticSeverity.Info as adjustedSeverity ->
+        | FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info as adjustedSeverity ->
             DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
@@ -1446,24 +1447,24 @@ type internal FsiConsoleInput
         if fsiOptions.Interact then
             if fsiOptions.PeekAheadOnConsoleToPermitTyping then
                 Thread(fun () ->
-                        match consoleOpt with
-                        | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
-                            if List.isEmpty fsiOptions.SourceFiles then
-                                if progress then
-                                    fprintfn outWriter "first-line-reader-thread reading first line..."
+                    match consoleOpt with
+                    | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
+                        if List.isEmpty fsiOptions.SourceFiles then
+                            if progress then
+                                fprintfn outWriter "first-line-reader-thread reading first line..."
 
-                                firstLine <- Some(console ())
-
-                                if progress then
-                                    fprintfn outWriter "first-line-reader-thread got first line = %A..." firstLine
-
-                            consoleReaderStartupDone.Set() |> ignore
+                            firstLine <- Some(console ())
 
                             if progress then
-                                fprintfn outWriter "first-line-reader-thread has set signal and exited."
-                        | _ ->
-                            ignore (inReader.Peek())
-                            consoleReaderStartupDone.Set() |> ignore)
+                                fprintfn outWriter "first-line-reader-thread got first line = %A..." firstLine
+
+                        consoleReaderStartupDone.Set() |> ignore
+
+                        if progress then
+                            fprintfn outWriter "first-line-reader-thread has set signal and exited."
+                    | _ ->
+                        ignore (inReader.Peek())
+                        consoleReaderStartupDone.Set() |> ignore)
                     .Start()
             else
                 if progress then
@@ -1613,8 +1614,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
 
-    let compPath =
-        CompilationPath.CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, [])
+    let compPath = CompilationPath.CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, [])
 
     let mutable mty = Unchecked.defaultof<_>
 

@@ -2523,9 +2523,7 @@ module Array =
             // Here we  enforce nan=nan equality to prevent throwing
             if typeof<'Key> = typeof<float> || typeof<'Key> = typeof<float32> then
                 let genericCmp =
-                    HashIdentity.FromFunctions<'Key>
-                        LanguagePrimitives.GenericHash
-                        LanguagePrimitives.GenericEqualityER
+                    HashIdentity.FromFunctions<'Key> LanguagePrimitives.GenericHash LanguagePrimitives.GenericEqualityER
 
                 groupByImplParallel genericCmp keyf id array
             else

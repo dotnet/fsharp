@@ -343,7 +343,7 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
                                 s.OutputFileName
                                 |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
                                 s
-                                ))
+                            ))
                         |> Seq.toList
 
                     projectConfig, referencedProjects)

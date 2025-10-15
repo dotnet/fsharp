@@ -632,7 +632,7 @@ module MainModuleBuilder =
                                 ManifestResourceFormat.VS_MANIFEST_RESOURCE(
                                     FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes(),
                                     tcConfig.target = CompilerTarget.Dll
-                                    )
+                                )
                         |]
                 if
                     String.IsNullOrEmpty(tcConfig.win32res)
