@@ -645,11 +645,11 @@ let OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m (os: Strin
             os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
         else
             os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
-    | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch (ty2))
+    | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch ty2)
     | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
     | ContextInfo.FollowingPatternMatchClause range when equals range m ->
         os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
-    | ContextInfo.PatternMatchGuard range when equals range m -> os.AppendString(FSComp.SR.patternMatchGuardIsNotBool (ty2))
+    | ContextInfo.PatternMatchGuard range when equals range m -> os.AppendString(FSComp.SR.patternMatchGuardIsNotBool ty2)
     | contextInfo -> fallback contextInfo
 
 type Exception with
@@ -1086,7 +1086,7 @@ type Exception with
                 | _ -> os.AppendString(NonRigidTypar3E().Format tpnm (NicePrint.stringOfTy denv ty2))
 
         | SyntaxError(ctxt, _) ->
-            let ctxt = unbox<Parsing.ParseErrorContext<Parser.token>> (ctxt)
+            let ctxt = unbox<Parsing.ParseErrorContext<Parser.token>> ctxt
 
             let (|EndOfStructuredConstructToken|_|) token =
                 match token with
@@ -1725,7 +1725,7 @@ type Exception with
 
             os.AppendString(LetRecUnsound2E().Format (List.head path).DisplayName (bos.ToString()))
 
-        | LetRecEvaluatedOutOfOrder(_) -> os.AppendString(LetRecEvaluatedOutOfOrderE().Format)
+        | LetRecEvaluatedOutOfOrder _ -> os.AppendString(LetRecEvaluatedOutOfOrderE().Format)
 
         | LetRecCheckedAtRuntime _ -> os.AppendString(LetRecCheckedAtRuntimeE().Format)
 
@@ -2218,7 +2218,7 @@ let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticS
                             |> fun lines -> Array.sub lines (m.StartLine - 1) (m.EndLine - m.StartLine - 1)
                             |> Array.fold
                                 (fun (context, lineNumber) line -> (context + $"\n{lineNumber} | {line}", lineNumber + 1))
-                                ("", (m.StartLine))
+                                ("", m.StartLine)
                             |> fst
                             |> Some
                     | None -> None

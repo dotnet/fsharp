@@ -2420,7 +2420,7 @@ module Array =
         [<CompiledName("AverageBy")>]
         let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T array) : ^U =
             let sum = array |> reduceBy projection Checked.(+)
-            LanguagePrimitives.DivideByInt sum (array.Length)
+            LanguagePrimitives.DivideByInt sum array.Length
 
         [<CompiledName("Average")>]
         let inline average (array: 'T array) =
@@ -2460,7 +2460,7 @@ module Array =
             let counts =
                 ConcurrentDictionary<_, _>(
                     concurrencyLevel = maxPartitions,
-                    capacity = Operators.min (array.Length) 1_000,
+                    capacity = Operators.min array.Length 1_000,
                     comparer = comparer
                 )
 
@@ -2509,7 +2509,7 @@ module Array =
 
                     for elemIdx = chunk.Offset to (chunk.Offset + chunk.Count - 1) do
                         let key = projectedValues[elemIdx]
-                        let (counter, arrayForThisGroup) = finalResultsLookup[key]
+                        let counter, arrayForThisGroup = finalResultsLookup[key]
                         let idxToWrite = Interlocked.Decrement(counter)
                         arrayForThisGroup[idxToWrite] <- array[elemIdx]
             )
@@ -2524,8 +2524,8 @@ module Array =
             if typeof<'Key> = typeof<float> || typeof<'Key> = typeof<float32> then
                 let genericCmp =
                     HashIdentity.FromFunctions<'Key>
-                        (LanguagePrimitives.GenericHash)
-                        (LanguagePrimitives.GenericEqualityER)
+                        LanguagePrimitives.GenericHash
+                        LanguagePrimitives.GenericEqualityER
 
                 groupByImplParallel genericCmp keyf id array
             else

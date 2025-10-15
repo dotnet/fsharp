@@ -129,13 +129,13 @@ module ExtraTopLevelOperators =
 
         interface ICollection<KeyValuePair<'Key, 'T>> with
 
-            member _.Add(_) =
+            member _.Add _ =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
             member _.Clear() =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
-            member _.Remove(_) =
+            member _.Remove _ =
                 raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
 
             member _.Contains(KeyValue(k, v)) =
@@ -144,7 +144,7 @@ module ExtraTopLevelOperators =
             member _.CopyTo(arr, i) =
                 let mutable n = 0
 
-                for (KeyValue(k, v)) in t do
+                for KeyValue(k, v) in t do
                     arr.[i + n] <- KeyValuePair<_, _>(getKey k, v)
                     n <- n + 1
 
@@ -160,7 +160,7 @@ module ExtraTopLevelOperators =
             member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
-                let kvps = [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
+                let kvps = [| for KeyValue(k, v) in t -> KeyValuePair(getKey k, v) |] :> seq<_>
                 kvps.GetEnumerator()
 
         interface System.Collections.IEnumerable with
@@ -168,7 +168,7 @@ module ExtraTopLevelOperators =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics.
                 let kvps =
-                    [| for (KeyValue(k, v)) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
+                    [| for KeyValue(k, v) in t -> KeyValuePair(getKey k, v) |] :> System.Collections.IEnumerable
 
                 kvps.GetEnumerator()
 
@@ -184,7 +184,7 @@ module ExtraTopLevelOperators =
         =
         let t = Dictionary comparer
 
-        for (k, v) in l do
+        for k, v in l do
             t.[makeSafeKey k] <- v
 
         DictImpl(t, makeSafeKey, getKey)
@@ -195,7 +195,7 @@ module ExtraTopLevelOperators =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let dictRefType (l: seq<'Key * 'T>) =
-        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (RuntimeHelpers.StructBox) (fun sb -> sb.Value) l
+        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer RuntimeHelpers.StructBox (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs: seq<'Key * 'T>) : IDictionary<'Key, 'T> =
@@ -465,7 +465,7 @@ type IProvidedNamespace =
 
     abstract GetTypes: unit -> Type array
 
-    abstract ResolveTypeName: typeName: string -> (Type | null)
+    abstract ResolveTypeName: typeName: string -> Type | null
 
 type ITypeProvider =
     inherit IDisposable

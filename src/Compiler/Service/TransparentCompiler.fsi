@@ -95,7 +95,7 @@ type internal Extensions =
     [<System.Runtime.CompilerServices.Extension>]
     static member Key:
         fileSnapshots: #IFileSnapshot list * ?extraKeyFlag: DependencyGraphType ->
-            ICacheKey<(DependencyGraphType option * byte array), string>
+            ICacheKey<DependencyGraphType option * byte array, string>
 
 [<Experimental("This FCS type is experimental and will likely change or be removed in the future.")>]
 type CacheSizes =
@@ -138,45 +138,45 @@ type internal CompilerCaches =
 
     new: cacheSizes: CacheSizes -> CompilerCaches
 
-    member AssemblyData: AsyncMemoize<FSharpProjectIdentifier, (string * string), ProjectAssemblyDataResult>
+    member AssemblyData: AsyncMemoize<FSharpProjectIdentifier, string * string, ProjectAssemblyDataResult>
 
-    member BootstrapInfo: AsyncMemoize<FSharpProjectIdentifier, string, (BootstrapInfo option * FSharpDiagnostic array)>
+    member BootstrapInfo: AsyncMemoize<FSharpProjectIdentifier, string, BootstrapInfo option * FSharpDiagnostic array>
 
     member BootstrapInfoStatic:
-        AsyncMemoize<FSharpProjectIdentifier, (string * string), (int * TcImports * TcGlobals * TcInfo * Event<unit>)>
+        AsyncMemoize<FSharpProjectIdentifier, string * string, int * TcImports * TcGlobals * TcInfo * Event<unit>>
 
     member DependencyGraph:
-        AsyncMemoize<(DependencyGraphType option * byte array), string, (Graph<NodeToTypeCheck> * Graph<FileIndex>)>
+        AsyncMemoize<DependencyGraphType option * byte array, string, Graph<NodeToTypeCheck> * Graph<FileIndex>>
 
-    member FrameworkImports: AsyncMemoize<string, FrameworkImportsCacheKey, (TcGlobals * TcImports)>
+    member FrameworkImports: AsyncMemoize<string, FrameworkImportsCacheKey, TcGlobals * TcImports>
 
-    member ItemKeyStore: AsyncMemoize<(string * FSharpProjectIdentifier), string, ItemKeyStore option>
+    member ItemKeyStore: AsyncMemoize<string * FSharpProjectIdentifier, string, ItemKeyStore option>
 
     member ParseAndCheckAllFilesInProject: AsyncMemoizeDisabled<obj, obj, obj>
 
     member ParseAndCheckFileInProject:
         AsyncMemoize<
-            (string * FSharpProjectIdentifier),
+            string * FSharpProjectIdentifier,
             string * string,
-            (FSharpParseFileResults * FSharpCheckFileAnswer)
+            FSharpParseFileResults * FSharpCheckFileAnswer
          >
 
     member ParseAndCheckProject: AsyncMemoize<FSharpProjectIdentifier, string, FSharpCheckProjectResults>
 
-    member ParseFile: AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), FSharpParsedFile>
+    member ParseFile: AsyncMemoize<FSharpProjectIdentifier * string, string * string * bool, FSharpParsedFile>
 
     member ParseFileWithoutProject: AsyncMemoize<string, string, FSharpParseFileResults>
 
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
     member SemanticClassification:
-        AsyncMemoize<(string * FSharpProjectIdentifier), string, SemanticClassificationView option>
+        AsyncMemoize<string * FSharpProjectIdentifier, string, SemanticClassificationView option>
 
     member CacheSizes: CacheSizes
 
-    member TcIntermediate: AsyncMemoize<(string * FSharpProjectIdentifier), (string * int), TcIntermediate>
+    member TcIntermediate: AsyncMemoize<string * FSharpProjectIdentifier, string * int, TcIntermediate>
 
-    member ScriptClosure: AsyncMemoize<(string * FSharpProjectIdentifier), string, LoadClosure>
+    member ScriptClosure: AsyncMemoize<string * FSharpProjectIdentifier, string, LoadClosure>
 
     member TcLastFile: AsyncMemoizeDisabled<obj, obj, obj>
 

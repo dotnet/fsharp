@@ -797,7 +797,7 @@ type internal TypeCheckInfo
                     let qual =
                         quals
                         |> Array.tryFind (fun (_, _, _, r) ->
-                            ignore (r) // for breakpoint
+                            ignore r // for breakpoint
                             posEq exprRange.Start r.Start)
 
                     qual, false
@@ -3024,7 +3024,7 @@ module internal ParseAndCheckFile =
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                     let braceOffset =
                         match tok with
-                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, (LexerContinuation.Token(_, (_, _, dl, _, _) :: _))) ->
+                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, LexerContinuation.Token(_, (_, _, dl, _, _) :: _)) ->
                             dl - 1
                         | _ -> 0
 

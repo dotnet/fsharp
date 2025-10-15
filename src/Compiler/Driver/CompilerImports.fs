@@ -663,9 +663,9 @@ type TcConfig with
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile =
                 [|
-                    for (_filename, maxIndexOfReference, references) in groupedReferences do
+                    for _filename, maxIndexOfReference, references in groupedReferences do
                         let assemblyResolution =
-                            references |> List.choose (tcConfig.TryResolveLibWithDirectories)
+                            references |> List.choose tcConfig.TryResolveLibWithDirectories
 
                         if not assemblyResolution.IsEmpty then
                             (maxIndexOfReference, assemblyResolution)
@@ -739,7 +739,7 @@ type TcConfig with
 
             let unresolved =
                 [
-                    for (name, _, r) in unresolvedReferences -> UnresolvedAssemblyReference(name, r)
+                    for name, _, r in unresolvedReferences -> UnresolvedAssemblyReference(name, r)
                 ]
 
             // If mode=Speculative, then we haven't reported any errors.
@@ -1166,7 +1166,7 @@ type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<Tc
     let mutable dllInfos: TcImportsDllInfoFacade list = []
 
     // The name of these fields must not change, see above
-    do assert (nameof (dllInfos) = "dllInfos")
+    do assert (nameof dllInfos = "dllInfos")
 
     member _.SetDllInfos(value: ImportedBinary list) =
         tciLock.AcquireLock(fun tcitok ->
@@ -1177,7 +1177,7 @@ type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<Tc
                     for x in value do
                         let info = { FileName = x.FileName }
                         // The name of this field must not change, see above
-                        assert (nameof (info.FileName) = "FileName")
+                        assert (nameof info.FileName = "FileName")
                         info
                 ]
 
@@ -1185,7 +1185,7 @@ type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<Tc
 
     member this.Base: TcImportsWeakFacade option =
         // The name of this property msut not change, see above
-        assert (nameof (this.Base) = "Base")
+        assert (nameof this.Base = "Base")
 
         match tcImportsWeak.TryGetTarget() with
         | true, tcImports ->
@@ -1520,7 +1520,7 @@ and [<Sealed>] TcImports
                     {
                         IsFSharp = false
                         UsesFSharp20PlusQuotations = false
-                        InvalidateEvent = (Event<_>()).Publish
+                        InvalidateEvent = Event<_>().Publish
                         IsProviderGenerated = true
                         QualifiedName = Some(assembly.PUntaint((fun a -> a.FullName), m))
                         Contents = ccuContents
@@ -1863,7 +1863,7 @@ and [<Sealed>] TcImports
                 let tcImports = tcImportsWeak
 
                 // The name of this captured value must not change, see comments on TcImportsWeakFacade above
-                assert (nameof (tcImports) = "tcImports")
+                assert (nameof tcImports = "tcImports")
 
                 let mutable systemRuntimeContainsTypeRef = tcImports.SystemRuntimeContainsType
 
@@ -2687,7 +2687,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
         ccuinfos
         |> List.map (function
             | ResolvedImportedAssembly(asm, m) -> asm, m
-            | UnresolvedImportedAssembly(assemblyName, m) -> error (Error(FSComp.SR.buildCouldNotResolveAssembly (assemblyName), m)))
+            | UnresolvedImportedAssembly(assemblyName, m) -> error (Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m)))
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()

@@ -1990,7 +1990,7 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
                     delayedFieldInits = (fun () -> fieldB.SetConstant(initial.AsObject())) :: emEnv.delayedFieldInits
                 }
 
-    fdef.Offset |> Option.iter (fieldB.SetOffset)
+    fdef.Offset |> Option.iter fieldB.SetOffset
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
     let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)

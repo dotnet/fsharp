@@ -332,7 +332,7 @@ module Internal =
 
                 let setIndex i =
                     index <- i
-                    current <- (Unchecked.defaultof<_>) // cache node unprimed, initialised on demand.
+                    current <- Unchecked.defaultof<_> // cache node unprimed, initialised on demand.
 
                 let getCurrent () =
                     if index = unstarted then
@@ -1679,7 +1679,7 @@ module Seq =
         checkNonNull "source" source
         use e = source.GetEnumerator()
 
-        if (e.MoveNext()) then
+        if e.MoveNext() then
             e.Current
         else
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
@@ -1689,7 +1689,7 @@ module Seq =
         checkNonNull "source" source
         use e = source.GetEnumerator()
 
-        if (e.MoveNext()) then
+        if e.MoveNext() then
             Some e.Current
         else
             None

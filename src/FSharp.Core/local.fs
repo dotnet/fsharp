@@ -440,7 +440,7 @@ module internal List =
         | [] -> []
         | [h] -> f h
         | _ ->
-            let cons = freshConsNoTail (Unchecked.defaultof<'U>)
+            let cons = freshConsNoTail Unchecked.defaultof<'U>
             collectToFreshConsTail f list cons
             cons.Tail
 
@@ -464,7 +464,7 @@ module internal List =
         | _, [] -> []
         | [], _ -> []
         | _ ->
-            let cons = freshConsNoTail (Unchecked.defaultof<'T * 'U>)
+            let cons = freshConsNoTail Unchecked.defaultof<'T * 'U>
             allPairsToFreshConsTail xs ys cons
             cons.Tail
 
@@ -1195,7 +1195,7 @@ module internal Seq =
             use e = source.GetEnumerator()
             if e.MoveNext() then
                 let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
+                while e.MoveNext() do res <- e.Current
                 ValueSome(res)
             else
                 ValueNone

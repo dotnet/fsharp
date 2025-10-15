@@ -463,7 +463,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
-             | _ when not (isNil qinfos) -> Some(TraitItem (qinfos))
+             | _ when not (isNil qinfos) -> Some(TraitItem qinfos)
              | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
              | _ when not (isNil minfos) -> Some(MethodItem [minfos])
              | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))
@@ -796,7 +796,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     let hashFlags3 = 
         { new IEqualityComparer<AccessorDomain> with 
                member _.GetHashCode((ad: AccessorDomain)) = AccessorDomain.CustomGetHashCode ad
-               member _.Equals((ad1), (ad2)) = nullSafeEquality ad1 ad2 (fun ad1 ad2 -> AccessorDomain.CustomEquals(g, ad1, ad2)) }
+               member _.Equals(ad1, ad2) = nullSafeEquality ad1 ad2 (fun ad1 ad2 -> AccessorDomain.CustomEquals(g, ad1, ad2)) }
                          
     let hashFlags4 = 
         { new IEqualityComparer<AccessorDomain * string> with 

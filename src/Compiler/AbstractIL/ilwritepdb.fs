@@ -228,13 +228,13 @@ let pdbMagicNumber = 0x4244504dL
 let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (compressedStream: MemoryStream) =
     let iddPdbBuffer =
         let buffer =
-            Array.zeroCreate (sizeof<int32> + sizeof<int32> + int (compressedStream.Length))
+            Array.zeroCreate (sizeof<int32> + sizeof<int32> + int compressedStream.Length)
 
         let offset, size = (0, sizeof<int32>) // Magic Number dword: 0x4244504dL
         Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>) // Uncompressed size
         Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
-        let offset, size = (offset + size, int (compressedStream.Length)) // Uncompressed size
+        let offset, size = (offset + size, int compressedStream.Length) // Uncompressed size
         Buffer.BlockCopy(compressedStream.ToArray(), 0, buffer, offset, size)
         buffer
 
@@ -321,7 +321,7 @@ let sortMethods info =
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter (builder.Add)
+    tableRowCounts |> Seq.iter builder.Add
     builder.MoveToImmutable()
 
 let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
@@ -462,7 +462,7 @@ type PortablePdbGenerator
             fs.CopyTo ms
 
             metadata.AddCustomDebugInformation(
-                ModuleDefinitionHandle.op_Implicit (EntityHandle.ModuleDefinition),
+                ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
                 metadata.GetOrAddGuid sourceLinkId,
                 metadata.GetOrAddBlob(ms.ToArray())
             )
@@ -990,7 +990,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
                                 yield (scope.EndOffset, scope.EndOffset)
                             |]
 
-                        for ((_, a), (b, _)) in Array.pairwise gaps do
+                        for (_, a), (b, _) in Array.pairwise gaps do
                             if a < b then
                                 yield
                                     { scope with

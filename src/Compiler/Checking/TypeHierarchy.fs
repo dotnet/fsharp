@@ -445,8 +445,8 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     let n1 = tinst.Length
     let n2 = tpsorig.Length
     let n3 = tps.Length
-    if n0 <> n1 then error(Error((FSComp.SR.tcInvalidTypeArgumentCount(n0, n1)), m))
-    if n2 <> n3 then error(Error((FSComp.SR.tcInvalidTypeArgumentCount(n2, n3)), m))
+    if n0 <> n1 then error(Error(FSComp.SR.tcInvalidTypeArgumentCount(n0, n1), m))
+    if n2 <> n3 then error(Error(FSComp.SR.tcInvalidTypeArgumentCount(n2, n3), m))
 
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps

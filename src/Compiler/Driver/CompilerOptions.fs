@@ -320,7 +320,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             opt
 
     let getSwitch (s: string) =
-        let s = (s.Split([| ':' |]))[0]
+        let s = s.Split([| ':' |])[0]
 
         if s <> "--" && s.EndsWithOrdinal("-") then
             OptionSwitch.Off
@@ -623,7 +623,7 @@ let callVirtSwitch (tcConfigB: TcConfigBuilder) switch =
 let callParallelCompilationSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.parallelIlxGen <- switch = OptionSwitch.On
 
-    let (graphCheckingMode, optMode) =
+    let graphCheckingMode, optMode =
         match switch with
         | OptionSwitch.On -> TypeCheckingMode.Graph, OptimizationProcessingMode.Parallel
         | OptionSwitch.Off -> TypeCheckingMode.Sequential, OptimizationProcessingMode.Sequential
@@ -1174,7 +1174,7 @@ let languageFlags tcConfigB =
         CompilerOption(
             "langversion",
             tagLangVersionValues,
-            OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion (switch)),
+            OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion switch),
             None,
             Some(FSComp.SR.optsSetLangVersion ())
         )
@@ -1545,7 +1545,7 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "bufferwidth",
             tagNone,
-            OptionInt((fun v -> tcConfigB.bufferWidth <- Some v)),
+            OptionInt(fun v -> tcConfigB.bufferWidth <- Some v),
             Some(InternalCommandLineOption("--bufferWidth", rangeCmdArgs)),
             None
         )
@@ -2179,29 +2179,29 @@ let miscFlagsFsi tcConfigB = miscFlagsBoth tcConfigB
 
 let abbreviatedFlagsBoth tcConfigB =
     [
-        CompilerOption("d", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsShortFormOf ("--define")))
-        CompilerOption("O", tagNone, OptionSwitch(SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf ("--optimize[+|-]")))
-        CompilerOption("g", tagNone, OptionSwitch(SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf ("--debug")))
+        CompilerOption("d", tagString, OptionString(defineSymbol tcConfigB), None, Some(FSComp.SR.optsShortFormOf "--define"))
+        CompilerOption("O", tagNone, OptionSwitch(SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf "--optimize[+|-]"))
+        CompilerOption("g", tagNone, OptionSwitch(SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf "--debug"))
         CompilerOption(
             "i",
             tagString,
             OptionUnit(fun () -> tcConfigB.printSignature <- true),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--sig"))
+            Some(FSComp.SR.optsShortFormOf "--sig")
         )
         CompilerOption(
             "r",
             tagFile,
             OptionString(fun s -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup, s)),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--reference"))
+            Some(FSComp.SR.optsShortFormOf "--reference")
         )
         CompilerOption(
             "I",
             tagDirList,
             OptionStringList(fun s -> tcConfigB.AddIncludePath(rangeStartup, s, tcConfigB.implicitIncludeDir)),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--lib"))
+            Some(FSComp.SR.optsShortFormOf "--lib")
         )
     ]
 
@@ -2210,14 +2210,14 @@ let abbreviatedFlagsFsi tcConfigB = abbreviatedFlagsBoth tcConfigB
 let abbreviatedFlagsFsc tcConfigB =
     abbreviatedFlagsBoth tcConfigB
     @ [ // FSC only abbreviated options
-        CompilerOption("o", tagString, OptionString(setOutFileName tcConfigB), None, Some(FSComp.SR.optsShortFormOf ("--out")))
+        CompilerOption("o", tagString, OptionString(setOutFileName tcConfigB), None, Some(FSComp.SR.optsShortFormOf "--out"))
 
         CompilerOption(
             "a",
             tagString,
             OptionUnit(fun () -> tcConfigB.target <- CompilerTarget.Dll),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--target library"))
+            Some(FSComp.SR.optsShortFormOf "--target library")
         )
 
         // FSC help abbreviations. FSI has its own help options...
@@ -2228,7 +2228,7 @@ let abbreviatedFlagsFsc tcConfigB =
                 Console.Write(GetHelpFsc tcConfigB blocks)
                 tcConfigB.exiter.Exit 0),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--help"))
+            Some(FSComp.SR.optsShortFormOf "--help")
         )
 
         CompilerOption(
@@ -2238,7 +2238,7 @@ let abbreviatedFlagsFsc tcConfigB =
                 Console.Write(GetHelpFsc tcConfigB blocks)
                 tcConfigB.exiter.Exit 0),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--help"))
+            Some(FSComp.SR.optsShortFormOf "--help")
         )
 
         CompilerOption(
@@ -2248,7 +2248,7 @@ let abbreviatedFlagsFsc tcConfigB =
                 Console.Write(GetHelpFsc tcConfigB blocks)
                 tcConfigB.exiter.Exit 0),
             None,
-            Some(FSComp.SR.optsShortFormOf ("--help"))
+            Some(FSComp.SR.optsShortFormOf "--help")
         )
     ]
 

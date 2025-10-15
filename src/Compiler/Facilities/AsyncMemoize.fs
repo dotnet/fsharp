@@ -332,7 +332,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
             if requests = 0 then
                 ""
             else
-                $" (%.0f{float hits / (float (requests)) * 100.0} %%)"
+                $" (%.0f{float hits / (float requests) * 100.0} %%)"
 
         let faulted = getStat "Faulted"
         let failed = eventCounts[Failed].Value

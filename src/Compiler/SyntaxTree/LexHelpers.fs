@@ -451,7 +451,7 @@ module Keywords =
         | true, v ->
             match v with
             | RESERVED ->
-                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved (s), lexbuf.LexemeRange))
+                warning (ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved s, lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
             | _ ->
                 match s with
@@ -462,7 +462,7 @@ module Keywords =
                 | "lsr"
                 | "asr" ->
                     if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-                        mlCompatWarning (FSComp.SR.mlCompatKeyword (s)) lexbuf.LexemeRange
+                        mlCompatWarning (FSComp.SR.mlCompatKeyword s) lexbuf.LexemeRange
                 | _ -> ()
 
                 v

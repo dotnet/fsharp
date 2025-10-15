@@ -66,7 +66,7 @@ module ProductVersionTest =
 
     [<Fact>]
     let ``should use values if valid major.minor.revision.build version format`` () =
-        for (v, expected) in validValues() do 
+        for v, expected in validValues() do 
             v |> ConvertProductVersionToILVersionInfo |> Assert.shouldBe expected
 
     let internal invalidValues () =
@@ -84,5 +84,5 @@ module ProductVersionTest =
 
     [<Fact>]
     let ``should zero starting from first invalid version part`` () = 
-        for (v, expected) in invalidValues() do
+        for v, expected in invalidValues() do
             v |> ConvertProductVersionToILVersionInfo |> Assert.shouldBe expected

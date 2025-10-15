@@ -915,7 +915,7 @@ module StackGuardMetrics =
         let data =
             [
                 for kvp in dataByFunctionName do
-                    let (memberName, source) = kvp.Key
+                    let memberName, source = kvp.Key
                     let jumps, depth = kvp.Value
                     [ memberName; source; string jumps.Value; string depth.Value ]
             ]

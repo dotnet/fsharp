@@ -23,7 +23,7 @@ module internal HashingPrimitives =
     let inline hashText (s: string) : Hash = hash s
     let inline combineHash acc y : Hash = (acc <<< 1) + y + 631
     let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
-    let inline addFullStructuralHash (value) (acc: Hash) = combineHash (acc) (hash value)
+    let inline addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
 
     let inline hashListOrderMatters ([<InlineIfLambda>] func) (items: #seq<'T>) : Hash =
         let mutable acc = 0
@@ -97,7 +97,7 @@ module HashIL =
         | ILType.Void -> hash ILType.Void
         | ILType.Array(sh, t) -> hashILType t @@ hashILArrayShape sh
         | ILType.Value t
-        | ILType.Boxed t -> hashILTypeRef t.TypeRef @@ (t.GenericArgs |> hashListOrderMatters (hashILType))
+        | ILType.Boxed t -> hashILTypeRef t.TypeRef @@ (t.GenericArgs |> hashListOrderMatters hashILType)
         | ILType.Ptr t
         | ILType.Byref t -> hashILType t
         | ILType.FunctionPointer t -> hashILCallingSignature t
@@ -106,7 +106,7 @@ module HashIL =
 
     and hashILCallingSignature (signature: ILCallingSignature) =
         let res = signature.ReturnType |> hashILType
-        signature.ArgTypes |> hashListOrderMatters (hashILType) |> pipeToHash res
+        signature.ArgTypes |> hashListOrderMatters hashILType |> pipeToHash res
 
 module HashAccessibility =
 
@@ -140,8 +140,8 @@ module rec HashTypes =
 
     let private hashTyparRef (typar: Typar) =
         hashText typar.DisplayName
-        |> addFullStructuralHash (typar.Rigidity)
-        |> addFullStructuralHash (typar.StaticReq)
+        |> addFullStructuralHash typar.Rigidity
+        |> addFullStructuralHash typar.StaticReq
 
     let private hashTyparRefWithInfo (typar: Typar) =
         hashTyparRef typar @@ hashAttributeList typar.Attribs
@@ -163,7 +163,7 @@ module rec HashTypes =
         | TyparConstraint.IsReferenceType _ -> tpHash @@ 11
         | TyparConstraint.SimpleChoice(tys, _) -> tpHash @@ 12 @@ (tys |> hashListOrderIndependent (hashTType g))
         | TyparConstraint.RequiresDefaultConstructor _ -> tpHash @@ 13
-        | TyparConstraint.NotSupportsNull(_) -> tpHash @@ 14
+        | TyparConstraint.NotSupportsNull _ -> tpHash @@ 14
         | TyparConstraint.AllowsRefStruct _ -> tpHash @@ 15
 
     /// Hash type parameter constraints
@@ -181,8 +181,8 @@ module rec HashTypes =
 
         traitInfo.CompiledObjectAndArgumentTypes
         |> hashListOrderIndependent (hashTType g)
-        |> pipeToHash (nameHash)
-        |> pipeToHash (returnTypeHash)
+        |> pipeToHash nameHash
+        |> pipeToHash returnTypeHash
         |> pipeToHash memberHash
 
     /// Hash a unit of measure expression
@@ -210,7 +210,7 @@ module rec HashTypes =
             |> hashListOrderMatters (hashTType g)
             |> addFullStructuralHash (evalTupInfoIsStruct tupInfo)
         // Hash a first-class generic type.
-        | TType_forall(tps, tau) -> tps |> hashListOrderMatters (hashTyparRef) |> pipeToHash (hashTType g tau)
+        | TType_forall(tps, tau) -> tps |> hashListOrderMatters hashTyparRef |> pipeToHash (hashTType g tau)
         | TType_fun _ ->
             let argTys, retTy = stripFunTy g ty
             argTys |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTType g retTy)

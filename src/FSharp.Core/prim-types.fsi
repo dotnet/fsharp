@@ -2152,7 +2152,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg5">The fifth arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W * arg5: 'X -> 'Y
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V -> 'W -> 'X -> 'Y> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W * arg5: 'X -> 'Y
 
         /// <summary>Invoke an F# first class function value with four curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2164,7 +2164,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg4">The fourth arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X)> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W -> 'X
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V -> 'W -> 'X> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W -> 'X
 
         /// <summary>Invoke an F# first class function value with three curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2175,7 +2175,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg3">The third arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W)> * arg1: 'T * arg2: 'U * arg3: 'V -> 'W
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V -> 'W> * arg1: 'T * arg2: 'U * arg3: 'V -> 'W
 
         /// <summary>Invoke an F# first class function value with two curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2185,7 +2185,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg2">The second arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V)> * arg1: 'T * arg2: 'U -> 'V
+        static member InvokeFast: func: FSharpFunc<'T, 'U -> 'V> * arg1: 'T * arg2: 'U -> 'V
 
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
@@ -2330,7 +2330,7 @@ namespace Microsoft.FSharp.Core
         /// typically used directly from either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'U> = 
-            inherit  FSharpFunc<'T1,('T2 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'U>
 
             /// <summary>Invoke the optimized function value with two curried arguments </summary>
             ///
@@ -2359,7 +2359,7 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'U> = 
 
-            inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'T3 -> 'U>
 
             /// <summary>Invoke an F# first class function value that accepts three curried arguments 
             /// without intervening execution</summary>
@@ -2389,7 +2389,7 @@ namespace Microsoft.FSharp.Core
         /// either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'U> = 
-            inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'T3 -> 'T4 -> 'U>
 
             /// <summary>Invoke an F# first class function value that accepts four curried arguments 
             /// without intervening execution</summary>
@@ -2420,7 +2420,7 @@ namespace Microsoft.FSharp.Core
         /// either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U> = 
-            inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)>
+            inherit  FSharpFunc<'T1, 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U>
 
             /// <summary>Invoke an F# first class function value that accepts five curried arguments 
             /// without intervening execution</summary>

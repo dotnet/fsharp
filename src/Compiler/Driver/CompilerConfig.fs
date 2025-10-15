@@ -1054,7 +1054,7 @@ type TcConfigBuilder =
 
     member tcConfigB.AddReferencedAssemblyByPath(m, path) =
         if FileSystem.IsInvalidPathShim path then
-            warning (Error(FSComp.SR.buildInvalidAssemblyName (path), m))
+            warning (Error(FSComp.SR.buildInvalidAssemblyName path, m))
         elif
             not (
                 tcConfigB.referencedDLLs
@@ -1182,7 +1182,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt =
-        computeKnownDllReference (data.primaryAssembly.Name)
+        computeKnownDllReference data.primaryAssembly.Name
 
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler

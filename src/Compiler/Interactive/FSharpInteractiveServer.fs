@@ -30,7 +30,7 @@ module CtrlBreakHandlers =
             use stream = new StreamReader(service)
 
             try
-                while not (stream.EndOfStream) do
+                while not stream.EndOfStream do
                     let line = stream.ReadLine()
 
                     if line = interruptCommand then
@@ -49,7 +49,7 @@ module CtrlBreakHandlers =
             | None -> ()
             | Some client ->
                 try
-                    if not (client.IsConnected) then
+                    if not client.IsConnected then
                         client.Connect(connectionTimeout)
                 with _ ->
                     ()

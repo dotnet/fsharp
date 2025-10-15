@@ -3740,7 +3740,7 @@ let writePdb (
             try
                 s.SignStream fs
             with exn ->
-                failwith ($"Warning: A call to SignFile failed ({exn.Message})")
+                failwith $"Warning: A call to SignFile failed ({exn.Message})"
         reportTime "Signing Image"
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
@@ -3996,7 +3996,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                     generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
 
                 if options.embeddedPDB then
-                    let (uncompressedLength, contentId, stream, algorithmName, checkSum) = pdbInfo
+                    let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo
                     let compressedStream = compressPortablePdbStream stream
                     Some (uncompressedLength, contentId, compressedStream, algorithmName, checkSum)
                 else

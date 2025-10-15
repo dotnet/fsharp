@@ -3269,7 +3269,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
             |> Option.get
         printfn "symbol = %s" symbol.FullName
-        let wpi = (symbol.GetWitnessPassingInfo())
+        let wpi = symbol.GetWitnessPassingInfo()
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
@@ -3288,7 +3288,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
             |> Option.get
         printfn "symbol = %s" symbol.FullName
-        let wpi = (symbol.GetWitnessPassingInfo())
+        let wpi = symbol.GetWitnessPassingInfo()
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->
@@ -3433,7 +3433,7 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
             |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
             |> Option.get
         printfn "symbol = %s" symbol.FullName
-        let wpi = (symbol.GetWitnessPassingInfo())
+        let wpi = symbol.GetWitnessPassingInfo()
         match wpi with
         | None -> failwith "witness passing info expected"
         | Some (nm, argTypes) ->

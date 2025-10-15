@@ -44,8 +44,8 @@ module ForwardDeclarations =
     let mutable Query =
         {
             new IQueryMethods with
-                member _.Execute(_) = failwith "IQueryMethods.Execute should never be called"
-                member _.EliminateNestedQueries(_) = failwith "IQueryMethods.EliminateNestedQueries should never be called"
+                member _.Execute _ = failwith "IQueryMethods.Execute should never be called"
+                member _.EliminateNestedQueries _ = failwith "IQueryMethods.EliminateNestedQueries should never be called"
         }
 
 type QueryBuilder() =
@@ -152,7 +152,7 @@ type QueryBuilder() =
         let source = source.Source
         checkNonNull "source" source
         use e = source.GetEnumerator()
-        let mutable acc : ^Value = LanguagePrimitives.GenericZero< (^Value) >
+        let mutable acc : ^Value = LanguagePrimitives.GenericZero< ^Value >
         while e.MoveNext() do
             let v : Nullable< ^Value > = valueSelector e.Current
             if v.HasValue then
@@ -173,14 +173,14 @@ type QueryBuilder() =
         let source = source.Source
         checkNonNull "source" source
         use e = source.GetEnumerator()
-        let mutable acc = LanguagePrimitives.GenericZero< (^Value) >
+        let mutable acc = LanguagePrimitives.GenericZero< ^Value >
         let mutable count = 0
         while e.MoveNext() do
             let v = projection e.Current
             if v.HasValue then
                 acc <- plus acc v.Value
             count <- count + 1
-        if count = 0 then Nullable() else Nullable(LanguagePrimitives.DivideByInt< (^Value) > acc count)
+        if count = 0 then Nullable() else Nullable(LanguagePrimitives.DivideByInt< ^Value > acc count)
 
     member inline _.AverageBy< 'T, 'Q, ^Value
                                   when ^Value : (static member ( + ) : ^Value * ^Value -> ^Value)
@@ -192,20 +192,20 @@ type QueryBuilder() =
         let source = source.Source
         checkNonNull "source" source
         use e = source.GetEnumerator()
-        let mutable acc = LanguagePrimitives.GenericZero< (^U) >
+        let mutable acc = LanguagePrimitives.GenericZero< ^U >
         let mutable count = 0
         while e.MoveNext() do
             acc <- plus acc (projection e.Current)
             count <- count + 1
         if count = 0 then
             invalidOp "source"
-        LanguagePrimitives.DivideByInt< (^U) > acc count
+        LanguagePrimitives.DivideByInt< ^U > acc count
 
     member inline _.SumBy< 'T, 'Q, ^Value
                                   when ^Value : (static member ( + ) : ^Value * ^Value -> ^Value)
                                   and  ^Value : (static member Zero : ^Value)
                                   and default ^Value : int >
-             (source: QuerySource<'T, 'Q>, projection : ('T -> ^Value)) : ^Value =
+             (source: QuerySource<'T, 'Q>, projection : 'T -> ^Value) : ^Value =
 
         Seq.sumBy projection source.Source
 
@@ -399,7 +399,7 @@ module Query =
         (fun (obj: Expr, tyargs: Type list, args: Expr list) -> Expr.Call (obj, BindGenericStaticMethod methInfo tyargs, args))
 
     let ImplicitExpressionConversionHelperMethodInfo =
-        methodhandleof (ImplicitExpressionConversionHelper)
+        methodhandleof ImplicitExpressionConversionHelper
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -566,7 +566,7 @@ module Query =
         let (cq_int32, mq_int32), (ce_int32, me_int32) = MakersCallers2 fq_int32 fe_int32
         let (cq_int64, mq_int64), (ce_int64, me_int64) = MakersCallers2 fq_int64 fe_int64
         // The F# implementation is an instance method on QueryBuilder
-        let (CE, ME) = MakersCallersInstance FE
+        let CE, ME = MakersCallersInstance FE
         let failDueToUnsupportedInputTypeInSumByOrAverageBy() = invalidOp (SR.GetString(SR.failDueToUnsupportedInputTypeInSumByOrAverageBy))
 
         let Make (qb: Expr, isIQ, src: Expr, v: Var, res: Expr) =
@@ -718,21 +718,27 @@ module Query =
             (if isIQ then CQ else CE) ([srcItemTy], [src])
         Make, Call
 
-    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof (Queryable.First)) (methodhandleof (Enumerable.First))
+    let MakeFirst, CallFirst = MakeOrCallSimpleOp (methodhandleof Queryable.First) (methodhandleof Enumerable.First)
 
-    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof (Queryable.FirstOrDefault)) (methodhandleof (Enumerable.FirstOrDefault))
+    let MakeFirstOrDefault, CallFirstOrDefault = MakeOrCallSimpleOp (methodhandleof Queryable.FirstOrDefault) (methodhandleof
+                                                                                                                   Enumerable.FirstOrDefault
+                                                     )
 
-    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof (Queryable.Last)) (methodhandleof (Enumerable.Last))
+    let MakeLast, CallLast = MakeOrCallSimpleOp (methodhandleof Queryable.Last) (methodhandleof Enumerable.Last)
 
-    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof (Queryable.LastOrDefault)) (methodhandleof (Enumerable.LastOrDefault))
+    let MakeLastOrDefault, CallLastOrDefault = MakeOrCallSimpleOp (methodhandleof Queryable.LastOrDefault) (methodhandleof
+                                                                                                                Enumerable.LastOrDefault
+                                                   )
 
-    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof (Queryable.Single)) (methodhandleof (Enumerable.Single))
+    let MakeSingle, CallSingle = MakeOrCallSimpleOp (methodhandleof Queryable.Single) (methodhandleof Enumerable.Single)
 
-    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof (Queryable.SingleOrDefault)) (methodhandleof (Enumerable.SingleOrDefault))
+    let MakeSingleOrDefault, CallSingleOrDefault = MakeOrCallSimpleOp (methodhandleof Queryable.SingleOrDefault) (methodhandleof
+                                                                                                                      Enumerable.SingleOrDefault
+                                                       )
 
-    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof (Queryable.Count)) (methodhandleof (Enumerable.Count))
+    let MakeCount, CallCount = MakeOrCallSimpleOp (methodhandleof Queryable.Count) (methodhandleof Enumerable.Count)
 
-    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof (Enumerable.DefaultIfEmpty))
+    let MakeDefaultIfEmpty = MakeGenericStaticMethod (methodhandleof Enumerable.DefaultIfEmpty)
 
     /// Indicates if we can eliminate redundant 'Select(x=>x)' nodes
     type CanEliminate =
@@ -894,8 +900,8 @@ module Query =
             (methodhandleof (fun (x, y: Func<_, _>) -> Enumerable.TakeWhile(x, y)))
 
     let MakeDistinct =
-        let FQ = MakeGenericStaticMethod (methodhandleof (Queryable.Distinct))
-        let FE = MakeGenericStaticMethod (methodhandleof (Enumerable.Distinct))
+        let FQ = MakeGenericStaticMethod (methodhandleof Queryable.Distinct)
+        let FE = MakeGenericStaticMethod (methodhandleof Enumerable.Distinct)
         fun (isIQ, srcItemTy, src: Expr) ->
             if isIQ then
                 FQ ([srcItemTy], [src])
@@ -1121,13 +1127,17 @@ module Query =
 
     let (|CallLeftOuterJoin|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.LeftOuterJoin(arg1, arg2, arg3, arg4, arg5)))
 
-    let (|CallAverageBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:(double->double)) -> query.AverageBy(arg1, arg2)))
+    let (|CallAverageBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:
+                                                                            double->double) -> query.AverageBy(arg1, arg2)))
 
-    let (|CallSumBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:(double->double)) -> query.SumBy(arg1, arg2)))
+    let (|CallSumBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:
+                                                                        double->double) -> query.SumBy(arg1, arg2)))
 
-    let (|CallAverageByNullable|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:(double->Nullable<double>)) -> query.AverageByNullable(arg1, arg2)))
+    let (|CallAverageByNullable|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:
+                                                                                    double->Nullable<double>) -> query.AverageByNullable(arg1, arg2)))
 
-    let (|CallSumByNullable|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:(double->Nullable<double>)) -> query.SumByNullable(arg1, arg2)))
+    let (|CallSumByNullable|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:
+                                                                                double->Nullable<double>) -> query.SumByNullable(arg1, arg2)))
 
     let (|CallCount|_|) = (|SpecificCall1|_|) (methodhandleof (fun (query:QueryBuilder, arg1) -> query.Count arg1))
 

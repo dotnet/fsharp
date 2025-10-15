@@ -285,9 +285,9 @@ module internal Activity =
             appendWithLeadingComma (a.StartTimeUtc.ToString("HH-mm-ss.ffff"))
             appendWithLeadingComma ((a.StartTimeUtc + a.Duration).ToString("HH-mm-ss.ffff"))
             appendWithLeadingComma (a.Duration.TotalSeconds.ToString("000.0000", System.Globalization.CultureInfo.InvariantCulture))
-            appendWithLeadingComma (a.Id)
-            appendWithLeadingComma (a.ParentId)
-            appendWithLeadingComma (a.RootId)
+            appendWithLeadingComma a.Id
+            appendWithLeadingComma a.ParentId
+            appendWithLeadingComma a.RootId
 
             Tags.AllKnownTags
             |> Array.iter (a.GetTagItem >> escapeStringForCsv >> appendWithLeadingComma)

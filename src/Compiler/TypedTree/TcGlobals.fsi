@@ -22,7 +22,7 @@ type internal IntrinsicValRef =
     override ToString: unit -> string
 
     /// For debugging
-    [<System.Diagnostics.DebuggerBrowsable(enum<System.Diagnostics.DebuggerBrowsableState> (0))>]
+    [<System.Diagnostics.DebuggerBrowsable(enum<System.Diagnostics.DebuggerBrowsableState> 0)>]
     member DebugText: string
 
     member Name: string
@@ -92,7 +92,7 @@ type internal BuiltinAttribInfo =
     override ToString: unit -> string
 
     /// For debugging
-    [<System.Diagnostics.DebuggerBrowsable(enum<System.Diagnostics.DebuggerBrowsableState> (0))>]
+    [<System.Diagnostics.DebuggerBrowsable(enum<System.Diagnostics.DebuggerBrowsableState> 0)>]
     member DebugText: string
 
     member TyconRef: TypedTree.TyconRef
@@ -828,7 +828,7 @@ type internal TcGlobals =
     member knownFSharpCoreModules: System.Collections.Generic.IDictionary<string, TypedTree.EntityRef>
 
     member knownIntrinsics:
-        System.Collections.Concurrent.ConcurrentDictionary<(string * string option * string * int), TypedTree.ValRef>
+        System.Collections.Concurrent.ConcurrentDictionary<string * string option * string * int, TypedTree.ValRef>
 
     member knownWithNull: TypedTree.Nullness
 

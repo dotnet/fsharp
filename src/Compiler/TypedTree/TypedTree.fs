@@ -2227,7 +2227,7 @@ type Accessibility =
 
     override x.ToString() =
         match x with
-        | TAccess (paths) ->
+        | TAccess paths ->
             let mangledTextOfCompPath (CompPath(scoref, _, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
             let scopename =
                 if x.IsPublic then "public"
@@ -3694,7 +3694,7 @@ type EntityRef =
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
     member x.XmlDoc =
-        if not (x.Deref.XmlDoc.IsEmpty) then
+        if not x.Deref.XmlDoc.IsEmpty then
                 x.Deref.XmlDoc
         else
             x.Deref.entity_opt_data
@@ -6042,7 +6042,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (ty)), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),

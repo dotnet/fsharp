@@ -196,7 +196,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
                 savedCont <- None
                 action true |> ignore)
 
-    member x.TryScan((f: 'Msg -> (Async<'T>) option), timeout) : Async<'T option> =
+    member x.TryScan(f: 'Msg -> Async<'T> option, timeout) : Async<'T option> =
         let rec scan timeoutAsync (timeoutCts: CancellationTokenSource) =
             async {
                 match x.ScanArrivals f with
@@ -263,7 +263,7 @@ type Mailbox<'Msg>(cancellationSupported: bool, isThrowExceptionAfterDisposed: b
                 return Some res
         }
 
-    member x.Scan((f: 'Msg -> (Async<'T>) option), timeout) =
+    member x.Scan(f: 'Msg -> Async<'T> option, timeout) =
         async {
             let! resOpt = x.TryScan(f, timeout)
 
@@ -419,7 +419,7 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     member _.Post message =
         mailbox.Post message
 
-    member _.TryPostAndReply(buildMessage: (_ -> 'Msg), ?timeout) : 'Reply option =
+    member _.TryPostAndReply(buildMessage: _ -> 'Msg, ?timeout) : 'Reply option =
         let timeout = defaultArg timeout defaultTimeout
         use resultCell = new ResultCell<_>()
 
@@ -506,10 +506,10 @@ type MailboxProcessor<'Msg>(body, isThrowExceptionAfterDisposed, ?cancellationTo
     member _.TryReceive(?timeout) =
         mailbox.TryReceive(timeout = defaultArg timeout defaultTimeout)
 
-    member _.Scan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+    member _.Scan(scanner: 'Msg -> Async<'T> option, ?timeout) =
         mailbox.Scan(scanner, timeout = defaultArg timeout defaultTimeout)
 
-    member _.TryScan(scanner: 'Msg -> (Async<'T>) option, ?timeout) =
+    member _.TryScan(scanner: 'Msg -> Async<'T> option, ?timeout) =
         mailbox.TryScan(scanner, timeout = defaultArg timeout defaultTimeout)
 
     member x.Dispose() =

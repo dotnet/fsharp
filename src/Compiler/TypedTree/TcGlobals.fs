@@ -1116,7 +1116,7 @@ type TcGlobals(
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
       for key in embeddedILTypeDefs.Keys.OrderBy id do
-        match (embeddedILTypeDefs.TryRemove(key)) with
+        match embeddedILTypeDefs.TryRemove(key) with
         | true, ilTypeDef -> yield ilTypeDef
         | false, _ -> ()
       ]

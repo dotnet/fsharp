@@ -46,12 +46,12 @@ module internal Adapters =
             && not (FSharpType.GetRecordFields t |> Array.forall (fun f -> f.CanWrite)))
 
     let MemberInitializationHelperMeth =
-        methodhandleof (LeafExpressionConverter.MemberInitializationHelper)
+        methodhandleof LeafExpressionConverter.MemberInitializationHelper
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
     let NewAnonymousObjectHelperMeth =
-        methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper)
+        methodhandleof LeafExpressionConverter.NewAnonymousObjectHelper
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
@@ -74,10 +74,10 @@ module internal Adapters =
         let rec propSetList acc x =
             match x with
             // detect " v.X <- y"
-            | ((Patterns.PropertySet(Some(Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
+            | Patterns.PropertySet(Some(Patterns.Var var), _, _, _) as p :: xs when var = varArg ->
                 propSetList (p :: acc) xs
             // skip unit values
-            | (Patterns.Value(v, _)) :: xs when isNull v -> propSetList acc xs
+            | Patterns.Value(v, _) :: xs when isNull v -> propSetList acc xs
             // detect "v"
             | [ Patterns.Var var ] when var = varArg -> Some acc
             | _ -> None
@@ -111,7 +111,7 @@ module internal Adapters =
     let tupleToAnonTypeMap =
         let t = Dictionary<Type, Type>()
 
-        for (k, v) in tupleTypes do
+        for k, v in tupleTypes do
             t.[k] <- v
 
         t
@@ -119,7 +119,7 @@ module internal Adapters =
     let anonToTupleTypeMap =
         let t = Dictionary<Type, Type>()
 
-        for (k, v) in tupleTypes do
+        for k, v in tupleTypes do
             t.[v] <- k
 
         t
@@ -252,7 +252,7 @@ module internal Adapters =
         | NoConv -> ty
 
     let IsNewAnonymousObjectHelperQ =
-        let mhandle = (methodhandleof (LeafExpressionConverter.NewAnonymousObjectHelper))
+        let mhandle = (methodhandleof LeafExpressionConverter.NewAnonymousObjectHelper)
 
         let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
 

@@ -64,7 +64,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             let rec buildLid res (id: Ident) =
                 function
                 | [] -> res
-                | (h: Ident) :: t ->
+                | h: Ident :: t ->
                     // Mark these hidden field accesses as synthetic so that they don't make it
                     // into the name resolution sink.
                     let h = ident (h.idText, h.idRange.MakeSynthetic())

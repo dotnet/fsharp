@@ -702,7 +702,7 @@ let IsPartialExpr cenv env m x =
         | Expr.Let (TBind (_,expr,_), body, _, _) -> expr :: [body] |> List.exists isPartialExpression
         | Expr.LetRec (bindings, body, _, _) -> body :: (bindings |> List.map (fun (TBind (_,expr,_)) -> expr)) |> List.exists isPartialExpression
         | Expr.Sequential (expr1, expr2, _, _) -> [expr1; expr2] |> Seq.exists isPartialExpression
-        | Expr.Val (vr, _, _) when not vr.IsLocalRef -> ((GetInfoForVal cenv env m vr).ValExprInfo) |> IsPartialExprVal
+        | Expr.Val (vr, _, _) when not vr.IsLocalRef -> (GetInfoForVal cenv env m vr).ValExprInfo |> IsPartialExprVal
         | _ -> false
     isPartialExpression x
 
@@ -1447,7 +1447,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
         
           // Check for escape in lambda 
           | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when 
-            (let fvs = freeInExpr (if isNil boundTyVars then (CollectLocalsWithStackGuard()) else CollectTyparsAndLocals) expr
+            (let fvs = freeInExpr (if isNil boundTyVars then CollectLocalsWithStackGuard() else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              fvs.UsesMethodLocalConstructs) ->
@@ -2515,7 +2515,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
 
     and optimizeArgs args accArgs =
         (args, accArgs)
-        ||> List.foldBack (optimizeArg)
+        ||> List.foldBack optimizeArg
 
     let args = optimizeArgs args []
 

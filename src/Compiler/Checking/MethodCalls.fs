@@ -942,7 +942,7 @@ let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
     match args, staticTyOpt with
     | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && (minfo.IsAbstract || minfo.IsVirtual) -> Some staticTy
 
-    | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
+    | objArgExpr :: _, _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
         let objArgTy = if isByrefTy g objArgTy then destByrefTy g objArgTy else objArgTy
@@ -1299,7 +1299,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
 
 /// Build a call to the System.Object constructor taking no arguments,
 let BuildObjCtorCall (g: TcGlobals) m =
-    let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object, [])).MethodRef
+    let ilMethRef = mkILCtorMethSpecForTy(g.ilg.typ_Object, []).MethodRef
     Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty_noNulls]), [], [], m)
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
@@ -1963,7 +1963,7 @@ module ProvidedMethodCalls =
                     let exprR = mkValSet m (mkLocalValRef vR) eR 
                     None, (exprR, tyOfExpr g exprR)
             | ProvidedWhileLoopExpr (guardExpr, bodyExpr) ->
-                let guardExpr, bodyExpr = (exprType.PApply2((fun _ -> (guardExpr, bodyExpr)), m))
+                let guardExpr, bodyExpr = exprType.PApply2((fun _ -> (guardExpr, bodyExpr)), m)
                 let guardExprR = exprToExpr guardExpr
                 let bodyExprR = exprToExpr bodyExpr
                 let exprR = mkWhile g (DebugPointAtWhile.No, SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprR, bodyExprR, m)

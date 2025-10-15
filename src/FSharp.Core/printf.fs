@@ -349,7 +349,7 @@ module internal PrintfImpl =
                     env.WriteSkipEmpty prefix
                     let farg = args.[argIndex]
                     argIndex <- argIndex + 1
-                    let f = farg :?> ('State -> 'Residue)
+                    let f = farg :?> 'State -> 'Residue
                     env.WriteT(f env.State)
 
                 | StepLittleA(prefix) -> 
@@ -358,7 +358,7 @@ module internal PrintfImpl =
                     argIndex <- argIndex + 1
                     let arg = args.[argIndex]
                     argIndex <- argIndex + 1
-                    let f = farg :?> ('State -> objnull -> 'Residue)
+                    let f = farg :?> 'State -> objnull -> 'Residue
                     env.WriteT(f env.State arg)
 
                 | StepStar1(prefix, conv) -> 
@@ -407,7 +407,8 @@ module internal PrintfImpl =
     ///    f3 8           // same activation captures 8 (args --> [3;5;8])
     ///
     /// If we captured into an mutable array then these would interfere 
-    type PrintfInitial<'State, 'Residue, 'Result> = (unit -> PrintfEnv<'State, 'Residue, 'Result>)
+    type PrintfInitial<'State, 'Residue, 'Result> = unit -> PrintfEnv<'State, 'Residue, 'Result>
+
     type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = 
         delegate of objnull list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
 
@@ -620,8 +621,7 @@ module internal PrintfImpl =
                         pad spec.Width)
                 else
                     // width=X, prec=*
-                    ValueConverter.Make ( 
-                        basic)
+                    ValueConverter.Make basic
 
         let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  objnull -> string) left right : ValueConverter =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then
@@ -1148,10 +1148,10 @@ module internal PrintfImpl =
                     let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[argTys.Length - 1]
                     let conv = getValueConverter argTy spec 
                     if isTwoStar then 
-                        let convFunc = conv.FuncObj :?> (objnull -> int -> int -> string)
+                        let convFunc = conv.FuncObj :?> objnull -> int -> int -> string
                         StepStar2 (prefix, convFunc)
                     else
-                        let convFunc = conv.FuncObj :?> (objnull -> int -> string)
+                        let convFunc = conv.FuncObj :?> objnull -> int -> string
                         StepStar1 (prefix, convFunc)
             else
                 // For interpolated string format processing, the static types of the '%A' arguments 
@@ -1161,7 +1161,7 @@ module internal PrintfImpl =
                     let convFunc arg argTy = 
                         let mi = mi_GenericToString.MakeGenericMethod [| argTy |]
                         let f = mi.Invoke(null, [| box spec |]) :?> ValueConverter
-                        let f2 = f.FuncObj :?> (objnull -> string)
+                        let f2 = f.FuncObj :?> objnull -> string
                         f2 arg
 
                     StepWithTypedArg (prefix, convFunc)
@@ -1171,7 +1171,7 @@ module internal PrintfImpl =
                     // are provided via the argument typed extracted from the curried function. They are known on first phase.
                     let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[0]
                     let conv = getValueConverter argTy spec
-                    let convFunc = conv.FuncObj :?> (objnull -> string)
+                    let convFunc = conv.FuncObj :?> objnull -> string
                     StepWithArg (prefix, convFunc)
             
         let parseSpec (i: byref<int>) = 
@@ -1249,9 +1249,9 @@ module internal PrintfImpl =
                 let spec = parseSpec &i
                 let suffix = FormatString.findNextFormatSpecifier fmt &i
                 let n = spec.ArgCount
-                let (argTys, retTy) =  extractCurriedArguments funcTy n
+                let argTys, retTy =  extractCurriedArguments funcTy n
                 let step = buildStep spec argTys prefix
-                let (allSteps, nextInfo) = parseAndCreateFuncFactoryAux (step::steps) suffix retTy &i
+                let allSteps, nextInfo = parseAndCreateFuncFactoryAux (step::steps) suffix retTy &i
                 let nextInfoNew = buildCaptureFunc (spec, allSteps, argTys, retTy, nextInfo)
                 (allSteps, nextInfoNew)
 
@@ -1262,7 +1262,7 @@ module internal PrintfImpl =
             let mutable i = 0
             let prefix = FormatString.findNextFormatSpecifier fmt &i
             
-            let (allSteps, (factoryObj, _, combinedArgTys, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy &i
+            let allSteps, (factoryObj, _, combinedArgTys, _, _) = parseAndCreateFuncFactoryAux [] prefix funcTy &i
             
             // If there are no format specifiers then take a simple path
             match allSteps with 

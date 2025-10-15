@@ -51,7 +51,7 @@ module Parser =
             if not this.Exceptions.IsEmpty then
                 sb.AppendLine "\nExceptions:" |> ignore
 
-                for (exType, exDesc) in this.Exceptions do
+                for exType, exDesc in this.Exceptions do
                     sb.AppendLine $"%s{exType}: %s{exDesc}" |> ignore
 
             if not this.Examples.IsEmpty then

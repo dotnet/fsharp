@@ -41,7 +41,7 @@ module String =
         | _ -> String.Join(sep, strings)
 
     [<CompiledName("Iterate")>]
-    let iter (action: (char -> unit)) (str: string) =
+    let iter (action: char -> unit) (str: string) =
         if not (String.IsNullOrEmpty str) then
             for i = 0 to str.Length - 1 do
                 action str.[i]

@@ -89,7 +89,7 @@ let rec pushUnaryArg expr arg =
             x1,
             m1
         )
-    | SynExpr.App(ExprAtomicFlag.Atomic, infix, (SynExpr.App(_) as innerApp), x1, m1) ->
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, (SynExpr.App _ as innerApp), x1, m1) ->
         SynExpr.App(ExprAtomicFlag.Atomic, infix, (pushUnaryArg innerApp arg), x1, m1)
     | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range), x1, m1) ->
         SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet((pushUnaryArg synExpr arg), rangeOfDot, synLongIdent, range), x1, m1)
@@ -447,7 +447,7 @@ let mkSynOperator (opm: range) (oper: string) =
             && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1))
         then
             // PREFIX_OP token where the ~ was actually absent
-            IdentTrivia.OriginalNotation(string (oper.[1..]))
+            IdentTrivia.OriginalNotation(string oper.[1..])
         else
             IdentTrivia.OriginalNotation oper
 
@@ -1065,11 +1065,11 @@ let parsedHashDirectiveStringArguments (input: ParsedHashDirectiveArgument list)
         (function
         | ParsedHashDirectiveArgument.String(s, _, _) -> Some s
         | ParsedHashDirectiveArgument.Int32(n, m) ->
-            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger (n), m))
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedInteger n, m))
             None
         | ParsedHashDirectiveArgument.SourceIdentifier(s, v, m) -> Some(applyLineDirectivesToSourceIdentifier s v m)
         | ParsedHashDirectiveArgument.Ident(ident, m) ->
-            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (ident.idText), m))
+            errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier ident.idText, m))
             None
         | ParsedHashDirectiveArgument.LongIdent(ident, m) ->
             errorR (Error(FSComp.SR.featureParsedHashDirectiveUnexpectedIdentifier (longIdentToString ident), m))

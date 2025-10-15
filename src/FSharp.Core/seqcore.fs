@@ -383,7 +383,7 @@ module RuntimeHelpers =
 
 
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
-        let originalSource = lazy(source.GetEnumerator())
+        let originalSource = lazy source.GetEnumerator()
         let mutable shouldDisposeOriginalAtTheEnd = true
         let mutable exceptionalSource : IEnumerator<'T> option = None     
 
@@ -397,7 +397,7 @@ module RuntimeHelpers =
                 shouldDisposeOriginalAtTheEnd <- false
                 originalSource.Value.Dispose() 
 
-        let moveExceptionHandler(exn) = 
+        let moveExceptionHandler exn = 
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())
             exceptionalSource.Value.MoveNext()
 
@@ -492,7 +492,7 @@ type GeneratedSequenceBase<'T>() =
                              member x.GetFreshEnumerator() = e
 
                              [<DebuggerStepThrough>]
-                             member x.GenerateNext(_) = if e.MoveNext() then 1 else 0
+                             member x.GenerateNext _ = if e.MoveNext() then 1 else 0
 
                              member x.Close() = try e.Dispose() finally active.Close()
 

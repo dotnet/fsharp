@@ -139,7 +139,7 @@ module XmlDocWriter =
         fprintfn os "<assembly><name>%s</name></assembly>" assemblyName
         fprintfn os "<members>"
 
-        for (nm, doc) in members do
+        for nm, doc in members do
             fprintfn os "<member name=\"%s\">" nm
             fprintfn os "%s" doc
             fprintfn os "</member>"

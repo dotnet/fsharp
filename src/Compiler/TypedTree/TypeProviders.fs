@@ -22,7 +22,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 type TypeProviderDesignation = TypeProviderDesignation of string
-type 'a ProvidedArray= ('a[]) MaybeNull
+type 'a ProvidedArray= 'a[] MaybeNull
 module ProvidedArray =
     let map f (arr:_ ProvidedArray) : _ ProvidedArray = 
         match arr with
@@ -220,7 +220,8 @@ let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
         [||]
 
 /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U | null)) : Tainted<'U> =
+let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U,
+                                                                        f: 'T -> 'U | null) : Tainted<'U> =
     match TryTypeMember<'T, 'U | null>(st, fullName, memberName, m, withNull recover, f) with 
     | Tainted.Null -> 
         errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
@@ -636,7 +637,7 @@ type ProvidedAssembly (x: Assembly) =
 
     member _.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
 
-    static member Create (x: Assembly MaybeNull) : ProvidedAssembly MaybeNull = match x with null -> null | t -> ProvidedAssembly (t)
+    static member Create (x: Assembly MaybeNull) : ProvidedAssembly MaybeNull = match x with null -> null | t -> ProvidedAssembly t
 
     member _.Handle = x
 

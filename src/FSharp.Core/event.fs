@@ -55,23 +55,23 @@ type EventDelegee<'Args>(observer: IObserver<'Args>) =
         observer.OnNext args
 
     member x.Invoke(_sender: objnull, a, b) =
-        let args = makeTuple ([| a; b |]) :?> 'Args
+        let args = makeTuple [| a; b |] :?> 'Args
         observer.OnNext args
 
     member x.Invoke(_sender: objnull, a, b, c) =
-        let args = makeTuple ([| a; b; c |]) :?> 'Args
+        let args = makeTuple [| a; b; c |] :?> 'Args
         observer.OnNext args
 
     member x.Invoke(_sender: objnull, a, b, c, d) =
-        let args = makeTuple ([| a; b; c; d |]) :?> 'Args
+        let args = makeTuple [| a; b; c; d |] :?> 'Args
         observer.OnNext args
 
     member x.Invoke(_sender: objnull, a, b, c, d, e) =
-        let args = makeTuple ([| a; b; c; d; e |]) :?> 'Args
+        let args = makeTuple [| a; b; c; d; e |] :?> 'Args
         observer.OnNext args
 
     member x.Invoke(_sender: objnull, a, b, c, d, e, f) =
-        let args = makeTuple ([| a; b; c; d; e; f |]) :?> 'Args
+        let args = makeTuple [| a; b; c; d; e; f |] :?> 'Args
         observer.OnNext args
 
 type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * objnull * 'Args -> unit

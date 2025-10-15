@@ -104,7 +104,7 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
         let mutable lastStamp = -1L // first value retrieved will be 0
         fun () -> System.Threading.Interlocked.Increment &lastStamp
 
-    static let globals = Dictionary<(string * Type), Var>(11)
+    static let globals = Dictionary<string * Type, Var>(11)
 
     let stamp = getStamp ()
     let isMutable = defaultArg isMutable false
@@ -399,10 +399,10 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
             let argsWithoutWitnesses = List.skip nWitnesses args
             combL "Call" [ noneL; minfoL minfo; listL (exprs argsWithoutWitnesses) ]
 
-        | CombTerm(InstancePropGetOp(pinfo), (obj :: args)) ->
+        | CombTerm(InstancePropGetOp(pinfo), obj :: args) ->
             combL "PropertyGet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
         | CombTerm(StaticPropGetOp(pinfo), args) -> combL "PropertyGet" [ noneL; pinfoL pinfo; listL (exprs args) ]
-        | CombTerm(InstancePropSetOp(pinfo), (obj :: args)) ->
+        | CombTerm(InstancePropSetOp(pinfo), obj :: args) ->
             combL "PropertySet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
         | CombTerm(StaticPropSetOp(pinfo), args) -> combL "PropertySet" [ noneL; pinfoL pinfo; listL (exprs args) ]
         | CombTerm(InstanceFieldGetOp(finfo), [ obj ]) -> combL "FieldGet" [ someL obj; finfoL finfo ]
@@ -498,7 +498,7 @@ module Patterns =
 
         loop [] es
 
-    let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()
+    let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition()
     let exprTyC = typedefof<Expr<int>>
     let voidTy = typeof<Void>
     let unitTy = typeof<unit>
@@ -507,7 +507,7 @@ module Patterns =
         if a = voidTy then unitTy else a
 
     let mkFunTy a b =
-        let (a, b) = removeVoid a, removeVoid b
+        let a, b = removeVoid a, removeVoid b
         funTyC.MakeGenericType([| a; b |])
 
     let mkArrayTy (t: Type) =
@@ -587,7 +587,7 @@ module Patterns =
     [<CompiledName("NewTuplePattern")>]
     let (|NewTuple|_|) input =
         match input with
-        | E(CombTerm(NewTupleOp(_), es)) -> Some es
+        | E(CombTerm(NewTupleOp _, es)) -> Some es
         | _ -> None
 
     [<CompiledName("NewStructTuplePattern")>]
@@ -755,7 +755,7 @@ module Patterns =
         match input with
         | E(CombTerm(StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
 
-        | E(CombTerm(InstanceMethodCallOp minfo, (obj :: args))) -> Some(Some(obj), minfo, args)
+        | E(CombTerm(InstanceMethodCallOp minfo, obj :: args)) -> Some(Some(obj), minfo, args)
 
         // A StaticMethodCallWOp matches as if it were a StaticMethodCallOp
         | E(CombTerm(StaticMethodCallWOp(minfo, _minfoW, nWitnesses), args)) when nWitnesses <= args.Length ->
@@ -1076,7 +1076,7 @@ module Patterns =
     let mkLetRaw v =
         mkFE2 LetOp v
 
-    let mkLetRawWithCheck ((e1, e2) as v) =
+    let mkLetRawWithCheck (e1, e2 as v) =
         checkAppliedLambda (e2, e1)
         mkLetRaw v
 
@@ -1090,7 +1090,7 @@ module Patterns =
         List.iter2 (fun mt a -> checkTypesSR mt (typeOf a) "args" (SR.GetString(SR.QtmmTuple))) mems args
         mkFEN (NewTupleOp ty) args
 
-    let mkNewTuple (args) =
+    let mkNewTuple args =
         let ty = FSharpType.MakeTupleType(Array.map typeOf (Array.ofList args))
         mkFEN (NewTupleOp ty) args
 
@@ -1154,7 +1154,7 @@ module Patterns =
     // Conditional etc..
     let mkIfThenElse (e, t, f) =
         checkTypesSR (typeOf t) (typeOf f) "cond" (SR.GetString(SR.QtmmTrueAndFalseMustMatch))
-        checkTypesSR (typeof<Boolean>) (typeOf e) "cond" (SR.GetString(SR.QtmmCondMustBeBool))
+        checkTypesSR typeof<Boolean> (typeOf e) "cond" (SR.GetString(SR.QtmmCondMustBeBool))
         mkFE3 IfThenElseOp (e, t, f)
 
     let mkNewArray (ty, args) =
@@ -1312,15 +1312,15 @@ module Patterns =
         | false -> invalidArg "minfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
     let mkForLoop (v: Var, lowerBound, upperBound, body) =
-        checkTypesSR (typeof<int>) (typeOf lowerBound) "lowerBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
-        checkTypesSR (typeof<int>) (typeOf upperBound) "upperBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
-        checkTypesSR (typeof<int>) (v.Type) "for" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
+        checkTypesSR typeof<int> (typeOf lowerBound) "lowerBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
+        checkTypesSR typeof<int> (typeOf upperBound) "upperBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
+        checkTypesSR typeof<int> v.Type "for" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
         mkFE3 ForIntegerRangeLoopOp (lowerBound, upperBound, mkLambda (v, body))
 
     let mkWhileLoop (guard, body) =
-        checkTypesSR (typeof<bool>) (typeOf guard) "guard" (SR.GetString(SR.QtmmGuardMustBeBool))
-        checkTypesSR (typeof<Unit>) (typeOf body) "body" (SR.GetString(SR.QtmmBodyMustBeUnit))
-        mkFE2 (WhileLoopOp) (guard, body)
+        checkTypesSR typeof<bool> (typeOf guard) "guard" (SR.GetString(SR.QtmmGuardMustBeBool))
+        checkTypesSR typeof<Unit> (typeOf body) "body" (SR.GetString(SR.QtmmBodyMustBeUnit))
+        mkFE2 WhileLoopOp (guard, body)
 
     let mkNewDelegate (ty, e) =
         let mi = getDelegateInvoke ty
@@ -2019,7 +2019,7 @@ module Patterns =
         (fun tyargs -> getUnionCaseInfoField (case tyargs, i))
 
     and u_ModuleDefn witnessInfo st =
-        let (ty, nm, isProp) = u_tup3 u_NamedType u_string u_bool st
+        let ty, nm, isProp = u_tup3 u_NamedType u_string u_bool st
 
         if isProp then
             Unique(StaticPropGetOp(bindModuleProperty (ty, nm)))
@@ -2073,10 +2073,10 @@ module Patterns =
             match u_ModuleDefn None st with
             | Unique(StaticMethodCallOp minfo) -> (minfo :> MethodBase)
             | Unique(StaticPropGetOp pinfo) -> (pinfo.GetGetMethod true :> MethodBase)
-            | Ambiguous(_) -> raise (AmbiguousMatchException())
+            | Ambiguous _ -> raise (AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 ->
-            let ((genericType, _, _, methName, _) as data) = u_MethodInfoData st
+            let genericType, _, _, methName, _ as data = u_MethodInfoData st
 
             if methName = ".cctor" then
                 let cinfo = bindGenericCctor genericType
@@ -2096,7 +2096,7 @@ module Patterns =
             | Unique(StaticMethodCallOp(minfo)) -> (minfo :> MethodBase)
             | Unique(StaticMethodCallWOp(_minfo, minfoW, _)) -> (minfoW :> MethodBase)
             | Unique(StaticPropGetOp(pinfo)) -> (pinfo.GetGetMethod(true) :> MethodBase)
-            | Ambiguous(_) -> raise (AmbiguousMatchException())
+            | Ambiguous _ -> raise (AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | _ -> failwith "u_MethodBase"
 
@@ -2439,7 +2439,7 @@ module Patterns =
         match data with
         | Some(Entry exprBuilder) ->
             let expectedNumTypars =
-                getNumGenericArguments (methodBase.DeclaringType)
+                getNumGenericArguments methodBase.DeclaringType
                 + (match methodBase with
                    | :? MethodInfo as minfo ->
                        if minfo.IsGenericMethod then
@@ -2488,7 +2488,7 @@ module Patterns =
         fillHolesInRawExpr spliceExprs expr
 
     let cast (expr: Expr) : Expr<'T> =
-        checkTypesSR (typeof<'T>) (typeOf expr) "expr" (SR.GetString(SR.QtmmExprHasWrongType))
+        checkTypesSR typeof<'T> (typeOf expr) "expr" (SR.GetString(SR.QtmmExprHasWrongType))
         new Expr<'T>(expr.Tree, expr.CustomAttributes)
 
 open Patterns
@@ -2847,7 +2847,7 @@ module DerivedPatterns =
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | (Lambdas(_, Call(_, minfo1, _)) | Call(_, minfo1, _)) ->
+        | Lambdas(_, Call(_, minfo1, _)) | Call(_, minfo1, _) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =
@@ -2893,7 +2893,7 @@ module DerivedPatterns =
         | _ -> None
 
     [<CompiledName("MethodWithReflectedDefinitionPattern")>]
-    let (|MethodWithReflectedDefinition|_|) (methodBase) =
+    let (|MethodWithReflectedDefinition|_|) methodBase =
         Expr.TryGetReflectedDefinition methodBase
 
     [<CompiledName("PropertyGetterWithReflectedDefinitionPattern")>]
@@ -2908,7 +2908,7 @@ module DerivedPatterns =
 module ExprShape =
     let RebuildShapeCombination (shape: objnull, arguments) =
         // preserve the attributes
-        let op, attrs = unbox<ExprConstInfo * Expr list> (shape)
+        let op, attrs = unbox<ExprConstInfo * Expr list> shape
 
         let e =
             match op, arguments with
@@ -2922,12 +2922,12 @@ module ExprShape =
             | UnionCaseTestOp unionCase, [ arg ] -> mkUnionCaseTest (unionCase, arg)
             | NewTupleOp ty, _ -> mkNewTupleWithType (ty, arguments)
             | TupleGetOp(ty, i), [ arg ] -> mkTupleGet (ty, i, arg)
-            | InstancePropGetOp pinfo, (obj :: args) -> mkInstancePropGet (obj, pinfo, args)
+            | InstancePropGetOp pinfo, obj :: args -> mkInstancePropGet (obj, pinfo, args)
             | StaticPropGetOp pinfo, _ -> mkStaticPropGet (pinfo, arguments)
-            | InstancePropSetOp pinfo, obj :: (FrontAndBack(args, v)) -> mkInstancePropSet (obj, pinfo, args, v)
-            | StaticPropSetOp pinfo, (FrontAndBack(args, v)) -> mkStaticPropSet (pinfo, args, v)
+            | InstancePropSetOp pinfo, obj :: FrontAndBack(args, v) -> mkInstancePropSet (obj, pinfo, args, v)
+            | StaticPropSetOp pinfo, FrontAndBack(args, v) -> mkStaticPropSet (pinfo, args, v)
             | InstanceFieldGetOp finfo, [ obj ] -> mkInstanceFieldGet (obj, finfo)
-            | StaticFieldGetOp finfo, [] -> mkStaticFieldGet (finfo)
+            | StaticFieldGetOp finfo, [] -> mkStaticFieldGet finfo
             | InstanceFieldSetOp finfo, [ obj; v ] -> mkInstanceFieldSet (obj, finfo, v)
             | StaticFieldSetOp finfo, [ v ] -> mkStaticFieldSet (finfo, v)
             | NewObjectOp minfo, _ -> mkCtorCall (minfo, arguments)

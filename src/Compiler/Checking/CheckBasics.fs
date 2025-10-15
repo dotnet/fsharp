@@ -311,7 +311,7 @@ type TcFileState =
 
       diagnosticOptions: FSharpDiagnosticOptions
 
-      argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
+      argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv

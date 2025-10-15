@@ -343,7 +343,7 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member val ParseFile =
         AsyncMemoize(keepStrongly = cs.ParseFileKeepStrongly, keepWeakly = cs.ParseFileKeepWeakly, name = "ParseFile")
-        : AsyncMemoize<(FSharpProjectIdentifier * string), (string * string * bool), FSharpParsedFile>
+        : AsyncMemoize<FSharpProjectIdentifier * string, string * string * bool, FSharpParsedFile>
 
     member val ParseFileWithoutProject =
         AsyncMemoize<string, string, FSharpParseFileResults>(
@@ -1282,7 +1282,7 @@ type internal TransparentCompiler
                     else
                         fileName)
             )
-            |> Seq.map (snd >> (Seq.toList))
+            |> Seq.map (snd >> Seq.toList)
             |> Seq.choose (function
                 | [ idx1, _; idx2, _ ] -> max idx1 idx2 |> Some
                 | _ -> None)
@@ -1306,7 +1306,7 @@ type internal TransparentCompiler
                     else
                         fileName)
             )
-            |> Seq.map (snd >> (Seq.toList))
+            |> Seq.map (snd >> Seq.toList)
             |> Seq.choose (function
                 | [ idx1, _; idx2, _ ] -> max idx1 idx2 |> Some
                 | _ -> None)
@@ -1624,7 +1624,7 @@ type internal TransparentCompiler
 
                     let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
-                    let (tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile) = result
+                    let tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile = result
 
                     let tcState = tcInfo.tcState
 
@@ -1913,7 +1913,7 @@ type internal TransparentCompiler
 
                             return assemblyDataResult
                 with ex ->
-                    errorR (exn ($"Error while computing assembly data for project {projectSnapshot.Label}: {ex}"))
+                    errorR (exn $"Error while computing assembly data for project {projectSnapshot.Label}: {ex}")
                     return ProjectAssemblyDataResult.Unavailable true
             }
         )

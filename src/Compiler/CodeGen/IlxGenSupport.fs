@@ -94,14 +94,14 @@ let mkLocalPrivateAttributeWithPropertyConstructors
         |> List.map (fun (name, ilType) ->
             match codegenStyle with
             | PublicFields ->
-                (g.AddFieldGeneratedAttributes(mkILInstanceField (name, ilType, None, getFieldMemberAccess codegenStyle))),
+                g.AddFieldGeneratedAttributes(mkILInstanceField (name, ilType, None, getFieldMemberAccess codegenStyle)),
                 [],
                 [],
                 (name, name, ilType, [])
             | EncapsulatedProperties ->
                 let fieldName = name + "@"
 
-                (g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, getFieldMemberAccess codegenStyle))),
+                g.AddFieldGeneratedAttributes(mkILInstanceField (fieldName, ilType, None, getFieldMemberAccess codegenStyle)),
                 [
                     g.AddMethodGeneratedAttributes(
                         mkLdfldMethodDef ($"get_{name}", ILMemberAccess.Public, false, ilTy, fieldName, ilType, ILAttributes.Empty, [])
@@ -206,7 +206,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
         ILGenericParameterDefs.Empty,
         g.ilg.typ_Attribute,
         [],
-        mkILMethods ([ ilScalarCtorDef; ilArrayCtorDef ]),
+        mkILMethods [ ilScalarCtorDef; ilArrayCtorDef ],
         mkILFields [ fieldDef ],
         emptyILTypeDefs,
         emptyILProperties,
@@ -216,7 +216,7 @@ let mkLocalPrivateAttributeWithByteAndByteArrayConstructors (g: TcGlobals, name:
     )
 
 let mkLocalPrivateInt32Enum (g: TcGlobals, tref: ILTypeRef, values: (string * int32) array) =
-    let ilType = ILType.Value(mkILNonGenericTySpec (tref))
+    let ilType = ILType.Value(mkILNonGenericTySpec tref)
 
     let enumFields =
         values
@@ -261,7 +261,7 @@ let GetIsUnmanagedAttribute (g: TcGlobals) =
 let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
     let tref = g.enum_DynamicallyAccessedMemberTypes.TypeRef
 
-    if not (g.compilingFSharpCore) then
+    if not g.compilingFSharpCore then
         g.TryEmbedILType(
             tref,
             (fun () ->
@@ -288,7 +288,7 @@ let GetDynamicallyAccessedMemberTypes (g: TcGlobals) =
                 (mkLocalPrivateInt32Enum (g, tref, values)).WithSerializable(true).WithSealed(true))
         )
 
-    ILType.Value(mkILNonGenericTySpec (tref))
+    ILType.Value(mkILNonGenericTySpec tref)
 
 let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
     let tref = g.attrib_DynamicDependencyAttribute.TypeRef
@@ -303,7 +303,7 @@ let GetDynamicDependencyAttribute (g: TcGlobals) memberTypes (ilType: ILType) =
     )
 
     let typIlMemberTypes =
-        ILType.Value(mkILNonGenericTySpec (g.enum_DynamicallyAccessedMemberTypes.TypeRef))
+        ILType.Value(mkILNonGenericTySpec g.enum_DynamicallyAccessedMemberTypes.TypeRef)
 
     mkILCustomAttribute (
         tref,

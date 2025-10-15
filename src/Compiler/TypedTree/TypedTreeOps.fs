@@ -3080,8 +3080,8 @@ module PrettyTypes =
             x
  
     let PrettifyInst g x = 
-        PrettifyThings g 
-            (foldTyparInst) 
+        PrettifyThings g
+            foldTyparInst
             (fun f -> mapTyparInst g f)
             x
  
@@ -3204,7 +3204,7 @@ type DisplayEnv =
 
     member x.SetOpenPaths paths = 
         { x with 
-             openTopPathsSorted = (InterruptibleLazy(fun _ -> paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
+             openTopPathsSorted = InterruptibleLazy(fun _ -> paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2)))
              openTopPathsRaw = paths 
         }
 
@@ -4363,7 +4363,7 @@ module DebugPrint =
             (wordL(tagText "slot") --- (wordL (tagText nm)) ^^ wordL(tagText "@") ^^ typeL ty) --
               (wordL(tagText "LAM") --- spaceListL (List.map typarL tps1) ^^ rightL(tagText ".")) ---
               (wordL(tagText "LAM") --- spaceListL (List.map typarL tps2) ^^ rightL(tagText ".")) ---
-              (commaListL (List.map (List.map tslotparamL >> tupleL) pms)) ^^ (wordL(tagText "-> ")) --- (typeL retTy) 
+              (commaListL (List.map (List.map tslotparamL >> tupleL) pms)) ^^ wordL(tagText "-> ") --- (typeL retTy) 
 #else
         ignore slotsig
         wordL(tagText "slotsig")
@@ -4664,8 +4664,8 @@ module DebugPrint =
             | Expr.Op (TOp.TraitCall _, _tyargs, _args, _) -> wordL(tagText "traitcall...")
             | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
-            | Expr.Op (TOp.TryFinally _, _tyargs, args, _) -> wordL(tagText ("unexpected-try-finally")) ---- aboveListL (List.map atomL args)
-            | Expr.Op (TOp.TryWith _, _tyargs, args, _) -> wordL(tagText ("unexpected-try-with")) ---- aboveListL (List.map atomL args)
+            | Expr.Op (TOp.TryFinally _, _tyargs, args, _) -> wordL(tagText "unexpected-try-finally") ---- aboveListL (List.map atomL args)
+            | Expr.Op (TOp.TryWith _, _tyargs, args, _) -> wordL(tagText "unexpected-try-with") ---- aboveListL (List.map atomL args)
             | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
@@ -4689,7 +4689,7 @@ module DebugPrint =
 
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
-                   (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
+                   (wordL(tagText "|") ^^ exprL csx --- wordL(tagText "when..."))
            
         // For tracking ranges through expr rewrites 
         if layoutRanges then
@@ -4712,7 +4712,7 @@ module DebugPrint =
             let bind = wordL(tagText "let") ^^ bindingL bind
             (bind @@ decisionTreeL body) 
         | TDSuccess (args, n) -> 
-            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL))
+            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map exprL)
         | TDSwitch (test, dcases, dflt, _) ->
             (wordL(tagText "Switch") --- exprL test) @@--
             (aboveListL (List.map dcaseL dcases) @@
@@ -4823,7 +4823,7 @@ module DebugPrint =
         (header @@-- body) @@ footer
 
     let implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
-        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL implFileTy implFileContents]
+        aboveListL [ wordL(tagText "top implementation ") @@-- mexprL implFileTy implFileContents]
         
     let implFilesL implFiles =
         aboveListL (List.map implFileL implFiles)
@@ -5226,7 +5226,7 @@ let (|LinearMatchExpr|_|) expr =
     | _ -> ValueNone
     
 let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, m2, ty) = 
-    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, None))|], m2, ty)
+    primMkMatch (sp, m, dtree, [|tg1;TTarget([], e2, None) |], m2, ty)
 
 /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
 /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
@@ -8249,7 +8249,7 @@ let tref_SourceConstructFlags (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef,
 let mkCompilationMappingAttrPrim (g: TcGlobals) k nums = 
     mkILCustomAttribute (tref_CompilationMappingAttr g, 
                                ((mkILNonGenericValueTy (tref_SourceConstructFlags g)) :: (nums |> List.map (fun _ -> g.ilg.typ_Int32))), 
-                               ((k :: nums) |> List.map (ILAttribElem.Int32)), 
+                               ((k :: nums) |> List.map ILAttribElem.Int32), 
                                [])
 
 let mkCompilationMappingAttr g kind = mkCompilationMappingAttrPrim g kind []
@@ -8260,7 +8260,7 @@ let mkCompilationMappingAttrWithVariantNumAndSeqNum g kind varNum seqNum = mkCom
 
 let mkCompilationArgumentCountsAttr (g: TcGlobals) nums = 
     mkILCustomAttribute (tref_CompilationArgumentCountsAttr g, [ mkILArr1DTy g.ilg.typ_Int32 ], 
-                               [ILAttribElem.Array (g.ilg.typ_Int32, List.map (ILAttribElem.Int32) nums)], 
+                               [ILAttribElem.Array (g.ilg.typ_Int32, List.map ILAttribElem.Int32 nums)], 
                                [])
 
 let mkCompilationSourceNameAttr (g: TcGlobals) n = 
@@ -8482,7 +8482,7 @@ let (|NewDelegateExpr|_|) g expr =
 [<return: Struct>]
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
+    | Expr.App (Expr.Val (invokeRef, _, _) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
         when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
             ValueSome(delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m)
     | _ -> ValueNone
@@ -11080,7 +11080,8 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
         | _ -> mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
 
-let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
+let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop:
+        Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr) =
     let inline mkLetBindingsIfNeeded f =
         match start, step, finish with
         | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
@@ -11594,7 +11595,7 @@ let rec isReturnsResumableCodeTy g ty =
 let (|ResumableCodeInvoke|_|) g expr =
     match expr with
     // defn.Invoke x --> let arg = x in [defn][arg/x]
-    | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args), m) 
+    | Expr.App (Expr.Val (invokeRef, _, _) as iref, a, b, f :: args, m) 
             when invokeRef.LogicalName = "Invoke" && isReturnsResumableCodeTy g (tyOfExpr g f) -> 
         ValueSome (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
     | _ -> ValueNone

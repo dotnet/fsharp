@@ -24,7 +24,7 @@ open FSharp.Compiler.Text.Range
 type IsResultObsolete = IsResultObsolete of (unit -> bool)
 
 module CompileHelpers =
-    let mkCompilationDiagnosticsHandlers (flatErrors) =
+    let mkCompilationDiagnosticsHandlers flatErrors =
         let diagnostics = ResizeArray<_>()
 
         let diagnosticsLogger =

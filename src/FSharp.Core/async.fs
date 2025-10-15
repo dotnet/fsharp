@@ -76,9 +76,9 @@ type AsyncReturn =
     static member inline Fake() =
         Unchecked.defaultof<AsyncReturn>
 
-type cont<'T> = ('T -> AsyncReturn)
-type econt = (ExceptionDispatchInfo -> AsyncReturn)
-type ccont = (OperationCanceledException -> AsyncReturn)
+type cont<'T> = 'T -> AsyncReturn
+type econt = ExceptionDispatchInfo -> AsyncReturn
+type ccont = OperationCanceledException -> AsyncReturn
 
 [<AllowNullLiteral>]
 type Trampoline() =
@@ -219,11 +219,11 @@ type TrampolineHolder() =
         trampoline.Execute firstAction
 
     member this.PostWithTrampoline (syncCtxt: SynchronizationContext) (f: unit -> AsyncReturn) =
-        syncCtxt.Post(getSendOrPostCallbackWithTrampoline (this), state = (f |> box))
+        syncCtxt.Post(getSendOrPostCallbackWithTrampoline this, state = (f |> box))
         AsyncReturn.Fake()
 
     member this.QueueWorkItemWithTrampoline(f: unit -> AsyncReturn) =
-        if not (ThreadPool.QueueUserWorkItem(getWaitCallbackForQueueWorkItemWithTrampoline (this), f |> box)) then
+        if not (ThreadPool.QueueUserWorkItem(getWaitCallbackForQueueWorkItemWithTrampoline this, f |> box)) then
             failwith "failed to queue user work item"
 
         AsyncReturn.Fake()
@@ -235,7 +235,7 @@ type TrampolineHolder() =
 
     // This should be the only call to Thread.Start in this library. We must always install a trampoline.
     member this.StartThreadWithTrampoline(f: unit -> AsyncReturn) =
-        Thread(getThreadStartCallbackForStartThreadWithTrampoline (this), IsBackground = true).Start(f |> box)
+        Thread(getThreadStartCallbackForStartThreadWithTrampoline this, IsBackground = true).Start(f |> box)
 
         AsyncReturn.Fake()
 
@@ -426,7 +426,7 @@ type AsyncActivation<'T>(contents: AsyncActivationContents<'T>) =
 [<NoEquality; NoComparison; CompiledName("FSharpAsync`1")>]
 type Async<'T> =
     {
-        Invoke: (AsyncActivation<'T> -> AsyncReturn)
+        Invoke: AsyncActivation<'T> -> AsyncReturn
     }
 
 /// Mutable register to help ensure that code is only executed once
@@ -1039,7 +1039,7 @@ module AsyncPrimitives =
                             | Some _ -> result
                             | None ->
                                 // Otherwise save the continuation and call it in RegisterResult
-                                savedConts <- (SuspendedAsync<_>(ctxt)) :: savedConts
+                                savedConts <- SuspendedAsync<_>(ctxt) :: savedConts
                                 None)
 
                 match resOpt with
@@ -1079,7 +1079,7 @@ module AsyncPrimitives =
             let obj = FuncDelegate<'T>(f)
 
             let invokeMeth =
-                (typeof<FuncDelegate<'T>>)
+                typeof<FuncDelegate<'T>>
                     .GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
 
             Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
@@ -1767,8 +1767,8 @@ type Async =
 
         Async.StartWithContinuations(
             computation,
-            (ts.SetResult),
-            (ts.SetException),
+            ts.SetResult,
+            ts.SetException,
             (fun _ -> ts.SetCanceled()),
             cancellationToken
         )
@@ -2042,7 +2042,7 @@ type Async =
         )
 
     static member AsBeginEnd<'Arg, 'T>
-        (computation: ('Arg -> Async<'T>))
+        (computation: 'Arg -> Async<'T>)
         // The 'Begin' member
         : ('Arg * AsyncCallback * objnull -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit) =
         let beginAction =

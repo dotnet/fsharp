@@ -519,7 +519,7 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden (accessibility: Accessibility) re
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
 type TypeReprEnv
-    (reprs: Map<Stamp, (uint16 * Typar)>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation) option) =
+    (reprs: Map<Stamp, uint16 * Typar>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInstantiation) option) =
 
     static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
 
@@ -855,7 +855,7 @@ and GenTypeArgs cenv m tyenv tyargs = GenTypeArgsAux cenv m tyenv tyargs
 // Computes the location where the static field for a value lives.
 //     - Literals go in their type/module.
 //     - For interactive code, we always place fields in their type/module with an accurate name
-let GenFieldSpecForStaticField (isInteractive, (g: TcGlobals), ilContainerTy, vspec: Val, nm, m, cloc, ilTy) =
+let GenFieldSpecForStaticField (isInteractive, g: TcGlobals, ilContainerTy, vspec: Val, nm, m, cloc, ilTy) =
 
     let fieldName = vspec.CompiledName g.CompilerGlobalState
 
@@ -2453,7 +2453,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         // old implementation adds new element to the head of list so result was accumulated in reversed order
         let orderedReflectedDefinitions =
             [
-                for (vspec, (n, (name, expr))) in reflectedDefinitions.GetAll() -> n, ((name, vspec), expr)
+                for vspec, (n, (name, expr)) in reflectedDefinitions.GetAll() -> n, ((name, vspec), expr)
             ]
             |> List.sortBy (fst >> (~-)) // invert the result to get 'order-by-descending' behavior (items in list are 0..* so we don't need to worry about int.MinValue)
             |> List.map snd
@@ -2935,7 +2935,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
     // Check for the '__debugPoint" construct for inlined code
     match expr with
-    | Expr.Sequential((DebugPointExpr g debugPointName) as dpExpr, codeExpr, NormalSeq, m) ->
+    | Expr.Sequential(DebugPointExpr g debugPointName as dpExpr, codeExpr, NormalSeq, m) ->
         match cenv.namedDebugPointsForInlinedCode.TryGetValue({ Range = m; Name = debugPointName }) with
         | false, _ when String.IsNullOrEmpty(debugPointName) -> CG.EmitDebugPoint cgbuf m
         | false, _ ->
@@ -3000,13 +3000,13 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                     // is important if the nested state machine generates dynamic code (LoweredStateMachineResult.UseAlternative).
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
-                    warning (Error(FSComp.SR.reprStateMachineNotCompilable (msg), expr.Range))
+                    warning (Error(FSComp.SR.reprStateMachineNotCompilable msg, expr.Range))
                     GenExpr cenv cgbuf eenv altExpr sequel
                     true
                 | LoweredStateMachineResult.NoAlternative msg ->
                     let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
-                    errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative (msg), expr.Range))
+                    errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative msg, expr.Range))
                     GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
                     true
                 | LoweredStateMachineResult.NotAStateMachine ->
@@ -3177,7 +3177,7 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
 
     code
 
-and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
+and DelayCodeGenMethodForExpr cenv mgbuf (_, _, eenv, _, _, _, _ as args) =
     let change3rdOutOf7 (a1, a2, _, a4, a5, a6, a7) newA3 = (a1, a2, newA3, a4, a5, a6, a7)
 
     if eenv.delayCodeGen then
@@ -3658,13 +3658,13 @@ and GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel =
             (pop 0)
             (Push [ ilArrTy ])
             [
-                (AI_ldc(DT_I4, ILConst.I4 elems.Length))
+                AI_ldc(DT_I4, ILConst.I4 elems.Length)
                 I_newarr(ILArrayShape.SingleDimensional, ilElemTy)
             ]
 
         elems
         |> List.iteri (fun i e ->
-            CG.EmitInstrs cgbuf (pop 0) (Push [ ilArrTy; cenv.g.ilg.typ_Int32 ]) [ AI_dup; (AI_ldc(DT_I4, ILConst.I4 i)) ]
+            CG.EmitInstrs cgbuf (pop 0) (Push [ ilArrTy; cenv.g.ilg.typ_Int32 ]) [ AI_dup; AI_ldc(DT_I4, ILConst.I4 i) ]
             GenExpr cenv cgbuf eenv e Continue
             CG.EmitInstr cgbuf (pop 3) Push0 (I_stelem_any(ILArrayShape.SingleDimensional, ilElemTy)))
 
@@ -4232,7 +4232,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         || valRefEq g v g.cgh__resumableEntry_vref
         || valRefEq g v g.cgh__stateMachine_vref
         ->
-        errorR (Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen (v.DisplayName), m))
+        errorR (Error(FSComp.SR.ilxgenInvalidConstructInStateMachineDuringCodegen v.DisplayName, m))
         CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Object ]) AI_ldnull
         GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -5083,7 +5083,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
         | FSharpForLoopDown -> BI_bne_un
         | CSharpForLoopUp -> BI_blt
 
-    let e2Sequel = (CmpThenBrOrContinue(pop 2, [ I_brcmp(cmp, inner.CodeLabel) ]))
+    let e2Sequel = CmpThenBrOrContinue(pop 2, [ I_brcmp(cmp, inner.CodeLabel) ])
 
     if isFSharpStyle then
         EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
@@ -5235,7 +5235,7 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
          Expr.Const((Const.Bool false | Const.SByte 0y | Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy | Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL),
                     _,
                     _) ],
-       CmpThenBrOrContinue(1, [ I_brcmp((BI_brfalse | BI_brtrue) as bi, label1) ]),
+       CmpThenBrOrContinue(1, [ I_brcmp(BI_brfalse | BI_brtrue as bi, label1) ]),
        _) ->
 
         let bi =
@@ -5525,7 +5525,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         match exprOpt with
         | None ->
             let exnArg =
-                mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberLogicalName))
+                mkString g m (FSComp.SR.ilDynamicInvocationNotSupported traitInfo.MemberLogicalName)
 
             let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
             let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr
@@ -5573,7 +5573,7 @@ and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
     | Method _
     | Env _
     | Null ->
-        errorR (Error(FSComp.SR.ilAddressOfValueHereIsInvalid (v.DisplayName), m))
+        errorR (Error(FSComp.SR.ilAddressOfValueHereIsInvalid v.DisplayName, m))
 
         CG.EmitInstr
             cgbuf
@@ -5727,7 +5727,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
             | _ -> ()
         ]
 
-    let tpAttrs = mkILCustomAttrs (attributeList)
+    let tpAttrs = mkILCustomAttrs attributeList
 
     let modreqValueType () =
         ILType.Modified(true, g.iltyp_UnmanagedType.TypeRef, g.iltyp_ValueType)
@@ -7410,7 +7410,7 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
     // The others (e.g. Continue, LeaveFilter and CmpThenBrOrContinue) can't be done at the end of each branch. We must create a join point.
     | _ ->
         let pushed = GenType cenv m eenv.tyenv ty
-        let stackAfterJoin = (pushed :: (cgbuf.GetCurrentStack()))
+        let stackAfterJoin = (pushed :: cgbuf.GetCurrentStack())
         let afterJoin = CG.GenerateDelayMark cgbuf (pos + "_join")
         // go to the join point
         Br afterJoin, afterJoin, stackAfterJoin, sequel
@@ -7642,7 +7642,7 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
     GenBindings cenv cgbuf eenvAtTarget binds stateVarFlagsOpt
     CG.SetMarkToHere cgbuf targetMarkAfterBinds
     CG.SetStack cgbuf stackAtTargets
-    (eenvAtTarget, successExpr, (EndLocalScope(sequel, endMark)))
+    (eenvAtTarget, successExpr, EndLocalScope(sequel, endMark))
 
 and GenDecisionTreeSwitch
     cenv
@@ -7708,7 +7708,7 @@ and GenDecisionTreeSwitch
         let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore c.TyconRef
 
         let tester =
-            (Some(pop 1, Push [ g.ilg.typ_Bool ], Choice1Of2(avoidHelpers, cuspec, idx)))
+            Some(pop 1, Push [ g.ilg.typ_Bool ], Choice1Of2(avoidHelpers, cuspec, idx))
 
         GenDecisionTreeTest
             cenv
@@ -8671,7 +8671,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                                     mkNormalStsfld fspec
                                 ]
 
-                            CG.EmitInstrs cgbuf (pop 0) (Push0) ilInstrs
+                            CG.EmitInstrs cgbuf (pop 0) Push0 ilInstrs
                             [ attrib ]
                         | _ -> failwith "unreachable"
                     | _ -> failwith "unreachable"
@@ -9741,9 +9741,9 @@ and GenSetStorage m cgbuf storage =
 
         CG.EmitInstr cgbuf (pop 1) Push0 (I_call(Normalcall, mkILMethSpecForMethRefInTy (ilSetterMethRef, ilContainerTy, []), None))
 
-    | StaticProperty(ilGetterMethSpec, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda (ilGetterMethSpec.Name), m))
+    | StaticProperty(ilGetterMethSpec, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda ilGetterMethSpec.Name, m))
 
-    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda (mspec.Name), m))
+    | Method(_, _, mspec, _, m, _, _, _, _, _, _, _) -> error (Error(FSComp.SR.ilStaticMethodIsNotLambda mspec.Name, m))
 
     | Null -> CG.EmitInstr cgbuf (pop 1) Push0 AI_pop
 
@@ -9982,7 +9982,7 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
 /// - [gross] because IL flushes the stack at the exn. handler
 /// - and because IL requires empty stack following a forward br (jump).
 and EmitSaveStack cenv cgbuf eenv m scopeMarks =
-    let savedStack = (cgbuf.GetCurrentStack())
+    let savedStack = cgbuf.GetCurrentStack()
 
     let savedStackLocals, eenvinner =
         (eenv, savedStack)
@@ -10259,7 +10259,7 @@ and CodeGenInitMethod cenv (cgbuf: CodeGenBuffer) eenv tref (codeGenInitFunc: Co
         let methodSpec =
             mkILNonGenericStaticMethSpecInTy (ty, eenv.staticInitializationName, [], ILType.Void)
 
-        cgbuf.EmitInstr((pop 0), Push0, mkNormalCall (methodSpec))
+        cgbuf.EmitInstr((pop 0), Push0, mkNormalCall methodSpec)
 
 and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     match x with
@@ -10303,7 +10303,7 @@ and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo 
 
                 GenLetRecBindings cenv cgbuf eenv (recBinds, m) dict
                 bindsRemaining <- otherBinds
-            | (ModuleOrNamespaceBinding.Module _ as mbind) :: rest ->
+            | ModuleOrNamespaceBinding.Module _ as mbind :: rest ->
                 GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
                 bindsRemaining <- rest
             | [] -> failwith "unreachable"
@@ -11506,7 +11506,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                             SourceConstructFlags.RecordType
                                     ))
 
-                            if not (ilBaseTy.GenericArgs.IsEmpty) then
+                            if not ilBaseTy.GenericArgs.IsEmpty then
                                 yield! GenAdditionalAttributesForTy g super
                         ]
 
@@ -11786,7 +11786,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             // In this case, the .cctor for this type must force the .cctor of the backing static class for the file.
             if
                 tycon.TyparsNoRange.IsEmpty
-                && not (eenv.realsig)
+                && not eenv.realsig
                 && tycon.MembersOfFSharpTyconSorted
                    |> List.exists (fun vref -> vref.Deref.IsClassConstructor)
             then

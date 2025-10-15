@@ -647,7 +647,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="4">Threads and Contexts</category>
         ///
         /// <example-tbd></example-tbd>
-        static member SwitchToContext : syncContext:(SynchronizationContext | null) -> Async<unit> 
+        static member SwitchToContext : syncContext: SynchronizationContext | null -> Async<unit> 
 
         /// <summary>Creates an asynchronous computation that captures the current
         /// success, exception and cancellation continuations. The callback must 

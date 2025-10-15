@@ -966,7 +966,7 @@ type TProvidedTypeInfo =
 
         /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
         /// Reading is delayed, since it does an import on the underlying type
-        LazyBaseType: LazyWithContext<TType, (range * TType)>
+        LazyBaseType: LazyWithContext<TType, range * TType>
 
         /// A flag read eagerly from the provided type type used to compute basic properties of the type definition.
         IsClass: bool

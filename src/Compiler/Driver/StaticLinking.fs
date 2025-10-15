@@ -117,7 +117,7 @@ let StaticLinkILModules
                 | _ -> None)
 
         match dependentCcuUsingQuotations with
-        | Some ccu -> error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking (ccu.AssemblyName), rangeStartup))
+        | Some ccu -> error (Error(FSComp.SR.fscQuotationLiteralsStaticLinking ccu.AssemblyName, rangeStartup))
         | None -> ()
 
         // Check we're not static linking a .EXE
@@ -382,7 +382,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                     remaining <- Array.toList refs.AssemblyReferences @ remaining
 
                 | None ->
-                    warning (Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies (ilAssemRef.Name), rangeStartup))
+                    warning (Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies ilAssemRef.Name, rangeStartup))
                     depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
 
         ReportTime tcConfig "Find dependencies"

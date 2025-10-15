@@ -31,7 +31,7 @@ type internal ICacheKey<'TKey, 'TVersion> =
 type Extensions =
 
     [<System.Runtime.CompilerServices.Extension>]
-    static member internal WithExtraVersion: cacheKey: ICacheKey<'a, 'b> * extraVersion: 'c -> ICacheKey<'a, ('b * 'c)>
+    static member internal WithExtraVersion: cacheKey: ICacheKey<'a, 'b> * extraVersion: 'c -> ICacheKey<'a, 'b * 'c>
 
 /// <summary>
 /// A cache/memoization for computations that makes sure that the same computation will only be computed once even if it's needed
