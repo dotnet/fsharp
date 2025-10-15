@@ -205,11 +205,11 @@ val mkLetExpression:
     mWhole: range *
     body: SynExpr *
     bindingInfo: BindingSet option *
-    bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option ->
+    bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * range * range option * bool) option ->
         SynExpr
 
 val mkAndBang:
-    mKeyword: range * pat: SynPat * rhs: SynExpr * mWhole: range * mEquals: range * mIn: range option -> SynBinding
+    mKeyword: range * pat: SynPat * returnInfo: SynBindingReturnInfo option * rhs: SynExpr * mWhole: range * mEquals: range * mIn: range option -> SynBinding
 
 val mkDefnBindings:
     mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range -> SynModuleDecl list
