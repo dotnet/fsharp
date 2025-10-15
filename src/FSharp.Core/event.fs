@@ -3,13 +3,10 @@
 namespace Microsoft.FSharp.Control
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.LanguagePrimitives
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Control
 open System
-open System.Diagnostics
 open System.Reflection
 
 module private Atomic =

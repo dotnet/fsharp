@@ -4,7 +4,6 @@
 namespace Microsoft.FSharp.Core
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
 open System
 open System.IO
 open System.Text

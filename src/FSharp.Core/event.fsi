@@ -4,9 +4,7 @@ namespace Microsoft.FSharp.Control
 
 open System
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Control
-open Microsoft.FSharp.Collections
 
 /// <summary>Event implementations for an arbitrary type of delegate.</summary>
 ///

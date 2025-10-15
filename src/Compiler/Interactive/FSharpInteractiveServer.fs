@@ -3,10 +3,8 @@ namespace FSharp.Compiler.Interactive
 
 open System
 open System.Text
-open System.Diagnostics
 open System.IO
 open System.IO.Pipes
-open System.Threading
 
 module CtrlBreakHandlers =
 

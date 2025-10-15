@@ -7,7 +7,6 @@ open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 open FSharp.Compiler.DiagnosticsLogger
-open Internal.Utilities.Library
 
 type AsyncLazyState<'t> =
     | Initial of computation: Async<'t>

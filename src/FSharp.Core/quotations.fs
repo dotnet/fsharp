@@ -9,8 +9,6 @@ open System.Collections.Generic
 open Microsoft.FSharp
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
-open Microsoft.FSharp.Primitives.Basics
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Core.Printf
@@ -2713,8 +2711,6 @@ type Expr with
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module DerivedPatterns =
-    open Patterns
-
     [<CompiledName("BoolPattern")>]
     let (|Bool|_|) input =
         match input with
@@ -2910,8 +2906,6 @@ module DerivedPatterns =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ExprShape =
-    open Patterns
-
     let RebuildShapeCombination (shape: objnull, arguments) =
         // preserve the attributes
         let op, attrs = unbox<ExprConstInfo * Expr list> (shape)

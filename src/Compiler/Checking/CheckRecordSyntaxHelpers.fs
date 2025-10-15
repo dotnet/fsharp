@@ -13,7 +13,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
-open TypedTreeOps
 
 /// Merges updates to nested record fields on the same level in record copy-and-update.
 ///

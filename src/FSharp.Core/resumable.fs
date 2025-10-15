@@ -12,11 +12,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 open System
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Printf
-open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = false)>]

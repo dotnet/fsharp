@@ -9,7 +9,6 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
-open System.Reflection
 open System.Threading
 open FSharp.Compiler.IO
 open FSharp.Compiler.NicePrint
@@ -55,9 +54,6 @@ open FSharp.Compiler.TypedTreeOps
 open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
-open Internal.Utilities.Hashing
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 

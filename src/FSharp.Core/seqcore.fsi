@@ -6,7 +6,6 @@ open System
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
 
 module internal IEnumerator =
     val noReset: unit -> 'a
@@ -50,7 +49,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
 open System
 open System.Collections
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 

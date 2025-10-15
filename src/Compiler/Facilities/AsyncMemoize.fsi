@@ -1,8 +1,5 @@
 namespace Internal.Utilities.Collections
 
-open System.Threading.Tasks
-open FSharp.Compiler.BuildGraph
-
 [<AutoOpen>]
 module internal Utils =
 

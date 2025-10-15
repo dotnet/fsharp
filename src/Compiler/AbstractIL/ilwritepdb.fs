@@ -7,19 +7,15 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
 open System.IO.Compression
-open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Security.Cryptography
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
-open FSharp.Compiler.Text.Range
 
 type BlobBuildingStream() =
     inherit Stream()

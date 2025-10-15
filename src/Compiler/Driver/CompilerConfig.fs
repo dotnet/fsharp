@@ -27,8 +27,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.BuildGraph
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Core.CompilerServices
 #endif

@@ -15,12 +15,7 @@
 namespace Microsoft.FSharp.Core
 
     open System
-    open System.Collections
     open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Reflection
-    open System.Text
 
     type Unit() =
         override _.GetHashCode() = 0
@@ -452,11 +447,9 @@ namespace Microsoft.FSharp.Core
     open System
     open System.Collections
     open System.Collections.Generic
-    open System.Diagnostics
     open System.Globalization
     open System.Reflection
-    open System.Text
-#endif
+    #endif
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
@@ -3706,15 +3699,9 @@ namespace Microsoft.FSharp.Core
 namespace Microsoft.FSharp.Core
 
     open System
-    open System.Collections
-    open System.Collections.Generic
     open System.Diagnostics
-    open System.Globalization
-    open System.Text
     open Microsoft.FSharp.Core.BasicInlinedOperations
     open Microsoft.FSharp.Core.LanguagePrimitives
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
 
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`2")>]
@@ -4133,7 +4120,6 @@ namespace Microsoft.FSharp.Collections
     open System.Diagnostics
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
@@ -4391,7 +4377,6 @@ namespace Microsoft.FSharp.Collections
 namespace Microsoft.FSharp.Core
 
     open System
-    open System.Diagnostics              
     open System.Collections.Generic
     open System.Globalization
     open System.Text
@@ -7308,9 +7293,7 @@ namespace Microsoft.FSharp.Core
 
 namespace Microsoft.FSharp.Control
 
-    open System    
-    open System.Threading    
-    open System.Diagnostics
+    open System
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
 

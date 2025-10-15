@@ -126,8 +126,6 @@ module HashAccessibility =
         | _ -> true
 
 module rec HashTypes =
-    open Microsoft.FSharp.Core.LanguagePrimitives
-
     /// Hash a reference to a type
     let hashTyconRef tcref = hashTyconRefImpl tcref
 

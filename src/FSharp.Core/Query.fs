@@ -9,7 +9,6 @@ open System.Collections.Generic
 
 open Microsoft.FSharp
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Linq.RuntimeHelpers
@@ -286,12 +285,9 @@ open System.Collections
 open System.Collections.Generic
 open System.Linq.Expressions
 open System.Reflection
-open Microsoft.FSharp
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Linq
 open Microsoft.FSharp.Linq.RuntimeHelpers.Adapters
 open Microsoft.FSharp.Linq.RuntimeHelpers

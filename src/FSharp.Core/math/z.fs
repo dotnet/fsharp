@@ -17,7 +17,6 @@ namespace Microsoft.FSharp.Core
 type bigint = System.Numerics.BigInteger
 
 open System
-open System.Diagnostics.CodeAnalysis
 open System.Globalization
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators

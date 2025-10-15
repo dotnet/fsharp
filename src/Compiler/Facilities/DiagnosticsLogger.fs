@@ -2,7 +2,6 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
-open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -14,7 +13,6 @@ open System.Threading
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open System.Threading.Tasks
 open System.Collections.Concurrent
 

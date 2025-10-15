@@ -4,18 +4,15 @@ namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 open System
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Quotations
-open Microsoft.FSharp.Quotations.DerivedPatterns
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Linq.RuntimeHelpers
 open System.Collections
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Linq
-open System.Linq.Expressions
 open System.Reflection
 
 // ----------------------------------------------------------------------------

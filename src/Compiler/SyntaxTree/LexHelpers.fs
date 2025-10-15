@@ -6,7 +6,6 @@ open System
 open System.Text
 
 open Internal.Utilities
-open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler.DiagnosticsLogger

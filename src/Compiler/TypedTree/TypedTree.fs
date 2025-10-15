@@ -7,8 +7,6 @@ open System
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
-open System.Reflection
-
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras

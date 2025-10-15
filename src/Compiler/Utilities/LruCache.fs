@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Diagnostics
 
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 
 [<RequireQualifiedAccess>]
 type internal CacheEvent =

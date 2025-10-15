@@ -5,7 +5,6 @@ module FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open System
 open System.Collections.Generic
 open System.IO
-open System.Reflection
 open FSharp.Compiler.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras

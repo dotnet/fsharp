@@ -12,7 +12,6 @@ open System.Globalization
 open System.Reflection
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 
 open LanguagePrimitives.IntrinsicOperators

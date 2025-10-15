@@ -21,7 +21,6 @@ open System.Text
 open System.Threading
 
 open FSharp.Compiler.AbstractIL.Diagnostics
-open Internal.Utilities.Library
 open Internal.Utilities
 
 let logging = false

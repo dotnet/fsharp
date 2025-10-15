@@ -9,7 +9,6 @@ open System
 open System.Collections.Generic
 open System.Reflection
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics

@@ -6,7 +6,6 @@ module internal FSharp.Compiler.CompilerImports
 
 open System
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.IO.Compression
@@ -40,8 +39,6 @@ open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.BuildGraph
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices

@@ -6,7 +6,6 @@ module internal FSharp.Compiler.NameResolution
 
 open System.Collections.Generic
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras

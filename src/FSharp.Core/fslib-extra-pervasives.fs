@@ -8,13 +8,10 @@ module ExtraTopLevelOperators =
     open System.Collections.Generic
     open System.IO
     open System.Diagnostics
-    open Microsoft.FSharp
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Linq
-    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core.CompilerServices
 
     let inline checkNonNullNullArg argName arg =

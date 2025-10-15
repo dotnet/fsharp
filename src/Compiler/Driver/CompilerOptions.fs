@@ -5,7 +5,6 @@
 module internal FSharp.Compiler.CompilerOptions
 
 open System
-open System.Diagnostics
 open System.IO
 open FSharp.Compiler.Optimizer
 open Internal.Utilities.Library
@@ -19,7 +18,6 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.DiagnosticsLogger
 

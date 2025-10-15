@@ -9,7 +9,6 @@ open System.Diagnostics
 open System.Text
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 
 // A functional language implementation of binary trees

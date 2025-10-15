@@ -252,8 +252,6 @@ and [<CompilerMessage("This type is for compiler use and should not be used dire
 
 namespace Microsoft.FSharp.Collections
 
-open System
-open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 

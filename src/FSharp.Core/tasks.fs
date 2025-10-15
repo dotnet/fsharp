@@ -21,7 +21,6 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
 /// The extra data stored in ResumableStateMachine for tasks

@@ -82,8 +82,6 @@ namespace Microsoft.FSharp.Primitives.Basics
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Core.Operators
-open System.Diagnostics.CodeAnalysis
 open System.Collections.Generic
 
 

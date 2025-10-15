@@ -13,7 +13,6 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Control
     open Microsoft.FSharp.Linq
     open Microsoft.FSharp.Quotations
 

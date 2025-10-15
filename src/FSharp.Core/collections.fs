@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
 #nowarn "51"
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open System.Collections.Generic
 
 module HashIdentity =

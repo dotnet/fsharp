@@ -4,9 +4,7 @@ module internal FSharp.Compiler.AbstractIL.Support
 
 open System
 open System.IO
-open System.Reflection
 open System.Runtime.InteropServices
-open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.IO
 

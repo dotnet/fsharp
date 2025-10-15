@@ -12145,8 +12145,6 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
 // If we know how/where the field was generated, then we can lookup via reflection.
 //-------------------------------------------------------------------------
 
-open System
-
 /// The lookup* functions are the conversions available from ilreflect.
 type ExecutionContext =
     {

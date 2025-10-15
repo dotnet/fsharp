@@ -6,12 +6,8 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
-open System.Diagnostics
-
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open Internal.Utilities.TypeHashing
-
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
@@ -24,8 +20,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Caches
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif

@@ -5,13 +5,11 @@ namespace Microsoft.FSharp.Collections
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 open System
-open System.Diagnostics
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics

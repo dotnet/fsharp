@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.IlxGenSupport
 
 open System.Reflection
-open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text.Range

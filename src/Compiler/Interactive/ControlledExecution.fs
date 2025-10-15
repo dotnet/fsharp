@@ -15,8 +15,6 @@ open System.Reflection
 open System.Threading
 
 open Internal.Utilities.FSharpEnvironment
-open Internal.Utilities.Library
-
 open Unchecked
 
 type internal ControlledExecution(isInteractive: bool) =

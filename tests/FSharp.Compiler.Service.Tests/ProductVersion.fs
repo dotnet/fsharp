@@ -1,8 +1,6 @@
 ﻿namespace FSharp.Compiler.Service.Tests
 
 open System
-open System.IO
-open System.Text
 open Xunit
 open FSharp.Test
 

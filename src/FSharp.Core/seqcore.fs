@@ -9,10 +9,6 @@ open System.Diagnostics
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
-open Microsoft.FSharp.Control
-open Microsoft.FSharp.Collections
 
 module internal IEnumerator =
 
@@ -186,14 +182,12 @@ open System
 open System.Diagnostics
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Collections.IEnumerator
 open Microsoft.FSharp.Primitives.Basics
 open System.Collections
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 
 module RuntimeHelpers =
 

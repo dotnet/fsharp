@@ -19,8 +19,6 @@ open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif

@@ -415,8 +415,6 @@ let private CheckDuplicatesAbstractMethodParamsSig (typeSpecs:  SynTypeDefnSig l
         | _ -> ()
         
 module TcRecdUnionAndEnumDeclarations =
-    open CheckExpressionsOps
-
     let CombineReprAccess parent vis = 
         match parent with 
         | ParentNone -> vis 

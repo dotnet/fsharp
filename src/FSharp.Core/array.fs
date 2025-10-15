@@ -5,11 +5,9 @@ namespace Microsoft.FSharp.Collections
 //#nowarn "1118" // 'Make' marked 'inline', perhaps because a recursive value was marked 'inline'
 
 open System
-open System.Diagnostics
 open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
