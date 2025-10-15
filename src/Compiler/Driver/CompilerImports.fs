@@ -1586,8 +1586,10 @@ and [<Sealed>] TcImports
 
 #if !NO_TYPEPROVIDERS
     member private tcImports.AttachDisposeTypeProviderAction action =
-        CheckDisposed()
-        disposeTypeProviderActions.Add action
+        tciLock.AcquireLock(fun tcitok ->
+            CheckDisposed()
+            RequireTcImportsLock(tcitok, disposeTypeProviderActions)
+            disposeTypeProviderActions.Add action)
 #endif
 
     // Note: the returned binary reader is associated with the tcImports, i.e. when the tcImports are closed
