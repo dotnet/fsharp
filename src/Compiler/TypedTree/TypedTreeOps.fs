@@ -34,10 +34,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
-let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
-let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
-
 let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
     match x,y with
     | null,null -> 0
@@ -2331,7 +2327,7 @@ let CollectTypars = CollectTyparsAndLocals
 let CollectLocals = CollectTyparsAndLocals
 
 let CollectTyparsAndLocalsWithStackGuard() =
-    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth, "AccFreeVarsStackGuardDepth")
+    let stackGuard = StackGuard("AccFreeVarsStackGuardDepth")
     CollectTyparsAndLocalsImpl (Some stackGuard)
 
 let CollectLocalsWithStackGuard() = CollectTyparsAndLocalsWithStackGuard()
@@ -6526,31 +6522,31 @@ and remapImplFile ctxt compgen tmenv implFile =
 // Entry points
 
 let remapAttrib g tmenv attrib = 
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapAttribImpl ctxt tmenv attrib
 
 let remapExpr g (compgen: ValCopyFlag) (tmenv: Remap) expr =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen tmenv expr
 
 let remapPossibleForallTy g tmenv ty =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapPossibleForallTyImpl ctxt tmenv ty
 
 let copyModuleOrNamespaceType g compgen mtyp =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
 
 let copyExpr g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen Remap.Empty e    
 
 let copyImplFile g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapImplFile ctxt compgen Remap.Empty e |> fst
 
 let instExpr g tpinst e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
 //--------------------------------------------------------------------------
@@ -7440,7 +7436,7 @@ let ExprFolder0 =
 type ExprFolders<'State> (folders: ExprFolder<'State>) =
     let mutable exprFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
     let mutable exprNoInterceptFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
-    let stackGuard = StackGuard(FoldExprStackGuardDepth, "FoldExprStackGuardDepth")
+    let stackGuard = StackGuard("FoldExprStackGuardDepth")
 
     let rec exprsF z xs = 
         List.fold exprFClosure z xs
@@ -9969,7 +9965,7 @@ and remapValToNonLocal ctxt tmenv inp =
     inp |> Construct.NewModifiedVal (remapValData ctxt tmenv)
 
 let ApplyExportRemappingToEntity g tmenv x =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapTyconToNonLocal ctxt tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
