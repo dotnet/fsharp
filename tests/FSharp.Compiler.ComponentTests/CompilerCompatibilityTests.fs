@@ -1,12 +1,11 @@
 module FSharp.Compiler.ComponentTests.CompilerCompatibilityTests
 
-open System
+
 open System.IO
 open Xunit
-open FSharp.Test
-open FSharp.Test.Assert
 open TestFramework
 
+[<FSharp.Test.RunTestCasesInSequence>]
 type CompilerCompatibilityTests() =
 
     let projectsPath = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../projects/CompilerCompat"))
@@ -22,16 +21,13 @@ type CompilerCompatibilityTests() =
         let (exitCode, output, error) = Commands.executeProcess "dotnet" args projectPath
         
         if exitCode <> 0 then
-            let outputStr = String.concat "\n" (List.ofArray output)
-            let errorStr = String.concat "\n" (List.ofArray error)
-            failwith $"Build failed with exit code {exitCode}. Output: {outputStr}. Error: {errorStr}"
+            failwith $"Build failed with exit code {exitCode}. Output: {output}. Error: {error}"
         
-        String.concat "\n" (List.ofArray output)
+        output
     
     let runApp appBinaryPath =
-        let (exitCode, output, error) = Commands.executeProcess "dotnet" appBinaryPath (Path.GetDirectoryName(appBinaryPath))
-        (exitCode, String.concat "\n" (List.ofArray output), String.concat "\n" (List.ofArray error))
-    
+        Commands.executeProcess "dotnet" appBinaryPath (Path.GetDirectoryName(appBinaryPath))
+
     let cleanBinObjDirectories projectPath =
         let binPath = Path.Combine(projectPath, "bin")
         let objPath = Path.Combine(projectPath, "obj")
