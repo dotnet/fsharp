@@ -16,7 +16,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 
 module Utils =
-    let replaceLastIdentToDisplayName idents (displayName: string) =
+    let replaceLastIdentToDisplayName (idents: string array) (displayName: string) =
         match idents |> Array.tryFindIndexBack (fun i -> displayName.StartsWith(i, System.StringComparison.Ordinal)) with
         | Some x when x = idents.Length - 1 -> idents |> Array.replace (idents.Length - 1) displayName
         | Some x -> 

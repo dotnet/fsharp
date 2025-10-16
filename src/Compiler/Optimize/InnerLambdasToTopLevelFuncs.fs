@@ -22,8 +22,6 @@ open FSharp.Compiler.TcGlobals
 
 let verboseTLR = false
 
-let InnerLambdasToTopLevelFunctionsStackGuardDepth = StackGuard.GetDepthOption "InnerLambdasToTopLevelFunctions"
-
 //-------------------------------------------------------------------------
 // library helpers
 //-------------------------------------------------------------------------
@@ -1372,7 +1370,7 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
                 recShortCallS = recShortCallS
                 envPackM = envPackM
                 fHatM = fHatM
-                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth, "InnerLambdasToTopLevelFunctionsStackGuardDepth") }
+                stackGuard = StackGuard("InnerLambdasToTopLevelFunctionsStackGuardDepth") }
           let z = Pass4_RewriteAssembly.rewriteState0
           Pass4_RewriteAssembly.TransImplFile penv z expr
 
