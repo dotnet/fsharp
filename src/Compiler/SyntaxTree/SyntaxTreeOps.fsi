@@ -7,6 +7,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
+open Internal.Utilities
 
 [<Class>]
 type SynArgNameGenerator =
@@ -321,6 +322,12 @@ val noInferredTypars: SynValTyparDecls
 val unionBindingAndMembers: bindings: SynBinding list -> members: SynMemberDefn list -> SynBinding list
 
 val synExprContainsError: inpExpr: SynExpr -> bool
+
+val stdinMockFileName: string
+
+val getSourceIdentifierValue: PathMap -> string -> range -> string
+
+val applyLineDirectivesToSourceIdentifier: string -> string -> range -> string
 
 val parsedHashDirectiveArguments: ParsedHashDirectiveArgument list -> LanguageVersion -> string list
 

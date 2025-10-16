@@ -45,10 +45,7 @@ open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
-let IlxGenStackGuardDepth = StackGuard.GetDepthOption "IlxGen"
-
-let getEmptyStackGuard () =
-    StackGuard(IlxGenStackGuardDepth, "IlxAssemblyGenerator")
+let getEmptyStackGuard () = StackGuard("IlxAssemblyGenerator")
 
 let IsNonErasedTypar (tp: Typar) = not tp.IsErased
 
@@ -2334,6 +2331,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     // A memoization table for generating value types for big constant arrays
     let rawDataValueTypeGenerator =
         MemoizationTable<CompileLocation * int, ILTypeSpec>(
+            "rawDataValueTypeGenerator",
             (fun (cloc, size) ->
                 let name =
                     CompilerGeneratedName("T" + string (newUnique ()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
