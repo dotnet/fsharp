@@ -464,10 +464,14 @@ module StructuralUtilities =
             | TType_measure m -> yield! accumulateMeasure m
         }
 
-    // If the sequence got too long, just drop it.
+    let private neverEqual = [| TypeToken.NeverEqual NeverEqual.Singleton |]
+
+    let InvalidTypeStructure = TypeStructure neverEqual
+
+    // If the sequence got too long, just drop it, we could be dealing with an infinite type.
     let private getTokens tokens =
         let result = tokens |> Seq.truncate 256 |> Array.ofSeq
-        if result.Length = 256 then Array.singleton (TypeToken.NeverEqual NeverEqual.Singleton) else result
+        if result.Length = 256 then neverEqual else result
 
     /// Get the full structure of a type as a sequence of tokens, suitable for equality
     let getTypeStructure =
