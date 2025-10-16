@@ -30,7 +30,7 @@ type TTypeCacheKey =
     | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
     static member TryGetFromStrippedTypes(ty1, ty2, canCoerce) =
         let t1, t2 = getTypeStructure ty1, getTypeStructure ty2
-        if t1 = InvalidTypeStructure || t2 = InvalidTypeStructure then
+        if t1.IsPossiblyInfinite || t2.IsPossiblyInfinite then
             ValueNone
         else
             ValueSome (TTypeCacheKey(t1, t2, canCoerce))
