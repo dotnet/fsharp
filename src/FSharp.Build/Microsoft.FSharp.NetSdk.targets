@@ -56,8 +56,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <!-- Check for design-time provider references and add target if needed -->
   <!-- This target attempts to update TargetsForTfmSpecificContentInPackage based on reference metadata -->
-  <!-- NOTE: This is experimental - MSBuild target scheduling happens at graph construction time, -->
-  <!-- so updating the property here may be too late. Testing to see how MSBuild reacts. -->
   <Target Name="_CheckForDesignTimeProviderReferences" BeforeTargets="GenerateNuspec" Condition=" '$(IsFSharpDesignTimeProvider)' != 'true' ">
     <ItemGroup>
       <_FSharpDesignTimeProviderProject Include="@(ProjectReference)" Condition="'%(ProjectReference.IsFSharpDesignTimeProvider)' == 'true'" />
