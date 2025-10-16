@@ -256,8 +256,8 @@ module MemberDefinitions_OverloadingMembers =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 438, Line 6, Col 19, Line 6, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
             (Error 438, Line 7, Col 19, Line 7, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")
+            (Error 438, Line 6, Col 19, Line 6, Col 20, "Duplicate method. The method 'M' has the same name and signature as another method in type 'Q'.")           
         ]
 
     // NativePtrOverloads03.fs - regression test, previously failing overloads should now compile
@@ -277,7 +277,7 @@ module MemberDefinitions_OverloadingMembers =
         |> withOptions ["--nowarn:9"]
         |> compile
         |> shouldFail
-        |> withDiagnostics [
-            (Error 438, Line 8, Col 19, Line 8, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
+        |> withDiagnostics [            
             (Error 438, Line 9, Col 19, Line 9, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
+            (Error 438, Line 8, Col 19, Line 8, Col 20, "Duplicate method. The method 'H' has the same name and signature as another method in type 'S' once tuples, functions, units of measure and/or provided types are erased.")
         ]
