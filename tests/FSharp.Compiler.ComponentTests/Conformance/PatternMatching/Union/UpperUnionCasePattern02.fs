@@ -17,3 +17,11 @@ let test5 () =
 let test6 () =
     try failwith "test"  
     with UndefinedException -> 1
+
+let test7 () =
+    try failwith "test"  
+    with UndefinedException as Foo -> 1
+
+let test8 () =
+    try failwith "test"  
+    with | UndefinedException as Foo -> 1

@@ -200,5 +200,8 @@ module BindingExpressions =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 49, Line 61, Col 6, Line 61, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
+            (Warning 49, Line 61, Col 6, Line 61, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 122, Col 6, Line 122, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 125, Col 6, Line 125, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
+            (Warning 49, Line 128, Col 6, Line 128, Col 8, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
         ]
