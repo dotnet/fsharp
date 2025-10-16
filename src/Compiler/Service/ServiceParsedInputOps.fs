@@ -1440,6 +1440,25 @@ module ParsedInput =
                 None
         | _ -> None
 
+    let tryMakeOpenDeclarationCtx target m (pos: pos) =
+        // in theory, this means we're "in an open"
+        // in practice, because the parse tree/visitors do not handle attributes well yet, need extra check below to ensure not e.g. $here$
+        //     open System
+        //     [<Attr$
+        //     let f() = ()
+        // inside an attribute on the next item
+        let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
+
+        if rangeContainsPos m pos then
+            let isOpenType =
+                match target with
+                | SynOpenDeclTarget.Type _ -> true
+                | SynOpenDeclTarget.ModuleOrNamespace _ -> false
+
+            Some(CompletionContext.OpenDeclaration isOpenType)
+        else
+            None
+
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option =
 
@@ -1491,6 +1510,8 @@ module ParsedInput =
                             lineStr.Trim().Split(' ') |> Array.contains "new"
                             ->
                             Some(CompletionContext.Inherit(InheritanceContext.Unknown, ([], None)))
+
+                        | SynExpr.Open(target, mOpen, _, _) -> tryMakeOpenDeclarationCtx target mOpen pos
 
                         | _ -> defaultTraverse expr
 
@@ -1760,24 +1781,7 @@ module ParsedInput =
 
                 member _.VisitModuleDecl(_, defaultTraverse, decl) =
                     match decl with
-                    | SynModuleDecl.Open(target, m) ->
-                        // in theory, this means we're "in an open"
-                        // in practice, because the parse tree/visitors do not handle attributes well yet, need extra check below to ensure not e.g. $here$
-                        //     open System
-                        //     [<Attr$
-                        //     let f() = ()
-                        // inside an attribute on the next item
-                        let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
-
-                        if rangeContainsPos m pos then
-                            let isOpenType =
-                                match target with
-                                | SynOpenDeclTarget.Type _ -> true
-                                | SynOpenDeclTarget.ModuleOrNamespace _ -> false
-
-                            Some(CompletionContext.OpenDeclaration isOpenType)
-                        else
-                            None
+                    | SynModuleDecl.Open(target, m) -> tryMakeOpenDeclarationCtx target m pos
 
                     // module Namespace.Top
                     // module Nested

@@ -559,6 +559,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
         | SynExpr.Dynamic(funcExpr, _, argExpr, _) ->
             let continuations = List.map visit [ funcExpr; argExpr ]
             Continuation.concatenate continuations continuation
+        | SynExpr.Open(body = body) -> visit body continuation
 
     visit e id
 
