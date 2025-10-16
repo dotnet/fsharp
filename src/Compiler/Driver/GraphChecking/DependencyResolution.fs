@@ -237,12 +237,9 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 | Some sigIdx -> Array.singleton sigIdx
 
             let wrongOrderSignature =
-                if file.ParsedInput.IsSigFile then
-                    match filePairs.TryGetWrongOrderSignatureToImplementationIndex file.Idx with
-                    | Some idx -> Array.singleton idx
-                    | None -> Array.empty
-                else
-                    Array.empty
+                match filePairs.TryGetWrongOrderSignatureToImplementationIndex file.Idx with
+                | None -> Array.empty
+                | Some idx -> Array.singleton idx
 
             let allDependencies =
                 [|
