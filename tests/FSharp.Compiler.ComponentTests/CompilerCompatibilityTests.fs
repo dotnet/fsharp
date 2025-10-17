@@ -91,7 +91,7 @@ type CompilerCompatibilityTests() =
         
         // For net9, create a global.json to pin SDK version
         if compilerVersion = "net9" then
-            createGlobalJson projectDir "9.0.306" |> ignore
+            createGlobalJson projectDir "9.0.300" |> ignore
         
         let buildArgs =
             if compilerVersion = "local" then
@@ -117,7 +117,7 @@ type CompilerCompatibilityTests() =
         
         // For net9, create a global.json to pin SDK version
         if compilerVersion = "net9" then
-            createGlobalJson projectDir "9.0.306" |> ignore
+            createGlobalJson projectDir "9.0.300" |> ignore
         
         let packArgs =
             if compilerVersion = "local" then
