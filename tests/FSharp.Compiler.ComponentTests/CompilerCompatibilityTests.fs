@@ -18,7 +18,7 @@ type CompilerCompatibilityTests() =
         let content = $"""{{
   "sdk": {{
     "version": "{sdkVersion}",
-    "rollForward": "latestPatch"
+    "rollForward": "latestMinor"
   }}
 }}"""
         File.WriteAllText(globalJsonPath, content)
@@ -195,7 +195,7 @@ type CompilerCompatibilityTests() =
         
         // For net9, create global.json before restore
         if appCompilerVersion = "net9" then
-            createGlobalJson appProjectPath "9.0.306" |> ignore
+            createGlobalJson appProjectPath "9.0.300" |> ignore
         
         try
             // Step 3: Clear global packages cache to ensure we get the fresh package, then restore the app  
