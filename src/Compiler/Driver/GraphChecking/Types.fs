@@ -25,6 +25,11 @@ type internal FileInProject =
         ParsedInput: ParsedInput
     }
 
+    member x.IsScript =
+        match x.ParsedInput with
+        | ParsedInput.ImplFile impl -> impl.IsScript
+        | _ -> false
+
 /// There is a subtle difference between a module and namespace.
 /// A namespace does not necessarily expose a set of dependent files.
 /// Only when the namespace exposes types that could later be inferred.
@@ -146,20 +151,25 @@ type internal QueryTrie = LongIdentifier -> QueryTrieNodeResult
 
 /// Helper class to help map signature files to implementation files and vice versa.
 type internal FilePairMap(files: FileInProject array) =
+    let sigFiles = files |> Array.filter _.ParsedInput.IsSigFile
+    let implFiles = files |> Array.filter _.ParsedInput.IsImplFile
+
     let buildBiDirectionalMaps pairs =
         Map.ofArray pairs, Map.ofArray (pairs |> Array.map (fun (a, b) -> (b, a)))
 
-    let implToSig, sigToImpl =
-        files
-        |> Array.choose (fun f ->
-            match f.ParsedInput with
-            | ParsedInput.SigFile _ ->
-                files
-                |> Array.skip (f.Idx + 1)
-                |> Array.tryFind (fun (implFile: FileInProject) -> $"{implFile.FileName}i" = f.FileName)
-                |> Option.map (fun (implFile: FileInProject) -> (implFile.Idx, f.Idx))
-            | ParsedInput.ImplFile _ -> None)
-        |> buildBiDirectionalMaps
+    let pairs =
+        sigFiles
+        |> Array.map (fun sigFile ->
+            implFiles
+            |> Array.tryFind (fun (implFile: FileInProject) -> $"{implFile.FileName}i" = sigFile.FileName)
+            |> Option.map (fun (implFile: FileInProject) -> (sigFile.Idx, implFile.Idx)))
+        |> Array.choose id
+
+    let goodPairs, wrongOrderPairs =
+        pairs |> Array.partition (fun (sigIdx, implIdx) -> sigIdx < implIdx)
+
+    let sigToImpl, implToSig = buildBiDirectionalMaps goodPairs
+    let wrongOrder = wrongOrderPairs |> Map.ofArray
 
     member x.GetSignatureIndex(implementationIndex: FileIndex) = Map.find implementationIndex implToSig
     member x.GetImplementationIndex(signatureIndex: FileIndex) = Map.find signatureIndex sigToImpl
@@ -174,6 +184,8 @@ type internal FilePairMap(files: FileInProject array) =
             None
 
     member x.IsSignature(index: FileIndex) = Map.containsKey index sigToImpl
+
+    member x.TryGetWrongOrderSignatureToImplementationIndex(index: FileIndex) = wrongOrder |> Map.tryFind index
 
 /// Callback that returns a previously calculated 'Result and updates 'State accordingly.
 type internal Finisher<'Node, 'State, 'Result> = Finisher of node: 'Node * finisher: ('State -> 'Result * 'State)
