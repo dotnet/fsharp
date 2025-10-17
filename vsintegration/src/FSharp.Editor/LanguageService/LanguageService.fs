@@ -26,6 +26,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open CancellableTasks
 open FSharp.Compiler.Text
+open Microsoft.VisualStudio.Editor
 
 #nowarn "9" // NativePtr.toNativeInt
 #nowarn "57" // Experimental stuff
@@ -411,6 +412,19 @@ type internal FSharpPackage() as this =
                 |> CancellableTask.startAsTask cancellationToken)
         )
 
+#if DEBUG
+    override _.RegisterOnAfterPackageLoadedAsyncWork(afterPackageLoadedTasks: PackageLoadTasks) =
+        afterPackageLoadedTasks.AddTask(
+            false,
+            fun _ _ ->
+                task {
+                    DebugHelpers.FSharpServiceTelemetry.periodicallyDisplayMetrics
+                    |> CancellableTask.start this.DisposalToken
+                    |> ignore
+                }
+        )
+#endif
+
     override _.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)
     override this.CreateLanguageService() = FSharpLanguageService(this)
@@ -448,11 +462,13 @@ type internal FSharpLanguageService(package: FSharpPackage) =
         let outliningManagerService =
             this.Package.ComponentModel.GetService<IOutliningManagerService>()
 
-        let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
+        let wpfTextView =
+            this.Package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>().GetWpfTextView(textView)
+
         let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
 
         if not (isNull outliningManager) then
-            let settings = this.Workspace.Services.GetService<EditorOptions>()
+            let settings = this.Workspace.Value.Services.GetService<EditorOptions>()
             outliningManager.Enabled <- settings.Advanced.IsOutliningEnabled
 
 [<Composition.Shared>]

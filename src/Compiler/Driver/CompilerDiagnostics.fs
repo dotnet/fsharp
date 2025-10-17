@@ -733,21 +733,15 @@ type Exception with
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
 
-        | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as ty1), (TType_measure _ as ty2), m, m2, _) ->
-            // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-
-            os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1 ty2)
-
-            if m.StartLine <> m2.StartLine then
-                os.AppendString(SeeAlsoE().Format(stringOfRange m))
-
         | ConstraintSolverTypesNotInEqualityRelation(denv, ty1, ty2, m, m2, contextInfo) ->
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-            let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let ty1str, ty2str, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun _ ->
-                os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1 ty2))
+            match ty1, ty2 with
+            | TType_measure _, TType_measure _ -> os.AppendString(ConstraintSolverTypesNotInEqualityRelation1E().Format ty1str ty2str)
+            | _ ->
+                OutputTypesNotInEqualityRelationContextInfo contextInfo ty1str ty2str m os (fun _ ->
+                    os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1str ty2str))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
@@ -816,11 +810,26 @@ type Exception with
                     os.AppendString(SeeAlsoE().Format(stringOfRange m1))
 
         | ErrorFromAddingTypeEquation(g, denv, ty1, ty2, e, _) ->
-            if not (typeEquiv g ty1 ty2) then
-                let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let e =
+                if not (typeEquiv g ty1 ty2) then
+                    let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-                if ty1 <> ty2 + tpcs then
-                    os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+                    if ty1 <> ty2 + tpcs then
+                        os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
+
+                    e
+
+                else
+                    // Fix for https://github.com/dotnet/fsharp/issues/18905
+                    // If ty1 = ty2 after the type solving, then ty2 holds an actual type.
+                    // The order of expected and actual types in ConstraintSolverTypesNotInEqualityRelation can be arbitrary
+                    // due to type solving logic.
+                    // If ty1 = ty2 = ty2b, it means ty2b is also an actual type, and it needs to be swapped with ty1b
+                    // to be correctly used in the type mismatch error message based on ConstraintSolverTypesNotInEqualityRelation
+                    match e with
+                    | ConstraintSolverTypesNotInEqualityRelation(env, ty1b, ty2b, m, m2, contextInfo) when typeEquiv g ty2 ty2b ->
+                        ConstraintSolverTypesNotInEqualityRelation(env, ty2b, ty1b, m, m2, contextInfo)
+                    | _ -> e
 
             e.Output(os, suggestNames)
 

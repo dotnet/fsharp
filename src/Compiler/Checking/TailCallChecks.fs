@@ -16,8 +16,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_TailCallChecks" 50
-
 [<return: Struct>]
 let (|ValUseAtApp|_|) e =
     match e with
@@ -78,6 +76,9 @@ type cenv =
 
         /// Values in module that have been marked [<TailCall>]
         mustTailCall: Zset<Val>
+
+        /// Indicates whether the current method has pinned locals that would prevent tail calls
+        hasPinnedLocals: bool
     }
 
     override x.ToString() = "<cenv>"
@@ -202,6 +203,7 @@ let CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
                             && not (IsValRefIsDllImport cenv.g vref)
                             && not isCCall
                             && not hasByrefArg
+                            && not cenv.hasPinnedLocals
 
                         noTailCallBlockers // blockers that will prevent the IL level from emitting a tail instruction
                     else
@@ -730,11 +732,26 @@ and CheckBinding cenv alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bind) :
         | Some info -> info
         | _ -> ValReprInfo.emptyValData
 
+    // Check if this binding introduces a pinned local
+    let cenv =
+        if v.IsFixed then
+            { cenv with hasPinnedLocals = true }
+        else
+            cenv
+
     CheckLambdas isTop (Some v) cenv v.ShouldInline valReprInfo tailCall alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv binds =
     for bind in binds do
-        CheckBinding cenv false PermitByRefExpr.Yes bind
+        let (TBind(v, _, _)) = bind
+        // Update the environment if this binding is fixed
+        let currentCenv =
+            if v.IsFixed then
+                { cenv with hasPinnedLocals = true }
+            else
+                cenv
+
+        CheckBinding currentCenv false PermitByRefExpr.Yes bind
 
 let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
 
@@ -868,9 +885,10 @@ let CheckImplFile (g: TcGlobals, amap, reportErrors, implFileContents) =
         let cenv =
             {
                 g = g
-                stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
+                stackGuard = StackGuard("CheckImplFile")
                 amap = amap
                 mustTailCall = Zset.empty valOrder
+                hasPinnedLocals = false
             }
 
         CheckDefnInModule cenv implFileContents

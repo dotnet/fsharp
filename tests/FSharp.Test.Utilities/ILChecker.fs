@@ -15,9 +15,7 @@ module ILChecker =
 
     let private exec exe args =
         let arguments = args |> String.concat " "
-        let exitCode, _output, errors = Commands.executeProcess exe arguments ""
-        let errors = errors |> String.concat Environment.NewLine
-        errors, exitCode
+        Commands.executeProcess exe arguments ""
 
     /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']
     let private filterSpecialComment (text: string) =
@@ -101,7 +99,7 @@ module ILChecker =
 
         let ildasmFullArgs = [ dllFilePath; $"-out=%s{ilFilePath}"; yield! ildasmArgs  ]
 
-        let stdErr, exitCode =
+        let exitCode, _, stdErr =
             let ildasmCommandPath = Path.ChangeExtension(dllFilePath, ".ildasmCommandPath")
             File.WriteAllLines(ildasmCommandPath, [| $"{ildasmPath} {ildasmFullArgs}" |] )
             exec ildasmPath ildasmFullArgs
@@ -212,5 +210,5 @@ module ILChecker =
 
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
-        let errors, _ = exec ilasmPath [ $"%s{ilFilePath} /output=%s{dllFilePath} /dll" ]
+        let _, _, errors = exec ilasmPath [ $"%s{ilFilePath} /output=%s{dllFilePath} /dll" ]
         errors

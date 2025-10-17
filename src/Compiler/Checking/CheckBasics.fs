@@ -28,12 +28,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeProviders
 #endif
 
-#if DEBUG
-let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 40
-#else
-let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
-#endif
-
 /// The ValReprInfo for a value, except the number of typars is not yet inferred
 type PrelimValReprInfo =
     | PrelimValReprInfo of
@@ -325,7 +319,7 @@ type TcFileState =
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
       // forward call
-      TcSimplePats: TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> string list * TcPatLinearEnv
+      TcSimplePats: TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> SynPat list * bool -> string list * TcPatLinearEnv
 
       // forward call
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
@@ -353,7 +347,7 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          stackGuard = StackGuard(TcStackGuardDepth, "TcFileState")
+          stackGuard = StackGuard("TcFileState")
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript
