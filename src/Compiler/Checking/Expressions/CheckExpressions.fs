@@ -10745,8 +10745,15 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
 
     let inputTypeForNextPatterns=
         let removeNull t =
-            let stripped = stripTyEqns cenv.g t
-            replaceNullnessOfTy KnownWithoutNull stripped
+            // Check if this is a type abbreviation that we should preserve
+            match t with
+            | TType_app (tcref, tinst, _) when tcref.Deref.IsTypeAbbrev ->
+                // Preserve the type abbreviation structure while refining nullness
+                TType_app (tcref, tinst, KnownWithoutNull)
+            | _ ->
+                // Use existing logic for non-abbreviation types
+                let stripped = stripTyEqns cenv.g t
+                replaceNullnessOfTy KnownWithoutNull stripped
         let rec isWild (p:Pattern) =
             match p with
             | TPat_wild _ -> true
