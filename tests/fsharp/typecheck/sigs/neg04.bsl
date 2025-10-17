@@ -128,4 +128,4 @@ neg04.fs(159,47,159,57): typecheck error FS0692: This function value is being us
 
 neg04.fs(163,54,163,67): typecheck error FS0692: This function value is being used to construct a delegate type whose signature includes a byref argument. You must use an explicit lambda expression taking 1 arguments.
 
-neg04.fs(178,13,178,18): typecheck error FS0001: The type '('a -> unit)' does not support the 'equality' constraint because it is a function type
+neg04.fs(178,13,178,18): typecheck error FS0001: The type ''a -> unit' does not support the 'equality' constraint because it is a function type
