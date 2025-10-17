@@ -3,13 +3,27 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' == 'True'">../../../../UseLocalCompiler.Directory.Build.props</DirectoryBuildPropsPath>
-    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' != 'True'"></DirectoryBuildPropsPath>
+    
+    <!-- Package properties for NuGet pack -->
+    <IsPackable>true</IsPackable>
+    <PackageId>CompilerCompatLib</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Test</Authors>
+    <Description>Test library for compiler compatibility tests</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="LibBuildInfo.fs" />
     <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <!-- When building with local compiler, include FSharp.Core in the package so consumers can find it -->
+  <ItemGroup Condition="'$(LoadLocalFSharpBuild)' == 'True'">
+    <Content Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll">
+      <PackagePath>lib/$(TargetFramework)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
   <Target Name="GenerateLibBuildInfo" BeforeTargets="BeforeCompile">

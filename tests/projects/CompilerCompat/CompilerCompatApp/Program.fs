@@ -5,17 +5,19 @@ open System
 [<EntryPoint>]
 let main _argv =
     try
+        // Helper to get the actual compiler path (prefer dotnetFscCompilerPath when using local build)
+        let getActualCompilerPath (dotnetPath: string) (fallbackPath: string) =
+            if dotnetPath <> "N/A" && dotnetPath <> "" then dotnetPath else fallbackPath
+        
         // Print detailed build information to verify which compiler was used
         printfn "=== BUILD VERIFICATION ==="
         printfn "Library Build Info:"
         printfn "  SDK Version: %s" LibBuildInfo.sdkVersion
-        printfn "  F# Compiler Path: %s" LibBuildInfo.fsharpCompilerPath
-        printfn "  .NET FSC Compiler Path: %s" LibBuildInfo.dotnetFscCompilerPath
+        printfn "  F# Compiler Path: %s" (getActualCompilerPath LibBuildInfo.dotnetFscCompilerPath LibBuildInfo.fsharpCompilerPath)
         printfn "  Is Local Build: %b" LibBuildInfo.isLocalBuild
         printfn "Application Build Info:"
         printfn "  SDK Version: %s" AppBuildInfo.sdkVersion
-        printfn "  F# Compiler Path: %s" AppBuildInfo.fsharpCompilerPath
-        printfn "  .NET FSC Compiler Path: %s" AppBuildInfo.dotnetFscCompilerPath
+        printfn "  F# Compiler Path: %s" (getActualCompilerPath AppBuildInfo.dotnetFscCompilerPath AppBuildInfo.fsharpCompilerPath)
         printfn "  Is Local Build: %b" AppBuildInfo.isLocalBuild
         printfn "=========================="
         

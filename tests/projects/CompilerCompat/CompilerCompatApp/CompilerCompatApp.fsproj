@@ -3,8 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' == 'True'">../../../../UseLocalCompiler.Directory.Build.props</DirectoryBuildPropsPath>
-    <DirectoryBuildPropsPath Condition="'$(LoadLocalFSharpBuild)' != 'True'"></DirectoryBuildPropsPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../CompilerCompatLib/CompilerCompatLib.fsproj" />
+    <!-- Reference the library as a NuGet package instead of a project reference -->
+    <!-- This allows testing cross-compiler scenarios where lib and app use different compilers -->
+    <PackageReference Include="CompilerCompatLib" Version="1.0.0" />
   </ItemGroup>
 
   <Target Name="GenerateAppBuildInfo" BeforeTargets="BeforeCompile">
