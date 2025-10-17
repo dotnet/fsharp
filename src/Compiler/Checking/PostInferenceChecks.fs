@@ -2640,6 +2640,35 @@ let CheckEntityDefns cenv env tycons =
 // check modules
 //--------------------------------------------------------------------------
 
+/// Check for duplicate extension member names that would cause IL conflicts.
+/// Extension members for types with the same simple name but different fully qualified names 
+/// will be emitted into the same IL container type, causing a duplicate member error.
+let CheckForDuplicateExtensionMemberNames (cenv: cenv) (vals: Val seq) =
+    if cenv.reportErrors then
+        // Group extension members by the simple name of the type they extend
+        let extensionMembers = 
+            vals 
+            |> Seq.filter (fun v -> v.IsExtensionMember && v.IsMember)
+            |> Seq.toList
+
+        if not extensionMembers.IsEmpty then
+            let groupedBySimpleName =
+                extensionMembers
+                |> List.groupBy (fun v -> v.MemberApparentEntity.DisplayNameCore)
+            
+            for (simpleName, members) in groupedBySimpleName do
+                // Check if members extend different fully qualified types
+                let distinctTypes = 
+                    members 
+                    |> List.map (fun v -> v.MemberApparentEntity)
+                    |> List.distinctBy (fun tcref -> tcref.Stamp)
+                
+                if distinctTypes.Length > 1 then
+                    // Found extensions for types with same simple name but different fully qualified names
+                    // Report error on the second (and subsequent) extensions
+                    for v in members |> List.skip 1 do
+                        errorR(Error(FSComp.SR.tcDuplicateExtensionMemberNames(simpleName), v.Range))
+
 let rec CheckDefnsInModule cenv env mdefs =
     for mdef in mdefs do
         CheckDefnInModule cenv env mdef
@@ -2649,6 +2678,7 @@ and CheckNothingAfterEntryPoint cenv m =
         errorR(Error(FSComp.SR.chkEntryPointUsage(), m))
 
 and CheckDefnInModule cenv env mdef =
+    CheckForDuplicateExtensionMemberNames cenv (allTopLevelValsOfModDef mdef)
     match mdef with
     | TMDefRec(isRec, _opens, tycons, mspecs, m) ->
         CheckNothingAfterEntryPoint cenv m
