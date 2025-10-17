@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    Isolated Directory.Build.props for CompilerCompat test projects.
+    Prevents import of repository root's Directory.Build.props for isolated build environments.
+  -->
+  
+  <PropertyGroup>
+    <CompilerCompatTestProject>true</CompilerCompatTestProject>
+  </PropertyGroup>
+</Project>
