@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 
 module internal SR =
     let private resources =
-        lazy (System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
+        lazy System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly())
 
     let GetString (name: string) =
         let s =
@@ -34,7 +34,7 @@ module internal DiagnosticMessage =
         not (ty.IsArray || ty.IsByRef || ty.IsPointer)
 
     let isFunctionType (ty1: System.Type) =
-        isNamedType (ty1)
+        isNamedType ty1
         && ty1.IsGenericType
         && System.Type.op_Equality (ty1.GetGenericTypeDefinition(), funTyC)
 

@@ -111,7 +111,7 @@ type ILAssemblyRef =
 
     member EqualsIgnoringVersion: ILAssemblyRef -> bool
 
-    interface System.IComparable
+    interface IComparable
 
 [<Sealed>]
 type ILModuleRef =
@@ -123,7 +123,7 @@ type ILModuleRef =
 
     member Hash: byte[] option
 
-    interface System.IComparable
+    interface IComparable
 
 // Scope references
 [<StructuralEquality; StructuralComparison; RequireQualifiedAccess>]
@@ -239,7 +239,7 @@ type ILTypeRef =
 
     override ToString: unit -> string
 
-    interface System.IComparable
+    interface IComparable
 
 /// Type specs and types.
 [<Sealed>]
@@ -267,7 +267,7 @@ type ILTypeSpec =
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
 
-    interface System.IComparable
+    interface IComparable
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILType =
@@ -371,7 +371,7 @@ type ILMethodRef =
 
     member GetCallingSignature: unit -> ILCallingSignature
 
-    interface System.IComparable
+    interface IComparable
 
 /// Formal identities of fields.
 [<StructuralEquality; StructuralComparison>]
@@ -403,7 +403,7 @@ type ILMethodSpec =
 
     member FormalReturnType: ILType
 
-    interface System.IComparable
+    interface IComparable
 
 /// Field specs.  The data given for a ldfld, stfld etc. instruction.
 [<StructuralEquality; StructuralComparison>]
@@ -2490,7 +2490,7 @@ type internal ILPropertyRef =
     static member Create: ILTypeRef * string -> ILPropertyRef
     member DeclaringTypeRef: ILTypeRef
     member Name: string
-    interface System.IComparable
+    interface IComparable
 
 type ILReferences =
     { AssemblyReferences: ILAssemblyRef[]

@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
 open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
-open System.Collections.Generic
 
 /// <summary>Contains operations for working with arrays.</summary>
 ///

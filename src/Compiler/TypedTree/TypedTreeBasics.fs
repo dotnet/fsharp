@@ -542,14 +542,14 @@ let compPathOfCcu (ccu: CcuThunk) = CompPath(ccu.ILScopeRef, SyntaxAccess.Unknow
 let taccessPublic = TAccess []
 let compPathInternal = CompPath(ILScopeRef.Local, SyntaxAccess.Internal, [])
 let taccessInternal = TAccess [compPathInternal]
-let taccessPrivate accessPath = let (CompPath(sc,_, paths)) = accessPath in TAccess [CompPath(sc, TypedTree.SyntaxAccess.Private, paths)]
+let taccessPrivate accessPath = let (CompPath(sc,_, paths)) = accessPath in TAccess [CompPath(sc, SyntaxAccess.Private, paths)]
 
 let combineAccess access1 access2 =
     let (TAccess a1) = access1
     let (TAccess a2) = access2
     let combined =
-        if access1 = taccessPublic then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Public
-        elif access1 = taccessInternal then updateSyntaxAccessForCompPath (a1@a2) TypedTree.SyntaxAccess.Internal
+        if access1 = taccessPublic then updateSyntaxAccessForCompPath (a1@a2) SyntaxAccess.Public
+        elif access1 = taccessInternal then updateSyntaxAccessForCompPath (a1@a2) SyntaxAccess.Internal
         else (a1@a2)
     TAccess combined
 

@@ -2,27 +2,18 @@
 
 module internal FSharp.Compiler.TypeHierarchy
 
-open System
-open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Import.Nullness
 open FSharp.Compiler.Features
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.Xml
-
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
@@ -454,8 +445,8 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     let n1 = tinst.Length
     let n2 = tpsorig.Length
     let n3 = tps.Length
-    if n0 <> n1 then error(Error((FSComp.SR.tcInvalidTypeArgumentCount(n0, n1)), m))
-    if n2 <> n3 then error(Error((FSComp.SR.tcInvalidTypeArgumentCount(n2, n3)), m))
+    if n0 <> n1 then error(Error(FSComp.SR.tcInvalidTypeArgumentCount(n0, n1), m))
+    if n2 <> n3 then error(Error(FSComp.SR.tcInvalidTypeArgumentCount(n2, n3), m))
 
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps

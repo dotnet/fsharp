@@ -80,7 +80,7 @@ open FSharp.Compiler.TypeProviders
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
    
-let compgenId = mkSynId Range.range0 unassignedTyparName
+let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
     Construct.NewTypar(kind, rigid, SynTypar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
@@ -288,7 +288,7 @@ type ConstraintSolverState =
         else
             this.PostInferenceChecksFinal.Add check
 
-    member this.PopPostInferenceCheck (preDefaults) =
+    member this.PopPostInferenceCheck preDefaults =
         if preDefaults then
             this.PostInferenceChecksPreDefaults.RemoveAt(this.PostInferenceChecksPreDefaults.Count-1)
         else
@@ -791,9 +791,9 @@ let SimplifyMeasure g vars ms =
           let nonZeroVar = ListMeasureVarOccsWithNonZeroExponents ms
           let newms =
               ProdMeasures [
-                  for (c, e') in nonZeroCon do
+                  for c, e' in nonZeroCon do
                       Measure.RationalPower (Measure.Const(c, ms.Range), NegRational (DivRational e' e)) 
-                  for (v', e') in nonZeroVar do
+                  for v', e' in nonZeroVar do
                       if typarEq v v' then 
                           newvarExpr 
                       else 
@@ -1056,7 +1056,8 @@ and SolveNullnessEquiv (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
-            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))    
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc
+                            csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value,m2))    
         // Allow expected of WithNull and actual of WithoutNull except for specially marked APIs (handled above)        
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull -> CompleteD
         | _ -> 
@@ -1091,7 +1092,8 @@ and SolveNullnessSubsumesNullness (csenv: ConstraintSolverEnv) m2 (trace: Option
         | NullnessInfo.WithoutNull, NullnessInfo.WithoutNull -> CompleteD
         // Warn for 'strict "must pass null"` APIs like Option.ofObj
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull when shouldWarnUselessNullCheck csenv -> 
-            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc (csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value),m2))
+            WarnD(Error(FSComp.SR.tcPassingWithoutNullToANullableExpectingFunc
+                            csenv.SolverState.WarnWhenUsingWithoutNullOnAWithNullTarget.Value,m2))
         // Allow target of WithNull and actual of WithoutNull
         | NullnessInfo.WithNull, NullnessInfo.WithoutNull ->             
             CompleteD
@@ -1323,13 +1325,13 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
                 }
 
         // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
-        | (_, TType_app (tc2, [ms2], _)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
+        | _, TType_app (tc2, [ms2], _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2])) ->
             trackErrors {
                 do! SolveTypeEqualsType csenv ndeep m2 trace None (TType_measure(Measure.One m2)) ms2
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
             }
 
-        | (TType_app (tc1, [ms1], _), _) when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
+        | TType_app (tc1, [ms1], _), _ when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1])) ->
             trackErrors {
                 do! SolveTypeEqualsType csenv ndeep m2 trace None ms1 (TType_measure(Measure.One m2))
                 do! SolveNullnessEquiv csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) (nullnessOfTy g sty2)
@@ -2197,7 +2199,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             let nominalTys = GetNominalSupportOfMemberConstraint csenv nm traitInfo
 
             let minfos =
-                [ for (supportTy, nominalTy) in nominalTys do
+                [ for supportTy, nominalTy in nominalTys do
                     let infos =
                         match traitInfo.MemberFlags.MemberKind with
                         | SynMemberKind.Constructor ->

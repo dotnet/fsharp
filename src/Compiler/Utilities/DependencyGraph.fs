@@ -351,8 +351,8 @@ type GraphExtensions =
     [<Extension>]
     static member UnpackOneMany(dependencies: 'NodeValue seq, oneUnpacker, manyUnpacker) =
         let mutable oneResult = None
-        let manyResult = new ResizeArray<_>()
-        let extras = new ResizeArray<_>()
+        let manyResult = ResizeArray<_>()
+        let extras = ResizeArray<_>()
 
         for dependency in dependencies do
             match oneUnpacker dependency, manyUnpacker dependency with

@@ -309,7 +309,7 @@ module SyntaxTraversal =
                     if posGt pos (fst r).Start then
                         e <- r
 
-                snd (e) ()
+                snd e ()
             | [ x ] -> x ()
             | _ ->
 #if DEBUG

@@ -3,10 +3,8 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Threading
-open System.Threading.Tasks
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -27,8 +25,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-
-open Internal.Utilities.Collections
 
 [<Experimental "This type is experimental and likely to be removed in the future.">]
 [<RequireQualifiedAccess>]

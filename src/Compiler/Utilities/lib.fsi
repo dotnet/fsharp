@@ -19,7 +19,7 @@ val isEnvVarSet: s: string -> bool
 
 val GetEnvInteger: e: string -> dflt: int -> int
 
-val dispose: x: (System.IDisposable MaybeNull) -> unit
+val dispose: x: System.IDisposable MaybeNull -> unit
 
 module Bits =
     /// Get the least significant byte of a 32-bit integer

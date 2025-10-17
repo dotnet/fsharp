@@ -89,10 +89,10 @@ type T =
 
 module AttributeConstructorCompletion =
     [<Theory>]
-    [<InlineData ("[<AnAttribute((* marker *)")>]
-    [<InlineData ("[<AnAttribute( (* marker *)")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute((* marker *)")>]
-    [<InlineData ("[<AnAttribute; AnAttribute((* marker *)")>]
+    [<InlineData "[<AnAttribute((* marker *)">]
+    [<InlineData "[<AnAttribute( (* marker *)">]
+    [<InlineData "[<AnAttribute>][<AnAttribute((* marker *)">]
+    [<InlineData "[<AnAttribute; AnAttribute((* marker *)">]
     let ``incomplete``(lineStr: string) =
         let code = $"""
 {lineStr}
@@ -102,11 +102,11 @@ type T =
         code |> assertCompletionContext (fun x -> match x with Some (CompletionContext.ParameterList _) -> true | _ -> false)
 
     [<Theory>]
-    [<InlineData ("[<AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute; AnAttribute((* marker *)>]")>]
-    [<InlineData ("[<AnAttribute; AnAttribute( (* marker *)>]")>]
-    [<InlineData ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]")>]
+    [<InlineData "[<AnAttribute((* marker *)>]">]
+    [<InlineData "[<AnAttribute>][<AnAttribute((* marker *)>]">]
+    [<InlineData "[<AnAttribute; AnAttribute((* marker *)>]">]
+    [<InlineData "[<AnAttribute; AnAttribute( (* marker *)>]">]
+    [<InlineData "[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]">]
     let ``complete``(lineStr: string) =
         let code = $"""
 {lineStr}

@@ -4,7 +4,6 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.IO
-open Internal.Utilities.Library
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 

@@ -246,7 +246,7 @@ type internal FxResolver
                             getRunningImplementationAssemblyDir (), warnings
                     with e ->
                         let warn =
-                            Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors)
+                            Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors)
 
                         let path = getRunningImplementationAssemblyDir ()
                         path, [ warn ]
@@ -371,7 +371,7 @@ type internal FxResolver
                     | None -> (None, None), warnings
             with e ->
                 let warn =
-                    Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors)
+                    Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors)
                 // This is defensive coding, we don't expect this exception to happen
                 // NOTE: consider reporting this exception as a warning
                 (None, None), [ warn ]
@@ -458,7 +458,7 @@ type internal FxResolver
                     | None -> None, warnings
                 with e ->
                     let warn =
-                        Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors)
+                        Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors)
                     // This is defensive coding, we don't expect this exception to happen
                     // NOTE: consider reporting this exception as a warning
                     None, warnings @ [ warn ]
@@ -936,7 +936,7 @@ type internal FxResolver
 
                             sdkReferences, false
                         with e ->
-                            warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected (e.Message), rangeForErrors))
+                            warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected e.Message, rangeForErrors))
                             // This is defensive coding, we don't expect this exception to happen
                             if isRunningOnCoreClr then
                                 // If running on .NET Core and something goes wrong with getting the

@@ -160,7 +160,7 @@ type SynConst =
 
     | Char of char
 
-    | Decimal of System.Decimal
+    | Decimal of Decimal
 
     | UserNum of value: string * suffix: string
 

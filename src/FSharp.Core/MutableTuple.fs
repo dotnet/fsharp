@@ -3,8 +3,6 @@
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 #nowarn "49" // no warning for uppercase variable names
-open Microsoft.FSharp.Core
-
 // ----------------------------------------------------------------------------
 // Mutable Tuples - used when translating queries that use F# tuples
 // and records. We replace tuples/records with anonymous types which

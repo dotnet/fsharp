@@ -336,7 +336,7 @@ module BuildGraphTests =
             errorCountShouldBe 200
             loggerShouldBe commonLogger
 
-        Tasks.Parallel.Invoke(task1, task2)
+        Parallel.Invoke(task1, task2)
 
 
     type internal DiagnosticsLoggerWithCallback(callback) =

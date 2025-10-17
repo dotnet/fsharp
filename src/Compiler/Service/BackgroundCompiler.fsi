@@ -1,9 +1,6 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open FSharp.Compiler.Text
-open FSharp.Compiler.BuildGraph
-
-open System.Reflection
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
