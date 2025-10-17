@@ -95,7 +95,6 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
     <InternalsVisibleTo Include="FSharp.Editor.Tests" />
-    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
