@@ -200,7 +200,8 @@ type CompilerCompatibilityTests() =
         try
             // Step 3: Clear global packages cache to ensure we get the fresh package, then restore the app  
             let appProjectFile = Path.Combine(appProjectPath, "CompilerCompatApp.fsproj")
-            let _ = runDotnetCommand "nuget locals global-packages --clear" appProjectPath appCompilerVersion
+            // This messes up with global nuget information
+            //let _ = runDotnetCommand "nuget locals global-packages --clear" appProjectPath appCompilerVersion
             let restoreOutput = runDotnetCommand $"restore \"{appProjectFile}\" --force --no-cache" appProjectPath appCompilerVersion
             // Restore may say "Restore complete", "Restored", or "All projects are up-to-date" depending on state
             Assert.True(
