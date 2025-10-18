@@ -1894,6 +1894,20 @@ let rec TryTranslateComputationExpression
                     | _ -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
 
                 let ident, pat = extractIdentifierFromPattern pat
+                // Validate the pattern's type annotation by invoking TcPat (for its type-checking side effects)
+                let patEnvValidate = TcPatLinearEnv(ceenv.tpenv, NameMap.empty, Set.empty)
+                let patTyValidate = NewInferenceType cenv.g
+
+                let _ =
+                    cenv.TcPat
+                        AllIdsOK
+                        cenv
+                        ceenv.env
+                        None
+                        (TcPatValFlags(ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false))
+                        patEnvValidate
+                        patTyValidate
+                        pat
 
                 let bindExpr =
                     let consumeExpr =

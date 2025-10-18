@@ -104,5 +104,20 @@ module UseBangBindingsPreview =
         |> withLangVersion10
         |> compileAndRun
         |> shouldSucceed
+        
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UseBang01.fs"|])>]
+    let ``UseBangBindings - E_UseBang01_fs - Preview LangVersion`` compilation =
+        compilation
+        |> asExe
+        |> withLangVersion10
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 39, Line 2, Col 12, Line 2, Col 23, "The type 'askjdhaskjd' is not defined.")
+            (Error 39, Line 3, Col 13, Line 3, Col 24, "The type 'askjdhaskjd' is not defined.")
+            (Error 39, Line 5, Col 14, Line 5, Col 25, "The type 'askjdhaskjd' is not defined.")
+            (Error 39, Line 6, Col 13, Line 6, Col 24, "The type 'askjdhaskjd' is not defined.")
+            (Error 39, Line 7, Col 14, Line 7, Col 25, "The type 'askjdhaskjd' is not defined.")
+        ]
 
 
