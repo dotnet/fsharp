@@ -1881,28 +1881,35 @@ let rec TryTranslateComputationExpression
                 //   use! (__) = ...
                 //   use! _ = ...
                 //   use! (_) = ...
-                // Drop the top-level type annotation from the pattern for the purpose of Bind,
-                // but keep it separately to reapply to the Using resource expression. This avoids
-                // constraining the Bind lambda parameter type while still type-checking the annotation
-                // (matching the behavior of plain 'use'/'let' with annotations).
                 let rec extractIdentifierFromPattern pat =
                     match pat with
-                    | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat, None
-                    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat, None
-                    | SynPat.Typed(pat = inner; targetType = ty; range = m) when supportsTypedLetOrUseBang ->
-                        let id, innerNoType, _ = extractIdentifierFromPattern inner
-                        id, innerNoType, Some(ty, m)
+                    | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
+                    | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
+                    | SynPat.Typed(pat = pat) when supportsTypedLetOrUseBang -> extractIdentifierFromPattern pat
                     | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
                         // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
                         let tmpIdent = mkSynId m "_"
-                        tmpIdent, SynPat.Named(SynIdent(tmpIdent, None), false, None, m), None
-                    | SynPat.Paren(pat = inner; range = _mParen) -> extractIdentifierFromPattern inner
+                        tmpIdent, SynPat.Named(SynIdent(tmpIdent, None), false, None, m)
+                    | SynPat.Paren(pat = pat) -> extractIdentifierFromPattern pat
                     | _ -> error (Error(FSComp.SR.tcInvalidUseBangBinding (), pat.Range))
 
-                let ident, pat, typeAnnOpt = extractIdentifierFromPattern pat
+                let ident, pat = extractIdentifierFromPattern pat
+                // Validate the pattern's type annotation by invoking TcPat (for its type-checking side effects)
+                let patEnvValidate = TcPatLinearEnv(ceenv.tpenv, NameMap.empty, Set.empty)
+                let patTyValidate = NewInferenceType cenv.g
+
+                let _ =
+                    cenv.TcPat
+                        AllIdsOK
+                        cenv
+                        ceenv.env
+                        None
+                        (TcPatValFlags(ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false))
+                        patEnvValidate
+                        patTyValidate
+                        pat
 
                 let bindExpr =
-                    // Lambda used by Using; pattern here has no top-level annotation (untyped)
                     let consumeExpr =
                         SynExpr.MatchLambda(
                             false,
@@ -1921,21 +1928,9 @@ let rec TryTranslateComputationExpression
                             mBind
                         )
 
-                    // Build the Using call that consumes the bound value
-                    // Reapply any optional type annotation to the resource identifier so errors are reported
-                    // at the annotation site without affecting the Bind parameter type.
-                    let resourceExpr =
-                        match typeAnnOpt with
-                        | Some(ty, mTy) ->
-                            // Apply the type annotation to the identifier expression to surface type errors on the annotation
-                            SynExpr.Typed(SynExpr.Ident ident, ty, unionRanges ident.idRange mTy)
-                        | None -> SynExpr.Ident ident
-
                     let consumeExpr =
-                        mkSynCall "Using" mBind [ resourceExpr; consumeExpr ] ceenv.builderValName
+                        mkSynCall "Using" mBind [ SynExpr.Ident ident; consumeExpr ] ceenv.builderValName
 
-                    // Build the lambda passed to Bind using the untyped pattern (no top-level annotation)
-                    // so the annotation does not constrain the source value bound by Bind.
                     let consumeExpr =
                         SynExpr.MatchLambda(
                             false,
