@@ -34,6 +34,10 @@ let customerId = CustomerId("123")
 match customerId with
 | CustomerId BBB -> ()
 
+match 42 with | UpperCase -> ()
+
+match 42 with UpperCase -> ()
+
 type Record = { Name: string; Age: int }
 
 match { Name = "Alice"; Age = 30 } with
