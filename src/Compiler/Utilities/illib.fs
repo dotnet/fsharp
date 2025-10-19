@@ -96,22 +96,22 @@ module internal PervasiveAutoOpens =
 
     type String with
 
-        member inline x.StartsWithOrdinal value =
+        member inline x.StartsWithOrdinal(value: string) =
             x.StartsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinal value =
+        member inline x.EndsWithOrdinal(value: string) =
             x.EndsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinalIgnoreCase value =
+        member inline x.EndsWithOrdinalIgnoreCase(value: string) =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
         member inline x.IndexOfOrdinal(value: string) =
             x.IndexOf(value, StringComparison.Ordinal)
 
-        member inline x.IndexOfOrdinal(value, startIndex) =
+        member inline x.IndexOfOrdinal(value: string, startIndex) =
             x.IndexOf(value, startIndex, StringComparison.Ordinal)
 
-        member inline x.IndexOfOrdinal(value, startIndex, count) =
+        member inline x.IndexOfOrdinal(value: string, startIndex, count) =
             x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
 
     /// Get an initialization hole

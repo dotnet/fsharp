@@ -46,7 +46,7 @@
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
-    <FSToolsMajorVersion>14</FSToolsMajorVersion>
+    <FSToolsMajorVersion>15</FSToolsMajorVersion>
     <FSToolsMinorVersion>0</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
@@ -99,15 +99,10 @@
     <VisualStudioShellProjectsPackages>18.0.2077-preview.1</VisualStudioShellProjectsPackages>
     <MicrosoftVisualStudioThreadingPackagesVersion>18.0.5</MicrosoftVisualStudioThreadingPackagesVersion>
   
-    <!-- Roslyn packages -->
-    <MicrosoftCodeAnalysisEditorFeaturesTextVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
-    <MicrosoftCodeAnalysisExternalAccessFSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
-    <MicrosoftCodeAnalysisVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisVersion>
-    <MicrosoftCodeAnalysisCSharpVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisCSharpVersion>
-    <MicrosoftVisualStudioLanguageServicesVersion>5.0.0-2.25480.7</MicrosoftVisualStudioLanguageServicesVersion>
+    <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
-	<!-- Roslyn for when we need to compile C# in tests. .dll hell caused by vstest makes newer version fail at runtime -->
-	<RoslynForTestingButNotForVSLayer>4.14.0</RoslynForTestingButNotForVSLayer>
+	  <!-- Roslyn for when we need to compile C# in tests. .dll hell caused by vstest makes newer version fail at runtime -->
+	  <RoslynForTestingButNotForVSLayer>4.14.0</RoslynForTestingButNotForVSLayer>
     <!-- -->
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
