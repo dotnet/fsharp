@@ -152,8 +152,7 @@ type internal QueryTrie = LongIdentifier -> QueryTrieNodeResult
 
 /// Helper class to help map signature files to implementation files and vice versa.
 type internal FilePairMap(files: FileInProject array) =
-    let sigFiles = files |> Array.filter _.ParsedInput.IsSigFile
-    let implFiles = files |> Array.filter _.ParsedInput.IsImplFile
+    let sigFiles, implFiles = files |> Array.partition _.ParsedInput.IsSigFile
 
     let buildBiDirectionalMaps pairs =
         Map.ofArray pairs, Map.ofArray (pairs |> Array.map (fun (a, b) -> (b, a)))
@@ -165,8 +164,12 @@ type internal FilePairMap(files: FileInProject array) =
     let pairs =
         sigFiles
         |> Array.map (fun sigFile ->
-            implFiles
-            |> Array.tryFind (matchFileNames sigFile)
+            // First, try to match the immediately following file.
+            files
+            |> Array.tryItem (sigFile.Idx + 1)
+            |> Option.filter (fun f -> f.ParsedInput.IsImplFile && matchFileNames sigFile f)
+            // Only if not a match, search all impl files.
+            |> Option.orElseWith (fun () -> implFiles |> Array.tryFind (matchFileNames sigFile))
             |> Option.map (fun (implFile: FileInProject) -> (sigFile.Idx, implFile.Idx)))
         |> Array.choose id
 
@@ -174,6 +177,8 @@ type internal FilePairMap(files: FileInProject array) =
         pairs |> Array.partition (fun (sigIdx, implIdx) -> sigIdx < implIdx)
 
     let sigToImpl, implToSig = buildBiDirectionalMaps goodPairs
+
+    // Pairs where the signature file comes after the implementation file in the project order. We need to track them to report such errors.
     let wrongOrder = wrongOrderPairs |> Map.ofArray
 
     member x.GetSignatureIndex(implementationIndex: FileIndex) = Map.find implementationIndex implToSig
