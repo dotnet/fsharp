@@ -2,6 +2,7 @@
 
 open System.Collections.Immutable
 open FSharp.Compiler.Syntax
+open System
 
 /// The index of a file inside a project.
 type internal FileIndex = int
@@ -157,11 +158,15 @@ type internal FilePairMap(files: FileInProject array) =
     let buildBiDirectionalMaps pairs =
         Map.ofArray pairs, Map.ofArray (pairs |> Array.map (fun (a, b) -> (b, a)))
 
+    let matchFileNames (sigFile: FileInProject) (implFile: FileInProject) =
+        implFile.FileName.Length = sigFile.FileName.Length - 1
+        && sigFile.FileName.StartsWith(implFile.FileName, StringComparison.Ordinal)
+
     let pairs =
         sigFiles
         |> Array.map (fun sigFile ->
             implFiles
-            |> Array.tryFind (fun (implFile: FileInProject) -> $"{implFile.FileName}i" = sigFile.FileName)
+            |> Array.tryFind (matchFileNames sigFile)
             |> Option.map (fun (implFile: FileInProject) -> (sigFile.Idx, implFile.Idx)))
         |> Array.choose id
 
