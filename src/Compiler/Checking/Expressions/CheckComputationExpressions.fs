@@ -853,7 +853,7 @@ let (|OptionalSequential|) e =
     | SynExpr.Sequential(debugPoint = _sp; isTrueSeq = true; expr1 = dataComp1; expr2 = dataComp2) -> (dataComp1, Some dataComp2)
     | _ -> (e, None)
 
-let private getTypedHeadPattern (SynBinding(headPat = headPattern; returnInfo = returnInfo)) =
+let private mkTypedHeadPat (SynBinding(headPat = headPattern; returnInfo = returnInfo)) =
     match returnInfo with
     | None -> headPattern
     | Some(SynBindingReturnInfo(typeName = typeName; range = range)) ->
@@ -871,7 +871,7 @@ let (|ExprAsUseBang|_|) expr =
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
         | SynBinding(debugPoint = spBind; expr = rhsExpr) as binding :: andBangs ->
-            let pat = getTypedHeadPattern binding
+            let pat = mkTypedHeadPat binding
             ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
@@ -888,7 +888,7 @@ let (|ExprAsLetBang|_|) expr =
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
         | SynBinding(debugPoint = spBind; expr = letRhsExpr) as binding :: andBangBindings ->
-            let letPat = getTypedHeadPattern binding
+            let letPat = mkTypedHeadPat binding
             ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
@@ -2013,7 +2013,7 @@ let rec TryTranslateComputationExpression
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
                 let pats =
-                    letPat :: [ for binding in andBangBindings -> getTypedHeadPattern binding ]
+                    letPat :: [ for binding in andBangBindings -> mkTypedHeadPat binding ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 

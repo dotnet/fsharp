@@ -2076,7 +2076,7 @@ but here has type
         ]
 
     [<Fact>]
-    let ``Preview: let! return type check error 01`` () =
+    let ``Preview: let! return type mismatch error 01`` () =
         FSharp """
 module Test
 
@@ -2100,7 +2100,7 @@ but here has type
         ]
 
     [<Fact>]
-    let ``Preview: let! return type check error 02`` () =
+    let ``Preview: let! return type mismatch error 02`` () =
         FSharp """
 module Test
 
@@ -2124,7 +2124,7 @@ but here has type
         ]
 
     [<Fact>]
-    let ``Preview: let! return type check error 03`` () =
+    let ``Preview: let! return type mismatch error 03`` () =
         FSharp """
 module Test
 
@@ -2148,7 +2148,7 @@ but here has type
         ]
 
     [<Fact>]
-    let ``Preview: let!-and! return type check error 01`` () =
+    let ``Preview: let!-and! return type mismatch error 01`` () =
         FSharp """
 module Test
 
@@ -2180,7 +2180,7 @@ but here has type
         ]
 
     [<Fact>]
-    let ``Preview: let!-and! return type check error 02`` () =
+    let ``Preview: let!-and! return type mismatch error 02`` () =
         FSharp """
 module Test
 
@@ -2210,7 +2210,7 @@ but here has type
         ]
 
     [<Fact>]
-    let ``Preview: let!-and! return type check error 03`` () =
+    let ``Preview: let!-and! return type mismatch error 03`` () =
         FSharp """
 module Test
 
