@@ -266,11 +266,22 @@ val myFunc2: param: int -> int
             }
 
 module Exceptions =
-    let project() = SyntheticProject.Create(
-        { sourceFile "First" [] with ExtraSource = "exception MyException of string" },
-        { sourceFile "Second" [] with ExtraSource = """
+    let source1 = "exception MyException of string"
+    let signature1 = "exception MyException of string"
+
+    let source2 = """
 open ModuleFirst
-let foo x = raise (MyException "foo")""" })
+let foo x = raise (MyException "foo")
+"""
+    let project() = SyntheticProject.Create(
+        { sourceFile "First" [] with ExtraSource = source1 },
+        { sourceFile "Second" [] with ExtraSource = source2 })
+
+    let projectWithSignature() = SyntheticProject.Create(
+        { sourceFile "First" [] with
+            ExtraSource = source1
+            SignatureFile = Custom signature1 },
+        { sourceFile "Second" [] with ExtraSource = source2 })
 
     [<Fact>]
     let ``We find exception from definition`` () =
@@ -288,6 +299,28 @@ let foo x = raise (MyException "foo")""" })
             placeCursor "Second" 8 30 "raise (MyException \"foo\")" ["MyException"]
             findAllReferences (expectToFind [
                 "FileFirst.fs", 6, 10, 21
+                "FileSecond.fs", 8, 19, 30
+            ])
+        }
+
+    [<Fact>]
+    let ``We find exception from definition and signature`` () =
+        projectWithSignature().Workflow {
+            placeCursor "First" 6 21 "exception MyException of string" ["MyException"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 10, 21
+                "FileFirst.fsi", 2, 10, 21
+                "FileSecond.fs", 8, 19, 30
+            ])
+        }
+
+    [<Fact>]
+    let ``We find exception from usage and signature`` () =
+        projectWithSignature().Workflow {
+            placeCursor "Second" 8 30 "raise (MyException \"foo\")" ["MyException"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 10, 21
+                "FileFirst.fsi", 2, 10, 21
                 "FileSecond.fs", 8, 19, 30
             ])
         }

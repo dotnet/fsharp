@@ -172,7 +172,7 @@ module TestFrameworkAdapter =
     let singleTestBuildAndRunIsolated folder mode = singleTestBuildAndRunVersion folder mode LangVersion.Latest ScriptSessionIsolation.Isolated
 
     let singleVersionedNegTestAux folder bonusArgs version testName =
-        singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version
+        singleTestBuildAndRunAuxVersion folder bonusArgs  (NEG_TEST_BUILD testName) version ScriptSessionIsolation.Shared
     let singleVersionedNegTest (folder:string)  (version:LangVersion) (testName:string) = 
         singleVersionedNegTestAux folder [] version testName
     let singleNegTest folder testName = singleVersionedNegTest folder LangVersion.Latest testName

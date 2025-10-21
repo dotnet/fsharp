@@ -5895,9 +5895,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
     | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, trivia) ->
-        match withExprOpt with
-        | None
-        | Some(SynExpr.Ident _, _) ->
+        match withExprOpt with 
+        | None | IsSimpleOrBoundExpr ->
             TcNonControlFlowExpr env <| fun env ->
             TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
                 TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
@@ -5929,10 +5928,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let binds = unionBindingAndMembers binds members
         TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
-    | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->
+    | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->        
         match withExprOpt with
-        | None
-        | Some(SynExpr.Ident _, _) ->
+        | None | IsSimpleOrBoundExpr ->
             TcNonControlFlowExpr env <| fun env ->
             TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
         | Some withExpr ->
@@ -6484,10 +6482,15 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
 and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpenv e =
     let g = cenv.g
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, _parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, synSimplePats, bodyExpr, parsedData, m, _trivia) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
+        let parsedPatterns =
+            parsedData
+            |> Option.map fst
+            |> Option.defaultValue []
+            
         let vs, (TcPatLinearEnv (tpenv, names, takenNames)) =
-            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats
+            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames)) synSimplePats (parsedPatterns, isFirst)
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
@@ -11296,6 +11299,8 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
         | _ -> ()
     | _ -> ()
 
+
+
     let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
     let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
     TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
@@ -11743,7 +11748,7 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTyR'. They get re-typechecked later.
-        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat)
+        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty)) pushedPat ([], false))
         ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
 
 /// Check if the type annotations and inferred type information in a value give a

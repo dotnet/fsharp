@@ -295,6 +295,9 @@ type TcFileState =
                 -> TcEnv
                 -> TcPatLinearEnv
                 -> SynSimplePats
+                // SynPat list: Represents parsed patterns,
+                // bool: Indicates if this is the first pattern in a sequence of patterns
+                -> SynPat list * bool
                 -> string list * TcPatLinearEnv
 
         // forward call
@@ -345,6 +348,7 @@ type TcFileState =
                 -> TcEnv
                 -> TcPatLinearEnv
                 -> SynSimplePats
+                -> SynPat list * bool
                 -> string list * TcPatLinearEnv) *
         tcSequenceExpressionEntry:
             (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
