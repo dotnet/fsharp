@@ -2092,6 +2092,7 @@ task {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            // x: string
             Error 1, Line 7, Col 10, Line 7, Col 19, "This expression was expected to have type
     'int'   
 but here has type
@@ -2115,6 +2116,7 @@ task {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            // x: string
             Error 1, Line 7, Col 11, Line 7, Col 20, "This expression was expected to have type
     'int'   
 but here has type
@@ -2138,6 +2140,7 @@ task {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            // (x: string): int
             Error 1, Line 7, Col 10, Line 7, Col 26, "This expression was expected to have type
     'string'   
 but here has type
@@ -2167,10 +2170,12 @@ builder {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            // y: string
             Error 1, Line 13, Col 10, Line 13, Col 19, "This expression was expected to have type
 'int'   
 but here has type
-'string'    ";
+'string'    "
+            // x: int
             Warning 25, Line 12, Col 10, Line 12, Col 16, "Incomplete pattern matches on this expression."
         ]
 
@@ -2197,6 +2202,7 @@ builder {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            // y: string
             Error 1, Line 13, Col 11, Line 13, Col 20, "This expression was expected to have type
 'int'   
 but here has type
@@ -2226,10 +2232,12 @@ builder {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
+            // (y: int): string
             Error 1, Line 13, Col 10, Line 13, Col 26, "This expression was expected to have type
 'int'   
 but here has type
 'string'    "
+            // y: int
             Error 1, Line 13, Col 11, Line 13, Col 17, "This expression was expected to have type
 'string'    
 but here has type
