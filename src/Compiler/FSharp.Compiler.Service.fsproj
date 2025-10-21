@@ -130,6 +130,7 @@
     <Compile Include="Utilities\EditDistance.fs" />
     <Compile Include="Utilities\TaggedCollections.fsi" />
     <Compile Include="Utilities\TaggedCollections.fs" />
+    <Compile Include="Utilities\Async2.fs" />
     <Compile Include="Utilities\Cancellable.fsi" />
     <Compile Include="Utilities\Cancellable.fs" />
     <Compile Include="Utilities\FileSystem.fsi" />
