@@ -740,6 +740,8 @@ stages:
             env:
               FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
+          - script: dotnet fsi .\tests\FSharp.Compiler.ComponentTests\CompilerCompatibilityTests.fsx
+            displayName: Compiler compatibility tests
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows

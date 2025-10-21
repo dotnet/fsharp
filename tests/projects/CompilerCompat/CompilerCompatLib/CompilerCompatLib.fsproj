@@ -1,16 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- CRITICAL: Prevent MSBuild from crawling to parent Directory.Build files -->
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+  </PropertyGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
+    <!-- Ensure output goes to local bin directory, not repo artifacts -->
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    
     <!-- Package properties for NuGet pack -->
     <IsPackable>true</IsPackable>
     <PackageId>CompilerCompatLib</PackageId>
-    <Version>1.0.0</Version>
+    <Version Condition="'$(PackageVersion)' != ''">$(PackageVersion)</Version>
+    <Version Condition="'$(PackageVersion)' == ''">1.0.0</Version>
     <Authors>Test</Authors>
     <Description>Test library for compiler compatibility tests</Description>
+    <PackageIcon></PackageIcon> <!-- Clear any inherited icon setting -->
   </PropertyGroup>
+
+  <!-- Import UseLocalCompiler when testing with local compiler -->
+  <!-- Note: This is imported here after SDK to ensure it can override SDK F# targets -->
+  <Import Project="../../../../UseLocalCompiler.Directory.Build.props" Condition="'$(LoadLocalFSharpBuild)' == 'True'" />
 
   <ItemGroup>
     <Compile Include="LibBuildInfo.fs" />
@@ -28,6 +44,7 @@
 
   <Target Name="GenerateLibBuildInfo" BeforeTargets="BeforeCompile">
     <PropertyGroup>
+      <!-- Convert MSBuild boolean property to F# boolean literal -->
       <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' == 'True'">true</IsLocalBuildValue>
       <IsLocalBuildValue Condition="'$(LoadLocalFSharpBuild)' != 'True'">false</IsLocalBuildValue>
       <CleanDotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' != ''">$(DotnetFscCompilerPath.Replace('&quot;', ''))</CleanDotnetFscCompilerPath>
