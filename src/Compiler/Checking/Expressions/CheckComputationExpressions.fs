@@ -2012,8 +2012,7 @@ let rec TryTranslateComputationExpression
                     (letRhsExpr :: [ for SynBinding(expr = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
-                let pats =
-                    letPat :: [ for binding in andBangBindings -> mkTypedHeadPat binding ]
+                let pats = letPat :: [ for binding in andBangBindings -> mkTypedHeadPat binding ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
