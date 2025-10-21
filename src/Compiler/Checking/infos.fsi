@@ -101,6 +101,7 @@ type CallerInfo =
     | CallerLineNumber
     | CallerMemberName
     | CallerFilePath
+    | CallerArgumentExpression of paramName: string
 
 [<RequireQualifiedAccess>]
 type ReflectedArgInfo =
