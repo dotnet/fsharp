@@ -1,5 +1,136 @@
 #!/usr/bin/env dotnet fsi
 
+(*
+# F# Compiler Compatibility Test Suite
+
+## What This Does
+
+This test suite verifies **binary compatibility** of F# anonymous records across different F# compiler versions. 
+It ensures that libraries and applications compiled with different F# compilers can interoperate correctly, 
+focusing on the binary serialization format (pickle format) of anonymous records.
+
+The test suite exercises three critical compatibility scenarios:
+1. **Baseline**: Both library and application built with the local (development) compiler
+2. **Forward Compatibility**: Library built with SDK compiler, application with local compiler  
+3. **Backward Compatibility**: Library built with local compiler, application with SDK compiler
+
+## Why This Matters - Binary Compatibility of Pickle Format
+
+F# uses a binary serialization format (pickle format) to encode type information and metadata for features like:
+- Anonymous records
+- Type providers
+- Quotations
+- Metadata for reflection
+
+**The Problem**: When the F# compiler changes, the pickle format can evolve. If not carefully managed, this can break binary compatibility:
+- A library compiled with F# 9.0 might generate anonymous records that F# 8.0 can't read
+- Breaking changes in the pickle format can cause runtime failures or incorrect behavior
+- Even minor compiler changes can inadvertently alter binary serialization
+
+**Why Anonymous Records**: They are particularly sensitive because:
+- Their types are compiler-generated (not explicitly named by developers)
+- They rely heavily on structural typing
+- Their binary representation must match exactly across compiler boundaries
+- They're commonly used at API boundaries between libraries
+
+This test suite acts as a **regression guard** to catch any changes that would break binary compatibility,
+ensuring the F# ecosystem remains stable as the compiler evolves.
+
+## How It Works
+
+### 1. MSBuild Integration
+
+The test controls which F# compiler is used through MSBuild properties:
+
+**Local Compiler** (`LoadLocalFSharpBuild=True`):
+- Uses the freshly-built compiler from `artifacts/bin/fsc`
+- Configured via `UseLocalCompiler.Directory.Build.props` in repo root
+- Allows testing bleeding-edge compiler changes
+
+**SDK Compiler** (`LoadLocalFSharpBuild=False` or not set):
+- Uses the F# compiler from the installed .NET SDK
+- Represents what users have in production
+
+### 2. Global.json Management
+
+For testing specific .NET versions, the suite dynamically creates `global.json` files:
+
+```json
+{
+  "sdk": {
+    "version": "9.0.300",
+    "rollForward": "latestMinor"
+  }
+}
+```
+
+This allows testing compatibility with specific SDK versions (like .NET 9) without requiring 
+hardcoded installations. The `rollForward: latestMinor` policy provides flexibility across patch versions.
+
+### 3. Build-Time Verification
+
+Each project generates a `BuildInfo.fs` file at build time using MSBuild targets:
+
+```xml
+<Target Name="GenerateLibBuildInfo" BeforeTargets="BeforeCompile">
+  <WriteLinesToFile File="LibBuildInfo.fs"
+    Lines="module LibBuildInfo =
+      let sdkVersion = &quot;$(NETCoreSdkVersion)&quot;
+      let fsharpCompilerPath = &quot;$(FscToolPath)\$(FscToolExe)&quot;
+      let dotnetFscCompilerPath = &quot;$(DotnetFscCompilerPath)&quot;
+      let isLocalBuild = $(IsLocalBuildValue)" />
+</Target>
+```
+
+This captures actual build-time information, allowing tests to verify which compiler was actually used.
+
+### 4. Test Flow
+
+For each scenario:
+1. **Clean** previous builds to ensure isolation
+2. **Pack** the library with specified compiler (creates NuGet package)
+3. **Build** the application with specified compiler, referencing the packed library
+4. **Run** the application and verify:
+   - Anonymous records work correctly across compiler boundaries
+   - Build info confirms correct compilers were used
+   - No runtime errors or data corruption
+
+### 5. Anonymous Record Testing
+
+The library (`CompilerCompatLib`) exposes APIs using anonymous records:
+- Simple anonymous records: `{| X = 42; Y = "hello" |}`
+- Nested anonymous records: `{| Simple = {| A = 1 |}; List = [...] |}`
+- Complex structures mixing anonymous records with other F# types
+
+The application (`CompilerCompatApp`) consumes these APIs and validates that:
+- Field access works correctly
+- Nested structures are properly preserved
+- Type information matches expectations
+
+This ensures the binary pickle format remains compatible even when compilers change.
+
+## Running the Tests
+
+**As part of test suite:**
+```bash
+dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj
+```
+
+**Standalone script:**
+```bash
+dotnet fsi tests/FSharp.Compiler.ComponentTests/CompilerCompatibilityTests.fsx
+```
+
+## Extending the Test Suite
+
+To add more compatibility tests:
+1. Add new functions to `CompilerCompatLib/Library.fs` using anonymous records
+2. Add corresponding validation in `CompilerCompatApp/Program.fs`
+3. The existing test infrastructure will automatically verify compatibility
+
+This allows the test suite to grow as new anonymous record patterns or edge cases are discovered.
+*)
+
 // Standalone F# script to test compiler compatibility across different F# SDK versions
 // Can be run with: dotnet fsi CompilerCompatibilityTests.fsx
 
