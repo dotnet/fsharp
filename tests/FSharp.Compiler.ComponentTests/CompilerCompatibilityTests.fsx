@@ -16,11 +16,7 @@ The test suite exercises three critical compatibility scenarios:
 
 ## Why This Matters - Binary Compatibility of Pickle Format
 
-F# uses a binary serialization format (pickle format) to encode type information and metadata for features like:
-- Anonymous records
-- Type providers
-- Quotations
-- Metadata for reflection
+F# uses a binary serialization format (pickle format) to encode type information and metadata for all signatures and also optimization related data.
 
 **The Problem**: When the F# compiler changes, the pickle format can evolve. If not carefully managed, this can break binary compatibility:
 - A library compiled with F# 9.0 might generate anonymous records that F# 8.0 can't read
