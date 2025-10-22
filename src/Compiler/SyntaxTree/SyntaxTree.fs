@@ -1057,7 +1057,7 @@ type SynMatchClause =
 
     member this.IsTrueMatchClause =
         let (SynMatchClause(trivia = trivia)) = this
-        trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+        trivia.ArrowRange.IsSome
 
     member this.Range =
         match this with

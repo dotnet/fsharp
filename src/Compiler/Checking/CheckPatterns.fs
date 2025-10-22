@@ -401,15 +401,18 @@ and TcPatNamedAs warnOnUpper cenv env valReprInfo vFlags patEnv ty synInnerPat i
     phase2, acc
 
 and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
-    let pats = [pat1; pat2]
-    let warnOnUpper =
+    // Type-check pat1 with the original warnOnUpper flag (to warn on uppercase identifiers)
+    let pat1R, patEnv1 = TcPat warnOnUpper cenv env None vFlags patEnv ty pat1
+
+    // For pat2 (the binding variable like UppercaseIdentifier as Foo), suppress uppercase warnings if the feature is enabled
+    let warnOnUpperForPat2 =
         if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
             AllIdsOK
         else
             warnOnUpper
-
-    let patsR, patEnvR = TcPatterns warnOnUpper cenv env vFlags patEnv (List.map (fun _ -> ty) pats) pats
-    let phase2 values = TPat_conjs(List.map (fun f -> f values) patsR, m)
+    
+    let pat2R, patEnvR = TcPat warnOnUpperForPat2 cenv env None vFlags patEnv1 ty pat2
+    let phase2 values = TPat_conjs([pat1R values; pat2R values], m)
     phase2, patEnvR
 
 and TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valReprInfo m =
