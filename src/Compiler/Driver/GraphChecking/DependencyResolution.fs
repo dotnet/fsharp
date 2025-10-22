@@ -206,6 +206,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
         if file.Idx = 0 then
             // First file cannot have any dependencies.
             Array.empty
+
         else
             let fileContent = fileContents[file.Idx]
 
@@ -235,20 +236,47 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 | None -> Array.empty
                 | Some sigIdx -> Array.singleton sigIdx
 
+            let wrongOrderSignature =
+                match filePairs.TryGetWrongOrderSignatureToImplementationIndex file.Idx with
+                | None -> Array.empty
+                | Some idx -> Array.singleton idx
+
             let allDependencies =
                 [|
                     yield! depsResult.FoundDependencies
                     yield! ghostDependencies
                     yield! signatureDependency
+                    yield! wrongOrderSignature
                 |]
                 |> Array.distinct
 
             allDependencies
 
-    let graph =
+    // If there is a script in the project, we just process sequentially all the files that may have been added as part of the script closure.
+    // That means all files up to the last script file.
+    let scriptCompilationLength =
         files
+        |> Array.tryFindIndexBack (fun f -> f.IsScript)
+        |> Option.map (fun idx -> idx + 1)
+        |> Option.defaultValue 0
+
+    let sequentialPartForScriptCompilation =
+        files
+        |> Array.take scriptCompilationLength
+        |> Array.map (fun file ->
+            file.Idx,
+            [|
+                if file.Idx > 0 then
+                    file.Idx - 1
+            |])
+
+    let normalPart =
+        files
+        |> Array.skip scriptCompilationLength
         |> Array.Parallel.map (fun file -> file.Idx, findDependencies file)
-        |> readOnlyDict
+
+    let graph =
+        Array.append sequentialPartForScriptCompilation normalPart |> readOnlyDict
 
     let trie = trie |> Array.last |> snd
 

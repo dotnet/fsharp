@@ -625,10 +625,12 @@ let callVirtSwitch (tcConfigB: TcConfigBuilder) switch =
 let callParallelCompilationSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.parallelIlxGen <- switch = OptionSwitch.On
 
-    let (graphCheckingMode, optMode) =
+    let (graphCheckingMode, optMode, parallelReferenceResolution) =
         match switch with
-        | OptionSwitch.On -> TypeCheckingMode.Graph, OptimizationProcessingMode.Parallel
-        | OptionSwitch.Off -> TypeCheckingMode.Sequential, OptimizationProcessingMode.Sequential
+        | OptionSwitch.On -> TypeCheckingMode.Graph, OptimizationProcessingMode.Parallel, ParallelReferenceResolution.On
+        | OptionSwitch.Off -> TypeCheckingMode.Sequential, OptimizationProcessingMode.Sequential, ParallelReferenceResolution.Off
+
+    tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
 
     if tcConfigB.typeCheckingConfig.Mode <> graphCheckingMode then
         tcConfigB.typeCheckingConfig <-
