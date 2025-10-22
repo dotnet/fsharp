@@ -1885,9 +1885,9 @@ let rec TryTranslateComputationExpression
                     match pat with
                     | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
                     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
-                    | SynPat.Typed(pat = innerPat) when supportsTypedLetOrUseBang ->
-                        let ident, _ = extractIdentifierFromPattern innerPat
-                        ident, pat
+                    | SynPat.Typed(innerPat, targetType, range) when supportsTypedLetOrUseBang ->
+                        let ident, pat = extractIdentifierFromPattern innerPat
+                        ident, SynPat.Typed(pat, targetType, unionRanges pat.Range range)
                     | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
                         // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
                         let tmpIdent = mkSynId m "_"
