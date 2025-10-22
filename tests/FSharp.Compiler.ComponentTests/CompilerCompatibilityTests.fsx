@@ -111,11 +111,10 @@ dotnet fsi tests/FSharp.Compiler.ComponentTests/CompilerCompatibilityTests.fsx
 ## Extending the Test Suite
 
 To add more compatibility tests:
-1. Add new functions to `CompilerCompatLib/Library.fs` using anonymous records
+1. Add new functions to `CompilerCompatLib/Library.fs` 
 2. Add corresponding validation in `CompilerCompatApp/Program.fs`
 3. The existing test infrastructure will automatically verify compatibility
 
-This allows the test suite to grow as new anonymous record patterns or edge cases are discovered.
 *)
 
 // Standalone F# script to test compiler compatibility across different F# SDK versions
