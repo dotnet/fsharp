@@ -5,7 +5,7 @@
 
 ## What This Does
 
-This test suite verifies **binary compatibility** of F# anonymous records across different F# compiler versions. 
+This test suite verifies **binary compatibility** of F# anonymous records across different F# compiler versions. It is meant as a place to grow by any other testing use case that wants to verify pickling handover, anon records are just the first pilot. For expanding this, just add more code to lib+app.
 It ensures that libraries and applications compiled with different F# compilers can interoperate correctly, 
 focusing on the binary serialization format (pickle format) of anonymous records.
 
