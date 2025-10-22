@@ -732,6 +732,15 @@ stages:
           steps:
           - checkout: self
             clean: true
+          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: '10.x'
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\Build.cmd -c Release -pack
             env:
               NativeToolsOnMachine: true
