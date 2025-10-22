@@ -23,11 +23,7 @@ F# uses a binary serialization format (pickle format) to encode type information
 - Breaking changes in the pickle format can cause compilation failures or incorrect behavior
 - Even minor compiler changes can inadvertently alter binary serialization
 
-**Why Anonymous Records**: They are particularly sensitive because:
-- Their types are compiler-generated (not explicitly named by developers)
-- They rely heavily on structural typing
-- Their binary representation must match exactly across compiler boundaries
-- They're commonly used at API boundaries between libraries
+**Why Anonymous Records**:  They just happen to be the fist use case:
 
 This test suite acts as a **regression guard** to catch any changes that would break binary compatibility,
 ensuring the F# ecosystem remains stable as the compiler evolves.
