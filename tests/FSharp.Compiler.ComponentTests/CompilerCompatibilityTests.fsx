@@ -20,7 +20,7 @@ F# uses a binary serialization format (pickle format) to encode type information
 
 **The Problem**: When the F# compiler changes, the pickle format can evolve. If not carefully managed, this can break binary compatibility:
 - A library compiled with F# 9.0 might generate anonymous records that F# 8.0 can't read
-- Breaking changes in the pickle format can cause runtime failures or incorrect behavior
+- Breaking changes in the pickle format can cause compilation failures or incorrect behavior
 - Even minor compiler changes can inadvertently alter binary serialization
 
 **Why Anonymous Records**: They are particularly sensitive because:
