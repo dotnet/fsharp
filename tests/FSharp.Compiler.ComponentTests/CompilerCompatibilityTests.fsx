@@ -103,11 +103,6 @@ This ensures the binary pickle format remains compatible even when compilers cha
 
 ## Running the Tests
 
-**As part of test suite:**
-```bash
-dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj
-```
-
 **Standalone script:**
 ```bash
 dotnet fsi tests/FSharp.Compiler.ComponentTests/CompilerCompatibilityTests.fsx
