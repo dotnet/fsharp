@@ -11,10 +11,11 @@ ImplFile
                      SynValData
                        (None, SynValInfo ([], SynArgInfo ([], false, None)),
                         None),
-                     Typed
-                       (Named (SynIdent (x, None), false, None, (3,5--3,6)),
-                        LongIdent (SynLongIdent ([int], [], [None])),
-                        (3,5--3,10)), None,
+                     Named (SynIdent (x, None), false, None, (3,5--3,6)),
+                     Some
+                       (SynBindingReturnInfo
+                          (LongIdent (SynLongIdent ([int], [], [None])),
+                           (3,7--3,10), [], { ColonRange = Some (3,6--3,7) })),
                      App
                        (NonAtomic, false, Ident async,
                         ComputationExpr

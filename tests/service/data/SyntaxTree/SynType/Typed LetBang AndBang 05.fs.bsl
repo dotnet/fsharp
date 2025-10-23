@@ -48,16 +48,18 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Record
-                                ([NamePatPairField
-                                    (SynLongIdent ([Id], [], [None]),
-                                     Some (5,14--5,15), (5,11--5,18),
-                                     Named
-                                       (SynIdent (id, None), false, None,
-                                        (5,16--5,18)), None)], (5,9--5,20)),
-                              LongIdent (SynLongIdent ([User], [], [None])),
-                              (5,9--5,26)), None,
+                           Record
+                             ([NamePatPairField
+                                 (SynLongIdent ([Id], [], [None]),
+                                  Some (5,14--5,15), (5,11--5,18),
+                                  Named
+                                    (SynIdent (id, None), false, None,
+                                     (5,16--5,18)), None)], (5,9--5,20)),
+                           Some
+                             (SynBindingReturnInfo
+                                (LongIdent (SynLongIdent ([User], [], [None])),
+                                 (5,22--5,26), [],
+                                 { ColonRange = Some (5,20--5,21) })),
                            App
                              (Atomic, false, Ident asyncUser,
                               Const (Unit, (5,38--5,40)), (5,29--5,40)),

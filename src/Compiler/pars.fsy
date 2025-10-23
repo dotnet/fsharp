@@ -3523,32 +3523,23 @@ bindingPattern:
   | headBindingPattern
     { $1, $1.Range }
 
-// This rule unifies the pattern parsing for both regular 'let' bindings and (let!, use!, and!)
-bindingPatternWithOptType:
-  | headBindingPattern opt_topReturnTypeWithTypeConstraints
-    { // Pattern with optional type annotation
-      match $2 with
-      | None -> 
-          // No type annotation
-          $1, $1.Range, None
-      | Some(colonRangeOpt, SynReturnInfo((ty, _), _)) ->
-          // Pattern with type annotation (e.g., x: int)
-          let mWhole = unionRanges $1.Range ty.Range
-          let typedPat = SynPat.Typed($1, ty, mWhole)
-          typedPat, mWhole, Some ty }
-
-// Handles the pattern part of let!, use!, and! bindings
+// Handles pattern and return type part of let!, use!, and! bindings
 ceBindingCore:
-  | opt_inline opt_mutable bindingPatternWithOptType
-    { let pat, mPat, tyOpt = $3
+  | opt_inline opt_mutable bindingPattern opt_topReturnTypeWithTypeConstraints
+    { let pat, mPat = $3
+      let tyOpt = $4
       let isInline = Option.isSome $1
       let isMutable = Option.isSome $2
-      match tyOpt with
-      | Some ty -> 
-          parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
-      | None -> ()
-      
-      pat, mPat, isInline, isMutable, tyOpt }
+
+      let returnInfo =
+          match tyOpt with
+          | Some(colonRangeOpt, SynReturnInfo((ty, _), tym)) ->
+              parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AllowTypedLetUseAndBang ty.Range
+              Some (SynBindingReturnInfo(ty, tym, [], { ColonRange = colonRangeOpt }))
+          | None ->
+              None
+
+      pat, mPat, isInline, isMutable, returnInfo }
 
 opt_simplePatterns:
   | simplePatterns
@@ -4144,7 +4135,7 @@ recover:
 
 moreBinders:
   | AND_BANG ceBindingCore EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
-     { let pat, mPat, isInline, isMutable, tyOpt = $2
+     { let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // and! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4155,11 +4146,11 @@ moreBinders:
        let m = unionRanges mKeyword $4.Range
        let mIn = Some(rhs parseState 5)
        
-       mkAndBang(mKeyword, pat, $4, m, mEquals, mIn) :: $6 }
+       mkAndBang(mKeyword, pat, returnInfo, $4, m, mEquals, mIn) :: $6 }
 
   | OAND_BANG ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
      { // Offside-sensitive version of and! binding
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // and! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4171,7 +4162,7 @@ moreBinders:
        let mEquals = rhs parseState 3
        let m = unionRanges mKeyword $4.Range
        
-       mkAndBang(mKeyword, pat, $4, m, mEquals, mIn) :: $7 }
+       mkAndBang(mKeyword, pat, returnInfo, $4, m, mEquals, mIn) :: $7 }
 
   | %prec prec_no_more_attr_bindings
       { [] }
@@ -4536,7 +4527,7 @@ declExpr:
 
   | BINDER ceBindingCore EQUALS typedSequentialExprBlock IN opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Handle let! and use! bindings with unified pattern parsing
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // let! and use! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4549,11 +4540,11 @@ declExpr:
        // $1 contains the actual keyword ("let" or "use")
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, returnInfo, $4, $7, mKeyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Offside-sensitive version of let!/use! binding
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // let! and use! bindings don't support inline or mutable modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4567,12 +4558,12 @@ declExpr:
        
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, None, m, $8, None, Some(pat, $4, $7, mKeyword, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, returnInfo, $4, $7, mKeyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // Error recovery for incomplete let!/use! bindings
        // Allows intellisense to work when writing incomplete computation expressions
-       let pat, mPat, isInline, isMutable, tyOpt = $2
+       let pat, mPat, isInline, isMutable, returnInfo = $2
        
        // Error checking for invalid modifiers
        if isInline then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
@@ -4586,7 +4577,7 @@ declExpr:
        let isUse = ($1 = "use")
        
        // Use ImplicitZero as the continuation expression for error recovery
-       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, $4, [], mKeyword, mEquals, isUse)) }
+       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, returnInfo, $4, [], mKeyword, mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo
