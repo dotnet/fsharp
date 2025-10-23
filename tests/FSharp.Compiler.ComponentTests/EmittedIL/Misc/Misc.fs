@@ -1,7 +1,6 @@
 namespace EmittedIL.RealInternalSignature
 
 open Xunit
-open System.IO
 open FSharp.Test
 open FSharp.Test.Compiler
 
@@ -214,6 +213,13 @@ module Misc =
     // SOURCE=GeneralizationOnUnions01.fs  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd GeneralizationOnUnions01.exe"	# GeneralizationOnUnions01.fs
     [<Theory; FileInlineData("GeneralizationOnUnions01.fs", Realsig=BooleanOptions.Both)>]
     let ``GeneralizationOnUnions01_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> asExe
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("ReturnAttributeOnClassMethod.fs")>]
+    let ``ReturnAttributeOnClassMethod_fs`` compilation =
         compilation
         |> getCompilation
         |> asExe

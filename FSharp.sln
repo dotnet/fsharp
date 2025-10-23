@@ -146,6 +146,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Compiler.Service", 
 		docs\release-notes\.FSharp.Compiler.Service\8.0.400.md = docs\release-notes\.FSharp.Compiler.Service\8.0.400.md
 		docs\release-notes\.FSharp.Compiler.Service\9.0.100.md = docs\release-notes\.FSharp.Compiler.Service\9.0.100.md
 		docs\release-notes\.FSharp.Compiler.Service\9.0.200.md = docs\release-notes\.FSharp.Compiler.Service\9.0.200.md
+		docs\release-notes\.FSharp.Compiler.Service\9.0.202.md = docs\release-notes\.FSharp.Compiler.Service\9.0.202.md
+		docs\release-notes\.FSharp.Compiler.Service\9.0.300.md = docs\release-notes\.FSharp.Compiler.Service\9.0.300.md
+		docs\release-notes\.FSharp.Compiler.Service\10.0.100.md = docs\release-notes\.FSharp.Compiler.Service\10.0.100.md
+		docs\release-notes\.FSharp.Compiler.Service\11.0.0.md = docs\release-notes\.FSharp.Compiler.Service\11.0.0.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".FSharp.Core", ".FSharp.Core", "{23798638-A1E9-4DAE-9C9C-F5D87499ADD6}"
