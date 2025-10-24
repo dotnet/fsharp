@@ -1883,8 +1883,7 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
         match tcConfig.typeCheckingConfig.Mode with
         | TypeCheckingMode.Graph when
             (not tcConfig.isInteractive
-             && not tcConfig.compilingFSharpCore
-             && not tcConfig.deterministic)
+             && not tcConfig.compilingFSharpCore)
             ->
             CheckMultipleInputsUsingGraphMode(
                 ctok,
