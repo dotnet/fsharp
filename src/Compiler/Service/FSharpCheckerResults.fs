@@ -334,16 +334,20 @@ type ExprTypingsResult =
 type Names = string list
 
 type FSharpCodeCompletionOptions =
-    { SuggestPatternNames: bool
-      SuggestObsoleteSymbols: bool
-      SuggestGeneratedOverrides: bool
-      SuggestOverrideBodies: bool }
+    {
+        SuggestPatternNames: bool
+        SuggestObsoleteSymbols: bool
+        SuggestGeneratedOverrides: bool
+        SuggestOverrideBodies: bool
+    }
 
     static member Default =
-        { SuggestPatternNames = true
-          SuggestObsoleteSymbols = false
-          SuggestGeneratedOverrides = true
-          SuggestOverrideBodies = true }
+        {
+            SuggestPatternNames = true
+            SuggestObsoleteSymbols = false
+            SuggestGeneratedOverrides = true
+            SuggestOverrideBodies = true
+        }
 
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
@@ -523,7 +527,9 @@ type internal TypeCheckInfo
             let targets =
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
-            let items = ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp) allowObsolete
+            let items =
+                ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp) allowObsolete
+
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors
 
@@ -700,7 +706,16 @@ type internal TypeCheckInfo
                     methods
                     |> List.collect (fun meth ->
                         let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-                        ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy allowObsolete)
+
+                        ResolveCompletionsInType
+                            ncenv
+                            nenv
+                            ResolveCompletionTargets.SettablePropertiesAndFields
+                            m
+                            ad
+                            false
+                            retTy
+                            allowObsolete)
 
                 let parameters = CollectParameters methods amap m
                 let items = props @ parameters
@@ -1358,7 +1373,14 @@ type internal TypeCheckInfo
 
         let getTyFromTypeNamePos (endPos: pos) =
             let nameResItems =
-                GetPreciseItemsFromNameResolution(endPos.Line, endPos.Column, None, ResolveTypeNamesToTypeRefs, ResolveOverloads.Yes, options.SuggestObsoleteSymbols)
+                GetPreciseItemsFromNameResolution(
+                    endPos.Line,
+                    endPos.Column,
+                    None,
+                    ResolveTypeNamesToTypeRefs,
+                    ResolveOverloads.Yes,
+                    options.SuggestObsoleteSymbols
+                )
 
             match nameResItems with
             | NameResResult.Members(ls, _, _) ->
@@ -1531,7 +1553,15 @@ type internal TypeCheckInfo
             // This is based on position (i.e. colAtEndOfNamesAndResidue). This is not used if a residueOpt is given.
             let nameResItems =
                 match residueOpt with
-                | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors, resolveOverloads, options.SuggestObsoleteSymbols)
+                | None ->
+                    GetPreciseItemsFromNameResolution(
+                        line,
+                        colAtEndOfNamesAndResidue,
+                        None,
+                        filterCtors,
+                        resolveOverloads,
+                        options.SuggestObsoleteSymbols
+                    )
                 | Some residue ->
                     // Deals with cases when we have spaces between dot and\or identifier, like A  . $
                     // if this is our case - then we need to locate end position of the name skipping whitespaces
@@ -1545,7 +1575,15 @@ type internal TypeCheckInfo
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
-                            GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors, resolveOverloads, options.SuggestObsoleteSymbols)
+
+                            GetPreciseItemsFromNameResolution(
+                                line,
+                                colAtEndOfNames,
+                                Some(residue),
+                                filterCtors,
+                                resolveOverloads,
+                                options.SuggestObsoleteSymbols
+                            )
                         | None -> NameResResult.Empty
                     | _ -> NameResResult.Empty
 
@@ -1612,7 +1650,9 @@ type internal TypeCheckInfo
                                 )
 
                             match leftOfDot with
-                            | Some(pos, _) -> GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors, options.SuggestObsoleteSymbols), true
+                            | Some(pos, _) ->
+                                GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors, options.SuggestObsoleteSymbols),
+                                true
                             | None ->
                                 // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
                                 // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
@@ -1707,7 +1747,7 @@ type internal TypeCheckInfo
         items |> List.map DefaultCompletionItem, denv, m
 
     /// Find record fields in the best naming environment.
-    let GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos plid envItems (options: FSharpCodeCompletionOptions)=
+    let GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos plid envItems (options: FSharpCodeCompletionOptions) =
         // An empty record expression may be completed into something like these:
         // { XXX = ... }
         // { xxx with XXX ... }
@@ -1895,7 +1935,8 @@ type internal TypeCheckInfo
 
             // Completion at ' SomeMethod( ... ) ' or ' [<SomeAttribute( ... )>] ' with named arguments
             | Some(CompletionContext.ParameterList(endPos, fields)) ->
-                let results = GetNamedParametersAndSettableFields endPos options.SuggestObsoleteSymbols
+                let results =
+                    GetNamedParametersAndSettableFields endPos options.SuggestObsoleteSymbols
 
                 let declaredItems = getDeclaredItemsNotInRangeOpWithAllSymbols ()
 
@@ -1986,14 +2027,7 @@ type internal TypeCheckInfo
                                                     spacesBeforeEnclosingDefinition)) when options.SuggestGeneratedOverrides ->
                 let indent = max 1 (spacesBeforeOverrideKeyword - spacesBeforeEnclosingDefinition)
 
-                GetOverridableMethods
-                    pos
-                    ctx
-                    enclosingTypeNameRange
-                    (spacesBeforeOverrideKeyword + indent)
-                    hasThis
-                    isStatic
-                    options
+                GetOverridableMethods pos ctx enclosingTypeNameRange (spacesBeforeOverrideKeyword + indent) hasThis isStatic options
 
             // Other completions
             | cc ->
@@ -2071,9 +2105,7 @@ type internal TypeCheckInfo
         |> Option.map (fun (_, q, _, _) -> FSharpDisplayContext(fun _ -> q.DisplayEnv))
 
     /// Get the auto-complete items at a location
-    member _.GetDeclarations
-        (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, options)
-        =
+    member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities, options) =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -2134,7 +2166,9 @@ type internal TypeCheckInfo
                 DeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities, genBodyForOverriddenMeth: FSharpCodeCompletionOptions) =
+    member _.GetDeclarationListSymbols
+        (parseResultsOpt, line, lineStr, partialName, getAllEntities, genBodyForOverriddenMeth: FSharpCodeCompletionOptions)
+        =
         let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
@@ -3391,19 +3425,13 @@ type FSharpCheckFileResults
         match details with
         | None -> DeclarationListInfo.Empty
         | Some(scope, _builderOpt) ->
-            scope.GetDeclarations(
-                parsedFileResults,
-                line,
-                lineText,
-                partialName,
-                completionContextAtPos,
-                getAllEntities,
-                options
-            )
+            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities, options)
 
     member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?options) =
         let getAllEntities = defaultArg getAllEntities (fun () -> [])
-        let genBodyForOverriddenMeth = defaultArg options FSharpCodeCompletionOptions.Default
+
+        let genBodyForOverriddenMeth =
+            defaultArg options FSharpCodeCompletionOptions.Default
 
         match details with
         | None -> []
