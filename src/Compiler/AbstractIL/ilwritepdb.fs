@@ -343,9 +343,13 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
 type PortablePdbGenerator
     (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, info: PdbData, pathMap: PathMap) =
 
-    let docs = info.Documents
+    // Deterministic: build the Document table in a stable order by mapped file path,
+    // but preserve the original-document-index -> handle mapping by filename.
+    let originalDocFiles = info.Documents |> Array.map (fun d -> d.File)
 
-    // The metadata to wite to the PortablePDB (Roslyn = _debugMetadataOpt)
+    let docsSorted =
+        info.Documents
+        |> Array.sortBy (fun d -> PathMap.apply pathMap d.File)
 
     let metadata = MetadataBuilder()
 
@@ -418,15 +422,13 @@ type PortablePdbGenerator
 
             Some(builder.ToImmutableArray())
 
+    // Build Document table in deterministic order
     let documentIndex =
-        let mutable index = Dictionary<string, DocumentHandle>(docs.Length)
-
-        let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
-
+        let mutable index = Dictionary<string, DocumentHandle>(docsSorted.Length)
+        let docLength = docsSorted.Length + (if String.IsNullOrWhiteSpace sourceLink then 0 else 1)
         metadata.SetCapacity(TableIndex.Document, docLength)
 
-        for doc in docs do
-            // For F# Interactive, file name 'stdin' gets generated for interactive inputs
+        for doc in docsSorted do
             let handle =
                 match checkSum doc.File checksumAlgorithm with
                 | Some(hashAlg, checkSum) ->
@@ -476,11 +478,12 @@ type PortablePdbGenerator
 
     let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
 
+    // IMPORTANT: map original document index -> filename -> handle
     let getDocumentHandle d =
-        if docs.Length = 0 || d < 0 || d > docs.Length then
+        if info.Documents.Length = 0 || d < 0 || d >= info.Documents.Length then
             Unchecked.defaultof<DocumentHandle>
         else
-            match documentIndex.TryGetValue(docs[d].File) with
+            match documentIndex.TryGetValue(originalDocFiles[d]) with
             | false, _ -> Unchecked.defaultof<DocumentHandle>
             | true, h -> h
 
@@ -563,7 +566,16 @@ type PortablePdbGenerator
     let serializeImportsBlob (imports: PdbImport[]) =
         let writer = new BlobBuilder()
 
-        for import in imports do
+        let importsSorted =
+            imports
+            |> Array.sortWith (fun a b ->
+                match a, b with
+                | ImportType t1, ImportType t2 -> compare t1 t2
+                | ImportNamespace n1, ImportNamespace n2 -> compare n1 n2
+                | ImportType _, ImportNamespace _ -> -1
+                | ImportNamespace _, ImportType _ -> 1)
+
+        for import in importsSorted do
             serializeImport writer import
 
         metadata.GetOrAddBlob(writer)
@@ -640,7 +652,8 @@ type PortablePdbGenerator
             )
             |> ignore
 
-            for localVariable in scope.Locals do
+            // Deterministic: write locals by stable index
+            for localVariable in scope.Locals |> Array.sortBy (fun l -> l.Index) do
                 lastLocalVariableHandle <-
                     metadata.AddLocalVariable(
                         LocalVariableAttributes.None,
@@ -653,7 +666,7 @@ type PortablePdbGenerator
             let sps =
                 match minfo.DebugRange with
                 | None -> Array.empty
-                | Some _ -> minfo.DebugPoints
+                | Some _ -> minfo.DebugPoints |> Array.sortWith SequencePoint.orderByOffset
 
             let builder = BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)
