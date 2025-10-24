@@ -192,7 +192,7 @@ type TcGlobals(
     checkNullness: bool,
     useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
-    tryFindSysTypeCcuHelper: string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option,
+    tryFindSysTypeCcuHelper: string list -> string -> bool -> CcuThunk option,
     emitDebugInfoInQuotations: bool,
     noDebugAttributes: bool,
     pathMap: PathMap,
@@ -1112,11 +1112,11 @@ type TcGlobals(
 
   member _.noDebugAttributes = noDebugAttributes
 
-  member _.tryFindSysTypeCcuHelper: string list -> string -> bool -> FSharp.Compiler.TypedTree.CcuThunk option = tryFindSysTypeCcuHelper
+  member _.tryFindSysTypeCcuHelper: string list -> string -> bool -> CcuThunk option = tryFindSysTypeCcuHelper
 
   member _.tryRemoveEmbeddedILTypeDefs () = [
       for key in embeddedILTypeDefs.Keys.OrderBy id do
-        match (embeddedILTypeDefs.TryRemove(key)) with
+        match embeddedILTypeDefs.TryRemove(key) with
         | true, ilTypeDef -> yield ilTypeDef
         | false, _ -> ()
       ]

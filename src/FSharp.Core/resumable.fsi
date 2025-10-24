@@ -65,7 +65,7 @@ and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> b
 type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 
 /// Contains functions for composing resumable code blocks
-[<Microsoft.FSharp.Core.RequireQualifiedAccess>]
+[<RequireQualifiedAccess>]
 module ResumableCode =
 
     /// Sequences one section of resumable code after another

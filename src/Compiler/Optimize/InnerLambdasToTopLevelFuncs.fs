@@ -191,7 +191,7 @@ module Pass1_DetermineTLRAndArities =
             let tps, vss, _b, _rty = stripTopLambda (e, f.Type)
             let nFormals = vss.Length
             let nMaxApplied = GetMaxNumArgsAtUses xinfo f
-            let arity = Operators.min nFormals nMaxApplied
+            let arity = min nFormals nMaxApplied
             if atTopLevel then
                 Some (f, arity)
             elif g.realsig then

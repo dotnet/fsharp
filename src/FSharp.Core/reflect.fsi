@@ -8,8 +8,6 @@ open System
 open System.Reflection
 open System.Diagnostics.CodeAnalysis
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Primitives.Basics
-open Microsoft.FSharp.Collections
 
 /// <summary>Represents a case of a discriminated union type</summary>
 ///

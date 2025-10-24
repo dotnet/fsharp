@@ -35,7 +35,7 @@ type ProcessedNode<'Item, 'Result> =
         Result: 'Result
     }
 
-type GraphProcessingException(msg, ex: System.Exception) =
+type GraphProcessingException(msg, ex: Exception) =
     inherit exn(msg, ex)
 
 let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
@@ -96,7 +96,7 @@ let processGraph<'Item, 'Result when 'Item: equality and 'Item: comparison>
     /// Create a setter and getter for an exception raised in one of the work items.
     /// Only the first exception encountered is stored - this can cause non-deterministic errors if more than one item fails.
     let raiseExn, getExn =
-        let mutable exn: ('Item * System.Exception) option = None
+        let mutable exn: ('Item * Exception) option = None
         let lockObj = obj ()
         // Only set the exception if it hasn't been set already
         let setExn newExn =

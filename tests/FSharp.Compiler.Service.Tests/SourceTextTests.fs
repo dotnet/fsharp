@@ -10,7 +10,7 @@ let ``Select text from a single line via the range`` () =
     let sourceText = SourceText.ofString """
 let a = 2
 """
-    let m = Range.mkRange "Sample.fs" (Position.mkPos 2 4) (Position.mkPos 2 5)
+    let m = mkRange "Sample.fs" (Position.mkPos 2 4) (Position.mkPos 2 5)
     let v = sourceText.GetSubTextFromRange m
     Assert.Equal("a", v)
 
@@ -21,7 +21,7 @@ let a b c =
     // comment
     2
 """
-    let m = Range.mkRange "Sample.fs" (Position.mkPos 2 4) (Position.mkPos 4 5)
+    let m = mkRange "Sample.fs" (Position.mkPos 2 4) (Position.mkPos 4 5)
     let v = sourceText.GetSubTextFromRange m
     let sanitized = v.Replace("\r", "")
     Assert.Equal("a b c =\n    // comment\n    2", sanitized)
@@ -29,7 +29,7 @@ let a b c =
 [<Fact>]
 let ``Inconsistent return carriage return correct text`` () =
     let sourceText =  SourceText.ofString "let a =\r\n    // foo\n    43"
-    let m = Range.mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6) 
+    let m = mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6) 
     let v = sourceText.GetSubTextFromRange m
     let sanitized = v.Replace("\r", "")
     Assert.Equal("a =\n    // foo\n    43", sanitized)
@@ -43,5 +43,5 @@ let ``Zero range should return empty string`` () =
 [<Fact>]
 let ``Invalid range should throw argument exception`` () =
     let sourceText = SourceText.ofString "a"
-    let mInvalid = Range.mkRange "Sample.fs" (Position.mkPos 3 6) (Position.mkPos 1 4)
+    let mInvalid = mkRange "Sample.fs" (Position.mkPos 3 6) (Position.mkPos 1 4)
     Assert.Throws<ArgumentException>(fun () -> sourceText.GetSubTextFromRange mInvalid |> ignore)

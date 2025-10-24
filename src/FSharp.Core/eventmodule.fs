@@ -11,13 +11,13 @@ module Event =
 
     [<CompiledName("Map")>]
     let map mapping (sourceEvent: IEvent<'Delegate, 'T>) =
-        let ev = new Event<_>()
+        let ev = Event<_>()
         sourceEvent.Add(mapping >> ev.Trigger)
         ev.Publish
 
     [<CompiledName("Filter")>]
     let filter predicate (sourceEvent: IEvent<'Delegate, 'T>) =
-        let ev = new Event<_>()
+        let ev = Event<_>()
 
         sourceEvent.Add(fun x ->
             if predicate x then
@@ -27,8 +27,8 @@ module Event =
 
     [<CompiledName("Partition")>]
     let partition predicate (sourceEvent: IEvent<'Delegate, 'T>) =
-        let ev1 = new Event<_>()
-        let ev2 = new Event<_>()
+        let ev1 = Event<_>()
+        let ev2 = Event<_>()
 
         sourceEvent.Add(fun x ->
             if predicate x then
@@ -40,7 +40,7 @@ module Event =
 
     [<CompiledName("Choose")>]
     let choose chooser (sourceEvent: IEvent<'Delegate, 'T>) =
-        let ev = new Event<_>()
+        let ev = Event<_>()
 
         sourceEvent.Add(fun x ->
             match chooser x with
@@ -52,7 +52,7 @@ module Event =
     [<CompiledName("Scan")>]
     let scan collector state (sourceEvent: IEvent<'Delegate, 'T>) =
         let mutable state = state
-        let ev = new Event<_>()
+        let ev = Event<_>()
 
         sourceEvent.Add(fun msg ->
             let z = state
@@ -82,15 +82,15 @@ module Event =
 
     [<CompiledName("Merge")>]
     let merge (event1: IEvent<'Del1, 'T>) (event2: IEvent<'Del2, 'T>) =
-        let ev = new Event<_>()
+        let ev = Event<_>()
         event1.Add(fun x -> ev.Trigger(x))
         event2.Add(fun x -> ev.Trigger(x))
         ev.Publish
 
     [<CompiledName("Split")>]
     let split (splitter: 'T -> Choice<'U1, 'U2>) (sourceEvent: IEvent<'Delegate, 'T>) =
-        let ev1 = new Event<_>()
-        let ev2 = new Event<_>()
+        let ev1 = Event<_>()
+        let ev2 = Event<_>()
 
         sourceEvent.Add(fun x ->
             match splitter x with

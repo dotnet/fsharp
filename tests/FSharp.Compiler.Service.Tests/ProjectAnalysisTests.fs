@@ -4437,7 +4437,7 @@ module internal Project34 =
             // i.e. the private type System.Data.Listeners may not be available on Mono.
             yield @"-r:" + (__SOURCE_DIRECTORY__ ++ ".." ++ "service" ++ "data" ++ "System.Data.dll")
         |]
-        |> Array.filter(fun arg -> not((arg.Contains("System.Data")) && not (arg.Contains(@"service\data\System.Data.dll"))))
+        |> Array.filter(fun arg -> not(arg.Contains("System.Data") && not (arg.Contains(@"service\data\System.Data.dll"))))
 
     let options = { checker.GetProjectOptionsFromCommandLineArgs (projFileName, args) with SourceFiles = fileNames }
 

@@ -19,7 +19,6 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.BuildGraph
 
 exception FileNameNotResolved of searchedLocations: string * fileName: string * range: range
 

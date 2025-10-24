@@ -4,7 +4,6 @@ module internal FSharp.Compiler.Detuple
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -687,7 +686,7 @@ let eligibleVal g m (v: Val) =
     && not //  .IsCompiledAsTopLevel &&
         v.IsCompiledAsTopLevel
 
-let determineTransforms g (z: GlobalUsageAnalysis.Results) =
+let determineTransforms g (z: Results) =
     let selectTransform (f: Val) sites =
         if not (eligibleVal g f.Range f) then
             None

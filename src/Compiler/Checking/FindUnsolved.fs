@@ -5,7 +5,6 @@ module internal FSharp.Compiler.FindUnsolved
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text

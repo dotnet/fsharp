@@ -107,8 +107,6 @@ exception TypeIsImplicitlyAbstract of range
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * range
 
 module DispatchSlotChecking =
-    open Import
-
     /// Print the signature of an override to a buffer as part of an error message
     let PrintOverrideToBuffer denv os (Override(_, _, id, methTypars, memberToParentInst, argTys, retTy, _, _, _)) = 
        let denv = { denv with showTyparBinding = true }
@@ -269,7 +267,7 @@ module DispatchSlotChecking =
         // Compare the types. CompiledSigOfMeth, GetObjectExprOverrideInfo and GetTypeMemberOverrideInfo have already 
         // applied all relevant substitutions except the renamings from fvtmps <-> methTypars 
 
-        let aenv = (TypeEquivEnv.EmptyIgnoreNulls).FromEquivTypars fvmethTypars methTypars 
+        let aenv = TypeEquivEnv.EmptyIgnoreNulls.FromEquivTypars fvmethTypars methTypars 
 
         List.forall2 (List.lengthsEqAndForall2 (typeAEquiv g aenv)) vargTys argTys &&
         returnTypesAEquiv g aenv vrty retTy &&
@@ -305,7 +303,7 @@ module DispatchSlotChecking =
                 ComposeTyparInsts ttpinst (ReverseTyparRenaming g memberToParentInst)
 
         // Compare under the composed substitutions 
-        let aenv = (TypeEquivEnv.EmptyIgnoreNulls).FromTyparInst ttpinst 
+        let aenv = TypeEquivEnv.EmptyIgnoreNulls.FromTyparInst ttpinst 
         
         typarsAEquiv g aenv fvmethTypars methTypars
 
@@ -640,7 +638,8 @@ module DispatchSlotChecking =
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (NicePrint.stringOfTy denv meth.ApparentEnclosingType) meth.LogicalName)), m))
+                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod
+                                                                      (sprintf "%s::%s" (NicePrint.stringOfTy denv meth.ApparentEnclosingType) meth.LogicalName), m))
                     | _ -> ()
 
     /// Get the slots of a type that can or must be implemented. This depends

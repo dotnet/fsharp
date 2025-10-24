@@ -843,7 +843,7 @@ module Structure =
                     | _ -> loop (lineNum, None, result) rest (lineNum + 1)
 
             let comments =
-                let (_, lastComment, comments) = loop (-1, None, []) (List.ofArray lines) 0
+                let _, lastComment, comments = loop (-1, None, []) (List.ofArray lines) 0
 
                 match lastComment with
                 | Some comment -> comment :: comments

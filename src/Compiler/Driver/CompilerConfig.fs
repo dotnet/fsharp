@@ -27,8 +27,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.BuildGraph
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Core.CompilerServices
 #endif
@@ -346,7 +344,7 @@ type ImportedAssembly =
         IsProviderGenerated: bool
         mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Optimizer.LazyModuleInfo option>
+        FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<LazyModuleInfo option>
     }
 
 type AvailableImportedAssembly =
@@ -564,7 +562,7 @@ type TcConfigBuilder =
         mutable doTLR: bool (* run TLR pass? *)
         mutable doFinalSimplify: bool (* do final simplification pass *)
         mutable optsOn: bool (* optimizations are turned on *)
-        mutable optSettings: Optimizer.OptimizationSettings
+        mutable optSettings: OptimizationSettings
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable parallelParsing: bool
@@ -1045,7 +1043,7 @@ type TcConfigBuilder =
 
     member tcConfigB.AddReferencedAssemblyByPath(m, path) =
         if FileSystem.IsInvalidPathShim path then
-            warning (Error(FSComp.SR.buildInvalidAssemblyName (path), m))
+            warning (Error(FSComp.SR.buildInvalidAssemblyName path, m))
         elif
             not (
                 tcConfigB.referencedDLLs
@@ -1173,7 +1171,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt =
-        computeKnownDllReference (data.primaryAssembly.Name)
+        computeKnownDllReference data.primaryAssembly.Name
 
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler

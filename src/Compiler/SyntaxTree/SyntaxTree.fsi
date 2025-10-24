@@ -152,7 +152,7 @@ type SynConst =
     | Char of char
 
     /// F# syntax: 23.4M
-    | Decimal of System.Decimal
+    | Decimal of Decimal
 
     /// UserNum(value, suffix)
     ///

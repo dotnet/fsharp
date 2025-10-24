@@ -5,13 +5,11 @@ namespace Microsoft.FSharp.Collections
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 open System
-open System.Diagnostics
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
@@ -119,7 +117,7 @@ module Internal =
                 member _.Reset() =
                     noReset ()
 
-            interface System.IDisposable with
+            interface IDisposable with
                 member this.Dispose() =
                     this.Dispose()
 
@@ -255,7 +253,7 @@ module Internal =
 
                   member _.Reset() =
                       noReset ()
-              interface System.IDisposable with
+              interface IDisposable with
                   member _.Dispose() =
                       e.Dispose()
             }
@@ -284,7 +282,7 @@ module Internal =
 
                       member _.Reset() =
                           noReset ()
-                  interface System.IDisposable with
+                  interface IDisposable with
                       member _.Dispose() =
                           e.Dispose()
                 }
@@ -334,7 +332,7 @@ module Internal =
 
                 let setIndex i =
                     index <- i
-                    current <- (Unchecked.defaultof<_>) // cache node unprimed, initialised on demand.
+                    current <- Unchecked.defaultof<_> // cache node unprimed, initialised on demand.
 
                 let getCurrent () =
                     if index = unstarted then
@@ -361,7 +359,7 @@ module Internal =
                               setIndex 0
                               true
                           else
-                              if index = System.Int32.MaxValue then
+                              if index = Int32.MaxValue then
                                   invalidOp (SR.GetString(SR.enumerationPastIntMaxValue))
 
                               if index = finalIndex then
@@ -372,7 +370,7 @@ module Internal =
 
                       member _.Reset() =
                           noReset ()
-                  interface System.IDisposable with
+                  interface IDisposable with
                       member _.Dispose() =
                           ()
                 }
@@ -394,7 +392,7 @@ module Internal =
             interface IEnumerator<'T> with
                 member x.Current = x.Get()
 
-            interface System.Collections.IEnumerator with
+            interface IEnumerator with
                 member _.MoveNext() =
                     if curr >= len then
                         false
@@ -407,7 +405,7 @@ module Internal =
                 member _.Reset() =
                     noReset ()
 
-            interface System.IDisposable with
+            interface IDisposable with
                 member _.Dispose() =
                     ()
 
@@ -519,7 +517,7 @@ module Internal =
                     | Some v -> v
                     | None -> invalidOp (SR.GetString(SR.moveNextNotCalledOrFinished))
 
-            interface System.Collections.IEnumerator with
+            interface IEnumerator with
                 member x.Current = box (x :> IEnumerator<_>).Current
 
                 member x.MoveNext() =
@@ -539,7 +537,7 @@ module Internal =
                 member _.Reset() =
                     IEnumerator.noReset ()
 
-            interface System.IDisposable with
+            interface IDisposable with
                 member _.Dispose() =
                     if not finished then
                         disposeG g
@@ -570,7 +568,7 @@ module Internal =
 
 [<Sealed>]
 type CachedSeq<'T>(cleanup, res: seq<'T>) =
-    interface System.IDisposable with
+    interface IDisposable with
         member x.Dispose() =
             cleanup ()
 
@@ -578,9 +576,9 @@ type CachedSeq<'T>(cleanup, res: seq<'T>) =
         member x.GetEnumerator() =
             res.GetEnumerator()
 
-    interface System.Collections.IEnumerable with
+    interface IEnumerable with
         member x.GetEnumerator() =
-            (res :> System.Collections.IEnumerable).GetEnumerator()
+            (res :> IEnumerable).GetEnumerator()
 
     member obj.Clear() =
         cleanup ()
@@ -596,10 +594,10 @@ module Seq =
         mkSeq (fun () -> f().GetEnumerator())
 
     let mkUnfoldSeq f x =
-        mkSeq (fun () -> IEnumerator.unfold f x)
+        mkSeq (fun () -> unfold f x)
 
     let inline indexNotFound () =
-        raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+        raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
     [<CompiledName("Delay")>]
     let delay generator =
@@ -614,14 +612,14 @@ module Seq =
 
     [<CompiledName("InitializeInfinite")>]
     let initInfinite initializer =
-        mkSeq (fun () -> IEnumerator.upto None initializer)
+        mkSeq (fun () -> upto None initializer)
 
     [<CompiledName("Initialize")>]
     let init count initializer =
         if count < 0 then
             invalidArgInputMustBeNonNegative "count" count
 
-        mkSeq (fun () -> IEnumerator.upto (Some(count - 1)) initializer)
+        mkSeq (fun () -> upto (Some(count - 1)) initializer)
 
     [<CompiledName("Iterate")>]
     let iter action (source: seq<'T>) =
@@ -639,7 +637,7 @@ module Seq =
             invalidArgInputMustBeNonNegative "index" index
 
         use e = source.GetEnumerator()
-        IEnumerator.nth index e
+        nth index e
 
     [<CompiledName("TryItem")>]
     let tryItem index (source: seq<'T>) =
@@ -649,7 +647,7 @@ module Seq =
             None
         else
             use e = source.GetEnumerator()
-            IEnumerator.tryItem index e
+            tryItem index e
 
     [<CompiledName("Get")>]
     let nth index (source: seq<'T>) =
@@ -736,7 +734,7 @@ module Seq =
     [<CompiledName("Filter")>]
     let filter predicate source =
         checkNonNull "source" source
-        revamp (IEnumerator.filter predicate) source
+        revamp (filter predicate) source
 
     [<CompiledName("Where")>]
     let where predicate source =
@@ -745,36 +743,36 @@ module Seq =
     [<CompiledName("Map")>]
     let map mapping source =
         checkNonNull "source" source
-        revamp (IEnumerator.map mapping) source
+        revamp (map mapping) source
 
     [<CompiledName("MapIndexed")>]
     let mapi mapping source =
         checkNonNull "source" source
-        revamp (IEnumerator.mapi mapping) source
+        revamp (mapi mapping) source
 
     [<CompiledName("MapIndexed2")>]
     let mapi2 mapping source1 source2 =
         checkNonNull "source1" source1
         checkNonNull "source2" source2
-        revamp2 (IEnumerator.mapi2 mapping) source1 source2
+        revamp2 (mapi2 mapping) source1 source2
 
     [<CompiledName("Map2")>]
     let map2 mapping source1 source2 =
         checkNonNull "source1" source1
         checkNonNull "source2" source2
-        revamp2 (IEnumerator.map2 mapping) source1 source2
+        revamp2 (map2 mapping) source1 source2
 
     [<CompiledName("Map3")>]
     let map3 mapping source1 source2 source3 =
         checkNonNull "source1" source1
         checkNonNull "source2" source2
         checkNonNull "source3" source3
-        revamp3 (IEnumerator.map3 mapping) source1 source2 source3
+        revamp3 (map3 mapping) source1 source2 source3
 
     [<CompiledName("Choose")>]
     let choose chooser source =
         checkNonNull "source" source
-        revamp (IEnumerator.choose chooser) source
+        revamp (choose chooser) source
 
     [<CompiledName("Indexed")>]
     let indexed source =
@@ -797,7 +795,7 @@ module Seq =
     [<CompiledName("Cast")>]
     let cast (source: IEnumerable) =
         checkNonNull "source" source
-        mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator()))
+        mkSeq (fun () -> cast (source.GetEnumerator()))
 
     [<CompiledName("TryPick")>]
     let tryPick chooser (source: seq<'T>) =
@@ -1006,7 +1004,7 @@ module Seq =
     [<CompiledName("OfArray")>]
     let ofArray (source: 'T array) =
         checkNonNull "source" source
-        mkSeq (fun () -> IEnumerator.ofArray source)
+        mkSeq (fun () -> ofArray source)
 
     [<CompiledName("ToArray")>]
     let toArray (source: seq<'T>) =
@@ -1070,7 +1068,7 @@ module Seq =
 
     [<CompiledName("Singleton")>]
     let singleton value =
-        mkSeq (fun () -> IEnumerator.Singleton value)
+        mkSeq (fun () -> Singleton value)
 
     [<CompiledName("Truncate")>]
     let truncate count (source: seq<'T>) =
@@ -1274,7 +1272,7 @@ module Seq =
                 prefix.Clear()
 
                 match enumeratorR with
-                | Some(Some e) -> IEnumerator.dispose e
+                | Some(Some e) -> dispose e
                 | _ -> ()
 
                 enumeratorR <- None)
@@ -1681,7 +1679,7 @@ module Seq =
         checkNonNull "source" source
         use e = source.GetEnumerator()
 
-        if (e.MoveNext()) then
+        if e.MoveNext() then
             e.Current
         else
             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
@@ -1691,7 +1689,7 @@ module Seq =
         checkNonNull "source" source
         use e = source.GetEnumerator()
 
-        if (e.MoveNext()) then
+        if e.MoveNext() then
             Some e.Current
         else
             None
@@ -1714,7 +1712,7 @@ module Seq =
     let last (source: seq<_>) =
         checkNonNull "source" source
 
-        match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
+        match Seq.tryLastV source with
         | ValueSome x -> x
         | ValueNone -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
 
@@ -1722,7 +1720,7 @@ module Seq =
     let tryLast (source: seq<_>) =
         checkNonNull "source" source
 
-        match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
+        match Seq.tryLastV source with
         | ValueSome x -> Some x
         | ValueNone -> None
 
