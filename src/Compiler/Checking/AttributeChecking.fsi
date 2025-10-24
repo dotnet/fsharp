@@ -77,7 +77,7 @@ val CheckILFieldAttributes: g: TcGlobals -> finfo: ILFieldInfo -> m: range -> un
 val CheckMethInfoAttributes:
     g: TcGlobals -> m: range -> tyargsOpt: 'a option -> minfo: MethInfo -> OperationResult<unit>
 
-val MethInfoIsUnseen: g: TcGlobals -> m: range -> ty: TType -> minfo: MethInfo -> bool
+val MethInfoIsUnseen: g: TcGlobals -> m: range -> ty: TType -> minfo: MethInfo -> allowObsolete: bool -> bool
 
 val PropInfoIsUnseen: m: 'a -> pinfo: PropInfo -> bool
 
