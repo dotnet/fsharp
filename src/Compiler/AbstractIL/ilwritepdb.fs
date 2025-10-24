@@ -348,8 +348,7 @@ type PortablePdbGenerator
     let originalDocFiles = info.Documents |> Array.map (fun d -> d.File)
 
     let docsSorted =
-        info.Documents
-        |> Array.sortBy (fun d -> PathMap.apply pathMap d.File)
+        info.Documents |> Array.sortBy (fun d -> PathMap.apply pathMap d.File)
 
     let metadata = MetadataBuilder()
 
@@ -425,7 +424,10 @@ type PortablePdbGenerator
     // Build Document table in deterministic order
     let documentIndex =
         let mutable index = Dictionary<string, DocumentHandle>(docsSorted.Length)
-        let docLength = docsSorted.Length + (if String.IsNullOrWhiteSpace sourceLink then 0 else 1)
+
+        let docLength =
+            docsSorted.Length + (if String.IsNullOrWhiteSpace sourceLink then 0 else 1)
+
         metadata.SetCapacity(TableIndex.Document, docLength)
 
         for doc in docsSorted do
