@@ -19,6 +19,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     =
     /// <summary>Returns a new map with the binding added to the given map.
     /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(log n)</remarks>
     /// <param name="key">The key to add.</param>
     /// <param name="value">The value to add.</param>
     ///
@@ -35,6 +36,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member Add: key: 'Key * value: 'Value -> Map<'Key, 'Value>
 
     /// <summary>Returns a new map with the value stored under key changed according to f.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="f">The change function.</param>
@@ -56,6 +58,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member Change: key: 'Key * f: ('Value option -> 'Value option) -> Map<'Key, 'Value>
 
     /// <summary>Returns true if there are no bindings in the map.</summary>
+    /// <remarks>Time complexity: O(1), Space complexity: O(1)</remarks>
     ///
     /// <example id="member-isempty-1">
     /// <code lang="fsharp">
@@ -69,6 +72,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member IsEmpty: bool
 
     /// <summary>Builds a map that contains the bindings of the given IEnumerable.</summary>
+    /// <remarks>Time complexity: O(n log n), Space complexity: O(n)</remarks>
     ///
     /// <param name="elements">The input sequence of key/value pairs.</param>
     ///
@@ -82,6 +86,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     new: elements: seq<'Key * 'Value> -> Map<'Key, 'Value>
 
     /// <summary>Tests if an element is in the domain of the map.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     ///
@@ -98,6 +103,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member ContainsKey: key: 'Key -> bool
 
     /// <summary>The number of bindings in the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(1)</remarks>
     ///
     /// <example id="member-count-1">
     /// <code lang="fsharp">
@@ -110,6 +116,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     /// <summary>Lookup an element in the map. Raise <c>KeyNotFoundException</c> if no binding
     /// exists in the map.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown when the key is not found.</exception>
@@ -127,6 +134,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
     member Item: key: 'Key -> 'Value with get
 
     /// <summary>Removes an element from the domain of the map. No exception is raised if the element is not present.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="key">The input key.</param>
     ///
@@ -144,6 +152,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     /// <summary>Lookup an element in the map, returning a <c>Some</c> value if the element is in the domain
     /// of the map and <c>None</c> if not.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     ///
@@ -161,6 +170,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     /// <summary>Lookup an element in the map, assigning to <c>value</c> if the element is in the domain
     /// of the map and returning <c>false</c> if not.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="value">A reference to the output value.</param>
@@ -185,6 +195,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     /// <summary>The keys in the map.
     /// The sequence will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <example id="member-keys-1">
     /// <code lang="fsharp">
@@ -197,6 +208,7 @@ type Map<[<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn; ComparisonCond
 
     /// <summary>All the values in the map, including the duplicates.
     /// The sequence will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <example id="member-values-1">
     /// <code lang="fsharp">
@@ -223,6 +235,7 @@ module Map =
 
     /// <summary>Returns a new map with the binding added to the given map.
     /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="value">The input value.</param>
@@ -242,6 +255,7 @@ module Map =
     val add: key: 'Key -> value: 'T -> table: Map<'Key, 'T> -> Map<'Key, 'T>
 
     /// <summary>Returns a new map with the value stored under key changed according to f.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="f">The change function.</param>
@@ -264,6 +278,7 @@ module Map =
     val change: key: 'Key -> f: ('T option -> 'T option) -> table: Map<'Key, 'T> -> Map<'Key, 'T>
 
     /// <summary>Returns a new map made from the given bindings.</summary>
+    /// <remarks>Time complexity: O(n log n), Space complexity: O(n)</remarks>
     ///
     /// <param name="elements">The input list of key/value pairs.</param>
     ///
@@ -280,6 +295,7 @@ module Map =
     val ofList: elements: ('Key * 'T) list -> Map<'Key, 'T>
 
     /// <summary>Returns a new map made from the given bindings.</summary>
+    /// <remarks>Time complexity: O(n log n), Space complexity: O(n)</remarks>
     ///
     /// <param name="elements">The input array of key/value pairs.</param>
     ///
@@ -296,6 +312,7 @@ module Map =
     val ofArray: elements: ('Key * 'T) array -> Map<'Key, 'T>
 
     /// <summary>Returns a new map made from the given bindings.</summary>
+    /// <remarks>Time complexity: O(n log n), Space complexity: O(n)</remarks>
     ///
     /// <param name="elements">The input sequence of key/value pairs.</param>
     ///
@@ -313,6 +330,7 @@ module Map =
 
     /// <summary>Views the collection as an enumerable sequence of pairs.
     /// The sequence will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <param name="table">The input map.</param>
     ///
@@ -330,6 +348,7 @@ module Map =
 
     /// <summary>Returns a list of all key-value pairs in the mapping.
     /// The list will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <param name="table">The input map.</param>
     ///
@@ -347,6 +366,7 @@ module Map =
 
     /// <summary>Returns an array of all key-value pairs in the mapping.
     /// The array will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <param name="table">The input map.</param>
     ///
@@ -363,6 +383,7 @@ module Map =
     val toArray: table: Map<'Key, 'T> -> ('Key * 'T) array
 
     /// <summary>Is the map empty?</summary>
+    /// <remarks>Time complexity: O(1), Space complexity: O(1)</remarks>
     ///
     /// <param name="table">The input map.</param>
     ///
@@ -381,6 +402,7 @@ module Map =
     val isEmpty: table: Map<'Key, 'T> -> bool
 
     /// <summary>The empty map.</summary>
+    /// <remarks>Time complexity: O(1), Space complexity: O(1)</remarks>
     ///
     /// <example id="empty-1">
     /// <code lang="fsharp">
@@ -393,6 +415,7 @@ module Map =
 
     /// <summary>Lookup an element in the map, raising <c>KeyNotFoundException</c> if no binding
     /// exists in the map.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="table">The input map.</param>
@@ -412,6 +435,7 @@ module Map =
     val find: key: 'Key -> table: Map<'Key, 'T> -> 'T
 
     /// <summary>Searches the map looking for the first element where the given function returns a <c>Some</c> value.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="chooser">The function to generate options from the key/value pairs.</param>
     /// <param name="table">The input map.</param>
@@ -440,6 +464,7 @@ module Map =
 
     /// <summary>Searches the map looking for the first element where the given function returns a <c>Some</c> value.
     /// Raise <c>KeyNotFoundException</c> if no such element exists.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="chooser">The function to generate options from the key/value pairs.</param>
     /// <param name="table">The input map.</param>
@@ -468,6 +493,7 @@ module Map =
     val pick: chooser: ('Key -> 'T -> 'U option) -> table: Map<'Key, 'T> -> 'U
 
     /// <summary>Folds over the bindings in the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="folder">The function to update the state given the input key/value pairs.</param>
     /// <param name="table">The input map.</param>
@@ -489,6 +515,7 @@ module Map =
             when 'Key: comparison
 
     /// <summary>Folds over the bindings in the map </summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="folder">The function to update the state given the input key/value pairs.</param>
     /// <param name="state">The initial state.</param>
@@ -510,6 +537,7 @@ module Map =
             when 'Key: comparison
 
     /// <summary>Applies the given function to each binding in the dictionary</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="action">The function to apply to each key/value pair.</param>
     /// <param name="table">The input map.</param>
@@ -527,6 +555,7 @@ module Map =
 
     /// <summary>Returns true if the given predicate returns true for one of the
     /// bindings in the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="table">The input map.</param>
@@ -545,6 +574,7 @@ module Map =
     val exists: predicate: ('Key -> 'T -> bool) -> table: Map<'Key, 'T> -> bool
 
     /// <summary>Builds a new map containing only the bindings for which the given predicate returns 'true'.</summary>
+    /// <remarks>Time complexity: O(n log n), Space complexity: O(n)</remarks>
     ///
     /// <param name="predicate">The function to test the key/value pairs.</param>
     /// <param name="table">The input map.</param>
@@ -563,6 +593,7 @@ module Map =
 
     /// <summary>Returns true if the given predicate returns true for all of the
     /// bindings in the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="table">The input map.</param>
@@ -583,6 +614,7 @@ module Map =
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to each of the elements of the collection. The key passed to the
     /// function indicates the key of element being transformed.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <param name="mapping">The function to transform the key/value pairs.</param>
     /// <param name="table">The input map.</param>
@@ -600,6 +632,7 @@ module Map =
     val map: mapping: ('Key -> 'T -> 'U) -> table: Map<'Key, 'T> -> Map<'Key, 'U>
 
     /// <summary>Tests if an element is in the domain of the map.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="table">The input map.</param>
@@ -619,6 +652,7 @@ module Map =
 
     /// <summary>Builds two new maps, one containing the bindings for which the given predicate returns 'true',
     /// and the other the remaining bindings.</summary>
+    /// <remarks>Time complexity: O(n log n), Space complexity: O(n)</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="table">The input map.</param>
@@ -637,6 +671,7 @@ module Map =
     val partition: predicate: ('Key -> 'T -> bool) -> table: Map<'Key, 'T> -> Map<'Key, 'T> * Map<'Key, 'T>
 
     /// <summary>Removes an element from the domain of the map. No exception is raised if the element is not present.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="table">The input map.</param>
@@ -656,6 +691,7 @@ module Map =
 
     /// <summary>Lookup an element in the map, returning a <c>Some</c> value if the element is in the domain
     /// of the map and <c>None</c> if not.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="key">The input key.</param>
     /// <param name="table">The input map.</param>
@@ -675,6 +711,7 @@ module Map =
 
     /// <summary>Evaluates the function on each mapping in the collection. Returns the key for the first mapping
     /// where the function returns 'true'. Raise <c>KeyNotFoundException</c> if no such element exists.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="table">The input map.</param>
@@ -695,6 +732,7 @@ module Map =
 
     /// <summary>Returns the key of the first mapping in the collection that satisfies the given predicate.
     /// Returns 'None' if no such element exists.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(log n)</remarks>
     ///
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="table">The input map.</param>
@@ -713,6 +751,7 @@ module Map =
     val tryFindKey: predicate: ('Key -> 'T -> bool) -> table: Map<'Key, 'T> -> 'Key option
 
     /// <summary>The number of bindings in the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(1)</remarks>
     ///
     /// <example id="count-1">
     /// <code lang="fsharp">
@@ -726,6 +765,7 @@ module Map =
 
     /// <summary>The keys in the map.
     /// The sequence will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <example id="keys-1">
     /// <code lang="fsharp">
@@ -739,6 +779,7 @@ module Map =
 
     /// <summary>The values in the map, including the duplicates.
     /// The sequence will be ordered by the keys of the map.</summary>
+    /// <remarks>Time complexity: O(n), Space complexity: O(n)</remarks>
     ///
     /// <example id="values-1">
     /// <code lang="fsharp">
@@ -752,6 +793,7 @@ module Map =
 
     /// <summary>Returns binding for the smallest key in the map.
     /// Raise <c>KeyNotFoundException</c> when map is empty.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="table">The input map.</param>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the map is empty.</exception>
@@ -768,6 +810,7 @@ module Map =
 
     /// <summary>Returns binding for the largest key in the map.
     /// Raise <c>KeyNotFoundException</c> when map is empty.</summary>
+    /// <remarks>Time complexity: O(log n), Space complexity: O(1)</remarks>
     ///
     /// <param name="table">The input map.</param>
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the map is empty.</exception>
