@@ -362,6 +362,12 @@ type BlockSeparator = range * pos option
 /// correct and can be used in name resolution.
 type RecordFieldName = SynLongIdent * bool
 
+/// Represents either a record field name or a spread expression.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type RecordBinding =
+    | Field of name: RecordFieldName * equalsRange: range option * declExpr: SynExpr option
+    | Spread of spread: SynExprSpread
+
 /// Indicates if an expression is an atomic expression.
 ///
 /// An atomic expression has no whitespace unless enclosed in parentheses, e.g.
@@ -591,7 +597,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: (SynLongIdent * range option * SynExpr) list *
+        recordFields: SynExprAnonRecordFieldOrSpread list *
         range: range *
         trivia: SynExprAnonRecdTrivia
 
@@ -605,7 +611,7 @@ type SynExpr =
     | Record of
         baseInfo: (SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo: (SynExpr * BlockSeparator) option *
-        recordFields: SynExprRecordField list *
+        recordFields: SynExprRecordFieldOrSpread list *
         range: range
 
     /// F# syntax: new C(...)
@@ -970,6 +976,18 @@ type SynExpr =
     /// Indicates if this expression arises from error recovery
     member IsArbExprAndThusAlreadyReportedError: bool
 
+/// Represents a type spread in a type definition.
+///
+/// type Ty2 = { ...Ty1 }
+[<NoEquality; NoComparison>]
+type SynTypeSpread = SynTypeSpread of spreadRange: range * ty: SynType * range: range
+
+/// Represents a spread expression.
+///
+/// ...expr
+[<NoEquality; NoComparison>]
+type SynExprSpread = SynExprSpread of spreadRange: range * expr: SynExpr * range: range
+
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
     | SynExprRecordField of
@@ -978,6 +996,28 @@ type SynExprRecordField =
         expr: SynExpr option *
         range: range *
         blockSeparator: BlockSeparator option
+
+/// Represents either a field declaration or a spread expression in a nominal record construction expression.
+///
+/// let r = { A = 3; ...b; C = true }
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynExprRecordFieldOrSpread =
+    | Field of field: SynExprRecordField
+    | Spread of spread: SynExprSpread * blockSeparator: BlockSeparator option
+
+[<NoEquality; NoComparison>]
+type SynExprAnonRecordField =
+    | SynExprAnonRecordField of fieldName: SynLongIdent * equalsRange: range option * expr: SynExpr * range: range
+
+/// Represents either a field declaration or a spread expression in an anonymous record construction expression.
+///
+/// let r = {| A = 3; ...b; C = true |}
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynExprAnonRecordFieldOrSpread =
+    | Field of field: SynExprAnonRecordField * blockSeparator: BlockSeparator option
+    | Spread of spread: SynExprSpread * blockSeparator: BlockSeparator option
+
+    member Range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
@@ -1362,7 +1402,7 @@ type SynTypeDefnSimpleRepr =
     | Enum of cases: SynEnumCase list * range: range
 
     /// A record type definition, type X = { A: int; B: int }
-    | Record of accessibility: SynAccess option * recordFields: SynField list * range: range
+    | Record of accessibility: SynAccess option * recordFieldsAndSpreads: SynFieldOrSpread list * range: range
 
     /// An object oriented type definition. This is not a parse-tree form, but represents the core
     /// type representation which the type checker splits out from the "ObjectModel" cases of type definitions.
@@ -1394,6 +1434,12 @@ type SynTypeDefnSimpleRepr =
 
     /// Gets the syntax range of this construct
     member Range: range
+
+/// Represents either a field declaration or a type spread.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynFieldOrSpread =
+    | Field of field: SynField
+    | Spread of spread: SynTypeSpread
 
 /// Represents the syntax tree for one case in an enum definition.
 [<NoEquality; NoComparison>]
@@ -1706,6 +1752,8 @@ type SynMemberDefn =
         synExpr: SynExpr *
         range: range *
         trivia: SynMemberDefnAutoPropertyTrivia
+
+    | Spread of spread: SynExprSpread * range: range
 
     /// Gets the syntax range of this construct
     member Range: range
