@@ -125,8 +125,8 @@ module CheckResultsExtensions =
         member this.GetTooltip(context: ResolveContext, width) =
             this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier, width)
 
-        member this.GetCodeCompletionSuggestions(context: CodeCompletionContext, parseResults: FSharpParseFileResults) =
-            this.GetDeclarationListInfo(Some parseResults, context.Pos.Line, context.LineText, context.PartialIdentifier)
+        member this.GetCodeCompletionSuggestions(context: CodeCompletionContext, parseResults: FSharpParseFileResults, options: FSharpCodeCompletionOptions) =
+            this.GetDeclarationListInfo(Some parseResults, context.Pos.Line, context.LineText, context.PartialIdentifier, options = options)
 
 [<RequireQualifiedAccess>]
 module Checker =
@@ -152,10 +152,13 @@ module Checker =
         let _, checkResults = getParseAndCheckResults context.Source
         context, checkResults
 
-    let getCompletionInfo (markedSource: string) =
+    let getCompletionInfoWithOptions (options: FSharpCodeCompletionOptions) (markedSource: string) =
         let context = getCompletionContext markedSource
         let parseResults, checkResults = getParseAndCheckResults context.Source
-        checkResults.GetCodeCompletionSuggestions(context, parseResults)
+        checkResults.GetCodeCompletionSuggestions(context, parseResults, options)
+
+    let getCompletionInfo markedSource =
+        getCompletionInfoWithOptions FSharpCodeCompletionOptions.Default markedSource
 
     let getSymbolUses (markedSource: string) =
         let context, checkResults = getCheckedResolveContext markedSource

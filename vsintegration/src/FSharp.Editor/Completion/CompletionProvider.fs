@@ -182,6 +182,11 @@ type internal FSharpCompletionProvider
             let completionContext =
                 ParsedInput.TryGetCompletionContext(completionContextPos, parseResults.ParseTree, line)
 
+            let options =
+                { FSharpCodeCompletionOptions.Default with
+                    SuggestOverrideBodies = genBodyForOverriddenMeth
+                }
+
             let declarations =
                 checkFileResults.GetDeclarationListInfo(
                     Some(parseResults),
@@ -190,7 +195,7 @@ type internal FSharpCompletionProvider
                     partialName,
                     getAllSymbols,
                     (completionContextPos, completionContext),
-                    genBodyForOverriddenMeth
+                    options
                 )
 
             let results = List<Completion.CompletionItem>()
