@@ -614,7 +614,6 @@ type T() =
 do {caret}
 """
 
-
         [<Fact>]
         let ``Record - Field 01`` () =
             assertItemAllowed "F" """
