@@ -3197,6 +3197,7 @@ type DisplayEnv =
       shrinkOverloads: bool
       printVerboseSignatures: bool
       escapeKeywordNames: bool
+      showOnlyDirectBaseTypes: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : Val -> Layout option
@@ -3235,6 +3236,7 @@ type DisplayEnv =
         shrinkOverloads = true
         printVerboseSignatures = false
         escapeKeywordNames = false
+        showOnlyDirectBaseTypes = false
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None)
@@ -3272,7 +3274,8 @@ type DisplayEnv =
                showDocumentation = true
                shrinkOverloads = false
                escapeKeywordNames = true
-               includeStaticParametersInTypeNames = true }
+               includeStaticParametersInTypeNames = true
+               showOnlyDirectBaseTypes = false }
         denv.SetOpenPaths
             [ FSharpLib.RootPath
               FSharpLib.CorePath

@@ -1087,6 +1087,7 @@ type DisplayEnv =
         showCsharpCodeAnalysisAttributes: bool
         showOverrides: bool
         showStaticallyResolvedTyparAnnotations: bool
+        showOnlyDirectBaseTypes: bool
         showNullnessAnnotations: bool option
         abbreviateAdditionalConstraints: bool
         showTyparDefaultConstraints: bool
