@@ -577,8 +577,10 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g (m: range) (ty: TType) minfo = 
-    let isUnseenByObsoleteAttrib () = 
+let MethInfoIsUnseen g (m: range) (ty: TType) minfo allowObsolete = 
+    let isUnseenByObsoleteAttrib () =
+        if allowObsolete then false else
+
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
                 (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m))
