@@ -21,6 +21,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n * m) - where n is the length of source1 and m is the length of source2
+    /// Space Complexity: O(m) - for caching source2, plus O(1) for lazy evaluation
+    /// </remarks>
+    ///
     /// <example id="all-pairs-1">
     /// <code lang="fsharp">
     /// ([1; 2], [3; 4]) ||> Seq.allPairs
@@ -38,7 +43,11 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed
-    /// concurrently.</remarks>
+    /// concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n + m) for full enumeration
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="source1">The first sequence.</param>
     /// <param name="source2">The second sequence.</param>
@@ -60,7 +69,11 @@ module Seq =
     /// <summary>Returns the average of the elements in the sequence.</summary>
     ///
     /// <remarks>The elements are averaged using the <c>+</c> operator, <c>DivideByInt</c> method and <c>Zero</c> property
-    /// associated with the element type.</remarks>
+    /// associated with the element type.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(1) - constant space for accumulating sum and count
+    /// </remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -93,7 +106,11 @@ module Seq =
     /// of the sequence.</summary>
     ///
     /// <remarks>The elements are averaged using the <c>+</c> operator, <c>DivideByInt</c> method and <c>Zero</c> property
-    /// associated with the generated type.</remarks>
+    /// associated with the generated type.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(1) - constant space for accumulating sum and count
+    /// </remarks>
     ///
     /// <param name="projection">A function applied to transform each element of the sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -151,7 +168,11 @@ module Seq =
     /// The enumerator may be disposed and underlying cache storage released by
     /// converting the returned sequence object to type IDisposable, and calling the Dispose method
     /// on this object. The sequence object may then be re-enumerated and a fresh enumerator will
-    /// be used.</remarks>
+    /// be used.
+    ///
+    /// Time Complexity: O(1) - for initial setup, O(k) for accessing k elements from cache
+    /// Space Complexity: O(k) - where k is the number of elements accessed from the source sequence
+    /// </remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -177,7 +198,11 @@ module Seq =
     /// <remarks>The use of this function usually requires a type annotation.
     /// An incorrect type annotation may result in runtime type
     /// errors.
-    /// Individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// Individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="source">The input sequence.</param>
     ///
@@ -200,7 +225,11 @@ module Seq =
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not
-    /// be accessed concurrently.</remarks>
+    /// be accessed concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="chooser">A function to transform items of type T into options of type U.</param>
     /// <param name="source">The input sequence of type T.</param>
@@ -235,6 +264,11 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration
+    /// Space Complexity: O(chunkSize) - for each chunk array, plus O(1) for lazy evaluation
+    /// </remarks>
+    ///
     /// <example id="chunk-by-size-1">
     /// <code lang="fsharp">
     /// [1; 2; 3] |> Seq.chunkBySize 2
@@ -254,7 +288,11 @@ module Seq =
     /// <summary>Applies the given function to each element of the sequence and concatenates all the
     /// results.</summary>
     ///
-    /// <remarks>Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    /// <remarks>Remember sequence is lazy, effects are delayed until it is enumerated.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n + Σk_i) for full enumeration where k_i is the length of each mapped subsequence
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="mapping">A function to transform elements of the input sequence into the sequences
     /// that will then be concatenated.</param>
@@ -299,6 +337,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
     /// is null.</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(min(n, m)) - where n and m are lengths of the sequences, stops at first difference
+    /// Space Complexity: O(1) - constant space for comparison
+    /// </remarks>
     ///
     /// <example id="compare-with-1">
     /// <code lang="fsharp">
@@ -371,7 +414,11 @@ module Seq =
     /// enumeration.</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
-    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.</remarks>
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(Σn_i) for full enumeration where n_i is the length of each subsequence
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="sources">The input enumeration-of-enumerations.</param>
     ///
@@ -399,6 +446,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the position of the element or the length of the sequence if not found
+    /// Space Complexity: O(1) - constant space for comparison
+    /// </remarks>
+    ///
     /// <example id="contains-1">
     /// <code lang="fsharp">
     /// [1; 2] |> Seq.contains 2 // evaluates to true
@@ -414,7 +466,11 @@ module Seq =
     /// <remarks>Note that this function returns a sequence that digests the whole initial sequence as soon as
     /// that sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences. The function makes no assumption on the ordering of the original
-    /// sequence.</remarks>
+    /// sequence.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(k) - where k is the number of unique keys
+    /// </remarks>
     ///
     /// <param name="projection">A function transforming each item of the input sequence into a key to be
     /// compared against the others.</param>
@@ -441,7 +497,11 @@ module Seq =
     /// sequence.</summary>
     ///
     /// <remarks>The input function is evaluated each time an IEnumerator for the sequence
-    /// is requested.</remarks>
+    /// is requested.
+    ///
+    /// Time Complexity: O(1) - for creating the delayed sequence wrapper
+    /// Space Complexity: O(1) - constant overhead for the delay mechanism
+    /// </remarks>
     ///
     /// <param name="generator">The generating function for the sequence.</param>
     /// <returns>The result sequence.</returns>
@@ -466,6 +526,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(k) - where k is the number of distinct elements
+    /// </remarks>
+    ///
     /// <example id="distinct-1">
     /// <code lang="fsharp">
     /// [1; 1; 2; 3] |> Seq.distinct
@@ -486,6 +551,11 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(k) - where k is the number of distinct keys
+    /// </remarks>
+    ///
     /// <example id="distinct-by-1">
     /// <code lang="fsharp">
     /// let inputs = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
@@ -500,7 +570,11 @@ module Seq =
     /// <summary>Splits the input sequence into at most <c>count</c> chunks.</summary>
     ///
     /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
-    /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
+    /// sequence is iterated. As a result this function should not be used with large or infinite sequences.
+    ///
+    /// Time Complexity: O(n) - where n is the length of the source sequence
+    /// Space Complexity: O(n) - for materializing the sequence and creating chunks
+    /// </remarks>
     ///
     /// <param name="count">The maximum number of chunks.</param>
     /// <param name="source">The input sequence.</param>
@@ -536,6 +610,11 @@ module Seq =
     ///
     /// <returns>An empty sequence.</returns>
     ///
+    /// <remarks>
+    /// Time Complexity: O(1) - constant time creation
+    /// Space Complexity: O(1) - no memory allocation for empty sequence
+    /// </remarks>
+    ///
     /// <example id="empty">
     /// <code lang="fsharp">
     /// Seq.empty // Evaluates to seq { }
@@ -551,7 +630,11 @@ module Seq =
     /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
     /// the result sequence is iterated. As a result this function should not be used with
     /// large or infinite sequences in the first parameter. The function makes no assumption on the ordering of the first input
-    /// sequence.</remarks>
+    /// sequence.
+    ///
+    /// Time Complexity: O(n + m) - where n is the length of itemsToExclude and m is the length of source
+    /// Space Complexity: O(n) - for storing the exclusion set from itemsToExclude
+    /// </remarks>
     ///
     /// <param name="itemsToExclude">A sequence whose elements that also occur in the second sequence will cause those elements to be
     /// removed from the returned sequence.</param>
@@ -577,7 +660,11 @@ module Seq =
     ///
     /// <remarks>The predicate is applied to the elements of the input sequence. If any application
     /// returns true then the overall result is true and no further elements are tested.
-    /// Otherwise, false is returned.</remarks>
+    /// Otherwise, false is returned.
+    ///
+    /// Time Complexity: O(n) - where n is the position of the first matching element, or length of sequence if none match
+    /// Space Complexity: O(1) - constant space for evaluation
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test each item of the input sequence.</param>
     /// <param name="source">The input sequence.</param>
@@ -611,7 +698,11 @@ module Seq =
     /// <remarks>The predicate is applied to matching elements in the two sequences up to the lesser of the
     /// two lengths of the collections. If any application returns true then the overall result is
     /// true and no further elements are tested. Otherwise, false is returned. If one sequence is shorter than
-    /// the other then the remaining elements of the longer sequence are ignored.</remarks>
+    /// the other then the remaining elements of the longer sequence are ignored.
+    ///
+    /// Time Complexity: O(min(n, m)) - where n and m are the lengths of the sequences, stops at first match
+    /// Space Complexity: O(1) - constant space for evaluation
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test each pair of items from the input sequences.</param>
     /// <param name="source1">The first input sequence.</param>
@@ -649,7 +740,11 @@ module Seq =
     /// <remarks>The returned sequence may be passed between threads safely. However,
     /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
     ///
-    /// Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    /// Remember sequence is lazy, effects are delayed until it is enumerated.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration where n is the source length
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
     /// <param name="source">The input sequence.</param>
@@ -677,7 +772,11 @@ module Seq =
     ///
     /// Remember sequence is lazy, effects are delayed until it is enumerated.
     ///
-    /// A synonym for Seq.filter.</remarks>
+    /// A synonym for Seq.filter.
+    ///
+    /// Time Complexity: O(1) - for lazy sequence construction, O(n) for full enumeration where n is the source length
+    /// Space Complexity: O(1) - lazy evaluation with constant overhead
+    /// </remarks>
     ///
     /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
     /// <param name="source">The input sequence.</param>
@@ -705,6 +804,11 @@ module Seq =
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
     /// evaluated by the predicate</exception>
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+    ///
+    /// <remarks>
+    /// Time Complexity: O(n) - where n is the position of the first matching element, or length of sequence if none match
+    /// Space Complexity: O(1) - constant space for evaluation
+    /// </remarks>
     ///
     /// <example id="find-1">
     /// <code lang="fsharp">
