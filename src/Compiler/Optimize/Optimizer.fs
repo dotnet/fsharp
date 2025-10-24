@@ -343,7 +343,7 @@ type OptimizationSettings =
           reportFunctionSizes = false
           reportHasEffect = false
           reportTotalSizes = false
-          processingMode = OptimizationProcessingMode.Sequential
+          processingMode = OptimizationProcessingMode.Parallel
         }
 
     /// Determines if JIT optimizations are enabled

@@ -5895,9 +5895,8 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
     | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr, trivia) ->
-        match withExprOpt with
-        | None
-        | Some(SynExpr.Ident _, _) ->
+        match withExprOpt with 
+        | None | IsSimpleOrBoundExpr ->
             TcNonControlFlowExpr env <| fun env ->
             TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
                 TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
@@ -5929,10 +5928,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         let binds = unionBindingAndMembers binds members
         TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
-    | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->
+    | SynExpr.Record (inherits, withExprOpt, synRecdFields, mWholeExpr) ->        
         match withExprOpt with
-        | None
-        | Some(SynExpr.Ident _, _) ->
+        | None | IsSimpleOrBoundExpr ->
             TcNonControlFlowExpr env <| fun env ->
             TcExprRecord cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
         | Some withExpr ->

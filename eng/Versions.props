@@ -46,7 +46,7 @@
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
-    <FSToolsMajorVersion>14</FSToolsMajorVersion>
+    <FSToolsMajorVersion>15</FSToolsMajorVersion>
     <FSToolsMinorVersion>0</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
