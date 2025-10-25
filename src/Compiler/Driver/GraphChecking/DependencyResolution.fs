@@ -236,8 +236,10 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                 | None -> Array.empty
                 | Some sigIdx -> Array.singleton sigIdx
 
-            let wrongOrderSignature =
-                match filePairs.TryGetWrongOrderSignatureToImplementationIndex file.Idx with
+            // Add a link from signature files to their implementation files, if the implementation file comes before the signature file.
+            // This allows us to emit FS0238 (implementation already given).
+            let implementationGivenBeforeSignature =
+                match filePairs.TryGetOutOfOrderImplementationIndex file.Idx with
                 | None -> Array.empty
                 | Some idx -> Array.singleton idx
 
@@ -246,7 +248,7 @@ let mkGraph (filePairs: FilePairMap) (files: FileInProject array) : Graph<FileIn
                     yield! depsResult.FoundDependencies
                     yield! ghostDependencies
                     yield! signatureDependency
-                    yield! wrongOrderSignature
+                    yield! implementationGivenBeforeSignature
                 |]
                 |> Array.distinct
 

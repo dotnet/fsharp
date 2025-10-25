@@ -18,12 +18,13 @@ open FSharp.Compiler.Text
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =    
-    let basicNameCounts = ConcurrentDictionary<string, int ref>(max Environment.ProcessorCount 1, 127)
+    let basicNameCounts = ConcurrentDictionary<struct (string * int), int ref>(max Environment.ProcessorCount 1, 127)
     // Cache this as a delegate.
-    let basicNameCountsAddDelegate = Func<string, int ref>(fun _ -> ref 0)
+    let basicNameCountsAddDelegate = Func<struct (string * int), int ref>(fun _ -> ref 0)
    
     member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
-        let countCell = basicNameCounts.GetOrAdd(basicName, basicNameCountsAddDelegate)
+        let key = struct (basicName, m.FileIndex)
+        let countCell = basicNameCounts.GetOrAdd(key, basicNameCountsAddDelegate)
         let count = Interlocked.Increment(countCell)
 
         CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count-1) with 0 -> "" | n -> "-" + string n))

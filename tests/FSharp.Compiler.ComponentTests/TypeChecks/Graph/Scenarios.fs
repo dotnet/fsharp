@@ -1085,4 +1085,105 @@ module Y = global.Z.N
                     """
                     (set [| 0 |])
             ]
+
     ]
+
+let internal misorderedScenario =
+    // New scenario: signature file erroneously follows implementation
+    // We add a backward link from implementation to signature, to correctly trigger
+    // FS0238 (implementation already given).
+    scenario
+        "Signature file follows implementation"
+        [
+            sourceFile
+                "A.fs"
+                """
+    module A
+
+    let a x = x + 1
+    """
+                Set.empty
+            sourceFile
+                "B.fs"
+                """
+    module B
+
+    let b = A.a 42
+    """
+                (set [| 0 |])
+            sourceFile
+                "A.fsi"
+                """
+    module A
+
+    val a: int -> int
+    """
+                (set [| 0 |])
+        ]
+
+let internal scriptCompilationScenario =
+    scenario
+        "Script compilation with #load and downstream files"
+        [
+            sourceFile
+                "A.fs"
+                """
+module LibA
+
+type A = { Value: int }
+
+let inc x = x + 1
+"""
+                Set.empty
+            sourceFile
+                "B.fs"
+                """
+module LibB
+
+let append s i = s + string i
+"""
+                (set [| 0 |])
+            sourceFile
+                "Run.fsx"
+                """
+namespace Script
+
+#load "A.fs"
+#load "B.fs"
+
+open LibA
+open LibB
+
+module ScriptModule =
+    let compute s =
+        let a = inc 41
+        append s a
+"""
+                (set [| 1 |])
+            sourceFile
+                "Independent.fs"
+                """
+module Independent
+
+let z = 0
+"""
+                Set.empty
+            sourceFile
+                "DependsOnScript.fs"
+                """
+module Consumer
+
+open Script.ScriptModule
+
+let result = compute "ok"
+"""
+                (set [| 2 |])
+            sourceFile
+                "AlsoDependsOnScript.fs"
+                """
+module AnotherConsumer
+
+let value = Script.ScriptModule.compute "hi"
+"""
+                (set [| 2 |])
+        ]
