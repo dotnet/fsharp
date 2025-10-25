@@ -1085,4 +1085,148 @@ module Y = global.Z.N
                     """
                     (set [| 0 |])
             ]
+        // New scenario: signature file erroneously follows implementation
+        // We add a backward link from implementation to signature, to correctly trigger
+        // FS0238 (implementation already given).
+
+        scenario
+            "Signature file follows implementation"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module A
+
+let a x = x + 1
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module B
+
+let b = A.a 42
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "A.fsi"
+                    """
+module A
+
+val a: int -> int
+"""
+                    (set [| 0 |])
+            ]
+
+        // The .fsx script is placed in-between files to enforce a linear graph up to the script.
+        // After the script, normal dependency resolution resumes.
+
+        scenario
+    "Script file uses modules across signatures (script in-between)"
+    [
+        // 0
+        sourceFile
+            "A.fsi"
+            """
+module A
+
+type AType = class end
+"""
+            Set.empty
+
+        // 1
+        sourceFile
+            "A.fs"
+            """
+module A
+
+type AType = class end
+"""
+            (set [| 0 |]) // sequential: depends on previous file due to script later
+
+        // 2
+        sourceFile
+            "B.fsi"
+            """
+module B
+
+open A
+
+val b: AType -> unit
+"""
+            (set [| 1 |]) // sequential
+
+        // 3
+        sourceFile
+            "B.fs"
+            """
+module B
+
+open A
+
+let b (a: AType) = ()
+"""
+            (set [| 2 |]) // sequential
+
+        // 4 (script in-between)
+        sourceFile
+            "Script.fsx"
+            """
+open A
+open B
+
+let run (a: A.AType) =
+    B.b a
+"""
+            (set [| 3 |]) // sequential
+
+        // 5
+        sourceFile
+            "C.fsi"
+            """
+module C
+
+type CType = class end
+"""
+            Set.empty
+
+        // 6
+        sourceFile
+            "C.fs"
+            """
+module C
+
+type CType = class end
+"""
+            (set [| 5 |]) // normal deps: impl to own signature
+
+        // 7
+        sourceFile
+            "D.fsi"
+            """
+module D
+
+open A
+open C
+
+val d: CType -> unit
+"""
+            (set [| 0; 5 |]) // normal deps: opens A (A.fsi=0) and C (C.fsi=5)
+
+        // 8
+        sourceFile
+            "D.fs"
+            """
+module D
+
+open A
+open B
+open C
+
+let d (c: CType) =
+    let a: AType = failwith "todo"
+    b a
+"""
+            (set [| 0; 2; 5; 7 |]) // normal deps: A.fsi=0, B.fsi=2, C.fsi=5, plus own D.fsi=7
+        ]
     ]
