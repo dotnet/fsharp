@@ -48,7 +48,7 @@ let compileScenario (scenario: Scenario) (method: Method) =
     |> withMethod method
     |> compile
 
-let scenarios = scenarios |> List.map (fun c -> [| box c |])
+let scenarios = scriptCompilationScenario :: scenarios |> List.map (fun c -> [| box c |])
 
 [<Theory>]
 [<MemberData(nameof scenarios)>]

@@ -5,7 +5,7 @@ open Xunit
 open FSharp.Compiler.GraphChecking
 open Scenarios
 
-let scenarios = scenarios |> Seq.map (fun p -> [| box p |])
+let scenarios = scriptCompilationScenario :: misorderedScenario :: scenarios |> Seq.map (fun p -> [| box p |])
 
 [<Theory>]
 [<MemberData(nameof scenarios)>]

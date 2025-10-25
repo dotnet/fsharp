@@ -1120,3 +1120,70 @@ let internal misorderedScenario =
     """
                 (set [| 0 |])
         ]
+
+let internal scriptCompilationScenario =
+    scenario
+        "Script compilation with #load and downstream files"
+        [
+            sourceFile
+                "A.fs"
+                """
+module LibA
+
+type A = { Value: int }
+
+let inc x = x + 1
+"""
+                Set.empty
+            sourceFile
+                "B.fs"
+                """
+module LibB
+
+let append s i = s + string i
+"""
+                (set [| 0 |])
+            sourceFile
+                "Run.fsx"
+                """
+namespace Script
+
+#load "A.fs"
+#load "B.fs"
+
+open LibA
+open LibB
+
+module ScriptModule =
+    let compute s =
+        let a = inc 41
+        append s a
+"""
+                (set [| 1 |])
+            sourceFile
+                "Independent.fs"
+                """
+module Independent
+
+let z = 0
+"""
+                Set.empty
+            sourceFile
+                "DependsOnScript.fs"
+                """
+module Consumer
+
+open Script.ScriptModule
+
+let result = compute "ok"
+"""
+                (set [| 2 |])
+            sourceFile
+                "AlsoDependsOnScript.fs"
+                """
+module AnotherConsumer
+
+let value = Script.ScriptModule.compute "hi"
+"""
+                (set [| 2 |])
+        ]
