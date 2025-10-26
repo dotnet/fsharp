@@ -21,16 +21,20 @@ type NiceNameGenerator() =
     let basicNameCounts = ConcurrentDictionary<struct (string * int), int ref>(max Environment.ProcessorCount 1, 127)
     // Cache this as a delegate.
     let basicNameCountsAddDelegate = Func<struct (string * int), int ref>(fun _ -> ref 0)
-   
-    member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
+
+    let increment basicName (m: range) =
         let key = struct (basicName, m.FileIndex)
         let countCell = basicNameCounts.GetOrAdd(key, basicNameCountsAddDelegate)
-        let count = Interlocked.Increment(countCell)
-
-        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count-1) with 0 -> "" | n -> "-" + string n))
+        Interlocked.Increment(countCell)
+   
+    member _.FreshCompilerGeneratedNameOfBasicName (basicName, m: range) =
+        let count = increment basicName m
+        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count - 1) with 0 -> "" | n -> "-" + string n))
 
     member this.FreshCompilerGeneratedName (name, m: range) =
         this.FreshCompilerGeneratedNameOfBasicName (GetBasicNameOfPossibleCompilerGeneratedName name, m)
+
+    member _.IncrementOnly(name: string, m: range) = increment name m
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in

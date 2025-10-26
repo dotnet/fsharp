@@ -368,6 +368,8 @@ type CompileLocation =
         Enclosing: string list
 
         QualifiedNameOfFile: string
+
+        Range: range
     }
 
 //--------------------------------------------------------------------------
@@ -388,6 +390,7 @@ let CompLocForFragment fragName (ccu: CcuThunk) =
         Scope = ccu.ILScopeRef
         Namespace = None
         Enclosing = []
+        Range = range0
     }
 
 let CompLocForCcu (ccu: CcuThunk) = CompLocForFragment ccu.AssemblyName ccu
@@ -406,7 +409,7 @@ let CompLocForSubModuleOrNamespace cloc (submod: ModuleOrNamespace) =
             Namespace = Some(mkTopName cloc.Namespace n)
         }
 
-let CompLocForFixedPath fragName qname (CompPath(sref, _, cpath)) =
+let CompLocForFixedPath fragName qname m (CompPath(sref, _, cpath)) =
     let ns, t =
         cpath
         |> List.takeUntil (fun (_, mkind) ->
@@ -425,10 +428,11 @@ let CompLocForFixedPath fragName qname (CompPath(sref, _, cpath)) =
         Scope = sref
         Namespace = ns
         Enclosing = encl
+        Range = m
     }
 
 let CompLocForFixedModule fragName qname (mspec: ModuleOrNamespace) =
-    let cloc = CompLocForFixedPath fragName qname mspec.CompilationPath
+    let cloc = CompLocForFixedPath fragName qname mspec.Range mspec.CompilationPath
     let cloc = CompLocForSubModuleOrNamespace cloc mspec
     cloc
 
@@ -2333,8 +2337,11 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         MemoizationTable<CompileLocation * int, ILTypeSpec>(
             "rawDataValueTypeGenerator",
             (fun (cloc, size) ->
-                let name =
-                    CompilerGeneratedName("T" + string (newUnique ()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
+
+                let unique =
+                    g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@T", cloc.Range)
+
+                let name = CompilerGeneratedName $"T{unique}_{size}Bytes" // Type names ending ...$T<unique>_37Bytes
 
                 let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
                 let vtref = NestedTypeRefForCompLoc cloc vtdef.Name
@@ -2390,7 +2397,12 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         // Byte array literals require a ValueType of size the required number of bytes.
         // With fsi.exe, S.R.Emit TypeBuilder CreateType has restrictions when a ValueType VT is nested inside a type T, and T has a field of type VT.
         // To avoid this situation, these ValueTypes are generated under the private implementation rather than in the current cloc. [was bug 1532].
-        let cloc = CompLocForPrivateImplementationDetails cloc
+        let cloc =
+            if cenv.options.isInteractive then
+                CompLocForPrivateImplementationDetails cloc
+            else
+                cloc
+
         rawDataValueTypeGenerator.Apply((cloc, size))
 
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
@@ -2754,7 +2766,11 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (w
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilArrayType ]) [ mkLdcInt32 0; I_newarr(ILArrayShape.SingleDimensional, ilElementType) ]
     else
         let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
-        let ilFieldName = CompilerGeneratedName("field" + string (newUnique ()))
+        //let fi = eenv.cloc.Range.FileIndex
+        let unique =
+            g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", eenv.cloc.Range)
+
+        let ilFieldName = CompilerGeneratedName $"field{unique}"
         let fty = ILType.Value vtspec
 
         let ilFieldDef =
@@ -10417,6 +10433,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
             cloc =
                 { eenv.cloc with
                     TopImplQualifiedName = qname.Text
+                    Range = m
                 }
         }
 
