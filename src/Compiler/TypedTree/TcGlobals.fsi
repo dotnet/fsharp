@@ -157,6 +157,7 @@ type internal TcGlobals =
         pathMap: Internal.Utilities.PathMap *
         langVersion: FSharp.Compiler.Features.LanguageVersion *
         realsig: bool *
+        deterministic: bool *
         compilationMode: CompilationMode ->
             TcGlobals
 
@@ -825,6 +826,8 @@ type internal TcGlobals =
 
     /// Are we assuming all code gen is for F# interactive, with no static linking
     member isInteractive: bool
+
+    member deterministic: bool
 
     member compilationMode: CompilationMode
 

@@ -2606,6 +2606,7 @@ and [<Sealed>] TcImports
                     tcConfig.pathMap,
                     tcConfig.langVersion,
                     tcConfig.realsig,
+                    tcConfig.deterministic,
                     tcConfig.compilationMode
                 )
 

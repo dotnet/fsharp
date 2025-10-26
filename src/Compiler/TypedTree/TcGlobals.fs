@@ -198,6 +198,7 @@ type TcGlobals(
     pathMap: PathMap,
     langVersion: LanguageVersion,
     realsig: bool,
+    deterministic: bool,
     compilationMode: CompilationMode) =
 
   let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
@@ -1846,6 +1847,8 @@ type TcGlobals(
 
   /// Are we assuming all code gen is for F# interactive, with no static linking
   member _.isInteractive=isInteractive
+
+  member val deterministic = deterministic
 
   member val compilationMode = compilationMode
 

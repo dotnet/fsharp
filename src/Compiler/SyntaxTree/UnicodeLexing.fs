@@ -8,7 +8,7 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf = LexBuffer<char>
 
-type LexBuffer<'Char> with
+type LexBuffer<'char> with
 
     member lexbuf.GetLocalData<'T when 'T: not null>(key: string, initializer) =
         match lexbuf.BufferLocalStore.TryGetValue key with

@@ -4218,7 +4218,8 @@ module TcDeclarations =
                 | Result res ->
                     // Update resolved type parameters with the names from the source.
                     let _, tcref, _ = res
-                    if tcref.TyparsNoRange.Length = synTypars.Length then
+
+                    if (not g.deterministic) && tcref.TyparsNoRange.Length = synTypars.Length then
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
                         |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
