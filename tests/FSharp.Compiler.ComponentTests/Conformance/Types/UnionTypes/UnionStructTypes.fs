@@ -687,6 +687,18 @@ type StructUnion = A of X:int | B of Y:StructUnion
         |> shouldFail
         |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 29, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
 
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedUnion<'a> = Cons of 'a * NestedUnion<'a list> | Nil
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 29, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
     let createMassiveStructDuProgram countOfCases =
         let codeSb = 
             System.Text.StringBuilder("""

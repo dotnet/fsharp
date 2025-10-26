@@ -604,3 +604,15 @@ module RecordTypes =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRecord<'a> = { A : int; B : NestedRecord<'a list> }
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 30, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
