@@ -4275,7 +4275,7 @@ let IsTyconUnseenObsoleteSpec ad g amap m (x: TyconRef) allowObsolete =
       (if x.IsILTycon then
           CheckILAttributesForUnseen g x.ILTyconRawMetadata.CustomAttrs m
        else
-          CheckFSharpAttributesForUnseen g x.Attribs m))
+          CheckFSharpAttributesForUnseen g x.Attribs m allowObsolete))
 
 let IsTyconUnseen ad g amap m allowObsolete (x: TyconRef) = IsTyconUnseenObsoleteSpec ad g amap m x allowObsolete
 
@@ -4283,11 +4283,11 @@ let IsValUnseen ad g m allowObsolete (v: ValRef) =
     v.IsCompilerGenerated ||
     v.Deref.IsClassConstructor ||
     not (IsValAccessible ad v) ||
-    not allowObsolete && CheckFSharpAttributesForUnseen g v.Attribs m
+    not allowObsolete && CheckFSharpAttributesForUnseen g v.Attribs m allowObsolete
 
 let IsUnionCaseUnseen ad g amap m allowObsolete (ucref: UnionCaseRef) =
     not (IsUnionCaseAccessible amap m ad ucref) ||
-    not allowObsolete && (IsTyconUnseen ad g amap m allowObsolete ucref.TyconRef || CheckFSharpAttributesForUnseen g ucref.Attribs m)
+    not allowObsolete && (IsTyconUnseen ad g amap m allowObsolete ucref.TyconRef || CheckFSharpAttributesForUnseen g ucref.Attribs m allowObsolete)
 
 let ItemIsUnseen ad g amap m allowObsolete item =
     match item with
@@ -4423,7 +4423,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         if allowObsolete then pinfosIncludingUnseen else
 
         pinfosIncludingUnseen
-        |> List.filter (fun x -> not (PropInfoIsUnseen m x))
+        |> List.filter (fun x -> not (PropInfoIsUnseen m allowObsolete x))
 
     let minfoFilter (suppressedMethNames: Zset<_>) (minfo: MethInfo) =
         let isApplicableMeth =
@@ -5127,7 +5127,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
 
             let pinfos =
                 pinfosIncludingUnseen
-                |> List.filter (fun x -> not (PropInfoIsUnseen m x))
+                |> List.filter (fun x -> not (PropInfoIsUnseen m false x))
 
             let minfoFilter (suppressedMethNames: Zset<_>) (minfo: MethInfo) =
                 // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is
