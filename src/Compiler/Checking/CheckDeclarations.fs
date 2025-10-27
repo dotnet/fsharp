@@ -4218,13 +4218,16 @@ module TcDeclarations =
                 | Result res ->
                     // Update resolved type parameters with the names from the source.
                     let _, tcref, _ = res
-
-                    if (not g.deterministic) && tcref.TyparsNoRange.Length = synTypars.Length then
+                   
+                    if tcref.TyparsNoRange.Length = synTypars.Length then
                         (tcref.TyparsNoRange, synTypars)
                         ||> List.zip
                         |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
                             let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
                             if typar.StaticReq = sr then
+                                // TODO: mutating typar here can lead to a race during parallel type checking.
+                                // Some type extensions can end up with a wrong type argument name.
+                                // This will break deterministic builds.
                                 typar.SetIdent(untypedIdent)
                         )
 

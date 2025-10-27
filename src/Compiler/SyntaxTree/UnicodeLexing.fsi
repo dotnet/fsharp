@@ -9,7 +9,7 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf = LexBuffer<char>
 
-type LexBuffer<'char> with
+type LexBuffer<'Char> with
     member GetLocalData<'T when 'T: not null> : key: string * initializer: (unit -> 'T) -> 'T
     member TryGetLocalData<'T when 'T: not null> : key: string -> 'T option
 
