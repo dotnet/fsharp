@@ -1684,7 +1684,7 @@ type internal TypeCheckInfo
                     | _ ->
                         // Use an environment lookup as the last resort
                         let envItems, denv, m =
-                            let allowObsolete = options.SuggestObsoleteSymbols || residueOpt.IsSome
+                            let allowObsolete = options.SuggestObsoleteSymbols
                             GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, allowObsolete)
 
                         let envResult =
