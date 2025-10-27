@@ -9364,7 +9364,9 @@ and GenMethodForBinding
     // ActivePatternElemsOfValRef will correctly propagate `[<return: Struct>]` on active patterns.
     let attrs =
         attrs
-        |> List.filter (function Attrib(targetsOpt = Some flags) -> not (flags.HasFlag(AttributeTargets.ReturnValue)) | _ -> true)
+        |> List.filter (function
+            | Attrib(targetsOpt = Some flags) -> not (flags.HasFlag(AttributeTargets.ReturnValue))
+            | _ -> true)
 
     let ilAttrsThatGoOnPrimaryItem =
         [
