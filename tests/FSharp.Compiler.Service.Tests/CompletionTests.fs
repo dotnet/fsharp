@@ -3,12 +3,18 @@
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Test.Assert
+open FSharp.Test.Compiler.Assertions.TextBasedDiagnosticAsserts
 open Xunit
 
 let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames = completionInfo.Items |> Array.map _.NameInCode |> set
+    let itemNames =
+        completionInfo.Items
+        |> Array.map _.NameInCode
+        |> Array.map normalizeNewLines
+        |> set
 
     for name in names do
+        let name = normalizeNewLines name
         Set.contains name itemNames |> shouldEqual contains
 
 let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
@@ -373,24 +379,29 @@ let test = System.Sp{caret}
 #endif
 
 module Options =
+    let private assertItemWithOptions getOption (options: FSharpCodeCompletionOptions list) name source =
+        options
+        |> List.iter (fun options ->
+            let contains = getOption options
+            let info = Checker.getCompletionInfoWithOptions options source
+            assertItemsWithNames contains [name] info
+        )
+
     module AllowObsolete =
         let private allowObsoleteOptions = { FSharpCodeCompletionOptions.Default with SuggestObsoleteSymbols = true }
         let private disallowObsoleteOptions = { FSharpCodeCompletionOptions.Default with SuggestObsoleteSymbols = false }
 
-        let private assertItemWithOptions assertAllowed assertDisallowed name source =
-            if assertAllowed then
-                let info = Checker.getCompletionInfoWithOptions allowObsoleteOptions source
-                assertHasItemWithNames [name] info
+        let private assertItemWithOptions =
+            assertItemWithOptions _.SuggestObsoleteSymbols
 
-            if assertDisallowed then
-                let info = Checker.getCompletionInfoWithOptions disallowObsoleteOptions source
-                assertHasNoItemsWithNames [name] info
+        let assertItem (name: string) source =
+            assertItemWithOptions [allowObsoleteOptions; disallowObsoleteOptions] name source
 
-        let assertItem name (source) =
-            assertItemWithOptions true true name source
+        let assertItemAllowed name source =
+            assertItemWithOptions [allowObsoleteOptions] name source
 
-        let assertItemAllowed name (source) =
-            assertItemWithOptions true false name source
+        let assertItemNotAllowed name source =
+            assertItemWithOptions [disallowObsoleteOptions] name source
 
         [<Fact>]
         let ``Prop - Instance 01`` () =
@@ -680,3 +691,40 @@ exception E
 try () with E{caret}
 """
 
+
+    module PatternNameSuggestions =
+        let private suggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = true }
+        let private doNotSuggestPatternNames = { FSharpCodeCompletionOptions.Default with SuggestPatternNames = false }
+
+        let assertItemWithOptions =
+            assertItemWithOptions _.SuggestPatternNames
+
+        let assertItem name source =
+            assertItemWithOptions [suggestPatternNames; doNotSuggestPatternNames] name source
+
+        [<Fact>]
+        let ``Union case field 01`` () =
+            assertItem "named" """
+type U =
+    | A of named: int
+
+match A 1 with
+| A n{caret}
+"""
+
+    module OverrideSuggestions =
+        let private suggestOverrides = { FSharpCodeCompletionOptions.Default with SuggestGeneratedOverrides = true }
+        let private doNotSuggestOverrides = { FSharpCodeCompletionOptions.Default with SuggestGeneratedOverrides = false }
+
+        let assertItemWithOptions =
+            assertItemWithOptions _.SuggestGeneratedOverrides
+
+        let assertItem name source =
+            assertItemWithOptions [suggestOverrides; doNotSuggestOverrides] name source
+
+        [<Fact>]
+        let ``Override 01`` () =
+            assertItem "this.ToString (): string = \n        base.ToString()" """
+type T() =
+    override {caret}
+"""

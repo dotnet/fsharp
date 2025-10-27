@@ -1454,7 +1454,7 @@ type internal TypeCheckInfo
                 |> Some
             | _ -> None)
 
-    let GetCompletionsForUnionCaseField pos indexOrName caseIdRange isTheOnlyField declaredItems =
+    let GetCompletionsForUnionCaseField pos indexOrName caseIdRange isTheOnlyField suggestPatternNames declaredItems =
         let declaredItems =
             declaredItems
             |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
@@ -1468,19 +1468,27 @@ type internal TypeCheckInfo
                 |> List.mapi (fun index _ -> Item.UnionCaseField(uci, index) |> ItemWithNoInst |> DefaultCompletionItem)
             | _ -> []
 
-        sResolutions.CapturedNameResolutions
-        |> ResizeArray.tryPick (fun r ->
-            match r.Item with
-            | Item.UnionCase(uci, _) when equals r.Range caseIdRange ->
-                let list =
-                    declaredItems
-                    |> Option.map p13
-                    |> Option.defaultValue []
-                    |> List.append (fields indexOrName isTheOnlyField uci)
+        if not suggestPatternNames then
+            declaredItems
+        else
 
-                Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName isTheOnlyField list, r.DisplayEnv, r.Range)
-            | _ -> None)
-        |> Option.orElse declaredItems
+            sResolutions.CapturedNameResolutions
+            |> ResizeArray.tryPick (fun r ->
+                match r.Item with
+                | Item.UnionCase(uci, _) when equals r.Range caseIdRange ->
+                    let list =
+                        declaredItems
+                        |> Option.map p13
+                        |> Option.defaultValue []
+                        |> List.append (fields indexOrName isTheOnlyField uci)
+
+                    Some(
+                        SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName isTheOnlyField list,
+                        r.DisplayEnv,
+                        r.Range
+                    )
+                | _ -> None)
+            |> Option.orElse declaredItems
 
     let GetCompletionsForRecordField pos referencedFields declaredItems =
         declaredItems
@@ -1999,7 +2007,7 @@ type internal TypeCheckInfo
                 getDeclaredItemsNotInRangeOpWithAllSymbols ()
                 |> Option.bind (FilterRelevantItemsBy getItem2 None IsTypeCandidate)
 
-            | Some(CompletionContext.Pattern patternContext) when options.SuggestPatternNames ->
+            | Some(CompletionContext.Pattern patternContext) ->
                 match patternContext with
                 | PatternContext.UnionCaseFieldIdentifier(referencedFields, caseIdRange) ->
                     GetUnionCaseFields caseIdRange referencedFields
@@ -2008,10 +2016,10 @@ type internal TypeCheckInfo
                         completions, nenv.DisplayEnv, m)
                 | PatternContext.PositionalUnionCaseField(fieldIndex, isTheOnlyField, caseIdRange) ->
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
-                    |> GetCompletionsForUnionCaseField pos (Choice1Of2 fieldIndex) caseIdRange isTheOnlyField
+                    |> GetCompletionsForUnionCaseField pos (Choice1Of2 fieldIndex) caseIdRange isTheOnlyField options.SuggestPatternNames
                 | PatternContext.NamedUnionCaseField(fieldName, caseIdRange) ->
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
-                    |> GetCompletionsForUnionCaseField pos (Choice2Of2 fieldName) caseIdRange false
+                    |> GetCompletionsForUnionCaseField pos (Choice2Of2 fieldName) caseIdRange false options.SuggestPatternNames
                 | PatternContext.RecordFieldIdentifier referencedFields ->
                     getDeclaredItemsNotInRangeOpWithAllSymbols ()
                     |> GetCompletionsForRecordField pos referencedFields
