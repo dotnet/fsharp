@@ -2766,7 +2766,6 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data: 'a[]) (w
         CG.EmitInstrs cgbuf (pop 0) (Push [ ilArrayType ]) [ mkLdcInt32 0; I_newarr(ILArrayShape.SingleDimensional, ilElementType) ]
     else
         let vtspec = cgbuf.mgbuf.GenerateRawDataValueType(eenv.cloc, bytes.Length)
-        //let fi = eenv.cloc.Range.FileIndex
         let unique =
             g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.IncrementOnly("@field", eenv.cloc.Range)
 
