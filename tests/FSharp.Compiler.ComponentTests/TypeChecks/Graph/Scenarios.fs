@@ -31,7 +31,7 @@ let private sourceFile fileName content (dependencies: Set<int>) =
             Content = content
         }
 
-let internal scenarios =
+let internal compilingScenarios =
     [
         scenario
             "Link via full open statement"
@@ -1085,13 +1085,77 @@ module Y = global.Z.N
                     """
                     (set [| 0 |])
             ]
+        scenario
+            "Script compilation with #load and downstream files"
+            [
+                sourceFile
+                    "A.fs"
+                    """
+module LibA
 
+type A = { Value: int }
+
+let inc x = x + 1
+"""
+                    Set.empty
+                sourceFile
+                    "B.fs"
+                    """
+module LibB
+
+let append s i = s + string i
+"""
+                    (set [| 0 |])
+                sourceFile
+                    "Run.fsx"
+                    """
+namespace Script
+
+#load "A.fs"
+#load "B.fs"
+
+open LibA
+open LibB
+
+module ScriptModule =
+        let compute s =
+            let a = inc 41
+            append s a
+"""
+                    (set [| 1 |])
+                sourceFile
+                    "Independent.fs"
+                    """
+module Independent
+
+let z = 0
+"""
+                    Set.empty
+                sourceFile
+                    "DependsOnScript.fs"
+                    """
+module Consumer
+
+open Script.ScriptModule
+
+let result = compute "ok"
+"""
+                    (set [| 2 |])
+                sourceFile
+                    "AlsoDependsOnScript.fs"
+                    """
+module AnotherConsumer
+
+let value = Script.ScriptModule.compute "hi"
+"""
+                    (set [| 2 |])
+            ]
     ]
 
+
+// Implementation given before signature file. This scenario will not compile, but is supported.
+// Produced graph should have a necessary dependecy to trigger expected errors. 
 let internal misorderedScenario =
-    // New scenario: signature file erroneously follows implementation
-    // We add a backward link from implementation to signature, to correctly trigger
-    // FS0238 (implementation already given).
     scenario
         "Signature file follows implementation"
         [
@@ -1118,72 +1182,9 @@ let internal misorderedScenario =
 
     val a: int -> int
     """
+                // We add a backward link from implementation to signature, to correctly trigger
+                // FS0238 (implementation already given).
                 (set [| 0 |])
         ]
 
-let internal scriptCompilationScenario =
-    scenario
-        "Script compilation with #load and downstream files"
-        [
-            sourceFile
-                "A.fs"
-                """
-module LibA
-
-type A = { Value: int }
-
-let inc x = x + 1
-"""
-                Set.empty
-            sourceFile
-                "B.fs"
-                """
-module LibB
-
-let append s i = s + string i
-"""
-                (set [| 0 |])
-            sourceFile
-                "Run.fsx"
-                """
-namespace Script
-
-#load "A.fs"
-#load "B.fs"
-
-open LibA
-open LibB
-
-module ScriptModule =
-    let compute s =
-        let a = inc 41
-        append s a
-"""
-                (set [| 1 |])
-            sourceFile
-                "Independent.fs"
-                """
-module Independent
-
-let z = 0
-"""
-                Set.empty
-            sourceFile
-                "DependsOnScript.fs"
-                """
-module Consumer
-
-open Script.ScriptModule
-
-let result = compute "ok"
-"""
-                (set [| 2 |])
-            sourceFile
-                "AlsoDependsOnScript.fs"
-                """
-module AnotherConsumer
-
-let value = Script.ScriptModule.compute "hi"
-"""
-                (set [| 2 |])
-        ]
+let internal scenarios = misorderedScenario :: compilingScenarios

@@ -48,21 +48,22 @@ let compileScenario (scenario: Scenario) (method: Method) =
     |> withMethod method
     |> compile
 
-let scenarios = scriptCompilationScenario :: scenarios |> List.map (fun c -> [| box c |])
+let compileAValidScenario (scenario: Scenario) (method: Method) =
+    compileScenario scenario method
+    |> shouldSucceed
+    |> ignore
+
+let scenarios = compilingScenarios |> List.map (fun c -> [| box c |])
 
 [<Theory>]
 [<MemberData(nameof scenarios)>]
 let ``Compile a valid scenario using graph-based type-checking`` (scenario) =
-    compileScenario scenario Method.Graph
-    |> shouldSucceed
-    |> ignore
+    compileAValidScenario scenario Method.Graph
 
 [<Theory>]
 [<MemberData(nameof scenarios)>]
 let ``Compile a valid scenario using sequential type-checking`` (scenario) =
-    compileScenario scenario Method.Sequential
-    |> shouldSucceed
-    |> ignore
+    compileAValidScenario scenario Method.Sequential
 
 [<Fact>]
 let ``Compile misordered scenario using graph-based type-checking fails`` () =
