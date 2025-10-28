@@ -53,34 +53,38 @@ module IncrementalBuilderEventTesting =
 
     type internal FixedLengthMRU<'T>() =
         let MAX = 400   // Length of the MRU.  For our current unit tests, 400 is enough.
-        let data = Array.create MAX None
-        let mutable curIndex = 0
+        
+        // Optimized: Use LinkedList for O(1) additions and O(n) MostRecentList traversal
+        let order = System.Collections.Generic.LinkedList<'T>()
         let mutable numAdds = 0
+        let lockObj = obj()
 
         // called by the product, to note when a parse/typecheck happens for a file
         member _.Add(fileName:'T) =
-            numAdds <- numAdds + 1
-            data[curIndex] <- Some fileName
-            curIndex <- (curIndex + 1) % MAX
+            lock lockObj (fun () ->
+                numAdds <- numAdds + 1
+                
+                // Always add to front (allows duplicates - same event can happen multiple times)
+                order.AddFirst fileName |> ignore
+                
+                // Evict oldest if we exceed MAX
+                if order.Count > MAX then
+                    order.RemoveLast()
+            )
 
         member _.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
 
         member _.MostRecentList(n: int) : 'T list =
-            if n < 0 || n > MAX then
-                raise <| ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
-            let mutable remaining = n
-            let mutable s = []
-            let mutable i = curIndex - 1
-            while remaining <> 0 do
-                if i < 0 then
-                    i <- MAX - 1
-                match data[i] with
-                | None -> ()
-                | Some x -> s <- x :: s
-                i <- i - 1
-                remaining <- remaining - 1
-            List.rev s
+            lock lockObj (fun () ->
+                if n < 0 || n > MAX then
+                    raise <| ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
+                
+                // O(n) traversal of linked list
+                order
+                |> Seq.truncate n
+                |> Seq.toList
+            )
 
     type IBEvent =
         | IBEParsed of fileName: string
