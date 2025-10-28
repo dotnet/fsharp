@@ -667,8 +667,7 @@ let RaiseOperationResult res : unit = CommitOperationResult res
 
 let ReportOperationResultAndRecover (res: OperationResult<unit>) : unit =
     match res with
-    | OkResult(warns, _) ->
-        ReportWarnings warns
+    | OkResult(warns, _) -> ReportWarnings warns
     | ErrorResult(warns, err) ->
         ReportWarnings warns
         errorR err
