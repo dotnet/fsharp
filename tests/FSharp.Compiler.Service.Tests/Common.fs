@@ -442,14 +442,16 @@ let assertContainsSymbolsWithNames (names: string list) source =
         |> Seq.contains name
         |> shouldEqual true
 
-let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults) =
+let assertHasSymbolUsages (expectedNames: string list) (results: FSharpCheckFileResults) =
+    let symbols =
+        getSymbolUses results |> getSymbols |> List.ofSeq
+
     let symbolNames =
-        getSymbolUses results
-        |> getSymbols
+        symbols
         |> Seq.choose getSymbolName
         |> set
 
-    for name in names do
+    for name in expectedNames do
         Assert.True(Set.contains name symbolNames, name)
 
 let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =

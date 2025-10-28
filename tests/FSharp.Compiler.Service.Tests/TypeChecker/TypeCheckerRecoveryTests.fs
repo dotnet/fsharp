@@ -50,3 +50,82 @@ Math.Max(a,b,)
     ]
 
     assertHasSymbolUsages ["Max"] checkResults
+
+module Constraints =
+    [<Fact>]
+    let ``Type 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f (x: unit) =
+    x + 1
+
+f ()
+"""
+        assertHasSymbolUsages ["f"; "x"] checkResults
+
+    [<Fact>]
+    let ``Reference 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f<'T when 'T : not struct> (x: 'T) =
+    x
+
+let (i: int) = f<int> 1
+"""
+        assertHasSymbolUsages ["f"; "x"; "i"] checkResults
+
+    [<Fact>]
+    let ``Struct 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f<'T when 'T : struct> (x: 'T) =
+    x
+
+let i = f<obj> 1
+"""
+        assertHasSymbolUsages ["f"; "x"; "i"] checkResults
+
+    [<Fact>]
+    let ``Struct 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f<'T when 'T : struct> (x: 'T) =
+    x
+
+let i = f<obj> Unchecked.defaultof<obj>
+"""
+        assertHasSymbolUsages ["f"; "x"; "defaultof"; "i"] checkResults
+
+    [<Fact>]
+    let ``Struct 03`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f<'T when 'T : struct> (x: 'T) =
+    x
+
+let i = f Unchecked.defaultof<obj>
+"""
+        assertHasSymbolUsages ["f"; "x"; "defaultof"; "i"] checkResults
+
+    [<Fact>]
+    let ``Equality 01`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f<'T when 'T : equality> (x: 'T) =
+    x
+
+[<NoEquality>]
+type T() =
+    class end
+
+let i = f<T> Unchecked.defaultof<T>
+"""
+        assertHasSymbolUsages ["f"; "x"; "defaultof"; "i"] checkResults
+
+    [<Fact>]
+    let ``Equality 02`` () =
+        let _, checkResults = getParseAndCheckResults """
+let f<'T when 'T : equality> (x: 'T) =
+    x
+
+[<NoEquality>]
+type T() =
+    class end
+
+let i = f Unchecked.defaultof<T>
+"""
+        assertHasSymbolUsages ["f"; "x"; "defaultof"; "i"] checkResults

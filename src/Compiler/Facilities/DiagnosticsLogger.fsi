@@ -351,6 +351,8 @@ type ImperativeOperationResult = OperationResult<unit>
 
 val ReportWarnings: warns: #exn list -> unit
 
+val ReportOperationResultAndRecover: res: OperationResult<unit> -> unit
+
 val CommitOperationResult: res: OperationResult<'T> -> 'T
 
 val RaiseOperationResult: res: OperationResult<unit> -> unit
