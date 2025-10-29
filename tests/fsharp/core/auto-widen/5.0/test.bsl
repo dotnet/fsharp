@@ -139,7 +139,22 @@ test.fsx(67,20,67,23): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
+test.fsx(67,20,67,23): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'int'    
+
 test.fsx(68,22,68,25): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
+test.fsx(68,22,68,25): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
+test.fsx(69,26,69,29): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'int'    
@@ -334,20 +349,53 @@ test.fsx(207,20,207,35): typecheck error FS0001: This expression was expected to
 but here has type
     'R'    
 
+test.fsx(207,20,207,35): typecheck error FS0791: This type is not a record type
+
+test.fsx(207,20,207,35): typecheck error FS0763: The field 'F1' has been given a value, but is not present in the type 'obj'
+
 test.fsx(210,22,210,41): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'R'    
+
+test.fsx(210,30,210,31): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'int'    
+
+test.fsx(210,33,210,34): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'int'    
 
 test.fsx(213,20,213,36): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'SR'    
 
+test.fsx(213,20,213,36): typecheck error FS0791: This type is not a record type
+
+test.fsx(213,20,213,36): typecheck error FS0763: The field 'SF1' has been given a value, but is not present in the type 'obj'
+
 test.fsx(216,22,216,43): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'SR'    
+
+test.fsx(216,31,216,32): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'int'    
+
+test.fsx(216,34,216,35): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'int'    
+
+test.fsx(219,20,219,33): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'U'    
 
 test.fsx(219,20,219,33): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -363,6 +411,11 @@ test.fsx(225,21,225,31): typecheck error FS0001: This expression was expected to
     'obj'    
 but here has type
     'int -> U'    
+
+test.fsx(228,21,228,40): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'SU'    
 
 test.fsx(228,21,228,40): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -533,6 +586,11 @@ test.fsx(286,22,286,45): typecheck error FS0001: This expression was expected to
 but here has type
     'IComparable'    
 
+test.fsx(286,22,286,24): typecheck error FS0001: This expression was expected to have type
+    'IComparable'    
+but here has type
+    'string'    
+
 test.fsx(287,22,287,24): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
@@ -549,6 +607,11 @@ but here has type
     'ICloneable'    
 
 test.fsx(290,21,290,23): typecheck error FS0001: This expression was expected to have type
+    'obj'    
+but here has type
+    'string'    
+
+test.fsx(291,21,291,30): typecheck error FS0001: This expression was expected to have type
     'obj'    
 but here has type
     'string'    
@@ -673,20 +736,40 @@ test.fsx(337,9,338,34): typecheck error FS0001: This expression was expected to 
 but here has type
     ''a list'    
 
+test.fsx(338,30,338,32): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
+
 test.fsx(340,9,341,33): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a list'    
+
+test.fsx(341,30,341,31): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
 
 test.fsx(343,9,344,35): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a list'    
 
+test.fsx(344,32,344,33): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
 test.fsx(346,9,347,36): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a list'    
+
+test.fsx(347,32,347,34): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
 
 test.fsx(349,9,349,36): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
@@ -703,10 +786,20 @@ test.fsx(353,9,354,40): typecheck error FS0001: This expression was expected to 
 but here has type
     ''a list'    
 
+test.fsx(354,37,354,38): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
 test.fsx(356,9,357,41): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a list'    
+
+test.fsx(357,37,357,39): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
 
 test.fsx(359,9,359,35): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
@@ -718,10 +811,20 @@ test.fsx(361,9,362,36): typecheck error FS0001: This expression was expected to 
 but here has type
     ''a list'    
 
+test.fsx(362,21,362,22): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
 test.fsx(364,9,365,37): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a list'    
+
+test.fsx(365,21,365,23): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
 
 test.fsx(368,39,368,40): typecheck error FS0001: This expression was expected to have type
     'int64'    
@@ -788,20 +891,40 @@ test.fsx(391,30,392,57): typecheck error FS0001: This expression was expected to
 but here has type
     ''a array'    
 
+test.fsx(392,52,392,54): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
+
 test.fsx(393,30,394,56): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a array'    
+
+test.fsx(394,52,394,53): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
 
 test.fsx(395,30,396,58): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a array'    
 
+test.fsx(396,54,396,55): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
 test.fsx(397,30,398,59): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a array'    
+
+test.fsx(398,54,398,56): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
 
 test.fsx(399,30,399,59): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
@@ -818,10 +941,20 @@ test.fsx(401,30,402,63): typecheck error FS0001: This expression was expected to
 but here has type
     ''a array'    
 
+test.fsx(402,59,402,60): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
 test.fsx(403,30,404,64): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a array'    
+
+test.fsx(404,59,404,61): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
 
 test.fsx(405,31,405,59): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
@@ -833,20 +966,34 @@ test.fsx(406,31,407,60): typecheck error FS0001: This expression was expected to
 but here has type
     ''a array'    
 
+test.fsx(407,44,407,45): typecheck error FS0001: This expression was expected to have type
+    'int64'    
+but here has type
+    'int'    
+
 test.fsx(408,31,409,61): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     ''a array'    
+
+test.fsx(409,44,409,46): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'int64'    
 
 test.fsx(429,10,437,16): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     'OtherSeq<'a>'    
 
+test.fsx(432,19,432,58): typecheck error FS0501: The member or object constructor 'ToString' takes 0 argument(s) but is here given 1. The required signature is 'Object.ToString() : string'.
+
 test.fsx(448,9,450,49): typecheck error FS0001: This expression was expected to have type
     'int64 seq'    
 but here has type
     'OtherSeqImpl<'a>'    
+
+test.fsx(450,14,450,29): typecheck error FS0501: The member or object constructor 'ToString' takes 0 argument(s) but is here given 1. The required signature is 'Object.ToString() : string'.
 
 test.fsx(452,32,452,33): typecheck error FS0001: This expression was expected to have type
     'int64'    
