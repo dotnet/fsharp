@@ -238,6 +238,7 @@ let x() = ({| b = 2; c = 3 |} = {| a = 2; d = "" |} )
         |> shouldFail
         |> withDiagnostics [
             (Error 1, Line 2, Col 33, Line 2, Col 52, "This anonymous record should have fields 'b', 'c'; but here has fields 'a', 'd'.")
+            (Error 1, Line 2, Col 47, Line 2, Col 49, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
         ]
         
     [<Fact>]

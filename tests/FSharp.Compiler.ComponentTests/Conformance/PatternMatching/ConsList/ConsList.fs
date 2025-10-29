@@ -46,10 +46,13 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 15, Col 22, Line 15, Col 24, "This expression was expected to have type
-    'int'    
-but here has type
-    ''a list'    ")
+        |> withDiagnostics [
+            (Error 1, Line 15, Col 22, Line 15, Col 24, "This expression was expected to have type\n    'int'    \nbut here has type\n    ''a list'    ")
+            (Error 1, Line 16, Col 14, Line 16, Col 16, "This expression was expected to have type\n    'int'    \nbut here has type\n    ''a list'    ")
+            (Warning 25, Line 13, Col 11, Line 13, Col 12, "Incomplete pattern matches on this expression. For example, the value '[_]' may indicate a case not covered by the pattern(s).")
+            (Warning 26, Line 15, Col 7, Line 15, Col 18, "This rule will never be matched")
+            (Warning 26, Line 16, Col 7, Line 16, Col 24, "This rule will never be matched")
+        ]
         
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
     [<Theory; FileInlineData("OutsideMatch01.fs")>]

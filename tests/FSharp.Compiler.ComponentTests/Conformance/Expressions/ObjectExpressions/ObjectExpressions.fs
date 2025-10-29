@@ -520,7 +520,7 @@ but here has type
     'AsString'    
 but here has type
     'SomeDu'    "
-            Warning 25, Line 30, Col 19, Line 30, Col 23, "Incomplete pattern matches on this expression."]
+         ]
 
     [<Fact>]
     let ``Object expression implementing multiple interfaces`` () =

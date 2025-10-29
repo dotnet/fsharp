@@ -69,7 +69,9 @@ let _ = Test<DoubleType<DoubleType<int option>>>()
         |> shouldFail
         |> withDiagnostics [
                    Error 1, Line 10, Col 9, Line 10, Col 33, "A generic construct requires that the type 'DoubleType<string>' is an unmanaged type"
-                   Error 1, Line 11, Col 9, Line 11, Col 49, "A generic construct requires that the type 'DoubleType<DoubleType<int option>>' is an unmanaged type" ]
+                   Error 1, Line 11, Col 9, Line 11, Col 49, "A generic construct requires that the type 'DoubleType<DoubleType<int option>>' is an unmanaged type"
+                   Error 688, Line 11, Col 9, Line 11, Col 51, "The default, zero-initializing constructor of a struct type may only be used if all the fields of the struct type admit default initialization"
+        ]
    
     [<Fact>]
     let ``voption considered unmanaged when inner type is unmanaged`` () = 
@@ -348,7 +350,9 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
                        Error 193, Line 26, Col 24, Line 26, Col 36, "A generic construct requires that the type 'A<'T,obj>' is an unmanaged type"
                        Error 1, Line 27, Col 9, Line 27, Col 18, "A generic construct requires that the type 'obj' is an unmanaged type"
                        Error 1, Line 28, Col 9, Line 28, Col 28, "A generic construct requires that the type 'NonStructRecd' is an unmanaged type"
-                       Error 1, Line 29, Col 9, Line 29, Col 49, "A generic construct requires that the type 'string' is an unmanaged type" ]
+                       Error 688, Line 28, Col 9, Line 28, Col 30, "The default, zero-initializing constructor of a struct type may only be used if all the fields of the struct type admit default initialization"
+                       Error 1, Line 29, Col 9, Line 29, Col 49, "A generic construct requires that the type 'string' is an unmanaged type"
+         ]
 
     [<Fact>]
     let ``Disallow both 'unmanaged' and 'not struct' constraints`` () =

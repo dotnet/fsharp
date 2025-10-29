@@ -43,10 +43,11 @@ module Legacy =
         |> withDiagnostics [
             (Warning 9, Line 5, Col 9, Line 5, Col 31, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
             (Error 1, Line 5, Col 9, Line 5, Col 31, """Type mismatch. Expecting a
-    'nativeptr<int>'    
+'nativeptr<int>' 
 but given a
-    'nativeptr<byte>'    
+'nativeptr<byte>' 
 The type 'int' does not match the type 'byte'""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -64,6 +65,7 @@ The type 'int' does not match the type 'byte'""")
 but given a
     'nativeptr<byte>'    
 The type 'char' does not match the type 'byte'""")
+            (Warning 9, Line 6, Col 5, Line 6, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -437,6 +439,7 @@ The type 'char' does not match the type 'byte'""")
 but given a
     'nativeptr<char>'    
 The type 'int' does not match the type 'char'")
+            (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]
@@ -667,6 +670,7 @@ module ExtendedFixedBindings =
 but given a
     'nativeptr<char>'    
 The type 'int' does not match the type 'char'")
+            (Warning 9, Line 10, Col 5, Line 10, Col 18, """Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.""")
         ]
         
     [<Theory>]

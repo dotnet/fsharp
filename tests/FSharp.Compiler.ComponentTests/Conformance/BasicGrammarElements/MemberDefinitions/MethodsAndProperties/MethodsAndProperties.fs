@@ -121,7 +121,9 @@ module MemberDefinitions_MethodsAndProperties =
             (Error 1, Line 11, Col 24, Line 11, Col 33, "This expression was expected to have type\n    ''a array2d'    \nbut here has type\n    'int array'    ")
             (Error 1, Line 12, Col 25, Line 12, Col 32, "This expression was expected to have type\n    ''a array'    \nbut here has type\n    'int array2d'    ")
             (Error 1, Line 13, Col 26, Line 13, Col 37, "This expression was expected to have type\n    ''a array'    \nbut here has type\n    'int array3d'    ")
+            (Error 1, Line 13, Col 32, Line 13, Col 35, "This expression was expected to have type\n    'int'    \nbut here has type\n    'int * int'    ")
             (Error 1, Line 14, Col 27, Line 14, Col 38, "This expression was expected to have type\n    ''a array'    \nbut here has type\n    'int array4d'    ")
+            (Error 1, Line 14, Col 33, Line 14, Col 36, "This expression was expected to have type\n    'int'    \nbut here has type\n    'int * int'    ")
         ]
 
     // SOURCE=E_IndexerArityMismatch02.fs     SCFLAGS="--test:ErrorRanges --flaterrors"	# E_IndexerArityMismatch02.fs
