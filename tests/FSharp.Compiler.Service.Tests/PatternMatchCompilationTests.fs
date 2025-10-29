@@ -28,7 +28,7 @@ let ("": unit), (x: int) = let y = () in ()
     dumpDiagnostics checkResults |> shouldEqual [
         "(2,5--2,7): This expression was expected to have type 'unit' but here has type 'string'";
         "(2,41--2,43): This expression was expected to have type 'unit * int' but here has type 'unit'";
-        "(2,4--2,24): Incomplete pattern matches on this expression."
+        """(2,4--2,24): Incomplete pattern matches on this expression. For example, the value '("a",_)' may indicate a case not covered by the pattern(s)."""
     ]
 
 [<FactForNETCOREAPP>]
@@ -83,7 +83,7 @@ match A with
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
         "(7,5--7,12): This expression was expected to have type 'int' but here has type ''a * 'b * 'c'";
-        "(6,6--6,7): Incomplete pattern matches on this expression."
+        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
 
@@ -171,7 +171,7 @@ match Some 1 with
     assertHasSymbolUsages ["a"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
         "(3,7--3,14): This expression was expected to have type 'int' but here has type ''a option'"
-        "(2,6--2,12): Incomplete pattern matches on this expression."
+        """(2,6--2,12): Incomplete pattern matches on this expression. For example, the value 'Some (Some ("a"))' may indicate a case not covered by the pattern(s)."""
     ]
 
 [<FactForNETCOREAPP>]
@@ -183,7 +183,7 @@ match Some 1 with
     assertHasSymbolUsages ["a"; "i"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
         "(3,7--3,18): This expression was expected to have type 'int' but here has type ''a option'";
-        "(2,6--2,12): Incomplete pattern matches on this expression."
+        """(2,6--2,12): Incomplete pattern matches on this expression. For example, the value 'Some (Some (("a",_)))' may indicate a case not covered by the pattern(s)."""
     ]
 
 [<FactForNETCOREAPP>]
@@ -337,6 +337,8 @@ match Unchecked.defaultof<System.ValueType> with
     assertHasSymbolUsages ["a"; "b"; "c"; "d"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
         "(5,21--5,27): Type constraint mismatch. The type 'int' is not compatible with type 'System.Enum'"
+        "(6,2--6,11): Type constraint mismatch. The type 'string' is not compatible with type 'System.ValueType'"
+        "(4,2--4,46): This rule will never be matched"
     ]
 
 [<FactForNETCOREAPP>]
@@ -958,6 +960,8 @@ Some "" |> eq<int> // No more type checks after the above line?
     dumpDiagnostics checkResults |> shouldEqual [
         "(27,2--27,14): This expression was expected to have type 'objnull' but here has type 'struct ('a * 'b)'";
         "(52,2--52,13): This expression was expected to have type 'objnull' but here has type 'AAA'";
+        "(53,11--53,18): Type mismatch. Expecting a 'string option -> 'a' but given a 'int option -> unit' The type 'int' does not match the type 'string'"
+        "(51,6--51,21): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";
         "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).";

@@ -25,8 +25,6 @@ neg45.fs(64,19,64,20): typecheck error FS0025: Incomplete pattern matches on thi
 
 neg45.fs(72,26,72,31): typecheck error FS0001: A type parameter is missing a constraint 'when 'T :> System.IComparable'
 
-neg45.fs(72,10,72,19): typecheck error FS0035: This construct is deprecated: This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C<'a> = C of ...'.
-
 neg45.fs(73,36,73,41): typecheck error FS0001: A type parameter is missing a constraint 'when 'T :> System.IComparable'
 
 neg45.fs(73,36,73,41): typecheck error FS0193: A type parameter is missing a constraint 'when 'T :> System.IComparable'
