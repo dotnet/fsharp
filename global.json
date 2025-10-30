@@ -11,12 +11,12 @@
   "tools": {
     "dotnet": "10.0.100-rc.1.25420.111",
     "vs": {
-      "version": "17.8",
+      "version": "17.14",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     },
-    "xcopy-msbuild": "17.13.0"
+    "xcopy-msbuild": "17.14.16"
   },
   "native-tools": {
     "perl": "5.38.2.2"
