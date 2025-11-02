@@ -369,6 +369,7 @@ type public FSharpLexerFlags =
 type public FSharpTokenKind =
     | None
     | HashIf
+    | HashElif
     | HashElse
     | HashEndIf
     | WarnDirective

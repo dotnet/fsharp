@@ -408,6 +408,7 @@ module internal TokenClassifications =
         | HASH_LINE _
         | WARN_DIRECTIVE _
         | HASH_IF _
+        | HASH_ELIF _
         | HASH_ELSE _
         | HASH_ENDIF _ -> (FSharpTokenColorKind.PreprocessorKeyword, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
 
@@ -486,6 +487,7 @@ module internal LexerStateEncoding =
         | HASH_LINE cont
         | HASH_LIGHT cont
         | HASH_IF(_, _, cont)
+        | HASH_ELIF(_, _, cont)
         | HASH_ELSE(_, _, cont)
         | HASH_ENDIF(_, _, cont)
         | INACTIVECODE cont
@@ -1051,6 +1053,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
                 // for VS (which needs to recognize when user types ".").
                 match token with
                 | HASH_IF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
+                | HASH_ELIF(m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
                 | HASH_ELSE(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 4 cont
                 | HASH_ENDIF(m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 5 cont
                 | WARN_DIRECTIVE(_, s, cont) -> false, processWarnDirective s leftc rightc cont
@@ -1301,6 +1304,7 @@ type FSharpLexerFlags =
 type FSharpTokenKind =
     | None
     | HashIf
+    | HashElif
     | HashElse
     | HashEndIf
     | WarnDirective
@@ -1515,6 +1519,7 @@ type FSharpToken =
         | INFIX_STAR_DIV_MOD_OP "lxor" -> FSharpTokenKind.InfixLxor
         | INFIX_STAR_DIV_MOD_OP "mod" -> FSharpTokenKind.InfixMod
         | HASH_IF _ -> FSharpTokenKind.HashIf
+        | HASH_ELIF _ -> FSharpTokenKind.HashElif
         | HASH_ELSE _ -> FSharpTokenKind.HashElse
         | HASH_ENDIF _ -> FSharpTokenKind.HashEndIf
         | WARN_DIRECTIVE _ -> FSharpTokenKind.WarnDirective
