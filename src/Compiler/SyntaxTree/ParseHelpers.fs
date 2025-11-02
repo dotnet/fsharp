@@ -77,6 +77,7 @@ let rhs parseState i = rhs2 parseState i i
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
+    | IfDefSkipRemaining // Used when an #if or #elif branch has been taken and we're skipping remaining branches
 
 /// Represents the active #if/#else blocks
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list

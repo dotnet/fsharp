@@ -42,6 +42,7 @@ val rhs: parseState: IParseState -> i: int -> range
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
+    | IfDefSkipRemaining // Used when an #if or #elif branch has been taken and we're skipping remaining branches
 
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
 

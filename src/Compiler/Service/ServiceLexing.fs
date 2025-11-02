@@ -615,6 +615,7 @@ module internal LexerStateEncoding =
             match ifOrElse with
             | IfDefIf, _ -> ()
             | IfDefElse, _ -> ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
+            | IfDefSkipRemaining, _ -> ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
 
             ifdefStackCount <- ifdefStackCount + 1
 
