@@ -60,15 +60,17 @@ module A
     let elifSource1 = """
 [<EntryPoint>]
 let main _ =
-    #if DEFINE1
-    1
-    #elif DEFINE2
-    2
-    #elif DEFINE3
-    3
-    #else
-    4
-    #endif
+    let result =
+        #if DEFINE1
+        1
+        #elif DEFINE2
+        2
+        #elif DEFINE3
+        3
+        #else
+        4
+        #endif
+    result
 """
 
     [<InlineData("DEFINE1", 1)>]
@@ -86,13 +88,15 @@ let main _ =
     let elifSource2 = """
 [<EntryPoint>]
 let main _ =
-    #if DEFINE1
-    1
-    #elif DEFINE2 && DEFINE3
-    2
-    #else
-    3
-    #endif
+    let result =
+        #if DEFINE1
+        1
+        #elif DEFINE2 && DEFINE3
+        2
+        #else
+        3
+        #endif
+    result
 """
 
     [<Fact>]
@@ -112,19 +116,21 @@ let main _ =
     let elifNestedSource = """
 [<EntryPoint>]
 let main _ =
-    #if OUTER
-        #if INNER
-        1
-        #elif INNER2
-        2
+    let result =
+        #if OUTER
+            #if INNER
+            1
+            #elif INNER2
+            2
+            #else
+            3
+            #endif
+        #elif OUTER2
+        4
         #else
-        3
+        5
         #endif
-    #elif OUTER2
-    4
-    #else
-    5
-    #endif
+    result
 """
 
     [<Fact>]
@@ -144,19 +150,21 @@ let main _ =
     let elifMultipleSource = """
 [<EntryPoint>]
 let main _ =
-    #if DEFINE1
-    1
-    #elif DEFINE2
-    2
-    #elif DEFINE3
-    3
-    #elif DEFINE4
-    4
-    #elif DEFINE5
-    5
-    #else
-    6
-    #endif
+    let result =
+        #if DEFINE1
+        1
+        #elif DEFINE2
+        2
+        #elif DEFINE3
+        3
+        #elif DEFINE4
+        4
+        #elif DEFINE5
+        5
+        #else
+        6
+        #endif
+    result
 """
 
     [<Fact>]
@@ -182,7 +190,7 @@ let x = 3
         |> withDefines ["DEFINE2"]
         |> asExe
         |> compile
-        |> withDiagnosticMessage "#endif required for #else"
+        |> withDiagnosticMessage "#endif required for #else in implementation file"
 
     let elifNoMatchingIfSource = """
 #elif DEFINE1
@@ -200,13 +208,15 @@ let x = 1
     let elifWithOrExpression = """
 [<EntryPoint>]
 let main _ =
-    #if DEFINE1
-    1
-    #elif DEFINE2 || DEFINE3
-    2
-    #else
-    3
-    #endif
+    let result =
+        #if DEFINE1
+        1
+        #elif DEFINE2 || DEFINE3
+        2
+        #else
+        3
+        #endif
+    result
 """
 
     [<Fact>]
@@ -219,13 +229,15 @@ let main _ =
     let elifWithNotExpression = """
 [<EntryPoint>]
 let main _ =
-    #if DEFINE1
-    1
-    #elif !DEFINE2
-    2
-    #else
-    3
-    #endif
+    let result =
+        #if DEFINE1
+        1
+        #elif !DEFINE2
+        2
+        #else
+        3
+        #endif
+    result
 """
 
     [<Fact>]
