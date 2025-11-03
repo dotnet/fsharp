@@ -980,7 +980,6 @@ type StackGuard(name: string) =
         finally
             depth.Value <- depth.Value - 1
 
-
 // UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
 // We should probably adapt and reuse that code.
 module MultipleDiagnosticsLoggers =

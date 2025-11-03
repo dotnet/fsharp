@@ -2031,6 +2031,50 @@ match test() with
         |> compileAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``Preview: use! unresolved return type`` () =
+        FSharp """
+module Test
+
+open System.IO
+open System.Threading.Tasks
+
+task {
+    use! x: IDisposable = Task.FromResult(new StreamReader(""))
+    ()
+}
+|> ignore
+            """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 39, Line 8, Col 13, Line 8, Col 24, "The type 'IDisposable' is not defined."
+        ]
+
+    [<Fact>]
+    let ``Preview: use! return type mismatch error 01`` () =
+        FSharp """
+module Test
+
+open System
+
+task {
+    use! (x: int): IDisposable = failwith ""
+    ()
+}
+|> ignore
+            """
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            Error 1, Line 7, Col 11, Line 7, Col 17, "This expression was expected to have type
+'IDisposable'   
+but here has type
+'int'   "
+        ]
+
     [<Theory; FileInlineData("tailcalls.fsx")>]
     let ``tail call methods work`` compilation =
         compilation

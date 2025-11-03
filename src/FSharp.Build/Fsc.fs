@@ -508,7 +508,7 @@ type public Fsc() as this =
         and set (s) = outputRefAssembly <- s
 
     member _.ParallelCompilation
-        with get () = parallelCompilation |> Option.defaultValue false
+        with get () = parallelCompilation |> Option.defaultValue true
         and set (p) = parallelCompilation <- Some p
 
     // --pathmap <string>: Paths to rewrite when producing deterministic builds

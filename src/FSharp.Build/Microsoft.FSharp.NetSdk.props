@@ -50,7 +50,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
     <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
     <ReflectionFree Condition=" '$(ReflectionFree)' == '' ">false</ReflectionFree>
-    <ParallelCompilation Condition=" '$(ParallelCompilation)' == '' and '$(LangVersion)' == 'preview' "></ParallelCompilation>                       <!-- Default to parallel compilation for preview language users before it is rolled out to everyone -->
+    <ParallelCompilation Condition=" '$(ParallelCompilation)' == '' ">true</ParallelCompilation>
   </PropertyGroup>
 
   <!-- BinaryFormatter is disabled (warning is treated as error) by default in .NET8+, this mirroring the change in SDK (https://github.com/dotnet/sdk/pull/31591) -->

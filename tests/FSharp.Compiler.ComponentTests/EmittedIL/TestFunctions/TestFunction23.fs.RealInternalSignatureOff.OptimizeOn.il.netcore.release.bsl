@@ -87,6 +87,23 @@
 
   } 
 
+  .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f<a>(!!a x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  call       void assembly::g@12(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+    IL_0006:  nop
+    IL_0007:  ldnull
+    IL_0008:  ldnull
+    IL_0009:  call       void assembly::g@12(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
+    IL_000e:  nop
+    IL_000f:  ldnull
+    IL_0010:  newobj     instance void class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(!0,
+                                                                                                                                                                                !1)
+    IL_0015:  ret
+  } 
+
   .method assembly static void  g@12(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
   {
     
@@ -109,23 +126,6 @@
                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_002d:  pop
     IL_002e:  ret
-  } 
-
-  .method public static class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f<a>(!!a x) cil managed
-  {
-    
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  call       void assembly::g@12(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
-    IL_0006:  nop
-    IL_0007:  ldnull
-    IL_0008:  ldnull
-    IL_0009:  call       void assembly::g@12(class [FSharp.Core]Microsoft.FSharp.Core.Unit)
-    IL_000e:  nop
-    IL_000f:  ldnull
-    IL_0010:  newobj     instance void class [runtime]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(!0,
-                                                                                                                                                                                !1)
-    IL_0015:  ret
   } 
 
 } 

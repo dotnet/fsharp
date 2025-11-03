@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharpTests.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <!-- FSharpTests.Directory.Build.props is already imported by the parent Directory.Build.props above -->
 
   <PropertyGroup>
     <!-- Ensure end-to-end build tests can find recently-build FSharp.Core and test packages. -->

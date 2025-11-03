@@ -541,6 +541,10 @@ type Async2 =
         let ct = defaultArg cancellationToken CancellationToken.None
         Async2.start ct computation |> _.GetAwaiter().GetResult()
 
+    static member RunSynchronously(computation: Async2<'T>, ?cancellationToken: CancellationToken) : 'T =
+        let ct = defaultArg cancellationToken CancellationToken.None
+        Async2.run ct computation
+
     static member Parallel(computations: Async2<_> seq) =
         async2 {
             let! ct = Async2.CancellationToken

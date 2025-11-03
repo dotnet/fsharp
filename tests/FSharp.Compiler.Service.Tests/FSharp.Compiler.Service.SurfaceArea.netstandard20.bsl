@@ -12398,6 +12398,7 @@ Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[a[]] Para
 Internal.Utilities.Library.Async2: Internal.Utilities.Library.Async2`1[a[]] Sequential[a](System.Collections.Generic.IEnumerable`1[Internal.Utilities.Library.Async2`1[a]])
 Internal.Utilities.Library.Async2: System.Threading.Tasks.Task`1[a] StartAsTask[a](Internal.Utilities.Library.Async2`1[a], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Internal.Utilities.Library.Async2: T RunImmediate[T](Internal.Utilities.Library.Async2`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+Internal.Utilities.Library.Async2: T RunSynchronously[T](Internal.Utilities.Library.Async2`1[T], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Internal.Utilities.Library.Async2: Void Start[a](Internal.Utilities.Library.Async2`1[a], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 Internal.Utilities.Library.Async2AutoOpens: Async2Builder async2
 Internal.Utilities.Library.Async2AutoOpens: Async2Builder get_async2()
