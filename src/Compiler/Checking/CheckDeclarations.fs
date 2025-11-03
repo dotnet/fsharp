@@ -3961,8 +3961,12 @@ module EstablishTypeDefinitionCores =
 
             // collect edges from the fields of a given struct type.
             and accStructFields includeStaticFields ty (structTycon: Tycon) tinst (doneTypes, acc) =
-                if List.exists (typeEquiv g ty) doneTypes then
+                if
                     // This type (type instance) has been seen before, so no need to collect the same edges again (and avoid loops!)
+                    List.exists (typeEquiv g ty) doneTypes
+                    // This tycon is the outer tycon with a lifted generic argument, e.g., `'a list`.
+                    || not (isNil doneTypes) && tryTcrefOfAppTy g ty |> ValueOption.bind _.TryDeref |> ValueOption.exists ((===) tycon)
+                then
                     doneTypes, acc 
                 else
                     // Only collect once from each type instance.
