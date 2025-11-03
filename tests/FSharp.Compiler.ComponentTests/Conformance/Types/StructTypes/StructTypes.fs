@@ -54,3 +54,58 @@ module StructTypes =
             (Error 946, Line 6, Col 12, Line 6, Col 20, "Cannot inherit from interface type. Use interface ... with instead.")
         ]
 
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument`` () =
+        Fsx
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRegularStruct<'a> = val A : NestedRegularStruct<'a list>
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 37, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedRegularStruct<'a> = val A : NestedRegularStruct<'a list>
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 37, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for mutually-recursive reference with a lifted generic argument`` () =
+        Fsx
+            """
+            namespace Foo
+            [<Struct>]
+            type MyStruct<'T> =
+                val field : YourStruct<MyStruct<MyStruct<'T>>>
+
+            and [<Struct>] YourStruct<'T> =
+                val field : 'T
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 26, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for mutually-recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type MyStruct<'T> =
+                val field : YourStruct<MyStruct<MyStruct<'T>>>
+
+            and [<Struct>] YourStruct<'T> =
+                val field : 'T
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 26, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
