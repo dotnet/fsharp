@@ -379,17 +379,6 @@ module HashTastMemberOrVals =
 ///
 /// </summary>
 module StructuralUtilities =
-    [<Struct; CustomEquality; NoComparison>]
-    type NeverEqual =
-        struct
-            interface System.IEquatable<NeverEqual> with
-                member _.Equals _ = false
-
-            override _.Equals _ = false
-            override _.GetHashCode() = 0
-        end
-
-        static member Singleton = NeverEqual()
 
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
@@ -399,16 +388,17 @@ module StructuralUtilities =
         | TupInfo of b: bool
         | MeasureOne
         | MeasureRational of int * int
-        | NeverEqual of never: NeverEqual
+        | Unsolved
 
     type TypeStructure =
         | TypeStructure of TypeToken[]
-        | PossiblyInfinite of never: NeverEqual
+        | UnsolvedTypeStructure of TypeToken[]
+        | PossiblyInfinite
 
     let inline toNullnessToken (n: Nullness) =
         match n.TryEvaluate() with
         | ValueSome k -> TypeToken.Nullness k
-        | _ -> TypeToken.NeverEqual NeverEqual.Singleton
+        | _ -> TypeToken.Unsolved
 
     let rec private accumulateMeasure (m: Measure) =
         seq {
@@ -425,7 +415,14 @@ module StructuralUtilities =
                 TypeToken.MeasureRational(GetNumerator r, GetDenominator r)
         }
 
-    let rec private accumulateTType (ty: TType) =
+    let rec private accumulateTypar (typar: Typar) =
+        seq {
+            match typar.Solution with
+            | Some ty -> yield! accumulateTType ty
+            | None -> TypeToken.Unsolved
+        }
+
+    and private accumulateTType (ty: TType) =
         seq {
             match ty with
             | TType_ucase(u, tinst) ->
@@ -441,40 +438,55 @@ module StructuralUtilities =
 
                 for arg in tinst do
                     yield! accumulateTType arg
+
             | TType_anon(info, tys) ->
                 TypeToken.Stamp info.Stamp
 
                 for arg in tys do
                     yield! accumulateTType arg
+
             | TType_tuple(tupInfo, tys) ->
                 TypeToken.TupInfo(evalTupInfoIsStruct tupInfo)
 
                 for arg in tys do
                     yield! accumulateTType arg
+
             | TType_forall(tps, tau) ->
                 for tp in tps do
-                    TypeToken.Stamp tp.Stamp
+                    yield! accumulateTypar tp
 
                 yield! accumulateTType tau
+
             | TType_fun(d, r, n) ->
                 yield! accumulateTType d
                 yield! accumulateTType r
                 toNullnessToken n
+
             | TType_var(r, n) ->
-                TypeToken.Stamp r.Stamp
                 toNullnessToken n
+                yield! accumulateTypar r
+
             | TType_measure m -> yield! accumulateMeasure m
         }
 
     // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-    let private toTypeStructure tokens =
-        let tokens = tokens |> Seq.truncate 256 |> Array.ofSeq
+    let private toTypeStructure (tokens: TypeToken seq) =
+        let tokens = tokens |> Seq.truncate 256 |> Seq.toArray
 
-        if tokens.Length = 256 then
-            PossiblyInfinite NeverEqual.Singleton
+        if Seq.length tokens = 256 then
+            PossiblyInfinite
+        elif tokens |> Array.exists _.IsUnsolved then
+            UnsolvedTypeStructure tokens
         else
             TypeStructure tokens
 
     /// Get the full structure of a type as a sequence of tokens, suitable for equality
     let getTypeStructure =
-        Extras.WeakMap.getOrCreate (fun ty -> accumulateTType ty |> toTypeStructure)
+        let shouldCache =
+            function
+            | PossiblyInfinite
+            | UnsolvedTypeStructure _ -> false
+            | _ -> true
+
+        // Speed up repeated calls by caching results for types that yield a stable structure.
+        Extras.WeakMap.cacheConditionally shouldCache (fun ty -> accumulateTType ty |> toTypeStructure)

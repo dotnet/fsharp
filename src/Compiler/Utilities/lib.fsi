@@ -307,3 +307,8 @@ module internal WeakMap =
     val internal getOrCreate:
         valueFactory: ('Key -> 'Value) -> ('Key -> 'Value)
             when 'Key: not struct and 'Key: not null and 'Value: not struct
+
+    /// Like getOrCreate, but only cache the value if it satisfies the given predicate.
+    val cacheConditionally:
+        shouldCache: ('Value -> bool) -> valueFactory: ('Key -> 'Value) -> ('Key -> 'Value)
+            when 'Key: not struct and 'Key: not null and 'Value: not struct
