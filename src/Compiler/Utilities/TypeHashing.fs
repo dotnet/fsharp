@@ -473,7 +473,7 @@ module StructuralUtilities =
     let private toTypeStructure (tokens: TypeToken seq) =
         let tokens = tokens |> Seq.truncate 256 |> Seq.toArray
 
-        if Seq.length tokens = 256 then
+        if Array.length tokens = 256 then
             PossiblyInfinite
         elif tokens |> Array.exists _.IsUnsolved then
             UnsolvedTypeStructure tokens
