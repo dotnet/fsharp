@@ -873,33 +873,29 @@ let main3
                 TailCallChecks.CheckImplFile(tcGlobals, tcImports.GetImportMap(), true, f.ImplFile.Contents)
 
     let refAssemblySignatureHash =
-        match tcConfig.emitMetadataAssembly with
-        | MetadataAssemblyGeneration.None -> None
-        | MetadataAssemblyGeneration.ReferenceOnly
-        | MetadataAssemblyGeneration.ReferenceOut _ ->
-            let hasIvt =
-                TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
-                |> Option.isSome
+        let hasIvt =
+            TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute topAttrs.assemblyAttrs
+            |> Option.isSome
 
-            let observer = if hasIvt then PublicAndInternal else PublicOnly
+        let observer = if hasIvt then PublicAndInternal else PublicOnly
 
-            let optDataHash =
-                optDataResources
-                |> List.map (fun ilResource ->
-                    use s = ilResource.GetBytes().AsStream()
-                    let sha256 = System.Security.Cryptography.SHA256.Create()
-                    sha256.ComputeHash s)
-                |> List.sumBy (hash >> int64)
-                |> hash
+        let optDataHash =
+            optDataResources
+            |> List.map (fun ilResource ->
+                use s = ilResource.GetBytes().AsStream()
+                let sha256 = System.Security.Cryptography.SHA256.Create()
+                sha256.ComputeHash s)
+            |> List.sumBy (hash >> int64)
+            |> hash
 
-            try
-                Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
-                + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
-                + optDataHash
-                |> Some
-            with e ->
-                printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
-                None
+        try
+            Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
+            + Fsharp.Compiler.SignatureHash.calculateHashOfAssemblyTopAttributes topAttrs tcConfig.platform
+            + optDataHash
+            |> Some
+        with e ->
+            printfn "Unexpected error when hashing implied signature, will hash the all of .NET metadata instead. Error: %O " e
+            None
 
     // Pass on only the minimum information required for the next phase
     Args(
@@ -1186,7 +1182,7 @@ let main6
                             dumpDebugInfo = tcConfig.dumpDebugInfo
                             referenceAssemblyOnly = false
                             referenceAssemblyAttribOpt = None
-                            referenceAssemblySignatureHash = None
+                            referenceAssemblySignatureHash = refAssemblySignatureHash
                             pathMap = tcConfig.pathMap
                         },
                         ilxMainModule,

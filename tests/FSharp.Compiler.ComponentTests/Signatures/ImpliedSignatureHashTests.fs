@@ -288,6 +288,36 @@ type BAttribute() =
 
 let a ([<B>] c: int) : int = 0  """)>]
 
+[<InlineDataAttribute("UnitOfMeasureInRecordField",
+(*BEFORE*)"""module MyTest
+[<Measure>] type a
+[<Measure>] type b
+type MyRecord = { Value: int<a> }"""
+(*AFTER*),"""module MyTest
+[<Measure>] type a
+[<Measure>] type b
+type MyRecord = { Value: int<b> }""")>]
+
+[<InlineDataAttribute("UnitOfMeasureInFunctionParameter",
+(*BEFORE*)"""module MyTest
+[<Measure>] type m
+[<Measure>] type s
+let calculateSpeed (distance: float<m>) (time: float<s>) = distance / time"""
+(*AFTER*),"""module MyTest
+[<Measure>] type m
+[<Measure>] type s
+let calculateSpeed (distance: float<s>) (time: float<m>) = distance / time""")>]
+
+[<InlineDataAttribute("UnitOfMeasureInReturnType",
+(*BEFORE*)"""module MyTest
+[<Measure>] type kg
+[<Measure>] type g
+let getWeight () : float<kg> = 1.0<kg>"""
+(*AFTER*),"""module MyTest
+[<Measure>] type kg
+[<Measure>] type g
+let getWeight () : float<g> = 1.0<g>""")>]
+
 //TODO add a lot more negative tests - in which cases should hash in fact change
 
 [<Theory>]

@@ -4165,9 +4165,9 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let deterministicId = 
             [| hCode
                hData
-               match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
-               | true, Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
-               | _ -> sha.ComputeHash metadata |] 
+               match options.referenceAssemblySignatureHash with
+               | Some impliedSigHash -> System.BitConverter.GetBytes(impliedSigHash)
+               | None -> sha.ComputeHash metadata |] 
             |> Array.collect id 
             |> sha.ComputeHash
           let deterministicMvid () = deterministicId[0..15]
