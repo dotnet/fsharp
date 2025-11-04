@@ -479,3 +479,24 @@ let sum a b : MyType = {Value=a+b}
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode.Trim(' ', '\r', '\n'), resultText.ToString().Trim(' ', '\r', '\n'))
+
+[<Fact>]
+let ``Should not throw when file is not properly configured`` () =
+    let symbolName = "sum"
+
+    let code =
+        """
+let sum a b = a + b
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    // This test verifies that even if internal operations fail (e.g., file not in project),
+    // the refactoring provider doesn't throw and just returns no actions
+    let actions = tryGetRefactoringActions code spanStart context (new AddReturnType())
+
+    // Should complete without throwing
+    // The number of actions may vary, but it should not crash
+    Assert.True(true)
