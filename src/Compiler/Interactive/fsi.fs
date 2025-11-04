@@ -2500,7 +2500,18 @@ type internal FsiDynamicCompiler
         let isIncrementalFragment = true
 
         let istate, tcEnvAtEndOfLastInput, declaredImpls =
-            ProcessInputs(ctok, diagnosticsLogger, istate, [ input ], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m, false)
+            ProcessInputs(
+                ctok,
+                diagnosticsLogger,
+                istate,
+                [ input ],
+                showTypes,
+                isIncrementalFragment,
+                isInteractiveItExpr,
+                prefix,
+                m,
+                false
+            )
 
         let tcState = istate.tcState
 
