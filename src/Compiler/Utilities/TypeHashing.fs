@@ -1,7 +1,6 @@
 module internal Internal.Utilities.TypeHashing
 
 open Internal.Utilities.Rational
-open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -9,7 +8,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open System.Collections.Immutable
 
 type ObserverVisibility =
     | PublicOnly
@@ -126,7 +124,6 @@ module HashAccessibility =
         | _ -> true
 
 module rec HashTypes =
-    open Microsoft.FSharp.Core.LanguagePrimitives
 
     /// Hash a reference to a type
     let hashTyconRef tcref = hashTyconRefImpl tcref
@@ -371,7 +368,7 @@ module HashTastMemberOrVals =
 ///   * Uses per-compilation stamps (entities, typars, anon records, measures).
 ///   * Emits shape for union cases (declaring type stamp + case name), tuple structness,
 ///     function arrows, forall binders, nullness, measures, generic arguments.
-///   * Unknown/variable nullness => NeverEqual token to force inequality (avoid unsound hits).
+///   * Does not include type constraints.
 ///
 /// Non-goals:
 ///   * Cross-compilation stability.
@@ -385,53 +382,42 @@ module StructuralUtilities =
         | Stamp of stamp: Stamp
         | UCase of name: string
         | Nullness of nullness: NullnessInfo
+        | NullnessUnsolved
         | TupInfo of b: bool
+        | Forall of int
         | MeasureOne
         | MeasureRational of int * int
-        | UnconstrainedVar
-        | Unsolved
+        | Unsolved of int
+        | Rigid of int
 
-    type TypeStructure =
-        | TypeStructure of TypeToken[]
-        | UnsolvedTypeStructure of TypeToken[]
-        | PossiblyInfinite
+    type TypeStructure = TypeStructure of TypeToken[]
 
-    let inline toNullnessToken (n: Nullness) =
+    type private EmitContext =
+        {
+            typarMap: System.Collections.Generic.Dictionary<Stamp, int>
+        }
+
+    let inline emitNullness (n: Nullness) =
         match n.TryEvaluate() with
         | ValueSome k -> TypeToken.Nullness k
-        | _ -> TypeToken.Unsolved
+        | ValueNone -> TypeToken.NullnessUnsolved
 
-    let rec private accumulateMeasure (m: Measure) =
+    let rec private emitMeasure (m: Measure) =
         seq {
             match m with
             | Measure.Var mv -> TypeToken.Stamp mv.Stamp
             | Measure.Const(tcref, _) -> TypeToken.Stamp tcref.Stamp
             | Measure.Prod(m1, m2, _) ->
-                yield! accumulateMeasure m1
-                yield! accumulateMeasure m2
-            | Measure.Inv m1 -> yield! accumulateMeasure m1
+                yield! emitMeasure m1
+                yield! emitMeasure m2
+            | Measure.Inv m1 -> yield! emitMeasure m1
             | Measure.One _ -> TypeToken.MeasureOne
             | Measure.RationalPower(m1, r) ->
-                yield! accumulateMeasure m1
+                yield! emitMeasure m1
                 TypeToken.MeasureRational(GetNumerator r, GetDenominator r)
         }
 
-    let rec private accumulateTypar (typar: Typar) =
-        seq {
-            match typar.Solution with
-            | Some ty -> yield! accumulateTType ty
-            | None ->
-                if typar.Rigidity <> TyparRigidity.Rigid then
-                    TypeToken.Unsolved
-
-                // We don't emit details of the constraints, just the stamp to avoid collisions.
-                if typar.Constraints.Length > 0 then
-                    TypeToken.Stamp typar.Stamp
-                else
-                    TypeToken.UnconstrainedVar
-        }
-
-    and private accumulateTType (ty: TType) =
+    and private emitTType (env: EmitContext) (ty: TType) =
         seq {
             match ty with
             | TType_ucase(u, tinst) ->
@@ -439,63 +425,77 @@ module StructuralUtilities =
                 TypeToken.UCase u.CaseName
 
                 for arg in tinst do
-                    yield! accumulateTType arg
+                    yield! emitTType env arg
 
             | TType_app(tcref, tinst, n) ->
                 TypeToken.Stamp tcref.Stamp
-                toNullnessToken n
+                emitNullness n
 
                 for arg in tinst do
-                    yield! accumulateTType arg
+                    yield! emitTType env arg
 
             | TType_anon(info, tys) ->
                 TypeToken.Stamp info.Stamp
 
                 for arg in tys do
-                    yield! accumulateTType arg
+                    yield! emitTType env arg
 
             | TType_tuple(tupInfo, tys) ->
                 TypeToken.TupInfo(evalTupInfoIsStruct tupInfo)
 
                 for arg in tys do
-                    yield! accumulateTType arg
+                    yield! emitTType env arg
 
             | TType_forall(tps, tau) ->
                 for tp in tps do
-                    yield! accumulateTypar tp
+                    env.typarMap.[tp.Stamp] <- env.typarMap.Count
 
-                yield! accumulateTType tau
+                TypeToken.Forall tps.Length
+
+                yield! emitTType env tau
 
             | TType_fun(d, r, n) ->
-                yield! accumulateTType d
-                yield! accumulateTType r
-                toNullnessToken n
+                yield! emitTType env d
+                yield! emitTType env r
+                emitNullness n
 
             | TType_var(r, n) ->
-                toNullnessToken n
-                yield! accumulateTypar r
+                emitNullness n
 
-            | TType_measure m -> yield! accumulateMeasure m
+                let typarId =
+                    match env.typarMap.TryGetValue r.Stamp with
+                    | true, idx -> idx
+                    | _ ->
+                        let idx = env.typarMap.Count
+                        env.typarMap.[r.Stamp] <- idx
+                        idx
+
+                match r.Solution with
+                | Some ty ->
+                    yield! emitTType env ty
+                | None ->
+                    if r.Rigidity = TyparRigidity.Rigid then
+                        TypeToken.Rigid typarId
+                    else
+                        TypeToken.Unsolved typarId
+            | TType_measure m -> yield! emitMeasure m
         }
 
-    // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-    let private toTypeStructure (tokens: TypeToken seq) =
-        let tokens = tokens |> Seq.truncate 256 |> Seq.toArray
+    let tryGetTypeStructureOfStrippedType (ty: TType) =
 
+        let env =
+            {
+                typarMap = System.Collections.Generic.Dictionary<Stamp, int>()
+            }
+
+        let tokens =
+            emitTType env ty
+            |> Seq.filter (fun t -> t <> TypeToken.Nullness NullnessInfo.WithoutNull)
+            |> Seq.truncate 256
+            |> Seq.toArray
+
+        // If the sequence got too long, just drop it, we could be dealing with an infinite type.
         if tokens.Length = 256 then
-            PossiblyInfinite
-        elif tokens |> Array.exists _.IsUnsolved then
-            UnsolvedTypeStructure tokens
+            ValueNone
         else
-            TypeStructure tokens
-
-    /// Get the full structure of a type as a sequence of tokens, suitable for equality
-    let getTypeStructure =
-        let shouldCache =
-            function
-            | PossiblyInfinite
-            | UnsolvedTypeStructure _ -> false
-            | _ -> true
-
-        // Speed up repeated calls by memoizing results for types that yield a stable structure.
-        Extras.WeakMap.cacheConditionally shouldCache (fun ty -> accumulateTType ty |> toTypeStructure)
+            ValueSome(TypeStructure tokens)
