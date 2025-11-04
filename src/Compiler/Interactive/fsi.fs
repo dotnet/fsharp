@@ -2224,46 +2224,53 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // typeCheckOnly stops processing after type-checking, but not for files loaded via #load
-        if tcConfig.typeCheckOnly && not isLoadedFile then
-            diagnosticsLogger.AbortOnError(fsiConsoleOutput)
-            raise StopProcessing
+        // typeCheckOnly stops processing after type-checking
+        // For loaded files, we skip code generation but continue to process the main script
+        // For main script, we report errors and stop processing
+        if tcConfig.typeCheckOnly then
+            if not isLoadedFile then
+                diagnosticsLogger.AbortOnError(fsiConsoleOutput)
+                raise StopProcessing
+            else
+                // For loaded files, update state with type-checking results but skip code generation
+                let newIState = { istate with tcState = tcState }
+                newIState, tcEnvAtEndOfLastInput, []
+        else
+            let codegenResults, optEnv, fragName =
+                ProcessTypedImpl(
+                    diagnosticsLogger,
+                    optEnv,
+                    tcState,
+                    tcConfig,
+                    isInteractiveItExpr,
+                    topCustomAttrs,
+                    prefixPath,
+                    isIncrementalFragment,
+                    declaredImpls,
+                    ilxGenerator
+                )
 
-        let codegenResults, optEnv, fragName =
-            ProcessTypedImpl(
-                diagnosticsLogger,
-                optEnv,
-                tcState,
-                tcConfig,
-                isInteractiveItExpr,
-                topCustomAttrs,
-                prefixPath,
-                isIncrementalFragment,
-                declaredImpls,
-                ilxGenerator
-            )
+            let newState, declaredImpls =
+                ProcessCodegenResults(
+                    ctok,
+                    diagnosticsLogger,
+                    istate,
+                    optEnv,
+                    tcState,
+                    tcConfig,
+                    prefixPath,
+                    showTypes,
+                    isIncrementalFragment,
+                    fragName,
+                    declaredImpls,
+                    ilxGenerator,
+                    codegenResults,
+                    m
+                )
 
-        let newState, declaredImpls =
-            ProcessCodegenResults(
-                ctok,
-                diagnosticsLogger,
-                istate,
-                optEnv,
-                tcState,
-                tcConfig,
-                prefixPath,
-                showTypes,
-                isIncrementalFragment,
-                fragName,
-                declaredImpls,
-                ilxGenerator,
-                codegenResults,
-                m
-            )
+            CheckEntryPoint istate.tcGlobals declaredImpls
 
-        CheckEntryPoint istate.tcGlobals declaredImpls
-
-        (newState, tcEnvAtEndOfLastInput, declaredImpls)
+            (newState, tcEnvAtEndOfLastInput, declaredImpls)
 
     let tryGetGeneratedValue istate cenv v =
         match istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), v) with
