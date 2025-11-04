@@ -2198,7 +2198,8 @@ type internal FsiDynamicCompiler
             isIncrementalFragment: bool,
             isInteractiveItExpr: bool,
             prefixPath: LongIdent,
-            m
+            m,
+            isLoadedFile: bool
         ) =
         let optEnv = istate.optEnv
         let tcState = istate.tcState
@@ -2223,8 +2224,8 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // typeCheckOnly either reports all errors found so far or exits with 0 - it stops processing the script
-        if tcConfig.typeCheckOnly then
+        // typeCheckOnly stops processing after type-checking, but not for files loaded via #load
+        if tcConfig.typeCheckOnly && not isLoadedFile then
             diagnosticsLogger.AbortOnError(fsiConsoleOutput)
             raise StopProcessing
 
@@ -2446,7 +2447,7 @@ type internal FsiDynamicCompiler
         let isIncrementalFragment = false
 
         let istate, _, _ =
-            ProcessInputs(ctok, diagnosticsLogger, istate, inputs, true, isIncrementalFragment, false, prefix, m)
+            ProcessInputs(ctok, diagnosticsLogger, istate, inputs, true, isIncrementalFragment, false, prefix, m, true)
 
         istate
 
@@ -2499,7 +2500,7 @@ type internal FsiDynamicCompiler
         let isIncrementalFragment = true
 
         let istate, tcEnvAtEndOfLastInput, declaredImpls =
-            ProcessInputs(ctok, diagnosticsLogger, istate, [ input ], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
+            ProcessInputs(ctok, diagnosticsLogger, istate, [ input ], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m, false)
 
         let tcState = istate.tcState
 
