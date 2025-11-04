@@ -388,6 +388,7 @@ module StructuralUtilities =
         | TupInfo of b: bool
         | MeasureOne
         | MeasureRational of int * int
+        | UnconstrainedVar
         | Unsolved
 
     type TypeStructure =
@@ -420,10 +421,14 @@ module StructuralUtilities =
             match typar.Solution with
             | Some ty -> yield! accumulateTType ty
             | None ->
-                TypeToken.Stamp typar.Stamp
-
-                if typar.Rigidity = TyparRigidity.Flexible then
+                if typar.Rigidity <> TyparRigidity.Rigid then
                     TypeToken.Unsolved
+
+                // We don't emit details of the constraints, just the stamp to avoid collisions.
+                if typar.Constraints.Length > 0 then
+                    TypeToken.Stamp typar.Stamp
+                else
+                    TypeToken.UnconstrainedVar
         }
 
     and private accumulateTType (ty: TType) =
@@ -477,7 +482,7 @@ module StructuralUtilities =
     let private toTypeStructure (tokens: TypeToken seq) =
         let tokens = tokens |> Seq.truncate 256 |> Seq.toArray
 
-        if Array.length tokens = 256 then
+        if tokens.Length = 256 then
             PossiblyInfinite
         elif tokens |> Array.exists _.IsUnsolved then
             UnsolvedTypeStructure tokens
@@ -492,5 +497,5 @@ module StructuralUtilities =
             | UnsolvedTypeStructure _ -> false
             | _ -> true
 
-        // Speed up repeated calls by caching results for types that yield a stable structure.
+        // Speed up repeated calls by memoizing results for types that yield a stable structure.
         Extras.WeakMap.cacheConditionally shouldCache (fun ty -> accumulateTType ty |> toTypeStructure)
