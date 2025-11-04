@@ -419,7 +419,11 @@ module StructuralUtilities =
         seq {
             match typar.Solution with
             | Some ty -> yield! accumulateTType ty
-            | None -> TypeToken.Unsolved
+            | None ->
+                TypeToken.Stamp typar.Stamp
+
+                if typar.Rigidity = TyparRigidity.Flexible then
+                    TypeToken.Unsolved
         }
 
     and private accumulateTType (ty: TType) =
