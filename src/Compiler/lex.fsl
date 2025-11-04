@@ -1077,15 +1077,11 @@ rule token (args: LexArgs) (skip: bool) = parse
      match args.ifdefStack with
      | [] ->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
      | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
-     | (IfDefSkipRemaining,_) :: _ ->
-       // A branch has already been taken, skip the else branch
+     | (IfDefSkipRemaining as operation,_) :: rest // A branch has already been taken, skip the else branch
+     | (IfDefIf as operation,_) :: rest ->
        shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
-       IfdefStore.SaveElseHash(lexbuf, lexed, m)
-       let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
-       if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok
-     | (IfDefIf,_) :: rest ->
-       shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
-       args.ifdefStack <- (IfDefElse,m) :: rest
+       if operation = IfDefIf then
+           args.ifdefStack <- (IfDefElse,m) :: rest
        IfdefStore.SaveElseHash(lexbuf, lexed, m)
        let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
        if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok }
@@ -1103,10 +1099,6 @@ rule token (args: LexArgs) (skip: bool) = parse
         if not skip then tok else endline LexerEndlineContinuation.Token args skip lexbuf }
 
  | "#if"
-   { let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
-     let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
-     if skip then token args skip lexbuf else tok }
-
  | "#elif"
    { let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
      let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
