@@ -115,9 +115,7 @@ type internal AddReturnType [<ImportingConstructor>] () =
                 | _ -> ()
 
                 return ()
-            with
-            | :? System.OperationCanceledException
-            | :? System.Exception ->
+            with _ ->
                 // File is not part of the project yet, or project options are not ready.
                 // This can happen when files are added/copied before the project system updates.
                 // Just return without offering any refactorings.
