@@ -195,7 +195,6 @@ module rec HashTypes =
 
         let measureConsWithExponents =
             ListMeasureConOccsWithNonZeroExponents g false unt
-            |> List.sortBy (fun (tcref: TyconRef, _) -> tcref.DisplayName)
 
         let varHash =
             measureVarsWithExponents
