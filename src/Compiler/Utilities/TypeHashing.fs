@@ -193,8 +193,7 @@ module rec HashTypes =
             ListMeasureVarOccsWithNonZeroExponents unt
             |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName)
 
-        let measureConsWithExponents =
-            ListMeasureConOccsWithNonZeroExponents g false unt
+        let measureConsWithExponents = ListMeasureConOccsWithNonZeroExponents g false unt
 
         let varHash =
             measureVarsWithExponents
