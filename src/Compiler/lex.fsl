@@ -1046,15 +1046,42 @@ rule token (args: LexArgs) (skip: bool) = parse
      let tok = HASH_IF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, contCase))
      if skip then endline contCase args skip lexbuf else tok }
 
- | anywhite* "#else" anywhite* ("//" anystring)?
+  | anywhite* "#elif" anywhite+ anystring
+   { let m = lexbuf.LexemeRange
+     match args.ifdefStack with
+     | [] -> LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
+     | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
+     | (IfDefIf,_) :: rest ->
+       shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
+       let lookup id = List.contains id args.conditionalDefines
+       let lexed = lexeme lexbuf
+       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+       IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+       // Change stack to IfDefSkipRemaining to indicate a branch has been taken and we're skipping the rest
+       args.ifdefStack <- (IfDefSkipRemaining,m) :: rest
+       let tok = HASH_ELIF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+       if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok
+     | (IfDefSkipRemaining,_) :: _ ->
+       // A branch has already been taken, skip remaining elif branches
+       shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
+       let lookup id = List.contains id args.conditionalDefines
+       let lexed = lexeme lexbuf
+       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+       IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+       let tok = HASH_ELIF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+       if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok }
+
+  | anywhite* "#else" anywhite* ("//" anystring)?
    { let lexed = (lexeme lexbuf)
+     let m = lexbuf.LexemeRange
      match args.ifdefStack with
      | [] ->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
      | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
-     | (IfDefIf,_) :: rest ->
-       let m = lexbuf.LexemeRange
+     | (IfDefSkipRemaining as operation,_) :: rest // A branch has already been taken, skip the else branch
+     | (IfDefIf as operation,_) :: rest ->
        shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst())
-       args.ifdefStack <- (IfDefElse,m) :: rest
+       if operation = IfDefIf then
+           args.ifdefStack <- (IfDefElse,m) :: rest
        IfdefStore.SaveElseHash(lexbuf, lexed, m)
        let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
        if skip then endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf else tok }
@@ -1072,12 +1099,14 @@ rule token (args: LexArgs) (skip: bool) = parse
         if not skip then tok else endline LexerEndlineContinuation.Token args skip lexbuf }
 
  | "#if"
+ | "#elif"
    { let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
      let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok
      if skip then token args skip lexbuf else tok }
 
  // Let the parser deal with these invalid directives
  | anywhite* "#if" ident_char+
+ | anywhite* "#elif" ident_char+
  | anywhite* "#else" ident_char+
  | anywhite* "#endif" ident_char+
  | anywhite* "#light" ident_char+
@@ -1118,6 +1147,47 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n+1, m)))
        if skip then endline (LexerEndlineContinuation.IfdefSkip(n+1, m)) args skip lexbuf else tok }
 
+  | anywhite* "#elif" anywhite+ anystring
+    { let m = lexbuf.LexemeRange
+
+      // If #elif is the first thing on the line then process it, otherwise ignore, because it is invalid (e.g. "(**) #elif ...")
+      if (m.StartColumn <> 0) then
+        if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
+        else ifdefSkip n m args skip lexbuf
+      elif n = 0 then
+         match args.ifdefStack with
+         | []->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
+         | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
+         | (IfDefSkipRemaining,_) :: _ ->
+           // A branch has already been taken, skip remaining branches
+           let lexed = lexeme lexbuf
+           let lookup id = List.contains id args.conditionalDefines
+           let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+           IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+           if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+           else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
+         | (IfDefIf,_) :: rest ->
+           let lexed = lexeme lexbuf
+           let lookup id = List.contains id args.conditionalDefines
+           let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+           IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+           if isTrue then
+             // Condition is true, change stack to IfDefSkipRemaining and resume normal parsing
+             args.ifdefStack <- (IfDefSkipRemaining,m) :: rest
+             if not skip then HASH_ELIF(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
+             else endline LexerEndlineContinuation.Token args skip lexbuf
+           else
+             // Condition is false, continue skipping
+             if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+             else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
+      else
+         let lexed = lexeme lexbuf
+         let lookup id = List.contains id args.conditionalDefines
+         let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion lexbuf.StrictIndentation args lookup lexed
+         IfdefStore.SaveElifHash(lexbuf, lexed, expr, m)
+         if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(n, m)))
+         else endline (LexerEndlineContinuation.IfdefSkip(n, m)) args skip lexbuf }
+
   | anywhite* "#else" anywhite* ("//" anystring)?
     { let lexed = (lexeme lexbuf)
       let m = lexbuf.LexemeRange
@@ -1130,6 +1200,11 @@ and ifdefSkip (n: int) (m: range) (args: LexArgs) (skip: bool) = parse
          match args.ifdefStack with
          | []->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
          | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
+         | (IfDefSkipRemaining,_) :: _ ->
+           // A branch has already been taken, skip remaining branches
+           IfdefStore.SaveElseHash(lexbuf, lexed, m)
+           if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.IfdefSkip(0, m)))
+           else endline (LexerEndlineContinuation.IfdefSkip(0, m)) args skip lexbuf
          | (IfDefIf,_) :: rest ->
            let m = lexbuf.LexemeRange
            IfdefStore.SaveElseHash(lexbuf, lexed, m)

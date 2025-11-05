@@ -717,13 +717,39 @@ module Structure =
                 match directives with
                 | [] -> ()
                 | ConditionalDirectiveTrivia.If _ as ifDirective :: directives -> group directives (ifDirective :: stack) sourceLines
+                | ConditionalDirectiveTrivia.Elif(_, elifRange) as elifDirective :: directives ->
+                    match stack with
+                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack
+                    | ConditionalDirectiveTrivia.Elif(_, ifRange) :: stack ->
+                        let startLineIndex = elifRange.StartLine - 2
+
+                        if startLineIndex >= 0 then
+                            // start of #if (or previous #elif) until the end of the line directly above current #elif
+
+                            let range =
+                                mkFileIndexRange
+                                    ifRange.FileIndex
+                                    ifRange.Start
+                                    (mkPos (elifRange.StartLine - 1) sourceLines[startLineIndex].Length)
+
+                            {
+                                Scope = Scope.HashDirective
+                                Collapse = Collapse.Same
+                                Range = range
+                                CollapseRange = range
+                            }
+                            |> acc.Add
+
+                        group directives (elifDirective :: stack) sourceLines
+                    | _ -> group directives stack sourceLines
                 | ConditionalDirectiveTrivia.Else elseRange as elseDirective :: directives ->
                     match stack with
-                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack ->
+                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack
+                    | ConditionalDirectiveTrivia.Elif(_, ifRange) :: stack ->
                         let startLineIndex = elseRange.StartLine - 2
 
                         if startLineIndex >= 0 then
-                            // start of #if until the end of the line directly above #else
+                            // start of #if/#elif until the end of the line directly above #else
                             let range =
                                 mkFileIndexRange
                                     ifRange.FileIndex
@@ -742,20 +768,10 @@ module Structure =
                     | _ -> group directives stack sourceLines
                 | ConditionalDirectiveTrivia.EndIf endIfRange :: directives ->
                     match stack with
-                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack ->
+                    | ConditionalDirectiveTrivia.If(_, ifRange) :: stack
+                    | ConditionalDirectiveTrivia.Elif(_, ifRange) :: stack
+                    | ConditionalDirectiveTrivia.Else ifRange :: stack ->
                         let range = Range.startToEnd ifRange endIfRange
-
-                        {
-                            Scope = Scope.HashDirective
-                            Collapse = Collapse.Same
-                            Range = range
-                            CollapseRange = range
-                        }
-                        |> acc.Add
-
-                        group directives stack sourceLines
-                    | ConditionalDirectiveTrivia.Else elseRange :: stack ->
-                        let range = Range.startToEnd elseRange endIfRange
 
                         {
                             Scope = Scope.HashDirective
