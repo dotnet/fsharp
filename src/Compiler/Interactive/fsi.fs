@@ -2224,17 +2224,19 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // typeCheckOnly stops processing after type-checking
-        // For loaded files, we skip code generation but continue to process the main script
-        // For main script, we report errors and stop processing
+        // typeCheckOnly: check for errors after type-checking
+        // Always abort on errors (for both loaded files and main script)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
+
+        // typeCheckOnly: skip code generation and execution
         if tcConfig.typeCheckOnly then
+            // Update state with type-checking results but skip code generation
+            let newIState = { istate with tcState = tcState }
+            // Only raise StopProcessing for main script, not for loaded files
             if not isLoadedFile then
-                diagnosticsLogger.AbortOnError(fsiConsoleOutput)
                 raise StopProcessing
-            else
-                // For loaded files, update state with type-checking results but skip code generation
-                let newIState = { istate with tcState = tcState }
-                newIState, tcEnvAtEndOfLastInput, []
+
+            newIState, tcEnvAtEndOfLastInput, []
         else
             let codegenResults, optEnv, fragName =
                 ProcessTypedImpl(
