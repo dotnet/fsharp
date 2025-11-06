@@ -185,13 +185,22 @@ module rec HashTypes =
         |> pipeToHash memberHash
 
     /// Hash a unit of measure expression
-    let private hashMeasure unt =
-        let measuresWithExponents =
+    let private hashMeasure g unt =
+        let measureVarsWithExponents =
             ListMeasureVarOccsWithNonZeroExponents unt
             |> List.sortBy (fun (tp: Typar, _) -> tp.DisplayName)
 
-        measuresWithExponents
-        |> hashListOrderIndependent (fun (typar, exp: Rational) -> hashTyparRef typar @@ hash exp)
+        let measureConsWithExponents = ListMeasureConOccsWithNonZeroExponents g false unt
+
+        let varHash =
+            measureVarsWithExponents
+            |> hashListOrderIndependent (fun (typar, exp: Rational) -> hashTyparRef typar @@ hash exp)
+
+        let conHash =
+            measureConsWithExponents
+            |> hashListOrderIndependent (fun (tcref, exp: Rational) -> hashTyconRef tcref @@ hash exp)
+
+        varHash @@ conHash
 
     /// Hash a type, taking precedence into account to insert brackets where needed
     let hashTType (g: TcGlobals) ty =
@@ -214,7 +223,7 @@ module rec HashTypes =
             let argTys, retTy = stripFunTy g ty
             argTys |> hashListOrderMatters (hashTType g) |> pipeToHash (hashTType g retTy)
         | TType_var(r, _) -> hashTyparRefWithInfo r
-        | TType_measure unt -> hashMeasure unt
+        | TType_measure unt -> hashMeasure g unt
 
     // Hash a single argument, including its name and type
     let private hashArgInfo (g: TcGlobals) (ty, argInfo: ArgReprInfo) =
