@@ -397,6 +397,7 @@ module StructuralUtilities =
         | Forall of int
         | MeasureOne
         | MeasureRational of int * int
+        | Solved of int
         | Unsolved of int
         | Rigid of int
 
@@ -408,15 +409,19 @@ module StructuralUtilities =
     type private EmitContext =
         {
             typarMap: System.Collections.Generic.Dictionary<Stamp, int>
+            emitNullness: bool
             mutable stable: bool
         }
 
     let private emitNullness env (n: Nullness) =
-        match n.TryEvaluate() with
-        | ValueSome k -> TypeToken.Nullness k
-        | ValueNone ->
-            env.stable <- false
-            TypeToken.NullnessUnsolved
+        seq {
+            if env.emitNullness then
+                env.stable <- false //
+
+                match n.TryEvaluate() with
+                | ValueSome k -> TypeToken.Nullness k
+                | ValueNone -> TypeToken.NullnessUnsolved
+        }
 
     let rec private emitMeasure (m: Measure) =
         seq {
@@ -445,7 +450,7 @@ module StructuralUtilities =
 
             | TType_app(tcref, tinst, n) ->
                 TypeToken.Stamp tcref.Stamp
-                emitNullness env n
+                yield! emitNullness env n
 
                 for arg in tinst do
                     yield! emitTType env arg
@@ -473,10 +478,10 @@ module StructuralUtilities =
             | TType_fun(d, r, n) ->
                 yield! emitTType env d
                 yield! emitTType env r
-                emitNullness env n
+                yield! emitNullness env n
 
             | TType_var(r, n) ->
-                emitNullness env n
+                yield! emitNullness env n
 
                 let typarId =
                     match env.typarMap.TryGetValue r.Stamp with
@@ -486,14 +491,17 @@ module StructuralUtilities =
                         env.typarMap.[r.Stamp] <- idx
                         idx
 
+                // Solved may become unsolved, in case of Trace.Undo.
+                env.stable <- false
+
                 match r.Solution with
                 | Some ty -> yield! emitTType env ty
                 | None ->
                     if r.Rigidity = TyparRigidity.Rigid then
                         TypeToken.Rigid typarId
                     else
-                        env.stable <- false
                         TypeToken.Unsolved typarId
+
             | TType_measure m -> yield! emitMeasure m
         }
 
@@ -502,14 +510,11 @@ module StructuralUtilities =
         let env =
             {
                 typarMap = System.Collections.Generic.Dictionary<Stamp, int>()
+                emitNullness = false
                 stable = true
             }
 
-        let tokens =
-            emitTType env ty
-            |> Seq.filter (fun t -> t <> TypeToken.Nullness NullnessInfo.WithoutNull)
-            |> Seq.truncate 256
-            |> Seq.toArray
+        let tokens = emitTType env ty |> Seq.truncate 256 |> Seq.toArray
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
         if tokens.Length = 256 then PossiblyInfinite
