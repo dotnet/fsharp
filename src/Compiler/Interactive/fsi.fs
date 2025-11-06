@@ -2224,12 +2224,10 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // typeCheckOnly: check for errors after type-checking
-        // Always abort on errors (for both loaded files and main script)
-        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
-
-        // typeCheckOnly: skip code generation and execution
+        // typeCheckOnly: check for errors and skip code generation
         if tcConfig.typeCheckOnly then
+            // Always abort on errors (for both loaded files and main script)
+            diagnosticsLogger.AbortOnError(fsiConsoleOutput)
             // Update state with type-checking results but skip code generation
             let newIState = { istate with tcState = tcState }
             // Only raise StopProcessing for main script, not for loaded files
