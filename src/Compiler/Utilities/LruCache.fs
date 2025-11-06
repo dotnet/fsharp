@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Diagnostics
 
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 
 [<RequireQualifiedAccess>]
 type internal CacheEvent =
@@ -215,7 +214,7 @@ type internal LruCache<'TKey, 'TVersion, 'TValue
         | false, _ -> []
         | true, versionDict ->
             versionDict.Values
-            |> Seq.map (_.Value)
+            |> Seq.map _.Value
             |> Seq.sortBy (function
                 | _, _, _, Strong _ -> 0
                 | _ -> 1)

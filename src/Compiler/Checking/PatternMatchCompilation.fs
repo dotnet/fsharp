@@ -21,10 +21,8 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 open type System.MemoryExtensions
-open Import
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
@@ -690,9 +688,9 @@ let canCompactConstantClass c =
 let discrimWithinSimultaneousClass g amap m discrim prev =
     match discrim, prev with
     | _, [] -> true
-    | DecisionTreeTest.Const _, (DecisionTreeTest.Const _ :: _)
-    | DecisionTreeTest.ArrayLength _, (DecisionTreeTest.ArrayLength _ :: _)
-    | DecisionTreeTest.UnionCase _, (DecisionTreeTest.UnionCase _ :: _) -> true
+    | DecisionTreeTest.Const _, DecisionTreeTest.Const _ :: _
+    | DecisionTreeTest.ArrayLength _, DecisionTreeTest.ArrayLength _ :: _
+    | DecisionTreeTest.UnionCase _, DecisionTreeTest.UnionCase _ :: _ -> true
 
     | DecisionTreeTest.IsNull, _ ->
         // Check that each previous test in the set, if successful, gives some information about this test
@@ -710,7 +708,8 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
             | _ -> false)
 
-    | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _), (DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) :: _) ->
+    | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _),
+      DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) :: _ ->
         match apatVrefOpt1, apatVrefOpt2 with
         | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
         | _ -> false (* for equality purposes these are considered different classes of discriminators! This is because adhoc computed patterns have no identity! *)
@@ -992,7 +991,7 @@ let CompilePatternBasic
     // Add the incomplete or rethrow match clause on demand,
     // printing a warning if necessary (only if it is ever exercised).
     let mutable firstIncompleteMatchClauseWithThrowExpr = None
-    let warningsGenerated = new ResizeArray<CounterExampleType>(2)
+    let warningsGenerated = ResizeArray<CounterExampleType>(2)
     let getIncompleteMatchClause refuted =
         // Emit the incomplete match warning.
         if warnOnIncomplete then
@@ -1364,7 +1363,7 @@ let CompilePatternBasic
             let fallthroughPathFrontiers = List.filter (isRefuted >> not) fallthroughPathFrontiers
 
             (* Add to the refuted set *)
-            let refuted = (RefutedInvestigation(path, simulSetOfDiscrims)) :: refuted
+            let refuted = RefutedInvestigation(path, simulSetOfDiscrims) :: refuted
 
             match fallthroughPathFrontiers with
             | [] ->
@@ -1378,7 +1377,7 @@ let CompilePatternBasic
         let (Frontier (i, actives, valMap)) = frontier
 
         if isMemOfActives path actives then
-            let (subExprForActive, patAtActive) = lookupActive path actives
+            let subExprForActive, patAtActive = lookupActive path actives
             let (SubExpr(accessf, ve)) = subExprForActive
 
             let mkSubFrontiers path subAccess subActive argpats pathBuilder =
@@ -1564,7 +1563,7 @@ let CompilePatternBasic
         else
             [frontier]
 
-    and BindProjectionPattern inpActive ((accActive, accValMap) as activeState) =
+    and BindProjectionPattern inpActive (accActive, accValMap as activeState) =
 
         let (Active(inpPath, inpExpr, pat)) = inpActive
         let (SubExpr(inpAccess, inpExprAndVal)) = inpExpr

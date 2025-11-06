@@ -99,7 +99,7 @@ type internal Tables<'Token> =
 // type Stack<'a> = System.Collections.Generic.Stack<'a>
 
 type Stack<'a>(n) =
-    let mutable contents = Array.zeroCreate<'a> (n)
+    let mutable contents = Array.zeroCreate<'a> n
     let mutable count = 0
 
     member buf.Ensure newSize =
@@ -331,7 +331,7 @@ module internal Implementation =
                     | None -> true
                     | Some(token) ->
                         let nextState = actionValue action
-                        actionKind (actionTable.Read(nextState, tables.tagOfToken (token))) = shiftFlag)
+                        actionKind (actionTable.Read(nextState, tables.tagOfToken token)) = shiftFlag)
             then
 
                 if Flags.debug then
@@ -351,7 +351,7 @@ module internal Implementation =
 
                 valueStack.Pop()
                 stateStack.Pop()
-                popStackUntilErrorShifted (tokenOpt)
+                popStackUntilErrorShifted tokenOpt
 
         while not finished do
             if stateStack.IsEmpty then
@@ -483,7 +483,7 @@ module internal Implementation =
                         if Flags.debug then
                             Console.WriteLine("RecoverableParseErrorException...\n")
 
-                        popStackUntilErrorShifted (None)
+                        popStackUntilErrorShifted None
                         // User code raised a Parse_error. Don't report errors again until three tokens have been shifted
                         errorSuppressionCountDown <- 3
                 elif kind = errorFlag then
@@ -543,9 +543,9 @@ module internal Implementation =
                           let reduceTokens =
                               [
                                   for tag, action in actions do
-                                      if actionKind (action) = reduceFlag then
+                                      if actionKind action = reduceFlag then
                                           yield tag
-                                  if actionKind (defaultAction) = reduceFlag then
+                                  if actionKind defaultAction = reduceFlag then
                                       for tag in 0 .. tables.numTerminals - 1 do
                                           if not (explicit.Contains(tag)) then
                                               yield tag
@@ -562,8 +562,8 @@ module internal Implementation =
                                   "syntax error"
                               )
 
-                          tables.parseError (errorContext)
-                          popStackUntilErrorShifted (None)
+                          tables.parseError errorContext
+                          popStackUntilErrorShifted None
                           errorSuppressionCountDown <- 3
 
                           if Flags.debug then

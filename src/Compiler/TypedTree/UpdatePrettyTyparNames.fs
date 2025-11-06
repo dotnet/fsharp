@@ -3,7 +3,6 @@
 /// In this module some helpers will traverse the ModuleOrNamespaceType and update all the typars of each found Val.
 module internal FSharp.Compiler.UpdatePrettyTyparNames
 
-open Internal.Utilities.Library
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 

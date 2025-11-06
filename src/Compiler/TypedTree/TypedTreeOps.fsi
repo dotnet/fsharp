@@ -2911,7 +2911,7 @@ type TraitConstraintInfo with
 /// This will match anything that does not have any types or bindings.
 [<return: Struct>]
 val (|EmptyModuleOrNamespaces|_|):
-    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) voption
+    moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace list voption
 
 val tryFindExtensionAttribute: g: TcGlobals -> attribs: Attrib list -> Attrib option
 

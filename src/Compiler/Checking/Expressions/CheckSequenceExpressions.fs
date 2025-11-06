@@ -3,7 +3,6 @@
 /// Sequence expressions checking
 module internal FSharp.Compiler.CheckSequenceExpressions
 
-open Internal.Utilities.Library
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
