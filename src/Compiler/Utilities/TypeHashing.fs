@@ -516,15 +516,15 @@ module StructuralUtilities =
         elif not env.stable then Unstable tokens
         else Stable tokens
 
-    let tryGetTypeStructureOfStrippedType ty =
-        // Speed up repeated calls by memoizing results for types that yield a stable structure.
-        let memoize =
-            WeakMap.cacheConditionally
-                (function
-                | Stable _ -> true
-                | _ -> false)
-                getTypeStructureOfStrippedType
+    // Speed up repeated calls by memoizing results for types that yield a stable structure.
+    let private memoize =
+        WeakMap.cacheConditionally
+            (function
+            | Stable _ -> true
+            | _ -> false)
+            getTypeStructureOfStrippedType
 
+    let tryGetTypeStructureOfStrippedType ty =
         match memoize ty with
         | PossiblyInfinite -> ValueNone
         | ts -> ValueSome ts
