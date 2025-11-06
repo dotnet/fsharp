@@ -16,7 +16,7 @@ namespace Microsoft.FSharp.Core
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Object"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type obj = System.Object
+    type obj = Object
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Object"/> or null.
     /// With the 'nullable reference types' feature, this is an alias to 'obj | null'.</summary>
@@ -27,107 +27,107 @@ namespace Microsoft.FSharp.Core
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Exception"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type exn = System.Exception
+    type exn = Exception
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.IntPtr"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type nativeint = System.IntPtr
+    type nativeint = IntPtr
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.UIntPtr"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type unativeint = System.UIntPtr
+    type unativeint = UIntPtr
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.String"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type string = System.String
+    type string = String
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Single"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type float32 = System.Single
+    type float32 = Single
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type float = System.Double
+    type float = Double
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Single"/>. Identical to <see cref="T:Microsoft.FSharp.Core.float32"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type single = System.Single
+    type single = Single
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>. Identical to <see cref="T:Microsoft.FSharp.Core.float"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type double = System.Double
+    type double = Double
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.SByte"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type sbyte = System.SByte
+    type sbyte = SByte
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Byte"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type byte = System.Byte
+    type byte = Byte
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.SByte"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type int8 = System.SByte
+    type int8 = SByte
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Byte"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type uint8 = System.Byte
+    type uint8 = Byte
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Int16"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type int16 = System.Int16
+    type int16 = Int16
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt16"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type uint16 = System.UInt16
+    type uint16 = UInt16
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Int32"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type int32 = System.Int32
+    type int32 = Int32
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt32"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type uint32 = System.UInt32
+    type uint32 = UInt32
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Int64"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type int64 = System.Int64
+    type int64 = Int64
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt64"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type uint64 = System.UInt64
+    type uint64 = UInt64
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Char"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type char = System.Char
+    type char = Char
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Boolean"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type bool = System.Boolean
+    type bool = Boolean
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Decimal"/>.</summary>
     ///
     /// <category>Basic Types</category>
-    type decimal = System.Decimal
+    type decimal = Decimal
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Int32"/>.</summary>
     ///

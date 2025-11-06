@@ -32,6 +32,7 @@
     <Compile Include="TestFramework.fs" />
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
+    <Compile Include="VSInstallDiscovery.fs" />
     <Compile Include="CompilerAssert.fs" />
     <Compile Include="ProjectGeneration.fs" />
     <Compile Include="Assert.fs" />
@@ -93,6 +94,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+    <InternalsVisibleTo Include="FSharp.Editor.Tests" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '$(FSharpNetCoreProductTargetFramework)'">
