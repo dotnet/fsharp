@@ -480,65 +480,91 @@ neg1.fsx(56,109,56,111): typecheck error FS0001: This expression was expected to
 but here has type
     'int64'    
 
+neg1.fsx(56,9,56,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(57,109,57,111): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'int16'    
+
+neg1.fsx(57,9,57,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(58,109,58,111): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'sbyte'    
 
+neg1.fsx(58,9,58,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(59,109,59,112): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'uint64'    
+
+neg1.fsx(59,9,59,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(60,109,60,112): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'byte'    
 
+neg1.fsx(60,9,60,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(61,109,61,111): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'uint32'    
+
+neg1.fsx(61,9,61,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(62,109,62,112): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'uint16'    
 
+neg1.fsx(62,9,62,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(63,109,63,113): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'decimal'    
+
+neg1.fsx(63,9,63,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(64,109,64,112): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'float'    
 
+neg1.fsx(64,9,64,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(65,109,65,113): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'float32'    
+
+neg1.fsx(65,9,65,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(66,109,66,112): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
 
+neg1.fsx(66,9,66,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(67,109,67,112): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'char'    
 
+neg1.fsx(67,9,67,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(68,109,68,113): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'bool'    
+
+neg1.fsx(68,9,68,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(72,103,72,105): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'sbyte'.
 
@@ -569,65 +595,91 @@ neg1.fsx(86,109,86,111): typecheck error FS0001: This expression was expected to
 but here has type
     'int64'    
 
+neg1.fsx(86,9,86,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(87,109,87,111): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'int16'    
+
+neg1.fsx(87,9,87,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(88,109,88,110): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'int'    
 
+neg1.fsx(88,9,88,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(89,109,89,112): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'uint64'    
+
+neg1.fsx(89,9,89,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(90,109,90,112): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'byte'    
 
+neg1.fsx(90,9,90,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(91,109,91,111): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'uint32'    
+
+neg1.fsx(91,9,91,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(92,109,92,112): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'uint16'    
 
+neg1.fsx(92,9,92,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(93,109,93,113): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'decimal'    
+
+neg1.fsx(93,9,93,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(94,109,94,112): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'float'    
 
+neg1.fsx(94,9,94,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(95,109,95,113): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'float32'    
+
+neg1.fsx(95,9,95,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(96,109,96,112): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'string'    
 
+neg1.fsx(96,9,96,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(97,109,97,112): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'char'    
 
+neg1.fsx(97,9,97,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(98,109,98,113): typecheck error FS0001: This expression was expected to have type
     'sbyte'    
 but here has type
     'bool'    
+
+neg1.fsx(98,9,98,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(101,103,101,105): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'int16'.
 
@@ -660,65 +712,91 @@ neg1.fsx(116,109,116,111): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(116,9,116,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(117,109,117,110): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'int'    
+
+neg1.fsx(117,9,117,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(118,109,118,111): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'sbyte'    
 
+neg1.fsx(118,9,118,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(119,109,119,112): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'uint64'    
+
+neg1.fsx(119,9,119,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(120,109,120,112): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'byte'    
 
+neg1.fsx(120,9,120,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(121,109,121,111): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'uint32'    
+
+neg1.fsx(121,9,121,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(122,109,122,112): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'uint16'    
 
+neg1.fsx(122,9,122,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(123,109,123,113): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'decimal'    
+
+neg1.fsx(123,9,123,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(124,109,124,112): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'float'    
 
+neg1.fsx(124,9,124,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(125,109,125,113): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'float32'    
+
+neg1.fsx(125,9,125,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(126,109,126,112): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'string'    
 
+neg1.fsx(126,9,126,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(127,109,127,112): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'char'    
 
+neg1.fsx(127,9,127,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(128,109,128,113): typecheck error FS0001: This expression was expected to have type
     'int16'    
 but here has type
     'bool'    
+
+neg1.fsx(128,9,128,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(132,103,132,105): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'int64'.
 
@@ -751,65 +829,91 @@ neg1.fsx(147,109,147,110): typecheck error FS0001: This expression was expected 
 but here has type
     'int'    
 
+neg1.fsx(147,9,147,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(148,109,148,111): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'int16'    
+
+neg1.fsx(148,9,148,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(149,109,149,111): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'sbyte'    
 
+neg1.fsx(149,9,149,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(150,109,150,112): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'uint64'    
+
+neg1.fsx(150,9,150,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(151,109,151,112): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'byte'    
 
+neg1.fsx(151,9,151,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(152,109,152,111): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'uint32'    
+
+neg1.fsx(152,9,152,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(153,109,153,112): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'uint16'    
 
+neg1.fsx(153,9,153,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(154,109,154,113): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'decimal'    
+
+neg1.fsx(154,9,154,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(155,109,155,112): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'float'    
 
+neg1.fsx(155,9,155,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(156,109,156,113): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'float32'    
+
+neg1.fsx(156,9,156,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(157,109,157,112): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'string'    
 
+neg1.fsx(157,9,157,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(158,109,158,112): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'char'    
 
+neg1.fsx(158,9,158,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(159,109,159,113): typecheck error FS0001: This expression was expected to have type
     'int64'    
 but here has type
     'bool'    
+
+neg1.fsx(159,9,159,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(163,104,163,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'uint64'.
 
@@ -842,65 +946,91 @@ neg1.fsx(177,110,177,112): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(177,9,177,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(178,110,178,112): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'int16'    
+
+neg1.fsx(178,9,178,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(179,110,179,112): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'sbyte'    
 
+neg1.fsx(179,9,179,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(180,110,180,111): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'int'    
+
+neg1.fsx(180,9,180,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(181,110,181,113): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'byte'    
 
+neg1.fsx(181,9,181,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(182,110,182,112): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'uint32'    
+
+neg1.fsx(182,9,182,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(183,110,183,113): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'uint16'    
 
+neg1.fsx(183,9,183,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(184,110,184,114): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'decimal'    
+
+neg1.fsx(184,9,184,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(185,110,185,113): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'float'    
 
+neg1.fsx(185,9,185,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(186,110,186,114): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'float32'    
+
+neg1.fsx(186,9,186,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(187,110,187,113): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'string'    
 
+neg1.fsx(187,9,187,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(188,110,188,113): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'char'    
 
+neg1.fsx(188,9,188,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(189,110,189,114): typecheck error FS0001: This expression was expected to have type
     'uint64'    
 but here has type
     'bool'    
+
+neg1.fsx(189,9,189,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(193,104,193,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'uint32'.
 
@@ -933,65 +1063,91 @@ neg1.fsx(208,110,208,112): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(208,9,208,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(209,110,209,112): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'int16'    
+
+neg1.fsx(209,9,209,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(210,110,210,112): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'sbyte'    
 
+neg1.fsx(210,9,210,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(211,110,211,113): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'uint64'    
+
+neg1.fsx(211,9,211,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(212,110,212,113): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'byte'    
 
+neg1.fsx(212,9,212,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(213,110,213,111): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'int'    
+
+neg1.fsx(213,9,213,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(214,110,214,113): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'uint16'    
 
+neg1.fsx(214,9,214,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(215,110,215,114): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'decimal'    
+
+neg1.fsx(215,9,215,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(216,110,216,113): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'float'    
 
+neg1.fsx(216,9,216,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(217,110,217,114): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'float32'    
+
+neg1.fsx(217,9,217,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(218,110,218,113): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'string'    
 
+neg1.fsx(218,9,218,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(219,110,219,113): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'char'    
 
+neg1.fsx(219,9,219,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(220,110,220,114): typecheck error FS0001: This expression was expected to have type
     'uint32'    
 but here has type
     'bool'    
+
+neg1.fsx(220,9,220,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(224,104,224,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'uint16'.
 
@@ -1024,65 +1180,91 @@ neg1.fsx(239,110,239,112): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(239,9,239,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(240,110,240,112): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'int16'    
+
+neg1.fsx(240,9,240,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(241,110,241,112): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'sbyte'    
 
+neg1.fsx(241,9,241,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(242,110,242,113): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'uint64'    
+
+neg1.fsx(242,9,242,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(243,110,243,113): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'byte'    
 
+neg1.fsx(243,9,243,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(244,110,244,112): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'uint32'    
+
+neg1.fsx(244,9,244,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(245,110,245,111): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'int'    
 
+neg1.fsx(245,9,245,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(246,110,246,114): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'decimal'    
+
+neg1.fsx(246,9,246,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(247,110,247,113): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'float'    
 
+neg1.fsx(247,9,247,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(248,110,248,114): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'float32'    
+
+neg1.fsx(248,9,248,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(249,110,249,113): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'string'    
 
+neg1.fsx(249,9,249,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(250,110,250,113): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'char'    
 
+neg1.fsx(250,9,250,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(251,110,251,114): typecheck error FS0001: This expression was expected to have type
     'uint16'    
 but here has type
     'bool'    
+
+neg1.fsx(251,9,251,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(255,102,255,104): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'byte'.
 
@@ -1115,65 +1297,91 @@ neg1.fsx(269,108,269,110): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(269,9,269,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(270,108,270,110): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'int16'    
+
+neg1.fsx(270,9,270,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(271,108,271,110): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'sbyte'    
 
+neg1.fsx(271,9,271,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(272,108,272,111): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'uint64'    
+
+neg1.fsx(272,9,272,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(273,108,273,109): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'int'    
 
+neg1.fsx(273,9,273,110): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(274,108,274,110): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'uint32'    
+
+neg1.fsx(274,9,274,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(275,108,275,111): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'uint16'    
 
+neg1.fsx(275,9,275,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(276,108,276,112): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'decimal'    
+
+neg1.fsx(276,9,276,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(277,108,277,111): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'float'    
 
+neg1.fsx(277,9,277,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(278,108,278,112): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'float32'    
+
+neg1.fsx(278,9,278,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(279,108,279,111): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'string'    
 
+neg1.fsx(279,9,279,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(280,108,280,111): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'char'    
 
+neg1.fsx(280,9,280,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(281,108,281,112): typecheck error FS0001: This expression was expected to have type
     'byte'    
 but here has type
     'bool'    
+
+neg1.fsx(281,9,281,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(285,102,285,104): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'bool'.
 
@@ -1206,65 +1414,91 @@ neg1.fsx(299,108,299,110): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(299,9,299,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(300,108,300,110): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'int16'    
+
+neg1.fsx(300,9,300,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(301,108,301,110): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'sbyte'    
 
+neg1.fsx(301,9,301,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(302,108,302,111): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'uint64'    
+
+neg1.fsx(302,9,302,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(303,108,303,111): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'byte'    
 
+neg1.fsx(303,9,303,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(304,108,304,110): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'uint32'    
+
+neg1.fsx(304,9,304,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(305,108,305,111): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'uint16'    
 
+neg1.fsx(305,9,305,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(306,108,306,112): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'decimal'    
+
+neg1.fsx(306,9,306,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(307,108,307,111): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'float'    
 
+neg1.fsx(307,9,307,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(308,108,308,112): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'float32'    
+
+neg1.fsx(308,9,308,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(309,108,309,111): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'string'    
 
+neg1.fsx(309,9,309,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(310,108,310,111): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'char'    
 
+neg1.fsx(310,9,310,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(311,108,311,109): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
     'int'    
+
+neg1.fsx(311,9,311,110): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(315,104,315,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'string'.
 
@@ -1299,65 +1533,91 @@ neg1.fsx(329,110,329,112): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(329,9,329,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Int64' to type 'System.String'.
+
 neg1.fsx(330,110,330,112): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'int16'    
+
+neg1.fsx(330,9,330,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Int16' to type 'System.String'.
 
 neg1.fsx(331,110,331,112): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'sbyte'    
 
+neg1.fsx(331,9,331,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.SByte' to type 'System.String'.
+
 neg1.fsx(332,110,332,113): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'uint64'    
+
+neg1.fsx(332,9,332,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.UInt64' to type 'System.String'.
 
 neg1.fsx(333,110,333,113): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'byte'    
 
+neg1.fsx(333,9,333,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Byte' to type 'System.String'.
+
 neg1.fsx(334,110,334,112): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'uint32'    
+
+neg1.fsx(334,9,334,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.UInt32' to type 'System.String'.
 
 neg1.fsx(335,110,335,113): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'uint16'    
 
+neg1.fsx(335,9,335,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.UInt16' to type 'System.String'.
+
 neg1.fsx(336,110,336,114): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'decimal'    
+
+neg1.fsx(336,9,336,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Decimal' to type 'System.String'.
 
 neg1.fsx(337,110,337,113): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'float'    
 
+neg1.fsx(337,9,337,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Double' to type 'System.String'.
+
 neg1.fsx(338,110,338,114): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'float32'    
+
+neg1.fsx(338,9,338,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Single' to type 'System.String'.
 
 neg1.fsx(339,110,339,111): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'int'    
 
+neg1.fsx(339,9,339,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Int32' to type 'System.String'.
+
 neg1.fsx(340,110,340,113): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'char'    
 
+neg1.fsx(340,9,340,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Char' to type 'System.String'.
+
 neg1.fsx(341,110,341,114): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'bool'    
+
+neg1.fsx(341,9,341,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Unable to cast object of type 'System.Boolean' to type 'System.String'.
 
 neg1.fsx(342,104,342,114): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'string'.
 
@@ -1392,65 +1652,91 @@ neg1.fsx(359,110,359,112): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(359,9,359,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(360,110,360,112): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'int16'    
+
+neg1.fsx(360,9,360,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(361,110,361,112): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'sbyte'    
 
+neg1.fsx(361,9,361,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(362,110,362,113): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'uint64'    
+
+neg1.fsx(362,9,362,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(363,110,363,113): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'byte'    
 
+neg1.fsx(363,9,363,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(364,110,364,112): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'uint32'    
+
+neg1.fsx(364,9,364,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(365,110,365,113): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'uint16'    
 
+neg1.fsx(365,9,365,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(366,110,366,114): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'decimal'    
+
+neg1.fsx(366,9,366,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(367,110,367,111): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'int'    
 
+neg1.fsx(367,9,367,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(368,110,368,114): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'float32'    
+
+neg1.fsx(368,9,368,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(369,110,369,113): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'string'    
 
+neg1.fsx(369,9,369,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(370,110,370,113): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'char'    
 
+neg1.fsx(370,9,370,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(371,110,371,114): typecheck error FS0001: This expression was expected to have type
     'float'    
 but here has type
     'bool'    
+
+neg1.fsx(371,9,371,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(376,104,376,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'float32'.
 
@@ -1483,65 +1769,91 @@ neg1.fsx(390,110,390,112): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(390,9,390,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(391,110,391,112): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'int16'    
+
+neg1.fsx(391,9,391,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(392,110,392,112): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'sbyte'    
 
+neg1.fsx(392,9,392,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(393,110,393,113): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'uint64'    
+
+neg1.fsx(393,9,393,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(394,110,394,113): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'byte'    
 
+neg1.fsx(394,9,394,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(395,110,395,112): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'uint32'    
+
+neg1.fsx(395,9,395,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(396,110,396,113): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'uint16'    
 
+neg1.fsx(396,9,396,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(397,110,397,114): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'decimal'    
+
+neg1.fsx(397,9,397,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(398,110,398,113): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'float'    
 
+neg1.fsx(398,9,398,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(399,110,399,111): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'int'    
+
+neg1.fsx(399,9,399,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(400,110,400,113): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'string'    
 
+neg1.fsx(400,9,400,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(401,110,401,113): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'char'    
 
+neg1.fsx(401,9,401,114): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(402,110,402,114): typecheck error FS0001: This expression was expected to have type
     'float32'    
 but here has type
     'bool'    
+
+neg1.fsx(402,9,402,115): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(406,102,406,104): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'char'.
 
@@ -1574,80 +1886,112 @@ neg1.fsx(420,108,420,110): typecheck error FS0001: This expression was expected 
 but here has type
     'int64'    
 
+neg1.fsx(420,9,420,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(421,108,421,110): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'int16'    
+
+neg1.fsx(421,9,421,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(422,108,422,110): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'sbyte'    
 
+neg1.fsx(422,9,422,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(423,108,423,111): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'uint64'    
+
+neg1.fsx(423,9,423,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(424,108,424,111): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'byte'    
 
+neg1.fsx(424,9,424,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(425,108,425,110): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'uint32'    
+
+neg1.fsx(425,9,425,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(426,108,426,111): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'uint16'    
 
+neg1.fsx(426,9,426,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(427,108,427,112): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'decimal'    
+
+neg1.fsx(427,9,427,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(428,108,428,111): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'float'    
 
+neg1.fsx(428,9,428,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(429,108,429,112): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'float32'    
+
+neg1.fsx(429,9,429,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(430,108,430,111): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'string'    
 
+neg1.fsx(430,9,430,112): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(431,108,431,109): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'int'    
+
+neg1.fsx(431,9,431,110): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(432,108,432,112): typecheck error FS0001: This expression was expected to have type
     'char'    
 but here has type
     'bool'    
 
+neg1.fsx(432,9,432,113): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
 neg1.fsx(438,109,438,110): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
 
-neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'string'    
+neg1.fsx(438,9,438,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
+
+neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+
+neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'string'    
+
+neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(448,9,448,107): typecheck error FS3148: Too many static parameters. Expected at most 1 parameters, but got 2 unnamed and 0 named parameters.
 

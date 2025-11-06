@@ -3060,7 +3060,7 @@ let ``Test Project21 whole project errors`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project21.options) |> Async.RunImmediate
     for e in wholeProjectResults.Diagnostics do
         printfn "Project21 error: <<<%s>>>" e.Message
-    wholeProjectResults.Diagnostics.Length |> shouldEqual 2
+    wholeProjectResults.Diagnostics.Length |> shouldEqual 1
 
 
 [<Fact>]
@@ -3090,6 +3090,11 @@ let ``Test Project21 all symbols`` () =
             ("int", "int", "file1", ((8, 27), (8, 30)), ["type"], ["abbrev"]);
             ("val x", "x", "file1", ((9, 21), (9, 22)), ["defn"], []);
             ("string", "string", "file1", ((9, 37), (9, 43)), ["type"], ["abbrev"]);
+            ("val arg1", "arg1", "file1", ((9, 31), (9, 35)), ["defn"], []);
+            ("unit", "unit", "file1", ((9, 46), (9, 50)), ["type"], ["abbrev"]);
+            ("val raise", "raise", "file1", ((10, 18), (10, 23)), [], ["val"]);
+            ("System", "System", "file1", ((10, 25), (10, 31)), [], ["namespace"]);
+            ("member .ctor", "NotImplementedException", "file1", ((10, 25), (10, 55)), [], ["member"]);
             ("val x", "x", "file1", ((12, 21), (12, 22)), ["defn"], []);
             ("int", "int", "file1", ((12, 37), (12, 40)), ["type"], ["abbrev"]);
             ("val arg1", "arg1", "file1", ((12, 31), (12, 35)), ["defn"], []);
@@ -3097,6 +3102,8 @@ let ``Test Project21 all symbols`` () =
             ("val raise", "raise", "file1", ((13, 18), (13, 23)), [], ["val"]);
             ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
             ("member .ctor", "NotImplementedException", "file1", ((13, 25), (13, 55)), [], ["member"]);
+            ("member Method1", "Method1", "file1", ((9, 23), (9, 30)), ["override"], ["slot"; "member"]);
+            ("member Method2", "Method2", "file1", ((12, 23), (12, 30)), ["override"], ["slot"; "member"])
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
 //-----------------------------------------------------------------------------------------

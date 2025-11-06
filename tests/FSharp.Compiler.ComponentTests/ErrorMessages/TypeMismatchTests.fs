@@ -292,7 +292,10 @@ type Derived3() =
         |> withDiagnostics [
                 (Error 856, Line 8,  Col 16, Line 8,  Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 856, Line 12, Col 16, Line 12, Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
-                (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")]
+                (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+                (Error 1, Line 16, Col 36, Line 16, Col 43, "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ");
+                (Error 1, Line 16, Col 66, Line 16, Col 67, "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
+        ]
 
     [<Fact>]
     let ``Interface member with tuple argument should give error message with better solution``() =

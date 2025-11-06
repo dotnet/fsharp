@@ -6,6 +6,8 @@ neg60.fs(65,19,65,38): typecheck error FS0001: This expression was expected to h
 but here has type
     'unit'    
 
+neg60.fs(66,34,66,35): typecheck error FS0039: The value or constructor 'x' is not defined.
+
 neg60.fs(71,36,71,40): typecheck error FS0043: The type 'System.Nullable<int>' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'.
 
 neg60.fs(77,16,77,19): typecheck error FS0043: The type 'System.Nullable<int>' does not support the operator '?>='. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.
@@ -14,7 +16,7 @@ neg60.fs(78,16,78,19): typecheck error FS0043: None of the types 'System.Nullabl
 
 neg60.fs(79,18,79,21): typecheck error FS0001: The type ''a * 'b' does not match the type 'int'
 
-neg60.fs(79,15,79,16): typecheck error FS0043: The type ''a * 'b' does not match the type 'int'
+neg60.fs(79,15,79,16): typecheck error FS0043: The type 'int * int' does not match the type 'int'
 
 neg60.fs(80,22,80,25): typecheck error FS0001: Expecting a type supporting the operator '+' but given a tuple type
 

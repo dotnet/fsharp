@@ -68,7 +68,7 @@ type sRealTime
 [<Measure>]
 type pixels
 
-let G             = 6.67e-11<m ^ 3 / (kg s^2))>
+let G             = 6.67e-11<m ^ 3 / (kg s^2)>
 let m_per_AU      = 149597870691.0<m/AU>
 let AU_per_m      = 1.0/m_per_AU
 let Pixels_per_AU = 200.0<pixels/AU>

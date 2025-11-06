@@ -31,7 +31,11 @@ neg28.fsx(69,39,69,40): typecheck error FS0001: The type 'int -> int' does not s
 
 neg28.fsx(70,17,70,34): typecheck error FS0001: The type 'int -> int' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
 
+neg28.fsx(70,39,70,40): typecheck error FS0001: The type 'int -> int' does not support the 'equality' constraint because it is a function type
+
 neg28.fsx(71,17,71,38): typecheck error FS0001: The type 'int -> int' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
+
+neg28.fsx(71,43,71,44): typecheck error FS0001: The type 'int -> int' does not support the 'equality' constraint because it is a function type
 
 neg28.fsx(79,17,79,39): typecheck error FS0001: The type 'System.Type' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
 

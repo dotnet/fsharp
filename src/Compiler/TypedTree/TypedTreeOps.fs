@@ -5715,8 +5715,8 @@ let InferValReprInfoOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL re
     let fun_arity = vsl.Length
     let dtys, _ = stripFunTyN g fun_arity (snd (tryDestForallTy g ty))
     let partialArgAttribsL = Array.ofList partialArgAttribsL
-    assert (List.length vsl = List.length dtys)
-        
+    if List.length vsl <> List.length dtys then ValReprInfo.emptyValData else
+
     let curriedArgInfos =
         (vsl, dtys) ||> List.mapi2 (fun i vs ty ->
             let partialAttribs = if i < partialArgAttribsL.Length then partialArgAttribsL[i] else []

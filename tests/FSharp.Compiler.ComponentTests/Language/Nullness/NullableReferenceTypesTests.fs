@@ -1031,7 +1031,7 @@ let test =
     |> shouldFail
     |> withDiagnostics 
              [Error 1, Line 5, Col 7, Line 5, Col 9, "The type 'int' does not have 'null' as a proper value. See also test.fs(3,10)-(3,14)."
-              Error 25, Line 3, Col 11, Line 3, Col 15, "Incomplete pattern matches on this expression."]
+              Error 25, Line 3, Col 11, Line 3, Col 15, "Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."]
 
                  
 [<Fact>]

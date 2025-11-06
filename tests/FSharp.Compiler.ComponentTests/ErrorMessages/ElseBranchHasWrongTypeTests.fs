@@ -119,8 +119,10 @@ let y =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 1, Line 7, Col 14, Line 7, Col 22,
-                                 "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+        |> withDiagnostics [
+            (Error 1, Line 7, Col 14, Line 7, Col 22, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")
+            (Error 1, Line 8, Col 26, Line 8, Col 27, "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    ")
+        ]
 
     [<Fact>]
     let ``Else branch context doesn't propagate to lines before last line``() =

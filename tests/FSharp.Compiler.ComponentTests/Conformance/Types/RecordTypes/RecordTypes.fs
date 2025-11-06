@@ -130,6 +130,9 @@ module RecordTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 1, Line 7, Col 17, Line 7, Col 47, "This expression was expected to have type\n    'int array'    \nbut here has type\n    'RecType'    ")
+            (Error 786, Line 7, Col 17, Line 7, Col 47, "The expression form { expr with ... } may only be used with record types. To build object types use { new Type(...) with ... }");
+            (Error 791, Line 7, Col 17, Line 7, Col 47, "This type is not a record type");
+            (Error 763, Line 7, Col 17, Line 7, Col 47, "The field 'B' has been given a value, but is not present in the type 'int array'")
         ]
 
     // SOURCE=E_RecordsNotNull01.fs                                                             # E_RecordsNotNull01.fs

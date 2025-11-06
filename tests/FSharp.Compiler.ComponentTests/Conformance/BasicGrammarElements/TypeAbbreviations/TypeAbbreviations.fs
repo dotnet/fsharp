@@ -85,7 +85,6 @@ module TypeAbbreviations =
         |> shouldFail
         |> withDiagnostics [
             (Error 1, Line 16, Col 14, Line 16, Col 19, "A type parameter is missing a constraint 'when 'b :> IB'")
-            (Error 35, Line 16, Col 6, Line 16, Col 7, "This construct is deprecated: This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C<'a> = C of ...'.")
         ]
 
     //SOURCE=E_DroppedTypeVariable01.fsx SCFLAGS="--test:ErrorRanges -a"                                        # E_DroppedTypeVariable01.fsx
