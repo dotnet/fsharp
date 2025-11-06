@@ -9,7 +9,6 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
-open System.Reflection
 open System.Threading
 open FSharp.Compiler.IO
 open FSharp.Compiler.NicePrint
@@ -55,9 +54,6 @@ open FSharp.Compiler.TypedTreeOps
 open Internal.Utilities
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
-open Internal.Utilities.Hashing
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
@@ -829,7 +825,7 @@ type internal TypeCheckInfo
                     let qual =
                         quals
                         |> Array.tryFind (fun (_, _, _, r) ->
-                            ignore (r) // for breakpoint
+                            ignore r // for breakpoint
                             posEq exprRange.Start r.Start)
 
                     qual, false
@@ -3090,7 +3086,7 @@ module internal ParseAndCheckFile =
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                     let braceOffset =
                         match tok with
-                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, (LexerContinuation.Token(_, (_, _, dl, _, _) :: _))) ->
+                        | INTERP_STRING_BEGIN_PART(_, SynStringKind.TripleQuote, LexerContinuation.Token(_, (_, _, dl, _, _) :: _)) ->
                             dl - 1
                         | _ -> 0
 
@@ -3626,7 +3622,7 @@ type FSharpCheckFileResults
                     | _ -> AccessibleFromSomewhere
 
                 let layout =
-                    NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
+                    layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
 
                 match pageWidth with
                 | None -> layout

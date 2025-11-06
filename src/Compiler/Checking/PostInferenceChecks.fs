@@ -19,7 +19,6 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -201,7 +200,7 @@ type cenv =
 
       g: TcGlobals
 
-      amap: Import.ImportMap
+      amap: ImportMap
 
       /// For reading metadata
       infoReader: InfoReader
@@ -531,7 +530,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
-                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
+                    errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()), m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env NoInfo ty
 
@@ -547,7 +546,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 let thisCompPath = compPathOfCcu cenv.viewCcu
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
-                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
+                    let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, objName()) |> snd
                     let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
                     warning(ObsoleteDiagnostic(false, None, Some warningText, None, m))
 
@@ -866,7 +865,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (ctxt: PermitB
         let isReturnOfStructThis =
             ctxt.PermitOnlyReturnable &&
             isByrefTy g vref.Type &&
-            (vref.IsMemberThisVal)
+            vref.IsMemberThisVal
 
         if isReturnOfStructThis then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
@@ -1908,7 +1907,7 @@ and CheckDecisionTree cenv env dtree =
 
 and CheckDecisionTreeSwitch cenv env (inpExpr, cases, dflt, m) =
     CheckExprPermitByRefLike cenv env inpExpr |> ignore// can be byref for struct union switch
-    for (TCase(discrim, dtree)) in cases do
+    for TCase(discrim, dtree) in cases do
         CheckDecisionTreeTest cenv env m discrim
         CheckDecisionTree cenv env dtree
     dflt |> Option.iter (CheckDecisionTree cenv env)
@@ -2473,7 +2472,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                   setterArgs.Length <> getterArgs.Length)
                 ||
                  (let nargs = pinfo.GetParamTypes(cenv.amap, m).Length
-                  others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap, m))) <> (nargs = 0)))) then
+                  others |> List.exists (fun pinfo2 -> isNil(pinfo2.GetParamTypes(cenv.amap, m)) <> (nargs = 0)))) then
 
                   errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm, NicePrint.minimalStringOfType cenv.denv ty), m))
 

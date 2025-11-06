@@ -2,18 +2,14 @@
 
 module internal FSharp.Compiler.TypeHierarchy
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Import
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.TypeProviders
 #endif
 
 /// Get the base type of a type, taking into account type instantiations. Return None if the
