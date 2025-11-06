@@ -6,7 +6,6 @@ module internal FSharp.Compiler.NameResolution
 
 open System.Collections.Generic
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -2109,15 +2108,15 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
     let capturedNameResolutionIdentifiers =
         HashSet<pos * string>
-            ( { new IEqualityComparer<_> with
-                    member _.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
-                    member _.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
+            { new IEqualityComparer<_> with
+                member _.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
+                member _.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 }
 
     let capturedModulesAndNamespaces =
         HashSet<range * Item>
-            ( { new IEqualityComparer<range * Item> with
-                    member _.GetHashCode ((m, _)) = hash m
-                    member _.Equals ((m1, item1), (m2, item2)) = equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )
+            { new IEqualityComparer<range * Item> with
+                member _.GetHashCode ((m, _)) = hash m
+                member _.Equals ((m1, item1), (m2, item2)) = equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 }
 
     let allowedRange (m: range) =
         not m.IsSynthetic
@@ -3256,16 +3255,16 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                       let innerSearch = search +++ (moduleSearch AccessibleFromSomeFSharpCode) +++ (tyconSearch AccessibleFromSomeFSharpCode)
 
                       let suggestEverythingInScope (addToBuffer: string -> unit) =
-                        for (KeyValue(_,modrefs)) in nenv.ModulesAndNamespaces fullyQualified do
+                        for KeyValue(_,modrefs) in nenv.ModulesAndNamespaces fullyQualified do
                             for modref in modrefs do
                                 if IsEntityAccessible ncenv.amap m ad modref then
                                     addToBuffer modref.DisplayName
 
-                        for (KeyValue(_,tcref)) in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                        for KeyValue(_,tcref) in nenv.TyconsByDemangledNameAndArity fullyQualified do
                             if IsEntityAccessible ncenv.amap m ad tcref then
                                 addToBuffer tcref.DisplayName
 
-                        for (KeyValue(_,item)) in nenv.eUnqualifiedItems do
+                        for KeyValue(_,item) in nenv.eUnqualifiedItems do
                             if canSuggestThisItem item then
                                 addToBuffer item.DisplayName
 
@@ -4527,7 +4526,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo ->
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists nm.StartsWithOrdinal))
 #endif
 
                     minfos
@@ -5219,7 +5218,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             if methsWithStaticParams.IsEmpty then minfos
                             else minfos |> List.filter (fun minfo ->
                                     let nm = minfo.LogicalName
-                                    not (nm.Contains "," && methsWithStaticParams |> List.exists (nm.StartsWithOrdinal)))
+                                    not (nm.Contains "," && methsWithStaticParams |> List.exists nm.StartsWithOrdinal))
         #endif
 
                         minfos

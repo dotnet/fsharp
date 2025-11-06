@@ -102,7 +102,7 @@ type Var =
     /// </example>
     static member Global: name: string * typ: Type -> Var
 
-    interface System.IComparable
+    interface IComparable
 
 /// <summary>Quoted expressions annotated with System.Type values. </summary>
 [<CompiledName("FSharpExpr")>]
@@ -1576,7 +1576,7 @@ module Patterns =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("NewTuplePattern")>]
-    val (|NewTuple|_|): input: Expr -> (Expr list) option
+    val (|NewTuple|_|): input: Expr -> Expr list option
 
     /// <summary>An active pattern to recognize expressions that represent construction of struct tuple values</summary>
     ///
@@ -1586,7 +1586,7 @@ module Patterns =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("NewStructTuplePattern")>]
-    val (|NewStructTuple|_|): input: Expr -> (Expr list) option
+    val (|NewStructTuple|_|): input: Expr -> Expr list option
 
     /// <summary>An active pattern to recognize expressions that represent the read of a static or instance property, or a non-function value declared in a module</summary>
     ///
@@ -2267,7 +2267,7 @@ module ExprShape =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("ShapePattern")>]
-    val (|ShapeVar|ShapeLambda|ShapeCombination|): input: Expr -> Choice<Var, (Var * Expr), (objnull * Expr list)>
+    val (|ShapeVar|ShapeLambda|ShapeCombination|): input: Expr -> Choice<Var, Var * Expr, objnull * Expr list>
 
     /// <summary>Re-build combination expressions. The first parameter should be an object
     /// returned by the <c>ShapeCombination</c> case of the active pattern in this module.</summary>

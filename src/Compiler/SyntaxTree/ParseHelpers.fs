@@ -654,7 +654,7 @@ let adjustHatPrefixToTyparLookup mFull rightExpr =
         | SynExpr.LongIdent(false, SynLongIdent([ typarIdent ], _, _), None, _) ->
             let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
             SynExpr.Typar(typar, mFull)
-        | SynExpr.LongIdent(false, SynLongIdent((typarIdent :: items), (dotm :: dots), (_ :: itemTrivias)), None, _) ->
+        | SynExpr.LongIdent(false, SynLongIdent(typarIdent :: items, dotm :: dots, _ :: itemTrivias), None, _) ->
             let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
             let lookup = SynLongIdent(items, dots, itemTrivias)
             SynExpr.DotGet(SynExpr.Typar(typar, mFull), dotm, lookup, mFull)
@@ -687,7 +687,7 @@ let mkSynTypeTuple (elementTypes: SynTupleTypeSegment list) : SynType =
 
 #if DEBUG
 let debugPrint s =
-    if Internal.Utilities.Text.Parsing.Flags.debug then
+    if Flags.debug then
         printfn "\n%s" s
 #else
 let debugPrint s = ignore s
@@ -1142,11 +1142,7 @@ let mkLetExpression
 
             let mIn' =
                 mIn
-                |> Option.bind (fun (mIn: range) ->
-                    if Position.posEq mIn.Start body.Range.Start then
-                        None
-                    else
-                        Some mIn)
+                |> Option.bind (fun (mIn: range) -> if posEq mIn.Start body.Range.Start then None else Some mIn)
 
             let mLetOrUse =
                 match decls with
