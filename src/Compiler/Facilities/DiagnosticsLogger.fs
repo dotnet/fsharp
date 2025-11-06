@@ -939,6 +939,8 @@ module StackGuardMetrics =
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
 type StackGuard(name: string) =
 
+    do ignore name
+
     let depth = new ThreadLocal<int>()
 
     static member inline IsStackSufficient() =
@@ -972,26 +974,16 @@ type StackGuard(name: string) =
             else
                 let fileName = System.IO.Path.GetFileName(path)
                 let depthWhenJump = depth.Value
-
                 StackGuardMetrics.countJump memberName $"{fileName}:{line}" depthWhenJump
 
-                async {
-                    do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depthWhenJump})"
-                    return f ()
-                }
-                |> Async.RunImmediate
+                async2 { return f () } |> Async2.runWithoutCancellation
         finally
             depth.Value <- depth.Value - 1
-
-    [<DebuggerHidden; DebuggerStepThrough>]
-    member x.GuardCancellable(original: Cancellable<'T>) =
-        Cancellable(fun ct -> x.Guard(fun () -> Cancellable.run ct original))
 
 // UseMultipleDiagnosticLoggers in ParseAndCheckProject.fs provides similar functionality.
 // We should probably adapt and reuse that code.
 module MultipleDiagnosticsLoggers =
-    let Parallel computations =
+    let Parallel (computations: Async2<_> seq) =
         let computationsWithLoggers, diagnosticsReady =
             [
                 for i, computation in computations |> Seq.indexed do
@@ -1001,7 +993,7 @@ module MultipleDiagnosticsLoggers =
 
                     // Inject capturing logger into the computation. Signal the TaskCompletionSource when done.
                     let computationsWithLoggers =
-                        async {
+                        async2 {
                             SetThreadDiagnosticsLoggerNoUnwind logger
 
                             try
@@ -1024,11 +1016,11 @@ module MultipleDiagnosticsLoggers =
                     finishedLogger.CommitDelayedDiagnostics target
             }
 
-        async {
+        async2 {
             try
                 // We want to restore the current diagnostics context when finished.
                 use _ = new CompilationGlobalsScope()
-                let! results = Async.Parallel computationsWithLoggers
+                let! results = Async2.Parallel computationsWithLoggers
                 do! replayDiagnostics |> Async.AwaitTask
                 return results
             finally
@@ -1043,8 +1035,8 @@ module MultipleDiagnosticsLoggers =
                     replayDiagnostics.Wait()
         }
 
-    let Sequential computations =
-        async {
+    let Sequential (computations: Async2<_> seq) =
+        async2 {
             let results = ResizeArray()
 
             for computation in computations do
