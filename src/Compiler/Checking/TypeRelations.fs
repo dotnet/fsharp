@@ -31,7 +31,8 @@ type TTypeCacheKey =
     static member TryGetFromStrippedTypes(ty1, ty2, canCoerce) =
         let tryGetTypeStructure ty =
             match ty with
-            | TType_app _ -> tryGetTypeStructureOfStrippedType ty
+            | TType_app _ ->
+                tryGetTypeStructureOfStrippedType ty
             | _ -> ValueNone
 
         (tryGetTypeStructure ty1, tryGetTypeStructure ty2)

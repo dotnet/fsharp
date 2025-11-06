@@ -385,6 +385,7 @@ module HashTastMemberOrVals =
 ///
 /// </summary>
 module StructuralUtilities =
+    open Internal.Utilities.Library.Extras
 
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
@@ -399,17 +400,23 @@ module StructuralUtilities =
         | Unsolved of int
         | Rigid of int
 
-    type TypeStructure = TypeStructure of TypeToken[]
+    type TypeStructure =
+        | Stable of TypeToken[]
+        | Unstable of TypeToken[]
+        | PossiblyInfinite
 
     type private EmitContext =
         {
             typarMap: System.Collections.Generic.Dictionary<Stamp, int>
+            mutable stable: bool
         }
 
-    let inline emitNullness (n: Nullness) =
+    let private emitNullness env (n: Nullness) =
         match n.TryEvaluate() with
         | ValueSome k -> TypeToken.Nullness k
-        | ValueNone -> TypeToken.NullnessUnsolved
+        | ValueNone ->
+            env.stable <- false
+            TypeToken.NullnessUnsolved
 
     let rec private emitMeasure (m: Measure) =
         seq {
@@ -438,7 +445,7 @@ module StructuralUtilities =
 
             | TType_app(tcref, tinst, n) ->
                 TypeToken.Stamp tcref.Stamp
-                emitNullness n
+                emitNullness env n
 
                 for arg in tinst do
                     yield! emitTType env arg
@@ -466,10 +473,10 @@ module StructuralUtilities =
             | TType_fun(d, r, n) ->
                 yield! emitTType env d
                 yield! emitTType env r
-                emitNullness n
+                emitNullness env n
 
             | TType_var(r, n) ->
-                emitNullness n
+                emitNullness env n
 
                 let typarId =
                     match env.typarMap.TryGetValue r.Stamp with
@@ -480,21 +487,22 @@ module StructuralUtilities =
                         idx
 
                 match r.Solution with
-                | Some ty ->
-                    yield! emitTType env ty
+                | Some ty -> yield! emitTType env ty
                 | None ->
                     if r.Rigidity = TyparRigidity.Rigid then
                         TypeToken.Rigid typarId
                     else
+                        env.stable <- false
                         TypeToken.Unsolved typarId
             | TType_measure m -> yield! emitMeasure m
         }
 
-    let tryGetTypeStructureOfStrippedType (ty: TType) =
+    let private getTypeStructureOfStrippedType (ty: TType) =
 
         let env =
             {
                 typarMap = System.Collections.Generic.Dictionary<Stamp, int>()
+                stable = true
             }
 
         let tokens =
@@ -504,7 +512,19 @@ module StructuralUtilities =
             |> Seq.toArray
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if tokens.Length = 256 then
-            ValueNone
-        else
-            ValueSome(TypeStructure tokens)
+        if tokens.Length = 256 then PossiblyInfinite
+        elif not env.stable then Unstable tokens
+        else Stable tokens
+
+    let tryGetTypeStructureOfStrippedType ty =
+        // Speed up repeated calls by memoizing results for types that yield a stable structure.
+        let memoize =
+            WeakMap.cacheConditionally
+                (function
+                | Stable _ -> true
+                | _ -> false)
+                getTypeStructureOfStrippedType
+
+        match memoize ty with
+        | PossiblyInfinite -> ValueNone
+        | ts -> ValueSome ts
