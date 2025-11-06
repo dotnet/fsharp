@@ -9,11 +9,9 @@ open System.IO
 open System.Collections.Immutable
 open System.Reflection.PortableExecutable
 open System.Security.Cryptography
-open System.Reflection
 open System.Runtime.InteropServices
 
 open Internal.Utilities.Library
-open FSharp.Compiler.IO
 
 type KeyType =
     | Public

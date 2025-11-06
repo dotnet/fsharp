@@ -17,7 +17,6 @@ namespace Microsoft.FSharp.Core
 type bigint = System.Numerics.BigInteger
 
 open System
-open System.Diagnostics.CodeAnalysis
 open System.Globalization
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -28,8 +27,8 @@ module NumericLiterals =
 
     module NumericLiteralI =
 
-        let tab64 = new System.Collections.Generic.Dictionary<int64, objnull>()
-        let tabParse = new System.Collections.Generic.Dictionary<string, objnull>()
+        let tab64 = System.Collections.Generic.Dictionary<int64, objnull>()
+        let tabParse = System.Collections.Generic.Dictionary<string, objnull>()
 
         let FromInt64Dynamic (value: int64) : objnull =
             lock tab64 (fun () ->
@@ -47,10 +46,7 @@ module NumericLiterals =
             FromInt64Dynamic(int64 x32)
 
         let inline isOX s =
-            not (System.String.IsNullOrEmpty(s))
-            && s.Length > 2
-            && s.[0] = '0'
-            && s.[1] = 'x'
+            not (String.IsNullOrEmpty(s)) && s.Length > 2 && s.[0] = '0' && s.[1] = 'x'
 
         let FromZero () : 'T =
             (get32 0 :?> 'T) when 'T: BigInteger = BigInteger.Zero
