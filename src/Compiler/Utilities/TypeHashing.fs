@@ -401,7 +401,9 @@ module StructuralUtilities =
         | MeasureRational of int * int
         | NeverEqual of never: NeverEqual
 
-    type TypeStructure = TypeStructure of ImmutableArray<TypeToken>
+    type TypeStructure =
+        | TypeStructure of TypeToken[]
+        | PossiblyInfinite of never: NeverEqual
 
     let inline toNullnessToken (n: Nullness) =
         match n.TryEvaluate() with
@@ -464,6 +466,15 @@ module StructuralUtilities =
             | TType_measure m -> yield! accumulateMeasure m
         }
 
+    // If the sequence got too long, just drop it, we could be dealing with an infinite type.
+    let private toTypeStructure tokens =
+        let tokens = tokens |> Seq.truncate 256 |> Array.ofSeq
+
+        if tokens.Length = 256 then
+            PossiblyInfinite NeverEqual.Singleton
+        else
+            TypeStructure tokens
+
     /// Get the full structure of a type as a sequence of tokens, suitable for equality
     let getTypeStructure =
-        Extras.WeakMap.getOrCreate (fun ty -> accumulateTType ty |> ImmutableArray.ofSeq |> TypeStructure)
+        Extras.WeakMap.getOrCreate (fun ty -> accumulateTType ty |> toTypeStructure)
