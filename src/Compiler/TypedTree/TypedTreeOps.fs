@@ -799,7 +799,8 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
             let reducedTy2 = addNullnessToTy nullness reducedTy
             stripTyEqnsAndErase eraseFuncAndTuple g reducedTy2
         elif tyconRefEq g tcref g.nativeptr_tcr && eraseFuncAndTuple then 
-            stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
+            // Regression fix (issue #7428): nativeptr<'T> erases to ilsigptr<'T>, not nativeint
+            stripTyEqnsAndErase eraseFuncAndTuple g (TType_app(g.ilsigptr_tcr, args, nullness))
         else
             ty
 
