@@ -1,4 +1,4 @@
-﻿namespace Conformance.Types
+namespace Conformance.Types
 
 open Xunit
 open FSharp.Test.Compiler
@@ -675,6 +675,29 @@ type StructUnion = A of X:int | B of Y:StructUnion
             (Error 954, Line 4, Col 6, Line 4, Col 17, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
         ]
 
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument`` () =
+        Fsx
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedUnion<'a> = Cons of 'a * NestedUnion<'a list> | Nil
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 29, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
+
+    [<Fact>]
+    let ``Cyclic reference check works for recursive reference with a lifted generic argument: signature`` () =
+        Fsi
+            """
+            namespace Foo
+            [<Struct>]
+            type NestedUnion<'a> = Cons of 'a * NestedUnion<'a list> | Nil
+            """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 29, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
 
     let createMassiveStructDuProgram countOfCases =
         let codeSb = 
