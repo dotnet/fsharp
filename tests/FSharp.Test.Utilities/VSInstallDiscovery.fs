@@ -126,11 +126,3 @@ module VSInstallDiscovery =
         | NotFound reason -> 
             logAction $"Visual Studio installation not found: {reason}"
             None
-
-    /// Legacy compatibility function that maintains the old behavior of hard-failing.
-    /// Use this only for tests that must maintain the old behavior.
-    [<Obsolete("Use tryGetVSInstallDir() or getVSInstallDirWithLogging() for graceful error handling")>]
-    let getVSInstallDirOrFail () : string =
-        match tryFindVSInstallation () with
-        | Found (path, _) -> path
-        | NotFound reason -> failwith $"VS170COMNTOOLS and VSAPPIDDIR environment variables not found. {reason}"
