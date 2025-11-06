@@ -42,11 +42,43 @@
       <Uri>https://github.com/dotnet/runtime</Uri>
       <Sha>9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3</Sha>
     </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis.Features" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis.CSharp" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.CodeAnalysis.Compilers" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
+    <Dependency Name="Microsoft.VisualStudio.LanguageServices" Version="5.0.0-2.25529.7">
+      <Uri>https://github.com/dotnet/roslyn</Uri>
+      <Sha>68a9207cafc10bb08d345e32f06dd1a91ab7a6a2</Sha>
+    </Dependency>
   </ProductDependencies>
   <ToolsetDependencies>
-    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.25479.4">
+    <Dependency Name="Microsoft.DotNet.Arcade.Sdk" Version="10.0.0-beta.25513.2">
       <Uri>https://github.com/dotnet/arcade</Uri>
-      <Sha>e6f510cb87812d56ad781d93ff0513cdcccd0eb4</Sha>
+      <Sha>e8ca69398033dd1eea35e9667bf857234465de2b</Sha>
     </Dependency>
     <Dependency Name="optimization.windows_nt-x64.MIBC.Runtime" Version="1.0.0-prerelease.25467.1">
       <Uri>https://dev.azure.com/dnceng/internal/_git/dotnet-optimization</Uri>
