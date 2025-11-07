@@ -16,5 +16,6 @@
 
 * Warn on uppercase identifiers in patterns. ([PR #15816](https://github.com/dotnet/fsharp/pull/15816))
 * Error on invalid declarations in type definitions.([Issue #10066](https://github.com/dotnet/fsharp/issues/10066), [PR #18813](https://github.com/dotnet/fsharp/pull/18813))
+* Fix type erasure logic for `nativeptr<'T>` overloads to properly preserve element type differences during duplicate member checking. ([Issue #<ISSUE_NUMBER>](https://github.com/dotnet/fsharp/issues/<ISSUE_NUMBER>), [PR #<PR_NUMBER>](https://github.com/dotnet/fsharp/pull/<PR_NUMBER>))
 
 ### Changed

@@ -4,7 +4,6 @@ module internal FSharp.Compiler.LowerStateMachines
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
@@ -13,8 +12,6 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-
-let LowerStateMachineStackGuardDepth = StackGuard.GetDepthOption "LowerStateMachines"
 
 type StateMachineConversionFirstPhaseResult =
    {
@@ -272,7 +269,7 @@ type LowerStateMachine(g: TcGlobals) =
                         | Expr.Op (TOp.ILAsm ([ I_throw ], [_oldTy]), a, b, c), Some newTy -> 
                             let targetExpr2 = Expr.Op (TOp.ILAsm ([ I_throw ], [newTy]), a, b, c) 
                             Some targetExpr2
-                        | Expr.Sequential (DebugPoints((Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1), rebuild1), Expr.Const (Const.Zero, m, _oldTy), a, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
+                        | Expr.Sequential (DebugPoints(Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1, rebuild1), Expr.Const (Const.Zero, m, _oldTy), a, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
                             let targetExpr2 = Expr.Sequential (e1, rebuild1 (Expr.Const (Const.Zero, m, newTy)), a, c)
                             Some targetExpr2
                         | _ ->
@@ -356,7 +353,7 @@ type LowerStateMachine(g: TcGlobals) =
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
-          StackGuard = StackGuard(LowerStateMachineStackGuardDepth, "LowerStateMachineStackGuardDepth") }
+          StackGuard = StackGuard("LowerStateMachineStackGuardDepth") }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr

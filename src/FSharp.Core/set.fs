@@ -9,7 +9,6 @@ open System.Diagnostics
 open System.Text
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 
 // A functional language implementation of binary trees
@@ -116,19 +115,19 @@ module internal SetTree =
         let t2h = height t2
 
         if t2h > t1h + tolerance then // right is heavier than left
-            let t2' = asNode (t2)
+            let t2' = asNode t2
             // one of the nodes must have height > height t1 + 1
             if height t2'.Left > t1h + 1 then // balance left: combination
-                let t2l = asNode (t2'.Left)
+                let t2l = asNode t2'.Left
                 mk (mk t1 v t2l.Left) t2l.Key (mk t2l.Right t2'.Key t2'.Right)
             else // rotate left
                 mk (mk t1 v t2'.Left) t2.Key t2'.Right
         else if t1h > t2h + tolerance then // left is heavier than right
-            let t1' = asNode (t1)
+            let t1' = asNode t1
             // one of the nodes must have height > height t2 + 1
             if height t1'.Right > t2h + 1 then
                 // balance right: combination
-                let t1r = asNode (t1'.Right)
+                let t1r = asNode t1'.Right
                 mk (mk t1'.Left t1.Key t1r.Left) t1r.Key (mk t1r.Right v t2)
             else
                 mk t1'.Left t1'.Key (mk t1'.Right v t2)
@@ -557,7 +556,7 @@ module internal SetTree =
 
               member _.Reset() =
                   i <- mkIterator s
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   ()
         }
@@ -566,7 +565,7 @@ module internal SetTree =
     let rec compareStacks (comparer: IComparer<'T>) (l1: SetTree<'T> list) (l2: SetTree<'T> list) : int =
         let cont () =
             match l1, l2 with
-            | (x1 :: t1), _ when not (isEmpty x1) ->
+            | x1 :: t1, _ when not (isEmpty x1) ->
                 if x1.Height = 1 then
                     compareStacks comparer (empty :: SetTree x1.Key :: t1) l2
                 else
@@ -576,7 +575,7 @@ module internal SetTree =
                         comparer
                         (x1n.Left :: (SetTreeNode(x1n.Key, empty, x1n.Right, 0) :> SetTree<'T>) :: t1)
                         l2
-            | _, (x2 :: t2) when not (isEmpty x2) ->
+            | _, x2 :: t2 when not (isEmpty x2) ->
                 if x2.Height = 1 then
                     compareStacks comparer l1 (empty :: SetTree x2.Key :: t2)
                 else
@@ -592,7 +591,7 @@ module internal SetTree =
         | [], [] -> 0
         | [], _ -> -1
         | _, [] -> 1
-        | (x1 :: t1), (x2 :: t2) ->
+        | x1 :: t1, x2 :: t2 ->
             if isEmpty x1 then
                 if isEmpty x2 then
                     compareStacks comparer t1 t2
@@ -706,11 +705,11 @@ module internal SetTree =
 [<DebuggerDisplay("Count = {Count}")>]
 type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // NOTE: This type is logically immutable. This field is only mutated during deserialization.
     let mutable comparer = comparer
 
-    [<System.NonSerialized>]
+    [<NonSerialized>]
     // NOTE: This type is logically immutable. This field is only mutated during deserialization.
     let mutable tree = tree
 
@@ -800,7 +799,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
 
     member s.Map f : Set<'U> =
         let comparer = LanguagePrimitives.FastGenericComparer<'U>
-        Set(comparer, SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) (SetTree.empty) s.Tree)
+        Set(comparer, SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) SetTree.empty s.Tree)
 
     member s.Exists f =
         SetTree.exists f s.Tree
@@ -903,9 +902,9 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
             loop ()
         | _ -> false
 
-    interface System.IComparable with
+    interface IComparable with
         member this.CompareTo(that: objnull) =
-            SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
+            SetTree.compare this.Comparer this.Tree (that :?> Set<'T>).Tree
 
     interface IStructuralEquatable with
         member this.Equals(that, comparer) =
@@ -917,7 +916,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
                 let rec loop () =
                     let m1 = e1.MoveNext()
                     let m2 = e2.MoveNext()
-                    (m1 = m2) && (not m1 || ((comparer.Equals(e1.Current, e2.Current)) && loop ()))
+                    (m1 = m2) && (not m1 || (comparer.Equals(e1.Current, e2.Current) && loop ()))
 
                 loop ()
             | _ -> false
@@ -936,14 +935,14 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison>(comparer: IComparer<'
     interface ICollection<'T> with
         member s.Add x =
             ignore x
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Clear() =
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Remove x =
             ignore x
-            raise (new System.NotSupportedException("ReadOnlyCollection"))
+            raise (NotSupportedException("ReadOnlyCollection"))
 
         member s.Contains x =
             SetTree.mem s.Comparer x s.Tree
@@ -1026,7 +1025,7 @@ and [<CompilerMessage("This type is for compiler use and should not be used dire
       AbstractClass;
       CompiledName("FSharpSet")>] Set =
     [<CompilerMessage("This method is for compiler use and should not be used directly", 1204, IsHidden = true)>]
-    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: System.ReadOnlySpan<'T>) =
+    static member Create([<System.Runtime.CompilerServices.ScopedRef>] items: ReadOnlySpan<'T>) =
         let comparer = LanguagePrimitives.FastGenericComparer<'T>
         let mutable acc = SetTree.empty
 

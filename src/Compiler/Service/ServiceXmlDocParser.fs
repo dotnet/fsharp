@@ -50,7 +50,7 @@ module XmlDocParsing =
             let parameters =
                 [
                     for args in curriedArgs do
-                        for (SynArgInfo(ident = ident)) in args do
+                        for SynArgInfo(ident = ident) in args do
                             match ident with
                             | Some ident -> ident.idText
                             | None -> ()

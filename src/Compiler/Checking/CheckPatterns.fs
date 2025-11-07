@@ -8,7 +8,6 @@ open System
 open System.Collections.Generic
 
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
@@ -145,47 +144,84 @@ and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
     List.iter (fun pat -> if isOptArg pat then hitOptArg <- true elif hitOptArg then error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))) pats
 
 
-/// Bind the patterns used in argument position for a function, method or lambda.
-and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synSimplePats =
+/// Bind the patterns used in the argument position for a function, method or lambda.
+and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synSimplePats (parsedPatterns: SynPat list * bool) =
 
-    let g = cenv.g
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let rec collectBoundIdTextsFromPat (acc: string list) (p: SynPat) : string list =
+        match p with
+        | SynPat.FromParseError(p, _)
+        | SynPat.Paren(p, _) -> collectBoundIdTextsFromPat acc p
+        | SynPat.Tuple(_, ps, _, _)
+        | SynPat.ArrayOrList(_, ps, _) -> List.fold collectBoundIdTextsFromPat acc ps
+        | SynPat.As(lhs, rhs, _) -> collectBoundIdTextsFromPat (collectBoundIdTextsFromPat acc lhs) rhs
+        | SynPat.Named(SynIdent(id, _), _, _, _)
+        | SynPat.OptionalVal(id, _) -> id.idText :: acc
+        | SynPat.LongIdent(argPats = SynArgPats.Pats ps) -> List.fold collectBoundIdTextsFromPat acc ps
+        | SynPat.Or(p1, p2, _, _) -> collectBoundIdTextsFromPat (collectBoundIdTextsFromPat acc p1) p2
+        | SynPat.Ands(pats, _) -> List.fold collectBoundIdTextsFromPat acc pats
+        | SynPat.Record(fieldPats = fields) ->
+            (acc, fields)
+            ||> List.fold (fun acc (NamePatPairField(_, _, _, pat, _)) -> collectBoundIdTextsFromPat acc pat)
+        | SynPat.ListCons(lhsPat = l; rhsPat = r) -> collectBoundIdTextsFromPat (collectBoundIdTextsFromPat acc l) r
+        | _ -> acc
 
-    // validate optional argument declaration
+    let augmentTakenNamesFromFirstGroup (parsedData: SynPat list * bool) (patEnvOut: TcPatLinearEnv) : TcPatLinearEnv =
+        match parsedData, patEnvOut with
+        | (pats ,true), TcPatLinearEnv(tpenvR, namesR, takenNamesR) ->
+            match pats with
+            | pat :: _ ->
+                let extra = collectBoundIdTextsFromPat [] pat |> Set.ofList
+                TcPatLinearEnv(tpenvR, namesR, Set.union takenNamesR extra)
+            | _ -> patEnvOut
+        | _ -> patEnvOut
+
+    let bindCurriedGroup (synSimplePats: SynSimplePats) : string list * TcPatLinearEnv =
+        let g = cenv.g
+        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        match synSimplePats with
+        | SynSimplePats.SimplePats ([], _, m) ->
+            // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
+            // syntactic translation when building bindings. This is done because the
+            // use of "()" has special significance for arity analysis and argument counting.
+            //
+            // Here we give a name to the single argument implied by those patterns.
+            // This is a little awkward since it would be nice if this was
+            // uniform with the process where we give names to other (more complex)
+            // patterns used in argument position, e.g. "let f (D(x)) = ..."
+            let id = ident("unitVar" + string takenNames.Count, m)
+            UnifyTypes cenv env m ty g.unit_ty
+            let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, true)
+            let _, namesR, takenNamesR = TcPatBindingName cenv env id ty false None None vFlags (names, takenNames)
+            [ id.idText ], TcPatLinearEnv(tpenv, namesR, takenNamesR)
+        | SynSimplePats.SimplePats ([sp], _, _) ->
+            // Single parameter: no tuple splitting, check directly
+            let v, patEnv' = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv sp []
+            [ v ], patEnv'
+        | SynSimplePats.SimplePats (ps, _, m) ->
+            // Multiple parameters: treat a domain type as a ref-tuple and map each simple pat
+            let ptys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
+            let namesOut, patEnvR =
+                (patEnv, List.zip ptys ps)
+                ||> List.mapFold (fun penv (pty, sp) -> TcSimplePat optionalArgsOK checkConstraints cenv pty env penv sp [])
+            namesOut, patEnvR
+
+    // 1) validate optional-arg ordering
     ValidateOptArgOrder synSimplePats
 
-    match synSimplePats with
-    | SynSimplePats.SimplePats ([],_, m) ->
-        // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
-        // syntactic translation when building bindings. This is done because the
-        // use of "()" has special significance for arity analysis and argument counting.
-        //
-        // Here we give a name to the single argument implied by those patterns.
-        // This is a little awkward since it would be nice if this was
-        // uniform with the process where we give names to other (more complex)
-        // patterns used in argument position, e.g. "let f (D(x)) = ..."
-        let id = ident("unitVar" + string takenNames.Count, m)
-        UnifyTypes cenv env m ty g.unit_ty
-        let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, true)
-        let _, namesR, takenNamesR = TcPatBindingName cenv env id ty false None None vFlags (names, takenNames)
-        let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
-        [id.idText], patEnvR
+    // 2) bind the current curried group
+    let namesOut, patEnvOut = bindCurriedGroup synSimplePats
 
-    | SynSimplePats.SimplePats (pats = [synSimplePat]) ->
-        let v, patEnv = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv synSimplePat []
-        [v], patEnv
+    // 3) post-augment takenNames for later groups (using the original first-group pattern)
+    let patEnvOut = augmentTakenNamesFromFirstGroup parsedPatterns patEnvOut
 
-    | SynSimplePats.SimplePats (ps, _, m) ->
-        let ptys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m ty ps
-        let ps', patEnvR = (patEnv, List.zip ptys ps) ||> List.mapFold (fun patEnv (ty, pat) -> TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv pat [])
-        ps', patEnvR
+    namesOut, patEnvOut
 
 and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv (pat: SynPat) =
     let g = cenv.g
     let argTy = NewInferenceType g
     let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)
     let spats, _ = SimplePatsOfPat cenv.synArgNameGenerator pat
-    let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats
+    let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats ([], false)
     names, patEnv, spats
 
 and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPatValFlags) (names, takenNames: Set<string>) =
@@ -364,15 +400,18 @@ and TcPatNamedAs warnOnUpper cenv env valReprInfo vFlags patEnv ty synInnerPat i
     phase2, acc
 
 and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
-    let pats = [pat1; pat2]
-    let warnOnUpper =
+    // Type-check pat1 with the original warnOnUpper flag (to warn on uppercase identifiers)
+    let pat1R, patEnv1 = TcPat warnOnUpper cenv env None vFlags patEnv ty pat1
+
+    // For pat2 (the binding variable like UppercaseIdentifier as Foo), suppress uppercase warnings if the feature is enabled
+    let warnOnUpperForPat2 =
         if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
             AllIdsOK
         else
             warnOnUpper
-
-    let patsR, patEnvR = TcPatterns warnOnUpper cenv env vFlags patEnv (List.map (fun _ -> ty) pats) pats
-    let phase2 values = TPat_conjs(List.map (fun f -> f values) patsR, m)
+    
+    let pat2R, patEnvR = TcPat warnOnUpperForPat2 cenv env None vFlags patEnv1 ty pat2
+    let phase2 values = TPat_conjs([pat1R values; pat2R values], m)
     phase2, patEnvR
 
 and TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valReprInfo m =

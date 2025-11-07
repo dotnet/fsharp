@@ -480,3 +480,56 @@ if actual <> expected then
     |> withLangVersion80
     |> compileExeAndRun
     |> verifyOutput "once"
+
+[<Fact>]
+let ``N-Nested copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+type SubSubTest = {
+    Z: int
+}
+
+type SubTest = {
+    Y: SubSubTest
+}
+
+type Test = {
+    X: SubTest
+}
+
+let getTest () =
+    { X = { Y = { Z = 0 } } }
+
+[<EntryPoint>]
+let main argv =
+    let a = {
+         getTest () with
+            X.Y.Z = 1 
+    }
+    printfn "%i" a.X.Y.Z |> ignore
+    0
+    """
+    |> typecheck
+    |> shouldSucceed
+    |> verifyOutput "1"
+
+[<Fact>]
+let ``N-Nested, anonymous copy-and-update works when the starting expression is not a simple identifier``() =
+    FSharp """
+module CopyAndUpdateTests
+
+let getTest () =
+    {| X = {| Y = {| Z = 0 |} |} |}
+
+[<EntryPoint>]
+let main argv =
+    let a = {|
+         getTest () with
+            X.Y.Z = 1 
+    |}
+    printfn "%i" a.X.Y.Z |> ignore
+    0
+    """
+    |> typecheck
+    |> shouldSucceed
+    |> verifyOutput "1"

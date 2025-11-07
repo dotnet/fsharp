@@ -160,7 +160,7 @@ type SynConst =
 
     | Char of char
 
-    | Decimal of System.Decimal
+    | Decimal of Decimal
 
     | UserNum of value: string * suffix: string
 
@@ -1086,7 +1086,7 @@ type SynMatchClause =
 
     member this.IsTrueMatchClause =
         let (SynMatchClause(trivia = trivia)) = this
-        trivia.BarRange.IsSome && trivia.ArrowRange.IsSome
+        trivia.ArrowRange.IsSome
 
     member this.Range =
         match this with

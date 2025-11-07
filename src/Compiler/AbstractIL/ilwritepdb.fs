@@ -7,19 +7,15 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
 open System.IO.Compression
-open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
 open System.Security.Cryptography
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
-open FSharp.Compiler.Text.Range
 
 type BlobBuildingStream() =
     inherit Stream()
@@ -232,13 +228,13 @@ let pdbMagicNumber = 0x4244504dL
 let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (compressedStream: MemoryStream) =
     let iddPdbBuffer =
         let buffer =
-            Array.zeroCreate (sizeof<int32> + sizeof<int32> + int (compressedStream.Length))
+            Array.zeroCreate (sizeof<int32> + sizeof<int32> + int compressedStream.Length)
 
         let offset, size = (0, sizeof<int32>) // Magic Number dword: 0x4244504dL
         Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>) // Uncompressed size
         Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
-        let offset, size = (offset + size, int (compressedStream.Length)) // Uncompressed size
+        let offset, size = (offset + size, int compressedStream.Length) // Uncompressed size
         Buffer.BlockCopy(compressedStream.ToArray(), 0, buffer, offset, size)
         buffer
 
@@ -325,7 +321,7 @@ let sortMethods info =
 
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
-    tableRowCounts |> Seq.iter (builder.Add)
+    tableRowCounts |> Seq.iter builder.Add
     builder.MoveToImmutable()
 
 let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
@@ -466,7 +462,7 @@ type PortablePdbGenerator
             fs.CopyTo ms
 
             metadata.AddCustomDebugInformation(
-                ModuleDefinitionHandle.op_Implicit (EntityHandle.ModuleDefinition),
+                ModuleDefinitionHandle.op_Implicit EntityHandle.ModuleDefinition,
                 metadata.GetOrAddGuid sourceLinkId,
                 metadata.GetOrAddBlob(ms.ToArray())
             )
@@ -485,7 +481,7 @@ type PortablePdbGenerator
             | true, h -> h
 
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
-    let importScopesTable = new Dictionary<PdbImports, ImportScopeHandle>()
+    let importScopesTable = Dictionary<PdbImports, ImportScopeHandle>()
 
     let serializeImport (writer: BlobBuilder) (import: PdbImport) =
         match import with
@@ -561,7 +557,7 @@ type PortablePdbGenerator
     //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
 
     let serializeImportsBlob (imports: PdbImport[]) =
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
 
         for import in imports do
             serializeImport writer import
@@ -570,7 +566,7 @@ type PortablePdbGenerator
 
     // Define the empty global imports scope for the whole assembly,it gets index #1 (the first entry in the table)
     let defineModuleImportScope () =
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
         let blob = metadata.GetOrAddBlob writer
 
         let rid =
@@ -994,7 +990,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
                                 yield (scope.EndOffset, scope.EndOffset)
                             |]
 
-                        for ((_, a), (b, _)) in Array.pairwise gaps do
+                        for (_, a), (b, _) in Array.pairwise gaps do
                             if a < b then
                                 yield
                                     { scope with
@@ -1023,11 +1019,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
 //     adding the text " (shadowed)" to the names of those with name conflicts.
 let unshadowScopes rootScope =
     // Avoid stack overflow when writing linearly nested scopes
-    let UnshadowScopesStackGuardDepth =
-        GetEnvInteger "FSHARP_ILPdb_UnshadowScopes_StackGuardDepth" 100
-
-    let stackGuard =
-        StackGuard(UnshadowScopesStackGuardDepth, "ILPdbWriter.unshadowScopes")
+    let stackGuard = StackGuard("ILPdbWriter.unshadowScopes")
 
     let result, _ = pushShadowedLocals stackGuard [||] rootScope
     result
