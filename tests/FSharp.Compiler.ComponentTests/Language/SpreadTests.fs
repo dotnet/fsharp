@@ -1171,6 +1171,28 @@ module NominalAndAnonymousRecords =
                 |> compileExeAndRun
                 |> shouldSucceed
 
+        module BackCompat =
+            [<Fact>]
+            let ``Inference works the same`` () =
+                let src =
+                    """
+                    let f x y =
+                        if x = y then ()
+                        else failwith $"Expected %A{x} = %A{y}."
+
+                    f {| a = 1 - 1 |} {| a = Unchecked.defaultof<_> |}
+
+                    #nowarn FS3883 // Spread shadowing explicit.
+
+                    let r = {| a = Unchecked.defaultof<_> |}
+                    f {| a = 1 - 1 |} {| a = "a"; ...r |}
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> compileExeAndRun
+                |> shouldSucceed
+
         module Conversions =
             ()
 
