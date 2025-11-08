@@ -4218,17 +4218,7 @@ module TcDeclarations =
             let tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res ->
-                    // Update resolved type parameters with the names from the source.
                     let _, tcref, _ = res
-                    if tcref.TyparsNoRange.Length = synTypars.Length then
-                        (tcref.TyparsNoRange, synTypars)
-                        ||> List.zip
-                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
-                            let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
-                            if typar.StaticReq = sr then
-                                typar.SetIdent(untypedIdent)
-                        )
-
                     tcref
 
                 | Exception exn ->

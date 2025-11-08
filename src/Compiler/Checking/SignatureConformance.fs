@@ -143,11 +143,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   if check then
                       errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))
                 
-                  // Adjust the actual type parameter name to look like the signature
-                  implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
+                  if implTypar.IsCompilerGenerated then
+                      // Adjust the actual type parameter name to look like the signature
+                      implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
 
-                  // Mark it as "not compiler generated", now that we've got a good name for it
-                  implTypar.SetCompilerGenerated false 
+                      // Mark it as "not compiler generated", now that we've got a good name for it
+                      implTypar.SetCompilerGenerated false 
 
                   // Check the constraints in the implementation are present in the signature
                   implTypar.Constraints |> List.forall (fun implTyparCx -> 
