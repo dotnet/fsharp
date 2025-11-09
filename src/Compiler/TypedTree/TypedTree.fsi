@@ -1565,7 +1565,7 @@ type Typar =
     /// Set the IL name of the type parameter
     member SetILName: il_name: string option -> unit
 
-    /// Saves the name as the declared name of the type parameter if it is not already set.    
+    /// Saves the name as the declared name of the type parameter if it is not already set.
     member PreserveDeclaredName: unit -> unit
 
     /// Sets the identifier associated with a type variable
