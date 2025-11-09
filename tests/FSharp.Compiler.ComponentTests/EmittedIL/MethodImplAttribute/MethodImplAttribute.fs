@@ -60,6 +60,15 @@ module MethodImplAttribute =
         compilation
         |> getCompilation
         |> verifyCompilation
+        
+        
+    // SOURCE=MethodImplAttribute.Async.fs SCFLAGS="-a -g --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplAttribute.Async.dll"	# MethodImplAttribute.Async.fs
+    [<Theory; FileInlineData("MethodImplAttribute.Async.fs")>]
+    let ``Async_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
 
     // SOURCE=MethodImplAttribute.NoOptimization.fs    SCFLAGS="-a -g --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplAttribute.NoOptimization.dll"	# MethodImplAttribute.NoOptimization.fs
     [<Theory; FileInlineData("MethodImplAttribute.NoOptimization.fs")>]

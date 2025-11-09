@@ -754,6 +754,7 @@ FSharp.Compiler.AbstractIL.IL+ILMemberAccess: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean HasSecurity
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsAbstract
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsAggressiveInline
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsAsync
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsCheckAccessOnOverride
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsClassInitializer
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsConstructor
@@ -779,6 +780,7 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean IsZeroInit
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_HasSecurity()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsAbstract()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsAggressiveInline()
+FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsAsync()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsCheckAccessOnOverride()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsClassInitializer()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Boolean get_IsConstructor()
