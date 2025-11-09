@@ -76,8 +76,7 @@ namespace Foo.Types
 
     val EndColumn: int"""
 
-// See https://github.com/dotnet/fsharp/issues/19033
-[<Fact(Skip="needs fixing")>]
+[<Fact>]
 let ``Type extension uses type parameters names from source`` () =
     FSharp """
 module Extensions
@@ -94,8 +93,7 @@ type List<'E> with
 
   member X: 'E"""
 
-// See https://github.com/dotnet/fsharp/issues/19033
-[<Fact(Skip="needs fixing")>]
+[<Fact>]
 let ``Type extension with constraints uses type parameters names from source`` () =
     FSharp """
 module Extensions
@@ -112,8 +110,7 @@ type Map<'K,'V when 'K: comparison> with
 
   member X: t: 'T -> k: 'K -> 'K option * ({| n: 'K array |} * int) when 'K: comparison"""
  
-// See https://github.com/dotnet/fsharp/issues/19033
-[<Fact(Skip="needs fixing")>]
+[<Fact>]
 let ``Type extension with lowercase type parameters names from source`` () =
     FSharp """
 module Extensions
