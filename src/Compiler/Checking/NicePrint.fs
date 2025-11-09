@@ -724,7 +724,7 @@ module PrintTypes =
             (sprintf "%s%s%s"
                 (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
                 (if denv.showInferenceTyparAnnotations then prefixOfInferenceTypar typar else "")
-                typar.DisplayName)
+                (typar.DeclaredName |> Option.defaultValue typar.Name))
         |> mkNav typar.Range
         |> wordL
 
@@ -1199,12 +1199,12 @@ module PrintTypes =
     let prettyArgInfos denv allTyparInst =
         function 
         | [] -> [(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)] 
-        | infos -> infos |> List.map (map1Of2 (instType allTyparInst)) 
+        | infos -> infos |> List.map (map1Of2 (instType allTyparInst))
 
     // Layout: type spec - class, datatype, record, abbrev 
     let prettyLayoutOfMemberSigCore denv memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
         let niceMethodTypars, allTyparInst = 
-            let methTyparNames = methTypars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
+            let methTyparNames = methTypars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.DeclaredName |> Option.defaultValue tp.Name )
             PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
 
         let retTy = instType allTyparInst retTy
@@ -1245,7 +1245,7 @@ module PrintTypes =
         let _niceMethodTypars, typarInst =
             let memberToParentInst = List.empty
             let typars = argInfos |> List.choose (function TType_var (typar, _),_ -> Some typar | _ -> None)
-            let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
+            let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.DeclaredName |> Option.defaultValue tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
 
         let retTy = instType typarInst retTy
