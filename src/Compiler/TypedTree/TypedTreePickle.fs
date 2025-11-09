@@ -2406,6 +2406,7 @@ let u_tyar_spec_data st =
                         typar_constraints = e
                         typar_attribs = c
                         typar_is_contravariant = false
+                        typar_declared_name = None
                     }
     }
 
