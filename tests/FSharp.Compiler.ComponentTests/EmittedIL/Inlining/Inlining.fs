@@ -35,6 +35,18 @@ module Inlining =
         |> getCompilation
         |> verifyCompilation
 
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Regression17607.fs"|])>]
+    let ``Mutually recursive inner let - regression 17607 - realsig off`` compilation =
+        compilation
+        |> withRealInternalSignatureOff
+        |> verifyCompilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Regression17607.fs"|])>]
+    let ``Mutually recursive inner let - regression 17607 - real sig on`` compilation =
+        compilation
+        |> withRealInternalSignatureOn
+        |> verifyCompilation
+
     // SOURCE=StructUnion01.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd StructUnion01.dll"	# StructUnion01.fs
     [<Theory; FileInlineData("StructUnion01.fs")>]
     let ``StructUnion01_fs`` compilation =

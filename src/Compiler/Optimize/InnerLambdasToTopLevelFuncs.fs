@@ -194,8 +194,8 @@ module Pass1_DetermineTLRAndArities =
             let arity = min nFormals nMaxApplied
             if atTopLevel then
                 Some (f, arity)
-            elif g.realsig then
-                None
+            //elif g.realsig then
+            //    None
             else if arity<>0 || not (isNil tps) then
                 Some (f, arity)
             else
@@ -215,20 +215,24 @@ module Pass1_DetermineTLRAndArities =
 
     let DetermineTLRAndArities g expr =
        let xinfo = GetUsageInfoOfImplFile g expr
-       let fArities = Zmap.chooseL (SelectTLRVals g xinfo) xinfo.Defns
-       let fArities = List.filter (fst >> IsValueRecursionFree xinfo) fArities
-       // Do not TLR v if it is bound under a shouldinline defn
-       // There is simply no point - the original value will be duplicated and TLR'd anyway
-       let rejectS = GetValsBoundUnderShouldInline xinfo
-       let fArities = List.filter (fun (v, _) -> not (Zset.contains v rejectS)) fArities
-       (*-*)
-       let tlrS = Zset.ofList valOrder (List.map fst fArities)
-       let topValS = xinfo.TopLevelBindings                                 (* genuinely top level *)
-       let topValS = Zset.filter (IsMandatoryNonTopLevel g >> not) topValS  (* restrict *)
+       let rejects = GetValsBoundUnderShouldInline xinfo
+       let fArities =
+            xinfo.Defns
+            |> Zmap.chooseL (SelectTLRVals g xinfo) 
+            |> List.filter (fst >> IsValueRecursionFree xinfo)
+            // Do not TLR v if it is bound under a shouldinline defn
+            // There is simply no point - the original value will be duplicated and TLR'd anyway
+            |> List.filter (fun (v, _) -> not (Zset.contains v rejects))
+
+       let tlrs = Zset.ofList valOrder (List.map fst fArities)
+       let topVals =
+            xinfo.TopLevelBindings                                  // genuinely top level *)
+            |> Zset.filter (IsMandatoryNonTopLevel g >> not)        // restrict
+
 #if DEBUG
        (* REPORT MISSED CASES *)
        if verboseTLR then
-           let missed = Zset.diff  xinfo.TopLevelBindings tlrS
+           let missed = Zset.diff  xinfo.TopLevelBindings tlrs
            missed |> Zset.iter (fun v -> dprintf "TopLevel but not TLR = %s\n" v.LogicalName)
        (* REPORT OVER *)
 #endif
@@ -236,7 +240,7 @@ module Pass1_DetermineTLRAndArities =
 #if DEBUG
        if verboseTLR then DumpArity arityM
 #endif
-       tlrS, topValS, arityM
+       tlrs, topVals, arityM
 
 (* NOTES:
    For constants,
@@ -758,7 +762,6 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        let aenvExprFor v = exprForVal env.m (aenvFor v)
 
        // build PackedReqdItems
-       let reqdTypars = env.reqdTypars
        let aenvs = Zmap.values cmap
        let pack = cmapPairs |> List.map (fun (v, aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
        let unpack =
@@ -783,7 +786,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
            dprintf "tlr: packEnv unpack =%s\n" (showL (listL bindingL unpack))
 
        // result
-       (fc, { ep_etps = Zset.elements reqdTypars
+       (fc, { ep_etps = Zset.elements env.reqdTypars
               ep_aenvs = aenvs
               ep_pack = pack
               ep_unpack = unpack}), carrierMaps
@@ -1090,6 +1093,7 @@ module Pass4_RewriteAssembly =
     /// At free vals, fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
     let rec TransExpr (penv: RewriteContext) (z: RewriteState) expr: Expr * RewriteState =
+
         penv.stackGuard.Guard <| fun () ->
 
         match expr with
