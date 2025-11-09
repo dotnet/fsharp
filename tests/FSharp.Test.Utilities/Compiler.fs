@@ -455,6 +455,9 @@ module rec Compiler =
     let FsSource source =
         SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })
 
+    let FsSourceWithFileName name source =
+        SourceCodeFileKind.Fs({FileName=name; SourceText=Some source })
+
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
 
@@ -1367,6 +1370,7 @@ Actual:
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
                 | false, errorMsg, _actualIL ->
+                    //printfn $"{actualIL}"
                     CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
         | CompilationResult.Failure f ->
             printfn "Failure:"
