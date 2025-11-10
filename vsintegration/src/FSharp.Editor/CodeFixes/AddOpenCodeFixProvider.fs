@@ -30,13 +30,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ TextChange(context.Span, qualifier) ]
         }
 
-    // Hey, I know what you're thinking: this is a horrible hack.
-    // Indeed it is, this is a better (but still bad) version of the OpenDeclarationHelper.
-    // The things should be actually fixed in the InsertionContext, it's bugged.
-    // But currently CompletionProvider also depends on InsertionContext and it's not tested enough.
-    // So fixing InsertionContext or OpenDeclarationHelper might break completion which would be bad.
-    // The hack below is at least heavily tested.
-    // And at least it shows what should be fixed down the line.
+    // With the fix in ServiceParsedInputOps, the InsertionContext now correctly
+    // points to the line after the module keyword (or namespace), so we can trust it.
     let getOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) =
         // insertion context counts from 2, make the world sane
         let insertionLineNumber = ctx.Pos.Line - 2
@@ -44,44 +39,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
         let startLineNumber, openDeclaration =
             match ctx.ScopeKind with
-            | ScopeKind.TopModule ->
-                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
-
-                // explicit top level module
-                | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-
-                // nested module, shouldn't be here
-                | line when line.StartsWith "module" -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-
-                // attribute, shouldn't be here
-                | line when line.StartsWith "[<" && line.EndsWith ">]" ->
-                    let moduleDeclLineNumberOpt =
-                        sourceText.Lines
-                        |> Seq.skip insertionLineNumber
-                        |> Seq.tryFindIndex (fun line -> line.ToString().Contains "module")
-
-                    match moduleDeclLineNumberOpt with
-                    // implicit top level module
-                    | None -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-                    // explicit top level module
-                    | Some number ->
-                        // add back the skipped lines
-                        let moduleDeclLineNumber = insertionLineNumber + number
-                        let moduleDeclLineText = sourceText.Lines[moduleDeclLineNumber].ToString().Trim()
-
-                        if moduleDeclLineText.EndsWith "=" then
-                            insertionLineNumber, $"{margin}open {ns}{br}{br}"
-                        else
-                            moduleDeclLineNumber + 2, $"{margin}open {ns}{br}{br}"
-
-                // implicit top level module
-                | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-
+            | ScopeKind.TopModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
             | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
             | ScopeKind.NestedModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
             | ScopeKind.OpenDeclaration -> insertionLineNumber + 1, $"{margin}open {ns}{br}"
-
-            // So far I don't know how to get here
             | ScopeKind.HashDirective -> insertionLineNumber + 1, $"open {ns}{br}{br}"
 
         let start = sourceText.Lines[startLineNumber].Start
