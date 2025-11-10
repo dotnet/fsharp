@@ -261,7 +261,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             string outputBasePath = this.ProjectMgr.OutputBaseRelativePath;
             if (outputBasePath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                 outputBasePath = Path.GetDirectoryName(outputBasePath);
-                newConfig.AddProperty("OutputPath", Path.Combine(outputBasePath, configName) + Path.DirectorySeparatorChar.ToString());
+            newConfig.AddProperty("OutputPath", Path.Combine(outputBasePath, configName) + Path.DirectorySeparatorChar.ToString());
 
         }
 

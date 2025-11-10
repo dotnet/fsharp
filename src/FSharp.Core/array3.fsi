@@ -2,10 +2,7 @@
 
 namespace Microsoft.FSharp.Collections
 
-open System
-open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 
 /// <summary>Contains operations for working with rank 3 arrays.</summary>
 ///

@@ -1697,15 +1697,15 @@ module InfoMemberPrinting =
                 let methodLayout = 
                     // Render Method attributes and [return:..] attributes on separate lines above (@@) the method definition
                     PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (minfo.GetCustomAttrs()) (squareAngleL >> (@@)) layout
-                    |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (mi.RawMetadata.Return.CustomAttrs) (squareAngleReturn >> (@@))
+                    |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv mi.RawMetadata.Return.CustomAttrs (squareAngleReturn >> (@@))
                 let paramLayouts = 
                     minfo.GetParamDatas (amap, m, minst)
                     |> List.head
-                    |> List.zip (mi.ParamMetadata)
+                    |> List.zip mi.ParamMetadata
                     |> List.map(fun (ilParams,paramData) -> 
                         layoutParamData denv paramData
                         // Render parameter attributes next to (^^) the parameter definition
-                        |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv (ilParams.CustomAttrs) (squareAngleL >> (^^)) )
+                        |> PrintTypes.layoutCsharpCodeAnalysisIlAttributes denv ilParams.CustomAttrs (squareAngleL >> (^^)) )
                 methodLayout,paramLayouts
             | _ ->
                 layout,

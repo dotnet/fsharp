@@ -8,7 +8,6 @@ open System
 open System.Collections.Generic
 
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions

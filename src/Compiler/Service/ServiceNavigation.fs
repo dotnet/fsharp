@@ -163,7 +163,7 @@ module NavigationImpl =
 
         let createMember (id: Ident, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
             let item = NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access)
-            item, addItemName (id.idText)
+            item, addItemName id.idText
 
         // Process let-binding
         let processBinding isMember enclosingEntityKind isAbstract synBinding =
@@ -384,10 +384,10 @@ module NavigationImpl =
 
                     | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); decls = decls; range = m) ->
                         // Find let bindings (for the right dropdown)
-                        let nested = processNestedDeclarations (decls)
+                        let nested = processNestedDeclarations decls
 
                         let newBaseName =
-                            (if (String.IsNullOrEmpty(baseName)) then
+                            (if String.IsNullOrEmpty(baseName) then
                                  ""
                              else
                                  baseName + ".")
@@ -417,7 +417,7 @@ module NavigationImpl =
                     let (SynModuleOrNamespace(id, _isRec, kind, decls, _, _, access, m, _)) = modul
                     let baseName = if (not singleTopLevel) then textOfLid id else ""
                     // Find let bindings (for the right dropdown)
-                    let nested = processNestedDeclarations (decls)
+                    let nested = processNestedDeclarations decls
                     // Get nested modules and types (for the left dropdown)
                     let other = processNavigationTopLevelDeclarations (baseName, decls)
 
@@ -435,7 +435,7 @@ module NavigationImpl =
                         let item =
                             NavigationItem.Create(nm, kind, FSharpGlyph.Module, m, mBody, singleTopLevel, NavigationEntityKind.Module, false, access)
 
-                        let decl = (item, addItemName (nm), nested)
+                        let decl = (item, addItemName nm, nested)
                         decl
 
                     yield! other
@@ -443,7 +443,7 @@ module NavigationImpl =
 
         let items =
             [|
-                for (d, idx, nested) in items do
+                for d, idx, nested in items do
                     let nested =
                         nested
                         |> Array.ofList
@@ -492,7 +492,7 @@ module NavigationImpl =
 
         let createMember (id: Ident, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
             let item = NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access)
-            item, addItemName (id.idText)
+            item, addItemName id.idText
 
         let rec processExnRepr baseName nested inp =
             let (SynExceptionDefnRepr(_, SynUnionCase(ident = SynIdent(id, _); caseType = fldspec), _, _, access, m)) = inp
@@ -609,7 +609,7 @@ module NavigationImpl =
 
                     | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = lid; accessibility = access); moduleDecls = decls; range = m) ->
                         // Find let bindings (for the right dropdown)
-                        let nested = processNestedSigDeclarations (decls)
+                        let nested = processNestedSigDeclarations decls
 
                         let newBaseName =
                             (if String.IsNullOrEmpty(baseName) then
@@ -642,7 +642,7 @@ module NavigationImpl =
                     let (SynModuleOrNamespaceSig(id, _isRec, kind, decls, _, _, access, m, _)) = modulSig
                     let baseName = if (not singleTopLevel) then textOfLid id else ""
                     // Find let bindings (for the right dropdown)
-                    let nested = processNestedSigDeclarations (decls)
+                    let nested = processNestedSigDeclarations decls
                     // Get nested modules and types (for the left dropdown)
                     let other = processNavigationTopLevelSigDeclarations (baseName, decls)
 
@@ -665,7 +665,7 @@ module NavigationImpl =
 
         let items =
             [|
-                for (d, idx, nested) in items do
+                for d, idx, nested in items do
                     let nested =
                         nested
                         |> Array.ofList
