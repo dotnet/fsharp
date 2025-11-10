@@ -2459,22 +2459,18 @@ module ParsedInput =
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
-            | SynModuleDecl.NestedModule(
-                moduleInfo = SynComponentInfo(longId = ident); 
-                decls = decls; 
-                range = range;
-                trivia = trivia) ->
-                
+            | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = ident); decls = decls; range = range; trivia = trivia) ->
+
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
 
                 if range.EndLine >= currentLine then
                     // Use trivia to get the actual module keyword line, which excludes attributes
-                    let moduleKeywordLine = 
+                    let moduleKeywordLine =
                         match trivia.ModuleKeyword with
                         | Some moduleKeywordRange -> moduleKeywordRange.StartLine
-                        | None -> range.StartLine  // Fallback if trivia unavailable
-                    
+                        | None -> range.StartLine // Fallback if trivia unavailable
+
                     let moduleBodyIndentation =
                         getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
 
