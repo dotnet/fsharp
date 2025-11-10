@@ -761,8 +761,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkExpr false e2
                             yield! walkExpr false e3
 
-                        | SynExpr.DotLambda(_, m, _) ->
-                            yield! checkRange m
+                        | SynExpr.DotLambda(_, m, _) -> yield! checkRange m
 
                 ]
 
