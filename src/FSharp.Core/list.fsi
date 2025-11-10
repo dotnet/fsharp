@@ -3,7 +3,6 @@
 namespace Microsoft.FSharp.Collections
 
 open System
-open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
