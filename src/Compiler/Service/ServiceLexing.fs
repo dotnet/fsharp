@@ -1588,7 +1588,7 @@ type FSharpToken =
         | COLON_QMARK_GREATER -> FSharpTokenKind.ColonQuestionMarkGreater
         | COLON_QMARK -> FSharpTokenKind.ColonQuestionMark
         | COLON_EQUALS -> FSharpTokenKind.ColonEquals
-        | SEMICOLON -> FSharpTokenKind.SemicolonSemicolon
+        | SEMICOLON -> FSharpTokenKind.Semicolon
         | WHEN -> FSharpTokenKind.When
         | WHILE -> FSharpTokenKind.While
         | WHILE_BANG -> FSharpTokenKind.WhileBang
