@@ -12,7 +12,6 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
@@ -180,7 +179,7 @@ val CheckOneInput:
     tcImports: TcImports *
     tcGlobals: TcGlobals *
     prefixPathOpt: LongIdent option *
-    tcSink: NameResolution.TcResultsSink *
+    tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
@@ -248,7 +247,7 @@ val CheckOneInputAndFinish:
     tcImports: TcImports *
     tcGlobals: TcGlobals *
     prefixPathOpt: LongIdent option *
-    tcSink: NameResolution.TcResultsSink *
+    tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>

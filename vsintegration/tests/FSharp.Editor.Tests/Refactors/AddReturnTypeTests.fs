@@ -5,6 +5,10 @@ open Xunit
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 open FSharp.Test.ProjectGeneration
 open FSharp.Editor.Tests.Helpers
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.CodeRefactorings
+open Microsoft.CodeAnalysis.CodeActions
 
 [<Theory>]
 [<InlineData(":int")>]
@@ -479,3 +483,42 @@ let sum a b : MyType = {Value=a+b}
 
     let resultText = newDoc.GetTextAsync() |> GetTaskResult
     Assert.Equal(expectedCode.Trim(' ', '\r', '\n'), resultText.ToString().Trim(' ', '\r', '\n'))
+
+[<Fact>]
+let ``Should not throw when file is not properly configured`` () =
+    let symbolName = "sum"
+
+    let code =
+        """
+let sum a b = a + b
+        """
+
+    use context = TestContext.CreateWithCode code
+
+    let spanStart = code.IndexOf symbolName
+
+    // Create a document that's not in the F# project options by adding it to solution
+    // but not to the project's source files list. This simulates the race condition
+    // where a file is copied but project options haven't been refreshed yet.
+    let project = context.Solution.Projects |> Seq.head
+    let newDocId = DocumentId.CreateNewId(project.Id)
+
+    let newDoc =
+        context.Solution.AddDocument(newDocId, "NotInProject.fs", code, filePath = "C:\\NotInProject.fs")
+
+    let documentNotInProject = newDoc.GetDocument(newDocId)
+
+    let refactoringActions = new System.Collections.Generic.List<CodeAction>()
+
+    let refactoringContext =
+        CodeRefactoringContext(documentNotInProject, TextSpan(spanStart, 1), (fun a -> refactoringActions.Add a), context.CancellationToken)
+
+    let refactorProvider = new AddReturnType()
+
+    // This should not throw even though the document is not in the project options
+    let computeTask = refactorProvider.ComputeRefactoringsAsync refactoringContext
+
+    computeTask.Wait(context.CancellationToken)
+
+    // The test passes if no exception was thrown
+    Assert.True(true)

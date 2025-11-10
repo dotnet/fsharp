@@ -98,7 +98,7 @@ type public HashIfExpression() =
                 "DEBUG"                     , (IfdefId "DEBUG")
                 "!DEBUG"                    , !! (IfdefId "DEBUG")
                 "O_s1"                      , IfdefId "O_s1"
-                "(ONE)"                     , (ONE)
+                "(ONE)"                     , ONE
                 "ONE&&TWO"                  , ONE &&& TWO
                 "ONE||TWO"                  , ONE ||| TWO
                 "( ONE && TWO )"            , ONE &&& TWO

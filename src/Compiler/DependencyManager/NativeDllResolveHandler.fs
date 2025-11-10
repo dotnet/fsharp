@@ -51,14 +51,14 @@ type internal ProbingPathsStore() =
     member this.Dispose() =
         let mutable probe: string = Unchecked.defaultof<string>
 
-        while (addedPaths.TryTake(&probe)) do
+        while addedPaths.TryTake(&probe) do
             ProbingPathsStore.RemoveProbeFromProcessPath(probe)
 
     interface IDisposable with
         member _.Dispose() =
             let mutable probe: string = Unchecked.defaultof<string>
 
-            while (addedPaths.TryTake(&probe)) do
+            while addedPaths.TryTake(&probe) do
                 ProbingPathsStore.RemoveProbeFromProcessPath(probe)
 
 /// Signature for Native library resolution probe callback
@@ -151,7 +151,7 @@ type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutio
                             |> Seq.tryPick (fun rid -> probeForNativeLibrary root rid name)))
 
         match probe with
-        | Some path -> loadNativeLibrary (path)
+        | Some path -> loadNativeLibrary path
         | None -> IntPtr.Zero
 
     // netstandard 2.1 has this property, unfortunately we don't build with that yet

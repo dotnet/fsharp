@@ -494,13 +494,13 @@ type DependencyProvider
     // Resolution Path = Location of FSharp.Compiler.Service.dll
     let assemblySearchPaths =
         lazy
-            ([
+            [
                 let assemblyLocation =
                     typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
 
                 yield !!(Path.GetDirectoryName assemblyLocation)
                 yield AppDomain.CurrentDomain.BaseDirectory
-            ])
+            ]
 
     let enumerateDependencyManagerAssemblies compilerTools (reportError: ResolvingErrorReport) =
         getCompilerToolsDesignTimeAssemblyPaths compilerTools
@@ -628,7 +628,7 @@ type DependencyProvider
                 path, null
         with e ->
             let e = stripTieWrapper e
-            let err, msg = FSComp.SR.packageManagerError (e.Message)
+            let err, msg = FSComp.SR.packageManagerError e.Message
             reportError.Invoke(ErrorReportType.Error, err, msg)
             null, null
 
@@ -643,7 +643,7 @@ type DependencyProvider
 
         with e ->
             let e = stripTieWrapper e
-            let err, msg = FSComp.SR.packageManagerError (e.Message)
+            let err, msg = FSComp.SR.packageManagerError e.Message
             reportError.Invoke(ErrorReportType.Error, err, msg)
             null
 
@@ -697,7 +697,7 @@ type DependencyProvider
 
                     with e ->
                         let e = stripTieWrapper e
-                        Error(FSComp.SR.packageManagerError (e.Message)))
+                        Error(FSComp.SR.packageManagerError e.Message))
             )
 
         match result with
