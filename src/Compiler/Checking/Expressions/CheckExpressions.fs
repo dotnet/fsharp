@@ -10982,47 +10982,15 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 false, SynExpr.ObjExpr(targetType, Some(expr, None), None, [], [], [], m, rhsExpr.Range), overallTy, overallTy
             | e -> false, e, overallTy, overallTy
 
-        // Check the attributes of the binding, parameters or return value
-        let TcAttrs tgt isRet attrs =
-            // For all but attributes positioned at the return value, disallow implicitly
-            // targeting the return value.
-            let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
-            let attrs, _ = TcAttributesMaybeFailEx TcCanFail.ReportAllErrors cenv envinner tgt tgtEx attrs
-            let attrs: Attrib list = attrs
-            if attrTgt = enum 0 && not (isNil attrs) then
-                for attr in attrs do
-                    errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), attr.Range))
-            attrs
-
         // Rotate [<return:...>] from binding to return value
         // Also patch the syntactic representation
-        let retAttribs, valAttribs, valSynData =
-            let attribs = TcAttrs attrTgt false attrs
-            let rotRetSynAttrs, rotRetAttribs, valAttribs =
-                // Do not rotate if some attrs fail to typecheck...
-                if attribs.Length <> attrs.Length then [], [], attribs
-                else attribs
-                     |> List.zip attrs
-                     |> List.partition(function | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
-                     |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
-            let retAttribs =
-                match rtyOpt with
-                | Some (SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
-                    rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs
-                | None -> rotRetAttribs
-            let valSynData =
-                match rotRetSynAttrs with
-                | [] -> valSynData
-                | {Range=mHead} :: _ ->
-                let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
-                SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
-            retAttribs, valAttribs, valSynData
+        let retAttribs, valAttribs, valSynData = TcNormalizeReturnAttribs cenv envinner attrTgt attrs valSynData rtyOpt
 
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable g valAttribs mBinding
 
         let argAttribs =
-            spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
+            spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs cenv envinner attrTgt AttributeTargets.Parameter false))
 
         // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
         let isStructRetTy = HasFSharpAttribute g g.attrib_StructAttribute retAttribs
@@ -11219,6 +11187,30 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             TcAttributeTargetsOnLetBindings { cenv with tcSink = TcResultsSink.NoSink } env attrs overallPatTy overallExprTy (not declaredTypars.IsEmpty) isClassLetBinding
 
         CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
+
+// Rotate [<return:...>] from binding to return value
+// Also patch the syntactic representation
+and TcNormalizeReturnAttribs cenv env attrTgt attrs valSynData rtyOpt =
+    let attribs = TcAttrs cenv env attrTgt attrTgt false attrs
+    let rotRetSynAttrs, rotRetAttribs, valAttribs =
+        // Do not rotate if some attrs fail to typecheck...
+        if List.length attribs <> attrs.Length then [], [], attribs
+        else attribs
+             |> List.zip attrs
+             |> List.partition(function | _, Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+             |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
+    let retAttribs =
+        match rtyOpt with
+        | Some (SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
+            rotRetAttribs @ TcAttrs cenv env attrTgt AttributeTargets.ReturnValue true retAttrs
+        | None -> rotRetAttribs
+    let valSynData =
+        match rotRetSynAttrs with
+        | [] -> valSynData
+        | {Range=mHead} :: _ ->
+        let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
+        SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
+    retAttribs, valAttribs, valSynData
 
 // Note:
 // - Let bound values can only have attributes that uses AttributeTargets.Field ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
@@ -11546,6 +11538,17 @@ and TcAttributesCanFail cenv env attrTgt synAttribs =
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
+
+// Check the attributes of the binding, parameters or return value
+and TcAttrs cenv env attrTgt tgt isRet attrs =
+    // For all but attributes positioned at the return value, disallow implicitly
+    // targeting the return value.
+    let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
+    let attrs, _ = TcAttributesMaybeFailEx TcCanFail.ReportAllErrors cenv env tgt tgtEx attrs
+    if attrTgt = enum 0 && not (isNil attrs) then
+        for attr in attrs do
+            errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), attr.Range))
+    attrs
 
 //-------------------------------------------------------------------------
 // TcLetBinding
@@ -12246,14 +12249,18 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     // Pull apart the inputs
     let (NormalizedBinding(vis1, bindingKind, isInline, isMutable, bindingSynAttribs, bindingXmlDoc, synTyparDecls, valSynData, declPattern, bindingRhs, mBinding, debugPoint)) = binding
-    let (NormalizedBindingRhs(_, _, bindingExpr)) = bindingRhs
-    let (SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
+    let (NormalizedBindingRhs(_, rtyOpt, bindingExpr)) = bindingRhs
+    let (SynValData(memberFlagsOpt, _, thisIdOpt)) = valSynData
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
     let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
     // Check the attributes on the declaration
-    let bindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
+    let retAttribs, bindingAttribs, (SynValData(_, valSynInfo, _) as valSynData) = TcNormalizeReturnAttribs cenv env attrTgt bindingSynAttribs valSynData rtyOpt
+
+    // Add the return attributes back onto the binding attributes so that ActivePatternElemsOfValRef will see
+    // `[<return: Struct>]` as ValRef does not contain return attributes.
+    let bindingAttribs = retAttribs @ bindingAttribs
 
     // Allocate the type inference variable for the inferred type
     let ty = NewInferenceType g

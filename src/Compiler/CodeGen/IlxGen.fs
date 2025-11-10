@@ -9356,6 +9356,14 @@ and GenMethodForBinding
                 g.DebuggerNonUserCodeAttribute
         ]
 
+    // Remove attributes that are applied to the return.  These attributes need to be passed through ValRef.Attribs so that
+    // ActivePatternElemsOfValRef will correctly propagate `[<return: Struct>]` on active patterns.
+    let attrs =
+        attrs
+        |> List.filter (function
+            | Attrib(targetsOpt = Some flags) -> not (flags.HasFlag(AttributeTargets.ReturnValue))
+            | _ -> true)
+
     let ilAttrsThatGoOnPrimaryItem =
         [
             yield! GenAttrs cenv eenv attrs
