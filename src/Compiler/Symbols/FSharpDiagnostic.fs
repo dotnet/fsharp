@@ -300,7 +300,8 @@ type DiagnosticsScope(flatErrors: bool)  =
             | None -> err ""
 
 /// A diagnostics logger that capture diagnostics, filtering them according to warning levels etc.
-type internal CompilationDiagnosticLogger(debugName: string, options: FSharpDiagnosticOptions, ?preprocess: (PhasedDiagnostic -> PhasedDiagnostic)) =
+type internal CompilationDiagnosticLogger(debugName: string, options: FSharpDiagnosticOptions, ?preprocess:
+                                              PhasedDiagnostic -> PhasedDiagnostic) =
     inherit DiagnosticsLogger("CompilationDiagnosticLogger("+debugName+")")
             
     let mutable errorCount = 0
