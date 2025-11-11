@@ -7331,12 +7331,14 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                         let bodyFreeVars = freeInExpr CollectTyparsAndLocals body
                         unionFreeVars acc bodyFreeVars) emptyFreeVars
                 
-                // Filter to only variables that are members of a struct type
+                // Filter to only instance members of struct types
+                // This identifies the problematic case: when an object expression inside a struct
+                // captures instance members, which would require capturing 'this' as a byref
                 let structMembers =
                     freeVars.FreeLocals
                     |> Zset.elements
                     |> List.filter (fun v ->
-                        v.HasDeclaringEntity && isStructTyconRef v.DeclaringEntity)
+                        v.IsInstanceMember && v.HasDeclaringEntity && isStructTyconRef v.DeclaringEntity)
                 
                 if structMembers.IsEmpty then
                     [], Remap.Empty
