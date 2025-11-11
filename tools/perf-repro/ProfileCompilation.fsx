@@ -85,7 +85,7 @@ let generateProjects config =
 
 // Restore dependencies for a project
 let restoreProject projectDir =
-    printfn "\nRestoring dependencies for %s..." (Path.GetFileName(projectDir))
+    printfn "\nRestoring dependencies for %s..." (Path.GetFileName(projectDir : string))
     let (exitCode, output, error) = runCommand projectDir "dotnet" "restore"
     
     if exitCode <> 0 then
@@ -97,7 +97,7 @@ let restoreProject projectDir =
         true
 
 // Profile compilation of a project
-let profileCompilation projectDir outputDir projectName =
+let profileCompilation projectDir outputDir projectName totalAsserts =
     printfn "\n=== Profiling Compilation: %s ===" projectName
     
     let tracePath = Path.Combine(outputDir, sprintf "%s.nettrace" projectName)
@@ -133,13 +133,13 @@ let profileCompilation projectDir outputDir projectName =
         // Save timing information
         let timingPath = Path.Combine(outputDir, sprintf "%s.timing.txt" projectName)
         let timingInfo = sprintf "Compilation Time: %.2f seconds\nTime per Assert: %.2f ms\n" 
-                           compilationTime ((compilationTime * 1000.0) / float config.TotalAsserts)
+                           compilationTime ((compilationTime * 1000.0) / float totalAsserts)
         File.WriteAllText(timingPath, timingInfo)
         
         (true, compilationTime)
 
 // Profile compilation with dotnet-trace
-let profileWithTrace projectDir outputDir projectName =
+let profileWithTrace projectDir outputDir projectName totalAsserts =
     printfn "\n=== Profiling with dotnet-trace: %s ===" projectName
     
     let tracePath = Path.Combine(outputDir, sprintf "%s.nettrace" projectName)
@@ -149,10 +149,9 @@ let profileWithTrace projectDir outputDir projectName =
     
     // Create a temporary script to build and capture PID
     let buildScript = Path.Combine(Path.GetTempPath(), "build-with-trace.sh")
-    let scriptContent = sprintf """#!/bin/bash
-cd "%s"
-dotnet build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false > build.log 2>&1
-""" projectDir
+    let scriptContent = 
+        sprintf "#!/bin/bash\ncd \"%s\"\ndotnet build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false > build.log 2>&1\n" 
+            projectDir
     
     File.WriteAllText(buildScript, scriptContent)
     
@@ -173,7 +172,7 @@ dotnet build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false > b
         printfn "%s" traceError
         printfn "Falling back to timing-only mode..."
         // Fallback to simple profiling
-        profileCompilation projectDir outputDir projectName
+        profileCompilation projectDir outputDir projectName totalAsserts
     else
         let compilationTime = stopwatch.Elapsed.TotalSeconds
         printfn "Trace collected successfully: %s" tracePath
@@ -182,7 +181,7 @@ dotnet build --no-restore -c Release /p:DebugType=None /p:DebugSymbols=false > b
         // Save timing information
         let timingPath = Path.Combine(outputDir, sprintf "%s.timing.txt" projectName)
         let timingInfo = sprintf "Compilation Time: %.2f seconds\nTime per Assert: %.2f ms\nTrace File: %s\n" 
-                           compilationTime ((compilationTime * 1000.0) / float config.TotalAsserts) tracePath
+                           compilationTime ((compilationTime * 1000.0) / float totalAsserts) tracePath
         File.WriteAllText(timingPath, timingInfo)
         
         (true, compilationTime)
@@ -222,8 +221,8 @@ let runProfilingWorkflow config =
             // Profile both versions
             let profileFunc = if hasTrace then profileWithTrace else profileCompilation
             
-            let (untypedSuccess, untypedTime) = profileFunc untypedDir config.OutputDir "XUnitPerfTest.Untyped"
-            let (typedSuccess, typedTime) = profileFunc typedDir config.OutputDir "XUnitPerfTest.Typed"
+            let (untypedSuccess, untypedTime) = profileFunc untypedDir config.OutputDir "XUnitPerfTest.Untyped" config.TotalAsserts
+            let (typedSuccess, typedTime) = profileFunc typedDir config.OutputDir "XUnitPerfTest.Typed" config.TotalAsserts
             
             if untypedSuccess && typedSuccess then
                 printfn "\n=== Profiling Complete ==="
@@ -234,22 +233,23 @@ let runProfilingWorkflow config =
                 
                 // Save summary
                 let summaryPath = Path.Combine(config.OutputDir, "summary.txt")
-                let summary = sprintf """F# Compilation Performance Summary
-=====================================
-
-Configuration:
-  Total Assert.Equal calls: %d
-  Test methods: %d
-
-Results:
-  Untyped (slow path): %.2f seconds (%.2f ms per Assert)
-  Typed (fast path):   %.2f seconds (%.2f ms per Assert)
-  Slowdown factor:     %.2fx
-  Time difference:     %.2f seconds
-
-Output directory: %s
-""" config.TotalAsserts config.MethodsCount untypedTime ((untypedTime * 1000.0) / float config.TotalAsserts) 
-    typedTime ((typedTime * 1000.0) / float config.TotalAsserts) (untypedTime / typedTime) (untypedTime - typedTime) config.OutputDir
+                let summary = 
+                    sprintf "F# Compilation Performance Summary\n\
+=====================================\n\n\
+Configuration:\n\
+  Total Assert.Equal calls: %d\n\
+  Test methods: %d\n\n\
+Results:\n\
+  Untyped (slow path): %.2f seconds (%.2f ms per Assert)\n\
+  Typed (fast path):   %.2f seconds (%.2f ms per Assert)\n\
+  Slowdown factor:     %.2fx\n\
+  Time difference:     %.2f seconds\n\n\
+Output directory: %s\n"
+                        config.TotalAsserts config.MethodsCount 
+                        untypedTime ((untypedTime * 1000.0) / float config.TotalAsserts) 
+                        typedTime ((typedTime * 1000.0) / float config.TotalAsserts) 
+                        (untypedTime / typedTime) (untypedTime - typedTime) 
+                        config.OutputDir
                 
                 File.WriteAllText(summaryPath, summary)
                 printfn "\nSummary written to: %s" summaryPath
