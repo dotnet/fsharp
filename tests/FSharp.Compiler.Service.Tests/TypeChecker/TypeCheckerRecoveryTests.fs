@@ -1,8 +1,19 @@
 ﻿module FSharp.Compiler.Service.Tests.TypeChecker.TypeCheckerRecoveryTests
 
 open FSharp.Compiler.Service.Tests
+open FSharp.Compiler.Text
 open FSharp.Test.Assert
 open Xunit
+
+let assertHasSymbolUsageAtCaret name source =
+    let context, checkResults = Checker.getCheckedResolveContext source
+
+    getSymbolUses checkResults
+    |> Seq.exists (fun symbolUse ->
+        Range.rangeContainsPos symbolUse.Range context.Pos &&
+        symbolUse.Symbol.DisplayNameCore = name
+    )
+    |> shouldEqual true
 
 [<Fact>]
 let ``Let 01`` () =
@@ -50,3 +61,23 @@ Math.Max(a,b,)
     ]
 
     assertHasSymbolUsages ["Max"] checkResults
+
+module Constraints =
+    [<Fact>]
+    let ``Type 01`` () =
+        assertHasSymbolUsageAtCaret "f" """
+let f (x: string) =
+    x + 1
+
+{caret}f ""
+"""
+
+    [<Fact>]
+    let ``Type 02`` () =
+        assertHasSymbolUsageAtCaret "M" """
+type T =
+    static member M(x: string) =
+        x + 1
+
+T.M{caret} ""
+"""
