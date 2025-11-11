@@ -3715,20 +3715,10 @@ module EstablishTypeDefinitionCores =
                                   let fparams =
                                       curriedArgInfos.Head
                                       |> List.map (fun (ty, argInfo: ArgReprInfo) ->
-                                            // Extract parameter attributes including optional and caller info flags
-                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
-                                            
-                                            // For IL emission, unwrap option types for CalleeSide optional parameters
-                                            // The F# type is 'T option' but IL should use 'T' with IsOptional flag
-                                            let ilTy =
-                                                match optArgInfo with
-                                                | CalleeSide ->
-                                                    match tryDestOptionTy g ty with
-                                                    | ValueSome innerTy -> innerTy
-                                                    | ValueNone -> ty // Shouldn't happen for valid code, but be safe
-                                                | _ -> ty
-                                            
-                                            TSlotParam(Option.map textOfId argInfo.Name, ilTy, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
+                                            // For delegates, we don't use CrackParamAttribsInfo or isOptional
+                                            // Delegates with optional parameters should use the ?param syntax
+                                            // which is handled elsewhere in the compiler
+                                            MakeSlotParam(ty, argInfo)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
