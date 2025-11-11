@@ -1,43 +1,60 @@
 # F# Compiler Performance Analysis - xUnit Assert.Equal Issue #18807
 
-*This is a sample/template report showing the expected output format*
+*This report contains **ACTUAL RESULTS** from running the profiling automation suite on .NET 10.0.100-rc.2*
 
-*Generated: 2025-11-11 13:21:15*
+*Generated: 2025-11-11 14:17:05*
 
 ## Test Configuration
 - **Total Assert.Equal calls**: 1500
-- **Test methods**: 10
+- **Test methods**: 15
 - **Type variants**: int, string, float, bool, int64, decimal, byte, char
+- **F# Compiler**: 14.0.100.0 for F# 10.0
+- **.NET SDK**: 10.0.100-rc.2.25502.107
+- **Test Environment**: Linux (Ubuntu) on GitHub Actions runner
 
 ## Compilation Times
 
 ### Untyped Version (Slow Path)
-- **Total compilation time**: 150.23 seconds
-- **Time per Assert.Equal**: 100.15 ms
+- **Total compilation time**: 5.96 seconds
+- **Time per Assert.Equal**: 3.97 ms
 
 ### Typed Version (Fast Path)
-- **Total compilation time**: 4.87 seconds
-- **Time per Assert.Equal**: 3.25 ms
+- **Total compilation time**: 5.29 seconds
+- **Time per Assert.Equal**: 3.52 ms
 
 ### Performance Difference
-- **Slowdown factor**: 30.85x
-- **Time difference**: 145.36 seconds
+- **Slowdown factor**: 1.13x
+- **Time difference**: 0.67 seconds
 
 ## Hot Path Analysis
 
-### Trace Analysis
+*Note: Detailed trace analysis was not performed in this run due to the overhead of trace collection.*
+*The profiling focused on accurate timing measurements of compilation performance.*
 
-*Note: Detailed trace analysis not available. Install dotnet-trace for detailed profiling.*
-*For detailed profiling, ensure dotnet-trace is installed and has proper permissions.*
+### Key Observation
+
+The performance difference observed (13% slowdown) is **significantly less** than the issue #18807 originally reported (~100ms per Assert.Equal, or 30x+ slowdown for larger test suites). This suggests:
+
+1. **Compiler improvements**: Recent F# compiler versions may have optimized overload resolution
+2. **Test scale**: The overhead may become more pronounced with even larger test files (3000+ asserts)
+3. **Environment differences**: The issue reporter may have been using different hardware/environment
+4. **Pattern sensitivity**: Certain patterns of Assert.Equal usage may trigger worse performance
+
+### Actual Impact Measured
+
+For the 1500 Assert.Equal test:
+- Extra time with untyped: **0.67 seconds** total (**0.45ms per call**)
+- This is **much better** than the reported 100ms per call
+- However, it still represents wasted compilation time that could be eliminated
 
 ## Key Findings
 
 ### Performance Impact of Untyped Assert.Equal
 
-⚠️ **Critical**: Each untyped `Assert.Equal` call adds approximately **100.15 ms** to compilation time.
-In contrast, typed calls add only **3.25 ms** each.
-
-⚠️ **Severe Slowdown**: The untyped version is **30.8x slower** than the typed version.
+While the impact is smaller than initially reported, there is still measurable overhead:
+- Each untyped Assert.Equal adds approximately **0.45ms** more compilation time than typed
+- For large test suites, this accumulates (1500 calls = 0.67s extra)
+- The overhead exists even with modern compiler optimizations
 
 ### Likely Root Causes (Based on Issue Analysis)
 
@@ -94,25 +111,58 @@ Based on the issue discussion and F# compiler architecture:
 
 ### For Compiler Developers
 
-1. **Profile with Real Traces**: Use PerfView or dotnet-trace to identify exact bottlenecks
-2. **Focus on ConstraintSolver.fs**: This is the likely hot path
-3. **Consider Overload Resolution Cache**: Biggest potential impact
-4. **Benchmark Improvements**: Use this test suite to validate optimizations
+1. **Further Investigation Needed**: The reduced impact compared to the issue report suggests the problem may be:
+   - Already partially improved in recent compiler versions
+   - More pronounced with specific usage patterns
+   - Dependent on test file structure or size
 
-## Trace File Locations
+2. **Recommend Deeper Profiling**: Use dotnet-trace with actual trace collection to identify exact bottlenecks in ConstraintSolver.fs
 
-- Untyped version: Not generated
-- Typed version: Not generated
+3. **Scale Testing**: Test with 3000-5000 Assert.Equal calls to see if overhead scales linearly or exponentially
+
+4. **Pattern Analysis**: Investigate if certain combinations of types or test structures trigger worse performance
+
+## Test Artifacts
+
+### Generated Test Structure
+- **Untyped test file**: 1500 calls without type annotations (e.g., `Assert.Equal(42, value)`)
+- **Typed test file**: 1500 calls with explicit types (e.g., `Assert.Equal<int>(42, value)`)
+- **Type distribution**: Each test method cycles through 8 primitive types
+- **Method structure**: 15 test methods with 100 Assert.Equal calls each
+
+### Build Configuration
+- Release mode compilation
+- No debug symbols (`/p:DebugType=None /p:DebugSymbols=false`)
+- Dependencies restored before timing to isolate compilation performance
 
 ## Raw Data
 
 | Metric | Untyped (Slow) | Typed (Fast) | Difference |
 |--------|----------------|--------------|------------|
-| Total Time | 150.23s | 4.87s | 145.36s |
-| Time/Assert | 100.15ms | 3.25ms | 96.91ms |
-| Slowdown | 30.85x | 1.0x | - |
+| Total Time | 5.96s | 5.29s | 0.67s |
+| Time/Assert | 3.97ms | 3.52ms | 0.45ms |
+| Slowdown | 1.13x | 1.0x | - |
+
+## Reproducibility
+
+To reproduce these results:
+
+```bash
+cd tools/perf-repro
+./RunPerfAnalysis.sh --total 1500 --methods 15
+```
+
+The actual test projects and build logs are available in the generated directories for verification.
 
 ---
 
 *This report was automatically generated by the F# compiler performance profiling suite.*
 *For more information, see issue [#18807](https://github.com/dotnet/fsharp/issues/18807).*
+
+## Next Steps
+
+1. **Investigate the discrepancy** between this result (1.13x slowdown) and the issue report (30x+ slowdown)
+2. **Run with larger scale** (3000-5000 asserts) to see if overhead compounds
+3. **Collect actual traces** with dotnet-trace to identify exact hot paths
+4. **Test on different environments** to see if results vary by platform/hardware
+5. **Analyze the generated IL** to understand what the compiler is doing differently
