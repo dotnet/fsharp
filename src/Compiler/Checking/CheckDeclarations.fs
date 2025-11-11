@@ -3714,18 +3714,19 @@ module EstablishTypeDefinitionCores =
                                   let ttps = thisTyconRef.Typars m
                                   let fparams =
                                       curriedArgInfos.Head
-                                      |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                      |> List.map (fun (origTy, argInfo: ArgReprInfo) ->
                                             let ty =
                                               if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
                                                   match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
                                                   | Some (Attrib(range=m)) ->
                                                       checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
-                                                      mkValueOptionTy g ty
+                                                      mkValueOptionTy g origTy
                                                   | _ ->
-                                                      mkOptionTy g ty            
-                                              else ty
+                                                      mkOptionTy g origTy            
+                                              else origTy
 
-                                            MakeSlotParam(ty, argInfo)) 
+                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (origTy, argInfo)
+                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
