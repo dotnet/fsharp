@@ -133,7 +133,7 @@ dotnet fsi AnalyzeTrace.fsx --results ./results
   dotnet tool install -g dotnet-trace
   ```
 
-**Note:** The suite will work without `dotnet-trace` by falling back to timing-only mode.
+**Note:** The suite will work without `dotnet-trace` by falling back to timing-only mode. When trace collection is enabled, expect significant slowdown (3-10x) during profiling - this is normal and necessary to capture detailed execution data.
 
 ## Understanding the Results
 
@@ -198,6 +198,8 @@ The suite will work in timing-only mode. For detailed trace analysis, install:
 ```bash
 dotnet tool install -g dotnet-trace
 ```
+
+**Note**: Trace collection adds significant overhead (3-10x slowdown) to build times. This is normal and expected when profiling.
 
 ### Permission Errors on Linux/macOS
 

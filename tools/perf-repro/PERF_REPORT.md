@@ -1,5 +1,7 @@
 # F# Compiler Performance Analysis - xUnit Assert.Equal Issue #18807
 
+*This is a sample/template report showing the expected output format*
+
 *Generated: 2025-11-11 13:21:15*
 
 ## Test Configuration
