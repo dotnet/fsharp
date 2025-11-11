@@ -52,15 +52,15 @@ let x = 21+21
 let ``typecheck-only flag catches type errors in scripts with #load``() =
     let tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
     Directory.CreateDirectory(tempDir) |> ignore
-    let originalDir = Environment.CurrentDirectory
     
     try
-        Environment.CurrentDirectory <- tempDir
         let domainPath = Path.Combine(tempDir, "Domain.fsx")
         let mainPath = Path.Combine(tempDir, "A.fsx")
         
-        File.WriteAllText(domainPath, "type T = { Field: string }\nprintfn \"D\"")
-        File.WriteAllText(mainPath, "#load \"Domain.fsx\"\nopen Domain\nlet y = { Field = 1 }\nprintfn \"A\"")
+        File.WriteAllText(domainPath, "type T = {\n    Field: string\n}\n\nprintfn \"printfn Domain.fsx\"")
+        // Use absolute path in #load directive since runFsi uses EvalInteraction which doesn't preserve script location context
+        let mainContent = sprintf "#load \"%s\"\n\nopen Domain\n\nlet y = {\n    Field = 1\n}\n\nprintfn \"printfn A.fsx\"" (domainPath.Replace("\\", "\\\\"))
+        File.WriteAllText(mainPath, mainContent)
         
         FsxFromPath mainPath
         |> withOptions ["--typecheck-only"]
@@ -69,7 +69,6 @@ let ``typecheck-only flag catches type errors in scripts with #load``() =
         |> withStdErrContains "This expression was expected to have type"
     finally
         try
-            Environment.CurrentDirectory <- originalDir
             if Directory.Exists(tempDir) then
                 Directory.Delete(tempDir, true)
         with _ -> ()
@@ -78,15 +77,15 @@ let ``typecheck-only flag catches type errors in scripts with #load``() =
 let ``typecheck-only flag catches type errors in loaded file``() =
     let tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
     Directory.CreateDirectory(tempDir) |> ignore
-    let originalDir = Environment.CurrentDirectory
     
     try
-        Environment.CurrentDirectory <- tempDir
         let domainPath = Path.Combine(tempDir, "Domain.fsx")
         let mainPath = Path.Combine(tempDir, "A.fsx")
         
         File.WriteAllText(domainPath, "type T = { Field: string }\nlet x: int = \"error\"\nprintfn \"D\"")
-        File.WriteAllText(mainPath, "#load \"Domain.fsx\"\nopen Domain\nlet y = { Field = \"ok\" }\nprintfn \"A\"")
+        // Use absolute path in #load directive since runFsi uses EvalInteraction which doesn't preserve script location context
+        let mainContent = sprintf "#load \"%s\"\nopen Domain\nlet y = { Field = \"ok\" }\nprintfn \"A\"" (domainPath.Replace("\\", "\\\\"))
+        File.WriteAllText(mainPath, mainContent)
         
         FsxFromPath mainPath
         |> withOptions ["--typecheck-only"]
@@ -95,7 +94,6 @@ let ``typecheck-only flag catches type errors in loaded file``() =
         |> withStdErrContains "This expression was expected to have type"
     finally
         try
-            Environment.CurrentDirectory <- originalDir
             if Directory.Exists(tempDir) then
                 Directory.Delete(tempDir, true)
         with _ -> ()
