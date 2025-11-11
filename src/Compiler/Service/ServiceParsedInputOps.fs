@@ -2428,7 +2428,7 @@ module ParsedInput =
             List.iter (walkSynModuleOrNamespace []) file.Contents
 
         and walkSynModuleOrNamespace (parent: LongIdent) modul =
-            let (SynModuleOrNamespace(longId = ident; kind = kind; decls = decls; range = range)) =
+            let (SynModuleOrNamespace(longId = ident; kind = kind; decls = decls; range = range; trivia = trivia)) =
                 modul
 
             if range.EndLine >= currentLine then
@@ -2444,7 +2444,14 @@ module ParsedInput =
 
                 let fullIdent = parent @ ident
 
-                let startLine = if isModule then range.StartLine else range.StartLine - 1
+                // Use trivia to get the actual module/namespace keyword line, which excludes attributes
+                let startLine =
+                    match trivia.LeadingKeyword with
+                    | SynModuleOrNamespaceLeadingKeyword.Module moduleRange
+                    | SynModuleOrNamespaceLeadingKeyword.Namespace moduleRange -> moduleRange.StartLine
+                    | SynModuleOrNamespaceLeadingKeyword.None ->
+                        // No keyword (implicit module), use range.StartLine
+                        if isModule then range.StartLine else range.StartLine - 1
 
                 let scopeKind =
                     match isModule, parent with

@@ -31,7 +31,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         }
 
     // With the fix in ServiceParsedInputOps, the InsertionContext now correctly
-    // points to the line after the module keyword (or namespace), so we can trust it.
+    // points to the line after the module/namespace keyword (excluding attributes).
+    // However, we still need to handle implicit top-level modules and nested modules.
     let getOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) =
         // insertion context counts from 2, make the world sane
         let insertionLineNumber = ctx.Pos.Line - 2
@@ -39,7 +40,18 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
         let startLineNumber, openDeclaration =
             match ctx.ScopeKind with
-            | ScopeKind.TopModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
+            | ScopeKind.TopModule ->
+                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
+
+                // explicit top level module
+                | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
+
+                // nested module, shouldn't be here
+                | line when line.StartsWith "module" -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
+
+                // implicit top level module
+                | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
+
             | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
             | ScopeKind.NestedModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
             | ScopeKind.OpenDeclaration -> insertionLineNumber + 1, $"{margin}open {ns}{br}"
