@@ -401,7 +401,7 @@ let inline mkOptionalParamTyBasedOnAttribute (g: TcGlobals.TcGlobals) tyarg attr
 /// - methodBodyRemap: Remap to apply to object expression method bodies to use the captured locals
 let TryExtractStructMembersFromObjectExpr 
     (isInterfaceTy: bool) 
-    (overridesAndVirts: ('a * 'b * 'c * 'd * 'e * ('f * (range * Val * Val list list * Attribs * Expr)) list) list)
+    overridesAndVirts
     (mWholeExpr: range) : (Val * Expr) list * Remap =
     
     // Early guard: Only apply for object expressions deriving from base classes, not pure interface implementations
