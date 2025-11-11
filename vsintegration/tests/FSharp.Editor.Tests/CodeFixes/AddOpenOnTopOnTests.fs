@@ -451,13 +451,12 @@ module FlatList =
 namespace X
 
 open System
+open System.Collections.Generic
 
 [<RequireQualifiedAccess;
   CompiledName((nameof System.Collections.Immutable.ImmutableArray)
                + "Module")>]
 module FlatList =
-
-    open System.Collections.Generic
 
     let a : KeyValuePair<string, int> = KeyValuePair<string, int>("key", 1)
 """
