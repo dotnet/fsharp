@@ -3714,19 +3714,21 @@ module EstablishTypeDefinitionCores =
                                   let ttps = thisTyconRef.Typars m
                                   let fparams =
                                       curriedArgInfos.Head
-                                      |> List.map (fun (origTy, argInfo: ArgReprInfo) ->
-                                            let ty =
-                                              if HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs then
-                                                  match TryFindFSharpAttribute g g.attrib_StructAttribute argInfo.Attribs with
-                                                  | Some (Attrib(range=m)) ->
-                                                      checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SupportValueOptionsAsOptionalParameters m
-                                                      mkValueOptionTy g origTy
-                                                  | _ ->
-                                                      mkOptionTy g origTy            
-                                              else origTy
-
-                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (origTy, argInfo)
-                                            TSlotParam(Option.map textOfId argInfo.Name, ty, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
+                                      |> List.map (fun (ty, argInfo: ArgReprInfo) ->
+                                            // Extract parameter attributes including optional and caller info flags
+                                            let (ParamAttribs(_, isInArg, isOutArg, optArgInfo, _, _)) = CrackParamAttribsInfo g (ty, argInfo)
+                                            
+                                            // For IL emission, unwrap option types for CalleeSide optional parameters
+                                            // The F# type is 'T option' but IL should use 'T' with IsOptional flag
+                                            let ilTy =
+                                                match optArgInfo with
+                                                | CalleeSide ->
+                                                    match tryDestOptionTy g ty with
+                                                    | ValueSome innerTy -> innerTy
+                                                    | ValueNone -> ty // Shouldn't happen for valid code, but be safe
+                                                | _ -> ty
+                                            
+                                            TSlotParam(Option.map textOfId argInfo.Name, ilTy, isInArg, isOutArg, optArgInfo.IsOptional, argInfo.Attribs)) 
                                   TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
