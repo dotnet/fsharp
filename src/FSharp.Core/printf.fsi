@@ -4,7 +4,6 @@
 namespace Microsoft.FSharp.Core
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
 open System
 open System.IO
 open System.Text
@@ -41,7 +40,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result> =
     member Captures: objnull array
 
     /// <summary>The capture types associated with an interpolated string.</summary>
-    member CaptureTypes: System.Type array
+    member CaptureTypes: Type array
 
 /// <summary>Type of a formatting expression.</summary>
 ///

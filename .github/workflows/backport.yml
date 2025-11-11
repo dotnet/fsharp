@@ -17,10 +17,13 @@ jobs:
     if: ${{ contains(github.event.comment.body, '/backport to') || github.event_name == 'schedule' }}
     uses: dotnet/arcade/.github/workflows/backport-base.yml@main
     with:
+      additional_git_am_switches: '--exclude=docs/release-notes/* --exclude=eng/common/* --whitespace=fix'
       pr_description_template: |
         Backport of #%source_pr_number% to %target_branch%
 
         /cc %cc_users%
+
+        **Note:** Release notes and `eng/common` files are excluded from this backport. If release notes are needed, they should be added manually to the appropriate version file for this branch.
 
         ## Customer Impact
 

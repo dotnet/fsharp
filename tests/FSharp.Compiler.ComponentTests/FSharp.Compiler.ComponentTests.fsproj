@@ -277,6 +277,7 @@
     <Compile Include="Interop\Literals.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
+    <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="TypeChecks\Graph\Utils.fs" />

@@ -57,7 +57,7 @@ type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float, string>[]) 
         member _.Dispose() = ()
 
 type SuggestionBuffer(idText: string) =
-    let data = Array.zeroCreate<KeyValuePair<float, string>> (maxSuggestions)
+    let data = Array.zeroCreate<KeyValuePair<float, string>> maxSuggestions
     let mutable tail = maxSuggestions - 1
     let uppercaseText = idText.ToUpperInvariant()
     let dotIdText = "." + idText
