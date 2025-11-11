@@ -99,3 +99,24 @@ let o: obj = null
 if true then
     o.GetHashCode{caret}
 """
+
+
+module Constraints =
+    [<Fact>]
+    let ``Type 01`` () =
+        assertHasSymbolUsageAtCaret "f" """
+let f (x: string) =
+    x + 1
+
+{caret}f ""
+"""
+
+    [<Fact>]
+    let ``Type 02`` () =
+        assertHasSymbolUsageAtCaret "M" """
+type T =
+    static member M(x: string) =
+        x + 1
+
+T.M{caret} ""
+"""
