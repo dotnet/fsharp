@@ -7310,67 +7310,12 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // 3. create the specs of overrides
         
         // Fix for struct object expressions: extract captured struct members to avoid byref fields
-        // When an object expression is created inside a struct member method and references struct fields,
-        // the generated closure would contain a byref<Struct> field which is illegal IL.
-        // Solution: Extract the struct member values into local variables before creating the object expression,
-        // so the closure captures the values instead of a byref to the struct.
-        //
-        // This transformation only applies when:
-        // - The object expression derives from a base class (not just implementing interfaces)
-        // - The object expression captures instance members from an enclosing struct
-        
+        // This transformation is only applied when ALL of the following conditions are met:
+        // 1. The object expression derives from a base class (not just implementing an interface)
+        // 2. The object expression captures instance members from an enclosing struct
+        // See CheckExpressionsOps.TryExtractStructMembersFromObjectExpr for implementation details
         let capturedStructMembers, methodBodyRemap =
-            // Only apply transformation for object expressions with base classes, not pure interface implementations
-            // Interface implementations don't pass struct members to base constructors, so they don't have the byref issue
-            if isInterfaceTy then
-                [], Remap.Empty
-            else
-                // Collect all free variables from method bodies in all overrides
-                let allMethodBodies =
-                    overridesAndVirts
-                    |> List.collect (fun (_, _, _, _, _, overrides) ->
-                        overrides |> List.map (fun (_, (_, _, _, _, bindingBody)) -> bindingBody))
-                
-                if allMethodBodies.IsEmpty then
-                    [], Remap.Empty
-                else
-                    let freeVars =
-                        allMethodBodies
-                        |> List.fold (fun acc body ->
-                            let bodyFreeVars = freeInExpr CollectTyparsAndLocals body
-                            unionFreeVars acc bodyFreeVars) emptyFreeVars
-                    
-                    // Filter to only instance members of struct types
-                    // This identifies the problematic case: when an object expression inside a struct
-                    // captures instance members, which would require capturing 'this' as a byref
-                    let structMembers =
-                        freeVars.FreeLocals
-                        |> Zset.elements
-                        |> List.filter (fun v ->
-                            v.IsInstanceMember && v.HasDeclaringEntity && isStructTyconRef v.DeclaringEntity)
-                    
-                    if structMembers.IsEmpty then
-                        [], Remap.Empty
-                    else
-                        // Create local variables for each captured struct member
-                        let bindings =
-                            structMembers
-                            |> List.map (fun memberVal ->
-                                // Create a new local to hold the member's value
-                                let localVal, _ = mkCompGenLocal mWholeExpr memberVal.DisplayName memberVal.Type
-                                // The value expression is just a reference to the member
-                                let valueExpr = exprForVal mWholeExpr memberVal
-                                (memberVal, localVal, valueExpr))
-                        
-                        // Build a remap from original member vals to new local vals
-                        let remap =
-                            bindings
-                            |> List.fold (fun remap (origVal, localVal, _) ->
-                                { remap with valRemap = remap.valRemap.Add origVal (mkLocalValRef localVal) }) Remap.Empty
-                        
-                        // Return the bindings to be added before the object expression
-                        let bindPairs = bindings |> List.map (fun (_, localVal, valueExpr) -> (localVal, valueExpr))
-                        bindPairs, remap
+            CheckExpressionsOps.TryExtractStructMembersFromObjectExpr isInterfaceTy overridesAndVirts mWholeExpr
         
         let allTypeImpls =
           overridesAndVirts |> List.map (fun (m, implTy, _, dispatchSlotsKeyed, _, overrides) ->
