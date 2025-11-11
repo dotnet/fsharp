@@ -2447,8 +2447,8 @@ module ParsedInput =
                 // Use trivia to get the actual module/namespace keyword line, which excludes attributes
                 let startLine =
                     match trivia.LeadingKeyword with
-                    | SynModuleOrNamespaceLeadingKeyword.Module moduleRange
-                    | SynModuleOrNamespaceLeadingKeyword.Namespace moduleRange -> moduleRange.StartLine
+                    | SynModuleOrNamespaceLeadingKeyword.Module moduleRange -> moduleRange.StartLine
+                    | SynModuleOrNamespaceLeadingKeyword.Namespace namespaceRange -> namespaceRange.StartLine - 1
                     | SynModuleOrNamespaceLeadingKeyword.None ->
                         // No keyword (implicit module), use range.StartLine
                         if isModule then range.StartLine else range.StartLine - 1
