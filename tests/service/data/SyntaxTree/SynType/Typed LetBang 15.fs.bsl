@@ -16,16 +16,18 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
-                                (As
-                                   (Named
-                                      (SynIdent (x, None), false, None,
-                                       (4,10--4,11)),
-                                    Named
-                                      (SynIdent (y, None), false, None,
-                                       (4,15--4,16)), (4,10--4,16)), (4,9--4,17)),
-                              FromParseError (4,18--4,18), (4,9--4,18)), None,
+                           Paren
+                             (As
+                                (Named
+                                   (SynIdent (x, None), false, None,
+                                    (4,10--4,11)),
+                                 Named
+                                   (SynIdent (y, None), false, None,
+                                    (4,15--4,16)), (4,10--4,16)), (4,9--4,17)),
+                           Some
+                             (SynBindingReturnInfo
+                                (FromParseError (4,18--4,18), (4,18--4,18), [],
+                                 { ColonRange = Some (4,17--4,18) })),
                            App
                              (Atomic, false, Ident asyncString,
                               Const (Unit, (5,39--5,41)), (5,28--5,41)),

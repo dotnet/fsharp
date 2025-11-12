@@ -16,22 +16,24 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
-                                (LongIdent
-                                   (SynLongIdent ([Union], [], [None]), None,
+                           Paren
+                             (LongIdent
+                                (SynLongIdent ([Union], [], [None]), None, None,
+                                 Pats
+                                   [Named
+                                      (SynIdent (value, None), false, None,
+                                       (3,16--3,21))], None, (3,10--3,21)),
+                              (3,9--3,22)),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([option], [], [None])),
                                     None,
-                                    Pats
-                                      [Named
-                                         (SynIdent (value, None), false, None,
-                                          (3,16--3,21))], None, (3,10--3,21)),
-                                 (3,9--3,22)),
-                              App
-                                (LongIdent (SynLongIdent ([option], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (3,24--3,34)), (3,9--3,34)),
-                           None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (3,24--3,34)), (3,24--3,34), [],
+                                 { ColonRange = Some (3,22--3,23) })),
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (3,48--3,50)), (3,37--3,50)),
