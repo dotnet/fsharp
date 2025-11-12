@@ -853,6 +853,12 @@ let (|OptionalSequential|) e =
     | SynExpr.Sequential(debugPoint = _sp; isTrueSeq = true; expr1 = dataComp1; expr2 = dataComp2) -> (dataComp1, Some dataComp2)
     | _ -> (e, None)
 
+let private mkTypedHeadPat (SynBinding(headPat = headPattern; returnInfo = returnInfo)) =
+    match returnInfo with
+    | None -> headPattern
+    | Some(SynBindingReturnInfo(typeName = typeName; range = range)) ->
+        SynPat.Typed(headPattern, typeName, unionRanges headPattern.Range range)
+
 [<return: Struct>]
 let (|ExprAsUseBang|_|) expr =
     match expr with
@@ -864,7 +870,8 @@ let (|ExprAsUseBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: andBangs ->
+        | SynBinding(debugPoint = spBind; expr = rhsExpr) as binding :: andBangs ->
+            let pat = mkTypedHeadPat binding
             ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
@@ -880,7 +887,8 @@ let (|ExprAsLetBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = letPat; expr = letRhsExpr) :: andBangBindings ->
+        | SynBinding(debugPoint = spBind; expr = letRhsExpr) as binding :: andBangBindings ->
+            let letPat = mkTypedHeadPat binding
             ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
@@ -2004,8 +2012,7 @@ let rec TryTranslateComputationExpression
                     (letRhsExpr :: [ for SynBinding(expr = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
-                let pats =
-                    letPat :: [ for SynBinding(headPat = andPat) in andBangBindings -> andPat ]
+                let pats = letPat :: [ for binding in andBangBindings -> mkTypedHeadPat binding ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
