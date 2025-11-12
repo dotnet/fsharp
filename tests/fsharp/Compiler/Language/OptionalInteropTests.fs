@@ -163,3 +163,86 @@ Test.OverloadedMethodTakingNullableOptionals(x = 6) |> ignore
         let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| $"--langversion:{langVersion}" |], cmplRefs = [cs])
         CompilerAssert.Compile fs
 
+    // Tests for issue #19074: Support voption with optional parameter syntax (?x=)
+    [<Fact>]
+    let ``F# method with voption optional parameter should accept ValueNone with question mark syntax`` () =
+        let fsSrc =
+            """
+open System.Runtime.InteropServices
+
+type MyClass() =
+    member _.Foo([<Optional>] x: int voption) = 
+        match x with
+        | ValueNone -> "none"
+        | ValueSome v -> string v
+
+let c = MyClass()
+let r1 = c.Foo(?x=ValueNone)
+printfn "%s" r1
+            """
+        
+        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| "--langversion:preview" |])
+        CompilerAssert.Compile fs
+
+    [<Fact>]
+    let ``F# method with voption optional parameter should accept ValueSome with question mark syntax`` () =
+        let fsSrc =
+            """
+open System.Runtime.InteropServices
+
+type MyClass() =
+    member _.Foo([<Optional>] x: int voption) = 
+        match x with
+        | ValueNone -> "none"
+        | ValueSome v -> string v
+
+let c = MyClass()
+let r2 = c.Foo(?x=ValueSome 42)
+printfn "%s" r2
+            """
+        
+        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| "--langversion:preview" |])
+        CompilerAssert.Compile fs
+
+    [<Fact>]
+    let ``F# method with voption optional parameter should work without question mark syntax`` () =
+        let fsSrc =
+            """
+open System.Runtime.InteropServices
+
+type MyClass() =
+    member _.Foo([<Optional>] x: int voption) = 
+        match x with
+        | ValueNone -> "none"
+        | ValueSome v -> string v
+
+let c = MyClass()
+let r1 = c.Foo(x=ValueNone)
+let r2 = c.Foo(x=ValueSome 42)
+printfn "%s %s" r1 r2
+            """
+        
+        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| "--langversion:preview" |])
+        CompilerAssert.Compile fs
+
+    [<Fact>]
+    let ``F# method with option optional parameter should still work with question mark syntax`` () =
+        let fsSrc =
+            """
+open System.Runtime.InteropServices
+
+type MyClass() =
+    member _.Foo([<Optional>] x: int option) = 
+        match x with
+        | None -> "none"
+        | Some v -> string v
+
+let c = MyClass()
+let r1 = c.Foo(?x=None)
+let r2 = c.Foo(?x=Some 42)
+printfn "%s %s" r1 r2
+            """
+        
+        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| "--langversion:preview" |])
+        CompilerAssert.Compile fs
+
