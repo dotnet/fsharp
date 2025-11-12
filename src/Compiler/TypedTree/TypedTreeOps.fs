@@ -10329,9 +10329,6 @@ let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) =
         | _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
             x
-    | Expr.Op (TOp.UnionCase _, _, _args, _) ->
-        // Union cases (like ValueNone, Some x) are valid constant expressions for attributes
-        x
     | _ -> 
         errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
         x
@@ -10341,8 +10338,6 @@ and EvaledAttribExprEquality g e1 e2 =
     | Expr.Const (c1, _, _), Expr.Const (c2, _, _) -> c1 = c2
     | TypeOfExpr g ty1, TypeOfExpr g ty2 -> typeEquiv g ty1 ty2
     | TypeDefOfExpr g ty1, TypeDefOfExpr g ty2 -> typeEquiv g ty1 ty2
-    | Expr.Op (TOp.UnionCase (UnionCaseRef(tc1, nm1)), _, args1, _), Expr.Op (TOp.UnionCase (UnionCaseRef(tc2, nm2)), _, args2, _) ->
-        tyconRefEq g tc1 tc2 && nm1 = nm2 && (args1.Length = args2.Length) && List.forall2 (EvaledAttribExprEquality g) args1 args2
     | _ -> false
 
 [<return: Struct>]

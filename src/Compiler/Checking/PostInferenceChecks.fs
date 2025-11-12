@@ -1974,8 +1974,6 @@ and CheckAttribArgExpr cenv env expr =
     | AttribBitwiseOrExpr g (arg1, arg2) ->
         CheckAttribArgExpr cenv env arg1
         CheckAttribArgExpr cenv env arg2
-    | Expr.Op (TOp.UnionCase _, _, args, _) ->
-        List.iter (CheckAttribArgExpr cenv env) args
     | _ ->
         if cenv.reportErrors then
            errorR (Error (FSComp.SR.chkInvalidCustAttrVal(), expr.Range))

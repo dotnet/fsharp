@@ -9934,7 +9934,7 @@ and TcMethodApplication_SplitSynArguments
                 // named optional arguments should always have option type
                 // STRUCT OPTIONS: if we allow struct options as optional arguments then we should relax this and rely
                 // on later inference to work out if this is a struct option or ref option
-                let ty = if isOpt then mkOptionTy denv.g ty else ty
+                let ty = if isOpt && not (denv.g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters) then mkOptionTy denv.g ty else ty
                 nm, isOpt, x, ty, x.Range)
 
             (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
