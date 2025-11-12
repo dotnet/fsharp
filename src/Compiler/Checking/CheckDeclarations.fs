@@ -309,7 +309,7 @@ let AddRootModuleOrNamespaceRefs g amap m env modrefs =
 
 /// Adjust the TcEnv to make more things 'InternalsVisibleTo'
 let addInternalsAccessibility env (ccu: CcuThunk) =
-    let compPath = CompPath (ccu.ILScopeRef, TypedTree.SyntaxAccess.Unknown, [])    
+    let compPath = CompPath (ccu.ILScopeRef, SyntaxAccess.Unknown, [])    
     let eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths
     { env with 
         eAccessRights = ComputeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
@@ -415,8 +415,6 @@ let private CheckDuplicatesAbstractMethodParamsSig (typeSpecs:  SynTypeDefnSig l
         | _ -> ()
         
 module TcRecdUnionAndEnumDeclarations =
-    open CheckExpressionsOps
-
     let CombineReprAccess parent vis = 
         match parent with 
         | ParentNone -> vis 
@@ -1180,7 +1178,7 @@ module MutRecBindingChecking =
                           TyconBindingPhase2A.Phase2AMember {
                             SyntacticBinding = NormalizedBinding(pat = SynPat.Named(ident = SynIdent(ident = Get_OrSet_Ident & setIdent)))
                             RecBindingInfo = RecursiveBindingInfo(vspec = vSet)
-                          } when Range.equals getIdent.idRange setIdent.idRange ->
+                          } when equals getIdent.idRange setIdent.idRange ->
                             match  vGet.ApparentEnclosingEntity with
                             | ParentNone -> ()
                             | Parent parentRef ->
@@ -4180,7 +4178,7 @@ module EstablishTypeDefinitionCores =
         // Generate the union augmentation values for all tycons.
         let withBaseValsAndSafeInitInfosAndUnionValues =
             (envMutRecPrelim, withBaseValsAndSafeInitInfos) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt, fixupFinalAttrs, info) -> 
-                let (tyconCore, _, _) = origInfo
+                let tyconCore, _, _ = origInfo
                 let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
                 let vspecs =
                     match tyconOpt with 
@@ -4219,18 +4217,7 @@ module TcDeclarations =
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             let tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurrence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
-                | Result res ->
-                    // Update resolved type parameters with the names from the source.
-                    let _, tcref, _ = res
-                    if tcref.TyparsNoRange.Length = synTypars.Length then
-                        (tcref.TyparsNoRange, synTypars)
-                        ||> List.zip
-                        |> List.iter (fun (typar, SynTyparDecl.SynTyparDecl (typar = tp)) ->
-                            let (SynTypar(ident = untypedIdent; staticReq = sr)) = tp
-                            if typar.StaticReq = sr then
-                                typar.SetIdent(untypedIdent)
-                        )
-
+                | Result (_, tcref, _) ->
                     tcref
 
                 | Exception exn ->
@@ -5285,7 +5272,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               return ([defn], [], []), env, env
 
       | SynModuleDecl.Types (typeDefs, m) ->
-          let typeDefs = typeDefs |> List.filter (function (SynTypeDefn(typeInfo = SynComponentInfo(longId = []))) -> false | _ -> true)
+          let typeDefs = typeDefs |> List.filter (function SynTypeDefn(typeInfo = SynComponentInfo(longId = [])) -> false | _ -> true)
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
           let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false

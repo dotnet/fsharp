@@ -6,7 +6,6 @@ open System
 open System.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
@@ -55,7 +54,7 @@ let escapeDotnetFormatString str =
     // We need to double '{' and '}', because even if they were escaped in the
     // original string, extra curly braces were stripped away by the F# lexer.
     |> Seq.collect (fun x -> if x = '{' || x = '}' then [x;x] else [x])
-    |> System.String.Concat
+    |> String.Concat
 
 [<return: Struct>]
 let (|PrefixedBy|_|) (prefix: string) (str: string) =
@@ -140,13 +139,13 @@ module internal Parse =
     let rec digitsPrecision (fmt: string) (fmtPos: int) =
         if fmtPos >= fmt.Length then failwith (FSComp.SR.forBadPrecision())
         match fmt[fmtPos] with
-        | c when System.Char.IsDigit c -> digitsPrecision fmt (fmtPos+1)
+        | c when Char.IsDigit c -> digitsPrecision fmt (fmtPos+1)
         | _ -> fmtPos
 
     let precision (info: FormatInfoRegister) (fmt: string) (fmtPos: int) =
         if fmtPos >= fmt.Length then failwith (FSComp.SR.forBadWidth())
         match fmt[fmtPos] with
-        | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision fmt (fmtPos+1)
+        | c when Char.IsDigit c -> info.precision <- true; false,digitsPrecision fmt (fmtPos+1)
         | '*' -> info.precision <- true; true,(fmtPos+1)
         | _ -> failwith (FSComp.SR.forPrecisionMissingAfterDot())
 
@@ -161,14 +160,14 @@ module internal Parse =
         let rec go pos n =
             if pos >= len then failwith (FSComp.SR.forBadPrecision())
             match fmt[pos] with
-            | c when System.Char.IsDigit c -> go (pos+1) (n*10 + int c - int '0')
+            | c when Char.IsDigit c -> go (pos+1) (n*10 + int c - int '0')
             | _ -> Some n, optionalDotAndPrecision info fmt pos
         go fmtPos intAcc
 
     let widthAndPrecision (info: FormatInfoRegister) (fmt: string) (fmtPos: int) =
         if fmtPos >= fmt.Length then failwith (FSComp.SR.forBadPrecision())
         match fmt[fmtPos] with
-        | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision info fmt fmtPos 0
+        | c when Char.IsDigit c -> false,digitsWidthAndPrecision info fmt fmtPos 0
         | '*' -> true, (None, optionalDotAndPrecision info fmt (fmtPos+1))
         | _ -> false, (None, optionalDotAndPrecision info fmt fmtPos)
 
@@ -178,7 +177,7 @@ module internal Parse =
         let rec digitsPosition n pos =
             if pos >= len then failwith (FSComp.SR.forBadPrecision())
             match fmt[pos] with
-            | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (pos+1)
+            | c when Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (pos+1)
             | '$' -> Some n, pos+1
             | _ -> None, pos
 
@@ -296,7 +295,7 @@ let parseFormatStringInternal
                else
                    failwith (FSComp.SR.forPositionalSpecifiersNotPermitted())
            argTys
-       elif System.Char.IsSurrogatePair(fmt,i) then
+       elif Char.IsSurrogatePair(fmt,i) then
           appendToDotnetFormatString fmt[i..i+1]
           parseLoop acc (i+2, fragLine, fragCol+2) fragments
        else
@@ -397,7 +396,7 @@ let parseFormatStringInternal
             let ch = fmt[i]
             match ch with
             | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
-                if ch = 'B' then DiagnosticsLogger.checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
+                if ch = 'B' then checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
                 if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
@@ -460,7 +459,7 @@ let parseFormatStringInternal
 
             // residue of hole "...{n}..." in interpolated strings become %P(...)
             | 'P' when isInterpolated ->
-                let (code, message) = FSComp.SR.alwaysUseTypedStringInterpolation()
+                let code, message = FSComp.SR.alwaysUseTypedStringInterpolation()
                 warning(DiagnosticWithText(code, message, m))
                 checkOtherFlags ch
                 let i = requireAndSkipInterpolationHoleFormat (i+1)

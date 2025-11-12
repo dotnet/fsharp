@@ -97,3 +97,29 @@ let ``typecheck-only flag catches type errors in loaded file``() =
             if Directory.Exists(tempDir) then
                 Directory.Delete(tempDir, true)
         with _ -> ()
+
+[<Fact>]
+let ``typecheck-only flag prevents execution with #load``() =
+    let tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+    Directory.CreateDirectory(tempDir) |> ignore
+    
+    try
+        let domainPath = Path.Combine(tempDir, "Domain.fsx")
+        let mainPath = Path.Combine(tempDir, "A.fsx")
+        
+        File.WriteAllText(domainPath, "type T = { Field: string }\nprintfn \"Domain.fsx output\"")
+        // Use absolute path in #load directive since runFsi uses EvalInteraction which doesn't preserve script location context
+        let mainContent = sprintf "#load \"%s\"\nopen Domain\nlet y = { Field = \"test\" }\nprintfn \"A.fsx output\"" (domainPath.Replace("\\", "\\\\"))
+        File.WriteAllText(mainPath, mainContent)
+        
+        FsxFromPath mainPath
+        |> withOptions ["--typecheck-only"]
+        |> runFsi
+        |> shouldSucceed
+        |> verifyNotInOutput "Domain.fsx output"
+        |> verifyNotInOutput "A.fsx output"
+    finally
+        try
+            if Directory.Exists(tempDir) then
+                Directory.Delete(tempDir, true)
+        with _ -> ()

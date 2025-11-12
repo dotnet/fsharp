@@ -590,7 +590,7 @@ type PositionWithColumn =
 type LexFilterImpl (
     indentationSyntaxStatus: IndentationAwareSyntaxStatus,
     compilingFSharpCore,
-    lexer: (Lexbuf -> token),
+    lexer: Lexbuf -> token,
     lexbuf: Lexbuf,
     debug: bool
 ) =
@@ -718,7 +718,7 @@ type LexFilterImpl (
 
         delayToken initialLookaheadTokenTup
         initialized <- true
-        offsideStack <- (CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup initialLookaheadTokenTup, NoAddBlockEnd)) :: offsideStack
+        offsideStack <- CtxtSeqBlock(FirstInSeqBlock, startPosOfTokenTup initialLookaheadTokenTup, NoAddBlockEnd) :: offsideStack
         initialLookaheadTokenTup
 
     let reportDiagnostic reportF (s: TokenTup) msg =
@@ -792,7 +792,7 @@ type LexFilterImpl (
             // Otherwise the rule of 'match ... with' limited by 'match' (given RelaxWhitespace2)
             // will consider the CtxtMatch as the limiting context instead of allowing undentation until the parenthesis
             // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore11
-            | _, (CtxtMatchClauses _ as ctxt1) :: (CtxtMatch _) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _ when relaxWhitespace2
+            | _, (CtxtMatchClauses _ as ctxt1) :: CtxtMatch _ :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _ when relaxWhitespace2
                       -> if ctxt1.StartCol <= ctxt2.StartCol
                          then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol)
                          else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol)
@@ -811,11 +811,11 @@ type LexFilterImpl (
                       -> undentationLimit false rest
 
             // 'try ... with' limited by 'try'
-            | _, (CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest)
+            | _, CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
             // 'match ... with' limited by 'match' (given RelaxWhitespace2)
-            | _, (CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest) when relaxWhitespace2
+            | _, CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest when relaxWhitespace2
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
             // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive)
@@ -1180,7 +1180,7 @@ type LexFilterImpl (
 
                 let res = scanAhead 0
                 // Put the tokens back on and smash them up if needed
-                for (tokenTup, smash) in stack do
+                for tokenTup, smash in stack do
                     if smash then
                         match tokenTup.Token with
                         | INFIX_COMPARE_OP "</" ->
@@ -1584,7 +1584,7 @@ type LexFilterImpl (
                     | _ :: [] -> true
                     // anything else is a non-namespace/module
                     | _ -> false
-                while not offsideStack.IsEmpty && (not(nextOuterMostInterestingContextIsNamespaceOrModule offsideStack)) &&
+                while not offsideStack.IsEmpty && not(nextOuterMostInterestingContextIsNamespaceOrModule offsideStack) &&
                                                     (match offsideStack.Head with
                                                     // open-parens of sorts
                                                     | CtxtParen(TokenLExprParen, _) -> true
@@ -1686,7 +1686,7 @@ type LexFilterImpl (
             hwTokenFetch useBlockRule
 
         // Balancing rule. Encountering a ')' or '}' balances with a '(' or '{', even if not offside
-        | ((TokenRExprParen | INTERP_STRING_END _ | INTERP_STRING_PART _) as t2), (CtxtParen (t1, _) :: _)
+        | TokenRExprParen | INTERP_STRING_END _ | INTERP_STRING_PART _ as t2, CtxtParen (t1, _) :: _
                 when parenTokensBalance t1 t2 ->
             if debug then dprintf "RPAREN/RBRACE/BAR_RBRACE/RBRACK/BAR_RBRACK/RQUOTE/END at %a terminates CtxtParen()\n" outputPos tokenStartPos
             popCtxt()
@@ -2081,7 +2081,7 @@ type LexFilterImpl (
         //  else ...
         // ....
         //
-        | _, CtxtElse (offsidePos) :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
+        | _, CtxtElse offsidePos :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column ->
             if debug then dprintf "offside from CtxtElse, popping\n"
             popCtxt()
             reprocess()
@@ -2338,7 +2338,7 @@ type LexFilterImpl (
         | WITH, (CtxtTry _ | CtxtMatch _) :: _ ->
             let lookaheadTokenTup = peekNextTokenTup()
             let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
-            let leadingBar = match (peekNextToken()) with BAR -> true | _ -> false
+            let leadingBar = match peekNextToken() with BAR -> true | _ -> false
 
             if debug then dprintf "WITH, pushing CtxtMatchClauses, lookaheadTokenStartPos = %a, tokenStartPos = %a\n" outputPos lookaheadTokenStartPos outputPos tokenStartPos
             tryPushCtxt strictIndentation false lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos)) |> ignore
@@ -2460,7 +2460,7 @@ type LexFilterImpl (
         | FUNCTION, _ ->
             let lookaheadTokenTup = peekNextTokenTup()
             let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
-            let leadingBar = match (peekNextToken()) with BAR -> true | _ -> false
+            let leadingBar = match peekNextToken() with BAR -> true | _ -> false
             pushCtxt tokenTup (CtxtFunction tokenStartPos)
             pushCtxt lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos))
             returnToken tokenLexbufState OFUNCTION
@@ -2735,7 +2735,7 @@ type LexFilterImpl (
                   | NATIVEINT(v, bad) -> delayMergedToken(NATIVEINT((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | IEEE32 v -> delayMergedToken(IEEE32(if plus then v else -v))
                   | IEEE64 v -> delayMergedToken(IEEE64(if plus then v else -v))
-                  | DECIMAL v -> delayMergedToken(DECIMAL(if plus then v else System.Decimal.op_UnaryNegation v))
+                  | DECIMAL v -> delayMergedToken(DECIMAL(if plus then v else Decimal.op_UnaryNegation v))
                   | BIGNUM(v, s) -> delayMergedToken(BIGNUM((if plus then v else "-" + v), s))
                   | _ -> noMerge()
               else

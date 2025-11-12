@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
@@ -21,7 +20,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.BuildGraph
 open Internal.Utilities.Collections
 
 type internal FrameworkImportsCacheKey =
@@ -153,7 +151,7 @@ type internal RawFSharpAssemblyDataBackedByLanguageService =
         outfile: string *
         topAttrs: TopAttribs *
         assemblyName: string *
-        ilAssemRef: FSharp.Compiler.AbstractIL.IL.ILAssemblyRef ->
+        ilAssemRef: IL.ILAssemblyRef ->
             RawFSharpAssemblyDataBackedByLanguageService
 
     interface IRawFSharpAssemblyData

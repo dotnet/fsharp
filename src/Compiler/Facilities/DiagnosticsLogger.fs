@@ -2,7 +2,6 @@
 
 module FSharp.Compiler.DiagnosticsLogger
 
-open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -14,7 +13,6 @@ open System.Threading
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open System.Threading.Tasks
 open System.Collections.Concurrent
 
@@ -483,8 +481,8 @@ module DiagnosticsLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             // Don't send ThreadAbortException down the error channel
-            | :? System.Threading.ThreadAbortException
-            | WrappedError(:? System.Threading.ThreadAbortException, _) -> ()
+            | :? ThreadAbortException
+            | WrappedError(:? ThreadAbortException, _) -> ()
             | ReportedError _
             | WrappedError(ReportedError _, _) -> ()
             | StopProcessing
@@ -917,7 +915,7 @@ module StackGuardMetrics =
         let data =
             [
                 for kvp in dataByFunctionName do
-                    let (memberName, source) = kvp.Key
+                    let memberName, source = kvp.Key
                     let jumps, depth = kvp.Value
                     [ memberName; source; string jumps.Value; string depth.Value ]
             ]

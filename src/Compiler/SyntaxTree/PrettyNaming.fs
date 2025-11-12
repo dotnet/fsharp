@@ -1096,7 +1096,7 @@ module CustomOperations =
 let unassignedTyparName = "?"
 
 let FormatAndOtherOverloadsString remainingOverloads =
-    FSComp.SR.typeInfoOtherOverloads (remainingOverloads)
+    FSComp.SR.typeInfoOtherOverloads remainingOverloads
 
 let GetLongNameFromString x = SplitNamesForILPath x
 
