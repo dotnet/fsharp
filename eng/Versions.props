@@ -102,7 +102,7 @@
     <!-- Roslyn packages. Rest is managed by maestro bot and is in the imported .Details.props file -->
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
 	  <!-- Roslyn for when we need to compile C# in tests. .dll hell caused by vstest makes newer version fail at runtime -->
-	  <RoslynForTestingButNotForVSLayer>4.14.0</RoslynForTestingButNotForVSLayer>
+	  <RoslynForTestingButNotForVSLayer>5.0.0-2.25480.7</RoslynForTestingButNotForVSLayer>
     <!-- -->
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
