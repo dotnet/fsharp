@@ -404,13 +404,14 @@ module StructuralUtilities =
     type TypeStructure =
         | Stable of TypeToken[]
         | Unstable of TypeToken[]
-        | PossiblyInfinite
+        | Unsolved
 
     type private EmitContext =
         {
             typarMap: System.Collections.Generic.Dictionary<Stamp, int>
             emitNullness: bool
             mutable stable: bool
+            mutable unsolved: bool
         }
 
     let rec private emitNullness env (n: Nullness) =
@@ -420,7 +421,9 @@ module StructuralUtilities =
 
                 match n.TryEvaluate() with
                 | ValueSome k -> TypeToken.Nullness k
-                | ValueNone -> TypeToken.NullnessUnsolved
+                | ValueNone ->
+                    env.unsolved <- true
+                    TypeToken.NullnessUnsolved
         }
 
     and private emitTypar env (r: Typar) =
@@ -442,6 +445,7 @@ module StructuralUtilities =
                 if r.Rigidity = TyparRigidity.Rigid then
                     TypeToken.Rigid typarId
                 else
+                    env.unsolved <- true
                     TypeToken.Unsolved typarId
         }
 
@@ -511,24 +515,23 @@ module StructuralUtilities =
 
     let private getTypeStructureOfStrippedType (ty: TType) =
 
-        // We don't expect IL types to change structure during type inference.
-        let guaranteedStability =
-            match ty with
-            | TType_app(r, _, _) when r.IsILTycon -> true
-            | _ -> false
-
         let env =
             {
                 typarMap = System.Collections.Generic.Dictionary<Stamp, int>()
-                emitNullness = true
+                emitNullness = false
                 stable = true
+                unsolved = false
             }
 
-        let tokens = emitTType env ty |> Seq.truncate 256 |> Seq.toArray
+        let tokens =
+            emitTType env ty
+            |> Seq.truncate 256
+            |> Seq.takeWhile (fun _ -> not env.unsolved)
+            |> Seq.toArray
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if tokens.Length = 256 then PossiblyInfinite
-        elif guaranteedStability || env.stable then Stable tokens
+        if tokens.Length = 256 then Unsolved
+        elif env.stable then Stable tokens
         else Unstable tokens
 
     // Speed up repeated calls by memoizing results for types that yield a stable structure.
@@ -541,5 +544,5 @@ module StructuralUtilities =
 
     let tryGetTypeStructureOfStrippedType ty =
         match memoize ty with
-        | PossiblyInfinite -> ValueNone
+        | Unsolved -> ValueNone
         | ts -> ValueSome ts
