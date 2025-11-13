@@ -413,28 +413,50 @@ module StructuralUtilities =
             mutable stable: bool
         }
 
-    let private emitNullness env (n: Nullness) =
+    let rec private emitNullness env (n: Nullness) =
         seq {
             if env.emitNullness then
-                env.stable <- false //
+                env.stable <- false
 
                 match n.TryEvaluate() with
                 | ValueSome k -> TypeToken.Nullness k
                 | ValueNone -> TypeToken.NullnessUnsolved
         }
 
-    let rec private emitMeasure (m: Measure) =
+    and private emitTypar env (r: Typar) =
+        seq {
+            let typarId =
+                match env.typarMap.TryGetValue r.Stamp with
+                | true, idx -> idx
+                | _ ->
+                    let idx = env.typarMap.Count
+                    env.typarMap.[r.Stamp] <- idx
+                    idx
+
+            // Solved may become unsolved, in case of Trace.Undo.
+            env.stable <- false
+
+            match r.Solution with
+            | Some ty -> yield! emitTType env ty
+            | None ->
+                if r.Rigidity = TyparRigidity.Rigid then
+                    TypeToken.Rigid typarId
+                else
+                    TypeToken.Unsolved typarId
+        }
+
+    and private emitMeasure env (m: Measure) =
         seq {
             match m with
-            | Measure.Var mv -> TypeToken.Stamp mv.Stamp
+            | Measure.Var mv -> yield! emitTypar env mv
             | Measure.Const(tcref, _) -> TypeToken.Stamp tcref.Stamp
             | Measure.Prod(m1, m2, _) ->
-                yield! emitMeasure m1
-                yield! emitMeasure m2
-            | Measure.Inv m1 -> yield! emitMeasure m1
+                yield! emitMeasure env m1
+                yield! emitMeasure env m2
+            | Measure.Inv m1 -> yield! emitMeasure env m1
             | Measure.One _ -> TypeToken.MeasureOne
             | Measure.RationalPower(m1, r) ->
-                yield! emitMeasure m1
+                yield! emitMeasure env m1
                 TypeToken.MeasureRational(GetNumerator r, GetDenominator r)
         }
 
@@ -482,35 +504,23 @@ module StructuralUtilities =
 
             | TType_var(r, n) ->
                 yield! emitNullness env n
+                yield! emitTypar env r
 
-                let typarId =
-                    match env.typarMap.TryGetValue r.Stamp with
-                    | true, idx -> idx
-                    | _ ->
-                        let idx = env.typarMap.Count
-                        env.typarMap.[r.Stamp] <- idx
-                        idx
-
-                // Solved may become unsolved, in case of Trace.Undo.
-                env.stable <- false
-
-                match r.Solution with
-                | Some ty -> yield! emitTType env ty
-                | None ->
-                    if r.Rigidity = TyparRigidity.Rigid then
-                        TypeToken.Rigid typarId
-                    else
-                        TypeToken.Unsolved typarId
-
-            | TType_measure m -> yield! emitMeasure m
+            | TType_measure m -> yield! emitMeasure env m
         }
 
     let private getTypeStructureOfStrippedType (ty: TType) =
 
+        // We don't expect IL types to change structure during type inference.
+        let guaranteedStability =
+            match ty with
+            | TType_app(r, _, _) when r.IsILTycon -> true
+            | _ -> false
+
         let env =
             {
                 typarMap = System.Collections.Generic.Dictionary<Stamp, int>()
-                emitNullness = false
+                emitNullness = true
                 stable = true
             }
 
@@ -518,8 +528,8 @@ module StructuralUtilities =
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
         if tokens.Length = 256 then PossiblyInfinite
-        elif not env.stable then Unstable tokens
-        else Stable tokens
+        elif guaranteedStability || env.stable then Stable tokens
+        else Unstable tokens
 
     // Speed up repeated calls by memoizing results for types that yield a stable structure.
     let private memoize =
