@@ -126,3 +126,11 @@ module VSInstallDiscovery =
         | NotFound reason -> 
             logAction $"Visual Studio installation not found: {reason}"
             None
+
+    /// Gets the VS installation directory or fails with a detailed error message.
+    /// This is the recommended method for test scenarios that require VS to be installed.
+    let getVSInstallDirOrFail () : string =
+        match tryFindVSInstallation () with
+        | Found (path, _) -> path
+        | NotFound reason -> 
+            failwith $"Visual Studio installation not found: {reason}. Ensure VS is installed or environment variables (VSAPPIDDIR, VS*COMNTOOLS) are set."

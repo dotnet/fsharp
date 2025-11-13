@@ -8,34 +8,23 @@ module AssemblyResolver =
     open System.Globalization
     open FSharp.Test.VSInstallDiscovery
 
-    let vsInstallDir =
-        // Use centralized VS installation discovery with graceful fallback
-        match tryGetVSInstallDir () with
-        | Some dir -> dir
-        | None -> 
-            // Fallback to legacy behavior for backward compatibility
-            let vsvar =
-                let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
-                if String.IsNullOrEmpty var then
-                    Environment.GetEnvironmentVariable("VSAPPIDDIR")
-                else
-                    var
-            if String.IsNullOrEmpty vsvar then failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
-            Path.Combine(vsvar, "..")
+    let vsInstallDir = getVSInstallDirOrFail ()
 
-    let probingPaths = [|
-        Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
-        Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
-        Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
-        Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\ManagedLanguages\VBCSharp\LanguageServices")
-        Path.Combine(vsInstallDir, @"IDE\Extensions\Microsoft\CodeSense\Framework")
-        Path.Combine(vsInstallDir, @"IDE")
-    |]
+    let probingPaths =
+        [|
+            Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
+            Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
+            Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
+            Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\ManagedLanguages\VBCSharp\LanguageServices")
+            Path.Combine(vsInstallDir, @"IDE\Extensions\Microsoft\CodeSense\Framework")
+            Path.Combine(vsInstallDir, @"IDE")
+        |]
 
     let addResolver () =
-        AppDomain.CurrentDomain.add_AssemblyResolve(fun h args ->
+        AppDomain.CurrentDomain.add_AssemblyResolve(fun _ args ->
             let found () =
-                (probingPaths ) |> Seq.tryPick(fun p ->
+                probingPaths
+                |> Seq.tryPick (fun p ->
                     try
                         let name = AssemblyName(args.Name)
                         let codebase = Path.GetFullPath(Path.Combine(p, name.Name) + ".dll")
@@ -43,10 +32,12 @@ module AssemblyResolver =
                             name.CodeBase <- codebase
                             name.CultureInfo <- Unchecked.defaultof<CultureInfo>
                             name.Version <- Unchecked.defaultof<Version>
-                            Some (name)
-                        else None
-                    with | _ -> None
-                    )
-            match found() with
+                            Some name
+                        else
+                            None
+                    with _ ->
+                        None)
+
+            match found () with
             | None -> Unchecked.defaultof<Assembly>
-            | Some name -> Assembly.Load(name) )
+            | Some name -> Assembly.Load(name))
