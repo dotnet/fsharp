@@ -379,7 +379,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
 
         // FSharpMethod(?x = arg), optional F#-style argument
         | CalleeSide ->
-            // In this case, the called argument will already have option type
+            // In this case, the called argument will already have option/voption type
             calledArgTy, TypeDirectedConversionUsed.No, None
 
         | NotOptional -> 
