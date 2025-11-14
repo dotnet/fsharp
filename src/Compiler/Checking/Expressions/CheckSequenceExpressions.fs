@@ -231,7 +231,8 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
         // 'use x = expr in expr'
         | SynExpr.LetOrUse(
             isUse = true
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; trivia = { LeadingKeyword = leadingKeyword}) ]
+            bindings = [ SynBinding(
+                             kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; trivia = { LeadingKeyword = leadingKeyword }) ]
             body = innerComp
             range = wholeExprMark) ->
 

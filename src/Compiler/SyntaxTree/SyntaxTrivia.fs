@@ -162,11 +162,7 @@ type SynExprLetOrUseTrivia =
         EqualsRange: range option
     }
 
-    static member Zero: SynExprLetOrUseTrivia =
-        {
-            InKeyword = None
-            EqualsRange = None
-        }
+    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None; EqualsRange = None }
 
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =

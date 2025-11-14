@@ -862,12 +862,7 @@ let private mkTypedHeadPat (SynBinding(headPat = headPattern; returnInfo = retur
 [<return: Struct>]
 let (|ExprAsUseBang|_|) expr =
     match expr with
-    | SynExpr.LetOrUse(
-        isUse = true
-        isFromSource = isFromSource
-        isBang = true
-        bindings = bindings
-        body = innerComp) ->
+    | SynExpr.LetOrUse(isUse = true; isFromSource = isFromSource; isBang = true; bindings = bindings; body = innerComp) ->
         match bindings with
         | SynBinding(debugPoint = spBind; expr = rhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangs ->
             let pat = mkTypedHeadPat binding
@@ -878,12 +873,7 @@ let (|ExprAsUseBang|_|) expr =
 [<return: Struct>]
 let (|ExprAsLetBang|_|) expr =
     match expr with
-    | SynExpr.LetOrUse(
-        isUse = false
-        isFromSource = isFromSource
-        isBang = true
-        bindings = bindings
-        body = innerComp) ->
+    | SynExpr.LetOrUse(isUse = false; isFromSource = isFromSource; isBang = true; bindings = bindings; body = innerComp) ->
         match bindings with
         | SynBinding(debugPoint = spBind; expr = letRhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangBindings ->
             let letPat = mkTypedHeadPat binding
@@ -1830,7 +1820,12 @@ let rec TryTranslateComputationExpression
         | SynExpr.LetOrUse(
             isUse = true
             isBang = false
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind; trivia = { LeadingKeyword = leadingKeyword }) ]
+            bindings = [ SynBinding(
+                             kind = SynBindingKind.Normal
+                             headPat = pat
+                             expr = rhsExpr
+                             debugPoint = spBind
+                             trivia = { LeadingKeyword = leadingKeyword }) ]
             body = innerComp) ->
 
             if ceenv.isQuery then
