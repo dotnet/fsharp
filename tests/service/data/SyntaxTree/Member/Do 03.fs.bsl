@@ -24,7 +24,8 @@ ImplFile
                              { LeadingKeyword =
                                 StaticDo ((5,4--5,10), (5,11--5,13))
                                InlineKeyword = None
-                               EqualsRange = None })], true, false, (5,4--5,13));
+                               EqualsRange = None
+                               InKeyword = None })], true, false, (5,4--5,13));
                       LetBindings
                         ([SynBinding
                             (None, Do, false, false, [], PreXmlDocEmpty,
@@ -35,7 +36,8 @@ ImplFile
                              Const (Unit, (7,7--7,9)), (7,4--7,9), NoneAtDo,
                              { LeadingKeyword = Do (7,4--7,6)
                                InlineKeyword = None
-                               EqualsRange = None })], false, false, (7,4--7,9))],
+                               EqualsRange = None
+                               InKeyword = None })], false, false, (7,4--7,9))],
                      (5,4--7,9)), [], None, (3,5--7,9),
                   { LeadingKeyword = Type (3,0--3,4)
                     EqualsRange = Some (3,7--3,8)

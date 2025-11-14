@@ -31,9 +31,9 @@ ImplFile
                      LongIdent (SynLongIdent ([int], [], [None])), (2,16--2,31)),
                   (2,4--2,7), NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (2,14--2,15) })],
-              (2,0--2,31))], PreXmlDocEmpty, [], None, (2,0--3,0),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                                           EqualsRange = Some (2,14--2,15)
+                                           InKeyword = None })], (2,0--2,31))],
+          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

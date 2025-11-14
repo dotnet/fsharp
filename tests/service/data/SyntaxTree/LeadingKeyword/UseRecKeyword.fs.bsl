@@ -21,12 +21,10 @@ ImplFile
                            (3,16--3,19)), (3,12--3,13), Yes (3,4--3,19),
                         { LeadingKeyword = UseRec ((3,4--3,7), (3,8--3,11))
                           InlineKeyword = None
-                          EqualsRange = Some (3,14--3,15) })],
-                    Const (Unit, (4,4--4,6)), (3,4--4,6),
-                    { InKeyword = None
-                      EqualsRange = Some (3,14--3,15) }), (2,0--4,6)),
-              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, true),
+                          EqualsRange = Some (3,14--3,15)
+                          InKeyword = None })], Const (Unit, (4,4--4,6)),
+                    (3,4--4,6)), (2,0--4,6)), (2,0--4,6))], PreXmlDocEmpty, [],
+          None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

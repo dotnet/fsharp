@@ -27,7 +27,8 @@ ImplFile
                         (4,12--4,16), NoneAtInvisible,
                         { LeadingKeyword = Member (4,5--4,11)
                           InlineKeyword = None
-                          EqualsRange = None }), (4,5--4,16))], [], (3,2--3,9),
+                          EqualsRange = None
+                          InKeyword = None }), (4,5--4,16))], [], (3,2--3,9),
                  (3,0--4,18)), (3,0--4,18));
            Expr (Const (Unit, (6,0--6,2)), (6,0--6,2))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

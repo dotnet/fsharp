@@ -47,8 +47,8 @@ ImplFile
                                None, (5,9--7,6)), (3,11--5,6), NoneAtInvisible,
                             { LeadingKeyword = Member (3,4--3,10)
                               InlineKeyword = None
-                              EqualsRange = Some (5,7--5,8) }), (3,4--7,6))],
-                     (3,4--7,6)), [],
+                              EqualsRange = Some (5,7--5,8)
+                              InKeyword = None }), (3,4--7,6))], (3,4--7,6)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (2,6--2,8)), None,

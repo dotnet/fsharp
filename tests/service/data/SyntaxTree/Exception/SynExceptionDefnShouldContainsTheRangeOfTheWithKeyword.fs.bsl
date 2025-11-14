@@ -37,9 +37,10 @@ ImplFile
                         (5,11--5,17), NoneAtInvisible,
                         { LeadingKeyword = Member (5,4--5,10)
                           InlineKeyword = None
-                          EqualsRange = Some (5,18--5,19) }), (5,4--5,22))],
-                 (4,0--5,22)), (4,0--5,22))], PreXmlDocEmpty, [], None,
-          (2,0--5,22), { LeadingKeyword = Namespace (2,0--2,9) })], (true, true),
+                          EqualsRange = Some (5,18--5,19)
+                          InKeyword = None }), (5,4--5,22))], (4,0--5,22)),
+              (4,0--5,22))], PreXmlDocEmpty, [], None, (2,0--5,22),
+          { LeadingKeyword = Namespace (2,0--2,9) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

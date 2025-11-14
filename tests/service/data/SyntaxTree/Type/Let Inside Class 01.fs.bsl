@@ -27,11 +27,11 @@ ImplFile
                                (SynIdent (privateField, None), false, None,
                                 (5,8--5,20)), None,
                              Const (Int32 10, (5,23--5,25)), (5,8--5,20),
-                             Yes (5,4--5,25),
-                             { LeadingKeyword = Let (5,4--5,7)
-                               InlineKeyword = None
-                               EqualsRange = Some (5,21--5,22) })], false, false,
-                         (5,4--5,25));
+                             Yes (5,4--5,25), { LeadingKeyword = Let (5,4--5,7)
+                                                InlineKeyword = None
+                                                EqualsRange = Some (5,21--5,22)
+                                                InKeyword = None })], false,
+                         false, (5,4--5,25));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -57,8 +57,9 @@ ImplFile
                             (6,11--6,23), NoneAtInvisible,
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
-                              EqualsRange = Some (6,24--6,25) }), (6,4--6,38))],
-                     (5,4--6,38)), [],
+                              EqualsRange = Some (6,24--6,25)
+                              InKeyword = None }), (6,4--6,38))], (5,4--6,38)),
+                  [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (4,12--4,14)), None,

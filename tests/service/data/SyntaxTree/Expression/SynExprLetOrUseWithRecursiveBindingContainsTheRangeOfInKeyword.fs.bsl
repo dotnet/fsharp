@@ -22,7 +22,8 @@ ImplFile
                         Yes (3,4--3,18),
                         { LeadingKeyword = LetRec ((3,4--3,7), (3,8--3,11))
                           InlineKeyword = None
-                          EqualsRange = Some (3,14--3,15) });
+                          EqualsRange = Some (3,14--3,15)
+                          InKeyword = None });
                      SynBinding
                        (None, Normal, false, false, [],
                         PreXmlDoc ((4,8), FSharp.Compiler.Xml.XmlDocCollector),
@@ -33,10 +34,9 @@ ImplFile
                         None, Const (Unit, (4,12--4,14)), (4,8--4,9),
                         Yes (4,4--4,14), { LeadingKeyword = And (4,4--4,7)
                                            InlineKeyword = None
-                                           EqualsRange = Some (4,10--4,11) })],
-                    Const (Unit, (5,4--5,6)), (3,4--5,6),
-                    { InKeyword = Some (4,15--4,17)
-                      EqualsRange = Some (3,14--3,15) }), (2,0--5,6)),
+                                           EqualsRange = Some (4,10--4,11)
+                                           InKeyword = Some (4,15--4,17) })],
+                    Const (Unit, (5,4--5,6)), (3,4--5,6)), (2,0--5,6)),
               (2,0--5,6))], PreXmlDocEmpty, [], None, (2,0--6,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

@@ -64,11 +64,12 @@ ImplFile
                                { BarRange = (1,49--1,50) })], [],
                            Some (1,55--1,56), false, (1,8--1,56)), false,
                         (1,8--1,63), { BarRange = (1,57--1,58) }), (1,66--1,70)),
-                  (1,4--1,5), Yes (1,0--1,70),
-                  { LeadingKeyword = Let (1,0--1,3)
-                    InlineKeyword = None
-                    EqualsRange = Some (1,64--1,65) })], (1,0--1,70))],
-          PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                  (1,4--1,5), Yes (1,0--1,70), { LeadingKeyword = Let (1,0--1,3)
+                                                 InlineKeyword = None
+                                                 EqualsRange = Some (1,64--1,65)
+                                                 InKeyword = None })],
+              (1,0--1,70))], PreXmlDocEmpty, [], None, (1,0--2,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

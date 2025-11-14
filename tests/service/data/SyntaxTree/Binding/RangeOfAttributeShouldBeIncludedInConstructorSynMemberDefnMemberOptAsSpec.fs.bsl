@@ -45,8 +45,9 @@ ImplFile
                             Const (Unit, (4,21--4,23)), (3,4--4,18),
                             NoneAtInvisible, { LeadingKeyword = New (4,4--4,7)
                                                InlineKeyword = None
-                                               EqualsRange = Some (4,19--4,20) }),
-                         (3,4--4,23))], (3,4--4,23)), [], None, (2,5--4,23),
+                                               EqualsRange = Some (4,19--4,20)
+                                               InKeyword = None }), (3,4--4,23))],
+                     (3,4--4,23)), [], None, (2,5--4,23),
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,11--2,12)
                     WithKeyword = None })], (2,0--4,23))], PreXmlDocEmpty, [],

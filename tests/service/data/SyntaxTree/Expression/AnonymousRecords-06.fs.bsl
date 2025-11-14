@@ -28,7 +28,8 @@ ImplFile
                      { OpeningBraceRange = (1,10--1,12) }), (1,4--1,7),
                   NoneAtLet, { LeadingKeyword = Let (1,0--1,3)
                                InlineKeyword = None
-                               EqualsRange = Some (1,8--1,9) })], (1,0--1,39))],
+                               EqualsRange = Some (1,8--1,9)
+                               InKeyword = None })], (1,0--1,39))],
           PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

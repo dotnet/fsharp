@@ -41,7 +41,8 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Override (4,8--4,16)
                               InlineKeyword = None
-                              EqualsRange = Some (4,29--4,30) }), (4,8--4,33));
+                              EqualsRange = Some (4,29--4,30)
+                              InKeyword = None }), (4,8--4,33));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -68,7 +69,8 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (5,8--5,14)
                               InlineKeyword = None
-                              EqualsRange = Some (5,27--5,28) }), (5,8--5,31))],
+                              EqualsRange = Some (5,27--5,28)
+                              InKeyword = None }), (5,8--5,31))],
                      [SynInterfaceImpl
                         (LongIdent (SynLongIdent ([SomethingElse], [], [None])),
                          Some (6,30--6,34), [],
@@ -99,12 +101,13 @@ ImplFile
                                 NoneAtInvisible,
                                 { LeadingKeyword = Member (7,8--7,14)
                                   InlineKeyword = None
-                                  EqualsRange = Some (7,28--7,29) }),
-                             (7,8--7,32))], (6,6--7,32))], (3,6--3,19),
-                     (3,4--7,34)), (2,4--2,7), Yes (2,0--7,34),
-                  { LeadingKeyword = Let (2,0--2,3)
-                    InlineKeyword = None
-                    EqualsRange = Some (2,8--2,9) })], (2,0--7,34))],
+                                  EqualsRange = Some (7,28--7,29)
+                                  InKeyword = None }), (7,8--7,32))],
+                         (6,6--7,32))], (3,6--3,19), (3,4--7,34)), (2,4--2,7),
+                  Yes (2,0--7,34), { LeadingKeyword = Let (2,0--2,3)
+                                     InlineKeyword = None
+                                     EqualsRange = Some (2,8--2,9)
+                                     InKeyword = None })], (2,0--7,34))],
           PreXmlDocEmpty, [], None, (2,0--8,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

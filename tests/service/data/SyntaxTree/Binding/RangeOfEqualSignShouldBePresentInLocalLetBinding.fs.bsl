@@ -18,10 +18,9 @@ ImplFile
                         None, Const (Int32 2, (3,12--3,13)), (3,8--3,9),
                         Yes (3,4--3,13), { LeadingKeyword = Let (3,4--3,7)
                                            InlineKeyword = None
-                                           EqualsRange = Some (3,10--3,11) })],
-                    Const (Unit, (4,4--4,6)), (3,4--4,6),
-                    { InKeyword = None
-                      EqualsRange = Some (3,10--3,11) }), (2,0--4,6)),
+                                           EqualsRange = Some (3,10--3,11)
+                                           InKeyword = None })],
+                    Const (Unit, (4,4--4,6)), (3,4--4,6)), (2,0--4,6)),
               (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

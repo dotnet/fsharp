@@ -23,7 +23,8 @@ ImplFile
                            None, Ident y, (3,4--3,14), Yes (3,4--3,14),
                            { LeadingKeyword = LetBang (3,4--3,8)
                              InlineKeyword = None
-                             EqualsRange = Some (3,11--3,12) });
+                             EqualsRange = Some (3,11--3,12)
+                             InKeyword = None });
                         SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
@@ -38,14 +39,13 @@ ImplFile
                            (4,4--4,28), Yes (4,4--4,28),
                            { LeadingKeyword = AndBang (4,4--4,8)
                              InlineKeyword = None
-                             EqualsRange = Some (4,11--4,12) })],
+                             EqualsRange = Some (4,11--4,12)
+                             InKeyword = None })],
                        YieldOrReturn
                          ((false, true), Const (Unit, (5,11--5,13)), (5,4--5,13),
-                          { YieldOrReturnKeyword = (5,4--5,10) }), (3,4--5,13),
-                       { InKeyword = None
-                         EqualsRange = Some (3,11--3,12) }), (2,5--6,1)),
-                 (2,0--6,1)), (2,0--6,1))], PreXmlDocEmpty, [], None, (2,0--6,1),
-          { LeadingKeyword = None })], (true, true),
+                          { YieldOrReturnKeyword = (5,4--5,10) }), (3,4--5,13)),
+                    (2,5--6,1)), (2,0--6,1)), (2,0--6,1))], PreXmlDocEmpty, [],
+          None, (2,0--6,1), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

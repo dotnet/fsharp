@@ -23,7 +23,8 @@ ImplFile
                            Yes (4,4--4,17),
                            { LeadingKeyword = LetRec ((4,4--4,7), (4,8--4,11))
                              InlineKeyword = None
-                             EqualsRange = Some (4,14--4,15) });
+                             EqualsRange = Some (4,14--4,15)
+                             InKeyword = None });
                         SynBinding
                           (None, Normal, false, false, [],
                            PreXmlDoc ((5,8), FSharp.Compiler.Xml.XmlDocCollector),
@@ -35,7 +36,8 @@ ImplFile
                            None, Const (Int32 5, (5,12--5,13)), (5,8--5,9),
                            Yes (5,4--5,13), { LeadingKeyword = And (5,4--5,7)
                                               InlineKeyword = None
-                                              EqualsRange = Some (5,10--5,11) })],
+                                              EqualsRange = Some (5,10--5,11)
+                                              InKeyword = None })],
                        LetOrUse
                          (false, false, true, true,
                           [SynBinding
@@ -50,7 +52,8 @@ ImplFile
                               Yes (6,4--6,14),
                               { LeadingKeyword = LetBang (6,4--6,8)
                                 InlineKeyword = None
-                                EqualsRange = Some (6,11--6,12) });
+                                EqualsRange = Some (6,11--6,12)
+                                InKeyword = None });
                            SynBinding
                              (None, Normal, false, false, [], PreXmlDocEmpty,
                               SynValData
@@ -63,15 +66,13 @@ ImplFile
                               Yes (7,4--7,14),
                               { LeadingKeyword = AndBang (7,4--7,8)
                                 InlineKeyword = None
-                                EqualsRange = Some (7,11--7,12) })],
+                                EqualsRange = Some (7,11--7,12)
+                                InKeyword = None })],
                           YieldOrReturn
                             ((false, true), Const (Unit, (8,11--8,13)),
                              (8,4--8,13), { YieldOrReturnKeyword = (8,4--8,10) }),
-                          (6,4--8,13), { InKeyword = None
-                                         EqualsRange = Some (6,11--6,12) }),
-                       (4,4--8,13), { InKeyword = None
-                                      EqualsRange = Some (4,14--4,15) }),
-                    (3,6--9,1)), (3,0--9,1)), (3,0--9,1))],
+                          (6,4--8,13)), (4,4--8,13)), (3,6--9,1)), (3,0--9,1)),
+              (3,0--9,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--9,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

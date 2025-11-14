@@ -31,7 +31,8 @@ ImplFile
                         (4,12--4,19), NoneAtInvisible,
                         { LeadingKeyword = Member (4,5--4,11)
                           InlineKeyword = None
-                          EqualsRange = Some (4,20--4,21) }), (4,5--4,21));
+                          EqualsRange = Some (4,20--4,21)
+                          InKeyword = None }), (4,5--4,21));
                   Member
                     (SynBinding
                        (None, Normal, false, false, [],
@@ -53,8 +54,9 @@ ImplFile
                         Const (Int32 2, (5,22--5,23)), (5,12--5,19),
                         NoneAtInvisible, { LeadingKeyword = Member (5,5--5,11)
                                            InlineKeyword = None
-                                           EqualsRange = Some (5,20--5,21) }),
-                     (5,5--5,23))], [], (3,2--3,9), (3,0--5,25)), (3,0--5,25));
+                                           EqualsRange = Some (5,20--5,21)
+                                           InKeyword = None }), (5,5--5,23))],
+                 [], (3,2--3,9), (3,0--5,25)), (3,0--5,25));
            Expr (Const (Unit, (7,0--7,2)), (7,0--7,2))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,2), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

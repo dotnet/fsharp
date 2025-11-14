@@ -43,12 +43,12 @@ ImplFile
                                (3,26--3,28)), (3,13--3,14), NoneAtInvisible,
                             { LeadingKeyword = Override (3,4--3,12)
                               InlineKeyword = None
-                              EqualsRange = Some (3,24--3,25) }), (3,4--3,28))],
-                     (3,4--3,28)), [], None, (2,5--3,28),
-                  { LeadingKeyword = Type (2,0--2,4)
-                    EqualsRange = Some (2,7--2,8)
-                    WithKeyword = None })], (2,0--3,28))], PreXmlDocEmpty, [],
-          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                              EqualsRange = Some (3,24--3,25)
+                              InKeyword = None }), (3,4--3,28))], (3,4--3,28)),
+                  [], None, (2,5--3,28), { LeadingKeyword = Type (2,0--2,4)
+                                           EqualsRange = Some (2,7--2,8)
+                                           WithKeyword = None })], (2,0--3,28))],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

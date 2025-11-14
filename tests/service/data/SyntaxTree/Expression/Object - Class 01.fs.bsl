@@ -28,8 +28,9 @@ ImplFile
                         Const (Int32 1, (4,20--4,21)), (4,13--4,17),
                         NoneAtInvisible, { LeadingKeyword = Override (4,4--4,12)
                                            InlineKeyword = None
-                                           EqualsRange = Some (4,18--4,19) }),
-                     (4,4--4,21))], [], (3,2--3,9), (3,0--4,23)), (3,0--4,23))],
+                                           EqualsRange = Some (4,18--4,19)
+                                           InKeyword = None }), (4,4--4,21))],
+                 [], (3,2--3,9), (3,0--4,23)), (3,0--4,23))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,23), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

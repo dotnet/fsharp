@@ -70,12 +70,12 @@ ImplFile
                             (5,34--5,46)), (5,15--5,31), NoneAtInvisible,
                          { LeadingKeyword = Member (5,8--5,14)
                            InlineKeyword = None
-                           EqualsRange = Some (5,32--5,33) }), (5,8--5,46))],
-                  None, (2,5--5,46), { LeadingKeyword = Type (2,0--2,4)
-                                       EqualsRange = Some (2,9--2,10)
-                                       WithKeyword = Some (4,4--4,8) })],
-              (2,0--5,46))], PreXmlDocEmpty, [], None, (2,0--6,0),
-          { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                           EqualsRange = Some (5,32--5,33)
+                           InKeyword = None }), (5,8--5,46))], None, (2,5--5,46),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,9--2,10)
+                    WithKeyword = Some (4,4--4,8) })], (2,0--5,46))],
+          PreXmlDocEmpty, [], None, (2,0--6,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

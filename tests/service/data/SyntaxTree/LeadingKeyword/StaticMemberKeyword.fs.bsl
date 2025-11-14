@@ -40,12 +40,12 @@ ImplFile
                             { LeadingKeyword =
                                StaticMember ((3,4--3,10), (3,11--3,17))
                               InlineKeyword = None
-                              EqualsRange = Some (3,26--3,27) }), (3,4--3,29))],
-                     (3,4--3,29)), [], None, (2,5--3,29),
-                  { LeadingKeyword = Type (2,0--2,4)
-                    EqualsRange = Some (2,7--2,8)
-                    WithKeyword = None })], (2,0--3,29))], PreXmlDocEmpty, [],
-          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                              EqualsRange = Some (3,26--3,27)
+                              InKeyword = None }), (3,4--3,29))], (3,4--3,29)),
+                  [], None, (2,5--3,29), { LeadingKeyword = Type (2,0--2,4)
+                                           EqualsRange = Some (2,7--2,8)
+                                           WithKeyword = None })], (2,0--3,29))],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

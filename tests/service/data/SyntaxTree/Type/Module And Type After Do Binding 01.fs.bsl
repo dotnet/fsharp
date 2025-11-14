@@ -30,7 +30,8 @@ ImplFile
                                    (6,16--6,22)), (6,8--6,22)), (5,4--6,22),
                              NoneAtDo, { LeadingKeyword = Do (5,4--5,6)
                                          InlineKeyword = None
-                                         EqualsRange = None })], false, false,
+                                         EqualsRange = None
+                                         InKeyword = None })], false, false,
                          (5,4--6,22))], (5,4--6,22)), [],
                   Some
                     (ImplicitCtor
@@ -70,10 +71,10 @@ ImplFile
                       None, Const (Int32 1, (11,16--11,17)), (11,12--11,13),
                       Yes (11,8--11,17), { LeadingKeyword = Let (11,8--11,11)
                                            InlineKeyword = None
-                                           EqualsRange = Some (11,14--11,15) })],
-                  (11,8--11,17))], false, (10,4--11,17),
-              { ModuleKeyword = Some (10,4--10,10)
-                EqualsRange = Some (10,26--10,27) });
+                                           EqualsRange = Some (11,14--11,15)
+                                           InKeyword = None })], (11,8--11,17))],
+              false, (10,4--11,17), { ModuleKeyword = Some (10,4--10,10)
+                                      EqualsRange = Some (10,26--10,27) });
            Open
              (ModuleOrNamespace
                 (SynLongIdent

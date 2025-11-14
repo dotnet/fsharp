@@ -50,8 +50,9 @@ ImplFile
                                   NoneAtInvisible,
                                   { LeadingKeyword = Member (4,8--4,14)
                                     InlineKeyword = None
-                                    EqualsRange = Some (4,22--4,23) }),
-                               (4,8--4,26))], (3,4--4,26));
+                                    EqualsRange = Some (4,22--4,23)
+                                    InKeyword = None }), (4,8--4,26))],
+                         (3,4--4,26));
                       Interface
                         (LongIdent (SynLongIdent ([Other], [], [None])), None,
                          None, (5,4--5,19))], (3,4--5,19)), [],

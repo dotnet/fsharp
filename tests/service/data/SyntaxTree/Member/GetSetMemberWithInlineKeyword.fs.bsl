@@ -41,7 +41,8 @@ ImplFile
                                NoneAtInvisible,
                                { LeadingKeyword = Member (3,4--3,10)
                                  InlineKeyword = Some (4,13--4,19)
-                                 EqualsRange = Some (4,27--4,28) })),
+                                 EqualsRange = Some (4,27--4,28)
+                                 InKeyword = None })),
                          Some
                            (SynBinding
                               (None, Normal, true, false, [],
@@ -71,17 +72,17 @@ ImplFile
                                NoneAtInvisible,
                                { LeadingKeyword = Member (3,4--3,10)
                                  InlineKeyword = Some (5,12--5,18)
-                                 EqualsRange = Some (5,25--5,26) })),
-                         (3,4--5,29), { InlineKeyword = Some (3,11--3,17)
-                                        WithKeyword = (4,8--4,12)
-                                        GetKeyword = Some (4,20--4,23)
-                                        AndKeyword = Some (5,8--5,11)
-                                        SetKeyword = Some (5,19--5,22) })],
-                     (3,4--5,29)), [], None, (2,5--5,29),
-                  { LeadingKeyword = Type (2,0--2,4)
-                    EqualsRange = Some (2,7--2,8)
-                    WithKeyword = None })], (2,0--5,29))], PreXmlDocEmpty, [],
-          None, (2,0--6,0), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                                 EqualsRange = Some (5,25--5,26)
+                                 InKeyword = None })), (3,4--5,29),
+                         { InlineKeyword = Some (3,11--3,17)
+                           WithKeyword = (4,8--4,12)
+                           GetKeyword = Some (4,20--4,23)
+                           AndKeyword = Some (5,8--5,11)
+                           SetKeyword = Some (5,19--5,22) })], (3,4--5,29)), [],
+                  None, (2,5--5,29), { LeadingKeyword = Type (2,0--2,4)
+                                       EqualsRange = Some (2,7--2,8)
+                                       WithKeyword = None })], (2,0--5,29))],
+          PreXmlDocEmpty, [], None, (2,0--6,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

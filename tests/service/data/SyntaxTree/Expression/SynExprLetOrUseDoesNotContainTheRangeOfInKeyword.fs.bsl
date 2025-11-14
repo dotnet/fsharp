@@ -19,11 +19,11 @@ ImplFile
                         None, Const (Int32 1, (3,8--3,9)), (3,4--3,5),
                         Yes (3,0--3,9), { LeadingKeyword = Let (3,0--3,3)
                                           InlineKeyword = None
-                                          EqualsRange = Some (3,6--3,7) })],
-                    Const (Unit, (4,0--4,2)), (3,0--4,2),
-                    { InKeyword = None
-                      EqualsRange = Some (3,6--3,7) }), (2,0--4,2)), (2,0--4,2))],
-          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                                          EqualsRange = Some (3,6--3,7)
+                                          InKeyword = None })],
+                    Const (Unit, (4,0--4,2)), (3,0--4,2)), (2,0--4,2)),
+              (2,0--4,2))], PreXmlDocEmpty, [], None, (2,0--5,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

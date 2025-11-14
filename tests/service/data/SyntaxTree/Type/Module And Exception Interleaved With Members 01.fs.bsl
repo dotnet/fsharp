@@ -34,11 +34,11 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (5,4--5,10)
                               InlineKeyword = None
-                              EqualsRange = Some (5,15--5,16) }), (5,4--5,18))],
-                     (5,4--5,18)), [], None, (4,5--5,18),
-                  { LeadingKeyword = Type (4,0--4,4)
-                    EqualsRange = Some (4,17--4,18)
-                    WithKeyword = None })], (4,0--5,18));
+                              EqualsRange = Some (5,15--5,16)
+                              InKeyword = None }), (5,4--5,18))], (5,4--5,18)),
+                  [], None, (4,5--5,18), { LeadingKeyword = Type (4,0--4,4)
+                                           EqualsRange = Some (4,17--4,18)
+                                           WithKeyword = None })], (4,0--5,18));
            NestedModule
              (SynComponentInfo
                 ([], None, [], [M1],
@@ -56,10 +56,10 @@ ImplFile
                       None, Const (Int32 2, (7,16--7,17)), (7,12--7,13),
                       Yes (7,8--7,17), { LeadingKeyword = Let (7,8--7,11)
                                          InlineKeyword = None
-                                         EqualsRange = Some (7,14--7,15) })],
-                  (7,8--7,17))], false, (6,4--7,17),
-              { ModuleKeyword = Some (6,4--6,10)
-                EqualsRange = Some (6,14--6,15) })],
+                                         EqualsRange = Some (7,14--7,15)
+                                         InKeyword = None })], (7,8--7,17))],
+              false, (6,4--7,17), { ModuleKeyword = Some (6,4--6,10)
+                                    EqualsRange = Some (6,14--6,15) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--7,17), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

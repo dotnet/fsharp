@@ -20,7 +20,8 @@ ImplFile
                           GreaterRange = (2,15--2,16) }), (2,8--2,16)),
                   (2,4--2,5), Yes (2,0--2,16), { LeadingKeyword = Let (2,0--2,3)
                                                  InlineKeyword = None
-                                                 EqualsRange = Some (2,6--2,7) })],
+                                                 EqualsRange = Some (2,6--2,7)
+                                                 InKeyword = None })],
               (2,0--2,16));
            Let
              (false,
@@ -38,7 +39,8 @@ ImplFile
                           GreaterRange = (3,16--3,17) }), (3,8--3,17)),
                   (3,4--3,5), Yes (3,0--3,17), { LeadingKeyword = Let (3,0--3,3)
                                                  InlineKeyword = None
-                                                 EqualsRange = Some (3,6--3,7) })],
+                                                 EqualsRange = Some (3,6--3,7)
+                                                 InKeyword = None })],
               (3,0--3,17))], PreXmlDocEmpty, [], None, (2,0--4,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

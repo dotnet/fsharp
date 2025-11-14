@@ -23,7 +23,8 @@ ImplFile
                   Const (Int32 1, (3,23--3,24)), (3,4--3,20), Yes (3,0--3,24),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,21--3,22) })], (3,0--3,24));
+                    EqualsRange = Some (3,21--3,22)
+                    InKeyword = None })], (3,0--3,24));
            Expr
              (LetOrUse
                 (false, false, true, true,
@@ -54,10 +55,9 @@ ImplFile
                            (5,30--5,42)), (5,24--5,42)), (5,0--5,42),
                      Yes (5,0--5,42), { LeadingKeyword = LetBang (5,0--5,4)
                                         InlineKeyword = None
-                                        EqualsRange = Some (5,22--5,23) })],
-                 ImplicitZero (5,42--5,42), (5,0--5,42),
-                 { InKeyword = None
-                   EqualsRange = Some (5,22--5,23) }), (5,0--5,42))],
+                                        EqualsRange = Some (5,22--5,23)
+                                        InKeyword = None })],
+                 ImplicitZero (5,42--5,42), (5,0--5,42)), (5,0--5,42))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,42), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

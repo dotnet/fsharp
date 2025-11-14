@@ -54,11 +54,12 @@ ImplFile
                             (3,23--3,28)), (3,11--3,20), NoneAtInvisible,
                          { LeadingKeyword = Member (3,4--3,10)
                            InlineKeyword = None
-                           EqualsRange = Some (3,21--3,22) }), (3,4--3,28))],
-                  None, (2,5--3,28), { LeadingKeyword = Type (2,0--2,4)
-                                       EqualsRange = None
-                                       WithKeyword = None })], (2,0--3,28))],
-          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                           EqualsRange = Some (3,21--3,22)
+                           InKeyword = None }), (3,4--3,28))], None, (2,5--3,28),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = None
+                    WithKeyword = None })], (2,0--3,28))], PreXmlDocEmpty, [],
+          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

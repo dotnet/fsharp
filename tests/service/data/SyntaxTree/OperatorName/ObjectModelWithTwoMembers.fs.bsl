@@ -28,11 +28,11 @@ ImplFile
                                (SynIdent (allowInto, None), false, None,
                                 (3,16--3,25)), None,
                              Const (Int32 0, (3,28--3,29)), (3,16--3,25),
-                             Yes (3,4--3,29),
-                             { LeadingKeyword = Let (3,4--3,7)
-                               InlineKeyword = None
-                               EqualsRange = Some (3,26--3,27) })], false, false,
-                         (3,4--3,29));
+                             Yes (3,4--3,29), { LeadingKeyword = Let (3,4--3,7)
+                                                InlineKeyword = None
+                                                EqualsRange = Some (3,26--3,27)
+                                                InKeyword = None })], false,
+                         false, (3,4--3,29));
                       GetSetMember
                         (Some
                            (SynBinding
@@ -61,7 +61,8 @@ ImplFile
                                (4,35--4,40), NoneAtInvisible,
                                { LeadingKeyword = Member (4,4--4,10)
                                  InlineKeyword = None
-                                 EqualsRange = Some (4,41--4,42) })),
+                                 EqualsRange = Some (4,41--4,42)
+                                 InKeyword = None })),
                          Some
                            (SynBinding
                               (None, Normal, false, false, [],
@@ -94,13 +95,13 @@ ImplFile
                                NoneAtInvisible,
                                { LeadingKeyword = Member (4,4--4,10)
                                  InlineKeyword = None
-                                 EqualsRange = Some (4,63--4,64) })),
-                         (4,4--4,79), { InlineKeyword = None
-                                        WithKeyword = (4,30--4,34)
-                                        GetKeyword = Some (4,35--4,38)
-                                        AndKeyword = Some (4,53--4,56)
-                                        SetKeyword = Some (4,57--4,60) })],
-                     (3,4--4,79)), [],
+                                 EqualsRange = Some (4,63--4,64)
+                                 InKeyword = None })), (4,4--4,79),
+                         { InlineKeyword = None
+                           WithKeyword = (4,30--4,34)
+                           GetKeyword = Some (4,35--4,38)
+                           AndKeyword = Some (4,53--4,56)
+                           SetKeyword = Some (4,57--4,60) })], (3,4--4,79)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (2,6--2,8)), None,

@@ -32,8 +32,8 @@ ImplFile
                      (3,8--3,25), { ArrowRange = Some (3,21--3,23) }),
                   (3,4--3,5), NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (3,6--3,7) })],
-              (3,0--3,25));
+                                           EqualsRange = Some (3,6--3,7)
+                                           InKeyword = None })], (3,0--3,25));
            Let
              (false,
               [SynBinding
@@ -66,7 +66,8 @@ ImplFile
                      { ArrowRange = Some (4,18--4,20) }), (4,4--4,5), NoneAtLet,
                   { LeadingKeyword = Let (4,0--4,3)
                     InlineKeyword = None
-                    EqualsRange = Some (4,6--4,7) })], (4,0--4,23));
+                    EqualsRange = Some (4,6--4,7)
+                    InKeyword = None })], (4,0--4,23));
            Let
              (false,
               [SynBinding
@@ -155,7 +156,8 @@ ImplFile
                      { ArrowRange = Some (5,40--5,42) }), (5,4--5,5), NoneAtLet,
                   { LeadingKeyword = Let (5,0--5,3)
                     InlineKeyword = None
-                    EqualsRange = Some (5,6--5,7) })], (5,0--5,45));
+                    EqualsRange = Some (5,6--5,7)
+                    InKeyword = None })], (5,0--5,45));
            Let
              (false,
               [SynBinding
@@ -177,8 +179,8 @@ ImplFile
                      (6,13--6,24), { ArrowRange = Some (6,19--6,21) }),
                   (6,4--6,10), NoneAtLet, { LeadingKeyword = Let (6,0--6,3)
                                             InlineKeyword = None
-                                            EqualsRange = Some (6,11--6,12) })],
-              (6,0--6,24));
+                                            EqualsRange = Some (6,11--6,12)
+                                            InKeyword = None })], (6,0--6,24));
            Let
              (false,
               [SynBinding
@@ -196,7 +198,8 @@ ImplFile
                      { ArrowRange = Some (7,19--7,21) }), (7,4--7,9), NoneAtLet,
                   { LeadingKeyword = Let (7,0--7,3)
                     InlineKeyword = None
-                    EqualsRange = Some (7,10--7,11) })], (7,0--7,24))],
+                    EqualsRange = Some (7,10--7,11)
+                    InKeyword = None })], (7,0--7,24))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,24), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

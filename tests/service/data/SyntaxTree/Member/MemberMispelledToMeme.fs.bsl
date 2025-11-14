@@ -50,14 +50,14 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Static (2,3--2,9)
                               InlineKeyword = None
-                              EqualsRange = Some (2,36--2,37) }), (2,3--2,39))],
-                     (2,3--2,39)), [], None, (1,5--2,39),
-                  { LeadingKeyword = Type (1,0--1,4)
-                    EqualsRange = Some (1,9--1,10)
-                    WithKeyword = None })], (1,0--2,39))], PreXmlDocEmpty, [],
-          None, (1,0--2,39), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                              EqualsRange = Some (2,36--2,37)
+                              InKeyword = None }), (2,3--2,39))], (2,3--2,39)),
+                  [], None, (1,5--2,39), { LeadingKeyword = Type (1,0--1,4)
+                                           EqualsRange = Some (1,9--1,10)
+                                           WithKeyword = None })], (1,0--2,39))],
+          PreXmlDocEmpty, [], None, (1,0--2,39), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))
 
 (2,3)-(2,9) parse error Incomplete declaration of a static construct. Use 'static let','static do','static member' or 'static val' for declaration.

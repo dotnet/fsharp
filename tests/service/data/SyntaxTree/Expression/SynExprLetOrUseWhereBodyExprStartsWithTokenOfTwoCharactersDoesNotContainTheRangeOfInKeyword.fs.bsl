@@ -28,7 +28,8 @@ ImplFile
                                  [None; None])), (3,9--3,42)), (3,4--3,6),
                         Yes (3,0--3,42), { LeadingKeyword = Let (3,0--3,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (3,7--3,8) })],
+                                           EqualsRange = Some (3,7--3,8)
+                                           InKeyword = Some (4,0--4,2) })],
                     Tuple
                       (false,
                        [LongIdent
@@ -40,10 +41,8 @@ ImplFile
                            SynLongIdent
                              ([e1; Value], [(4,10--4,11)], [None; None]), None,
                            (4,8--4,16))], [(4,6--4,7)], (4,0--4,16)),
-                    (3,0--4,16), { InKeyword = None
-                                   EqualsRange = Some (3,7--3,8) }), (2,0--4,16)),
-              (2,0--4,16))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, true),
+                    (3,0--4,16)), (2,0--4,16)), (2,0--4,16))], PreXmlDocEmpty,
+          [], None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

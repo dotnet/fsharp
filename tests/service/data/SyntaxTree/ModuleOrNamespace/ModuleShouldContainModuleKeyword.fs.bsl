@@ -42,10 +42,10 @@ ImplFile
                       None, Const (Int32 42, (13,12--13,14)), (13,8--13,9),
                       Yes (13,4--13,14), { LeadingKeyword = Let (13,4--13,7)
                                            InlineKeyword = None
-                                           EqualsRange = Some (13,10--13,11) })],
-                  (13,4--13,14))], false, (12,0--13,14),
-              { ModuleKeyword = Some (12,0--12,6)
-                EqualsRange = Some (12,40--12,41) })],
+                                           EqualsRange = Some (13,10--13,11)
+                                           InKeyword = None })], (13,4--13,14))],
+              false, (12,0--13,14), { ModuleKeyword = Some (12,0--12,6)
+                                      EqualsRange = Some (12,40--12,41) })],
           PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--13,14), { LeadingKeyword = Module (5,0--5,6) })], (true, true),
       { ConditionalDirectives = []

@@ -892,8 +892,7 @@ type SynExpr =
         isBang: bool *
         bindings: SynBinding list *
         body: SynExpr *
-        range: range *
-        trivia: SynExprLetOrUseTrivia
+        range: range
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of

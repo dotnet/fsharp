@@ -20,7 +20,8 @@ ImplFile
                      LongIdent (SynLongIdent ([obj], [], [None])), (1,8--1,26)),
                   (1,4--1,5), Yes (1,0--1,26), { LeadingKeyword = Let (1,0--1,3)
                                                  InlineKeyword = None
-                                                 EqualsRange = Some (1,6--1,7) })],
+                                                 EqualsRange = Some (1,6--1,7)
+                                                 InKeyword = None })],
               (1,0--1,26));
            Let
              (false,
@@ -39,7 +40,8 @@ ImplFile
                      LongIdent (SynLongIdent ([obj], [], [None])), (2,8--2,24)),
                   (2,4--2,5), Yes (2,0--2,24), { LeadingKeyword = Let (2,0--2,3)
                                                  InlineKeyword = None
-                                                 EqualsRange = Some (2,6--2,7) })],
+                                                 EqualsRange = Some (2,6--2,7)
+                                                 InKeyword = None })],
               (2,0--2,24));
            Let
              (false,
@@ -57,11 +59,12 @@ ImplFile
                      (3,8--3,19)), (3,4--3,5), Yes (3,0--3,19),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,6--3,7) })], (3,0--3,19))],
-          PreXmlDocEmpty, [], None, (1,0--4,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (3,6--3,7)
+                    InKeyword = None })], (3,0--3,19))], PreXmlDocEmpty, [],
+          None, (1,0--4,0), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))
 
 (1,19)-(1,20) parse error Unexpected symbol ')' in expression. Expected '.' or other token.
 (2,12)-(2,14) parse error Unexpected symbol ':>' in expression. Expected '.' or other token.

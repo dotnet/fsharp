@@ -29,12 +29,10 @@ ImplFile
                            (3,17--3,18)), (3,8--3,9), Yes (3,4--3,18),
                         { LeadingKeyword = Let (3,4--3,7)
                           InlineKeyword = None
-                          EqualsRange = Some (3,15--3,16) })],
-                    Const (Unit, (4,4--4,6)), (3,4--4,6),
-                    { InKeyword = None
-                      EqualsRange = Some (3,15--3,16) }), (2,0--4,6)),
-              (2,0--4,6))], PreXmlDocEmpty, [], None, (2,0--5,0),
-          { LeadingKeyword = None })], (true, true),
+                          EqualsRange = Some (3,15--3,16)
+                          InKeyword = None })], Const (Unit, (4,4--4,6)),
+                    (3,4--4,6)), (2,0--4,6)), (2,0--4,6))], PreXmlDocEmpty, [],
+          None, (2,0--5,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

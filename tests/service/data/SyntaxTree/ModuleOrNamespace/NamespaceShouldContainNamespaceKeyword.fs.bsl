@@ -21,11 +21,12 @@ ImplFile
                       Const (Int32 42, (4,12--4,14)), (4,8--4,9),
                       Yes (4,4--4,14), { LeadingKeyword = Let (4,4--4,7)
                                          InlineKeyword = None
-                                         EqualsRange = Some (4,10--4,11) })],
-                  (4,4--4,14))], false, (3,0--4,14),
-              { ModuleKeyword = Some (3,0--3,6)
-                EqualsRange = Some (3,11--3,12) })], PreXmlDocEmpty, [], None,
-          (2,0--4,14), { LeadingKeyword = Namespace (2,0--2,9) })], (true, true),
+                                         EqualsRange = Some (4,10--4,11)
+                                         InKeyword = None })], (4,4--4,14))],
+              false, (3,0--4,14), { ModuleKeyword = Some (3,0--3,6)
+                                    EqualsRange = Some (3,11--3,12) })],
+          PreXmlDocEmpty, [], None, (2,0--4,14),
+          { LeadingKeyword = Namespace (2,0--2,9) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

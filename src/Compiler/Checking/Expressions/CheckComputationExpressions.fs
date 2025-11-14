@@ -1417,8 +1417,7 @@ let rec TryTranslateComputationExpression
                             isBang = true,
                             bindings = [ binding ],
                             body = setCondExpr,
-                            range = mGuard,
-                            trivia = SynExprLetOrUseTrivia.Zero
+                            range = mGuard
                         )
 
                     let whileExpr =
@@ -1443,8 +1442,7 @@ let rec TryTranslateComputationExpression
                         isBang = false,
                         bindings = [ condBinding ],
                         body = whileExpr,
-                        range = mGuard,
-                        trivia = SynExprLetOrUseTrivia.Zero
+                        range = mGuard
                     )
 
                 let binding =
@@ -1471,8 +1469,7 @@ let rec TryTranslateComputationExpression
                     isBang = true,
                     bindings = [ binding ],
                     body = body,
-                    range = mGuard,
-                    trivia = SynExprLetOrUseTrivia.Zero
+                    range = mGuard
                 )
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
@@ -1691,8 +1688,7 @@ let rec TryTranslateComputationExpression
                                     isBang = true,
                                     bindings = [ binding ],
                                     body = innerComp2,
-                                    range = m,
-                                    trivia = SynExprLetOrUseTrivia.Zero
+                                    range = m
                                 ))
                                 translatedCtxt
                         )
@@ -1762,14 +1758,7 @@ let rec TryTranslateComputationExpression
 
         // 'let binds in expr'
         | SynExpr.LetOrUse(
-            isRecursive = isRec
-            isUse = false
-            isFromSource = isFromSource
-            isBang = false
-            bindings = binds
-            body = innerComp
-            range = m
-            trivia = trivia) ->
+            isRecursive = isRec; isUse = false; isFromSource = isFromSource; isBang = false; bindings = binds; body = innerComp; range = m) ->
 
             // For 'query' check immediately
             if ceenv.isQuery then
@@ -1810,8 +1799,7 @@ let rec TryTranslateComputationExpression
                             isBang = false,
                             bindings = binds,
                             body = holeFill,
-                            range = m,
-                            trivia = trivia
+                            range = m
                         )
                     ))
             )
@@ -2471,8 +2459,7 @@ and ConsumeCustomOpClauses
                                 isBang = true,
                                 bindings = [ binding ],
                                 body = contExpr,
-                                range = intoPat.Range,
-                                trivia = SynExprLetOrUseTrivia.Zero
+                                range = intoPat.Range
                             )
                         else
                             SynExpr.ForEach(
@@ -2528,8 +2515,7 @@ and ConsumeCustomOpClauses
                     isBang = true,
                     bindings = [ binding ],
                     body = compClausesExpr,
-                    range = compClausesExpr.Range,
-                    trivia = SynExprLetOrUseTrivia.Zero
+                    range = compClausesExpr.Range
                 )
             else
                 SynExpr.ForEach(
@@ -2661,14 +2647,7 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
                 Some(SynExpr.IfThenElse(guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia), None)
 
     | SynExpr.LetOrUse(
-        isRecursive = isRec
-        isUse = false
-        isFromSource = isFromSource
-        isBang = false
-        bindings = binds
-        body = innerComp
-        range = m
-        trivia = trivia) ->
+        isRecursive = isRec; isUse = false; isFromSource = isFromSource; isBang = false; bindings = binds; body = innerComp; range = m) ->
         match convertSimpleReturnToExpr ceenv comp varSpace innerComp with
         | None -> None
         | Some(_, Some _) -> None
@@ -2681,8 +2660,7 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
                     isBang = false,
                     bindings = binds,
                     body = innerExpr,
-                    range = m,
-                    trivia = trivia
+                    range = m
                 ),
                 None
             )
@@ -2808,8 +2786,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                         isBang = true,
                         bindings = [ binding ],
                         body = bodyExpr,
-                        range = m,
-                        trivia = SynExprLetOrUseTrivia.Zero
+                        range = m
                     )
 
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt

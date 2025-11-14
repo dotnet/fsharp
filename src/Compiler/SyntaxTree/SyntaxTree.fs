@@ -725,8 +725,7 @@ type SynExpr =
         isBang: bool *
         bindings: SynBinding list *
         body: SynExpr *
-        range: range *
-        trivia: SynExprLetOrUseTrivia
+        range: range
 
     | MatchBang of
         matchDebugPoint: DebugPointAtBinding *

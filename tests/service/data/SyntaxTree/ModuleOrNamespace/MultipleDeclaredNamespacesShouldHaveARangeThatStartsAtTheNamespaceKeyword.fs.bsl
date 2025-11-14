@@ -31,9 +31,9 @@ ImplFile
                   Const (Int32 42, (9,8--9,10)), (9,4--9,5), Yes (9,0--9,10),
                   { LeadingKeyword = Let (9,0--9,3)
                     InlineKeyword = None
-                    EqualsRange = Some (9,6--9,7) })], (9,0--9,10))],
-          PreXmlDocEmpty, [], None, (7,0--9,10),
-          { LeadingKeyword = Namespace (7,0--7,9) })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                    EqualsRange = Some (9,6--9,7)
+                    InKeyword = None })], (9,0--9,10))], PreXmlDocEmpty, [],
+          None, (7,0--9,10), { LeadingKeyword = Namespace (7,0--7,9) })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

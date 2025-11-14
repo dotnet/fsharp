@@ -17,11 +17,10 @@ ImplFile
                         Const (Unit, (5,8--5,10)), (5,4--5,5), Yes (5,0--5,10),
                         { LeadingKeyword = Let (5,0--5,3)
                           InlineKeyword = None
-                          EqualsRange = Some (5,6--5,7) })],
-                    ArbitraryAfterError ("seqExpr", (5,10--5,10)), (5,0--5,10),
-                    { InKeyword = None
-                      EqualsRange = Some (5,6--5,7) }), [], (3,0--5,10),
-                 Yes (3,0--3,3), Yes (5,10--5,10),
+                          EqualsRange = Some (5,6--5,7)
+                          InKeyword = None })],
+                    ArbitraryAfterError ("seqExpr", (5,10--5,10)), (5,0--5,10)),
+                 [], (3,0--5,10), Yes (3,0--3,3), Yes (5,10--5,10),
                  { TryKeyword = (3,0--3,3)
                    TryToWithRange = (3,0--5,10)
                    WithKeyword = (5,10--5,10)

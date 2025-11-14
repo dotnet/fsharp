@@ -42,7 +42,8 @@ ImplFile
                         (6,15--6,39)), Ident ar, (6,15--6,42)), (6,4--6,12),
                   NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
                                InlineKeyword = Some (4,4--4,10)
-                               EqualsRange = Some (6,13--6,14) })], (2,0--6,42))],
+                               EqualsRange = Some (6,13--6,14)
+                               InKeyword = None })], (2,0--6,42))],
           PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
       (true, true),
       { ConditionalDirectives =

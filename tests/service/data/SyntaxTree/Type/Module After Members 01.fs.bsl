@@ -42,7 +42,8 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (5,4--5,10)
                               InlineKeyword = None
-                              EqualsRange = Some (5,23--5,24) }), (5,4--5,26));
+                              EqualsRange = Some (5,23--5,24)
+                              InKeyword = None }), (5,4--5,26));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -69,8 +70,9 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
-                              EqualsRange = Some (6,23--6,24) }), (6,4--6,26))],
-                     (5,4--6,26)), [],
+                              EqualsRange = Some (6,23--6,24)
+                              InKeyword = None }), (6,4--6,26))], (5,4--6,26)),
+                  [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (4,21--4,23)), None,
@@ -96,10 +98,10 @@ ImplFile
                       None, Const (Int32 10, (9,21--9,23)), (9,12--9,18),
                       Yes (9,8--9,23), { LeadingKeyword = Let (9,8--9,11)
                                          InlineKeyword = None
-                                         EqualsRange = Some (9,19--9,20) })],
-                  (9,8--9,23))], false, (8,4--9,23),
-              { ModuleKeyword = Some (8,4--8,10)
-                EqualsRange = Some (8,25--8,26) })],
+                                         EqualsRange = Some (9,19--9,20)
+                                         InKeyword = None })], (9,8--9,23))],
+              false, (8,4--9,23), { ModuleKeyword = Some (8,4--8,10)
+                                    EqualsRange = Some (8,25--8,26) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--9,23), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

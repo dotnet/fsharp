@@ -32,7 +32,8 @@ ImplFile
                             (4,11--4,15), NoneAtInvisible,
                             { LeadingKeyword = Member (4,4--4,10)
                               InlineKeyword = None
-                              EqualsRange = None }), (4,4--4,15))], (4,4--4,15)),
+                              EqualsRange = None
+                              InKeyword = None }), (4,4--4,15))], (4,4--4,15)),
                   [], None, (3,5--4,15), { LeadingKeyword = Type (3,0--3,4)
                                            EqualsRange = Some (3,7--3,8)
                                            WithKeyword = None })], (3,0--4,15));

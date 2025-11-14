@@ -22,11 +22,12 @@ ImplFile
                   Typed
                     (Const (Int32 12, (2,14--2,16)),
                      LongIdent (SynLongIdent ([int], [], [None])), (2,14--2,16)),
-                  (2,4--2,5), Yes (2,0--2,16),
-                  { LeadingKeyword = Let (2,0--2,3)
-                    InlineKeyword = None
-                    EqualsRange = Some (2,12--2,13) })], (2,0--2,16))],
-          PreXmlDocEmpty, [], None, (2,0--3,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                  (2,4--2,5), Yes (2,0--2,16), { LeadingKeyword = Let (2,0--2,3)
+                                                 InlineKeyword = None
+                                                 EqualsRange = Some (2,12--2,13)
+                                                 InKeyword = None })],
+              (2,0--2,16))], PreXmlDocEmpty, [], None, (2,0--3,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

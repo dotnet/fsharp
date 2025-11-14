@@ -33,11 +33,11 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (5,8--5,14)
                               InlineKeyword = None
-                              EqualsRange = Some (5,22--5,23) }), (5,8--5,25))],
-                     (4,4--6,7)), [], None, (3,5--6,7),
-                  { LeadingKeyword = Type (3,0--3,4)
-                    EqualsRange = Some (3,7--3,8)
-                    WithKeyword = None })], (3,0--6,7));
+                              EqualsRange = Some (5,22--5,23)
+                              InKeyword = None }), (5,8--5,25))], (4,4--6,7)),
+                  [], None, (3,5--6,7), { LeadingKeyword = Type (3,0--3,4)
+                                          EqualsRange = Some (3,7--3,8)
+                                          WithKeyword = None })], (3,0--6,7));
            Expr (Const (Unit, (8,0--8,2)), (8,0--8,2))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--8,2), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

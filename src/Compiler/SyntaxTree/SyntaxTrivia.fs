@@ -156,15 +156,6 @@ type SynLeadingKeyword =
         | Synthetic -> range0
 
 [<NoEquality; NoComparison>]
-type SynExprLetOrUseTrivia =
-    {
-        InKeyword: range option
-        EqualsRange: range option
-    }
-
-    static member Zero: SynExprLetOrUseTrivia = { InKeyword = None; EqualsRange = None }
-
-[<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
     {
         MatchKeyword: range
@@ -283,6 +274,7 @@ type SynBindingTrivia =
         LeadingKeyword: SynLeadingKeyword
         InlineKeyword: range option
         EqualsRange: range option
+        InKeyword: range option
     }
 
     static member Zero: SynBindingTrivia =
@@ -290,6 +282,7 @@ type SynBindingTrivia =
             LeadingKeyword = SynLeadingKeyword.Synthetic
             InlineKeyword = None
             EqualsRange = None
+            InKeyword = None
         }
 
 [<NoEquality; NoComparison>]

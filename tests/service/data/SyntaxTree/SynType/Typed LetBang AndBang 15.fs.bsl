@@ -48,12 +48,10 @@ ImplFile
                                (4,4--4,39), Yes (4,4--4,39),
                                { LeadingKeyword = LetBang (4,4--4,8)
                                  InlineKeyword = None
-                                 EqualsRange = Some (4,27--4,28) })],
-                           ImplicitZero (4,39--4,39), (4,4--5,16),
-                           { InKeyword = None
-                             EqualsRange = Some (4,27--4,28) }); Ident y],
-                       [(5,15--5,16)], (4,4--5,18)), (3,6--7,1)), (3,0--7,1)),
-              (3,0--7,1))],
+                                 EqualsRange = Some (4,27--4,28)
+                                 InKeyword = None })], ImplicitZero (4,39--4,39),
+                           (4,4--5,16)); Ident y], [(5,15--5,16)], (4,4--5,18)),
+                    (3,6--7,1)), (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

@@ -22,7 +22,8 @@ ImplFile
                              Const (Unit, (3,7--3,9)), (3,4--3,9), NoneAtDo,
                              { LeadingKeyword = Do (3,4--3,6)
                                InlineKeyword = None
-                               EqualsRange = None })], false, false, (3,4--3,9))],
+                               EqualsRange = None
+                               InKeyword = None })], false, false, (3,4--3,9))],
                      (3,4--3,9)), [], None, (2,5--3,9),
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,7--2,8)

@@ -160,18 +160,6 @@ type SynLeadingKeyword =
 
     member Range: range
 
-/// Represents additional information for SynExpr.LetOrUse
-[<NoEquality; NoComparison>]
-type SynExprLetOrUseTrivia =
-    {
-        /// The syntax range of the `in` keyword.
-        InKeyword: range option
-
-        EqualsRange: range option
-    }
-
-    static member Zero: SynExprLetOrUseTrivia
-
 /// Represents additional information for SynExpr.Match
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
@@ -348,6 +336,9 @@ type SynBindingTrivia =
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
+
+        // The syntax range of the `in` keyword.
+        InKeyword: range option
     }
 
     static member Zero: SynBindingTrivia

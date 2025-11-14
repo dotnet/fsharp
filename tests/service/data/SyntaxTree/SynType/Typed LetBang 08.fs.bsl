@@ -34,13 +34,12 @@ ImplFile
                            (3,4--3,48), Yes (3,4--3,48),
                            { LeadingKeyword = LetBang (3,4--3,8)
                              InlineKeyword = None
-                             EqualsRange = Some (3,33--3,34) })],
+                             EqualsRange = Some (3,33--3,34)
+                             InKeyword = None })],
                        YieldOrReturn
                          ((false, true), Ident name, (4,4--4,15),
-                          { YieldOrReturnKeyword = (4,4--4,10) }), (3,4--4,15),
-                       { InKeyword = None
-                         EqualsRange = Some (3,33--3,34) }), (2,6--6,1)),
-                 (2,0--6,1)), (2,0--6,1))],
+                          { YieldOrReturnKeyword = (4,4--4,10) }), (3,4--4,15)),
+                    (2,6--6,1)), (2,0--6,1)), (2,0--6,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

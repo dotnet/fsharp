@@ -1164,7 +1164,11 @@ module SynExpr =
 
                 ambiguous || dangling inner
 
-            | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _ | SynExpr.LetOrUse(trivia = { InKeyword = None })) -> true
+            | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _) -> true
+            | OuterBinaryExpr inner (_, Right), (SynExpr.LetOrUse(bindings = bindings)) ->
+                match List.tryLast bindings with
+                | Some(SynBinding(trivia = { InKeyword = None })) -> true
+                | _ -> false
             | OuterBinaryExpr inner (_, Right), inner -> dangling inner
 
             // new T(expr)

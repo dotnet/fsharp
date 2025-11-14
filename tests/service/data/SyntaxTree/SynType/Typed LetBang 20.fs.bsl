@@ -35,7 +35,8 @@ ImplFile
                               (4,25--4,26)), (4,8--4,17), Yes (4,4--4,26),
                            { LeadingKeyword = Let (4,4--4,7)
                              InlineKeyword = None
-                             EqualsRange = Some (4,23--4,24) })],
+                             EqualsRange = Some (4,23--4,24)
+                             InKeyword = None })],
                        LetOrUse
                          (false, false, true, true,
                           [SynBinding
@@ -69,15 +70,13 @@ ImplFile
                               Yes (5,4--5,44),
                               { LeadingKeyword = LetBang (5,4--5,8)
                                 InlineKeyword = None
-                                EqualsRange = Some (5,24--5,25) })],
+                                EqualsRange = Some (5,24--5,25)
+                                InKeyword = None })],
                           YieldOrReturn
                             ((false, true), Ident x, (6,4--6,12),
                              { YieldOrReturnKeyword = (6,4--6,10) }),
-                          (5,4--6,12), { InKeyword = None
-                                         EqualsRange = Some (5,24--5,25) }),
-                       (4,4--6,12), { InKeyword = None
-                                      EqualsRange = Some (4,23--4,24) }),
-                    (3,6--7,1)), (3,0--7,1)), (3,0--7,1))],
+                          (5,4--6,12)), (4,4--6,12)), (3,6--7,1)), (3,0--7,1)),
+              (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

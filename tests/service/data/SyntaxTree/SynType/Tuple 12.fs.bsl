@@ -38,10 +38,11 @@ ImplFile
                             Type (FromParseError (3,16--3,16))], (3,7--3,16)),
                         LongIdent (SynLongIdent ([b], [], [None])), (3,7--3,21),
                         { ArrowRange = (3,17--3,19) }), (3,24--3,26)),
-                  (3,4--3,5), Yes (3,0--3,26),
-                  { LeadingKeyword = Let (3,0--3,3)
-                    InlineKeyword = None
-                    EqualsRange = Some (3,22--3,23) })], (3,0--3,26))],
+                  (3,4--3,5), Yes (3,0--3,26), { LeadingKeyword = Let (3,0--3,3)
+                                                 InlineKeyword = None
+                                                 EqualsRange = Some (3,22--3,23)
+                                                 InKeyword = None })],
+              (3,0--3,26))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,26), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

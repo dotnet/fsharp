@@ -58,10 +58,10 @@ ImplFile
                       Const (Int32 42, (9,12--9,14)), (9,8--9,9),
                       Yes (9,4--9,14), { LeadingKeyword = Let (9,4--9,7)
                                          InlineKeyword = None
-                                         EqualsRange = Some (9,10--9,11) })],
-                  (9,4--9,14))], false, (8,0--9,14),
-              { ModuleKeyword = Some (8,0--8,6)
-                EqualsRange = Some (8,9--8,10) });
+                                         EqualsRange = Some (9,10--9,11)
+                                         InKeyword = None })], (9,4--9,14))],
+              false, (8,0--9,14), { ModuleKeyword = Some (8,0--8,6)
+                                    EqualsRange = Some (8,9--8,10) });
            Types
              ([SynTypeDefn
                  (SynComponentInfo
