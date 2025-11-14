@@ -148,6 +148,7 @@ extends:
               env:
                   NativeToolsOnMachine: true
                   FSHARP_CACHE_OVERRIDE: 256
+                  FSharp_CacheEvictionImmediate: true
             - task: PublishTestResults@2
               displayName: Publish Test Results
               inputs:
