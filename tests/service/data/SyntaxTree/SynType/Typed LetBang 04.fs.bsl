@@ -36,8 +36,7 @@ ImplFile
                                  InlineKeyword = None
                                  EqualsRange = None })],
                            ArbitraryAfterError ("declExpr3", (5,15--5,16)),
-                           (4,4--5,16), { LetOrUseKeyword = (4,4--4,7)
-                                          InKeyword = None
+                           (4,4--5,16), { InKeyword = None
                                           EqualsRange = None }); Ident d],
                        [(5,15--5,16)], (4,4--5,18)), (3,6--5,47)), (3,0--5,47)),
               (3,0--5,47))],

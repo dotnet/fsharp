@@ -25,8 +25,7 @@ ImplFile
                           InlineKeyword = None
                           EqualsRange = Some (4,13--4,14) })],
                     Const (Unit, (6,4--6,6)), (4,4--6,6),
-                    { LetOrUseKeyword = (4,4--4,7)
-                      InKeyword = None
+                    { InKeyword = None
                       EqualsRange = Some (4,13--4,14) }), (3,0--6,6)),
               (3,0--6,6))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

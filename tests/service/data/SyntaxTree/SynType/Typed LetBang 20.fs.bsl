@@ -67,17 +67,15 @@ ImplFile
                                        { YieldOrReturnKeyword = (5,34--5,40) }),
                                     (5,32--5,44)), (5,26--5,44)), (5,4--5,44),
                               Yes (5,4--5,44),
-                              { LeadingKeyword = Let (5,4--5,8)
+                              { LeadingKeyword = LetBang (5,4--5,8)
                                 InlineKeyword = None
                                 EqualsRange = Some (5,24--5,25) })],
                           YieldOrReturn
                             ((false, true), Ident x, (6,4--6,12),
                              { YieldOrReturnKeyword = (6,4--6,10) }),
-                          (5,4--6,12), { LetOrUseKeyword = (5,4--5,8)
-                                         InKeyword = None
+                          (5,4--6,12), { InKeyword = None
                                          EqualsRange = Some (5,24--5,25) }),
-                       (4,4--6,12), { LetOrUseKeyword = (4,4--4,7)
-                                      InKeyword = None
+                       (4,4--6,12), { InKeyword = None
                                       EqualsRange = Some (4,23--4,24) }),
                     (3,6--7,1)), (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

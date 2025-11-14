@@ -6073,8 +6073,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.DoBang (trivia = { DoBangKeyword = m })
     | SynExpr.MatchBang (trivia = { MatchBangKeyword = m })
-    | SynExpr.WhileBang (range = m)
-    | SynExpr.LetOrUse (isBang = true; trivia = { LetOrUseKeyword = m }) ->
+    | SynExpr.WhileBang (range = m) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+    | SynExpr.LetOrUse (isBang = true; range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (rightExpr, m) ->

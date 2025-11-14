@@ -867,12 +867,11 @@ let (|ExprAsUseBang|_|) expr =
         isFromSource = isFromSource
         isBang = true
         bindings = bindings
-        body = innerComp
-        trivia = { LetOrUseKeyword = mBind }) ->
+        body = innerComp) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; expr = rhsExpr) as binding :: andBangs ->
+        | SynBinding(debugPoint = spBind; expr = rhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangs ->
             let pat = mkTypedHeadPat binding
-            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
+            ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, leadingKeyword.Range)
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -884,12 +883,11 @@ let (|ExprAsLetBang|_|) expr =
         isFromSource = isFromSource
         isBang = true
         bindings = bindings
-        body = innerComp
-        trivia = { LetOrUseKeyword = mBind }) ->
+        body = innerComp) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; expr = letRhsExpr) as binding :: andBangBindings ->
+        | SynBinding(debugPoint = spBind; expr = letRhsExpr; trivia = { LeadingKeyword = leadingKeyword }) as binding :: andBangBindings ->
             let letPat = mkTypedHeadPat binding
-            ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
+            ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, leadingKeyword.Range)
         | _ -> ValueNone
     | _ -> ValueNone
 
@@ -1832,12 +1830,11 @@ let rec TryTranslateComputationExpression
         | SynExpr.LetOrUse(
             isUse = true
             isBang = false
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind) ]
-            body = innerComp
-            trivia = { LetOrUseKeyword = mBind }) ->
+            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr; debugPoint = spBind; trivia = { LeadingKeyword = leadingKeyword }) ]
+            body = innerComp) ->
 
             if ceenv.isQuery then
-                error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), mBind))
+                error (Error(FSComp.SR.tcUseMayNotBeUsedInQueries (), leadingKeyword.Range))
 
             let innerCompRange = innerComp.Range
 
@@ -1859,10 +1856,10 @@ let rec TryTranslateComputationExpression
                     innerCompRange
                 )
 
-            requireBuilderMethod "Using" ceenv mBind mBind
+            requireBuilderMethod "Using" ceenv leadingKeyword.Range leadingKeyword.Range
 
             Some(
-                translatedCtxt (mkSynCall "Using" mBind [ rhsExpr; consumeExpr ] ceenv.builderValName)
+                translatedCtxt (mkSynCall "Using" leadingKeyword.Range [ rhsExpr; consumeExpr ] ceenv.builderValName)
                 |> addBindDebugPoint spBind
             )
 

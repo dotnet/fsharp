@@ -28,14 +28,13 @@ ImplFile
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (3,36--3,38)), (3,25--3,38)),
                            (3,4--3,38), Yes (3,4--3,38),
-                           { LeadingKeyword = Let (3,4--3,8)
+                           { LeadingKeyword = LetBang (3,4--3,8)
                              InlineKeyword = None
                              EqualsRange = Some (3,23--3,24) })],
                        YieldOrReturn
                          ((false, true), Ident value, (4,4--4,16),
                           { YieldOrReturnKeyword = (4,4--4,10) }), (3,4--4,16),
-                       { LetOrUseKeyword = (3,4--3,8)
-                         InKeyword = None
+                       { InKeyword = None
                          EqualsRange = Some (3,23--3,24) }), (2,6--5,1)),
                  (2,0--5,1)), (2,0--5,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

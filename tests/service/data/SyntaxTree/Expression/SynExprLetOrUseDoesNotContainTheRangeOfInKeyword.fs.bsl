@@ -21,8 +21,7 @@ ImplFile
                                           InlineKeyword = None
                                           EqualsRange = Some (3,6--3,7) })],
                     Const (Unit, (4,0--4,2)), (3,0--4,2),
-                    { LetOrUseKeyword = (3,0--3,3)
-                      InKeyword = None
+                    { InKeyword = None
                       EqualsRange = Some (3,6--3,7) }), (2,0--4,2)), (2,0--4,2))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []

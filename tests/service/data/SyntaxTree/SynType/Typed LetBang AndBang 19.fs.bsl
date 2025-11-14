@@ -48,7 +48,7 @@ ImplFile
                                 (SynIdent (a, None), false, None, (6,9--6,10)),
                               None, Const (Int32 3, (6,13--6,14)), (6,4--6,14),
                               Yes (6,4--6,14),
-                              { LeadingKeyword = Let (6,4--6,8)
+                              { LeadingKeyword = LetBang (6,4--6,8)
                                 InlineKeyword = None
                                 EqualsRange = Some (6,11--6,12) });
                            SynBinding
@@ -61,17 +61,15 @@ ImplFile
                                 (SynIdent (b, None), false, None, (7,9--7,10)),
                               None, Const (Int32 5, (7,13--7,14)), (7,4--7,14),
                               Yes (7,4--7,14),
-                              { LeadingKeyword = And (7,4--7,8)
+                              { LeadingKeyword = AndBang (7,4--7,8)
                                 InlineKeyword = None
                                 EqualsRange = Some (7,11--7,12) })],
                           YieldOrReturn
                             ((false, true), Const (Unit, (8,11--8,13)),
                              (8,4--8,13), { YieldOrReturnKeyword = (8,4--8,10) }),
-                          (6,4--8,13), { LetOrUseKeyword = (6,4--6,8)
-                                         InKeyword = None
+                          (6,4--8,13), { InKeyword = None
                                          EqualsRange = Some (6,11--6,12) }),
-                       (4,4--8,13), { LetOrUseKeyword = (4,4--4,11)
-                                      InKeyword = None
+                       (4,4--8,13), { InKeyword = None
                                       EqualsRange = Some (4,14--4,15) }),
                     (3,6--9,1)), (3,0--9,1)), (3,0--9,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

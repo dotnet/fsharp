@@ -4534,13 +4534,14 @@ declExpr:
        if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        
        let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
        let m = unionRanges mKeyword $8.Range
        
        // $1 contains the actual keyword ("let" or "use")
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, None, m, $8, None, Some(pat, returnInfo, $4, $7, mKeyword, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, returnInfo, $4, $7, keyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { // Offside-sensitive version of let!/use! binding
@@ -4553,12 +4554,13 @@ declExpr:
        let report, mIn, _ = $5
        report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error
        let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
        let m = unionRanges mKeyword $8.Range
        
        let isUse = ($1 = "use")
        
-       mkLetExpression(true, None, m, $8, None, Some(pat, returnInfo, $4, $7, mKeyword, mEquals, isUse)) }
+       mkLetExpression(true, None, m, $8, None, Some(pat, returnInfo, $4, $7, keyword, mEquals, isUse)) }
 
   | OBINDER ceBindingCore EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let
      { // Error recovery for incomplete let!/use! bindings
@@ -4570,6 +4572,7 @@ declExpr:
        if isMutable then errorR(Error(FSComp.SR.parsInvalidDeclarationSyntax(), rhs parseState 2))
        
        let mKeyword = rhs parseState 1
+       let keyword = if $1 = "let" then SynLeadingKeyword.LetBang mKeyword else SynLeadingKeyword.UseBang mKeyword
        let mEquals = Some(rhs parseState 3)
        let mAll = unionRanges mKeyword (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
@@ -4577,7 +4580,7 @@ declExpr:
        let isUse = ($1 = "use")
        
        // Use ImplicitZero as the continuation expression for error recovery
-       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, returnInfo, $4, [], mKeyword, mEquals, isUse)) }
+       mkLetExpression(true, None, mAll, SynExpr.ImplicitZero m, None, Some(pat, returnInfo, $4, [], keyword, mEquals, isUse)) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let
      { let spBind = DebugPointAtBinding.NoneAtDo

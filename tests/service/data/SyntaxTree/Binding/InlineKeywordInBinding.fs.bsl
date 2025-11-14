@@ -45,8 +45,7 @@ ImplFile
                            InlineKeyword = Some (3,8--3,14)
                            EqualsRange = Some (3,21--3,22) })],
                      Const (Unit, (4,4--4,6)), (3,4--4,6),
-                     { LetOrUseKeyword = (3,4--3,7)
-                       InKeyword = None
+                     { InKeyword = None
                        EqualsRange = Some (3,21--3,22) }), (2,11--2,16),
                   NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
                                InlineKeyword = Some (2,4--2,10)

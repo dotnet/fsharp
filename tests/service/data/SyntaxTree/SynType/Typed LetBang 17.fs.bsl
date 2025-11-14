@@ -52,12 +52,11 @@ ImplFile
                               (5,32--5,40),
                               { YieldOrReturnKeyword = (5,32--5,38) }),
                            (5,30--5,42)), (5,24--5,42)), (5,0--5,42),
-                     Yes (5,0--5,42), { LeadingKeyword = Let (5,0--5,4)
+                     Yes (5,0--5,42), { LeadingKeyword = LetBang (5,0--5,4)
                                         InlineKeyword = None
                                         EqualsRange = Some (5,22--5,23) })],
                  ImplicitZero (5,42--5,42), (5,0--5,42),
-                 { LetOrUseKeyword = (5,0--5,4)
-                   InKeyword = None
+                 { InKeyword = None
                    EqualsRange = Some (5,22--5,23) }), (5,0--5,42))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,42), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

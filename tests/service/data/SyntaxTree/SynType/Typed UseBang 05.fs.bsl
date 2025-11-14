@@ -31,14 +31,14 @@ ImplFile
                                     (4,24--4,32),
                                     { YieldOrReturnKeyword = (4,24--4,30) }),
                                  (4,22--4,34)), (4,16--4,34)), (4,4--4,34),
-                           Yes (4,4--4,34), { LeadingKeyword = Use (4,4--4,8)
-                                              InlineKeyword = None
-                                              EqualsRange = Some (4,14--4,15) })],
+                           Yes (4,4--4,34),
+                           { LeadingKeyword = UseBang (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,14--4,15) })],
                        YieldOrReturn
                          ((false, true), Ident res, (5,4--5,14),
                           { YieldOrReturnKeyword = (5,4--5,10) }), (4,4--5,14),
-                       { LetOrUseKeyword = (4,4--4,8)
-                         InKeyword = None
+                       { InKeyword = None
                          EqualsRange = Some (4,14--4,15) }), (3,6--6,1)),
                  (3,0--6,1)), (3,0--6,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

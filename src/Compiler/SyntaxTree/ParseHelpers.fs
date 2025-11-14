@@ -875,7 +875,7 @@ let mkAndBang
 
     let trivia: SynBindingTrivia =
         {
-            LeadingKeyword = SynLeadingKeyword.And mKeyword
+            LeadingKeyword = SynLeadingKeyword.AndBang mKeyword
             InlineKeyword = mIn
             EqualsRange = Some mEquals
         }
@@ -1077,20 +1077,16 @@ let mkLetExpression
         mWhole: range,
         body: SynExpr,
         bindingInfo: BindingSet option,
-        bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * range * range option * bool) option
+        bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * SynLeadingKeyword * range option * bool) option
     ) =
     if isBang then
         match bangInfo with
-        | Some(pat, returnInfo, rhs, andBangs, mKeyword, mEquals, isUse) ->
-            let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
+        | Some(pat, returnInfo, rhs, andBangs, leadingKeyword, mEquals, isUse) ->
+            let spBind = DebugPointAtBinding.Yes(unionRanges leadingKeyword.Range rhs.Range)
 
             let trivia: SynBindingTrivia =
                 {
-                    LeadingKeyword =
-                        if isUse then
-                            SynLeadingKeyword.Use mKeyword
-                        else
-                            SynLeadingKeyword.Let mKeyword
+                    LeadingKeyword = leadingKeyword
                     InlineKeyword = mIn
                     EqualsRange = mEquals
                 }
@@ -1107,7 +1103,7 @@ let mkLetExpression
                     headPat = pat,
                     returnInfo = returnInfo,
                     expr = rhs,
-                    range = unionRanges mKeyword rhs.Range,
+                    range = unionRanges leadingKeyword.Range rhs.Range,
                     debugPoint = spBind,
                     trivia = trivia
                 )
@@ -1122,7 +1118,6 @@ let mkLetExpression
                 range = mWhole,
                 trivia =
                     {
-                        LetOrUseKeyword = mKeyword
                         InKeyword = mIn
                         EqualsRange = mEquals
                     }
@@ -1146,11 +1141,6 @@ let mkLetExpression
                 mIn
                 |> Option.bind (fun (mIn: range) -> if posEq mIn.Start body.Range.Start then None else Some mIn)
 
-            let mLetOrUse =
-                match decls with
-                | SynBinding(trivia = trivia) :: _ -> trivia.LeadingKeyword.Range
-                | _ -> range0
-
             let mEquals =
                 match decls with
                 | SynBinding(trivia = trivia) :: _ -> trivia.EqualsRange
@@ -1166,7 +1156,6 @@ let mkLetExpression
                 range = mWhole,
                 trivia =
                     {
-                        LetOrUseKeyword = mLetOrUse
                         InKeyword = mIn'
                         EqualsRange = mEquals
                     }

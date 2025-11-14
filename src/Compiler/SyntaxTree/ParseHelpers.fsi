@@ -204,7 +204,7 @@ val mkLetExpression:
     mWhole: range *
     body: SynExpr *
     bindingInfo: BindingSet option *
-    bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * range * range option * bool) option ->
+    bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * SynLeadingKeyword * range option * bool) option ->
         SynExpr
 
 val mkAndBang:

@@ -19,8 +19,7 @@ ImplFile
                           InlineKeyword = None
                           EqualsRange = Some (5,6--5,7) })],
                     ArbitraryAfterError ("seqExpr", (5,10--5,10)), (5,0--5,10),
-                    { LetOrUseKeyword = (5,0--5,3)
-                      InKeyword = None
+                    { InKeyword = None
                       EqualsRange = Some (5,6--5,7) }), [], (3,0--5,10),
                  Yes (3,0--3,3), Yes (5,10--5,10),
                  { TryKeyword = (3,0--3,3)

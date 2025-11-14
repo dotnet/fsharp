@@ -33,9 +33,10 @@ ImplFile
                                     (4,30--4,38),
                                     { YieldOrReturnKeyword = (4,30--4,36) }),
                                  (4,28--4,40)), (4,22--4,40)), (4,4--4,40),
-                           Yes (4,4--4,40), { LeadingKeyword = Let (4,4--4,8)
-                                              InlineKeyword = None
-                                              EqualsRange = Some (4,20--4,21) });
+                           Yes (4,4--4,40),
+                           { LeadingKeyword = LetBang (4,4--4,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (4,20--4,21) });
                         SynBinding
                           (None, Normal, false, false, [], PreXmlDocEmpty,
                            SynValData
@@ -58,14 +59,14 @@ ImplFile
                                     (5,31--5,39),
                                     { YieldOrReturnKeyword = (5,31--5,37) }),
                                  (5,29--5,41)), (5,23--5,41)), (5,4--5,41),
-                           Yes (5,4--5,41), { LeadingKeyword = And (5,4--5,8)
-                                              InlineKeyword = None
-                                              EqualsRange = Some (5,21--5,22) })],
+                           Yes (5,4--5,41),
+                           { LeadingKeyword = AndBang (5,4--5,8)
+                             InlineKeyword = None
+                             EqualsRange = Some (5,21--5,22) })],
                        YieldOrReturn
                          ((false, true), Ident res, (6,4--6,14),
                           { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,14),
-                       { LetOrUseKeyword = (4,4--4,8)
-                         InKeyword = None
+                       { InKeyword = None
                          EqualsRange = Some (4,20--4,21) }), (3,6--7,1)),
                  (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

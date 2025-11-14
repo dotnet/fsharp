@@ -27,7 +27,7 @@ ImplFile
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (4,26--4,28)), (4,18--4,28)),
                            (4,4--4,28), Yes (4,4--4,28),
-                           { LeadingKeyword = Let (4,4--4,8)
+                           { LeadingKeyword = LetBang (4,4--4,8)
                              InlineKeyword = None
                              EqualsRange = Some (4,16--4,17) });
                         SynBinding
@@ -46,7 +46,7 @@ ImplFile
                              (Atomic, false, Ident asyncString,
                               Const (Unit, (5,29--5,31)), (5,18--5,31)),
                            (5,4--5,31), Yes (5,4--5,31),
-                           { LeadingKeyword = And (5,4--5,8)
+                           { LeadingKeyword = AndBang (5,4--5,8)
                              InlineKeyword = None
                              EqualsRange = Some (5,16--5,17) })],
                        YieldOrReturn
@@ -63,8 +63,7 @@ ImplFile
                                    (6,13--6,14)), Ident x, (6,11--6,14)),
                              Ident b, (6,11--6,16)), (6,4--6,16),
                           { YieldOrReturnKeyword = (6,4--6,10) }), (4,4--6,16),
-                       { LetOrUseKeyword = (4,4--4,8)
-                         InKeyword = None
+                       { InKeyword = None
                          EqualsRange = Some (4,16--4,17) }), (3,6--7,1)),
                  (3,0--7,1)), (3,0--7,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
