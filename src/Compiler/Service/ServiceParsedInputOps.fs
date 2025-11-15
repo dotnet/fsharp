@@ -2454,7 +2454,7 @@ module ParsedInput =
             List.iter (walkSynModuleOrNamespace []) file.Contents
 
         and walkSynModuleOrNamespace (parent: LongIdent) modul =
-            let (SynModuleOrNamespace(longId = ident; kind = kind; decls = decls; range = range)) =
+            let (SynModuleOrNamespace(longId = ident; kind = kind; decls = decls; range = range; trivia = trivia)) =
                 modul
 
             if range.EndLine >= currentLine then
@@ -2470,7 +2470,14 @@ module ParsedInput =
 
                 let fullIdent = parent @ ident
 
-                let startLine = if isModule then range.StartLine else range.StartLine - 1
+                // Use trivia to get the actual module/namespace keyword line, which excludes attributes
+                let startLine =
+                    match trivia.LeadingKeyword with
+                    | SynModuleOrNamespaceLeadingKeyword.Module moduleRange -> moduleRange.StartLine
+                    | SynModuleOrNamespaceLeadingKeyword.Namespace namespaceRange -> namespaceRange.StartLine - 1
+                    | SynModuleOrNamespaceLeadingKeyword.None ->
+                        // No keyword (implicit module), use range.StartLine
+                        if isModule then range.StartLine else range.StartLine - 1
 
                 let scopeKind =
                     match isModule, parent with
@@ -2485,15 +2492,22 @@ module ParsedInput =
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
-            | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = ident); decls = decls; range = range) ->
+            | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = ident); decls = decls; range = range; trivia = trivia) ->
+
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
 
                 if range.EndLine >= currentLine then
+                    // Use trivia to get the actual module keyword line, which excludes attributes
+                    let moduleKeywordLine =
+                        match trivia.ModuleKeyword with
+                        | Some moduleKeywordRange -> moduleKeywordRange.StartLine
+                        | None -> range.StartLine // Fallback if trivia unavailable
+
                     let moduleBodyIndentation =
                         getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
 
-                    doRange NestedModule fullIdent range.StartLine moduleBodyIndentation
+                    doRange NestedModule fullIdent moduleKeywordLine moduleBodyIndentation
                     List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective(_, range) -> doRange HashDirective [] range.EndLine range.StartColumn

@@ -525,7 +525,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         match expr with
                         | SynExpr.ArbitraryAfterError _
                         | SynExpr.LongIdent _
-                        | SynExpr.DotLambda _
                         | SynExpr.LibraryOnlyILAssembly _
                         | SynExpr.LibraryOnlyStaticOptimization _
                         | SynExpr.Null _
@@ -773,6 +772,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             yield! walkExpr false e1
                             yield! walkExpr false e2
                             yield! walkExpr false e3
+
+                        | SynExpr.DotLambda(_, m, _) -> yield! checkRange m
 
                 ]
 

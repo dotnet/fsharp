@@ -16,10 +16,12 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Named
-                                (SynIdent (res, None), false, None, (4,9--4,12)),
-                              FromParseError (4,13--4,13), (4,9--4,13)), None,
+                           Named
+                             (SynIdent (res, None), false, None, (4,9--4,12)),
+                           Some
+                             (SynBindingReturnInfo
+                                (FromParseError (4,13--4,13), (4,13--4,13), [],
+                                 { ColonRange = Some (4,12--4,13) })),
                            App
                              (NonAtomic, false, Ident async,
                               ComputationExpr

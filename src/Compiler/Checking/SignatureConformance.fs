@@ -143,6 +143,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   if check then
                       errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))
                 
+                  if not (PrettyTypes.NeedsPrettyTyparName implTypar) then
+                      implTypar.PreserveDeclaredName()
+                  
                   // Adjust the actual type parameter name to look like the signature
                   implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
 

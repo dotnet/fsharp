@@ -1494,6 +1494,9 @@ type TyparOptionalData =
 
         /// Set to true if the typar is contravariant, i.e. declared as <in T> in C#
         mutable typar_is_contravariant: bool
+
+        /// The declared name of the type parameter.
+        mutable typar_declared_name: string option
     }
 
     override ToString: unit -> string
@@ -1562,6 +1565,9 @@ type Typar =
     /// Set the IL name of the type parameter
     member SetILName: il_name: string option -> unit
 
+    /// Saves the name as the declared name of the type parameter if it is not already set.
+    member PreserveDeclaredName: unit -> unit
+
     /// Sets the identifier associated with a type variable
     member SetIdent: id: Ident -> unit
 
@@ -1593,6 +1599,9 @@ type Typar =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+    /// Gets the declared name of the type parameter.
+    member DeclaredName: string option
 
     /// Indicates the display name of a type variable
     member DisplayName: string

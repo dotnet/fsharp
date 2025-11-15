@@ -12223,12 +12223,14 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
 
     // Canonicalize constraints prior to generalization
     let denv = env.DisplayEnv
-    CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
-        (checkedBinds |> List.collect (fun tbinfo ->
-            let (CheckedBindingInfo(_, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
-            let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
-            let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
-            declaredTypars @ maxInferredTypars))
+    try
+        CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
+            (checkedBinds |> List.collect (fun tbinfo ->
+                let (CheckedBindingInfo(_, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
+                let (ExplicitTyparInfo(_, declaredTypars, _)) = explicitTyparInfo
+                let maxInferredTypars = (freeInTypeLeftToRight g false tauTy)
+                declaredTypars @ maxInferredTypars))
+    with RecoverableException _ -> ()
 
     let lazyFreeInEnv = lazy (GeneralizationHelpers.ComputeUngeneralizableTypars env)
 
