@@ -792,6 +792,46 @@ module LeafExpressionConverter =
             let convType = lambdaTy.MakeGenericType tyargs
             let convDelegate = Expression.Lambda(convType, bodyP, [| vP |]) |> asExpr
             Expression.Call(typeof<FuncConvert>, "ToFSharpFunc", tyargs, [| convDelegate |]) |> asExpr
+
+        | Sequential _ ->
+            let flattenNestedSeq = function
+                | Sequential(e1, e2) -> seq { e1; e2 }
+                | e -> Seq.singleton e
+            let exprs =
+                inp
+                |> flattenNestedSeq
+                |> Seq.map (ConvExprToLinqInContext env)
+                |> Array.ofSeq
+            Expression.Block(exprs) |> asExpr
+            
+        | VarSet(v, e) ->
+            let vP =
+                try
+                    Map.find v env.varEnv
+                with
+                |   :? KeyNotFoundException -> invalidOp ("The variable '"+ v.Name + "' was not found in the translation context'")
+            let eP = ConvExprToLinqInContext env e
+            Expression.Assign(vP, eP) |> asExpr
+
+        | PropertySet(objOpt, propInfo, args, e) ->
+            let coerceTo =
+                if objOpt.IsSome && FSharpType.IsUnion propInfo.DeclaringType && FSharpType.IsUnion propInfo.DeclaringType.BaseType then
+                    Some propInfo.DeclaringType
+                else
+                    None
+            let eP = ConvExprToLinqInContext env e
+            match args with
+            | [] ->
+                Expression.Assign(Expression.Property(ConvObjArg env objOpt coerceTo, propInfo), eP) |> asExpr
+            | _ ->
+                let argsP = ConvExprsToLinq env args
+                Expression.Call(ConvObjArg env objOpt coerceTo, propInfo.GetSetMethod(true), argsP) |> asExpr
+                
+        | FieldSet(objOpt, fieldInfo, e) ->
+            let objP = ConvObjArg env objOpt None
+            let eP = ConvExprToLinqInContext env e
+            Expression.Assign(Expression.Field(objP, fieldInfo), eP) |> asExpr
+
         | _ ->
             failConvert inp
 
