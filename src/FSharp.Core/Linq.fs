@@ -950,6 +950,11 @@ module LeafExpressionConverter =
        | Value (obj, _) -> obj
        | _ ->
        let ty = e.Type
+       let e =
+           if ty = typeof<unit> then
+               Expr.Sequential(e, <@ () @>)
+           else
+               e
        let e = Expr.NewDelegate (Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
        let linqExpr = (ConvExprToLinq e:?> LambdaExpression)
        let d = linqExpr.Compile ()
