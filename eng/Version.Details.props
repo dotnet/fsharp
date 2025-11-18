@@ -11,12 +11,12 @@ This file should be imported by eng/Versions.props
     <MicrosoftBuildTasksCorePackageVersion>18.1.0-preview-25567-03</MicrosoftBuildTasksCorePackageVersion>
     <MicrosoftBuildUtilitiesCorePackageVersion>18.1.0-preview-25567-03</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet/runtime dependencies -->
-    <SystemCollectionsImmutablePackageVersion>9.0.0</SystemCollectionsImmutablePackageVersion>
-    <SystemComponentModelCompositionPackageVersion>9.0.0</SystemComponentModelCompositionPackageVersion>
-    <SystemCompositionPackageVersion>9.0.0</SystemCompositionPackageVersion>
-    <SystemDiagnosticsDiagnosticSourcePackageVersion>9.0.0</SystemDiagnosticsDiagnosticSourcePackageVersion>
-    <SystemReflectionMetadataPackageVersion>9.0.0</SystemReflectionMetadataPackageVersion>
-    <SystemThreadingTasksDataflowPackageVersion>9.0.0</SystemThreadingTasksDataflowPackageVersion>
+    <SystemCollectionsImmutablePackageVersion>9.0.9</SystemCollectionsImmutablePackageVersion>
+    <SystemComponentModelCompositionPackageVersion>9.0.9</SystemComponentModelCompositionPackageVersion>
+    <SystemCompositionPackageVersion>9.0.9</SystemCompositionPackageVersion>
+    <SystemDiagnosticsDiagnosticSourcePackageVersion>9.0.9</SystemDiagnosticsDiagnosticSourcePackageVersion>
+    <SystemReflectionMetadataPackageVersion>9.0.9</SystemReflectionMetadataPackageVersion>
+    <SystemThreadingTasksDataflowPackageVersion>9.0.9</SystemThreadingTasksDataflowPackageVersion>
     <!-- dotnet/roslyn dependencies -->
     <MicrosoftCodeAnalysisPackageVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisPackageVersion>
     <MicrosoftCodeAnalysisCompilersPackageVersion>5.0.0-2.25480.7</MicrosoftCodeAnalysisCompilersPackageVersion>
