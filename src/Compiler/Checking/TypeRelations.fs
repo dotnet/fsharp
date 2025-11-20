@@ -31,6 +31,11 @@ let tryGetTypeStructure ty =
         tryGetTypeStructureOfStrippedType ty
     | _ -> ValueNone
 
+let cacheOptions (g: TcGlobals) =
+    match g.compilationMode with
+    | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+    | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
+
 [<Struct; NoComparison>]
 type TTypeCacheKey =
     | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
@@ -39,13 +44,7 @@ type TTypeCacheKey =
         ||> ValueOption.map2(fun t1 t2 -> TTypeCacheKey(t1, t2, canCoerce))
 
 let getTypeSubsumptionCache =
-    let factory (g: TcGlobals) =
-        let options =
-            match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
-        new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
-    Extras.WeakMap.getOrCreate factory  
+    Extras.WeakMap.getOrCreate (fun g -> new Caches.Cache<TTypeCacheKey, bool>(cacheOptions g, "typeSubsumptionCache"))  
     
 // Cache for feasible equivalence checks
 [<Struct; NoComparison>]
@@ -59,13 +58,7 @@ type TTypeFeasibleEquivCacheKey =
             TTypeFeasibleEquivCacheKey(t1, t2, stripMeasures))
 
 let getTypeFeasibleEquivCache =
-    let factory (g: TcGlobals) =
-        let options =
-            match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
-        new Caches.Cache<TTypeFeasibleEquivCacheKey, bool>(options, "typeFeasibleEquivCache")
-    Extras.WeakMap.getOrCreate factory
+    Extras.WeakMap.getOrCreate (fun g -> new Caches.Cache<TTypeFeasibleEquivCacheKey, bool>(cacheOptions g, "typeFeasibleEquivCache"))
 
 // Cache for definite subsumption without coercion
 [<Struct; NoComparison>]
@@ -76,13 +69,7 @@ type TTypeDefinitelySubsumesNoCoerceCacheKey =
         ||> ValueOption.map2(fun t1 t2 -> TTypeDefinitelySubsumesNoCoerceCacheKey(t1, t2))
 
 let getTypeDefinitelySubsumesNoCoerceCache =
-    let factory (g: TcGlobals) =
-        let options =
-            match g.compilationMode with
-            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
-            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
-        new Caches.Cache<TTypeDefinitelySubsumesNoCoerceCacheKey, bool>(options, "typeDefinitelySubsumesNoCoerceCache")
-    Extras.WeakMap.getOrCreate factory
+    Extras.WeakMap.getOrCreate (fun g -> new Caches.Cache<TTypeDefinitelySubsumesNoCoerceCacheKey, bool>(cacheOptions g, "typeDefinitelySubsumesNoCoerceCache"))
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
