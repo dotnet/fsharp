@@ -56,7 +56,7 @@ variables:
   - name: _PublishUsingPipelines
     value: true
   - name: _WindowsMachineQueueName
-    value: Windows.Amd64.VS2026.Pre.Scout.open
+    value: windows.vs2026preview.scout.amd64.open
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: Codeql.Enabled
