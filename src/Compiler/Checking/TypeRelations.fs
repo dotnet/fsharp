@@ -25,16 +25,16 @@ type CanCoerce =
     | CanCoerce
     | NoCoerce
 
+let tryGetTypeStructure ty =
+    match ty with
+    | TType_app _ ->
+        tryGetTypeStructureOfStrippedType ty
+    | _ -> ValueNone
+
 [<Struct; NoComparison>]
 type TTypeCacheKey =
     | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
     static member TryGetFromStrippedTypes(ty1, ty2, canCoerce) =
-        let tryGetTypeStructure ty =
-            match ty with
-            | TType_app _ ->
-                tryGetTypeStructureOfStrippedType ty
-            | _ -> ValueNone
-
         (tryGetTypeStructure ty1, tryGetTypeStructure ty2)
         ||> ValueOption.map2(fun t1 t2 -> TTypeCacheKey(t1, t2, canCoerce))
 
@@ -45,7 +45,44 @@ let getTypeSubsumptionCache =
             | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
             | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
-    Extras.WeakMap.getOrCreate factory     
+    Extras.WeakMap.getOrCreate factory  
+    
+// Cache for feasible equivalence checks
+[<Struct; NoComparison>]
+type TTypeFeasibleEquivCacheKey =
+    | TTypeFeasibleEquivCacheKey of TypeStructure * TypeStructure * bool
+    static member TryGetFromStrippedTypes(stripMeasures: bool, ty1: TType, ty2: TType) =
+        let sortPair a b = if hash a <= hash b then (a, b) else (b, a)
+        (tryGetTypeStructure ty1, tryGetTypeStructure ty2)
+        ||> ValueOption.map2(fun t1 t2 ->
+            let t1, t2 = sortPair t1 t2
+            TTypeFeasibleEquivCacheKey(t1, t2, stripMeasures))
+
+let getTypeFeasibleEquivCache =
+    let factory (g: TcGlobals) =
+        let options =
+            match g.compilationMode with
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
+        new Caches.Cache<TTypeFeasibleEquivCacheKey, bool>(options, "typeFeasibleEquivCache")
+    Extras.WeakMap.getOrCreate factory
+
+// Cache for definite subsumption without coercion
+[<Struct; NoComparison>]
+type TTypeDefinitelySubsumesNoCoerceCacheKey =
+    | TTypeDefinitelySubsumesNoCoerceCacheKey of TypeStructure * TypeStructure
+    static member TryGetFromStrippedTypes(ty1: TType, ty2: TType) =
+        (tryGetTypeStructure ty1, tryGetTypeStructure ty2)
+        ||> ValueOption.map2(fun t1 t2 -> TTypeDefinitelySubsumesNoCoerceCacheKey(t1, t2))
+
+let getTypeDefinitelySubsumesNoCoerceCache =
+    let factory (g: TcGlobals) =
+        let options =
+            match g.compilationMode with
+            | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
+            | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
+        new Caches.Cache<TTypeDefinitelySubsumesNoCoerceCacheKey, bool>(options, "typeDefinitelySubsumesNoCoerceCache")
+    Extras.WeakMap.getOrCreate factory
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -64,22 +101,37 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
     if ty1 === ty2 then true
     elif typeEquiv g ty1 ty2 then true
     else
+
+        let checkSubsumes ty1 ty2 = 
+
+            typeEquiv g ty1 ty2 ||
+
+            // F# reference types are subtypes of type 'obj'
+            (typeEquiv g ty1 g.obj_ty_ambivalent && isRefTy g ty2) ||
+            // Follow the supertype chain
+            (isAppTy g ty2 &&
+            isRefTy g ty2 &&
+
+            ((match GetSuperTypeOfType g amap m ty2 with
+                | None -> false
+                | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
+
+            // Follow the interface hierarchy
+            (isInterfaceTy g ty1 &&
+                ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
+                    |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+
         let ty1 = stripTyEqns g ty1
         let ty2 = stripTyEqns g ty2
-        // F# reference types are subtypes of type 'obj'
-        (typeEquiv g ty1 g.obj_ty_ambivalent && isRefTy g ty2) ||
-        // Follow the supertype chain
-        (isAppTy g ty2 &&
-        isRefTy g ty2 &&
 
-        ((match GetSuperTypeOfType g amap m ty2 with
-            | None -> false
-            | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
-
-        // Follow the interface hierarchy
-        (isInterfaceTy g ty1 &&
-            ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+        if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+            let key = TTypeDefinitelySubsumesNoCoerceCacheKey.TryGetFromStrippedTypes(ty1, ty2)
+            match key with
+            | ValueNone -> checkSubsumes ty1 ty2
+            | ValueSome key ->
+                (getTypeDefinitelySubsumesNoCoerceCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
+        else
+            checkSubsumes ty1 ty2
 
 let stripAll stripMeasures g ty =
     if stripMeasures then
@@ -96,30 +148,40 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
     let ty1 = stripAll stripMeasures g ty1
     let ty2 = stripAll stripMeasures g ty2
 
-    match ty1, ty2 with
-    | TType_measure _, TType_measure _
-    | TType_var _, _
-    | _, TType_var _ -> true
+    let computeEquiv ty1 ty2 =
 
-    | TType_app (tcref1, l1, _), TType_app (tcref2, l2, _) when tyconRefEq g tcref1 tcref2 ->
-        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+        match ty1, ty2 with
+        | TType_measure _, TType_measure _
+        | TType_var _, _
+        | _, TType_var _ -> true
 
-    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) ->
-        (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
-        (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
-        (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
-        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+        | TType_app (tcref1, l1, _), TType_app (tcref2, l2, _) when tyconRefEq g tcref1 tcref2 ->
+            List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) ->
-        evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
-        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
+        | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) ->
+            (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
+            (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
+            (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
+            List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
-        TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
-        TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
+        | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) ->
+            evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
+            List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
-    | _ ->
-        false
+        | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) ->
+            TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
+            TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
+
+        | _ ->
+            false
+
+    if g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache then
+        let key = TTypeFeasibleEquivCacheKey.TryGetFromStrippedTypes(stripMeasures, ty1, ty2)
+        match key with
+        | ValueNone -> computeEquiv ty1 ty2
+        | ValueSome key1 ->(getTypeFeasibleEquivCache g).GetOrAdd(key1, fun _ -> computeEquiv ty1 ty2)
+    else
+        computeEquiv ty1 ty2
 
 /// The feasible equivalence relation. Part of the language spec.
 let TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =

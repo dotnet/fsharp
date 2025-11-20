@@ -505,7 +505,7 @@ module StructuralUtilities =
             | TType_measure m -> yield! emitMeasure m
         }
 
-    let private getTypeStructureOfStrippedType (ty: TType) =
+    let private getTypeStructureOfStrippedTypeUncached (ty: TType) =
 
         let env =
             {
@@ -522,14 +522,14 @@ module StructuralUtilities =
         else Stable tokens
 
     // Speed up repeated calls by memoizing results for types that yield a stable structure.
-    let private memoize =
+    let private getTypeStructureOfStrippedType =
         WeakMap.cacheConditionally
             (function
             | Stable _ -> true
             | _ -> false)
-            getTypeStructureOfStrippedType
+            getTypeStructureOfStrippedTypeUncached
 
     let tryGetTypeStructureOfStrippedType ty =
-        match memoize ty with
+        match getTypeStructureOfStrippedType ty with
         | PossiblyInfinite -> ValueNone
         | ts -> ValueSome ts
