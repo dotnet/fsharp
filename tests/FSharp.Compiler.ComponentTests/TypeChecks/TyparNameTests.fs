@@ -141,3 +141,32 @@ let array2D (rows: seq<#seq<'T>>) : 'T[,] = failwith "todo"
             getGenericParametersNamesFor signatureFile "A" "array2D" implementationFile
 
         Assert.Equal<string array>([| "a"; "T" |], names)
+
+    [<Fact>]
+    let ``Type extension type parameters are preserved as declared name`` () =
+        let one =
+            FSharpWithFileName "One.fs" """
+module One
+
+type GenericType<'ActualType> = {
+    Value: 'ActualType
+}
+    """
+            |> withFileName "One.fs"
+
+        let two =
+            FsSourceWithFileName "Two.fs" """
+module Two
+type One.GenericType<'DeclaredType> with
+    member x.Print () = printfn "%A" x.Value
+    """
+
+        let result =         
+            one |> withAdditionalSourceFile two
+            |> typecheckProject false CompilerAssertHelpers.UseTransparentCompiler
+
+        let typar =
+            result.AssemblySignature.Entities[0].MembersFunctionsAndValues[0].GenericParameters[0].TypeParameter
+
+        Assert.Equal(Some "DeclaredType", typar.DeclaredName)
+        Assert.Equal("ActualType", typar.Name)
