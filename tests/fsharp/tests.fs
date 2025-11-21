@@ -627,46 +627,46 @@ module CoreTests =
         | "" -> ()
         | diffs -> failwithf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing`` () =
          runPrintingTest "--multiemit- --debug+" "output"
 
     // F# 5.0 changed some things printing output
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-langversion47`` () =
          runPrintingTest "--langversion:4.7" "output.47"
 
     // Output should not change with optimization off
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-optimizeoff`` () =
          runPrintingTest "--multiemit- --debug+ --optimize-" "output"
 
     // Legacy one-dynamic-assembly emit is the default for .NET Framework, which these tests are using
     // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
     // as it feeds in many incremental fragments into stdin of the FSI process.
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-multiemit`` () =
          runPrintingTest "--multiemit+ --debug+" "output.multiemit"
 
     // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
     // needs to be tested with optimizations off.  The output should not change.
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-multiemit-optimizeoff`` () =
          runPrintingTest "--multiemit+ --debug+ --optimize-" "output.multiemit"
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-width-1000`` () =
          runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-width-200`` () =  
          runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-off`` () =
          runPrintingTest "--use:preludeShowDeclarationValuesFalse.fsx" "output.off"
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``printing-quiet`` () =
          runPrintingTest "--quiet" "output.quiet"
 
@@ -1645,7 +1645,7 @@ module RegressionTests =
     [<Fact>]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``13219-bug-FSI`` () = singleTestBuildAndRun "regression/13219" FSI
 
     [<Fact>]
@@ -1653,69 +1653,69 @@ module RegressionTests =
         let cfg = testConfig "regression/4715"
         fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``multi-package-type-provider-test-FSI`` () = singleTestBuildAndRun "regression/13710" FSI
 
 #if NETCOREAPP
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fsc.dll 64-bit fsc.dll .NET SDK generating optimized code`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fsc.dll 64-bit .NET SDK generating debug code`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
 #else
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, portable PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, full PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code portable PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code, full PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, portable PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, full PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full " }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, portable PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
-    [<Fact>]
+    [<FSharp.Test.FactSkipOnSignedBuild>]
     let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, full PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
