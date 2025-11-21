@@ -39,6 +39,30 @@ type FactForDESKTOPAttribute() =
         do base.Skip <- "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only"
     #endif
 
+module SignedBuildSkip =
+    let isSignedBuild = System.Environment.GetEnvironmentVariable("SIGNTYPE") = "Real"
+    let skipMessage = "Test skipped on signed builds due to NuGet package restore restrictions"
+    
+    let skipIfSigned (attr: #FactAttribute) =
+        if isSignedBuild then
+            attr.Skip <- skipMessage
+
+type FactSkipOnSignedBuildAttribute() =
+    inherit FactAttribute()
+    do SignedBuildSkip.skipIfSigned this
+
+type TheorySkipOnSignedBuildAttribute() =
+    inherit TheoryAttribute()
+    do SignedBuildSkip.skipIfSigned this
+
+type FactForNETCOREAPPSkipOnSignedBuildAttribute() =
+    inherit FactAttribute()
+    #if !NETCOREAPP    
+        do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
+    #else
+        do SignedBuildSkip.skipIfSigned this
+    #endif
+
 // This file mimics how Roslyn handles their compilation references for compilation testing
 module Utilities =
 
