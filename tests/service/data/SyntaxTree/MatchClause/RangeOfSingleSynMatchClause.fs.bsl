@@ -7,26 +7,29 @@ ImplFile
           [Expr
              (TryWith
                 (LetOrUse
-                   (false, false, true, false,
-                    [SynBinding
-                       (None, Normal, false, false, [],
-                        PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                        SynValData
-                          (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                           None),
-                        Named
-                          (SynIdent (content, None), false, None, (3,8--3,15)),
-                        None,
-                        App
-                          (NonAtomic, false, Ident tryDownloadFile, Ident url,
-                           (3,18--3,37)), (3,8--3,15), Yes (3,4--3,37),
-                        { LeadingKeyword = Let (3,4--3,7)
-                          InlineKeyword = None
-                          EqualsRange = Some (3,16--3,17)
-                          InKeyword = None })],
-                    App
-                      (NonAtomic, false, Ident Some, Ident content, (4,4--4,16)),
-                    (3,4--4,16)),
+                   { IsRecursive = false
+                     Bindings =
+                      [SynBinding
+                         (None, Normal, false, false, [],
+                          PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
+                          SynValData
+                            (None, SynValInfo ([], SynArgInfo ([], false, None)),
+                             None),
+                          Named
+                            (SynIdent (content, None), false, None, (3,8--3,15)),
+                          None,
+                          App
+                            (NonAtomic, false, Ident tryDownloadFile, Ident url,
+                             (3,18--3,37)), (3,8--3,15), Yes (3,4--3,37),
+                          { LeadingKeyword = Let (3,4--3,7)
+                            InlineKeyword = None
+                            EqualsRange = Some (3,16--3,17)
+                            InKeyword = None })]
+                     Body =
+                      App
+                        (NonAtomic, false, Ident Some, Ident content,
+                         (4,4--4,16))
+                     Range = (3,4--4,16) },
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (5,5--5,7)), None,
                      Sequential

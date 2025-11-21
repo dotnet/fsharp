@@ -679,7 +679,12 @@ module SyntaxTraversal =
                         ]
                         |> pick expr
 
-                | SynExpr.LetOrUse(isRecursive = isRecursive; bindings = synBindingList; body = synExpr; range = range) ->
+                | SynExpr.LetOrUse({
+                                       IsRecursive = isRecursive
+                                       Bindings = synBindingList
+                                       Body = synExpr
+                                       Range = range
+                                   }) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | None ->
                         [

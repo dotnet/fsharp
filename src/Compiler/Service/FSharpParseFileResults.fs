@@ -102,7 +102,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 else
                     walkBinding expr2 workingRange
 
-            | SynExpr.LetOrUse(bindings = bindings; body = bodyExpr) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = bodyExpr }) ->
                 let potentialNestedRange =
                     bindings
                     |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingWithRhs pos)
@@ -696,7 +696,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExprOpt true whenExpr
                                 yield! walkExpr true tgtExpr
 
-                        | SynExpr.LetOrUse(bindings = binds; body = bodyExpr) ->
+                        | SynExpr.LetOrUse({ Bindings = binds; Body = bodyExpr }) ->
                             yield! walkBinds binds
                             yield! walkExpr true bodyExpr
 

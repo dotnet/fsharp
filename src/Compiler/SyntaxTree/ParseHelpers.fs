@@ -1071,7 +1071,7 @@ let leadingKeywordIsAbstract =
     | _ -> false
 
 let mkLetExpression (mIn: range option, mWhole: range, body: SynExpr, bindingInfo: BindingSet) =
-    let (BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _)) = bindingInfo
+    let (BindingSetPreAttrs(_, isRec, _isUse, declsPreAttrs, _)) = bindingInfo
     let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
     let decls =
@@ -1124,7 +1124,14 @@ let mkLetExpression (mIn: range option, mWhole: range, body: SynExpr, bindingInf
     if not (isNil ignoredFreeAttrs) then
         warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole))
 
-    SynExpr.LetOrUse(isRecursive = isRec, isUse = isUse, isFromSource = true, isBang = false, bindings = decls, body = body, range = mWhole)
+    SynExpr.LetOrUse(
+        {
+            IsRecursive = isRec
+            Bindings = decls
+            Body = body
+            Range = mWhole
+        }
+    )
 
 let mkLetBangExpression
     (
@@ -1133,7 +1140,7 @@ let mkLetBangExpression
         body: SynExpr,
         bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * SynLeadingKeyword * range option * bool)
     ) =
-    let (pat, returnInfo, rhs, andBangs, leadingKeyword, mEquals, isUse) = bangInfo
+    let (pat, returnInfo, rhs, andBangs, leadingKeyword, mEquals, _isUse) = bangInfo
     let spBind = DebugPointAtBinding.Yes(unionRanges leadingKeyword.Range rhs.Range)
 
     let trivia: SynBindingTrivia =
@@ -1161,12 +1168,10 @@ let mkLetBangExpression
             trivia = trivia
         )
 
-    SynExpr.LetOrUse(
-        isRecursive = false,
-        isUse = isUse,
-        isFromSource = true,
-        isBang = true,
-        bindings = binding :: andBangs,
-        body = body,
-        range = mWhole
-    )
+    SynExpr.LetOrUse
+        {
+            IsRecursive = false
+            Bindings = binding :: andBangs
+            Body = body
+            Range = mWhole
+        }

@@ -909,8 +909,10 @@ module InterfaceStubGenerator =
 
                 | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> walkExpr synExpr
 
-                | SynExpr.LetOrUse(bindings = synBindingList; body = synExpr) ->
-                    Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
+                | SynExpr.LetOrUse({
+                                       Bindings = synBindingList
+                                       Body = synExpr
+                                   }) -> Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
                 | SynExpr.TryWith(tryExpr = synExpr) -> walkExpr synExpr
 

@@ -955,7 +955,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Match(expr = e; clauses = cl)
         | SynExpr.MatchBang(expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
 
-        | SynExpr.LetOrUse(bindings = bs; body = e) -> walkBinds bs || walkExpr e
+        | SynExpr.LetOrUse({ Bindings = bs; Body = e }) -> walkBinds bs || walkExpr e
 
         | SynExpr.TryWith(tryExpr = e; withCases = cl) -> walkExpr e || walkMatchClauses cl
 

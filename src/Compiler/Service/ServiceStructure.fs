@@ -263,7 +263,7 @@ module Structure =
                 rcheck Scope.For Collapse.Below r r
                 parseExpr e
 
-            | SynExpr.LetOrUse(bindings = bindings; body = body) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = body }) ->
                 parseBindings bindings
                 parseExpr body
 

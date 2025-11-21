@@ -5,58 +5,64 @@ ImplFile
          ([Module], false, NamedModule,
           [Expr
              (LetOrUse
-                (false, false, true, true,
-                 [SynBinding
-                    (None, Normal, false, false, [], PreXmlDocEmpty,
-                     SynValData
-                       (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                        None),
-                     Named (SynIdent (x, None), false, None, (2,5--2,6)),
-                     Some
-                       (SynBindingReturnInfo
-                          (LongIdent (SynLongIdent ([int], [], [None])),
-                           (2,7--2,10), [], { ColonRange = Some (2,6--2,7) })),
-                     App
-                       (NonAtomic, false, Ident async,
-                        ComputationExpr
-                          (false,
-                           YieldOrReturn
-                             ((false, true), Const (Int32 1, (2,28--2,29)),
-                              (2,21--2,29),
-                              { YieldOrReturnKeyword = (2,21--2,27) }),
-                           (2,19--2,31)), (2,13--2,31)), (2,0--2,31),
-                     Yes (2,0--2,31), { LeadingKeyword = LetBang (2,0--2,4)
-                                        InlineKeyword = None
-                                        EqualsRange = Some (2,11--2,12)
-                                        InKeyword = None })],
-                 LetOrUse
-                   (false, false, true, true,
-                    [SynBinding
-                       (None, Normal, false, false, [], PreXmlDocEmpty,
-                        SynValData
-                          (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                           None),
-                        Paren
-                          (Typed
-                             (Named
-                                (SynIdent (y, None), false, None, (3,6--3,7)),
-                              LongIdent (SynLongIdent ([int], [], [None])),
-                              (3,6--3,11)), (3,5--3,12)), None,
-                        App
-                          (NonAtomic, false, Ident async,
-                           ComputationExpr
-                             (false,
-                              YieldOrReturn
-                                ((false, true), Const (Int32 2, (3,30--3,31)),
-                                 (3,23--3,31),
-                                 { YieldOrReturnKeyword = (3,23--3,29) }),
-                              (3,21--3,33)), (3,15--3,33)), (3,0--3,33),
-                        Yes (3,0--3,33), { LeadingKeyword = LetBang (3,0--3,4)
-                                           InlineKeyword = None
-                                           EqualsRange = Some (3,13--3,14)
-                                           InKeyword = None })],
-                    ImplicitZero (3,33--3,33), (3,0--3,33)), (2,0--3,33)),
-              (2,0--3,33))],
+                { IsRecursive = false
+                  Bindings =
+                   [SynBinding
+                      (None, Normal, false, false, [], PreXmlDocEmpty,
+                       SynValData
+                         (None, SynValInfo ([], SynArgInfo ([], false, None)),
+                          None),
+                       Named (SynIdent (x, None), false, None, (2,5--2,6)),
+                       Some
+                         (SynBindingReturnInfo
+                            (LongIdent (SynLongIdent ([int], [], [None])),
+                             (2,7--2,10), [], { ColonRange = Some (2,6--2,7) })),
+                       App
+                         (NonAtomic, false, Ident async,
+                          ComputationExpr
+                            (false,
+                             YieldOrReturn
+                               ((false, true), Const (Int32 1, (2,28--2,29)),
+                                (2,21--2,29),
+                                { YieldOrReturnKeyword = (2,21--2,27) }),
+                             (2,19--2,31)), (2,13--2,31)), (2,0--2,31),
+                       Yes (2,0--2,31), { LeadingKeyword = LetBang (2,0--2,4)
+                                          InlineKeyword = None
+                                          EqualsRange = Some (2,11--2,12)
+                                          InKeyword = None })]
+                  Body =
+                   LetOrUse
+                     { IsRecursive = false
+                       Bindings =
+                        [SynBinding
+                           (None, Normal, false, false, [], PreXmlDocEmpty,
+                            SynValData
+                              (None,
+                               SynValInfo ([], SynArgInfo ([], false, None)),
+                               None),
+                            Paren
+                              (Typed
+                                 (Named
+                                    (SynIdent (y, None), false, None, (3,6--3,7)),
+                                  LongIdent (SynLongIdent ([int], [], [None])),
+                                  (3,6--3,11)), (3,5--3,12)), None,
+                            App
+                              (NonAtomic, false, Ident async,
+                               ComputationExpr
+                                 (false,
+                                  YieldOrReturn
+                                    ((false, true),
+                                     Const (Int32 2, (3,30--3,31)), (3,23--3,31),
+                                     { YieldOrReturnKeyword = (3,23--3,29) }),
+                                  (3,21--3,33)), (3,15--3,33)), (3,0--3,33),
+                            Yes (3,0--3,33),
+                            { LeadingKeyword = LetBang (3,0--3,4)
+                              InlineKeyword = None
+                              EqualsRange = Some (3,13--3,14)
+                              InKeyword = None })]
+                       Body = ImplicitZero (3,33--3,33)
+                       Range = (3,0--3,33) }
+                  Range = (2,0--3,33) }, (2,0--3,33))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,33), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

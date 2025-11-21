@@ -834,7 +834,7 @@ module ParsedInput =
                 walkExprWithKind (Some EntityKind.Type) e
                 |> Option.orElseWith (fun () -> List.tryPick walkType tys)
 
-            | SynExpr.LetOrUse(bindings = bindings; body = e) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = e }) ->
                 List.tryPick walkBinding bindings
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
@@ -2127,7 +2127,7 @@ module ParsedInput =
                 List.iter walkType tys
                 walkExpr e
 
-            | SynExpr.LetOrUse(bindings = bindings; body = e) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = e }) ->
                 List.iter walkBinding bindings
                 walkExpr e
 

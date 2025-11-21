@@ -197,8 +197,8 @@ let YieldFree (cenv: TcFileState) expr =
             | SynExpr.MatchBang(clauses = clauses) -> clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
             | SynExpr.For(doBody = body)
-            | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse(body = body)
+            | SynExpr.TryFinally(tryExpr = body) -> YieldFree body
+            | SynExpr.LetOrUse({ Body = body } as letOrUse) when not letOrUse.IsBang -> YieldFree body
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
@@ -223,13 +223,12 @@ let YieldFree (cenv: TcFileState) expr =
             | SynExpr.MatchBang(clauses = clauses) -> clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
             | SynExpr.For(doBody = body)
-            | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse(body = body)
+            | SynExpr.TryFinally(tryExpr = body) -> YieldFree body
+            | SynExpr.LetOrUse({ Body = body } as letOrUse) when not letOrUse.IsBang -> YieldFree body
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
-
-            | SynExpr.LetOrUse(isBang = true)
+            | SynExpr.LetOrUse letOrUse when letOrUse.IsBang -> false
             | SynExpr.YieldOrReturnFrom _
             | SynExpr.YieldOrReturn _
             | SynExpr.ImplicitZero _
