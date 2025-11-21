@@ -685,3 +685,74 @@ module FSLibConsumer =
             |> withReferences [ producer ]
 
         fsharp2 |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Static extension members for types with same simple name but different namespaces should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    type System.Threading.Tasks.Task with
+        static member CompiledStaticExtension() = ()
+
+    type Task with
+        static member CompiledStaticExtension() = ()
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 11, Col 23, Line 11, Col 46, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
+
+    [<Fact>]
+    let ``Static extension members for types with same simple name in different modules should succeed`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions1 =
+    type System.Threading.Tasks.Task with
+        static member CompiledStaticExtension() = ()
+
+module CompiledExtensions2 =
+    type Task with
+        static member CompiledStaticExtension() = ()
+            """
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Static extension members with nested module in between should error`` () =
+        Fsx
+            """
+module Compiled
+
+type Task = { F: int }
+
+module CompiledExtensions =
+    // First extension for System.Threading.Tasks.Task
+    type System.Threading.Tasks.Task with
+        static member Extension1() = ()
+
+    // Nested module - this is fine, shouldn't interfere with duplicate check
+    module Nested =
+        let someValue = 42
+        type OtherType = { X: int }
+
+    // Some other definition
+    let someBinding = 10
+
+    // Second extension for local Task type - this should clash with the first
+    type Task with
+        static member Extension2() = ()
+            """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3356, Line 21, Col 23, Line 21, Col 33, "Extension members extending types with the same simple name 'Task' but different fully qualified names cannot be defined in the same module. Consider defining these extensions in separate modules.")
+        ]
