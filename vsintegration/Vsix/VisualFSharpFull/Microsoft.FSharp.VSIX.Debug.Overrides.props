@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <PropertyGroup>
+    <!-- Override FSharpCompilerPath to point to VSIX Tools directory -->
+    <!-- This props file is deployed alongside the Tools directory in the VSIX -->
+    <!-- Calculate path from this file's location to Tools -->
+    <_FSharpDebugVsixPropsDir>$(MSBuildThisFileDirectory)</_FSharpDebugVsixPropsDir>
+    <_FSharpDebugVsixToolsPath>$(_FSharpDebugVsixPropsDir)Tools\</_FSharpDebugVsixToolsPath>
+    
+    <!-- Override only if not already set and compiler exists -->
+    <FSharpCompilerPath Condition="'$(FSharpCompilerPath)' == '' and Exists('$(_FSharpDebugVsixToolsPath)fscAnyCpu.exe')">$(_FSharpDebugVsixToolsPath)</FSharpCompilerPath>
+  </PropertyGroup>
+  
+  <Target Name="WarnAboutDebugVsixCompiler" BeforeTargets="BeforeBuild" Condition="'$(FSharpCompilerPath)' == '$(_FSharpDebugVsixToolsPath)'">
+    <Warning Text="🔧 [F# Debug VSIX] Using custom F# compiler from: $(FSharpCompilerPath)" />
+  </Target>
+
+</Project>

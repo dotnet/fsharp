@@ -84,4 +84,13 @@
       </Content>
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <!-- Deploy the override props file as an MSBuild asset -->
+    <Content Include="Microsoft.FSharp.VSIX.Debug.Overrides.props">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSixSubPath>.</VSixSubPath>
+    </Content>
+  </ItemGroup>
 </Project>
