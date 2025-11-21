@@ -36,15 +36,16 @@ let cacheOptions (g: TcGlobals) =
     | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
     | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
 
+// Cache for feasible subsumption checks
 [<Struct; NoComparison>]
-type TTypeCacheKey =
-    | TTypeCacheKey of TypeStructure * TypeStructure * CanCoerce
+type TTypeFeasiblySubsumesCacheKey =
+    | TTypeFeasiblySubsumesCacheKey of TypeStructure * TypeStructure * CanCoerce
     static member TryGetFromStrippedTypes(ty1, ty2, canCoerce) =
         (tryGetTypeStructure ty1, tryGetTypeStructure ty2)
-        ||> ValueOption.map2(fun t1 t2 -> TTypeCacheKey(t1, t2, canCoerce))
+        ||> ValueOption.map2(fun t1 t2 -> TTypeFeasiblySubsumesCacheKey(t1, t2, canCoerce))
 
 let getTypeSubsumptionCache =
-    Extras.WeakMap.getOrCreate (fun g -> new Caches.Cache<TTypeCacheKey, bool>(cacheOptions g, "typeSubsumptionCache"))  
+    Extras.WeakMap.getOrCreate (fun g -> new Caches.Cache<TTypeFeasiblySubsumesCacheKey, bool>(cacheOptions g, "typeSubsumptionCache"))  
     
 // Cache for feasible equivalence checks
 [<Struct; NoComparison>]
@@ -214,7 +215,7 @@ let rec TypeFeasiblySubsumesType ndeep (g: TcGlobals) (amap: ImportMap) m (ty1: 
         true
 
     | _ when g.langVersion.SupportsFeature LanguageFeature.UseTypeSubsumptionCache ->
-        match TTypeCacheKey.TryGetFromStrippedTypes(ty1, ty2, canCoerce) with
+        match TTypeFeasiblySubsumesCacheKey.TryGetFromStrippedTypes(ty1, ty2, canCoerce) with
         | ValueSome key ->
             (getTypeSubsumptionCache g).GetOrAdd(key, fun _ -> checkSubsumes ty1 ty2)
         | _ -> checkSubsumes ty1 ty2
