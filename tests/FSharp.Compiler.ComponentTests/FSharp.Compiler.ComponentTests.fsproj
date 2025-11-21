@@ -234,6 +234,7 @@
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
+    <Compile Include="Language\FSharpPlusRegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
     <Compile Include="Language\ExperimentalAttributeCheckingTests.fs" />
