@@ -10092,7 +10092,31 @@ and TcMethodApplication_CheckArguments
         // This is the case where some explicit arguments have been given.
 
         let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr, argTy, mArg) -> CallerArg(argTy, mArg, false, argExpr))
-        let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id, isOpt, argExpr, argTy, mArg) -> CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
+        let namedCurriedCallerArgs =
+            if
+                g.langVersion.SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters
+                && namedCurriedCallerArgs |> List.existsSquared (fun (_, isOpt, _, _, _) -> isOpt)
+            then
+                let voptionParams =
+                    (Set.empty, preArgumentTypeCheckingCalledMethGroup)
+                    ||> List.fold (fun acc calledMeth ->
+                        (acc, calledMeth.AssignedNamedArgs)
+                        ||> List.fold (fun acc args ->
+                            (acc, args)
+                            ||> List.fold (fun acc arg ->
+                                match arg.CalledArg.OptArgInfo, arg.NamedArgIdOpt with
+                                | CalleeSide, Some argId when isValueOptionTy g arg.CalledArg.CalledArgumentType && arg.CallerArg.IsExplicitOptional -> acc |> Set.add argId.idText
+                                | _ -> acc)))
+
+                namedCurriedCallerArgs |> List.mapSquared (fun (id : Ident, isOpt, argExpr, argTy, mArg) ->
+                    let argTy =
+                        if isOpt && voptionParams |> Set.contains id.idText && isOptionTy g argTy then mkValueOptionTy g (destOptionTy g argTy)
+                        else argTy
+
+                    CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
+            else
+                namedCurriedCallerArgs |> List.mapSquared (fun (id, isOpt, argExpr, argTy, mArg) -> CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
+
 
         // Collect the information for F# 3.1 lambda propagation rule, and apply the caller's object type to the method's object type if the rule is relevant.
         let lambdaPropagationInfo =

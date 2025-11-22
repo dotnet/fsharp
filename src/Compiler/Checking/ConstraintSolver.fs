@@ -3213,6 +3213,10 @@ and ArgsMustSubsumeOrConvert
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
+        let callerTy =
+            let g = csenv.g
+            if isValueOptionTy g calledArgTy && isOptionTy g callerTy then mkValueOptionTy g (destOptionTy g callerTy)
+            else callerTy
         do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerTy
         if g.langVersion.SupportsFeature(LanguageFeature.WarnWhenUnitPassedToObjArg) && isUnitTy g callerTy && isObjTyAnyNullness g calledArgTy then
             do! WarnD(Error(FSComp.SR.tcUnitToObjSubsumption(), m))
@@ -3246,6 +3250,10 @@ and ArgsMustSubsumeOrConvertWithContextualReport
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes(warn, _, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
+        let callerArgTy =
+            let g = csenv.g
+            if isValueOptionTy g calledArgTy && isOptionTy g callerArgTy then mkValueOptionTy g (destOptionTy g callerArgTy)
+            else callerArgTy
         do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
     }
