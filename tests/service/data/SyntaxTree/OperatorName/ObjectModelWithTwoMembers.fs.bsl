@@ -32,7 +32,7 @@ ImplFile
                                                 InlineKeyword = None
                                                 EqualsRange = Some (3,26--3,27)
                                                 InKeyword = None })], false,
-                         false, (3,4--3,29));
+                         false, (3,4--3,29), { InKeyword = None });
                       GetSetMember
                         (Some
                            (SynBinding

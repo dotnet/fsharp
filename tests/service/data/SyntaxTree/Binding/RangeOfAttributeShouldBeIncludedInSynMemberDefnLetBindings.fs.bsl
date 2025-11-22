@@ -36,10 +36,10 @@ ImplFile
                                                 InlineKeyword = None
                                                 EqualsRange = Some (4,10--4,11)
                                                 InKeyword = None })], false,
-                         false, (3,4--4,13))], (3,4--4,13)), [], None,
-                  (2,5--4,13), { LeadingKeyword = Type (2,0--2,4)
-                                 EqualsRange = Some (2,9--2,10)
-                                 WithKeyword = None })], (2,0--4,13))],
+                         false, (3,4--4,13), { InKeyword = None })], (3,4--4,13)),
+                  [], None, (2,5--4,13), { LeadingKeyword = Type (2,0--2,4)
+                                           EqualsRange = Some (2,9--2,10)
+                                           WithKeyword = None })], (2,0--4,13))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

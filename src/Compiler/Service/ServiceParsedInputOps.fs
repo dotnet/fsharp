@@ -906,7 +906,7 @@ module ParsedInput =
 
             | SynMemberDefn.ImplicitInherit(t, e, _, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
 
-            | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
+            | SynMemberDefn.LetBindings(bindings = bindings) -> List.tryPick walkBinding bindings
 
             | SynMemberDefn.Interface(interfaceType = t; members = members) ->
                 walkType t
@@ -2252,7 +2252,7 @@ module ParsedInput =
             | SynMemberDefn.ImplicitInherit(t, e, _, _, _) ->
                 walkType t
                 walkExpr e
-            | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.iter walkBinding bindings
+            | SynMemberDefn.LetBindings(bindings = bindings) -> List.iter walkBinding bindings
             | SynMemberDefn.Interface(interfaceType = t; members = members) ->
                 walkType t
                 members |> Option.iter (List.iter walkMember)

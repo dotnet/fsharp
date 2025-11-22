@@ -324,7 +324,7 @@ module NavigationImpl =
                 |> List.map (fun md ->
                     md.Range,
                     (match md with
-                     | SynMemberDefn.LetBindings(binds, _, _, _) -> List.collect (processBinding false enclosingEntityKind false) binds
+                     | SynMemberDefn.LetBindings(bindings = binds) -> List.collect (processBinding false enclosingEntityKind false) binds
                      | SynMemberDefn.GetSetMember(Some bind, None, _, _)
                      | SynMemberDefn.GetSetMember(None, Some bind, _, _)
                      | SynMemberDefn.Member(bind, _) -> processBinding true enclosingEntityKind false bind
@@ -1023,7 +1023,7 @@ module NavigateTo =
                 Option.iter (fun b -> addBinding b None container) setBinding
             | SynMemberDefn.NestedType(typeDef, _, _) -> walkSynTypeDefn typeDef container
             | SynMemberDefn.ValField(fieldInfo = field) -> addField field false container
-            | SynMemberDefn.LetBindings(bindings, _, _, _) ->
+            | SynMemberDefn.LetBindings(bindings = bindings) ->
                 bindings
                 |> List.iter (fun binding -> addBinding binding (Some NavigableItemKind.Field) container)
             | SynMemberDefn.Open _

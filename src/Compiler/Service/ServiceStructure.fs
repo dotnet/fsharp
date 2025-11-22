@@ -571,7 +571,7 @@ module Structure =
                 |> Option.map (fun b -> SynMemberDefn.Member(b, m))
                 |> Option.iter (parseSynMemberDefn objectModelRange)
 
-            | SynMemberDefn.LetBindings(bindings, _, _, _) -> parseBindings bindings
+            | SynMemberDefn.LetBindings(bindings = bindings) -> parseBindings bindings
 
             | SynMemberDefn.Interface(interfaceType = tp; members = iMembers; range = r) ->
                 rcheck Scope.Interface Collapse.Below d.Range (Range.endToEnd tp.Range d.Range)

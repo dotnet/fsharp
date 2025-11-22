@@ -193,7 +193,12 @@ type BindingSet =
         range
 
 val mkClassMemberLocalBindings:
-    isStatic: bool * initialRangeOpt: range option * attrs: SynAttributes * vis: SynAccess option * BindingSet ->
+    isStatic: bool *
+    initialRangeOpt: range option *
+    attrs: SynAttributes *
+    vis: SynAccess option *
+    bindingSet: BindingSet *
+    mIn: range option ->
         SynMemberDefn
 
 /// Creates SynExpr.LetOrUse based on isBang parameter

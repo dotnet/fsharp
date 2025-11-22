@@ -1685,7 +1685,12 @@ type SynMemberDefn =
         trivia: SynMemberDefnInheritTrivia
 
     /// A 'let' definition within a class
-    | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
+    | LetBindings of
+        bindings: SynBinding list *
+        isStatic: bool *
+        isRecursive: bool *
+        range: range *
+        trivia: SynMemberDefnLetBindingsTrivia
 
     /// An abstract slot definition within a class or interface
     | AbstractSlot of

@@ -1549,7 +1549,7 @@ type SynMemberDefn =
         range: range *
         trivia: SynMemberDefnInheritTrivia
 
-    | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
+    | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range * trivia: SynMemberDefnLetBindingsTrivia
 
     | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberDefnAbstractSlotTrivia
 

@@ -826,7 +826,7 @@ let checkEndOfFileError t =
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 
 let mkClassMemberLocalBindings
-    (isStatic, initialRangeOpt, attrs, vis, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange))
+    (isStatic, initialRangeOpt, attrs, vis, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange), mIn)
     =
     let ignoredFreeAttrs, decls = declsPreAttrs attrs vis
 
@@ -836,6 +836,10 @@ let mkClassMemberLocalBindings
         | Some m -> unionRanges m bindingSetRange
         // decls could have a leading attribute
         |> fun m -> (m, decls) ||> unionRangeWithListBy (fun (SynBinding(range = m)) -> m)
+        |> fun m ->
+            match mIn with
+            | None -> m
+            | Some mIn -> unionRanges m mIn
 
     if not (isNil ignoredFreeAttrs) then
         warning (Error(FSComp.SR.parsAttributesIgnored (), mWhole))
@@ -867,7 +871,7 @@ let mkClassMemberLocalBindings
             SynBinding(a0, k, il, im, a, x, v, h, ri, e, m, dp, trivia) :: rest
         | None, decls -> decls
 
-    SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole)
+    SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole, { InKeyword = mIn })
 
 /// Creates a SynExprAndBang node for and! bindings in computation expressions
 let mkAndBang

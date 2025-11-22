@@ -791,7 +791,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 else
                     [
                         match memb with
-                        | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
+                        | SynMemberDefn.LetBindings(bindings = binds) -> yield! walkBinds binds
                         | SynMemberDefn.AutoProperty(synExpr = synExpr) -> yield! walkExpr true synExpr
                         | SynMemberDefn.ImplicitCtor(range = m) -> yield! checkRange m
                         | SynMemberDefn.Member(bind, _) -> yield! walkBind bind

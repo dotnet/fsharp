@@ -32,7 +32,7 @@ ImplFile
                                          InlineKeyword = None
                                          EqualsRange = None
                                          InKeyword = None })], false, false,
-                         (5,4--6,22))], (5,4--6,22)), [],
+                         (5,4--6,22), { InKeyword = None })], (5,4--6,22)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (4,16--4,18)), None,

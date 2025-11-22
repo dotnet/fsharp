@@ -962,7 +962,7 @@ module SyntaxTraversal =
                 match traverseSynExpr path synExpr with
                 | None -> attributeApplicationDives path attributes |> pick attributes
                 | x -> x
-            | SynMemberDefn.LetBindings(synBindingList, isRecursive, _, range) ->
+            | SynMemberDefn.LetBindings(bindings = synBindingList; isRecursive = isRecursive; range = range) ->
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                 | None ->
                     synBindingList

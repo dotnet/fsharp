@@ -31,7 +31,7 @@ ImplFile
                                                 InlineKeyword = None
                                                 EqualsRange = Some (5,16--5,17)
                                                 InKeyword = None })], false,
-                         false, (5,4--5,44));
+                         false, (5,4--5,44), { InKeyword = None });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],

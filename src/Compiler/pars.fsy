@@ -2002,11 +2002,13 @@ abstractMemberFlags:
 classDefnMember:
   | opt_attributes opt_access classDefnBindings
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       [mkClassMemberLocalBindings(false, None, $1, $2, $3)] }
+       let bindingSet, mIn = $3
+       [mkClassMemberLocalBindings(false, None, $1, $2, bindingSet, mIn)] }
 
   | opt_attributes opt_access STATIC classDefnBindings
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       [mkClassMemberLocalBindings(true, Some(rhs parseState 3), $1, $2, $4)] }
+       let bindingSet, mIn = $4
+       [mkClassMemberLocalBindings(true, Some(rhs parseState 3), $1, $2, bindingSet, mIn)] }
 
   | opt_attributes opt_access memberFlags memberCore opt_ODECLEND
      { let rangeStart = rhs parseState 1
@@ -3147,17 +3149,17 @@ hardwhiteDoBinding:
 /* The bindings in a class type definition */
 classDefnBindings:
   | defnBindings
-     { $1 }
+     { $1, None }
 
   | doBinding
-     { $1 }
+     { $1, None }
 
   | hardwhiteLetBindings
-     { let b, m, _ = $1
-       b }
+     { let b, m, mIn = $1
+       b, mIn }
 
   | hardwhiteDoBinding
-     { fst $1 }
+     { fst $1, None }
 
 
 /* The terminator for a 'let ....' binding in the #light syntax */

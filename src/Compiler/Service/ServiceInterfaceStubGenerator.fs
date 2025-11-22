@@ -826,7 +826,7 @@ module InterfaceStubGenerator =
                     | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
                 | SynMemberDefn.NestedType(typeDef, _access, _range) -> walkSynTypeDefn typeDef
                 | SynMemberDefn.ValField _ -> None
-                | SynMemberDefn.LetBindings(bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
+                | SynMemberDefn.LetBindings(bindings = bindings) -> List.tryPick walkBinding bindings
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.Inherit _ -> None

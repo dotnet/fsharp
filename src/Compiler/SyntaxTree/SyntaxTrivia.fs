@@ -400,6 +400,14 @@ type SynMemberDefnAutoPropertyTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynMemberDefnLetBindingsTrivia =
+    {
+        InKeyword: range option
+    }
+
+    static member Zero: SynMemberDefnLetBindingsTrivia = { InKeyword = None }
+
+[<NoEquality; NoComparison>]
 type SynMemberDefnAbstractSlotTrivia =
     {
         GetSetKeywords: GetSetKeywords option
