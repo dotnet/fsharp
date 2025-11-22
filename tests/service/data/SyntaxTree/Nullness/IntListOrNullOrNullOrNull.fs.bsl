@@ -32,10 +32,11 @@ ImplFile
                         { BarRange = (1,17--1,18) }), (1,23--1,23)), (1,4--1,5),
                   Yes (1,0--1,23), { LeadingKeyword = Let (1,0--1,3)
                                      InlineKeyword = None
-                                     EqualsRange = None })], (1,0--1,23))],
-          PreXmlDocEmpty, [], None, (1,0--2,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                                     EqualsRange = None })], (1,0--1,23),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (1,0--2,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))
 
 (1,24)-(1,25) parse error Unexpected symbol '|' (directly before 'null') in binding. Expected '=' or other token.

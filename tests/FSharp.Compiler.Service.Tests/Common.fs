@@ -240,7 +240,7 @@ let getSingleParenInnerExpr expr =
 
 let getLetDeclHeadPattern (moduleDecl: SynModuleDecl) =
     match moduleDecl with
-    | SynModuleDecl.Let(_, [SynBinding(headPat = pat)], _) -> pat
+    | SynModuleDecl.Let(bindings = [SynBinding(headPat = pat)]) -> pat
     | _ -> failwith "Unexpected tree"
 
 let parseSourceCodeAndGetModule (source: string) =

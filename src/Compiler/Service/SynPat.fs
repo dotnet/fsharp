@@ -72,6 +72,11 @@ module SynPat =
         | SynPat.QuoteExpr _ -> ValueSome Atomic
         | _ -> ValueNone
 
+    let (|LetOrUseBang|_|) =
+        function
+        | SynExpr.LetOrUse letOrUse when letOrUse.IsBang -> ValueSome()
+        | _ -> ValueNone
+
     let shouldBeParenthesizedInContext path pat : bool =
         match pat, path with
         // Parens are needed in:
@@ -92,17 +97,17 @@ module SynPat =
         //     set (x: …, y: …) = …
         | SynPat.Typed _, SyntaxNode.SynPat(Rightmost(SynPat.Paren(Is pat, _))) :: SyntaxNode.SynMatchClause _ :: _
         | Rightmost(SynPat.Typed _), SyntaxNode.SynMatchClause _ :: _
-        | SynPat.Typed _, SyntaxNode.SynExpr(SynExpr.LetOrUse(isBang = true)) :: _
-        | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SynExpr.LetOrUse(isBang = true)) :: _
-        | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(SynExpr.LetOrUse(isBang = true)) :: _
+        | SynPat.Typed _, SyntaxNode.SynExpr(LetOrUseBang) :: _
+        | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(LetOrUseBang) :: _
+        | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(LetOrUseBang) :: _
         | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynBinding _ :: _
         | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynBinding _ :: _
 
         //     let! (_ : obj) = …
-        | SynPat.Typed _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.LetOrUse(isBang = true)) :: _ -> true
+        | SynPat.Typed _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(LetOrUseBang) :: _ -> true
 
         //     let! (A _) = …
-        | SynPat.LongIdent _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SynExpr.LetOrUse(isBang = true)) :: _ -> false
+        | SynPat.LongIdent _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(LetOrUseBang) :: _ -> false
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynBinding _ :: _
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
         | SynPat.Tuple(isStruct = false), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
@@ -149,7 +154,7 @@ module SynPat =
                     | SyntaxNode.SynPat _ :: path -> wouldMoveRhsOffsides (n + 1) pat path
 
                     | SyntaxNode.SynExpr(SynExpr.Lambda(body = rhs)) :: _
-                    | SyntaxNode.SynExpr(SynExpr.LetOrUse(body = rhs)) :: _
+                    | SyntaxNode.SynExpr(SynExpr.LetOrUse({ Body = rhs })) :: _
                     | SyntaxNode.SynBinding(SynBinding(expr = rhs)) :: _
                     | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = rhs)) :: _ ->
                         let rhsRange = rhs.Range
@@ -248,7 +253,7 @@ module SynPat =
         //     fun (x) -> …
         | _, SyntaxNode.SynBinding _ :: _
         | _, SyntaxNode.SynExpr(SynExpr.ForEach _) :: _
-        | _, SyntaxNode.SynExpr(SynExpr.LetOrUse(isBang = true)) :: _
+        | _, SyntaxNode.SynExpr(LetOrUseBang) :: _
         | _, SyntaxNode.SynMatchClause _ :: _
         | Atomic, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> false
 

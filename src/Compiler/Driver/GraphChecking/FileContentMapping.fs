@@ -437,7 +437,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             visit funcExpr (fun funcNodes -> visit argExpr (fun argNodes -> funcNodes @ argNodes |> continuation))
         | SynExpr.TypeApp(expr = expr; typeArgs = typeArgs) ->
             visit expr (fun exprNodes -> exprNodes @ List.collect visitSynType typeArgs |> continuation)
-        | SynExpr.LetOrUse(bindings = bindings; body = body) ->
+        | SynExpr.LetOrUse({ Bindings = bindings; Body = body }) ->
             visit body (fun nodes -> List.collect visitBinding bindings @ nodes |> continuation)
         | SynExpr.TryWith(tryExpr = tryExpr; withCases = withCases) ->
             visit tryExpr (fun nodes -> nodes @ List.collect visitSynMatchClause withCases |> continuation)
