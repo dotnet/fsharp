@@ -6,10 +6,10 @@ This file should be imported by eng/Versions.props
 <Project>
   <PropertyGroup>
     <!-- dotnet/msbuild dependencies -->
-    <MicrosoftBuildPackageVersion>18.3.0-preview-25570-20</MicrosoftBuildPackageVersion>
-    <MicrosoftBuildFrameworkPackageVersion>18.3.0-preview-25570-20</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksCorePackageVersion>18.3.0-preview-25570-20</MicrosoftBuildTasksCorePackageVersion>
-    <MicrosoftBuildUtilitiesCorePackageVersion>18.3.0-preview-25570-20</MicrosoftBuildUtilitiesCorePackageVersion>
+    <MicrosoftBuildPackageVersion>18.3.0-preview-25571-04</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildFrameworkPackageVersion>18.3.0-preview-25571-04</MicrosoftBuildFrameworkPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>18.3.0-preview-25571-04</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftBuildUtilitiesCorePackageVersion>18.3.0-preview-25571-04</MicrosoftBuildUtilitiesCorePackageVersion>
     <!-- dotnet/runtime dependencies -->
     <SystemCollectionsImmutablePackageVersion>9.0.9</SystemCollectionsImmutablePackageVersion>
     <SystemComponentModelCompositionPackageVersion>9.0.9</SystemComponentModelCompositionPackageVersion>
