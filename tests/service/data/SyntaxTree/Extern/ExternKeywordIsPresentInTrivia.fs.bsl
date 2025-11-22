@@ -40,8 +40,8 @@ ImplFile
                   { LeadingKeyword = Extern (2,0--2,6)
                     InlineKeyword = None
                     EqualsRange = None
-                    InKeyword = None })], (2,0--2,28))], PreXmlDocEmpty, [],
-          None, (2,0--2,28), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                    InKeyword = None })], (2,0--2,28), { InKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--2,28), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

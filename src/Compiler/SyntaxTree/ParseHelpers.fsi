@@ -221,7 +221,8 @@ val mkAndBang:
         SynBinding
 
 val mkDefnBindings:
-    mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range -> SynModuleDecl list
+    mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range * mIn: range option ->
+        SynModuleDecl list
 
 val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
 

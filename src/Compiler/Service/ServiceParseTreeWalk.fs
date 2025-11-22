@@ -342,7 +342,7 @@ module SyntaxTraversal =
                     |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path))
                     |> List.append (attributeApplicationDives path attributes)
                     |> pick decl
-                | SynModuleDecl.Let(isRecursive, synBindingList, range) ->
+                | SynModuleDecl.Let(isRecursive = isRecursive; bindings = synBindingList; range = range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None ->

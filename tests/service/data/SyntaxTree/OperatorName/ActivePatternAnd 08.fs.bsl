@@ -31,10 +31,10 @@ ImplFile
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
                     EqualsRange = Some (1,34--1,35)
-                    InKeyword = None })], (1,0--1,42))], PreXmlDocEmpty, [],
-          None, (1,0--1,42), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                    InKeyword = None })], (1,0--1,42), { InKeyword = None })],
+          PreXmlDocEmpty, [], None, (1,0--1,42), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))
 
 (1,0)-(1,42) parse warning The declarations in this file will be placed in an implicit module 'ActivePatternAnd 08' based on the file name 'ActivePatternAnd 08.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file.

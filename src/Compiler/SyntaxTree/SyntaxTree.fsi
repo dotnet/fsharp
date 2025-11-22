@@ -1743,7 +1743,7 @@ type SynModuleDecl =
         trivia: SynModuleDeclNestedModuleTrivia
 
     /// A 'let' definition within a module
-    | Let of isRecursive: bool * bindings: SynBinding list * range: range
+    | Let of isRecursive: bool * bindings: SynBinding list * range: range * trivia: SynModuleDeclLetTrivia
 
     /// An 'expr' within a module.
     | Expr of expr: SynExpr * range: range

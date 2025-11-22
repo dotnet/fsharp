@@ -369,6 +369,16 @@ type SynModuleSigDeclNestedModuleTrivia =
 
     static member Zero: SynModuleSigDeclNestedModuleTrivia
 
+/// Represents additional information for SynModuleDecl.Let
+[<NoEquality; NoComparison>]
+type SynModuleDeclLetTrivia =
+    {
+        /// The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
+
+    static member Zero: SynModuleDeclLetTrivia
+
 /// Represents the leading keyword in a SynModuleOrNamespace or SynModuleOrNamespaceSig
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynModuleOrNamespaceLeadingKeyword =

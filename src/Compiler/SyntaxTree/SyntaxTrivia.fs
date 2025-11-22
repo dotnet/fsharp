@@ -311,6 +311,15 @@ type SynModuleSigDeclNestedModuleTrivia =
             EqualsRange = None
         }
 
+[<NoEquality; NoComparison>]
+type SynModuleDeclLetTrivia =
+    {
+        // The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
+
+    static member Zero: SynModuleDeclLetTrivia = { InKeyword = None }
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynModuleOrNamespaceLeadingKeyword =
     | Module of moduleRange: range

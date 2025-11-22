@@ -1308,20 +1308,20 @@ moduleDefn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         (getSynArgNameGenerator parseState.LexBuffer).Reset()
         let (BindingSetPreAttrs(_, _, _, _, mWhole)) = $3
-        mkDefnBindings (mWhole, $3, $1, $2, mWhole) }
+        mkDefnBindings (mWhole, $3, $1, $2, mWhole, None) }
 
   /* 'let' or 'do' definitions in #light */
   | opt_attributes opt_access hardwhiteLetBindings %prec decl_let
-      { let hwlb, m, _ = $3
+      { let hwlb, m, mIn = $3
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         (getSynArgNameGenerator parseState.LexBuffer).Reset()
-        mkDefnBindings (m, hwlb, $1, $2, m) }
+        mkDefnBindings (m, hwlb, $1, $2, m, mIn) }
 
   /* 'do' definitions in non-#light*/
   | opt_attributes opt_access doBinding %prec decl_let
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let mWhole = rhs parseState 3
-        mkDefnBindings (mWhole, $3, $1, $2, mWhole) }
+        mkDefnBindings (mWhole, $3, $1, $2, mWhole, None) }
 
   /* 'type' definitions */
   | opt_attributes opt_access typeKeyword tyconDefn tyconDefnList

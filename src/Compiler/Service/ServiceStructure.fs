@@ -772,7 +772,7 @@ module Structure =
 
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
-            | SynModuleDecl.Let(_, bindings, r) ->
+            | SynModuleDecl.Let(bindings = bindings; range = r) ->
                 for binding in bindings do
                     let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs r
                     rcheck Scope.LetOrUse Collapse.Below r collapse

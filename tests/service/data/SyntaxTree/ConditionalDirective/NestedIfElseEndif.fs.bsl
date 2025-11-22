@@ -16,8 +16,9 @@ ImplFile
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange = Some (2,6--2,7)
-                    InKeyword = None })], (2,0--10,9))], PreXmlDocEmpty, [],
-          None, (2,0--12,0), { LeadingKeyword = None })], (true, true),
+                    InKeyword = None })], (2,0--10,9), { InKeyword = None })],
+          PreXmlDocEmpty, [], None, (2,0--12,0), { LeadingKeyword = None })],
+      (true, true),
       { ConditionalDirectives =
          [If (Ident "FOO", (3,4--3,11)); If (Ident "MEH", (4,8--4,15));
           Else (6,8--6,13); EndIf (8,8--8,14); Else (9,4--9,9);

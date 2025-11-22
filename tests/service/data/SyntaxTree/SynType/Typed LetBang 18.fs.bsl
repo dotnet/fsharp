@@ -27,7 +27,7 @@ ImplFile
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,19--3,20)
-                    InKeyword = None })], (3,0--3,22));
+                    InKeyword = None })], (3,0--3,22), { InKeyword = None });
            Expr
              (LetOrUse
                 { IsRecursive = false

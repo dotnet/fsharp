@@ -779,7 +779,7 @@ module InterfaceStubGenerator =
             else
                 match decl with
                 | SynModuleDecl.Exception(SynExceptionDefn(_, _, synMembers, _), _) -> List.tryPick walkSynMemberDefn synMembers
-                | SynModuleDecl.Let(_isRecursive, bindings, _range) -> List.tryPick walkBinding bindings
+                | SynModuleDecl.Let(bindings = bindings) -> List.tryPick walkBinding bindings
                 | SynModuleDecl.ModuleAbbrev(_lhs, _rhs, _range) -> None
                 | SynModuleDecl.NamespaceFragment(fragment) -> walkSynModuleOrNamespace fragment
                 | SynModuleDecl.NestedModule(decls = modules) -> List.tryPick walkSynModuleDecl modules

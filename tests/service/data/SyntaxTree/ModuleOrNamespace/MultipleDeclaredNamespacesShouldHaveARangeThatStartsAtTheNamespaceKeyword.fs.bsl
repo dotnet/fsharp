@@ -32,8 +32,9 @@ ImplFile
                   { LeadingKeyword = Let (9,0--9,3)
                     InlineKeyword = None
                     EqualsRange = Some (9,6--9,7)
-                    InKeyword = None })], (9,0--9,10))], PreXmlDocEmpty, [],
-          None, (7,0--9,10), { LeadingKeyword = Namespace (7,0--7,9) })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    InKeyword = None })], (9,0--9,10), { InKeyword = None })],
+          PreXmlDocEmpty, [], None, (7,0--9,10),
+          { LeadingKeyword = Namespace (7,0--7,9) })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

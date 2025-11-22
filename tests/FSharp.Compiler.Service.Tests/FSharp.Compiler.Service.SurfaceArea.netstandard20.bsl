@@ -8438,6 +8438,8 @@ FSharp.Compiler.Syntax.SynModuleDecl+HashDirective: FSharp.Compiler.Text.Range g
 FSharp.Compiler.Syntax.SynModuleDecl+HashDirective: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+Let: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynModuleDecl+Let: Boolean isRecursive
+FSharp.Compiler.Syntax.SynModuleDecl+Let: FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia get_trivia()
+FSharp.Compiler.Syntax.SynModuleDecl+Let: FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia trivia
 FSharp.Compiler.Syntax.SynModuleDecl+Let: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynModuleDecl+Let: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+Let: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] bindings
@@ -8504,7 +8506,7 @@ FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewAt
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewException(FSharp.Compiler.Syntax.SynExceptionDefn, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewHashDirective(FSharp.Compiler.Syntax.ParsedHashDirective, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewLet(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewLet(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewModuleAbbrev(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewNamespaceFragment(FSharp.Compiler.Syntax.SynModuleOrNamespace)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewNestedModule(FSharp.Compiler.Syntax.SynComponentInfo, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia)
@@ -10703,6 +10705,12 @@ FSharp.Compiler.SyntaxTrivia.SynMemberSigMemberTrivia: Microsoft.FSharp.Core.FSh
 FSharp.Compiler.SyntaxTrivia.SynMemberSigMemberTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.GetSetKeywords] get_GetSetKeywords()
 FSharp.Compiler.SyntaxTrivia.SynMemberSigMemberTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynMemberSigMemberTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.GetSetKeywords])
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] InKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_InKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclLetTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia get_Zero()
 FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] EqualsRange

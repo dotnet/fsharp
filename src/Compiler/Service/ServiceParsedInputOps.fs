@@ -990,7 +990,7 @@ module ParsedInput =
 
             | SynModuleDecl.Open _ -> None
 
-            | SynModuleDecl.Let(_, bindings, _) -> List.tryPick walkBinding bindings
+            | SynModuleDecl.Let(bindings = bindings) -> List.tryPick walkBinding bindings
 
             | SynModuleDecl.Expr(expr, _) -> walkExpr expr
 
@@ -2331,7 +2331,7 @@ module ParsedInput =
             | SynModuleDecl.NestedModule(moduleInfo = info; decls = modules) ->
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
-            | SynModuleDecl.Let(_, bindings, _) -> List.iter walkBinding bindings
+            | SynModuleDecl.Let(bindings = bindings) -> List.iter walkBinding bindings
             | SynModuleDecl.Expr(expr, _) -> walkExpr expr
             | SynModuleDecl.Types(types, _) -> List.iter walkTypeDefn types
             | SynModuleDecl.Attributes(Attributes attrs, _) -> List.iter walkAttribute attrs

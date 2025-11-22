@@ -1605,7 +1605,7 @@ type SynModuleDecl =
         range: range *
         trivia: SynModuleDeclNestedModuleTrivia
 
-    | Let of isRecursive: bool * bindings: SynBinding list * range: range
+    | Let of isRecursive: bool * bindings: SynBinding list * range: range * trivia: SynModuleDeclLetTrivia
 
     | Expr of expr: SynExpr * range: range
 

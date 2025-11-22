@@ -22,7 +22,7 @@ ImplFile
                                                  InlineKeyword = None
                                                  EqualsRange = Some (2,6--2,7)
                                                  InKeyword = None })],
-              (2,0--2,16));
+              (2,0--2,16), { InKeyword = None });
            Let
              (false,
               [SynBinding
@@ -41,8 +41,8 @@ ImplFile
                                                  InlineKeyword = None
                                                  EqualsRange = Some (3,6--3,7)
                                                  InKeyword = None })],
-              (3,0--3,17))], PreXmlDocEmpty, [], None, (2,0--4,0),
-          { LeadingKeyword = None })], (true, true),
+              (3,0--3,17), { InKeyword = None })], PreXmlDocEmpty, [], None,
+          (2,0--4,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

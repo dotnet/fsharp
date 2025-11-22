@@ -899,7 +899,7 @@ let mkAndBang
         trivia = trivia
     )
 
-let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) =
+let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm, mIn) =
     if isUse then
         warning (Error(FSComp.SR.parsUseBindingsIllegalInModules (), mWhole))
 
@@ -908,7 +908,7 @@ let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _
     let mWhole =
         (mWhole, decls) ||> unionRangeWithListBy (fun (SynBinding(range = m)) -> m)
 
-    let letDecls = [ SynModuleDecl.Let(isRec, decls, mWhole) ]
+    let letDecls = [ SynModuleDecl.Let(isRec, decls, mWhole, { InKeyword = mIn }) ]
 
     let attrDecls =
         if not (isNil freeAttrs) then

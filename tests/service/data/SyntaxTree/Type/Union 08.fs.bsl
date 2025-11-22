@@ -41,7 +41,7 @@ ImplFile
                                                 InlineKeyword = None
                                                 EqualsRange = Some (7,13--7,14)
                                                 InKeyword = None })],
-                  (7,4--7,17))], false, (6,0--7,17),
+                  (7,4--7,17), { InKeyword = None })], false, (6,0--7,17),
               { ModuleKeyword = Some (6,0--6,6)
                 EqualsRange = Some (6,18--6,19) });
            Types

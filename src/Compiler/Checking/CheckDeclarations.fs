@@ -5113,7 +5113,7 @@ let ElimSynModuleDeclExpr bind =
     match bind with 
     | SynModuleDecl.Expr (expr, m) -> 
         let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
-        SynModuleDecl.Let(false, [bind2], m)
+        SynModuleDecl.Let(false, [bind2], m, SynModuleDeclLetTrivia.Zero)
     | _ -> bind
 
 let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env = 
@@ -5187,7 +5187,7 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = typeDefs |> List.map MutRecShape.Tycon
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Let (letrec, binds, m) -> 
+              | SynModuleDecl.Let (isRecursive = letrec; bindings = binds; range = m) -> 
                   let binds = 
                       if isNamespace then 
                           CheckLetOrDoInNamespace binds m; []
@@ -5292,7 +5292,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               | _ -> [ TMDefOpens openDecls ]
           return (defns, [], []), env, env
 
-      | SynModuleDecl.Let (letrec, binds, m) -> 
+      | SynModuleDecl.Let (isRecursive = letrec; bindings = binds; range = m) -> 
 
           match parent with
           | ParentNone ->

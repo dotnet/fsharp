@@ -22,7 +22,8 @@ ImplFile
                   Yes (3,0--3,6), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
                                     EqualsRange = None
-                                    InKeyword = None })], (3,0--3,6))],
+                                    InKeyword = None })], (3,0--3,6),
+              { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--3,6), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

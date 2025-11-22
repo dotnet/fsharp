@@ -60,9 +60,10 @@ ImplFile
                       Yes (7,8--7,23), { LeadingKeyword = Let (7,8--7,11)
                                          InlineKeyword = None
                                          EqualsRange = Some (7,19--7,20)
-                                         InKeyword = None })], (7,8--7,23))],
-              false, (6,4--7,23), { ModuleKeyword = Some (6,4--6,10)
-                                    EqualsRange = Some (6,13--6,14) })],
+                                         InKeyword = None })], (7,8--7,23),
+                  { InKeyword = None })], false, (6,4--7,23),
+              { ModuleKeyword = Some (6,4--6,10)
+                EqualsRange = Some (6,13--6,14) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--7,23), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

@@ -821,7 +821,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             let rec walkDecl decl =
                 [
                     match decl with
-                    | SynModuleDecl.Let(_, binds, m) when isMatchRange m -> yield! walkBinds binds
+                    | SynModuleDecl.Let(bindings = binds; range = m) when isMatchRange m -> yield! walkBinds binds
                     | SynModuleDecl.Expr(expr, m) when isMatchRange m -> yield! walkExpr true expr
                     | SynModuleDecl.ModuleAbbrev _ -> ()
                     | SynModuleDecl.NestedModule(decls = decls; range = m) when isMatchRange m ->
