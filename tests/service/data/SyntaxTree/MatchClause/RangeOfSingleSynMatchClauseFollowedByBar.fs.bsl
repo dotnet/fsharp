@@ -29,7 +29,8 @@ ImplFile
                       App
                         (NonAtomic, false, Ident Some, Ident content,
                          (4,4--4,16))
-                     Range = (3,4--4,16) },
+                     Range = (3,4--4,16)
+                     Trivia = { InKeyword = None } },
                  [SynMatchClause
                     (Named (SynIdent (ex, None), false, None, (6,2--6,4)), None,
                      Const (Unit, (7,4--7,6)), (6,2--7,6), Yes,

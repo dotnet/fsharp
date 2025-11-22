@@ -7988,12 +7988,14 @@ FSharp.Compiler.Syntax.SynLetOrUse: Boolean get_IsRecursive()
 FSharp.Compiler.Syntax.SynLetOrUse: Boolean get_IsUse()
 FSharp.Compiler.Syntax.SynLetOrUse: FSharp.Compiler.Syntax.SynExpr Body
 FSharp.Compiler.Syntax.SynLetOrUse: FSharp.Compiler.Syntax.SynExpr get_Body()
+FSharp.Compiler.Syntax.SynLetOrUse: FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia Trivia
+FSharp.Compiler.Syntax.SynLetOrUse: FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia get_Trivia()
 FSharp.Compiler.Syntax.SynLetOrUse: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynLetOrUse: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynLetOrUse: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] Bindings
 FSharp.Compiler.Syntax.SynLetOrUse: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding] get_Bindings()
 FSharp.Compiler.Syntax.SynLetOrUse: System.String ToString()
-FSharp.Compiler.Syntax.SynLetOrUse: Void .ctor(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynLetOrUse: Void .ctor(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia)
 FSharp.Compiler.Syntax.SynLongIdent: Boolean ThereIsAnExtraDotAtTheEnd
 FSharp.Compiler.Syntax.SynLongIdent: Boolean get_ThereIsAnExtraDotAtTheEnd()
 FSharp.Compiler.Syntax.SynLongIdent: FSharp.Compiler.Syntax.SynLongIdent NewSynLongIdent(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia]])
@@ -10651,6 +10653,12 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.Text.Range get_R
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia: FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia: FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] InKeyword
+FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_InKeyword()
+FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynLetOrUseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia get_Zero()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ArrowRange

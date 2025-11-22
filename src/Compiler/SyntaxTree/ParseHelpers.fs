@@ -1083,48 +1083,6 @@ let mkLetExpression (mIn: range option, mWhole: range, body: SynExpr, bindingInf
     let (BindingSetPreAttrs(_, isRec, _isUse, declsPreAttrs, _)) = bindingInfo
     let ignoredFreeAttrs, decls = declsPreAttrs [] None
 
-    let decls =
-        match mIn with
-        | None -> decls
-        | Some mIn ->
-            let lastIdx = decls.Length - 1
-
-            decls
-            |> List.mapi (fun idx binding ->
-                if idx <> lastIdx then
-                    binding
-                else
-                    let (SynBinding(accessibility,
-                                    kind,
-                                    isInline,
-                                    isMutable,
-                                    attributes,
-                                    xmlDoc,
-                                    valData,
-                                    headPat,
-                                    returnInfo,
-                                    expr,
-                                    range,
-                                    debugPoint,
-                                    trivia)) =
-                        binding
-
-                    SynBinding(
-                        accessibility = accessibility,
-                        kind = kind,
-                        isInline = isInline,
-                        isMutable = isMutable,
-                        attributes = attributes,
-                        xmlDoc = xmlDoc,
-                        valData = valData,
-                        headPat = headPat,
-                        returnInfo = returnInfo,
-                        expr = expr,
-                        range = range,
-                        debugPoint = debugPoint,
-                        trivia = { trivia with InKeyword = Some mIn }
-                    ))
-
     let mWhole =
         match decls with
         | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
@@ -1139,6 +1097,7 @@ let mkLetExpression (mIn: range option, mWhole: range, body: SynExpr, bindingInf
             Bindings = decls
             Body = body
             Range = mWhole
+            Trivia = { InKeyword = mIn }
         }
     )
 
@@ -1183,4 +1142,5 @@ let mkLetBangExpression
             Bindings = binding :: andBangs
             Body = body
             Range = mWhole
+            Trivia = { InKeyword = mIn }
         }

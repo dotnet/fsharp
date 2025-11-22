@@ -124,6 +124,16 @@ type SynExprDotLambdaTrivia =
     { UnderscoreRange: range
       DotRange: range }
 
+/// Represents additional information for SynExpr.LetOrUse
+[<NoEquality; NoComparison>]
+type SynLetOrUseTrivia =
+    {
+        /// The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
+
+    static member Zero: SynLetOrUseTrivia
+
 /// Represents the leading keyword in a SynBinding or SynValSig
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynLeadingKeyword =

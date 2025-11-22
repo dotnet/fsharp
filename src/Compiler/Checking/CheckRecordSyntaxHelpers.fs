@@ -199,4 +199,5 @@ let BindOriginalRecdExpr (withExpr: SynExpr * BlockSeparator) mkRecdExpr =
             Bindings = [ binding ]
             Body = mkRecdExpr (Some withExpr)
             Range = mOrigExprSynth
+            Trivia = SynLetOrUseTrivia.Zero
         }

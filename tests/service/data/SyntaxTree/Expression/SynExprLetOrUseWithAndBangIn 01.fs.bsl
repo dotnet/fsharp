@@ -52,8 +52,9 @@ ImplFile
                                EqualsRange = Some (4,11--4,12)
                                InKeyword = Some (4,15--4,17) })]
                         Body = Const (Unit, (5,4--5,6))
-                        Range = (2,4--5,6) }, (1,5--6,1)), (1,0--6,1)),
-              (1,0--6,1))], PreXmlDocEmpty, [], None, (1,0--6,1),
+                        Range = (2,4--5,6)
+                        Trivia = { InKeyword = Some (2,15--2,17) } }, (1,5--6,1)),
+                 (1,0--6,1)), (1,0--6,1))], PreXmlDocEmpty, [], None, (1,0--6,1),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []

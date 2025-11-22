@@ -574,6 +574,9 @@ type SynLetOrUse =
 
         /// The syntax range of this expression
         Range: range
+
+        /// Trivia for this expression
+        Trivia: SynLetOrUseTrivia
     }
 
     /// true for 'use' and 'use!' bindings, false for 'let' and 'let!' bindings

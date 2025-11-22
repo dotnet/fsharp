@@ -31,7 +31,7 @@ ImplFile
                           { LeadingKeyword = Let (3,0--3,3)
                             InlineKeyword = None
                             EqualsRange = Some (3,7--3,8)
-                            InKeyword = Some (4,0--4,2) })]
+                            InKeyword = None })]
                      Body =
                       Tuple
                         (false,
@@ -45,8 +45,10 @@ ImplFile
                              SynLongIdent
                                ([e1; Value], [(4,10--4,11)], [None; None]), None,
                              (4,8--4,16))], [(4,6--4,7)], (4,0--4,16))
-                     Range = (3,0--4,16) }, (2,0--4,16)), (2,0--4,16))],
-          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                     Range = (3,0--4,16)
+                     Trivia = { InKeyword = Some (4,0--4,2) } }, (2,0--4,16)),
+              (2,0--4,16))], PreXmlDocEmpty, [], None, (2,0--5,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

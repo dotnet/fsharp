@@ -48,7 +48,8 @@ ImplFile
                              EqualsRange = Some (3,21--3,22)
                              InKeyword = None })]
                       Body = Const (Unit, (4,4--4,6))
-                      Range = (3,4--4,6) }, (2,11--2,16), NoneAtLet,
+                      Range = (3,4--4,6)
+                      Trivia = { InKeyword = None } }, (2,11--2,16), NoneAtLet,
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = Some (2,4--2,10)
                     EqualsRange = Some (2,17--2,18)

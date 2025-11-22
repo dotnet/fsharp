@@ -89,6 +89,14 @@ type SynExprDotLambdaTrivia =
         DotRange: range
     }
 
+[<NoEquality; NoComparison>]
+type SynLetOrUseTrivia =
+    {
+        InKeyword: range option
+    }
+
+    static member Zero: SynLetOrUseTrivia = { InKeyword = None }
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynLeadingKeyword =
     | Let of letRange: range

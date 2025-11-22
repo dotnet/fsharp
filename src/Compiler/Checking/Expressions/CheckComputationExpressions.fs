@@ -1427,6 +1427,7 @@ let rec TryTranslateComputationExpression
                                 Bindings = [ binding ]
                                 Body = setCondExpr
                                 Range = mGuard
+                                Trivia = SynLetOrUseTrivia.Zero
                             }
 
                     let whileExpr =
@@ -1450,6 +1451,7 @@ let rec TryTranslateComputationExpression
                             Bindings = [ condBinding ]
                             Body = whileExpr
                             Range = mGuard
+                            Trivia = SynLetOrUseTrivia.Zero
                         }
 
                 let binding =
@@ -1478,6 +1480,7 @@ let rec TryTranslateComputationExpression
                         Bindings = [ binding ]
                         Body = body
                         Range = mGuard
+                        Trivia = SynLetOrUseTrivia.Zero
                     }
 
             TryTranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace rewrittenWhileExpr translatedCtxt
@@ -1698,6 +1701,7 @@ let rec TryTranslateComputationExpression
                                         Bindings = [ binding ]
                                         Body = innerComp2
                                         Range = m
+                                        Trivia = SynLetOrUseTrivia.Zero
                                     })
                                 translatedCtxt
                         )
@@ -1810,6 +1814,7 @@ let rec TryTranslateComputationExpression
                                 Bindings = binds
                                 Body = holeFill
                                 Range = m
+                                Trivia = SynLetOrUseTrivia.Zero
                             }
                     ))
             )
@@ -2470,6 +2475,7 @@ and ConsumeCustomOpClauses
                                     Bindings = [ binding ]
                                     Body = contExpr
                                     Range = intoPat.Range
+                                    Trivia = SynLetOrUseTrivia.Zero
                                 }
                         else
                             SynExpr.ForEach(
@@ -2527,6 +2533,7 @@ and ConsumeCustomOpClauses
                         Bindings = [ binding ]
                         Body = compClausesExpr
                         Range = compClausesExpr.Range
+                        Trivia = SynLetOrUseTrivia.Zero
                     }
             else
                 SynExpr.ForEach(
@@ -2673,6 +2680,7 @@ and convertSimpleReturnToExpr (ceenv: ComputationExpressionContext<'a>) comp var
                         Bindings = binds
                         Body = innerExpr
                         Range = m
+                        Trivia = SynLetOrUseTrivia.Zero
                     },
                 None
             )
@@ -2800,6 +2808,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                             Bindings = [ binding ]
                             Body = bodyExpr
                             Range = m
+                            Trivia = SynLetOrUseTrivia.Zero
                         }
 
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
