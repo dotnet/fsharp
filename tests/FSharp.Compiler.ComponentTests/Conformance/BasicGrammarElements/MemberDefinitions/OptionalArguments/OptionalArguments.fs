@@ -115,6 +115,12 @@ module MemberDefinitions_OptionalArguments =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RefAndStructOptionalArgParity.fs"|])>]
+    let ``RefAndStructOptionalArgParity_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Optional Arguments can't be a ValueOption+StructAttribute attribute with langversion=9`` () =
         let source =
