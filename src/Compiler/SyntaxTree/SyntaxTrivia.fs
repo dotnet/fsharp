@@ -97,72 +97,6 @@ type SynLetOrUseTrivia =
 
     static member Zero: SynLetOrUseTrivia = { InKeyword = None }
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynLeadingKeyword =
-    | Let of letRange: range
-    | LetBang of letBangRange: range
-    | LetRec of letRange: range * recRange: range
-    | And of andRange: range
-    | AndBang of andBangRange: range
-    | Use of useRange: range
-    | UseBang of useBangRange: range
-    | UseRec of useRange: range * recRange: range
-    | Extern of externRange: range
-    | Member of memberRange: range
-    | MemberVal of memberRange: range * valRange: range
-    | Override of overrideRange: range
-    | OverrideVal of overrideRange: range * valRange: range
-    | Abstract of abstractRange: range
-    | AbstractMember of abstractRange: range * memberRange: range
-    | Static of staticRange: range
-    | StaticMember of staticRange: range * memberRange: range
-    | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
-    | StaticAbstract of staticRange: range * abstractRange: range
-    | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
-    | StaticVal of staticRange: range * valRange: range
-    | StaticLet of staticRange: range * letRange: range
-    | StaticLetRec of staticRange: range * letRange: range * recRange: range
-    | StaticDo of staticRange: range * doRange: range
-    | Default of defaultRange: range
-    | DefaultVal of defaultRange: range * valRange: range
-    | Val of valRange: range
-    | New of newRange: range
-    | Do of doRange: range
-    | Synthetic
-
-    member this.Range =
-        match this with
-        | Let m
-        | LetBang m
-        | And m
-        | AndBang m
-        | Use m
-        | UseBang m
-        | Extern m
-        | Member m
-        | Override m
-        | Abstract m
-        | Default m
-        | Val m
-        | New m
-        | Do m
-        | Static m -> m
-        | LetRec(m1, m2)
-        | UseRec(m1, m2)
-        | AbstractMember(m1, m2)
-        | StaticMember(m1, m2)
-        | StaticAbstract(m1, m2)
-        | StaticAbstractMember(m1, _, m2)
-        | StaticVal(m1, m2)
-        | StaticLet(m1, m2)
-        | StaticLetRec(m1, _, m2)
-        | StaticDo(m1, m2)
-        | DefaultVal(m1, m2)
-        | MemberVal(m1, m2)
-        | OverrideVal(m1, m2)
-        | StaticMemberVal(m1, _, m2) -> unionRanges m1 m2
-        | Synthetic -> range0
-
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
     {
@@ -275,6 +209,72 @@ type SynTypeDefnSigTrivia =
             EqualsRange = None
             WithKeyword = None
         }
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynLeadingKeyword =
+    | Let of letRange: range
+    | LetBang of letBangRange: range
+    | LetRec of letRange: range * recRange: range
+    | And of andRange: range
+    | AndBang of andBangRange: range
+    | Use of useRange: range
+    | UseBang of useBangRange: range
+    | UseRec of useRange: range * recRange: range
+    | Extern of externRange: range
+    | Member of memberRange: range
+    | MemberVal of memberRange: range * valRange: range
+    | Override of overrideRange: range
+    | OverrideVal of overrideRange: range * valRange: range
+    | Abstract of abstractRange: range
+    | AbstractMember of abstractRange: range * memberRange: range
+    | Static of staticRange: range
+    | StaticMember of staticRange: range * memberRange: range
+    | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
+    | StaticAbstract of staticRange: range * abstractRange: range
+    | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
+    | StaticVal of staticRange: range * valRange: range
+    | StaticLet of staticRange: range * letRange: range
+    | StaticLetRec of staticRange: range * letRange: range * recRange: range
+    | StaticDo of staticRange: range * doRange: range
+    | Default of defaultRange: range
+    | DefaultVal of defaultRange: range * valRange: range
+    | Val of valRange: range
+    | New of newRange: range
+    | Do of doRange: range
+    | Synthetic
+
+    member this.Range =
+        match this with
+        | Let m
+        | LetBang m
+        | And m
+        | AndBang m
+        | Use m
+        | UseBang m
+        | Extern m
+        | Member m
+        | Override m
+        | Abstract m
+        | Default m
+        | Val m
+        | New m
+        | Do m
+        | Static m -> m
+        | LetRec(m1, m2)
+        | UseRec(m1, m2)
+        | AbstractMember(m1, m2)
+        | StaticMember(m1, m2)
+        | StaticAbstract(m1, m2)
+        | StaticAbstractMember(m1, _, m2)
+        | StaticVal(m1, m2)
+        | StaticLet(m1, m2)
+        | StaticLetRec(m1, _, m2)
+        | StaticDo(m1, m2)
+        | DefaultVal(m1, m2)
+        | MemberVal(m1, m2)
+        | OverrideVal(m1, m2)
+        | StaticMemberVal(m1, _, m2) -> unionRanges m1 m2
+        | Synthetic -> range0
 
 [<NoEquality; NoComparison>]
 type SynBindingTrivia =

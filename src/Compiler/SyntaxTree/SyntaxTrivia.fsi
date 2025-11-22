@@ -134,42 +134,6 @@ type SynLetOrUseTrivia =
 
     static member Zero: SynLetOrUseTrivia
 
-/// Represents the leading keyword in a SynBinding or SynValSig
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynLeadingKeyword =
-    | Let of letRange: range
-    | LetBang of letBangRange: range
-    | LetRec of letRange: range * recRange: range
-    | And of andRange: range
-    | AndBang of andBangRange: range
-    | Use of useRange: range
-    | UseBang of useBangRange: range
-    | UseRec of useRange: range * recRange: range
-    | Extern of externRange: range
-    | Member of memberRange: range
-    | MemberVal of memberRange: range * valRange: range
-    | Override of overrideRange: range
-    | OverrideVal of overrideRange: range * valRange: range
-    | Abstract of abstractRange: range
-    | AbstractMember of abstractRange: range * memberRange: range
-    | Static of staticRange: range
-    | StaticMember of staticRange: range * memberRange: range
-    | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
-    | StaticAbstract of staticRange: range * abstractRange: range
-    | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
-    | StaticVal of staticRange: range * valRange: range
-    | StaticLet of staticRange: range * letRange: range
-    | StaticLetRec of staticRange: range * letRange: range * recRange: range
-    | StaticDo of staticRange: range * doRange: range
-    | Default of defaultRange: range
-    | DefaultVal of defaultRange: range * valRange: range
-    | Val of valRange: range
-    | New of newRange: range
-    | Do of doRange: range
-    | Synthetic
-
-    member Range: range
-
 /// Represents additional information for SynExpr.Match
 [<NoEquality; NoComparison>]
 type SynExprMatchTrivia =
@@ -333,6 +297,42 @@ type SynTypeDefnSigTrivia =
     }
 
     static member Zero: SynTypeDefnSigTrivia
+
+/// Represents the leading keyword in a SynBinding or SynValSig
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynLeadingKeyword =
+    | Let of letRange: range
+    | LetBang of letBangRange: range
+    | LetRec of letRange: range * recRange: range
+    | And of andRange: range
+    | AndBang of andBangRange: range
+    | Use of useRange: range
+    | UseBang of useBangRange: range
+    | UseRec of useRange: range * recRange: range
+    | Extern of externRange: range
+    | Member of memberRange: range
+    | MemberVal of memberRange: range * valRange: range
+    | Override of overrideRange: range
+    | OverrideVal of overrideRange: range * valRange: range
+    | Abstract of abstractRange: range
+    | AbstractMember of abstractRange: range * memberRange: range
+    | Static of staticRange: range
+    | StaticMember of staticRange: range * memberRange: range
+    | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
+    | StaticAbstract of staticRange: range * abstractRange: range
+    | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
+    | StaticVal of staticRange: range * valRange: range
+    | StaticLet of staticRange: range * letRange: range
+    | StaticLetRec of staticRange: range * letRange: range * recRange: range
+    | StaticDo of staticRange: range * doRange: range
+    | Default of defaultRange: range
+    | DefaultVal of defaultRange: range * valRange: range
+    | Val of valRange: range
+    | New of newRange: range
+    | Do of doRange: range
+    | Synthetic
+
+    member Range: range
 
 /// Represents additional information for SynBinding
 [<NoEquality; NoComparison>]
