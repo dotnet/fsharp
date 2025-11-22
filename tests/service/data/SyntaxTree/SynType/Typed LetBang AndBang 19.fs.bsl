@@ -25,8 +25,7 @@ ImplFile
                              Yes (4,4--4,17),
                              { LeadingKeyword = LetRec ((4,4--4,7), (4,8--4,11))
                                InlineKeyword = None
-                               EqualsRange = Some (4,14--4,15)
-                               InKeyword = None });
+                               EqualsRange = Some (4,14--4,15) });
                           SynBinding
                             (None, Normal, false, false, [],
                              PreXmlDoc ((5,8), FSharp.Compiler.Xml.XmlDocCollector),
@@ -36,10 +35,10 @@ ImplFile
                                 None),
                              Named (SynIdent (b, None), false, None, (5,8--5,9)),
                              None, Const (Int32 5, (5,12--5,13)), (5,8--5,9),
-                             Yes (5,4--5,13), { LeadingKeyword = And (5,4--5,7)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (5,10--5,11)
-                                                InKeyword = None })]
+                             Yes (5,4--5,13),
+                             { LeadingKeyword = And (5,4--5,7)
+                               InlineKeyword = None
+                               EqualsRange = Some (5,10--5,11) })]
                         Body =
                          LetOrUse
                            { IsRecursive = false
@@ -57,8 +56,7 @@ ImplFile
                                   Yes (6,4--6,14),
                                   { LeadingKeyword = LetBang (6,4--6,8)
                                     InlineKeyword = None
-                                    EqualsRange = Some (6,11--6,12)
-                                    InKeyword = None });
+                                    EqualsRange = Some (6,11--6,12) });
                                SynBinding
                                  (None, Normal, false, false, [], PreXmlDocEmpty,
                                   SynValData
@@ -72,8 +70,7 @@ ImplFile
                                   Yes (7,4--7,14),
                                   { LeadingKeyword = AndBang (7,4--7,8)
                                     InlineKeyword = None
-                                    EqualsRange = Some (7,11--7,12)
-                                    InKeyword = None })]
+                                    EqualsRange = Some (7,11--7,12) })]
                              Body =
                               YieldOrReturn
                                 ((false, true), Const (Unit, (8,11--8,13)),

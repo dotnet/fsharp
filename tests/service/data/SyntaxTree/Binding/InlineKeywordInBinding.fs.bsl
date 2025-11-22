@@ -45,16 +45,15 @@ ImplFile
                            Const (Unit, (3,23--3,25)), (3,15--3,20), NoneAtLet,
                            { LeadingKeyword = Let (3,4--3,7)
                              InlineKeyword = Some (3,8--3,14)
-                             EqualsRange = Some (3,21--3,22)
-                             InKeyword = None })]
+                             EqualsRange = Some (3,21--3,22) })]
                       Body = Const (Unit, (4,4--4,6))
                       Range = (3,4--4,6)
                       Trivia = { InKeyword = None } }, (2,11--2,16), NoneAtLet,
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = Some (2,4--2,10)
-                    EqualsRange = Some (2,17--2,18)
-                    InKeyword = None })], (2,0--4,6), { InKeyword = None })],
-          PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                    EqualsRange = Some (2,17--2,18) })], (2,0--4,6),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--5,0),
+          { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

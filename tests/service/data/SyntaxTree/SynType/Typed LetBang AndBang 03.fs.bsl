@@ -43,8 +43,7 @@ ImplFile
                              (4,4--4,61), Yes (4,4--4,61),
                              { LeadingKeyword = LetBang (4,4--4,8)
                                InlineKeyword = None
-                               EqualsRange = Some (4,46--4,47)
-                               InKeyword = None });
+                               EqualsRange = Some (4,46--4,47) });
                           SynBinding
                             (None, Normal, false, false, [], PreXmlDocEmpty,
                              SynValData
@@ -68,8 +67,7 @@ ImplFile
                              (5,4--5,42), Yes (5,4--5,42),
                              { LeadingKeyword = AndBang (5,4--5,8)
                                InlineKeyword = None
-                               EqualsRange = Some (5,29--5,30)
-                               InKeyword = None })]
+                               EqualsRange = Some (5,29--5,30) })]
                         Body =
                          YieldOrReturn
                            ((false, true), Ident name, (6,4--6,15),

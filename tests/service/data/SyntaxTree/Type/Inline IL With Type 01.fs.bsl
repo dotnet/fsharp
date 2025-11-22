@@ -32,9 +32,8 @@ ImplFile
                      Var (SynTypar (T, None, false), (3,28--3,30)), (4,4--4,26)),
                   (3,11--3,25), NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
                                              InlineKeyword = Some (3,4--3,10)
-                                             EqualsRange = Some (3,31--3,32)
-                                             InKeyword = None })], (3,0--4,26),
-              { InKeyword = None });
+                                             EqualsRange = Some (3,31--3,32) })],
+              (3,0--4,26), { InKeyword = None });
            Types
              ([SynTypeDefn
                  (SynComponentInfo

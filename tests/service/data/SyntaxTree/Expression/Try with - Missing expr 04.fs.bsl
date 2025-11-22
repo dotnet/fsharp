@@ -18,8 +18,7 @@ ImplFile
                           Const (Unit, (5,8--5,10)), (5,4--5,5), Yes (5,0--5,10),
                           { LeadingKeyword = Let (5,0--5,3)
                             InlineKeyword = None
-                            EqualsRange = Some (5,6--5,7)
-                            InKeyword = None })]
+                            EqualsRange = Some (5,6--5,7) })]
                      Body = ArbitraryAfterError ("seqExpr", (5,10--5,10))
                      Range = (5,0--5,10)
                      Trivia = { InKeyword = None } }, [], (3,0--5,10),

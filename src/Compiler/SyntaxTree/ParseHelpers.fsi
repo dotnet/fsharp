@@ -221,8 +221,7 @@ val mkAndBang:
     returnInfo: SynBindingReturnInfo option *
     rhs: SynExpr *
     mWhole: range *
-    mEquals: range *
-    mIn: range option ->
+    mEquals: range ->
         SynBinding
 
 val mkDefnBindings:

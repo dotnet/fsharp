@@ -18,8 +18,7 @@ ImplFile
                        Const (Int32 1, (2,8--2,9)), (2,4--2,5), Yes (2,0--2,9),
                        { LeadingKeyword = Let (2,0--2,3)
                          InlineKeyword = None
-                         EqualsRange = Some (2,6--2,7)
-                         InKeyword = None })]
+                         EqualsRange = Some (2,6--2,7) })]
                   Body = Const (Unit, (2,13--2,15))
                   Range = (2,0--2,15)
                   Trivia = { InKeyword = Some (2,10--2,12) } }, (2,0--2,15))],

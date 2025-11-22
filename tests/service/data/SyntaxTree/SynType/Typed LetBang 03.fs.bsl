@@ -43,8 +43,7 @@ ImplFile
                                 (4,27--4,31)), (4,8--4,24), Yes (4,4--4,31),
                              { LeadingKeyword = Let (4,4--4,7)
                                InlineKeyword = None
-                               EqualsRange = Some (4,25--4,26)
-                               InKeyword = None })]
+                               EqualsRange = Some (4,25--4,26) })]
                         Body =
                          LetOrUse
                            { IsRecursive = false
@@ -90,8 +89,7 @@ ImplFile
                                   (5,4--5,49), Yes (5,4--5,49),
                                   { LeadingKeyword = LetBang (5,4--5,8)
                                     InlineKeyword = None
-                                    EqualsRange = Some (5,26--5,27)
-                                    InKeyword = None })]
+                                    EqualsRange = Some (5,26--5,27) })]
                              Body =
                               YieldOrReturn
                                 ((false, true),

@@ -91,8 +91,7 @@ ImplFile
                            (7,48--7,62), NoneAtInvisible,
                            { LeadingKeyword = Override (7,4--7,12)
                              InlineKeyword = None
-                             EqualsRange = Some (7,63--7,64)
-                             InKeyword = None })), (7,4--7,67),
+                             EqualsRange = Some (7,63--7,64) })), (7,4--7,67),
                      { InlineKeyword = None
                        WithKeyword = (7,43--7,47)
                        GetKeyword = None

@@ -46,10 +46,9 @@ ImplFile
                         (3,4--4,23), NoneAtInvisible,
                         { LeadingKeyword = Member (4,4--4,10)
                           InlineKeyword = None
-                          EqualsRange = Some (4,24--4,25)
-                          InKeyword = None }), (3,4--4,30))], [], (2,2--2,21),
-                 (2,0--4,32)), (2,0--4,32))], PreXmlDocEmpty, [], None,
-          (2,0--4,32), { LeadingKeyword = None })], (true, true),
+                          EqualsRange = Some (4,24--4,25) }), (3,4--4,30))], [],
+                 (2,2--2,21), (2,0--4,32)), (2,0--4,32))], PreXmlDocEmpty, [],
+          None, (2,0--4,32), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

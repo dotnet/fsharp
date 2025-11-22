@@ -23,8 +23,7 @@ ImplFile
                              None, Ident b, (2,4--2,14), Yes (2,4--2,14),
                              { LeadingKeyword = LetBang (2,4--2,8)
                                InlineKeyword = None
-                               EqualsRange = Some (2,11--2,12)
-                               InKeyword = Some (2,15--2,17) });
+                               EqualsRange = Some (2,11--2,12) });
                           SynBinding
                             (None, Normal, false, false, [], PreXmlDocEmpty,
                              SynValData
@@ -36,8 +35,7 @@ ImplFile
                              None, Ident d, (3,4--3,14), Yes (3,4--3,14),
                              { LeadingKeyword = AndBang (3,4--3,8)
                                InlineKeyword = None
-                               EqualsRange = Some (3,11--3,12)
-                               InKeyword = Some (3,15--3,17) });
+                               EqualsRange = Some (3,11--3,12) });
                           SynBinding
                             (None, Normal, false, false, [], PreXmlDocEmpty,
                              SynValData
@@ -49,8 +47,7 @@ ImplFile
                              None, Ident f, (4,4--4,14), Yes (4,4--4,14),
                              { LeadingKeyword = AndBang (4,4--4,8)
                                InlineKeyword = None
-                               EqualsRange = Some (4,11--4,12)
-                               InKeyword = Some (4,15--4,17) })]
+                               EqualsRange = Some (4,11--4,12) })]
                         Body = Const (Unit, (5,4--5,6))
                         Range = (2,4--5,6)
                         Trivia = { InKeyword = Some (2,15--2,17) } }, (1,5--6,1)),

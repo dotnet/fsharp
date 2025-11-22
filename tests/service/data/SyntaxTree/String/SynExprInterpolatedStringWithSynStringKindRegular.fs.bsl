@@ -18,8 +18,7 @@ ImplFile
                       String ("", (2,16--2,18))], Regular, (2,8--2,18)),
                   (2,4--2,5), Yes (2,0--2,18), { LeadingKeyword = Let (2,0--2,3)
                                                  InlineKeyword = None
-                                                 EqualsRange = Some (2,6--2,7)
-                                                 InKeyword = None })],
+                                                 EqualsRange = Some (2,6--2,7) })],
               (2,0--2,18), { InKeyword = None })], PreXmlDocEmpty, [], None,
           (2,0--3,0), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

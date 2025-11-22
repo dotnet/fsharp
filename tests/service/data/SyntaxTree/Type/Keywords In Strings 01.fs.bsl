@@ -27,11 +27,11 @@ ImplFile
                                (String
                                   ("type and module keywords", Regular,
                                    (5,18--5,44)), (5,18--5,44)), (5,8--5,15),
-                             Yes (5,4--5,44), { LeadingKeyword = Let (5,4--5,7)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (5,16--5,17)
-                                                InKeyword = None })], false,
-                         false, (5,4--5,44), { InKeyword = None });
+                             Yes (5,4--5,44),
+                             { LeadingKeyword = Let (5,4--5,7)
+                               InlineKeyword = None
+                               EqualsRange = Some (5,16--5,17) })], false, false,
+                         (5,4--5,44), { InKeyword = None });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -57,11 +57,11 @@ ImplFile
                             (6,11--6,25), NoneAtInvisible,
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
-                              EqualsRange = Some (6,26--6,27)
-                              InKeyword = None }), (6,4--6,35))], (5,4--6,35)),
-                  [], None, (4,5--6,35), { LeadingKeyword = Type (4,0--4,4)
-                                           EqualsRange = Some (4,13--4,14)
-                                           WithKeyword = None })], (4,0--6,35))],
+                              EqualsRange = Some (6,26--6,27) }), (6,4--6,35))],
+                     (5,4--6,35)), [], None, (4,5--6,35),
+                  { LeadingKeyword = Type (4,0--4,4)
+                    EqualsRange = Some (4,13--4,14)
+                    WithKeyword = None })], (4,0--6,35))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--6,35), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

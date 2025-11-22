@@ -30,10 +30,10 @@ ImplFile
                                    LongIdent (SynLongIdent ([int], [], [None])),
                                    (4,9--4,23)), (4,8--4,24)), None,
                              Const (Int32 1, (4,27--4,28)), (4,8--4,24),
-                             Yes (4,4--4,28), { LeadingKeyword = Let (4,4--4,7)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (4,25--4,26)
-                                                InKeyword = None })]
+                             Yes (4,4--4,28),
+                             { LeadingKeyword = Let (4,4--4,7)
+                               InlineKeyword = None
+                               EqualsRange = Some (4,25--4,26) })]
                         Body =
                          LetOrUse
                            { IsRecursive = false
@@ -70,8 +70,7 @@ ImplFile
                                   (5,4--5,46), Yes (5,4--5,46),
                                   { LeadingKeyword = LetBang (5,4--5,8)
                                     InlineKeyword = None
-                                    EqualsRange = Some (5,26--5,27)
-                                    InKeyword = None })]
+                                    EqualsRange = Some (5,26--5,27) })]
                              Body =
                               YieldOrReturn
                                 ((false, true), Ident x, (6,4--6,12),

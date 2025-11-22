@@ -22,8 +22,7 @@ ImplFile
                              (3,12--3,15)), (3,8--3,9), Yes (3,4--3,15),
                           { LeadingKeyword = Use (3,4--3,7)
                             InlineKeyword = None
-                            EqualsRange = Some (3,10--3,11)
-                            InKeyword = None })]
+                            EqualsRange = Some (3,10--3,11) })]
                      Body = Const (Unit, (4,4--4,6))
                      Range = (3,4--4,6)
                      Trivia = { InKeyword = None } }, (2,0--4,6)), (2,0--4,6))],

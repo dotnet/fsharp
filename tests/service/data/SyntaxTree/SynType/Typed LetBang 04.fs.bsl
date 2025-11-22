@@ -35,8 +35,7 @@ ImplFile
                                     (4,14--4,14)), (4,8--4,9), Yes (4,4--4,14),
                                  { LeadingKeyword = Let (4,4--4,7)
                                    InlineKeyword = None
-                                   EqualsRange = None
-                                   InKeyword = None })]
+                                   EqualsRange = None })]
                             Body =
                              ArbitraryAfterError ("declExpr3", (5,15--5,16))
                             Range = (4,4--5,16)

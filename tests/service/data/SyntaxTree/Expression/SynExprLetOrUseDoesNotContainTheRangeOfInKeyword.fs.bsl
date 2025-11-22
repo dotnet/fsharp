@@ -20,8 +20,7 @@ ImplFile
                           None, Const (Int32 1, (3,8--3,9)), (3,4--3,5),
                           Yes (3,0--3,9), { LeadingKeyword = Let (3,0--3,3)
                                             InlineKeyword = None
-                                            EqualsRange = Some (3,6--3,7)
-                                            InKeyword = None })]
+                                            EqualsRange = Some (3,6--3,7) })]
                      Body = Const (Unit, (4,0--4,2))
                      Range = (3,0--4,2)
                      Trivia = { InKeyword = None } }, (2,0--4,2)), (2,0--4,2))],

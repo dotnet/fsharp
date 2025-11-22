@@ -282,7 +282,6 @@ type SynBindingTrivia =
         LeadingKeyword: SynLeadingKeyword
         InlineKeyword: range option
         EqualsRange: range option
-        InKeyword: range option
     }
 
     static member Zero: SynBindingTrivia =
@@ -290,7 +289,6 @@ type SynBindingTrivia =
             LeadingKeyword = SynLeadingKeyword.Synthetic
             InlineKeyword = None
             EqualsRange = None
-            InKeyword = None
         }
 
 [<NoEquality; NoComparison>]

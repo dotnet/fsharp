@@ -28,8 +28,8 @@ ImplFile
                         Const (Int32 1, (4,22--4,23)), (4,15--4,19),
                         NoneAtInvisible, { LeadingKeyword = Override (4,6--4,14)
                                            InlineKeyword = None
-                                           EqualsRange = Some (4,20--4,21)
-                                           InKeyword = None }), (4,6--4,23))],
+                                           EqualsRange = Some (4,20--4,21) }),
+                     (4,6--4,23))],
                  [SynInterfaceImpl
                     (LongIdent (SynLongIdent ([I1], [], [None])),
                      Some (6,15--6,19), [],
@@ -55,8 +55,8 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (7,6--7,12)
                               InlineKeyword = None
-                              EqualsRange = Some (7,18--7,19)
-                              InKeyword = None }), (7,6--7,21))], (6,2--7,21));
+                              EqualsRange = Some (7,18--7,19) }), (7,6--7,21))],
+                     (6,2--7,21));
                   SynInterfaceImpl
                     (LongIdent (SynLongIdent ([I2], [], [None])),
                      Some (9,15--9,19), [],
@@ -82,9 +82,9 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (10,6--10,12)
                               InlineKeyword = None
-                              EqualsRange = Some (10,18--10,19)
-                              InKeyword = None }), (10,6--10,21))], (9,2--10,21))],
-                 (3,2--3,9), (3,0--10,23)), (3,0--10,23))],
+                              EqualsRange = Some (10,18--10,19) }),
+                         (10,6--10,21))], (9,2--10,21))], (3,2--3,9),
+                 (3,0--10,23)), (3,0--10,23))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--10,23), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

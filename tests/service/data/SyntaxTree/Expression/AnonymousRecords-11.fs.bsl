@@ -31,9 +31,8 @@ ImplFile
                      (3,12--3,28), { OpeningBraceRange = (3,12--3,14) }),
                   (3,4--3,9), NoneAtLet, { LeadingKeyword = Let (3,0--3,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (3,10--3,11)
-                                           InKeyword = None })], (3,0--3,28),
-              { InKeyword = None });
+                                           EqualsRange = Some (3,10--3,11) })],
+              (3,0--3,28), { InKeyword = None });
            Let
              (false,
               [SynBinding
@@ -61,9 +60,8 @@ ImplFile
                      (5,12--5,29), { OpeningBraceRange = (5,12--5,14) }),
                   (5,4--5,9), NoneAtLet, { LeadingKeyword = Let (5,0--5,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (5,10--5,11)
-                                           InKeyword = None })], (5,0--5,29),
-              { InKeyword = None });
+                                           EqualsRange = Some (5,10--5,11) })],
+              (5,0--5,29), { InKeyword = None });
            Let
              (false,
               [SynBinding
@@ -91,9 +89,8 @@ ImplFile
                      (7,12--7,29), { OpeningBraceRange = (7,12--7,14) }),
                   (7,4--7,9), NoneAtLet, { LeadingKeyword = Let (7,0--7,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (7,10--7,11)
-                                           InKeyword = None })], (7,0--7,29),
-              { InKeyword = None });
+                                           EqualsRange = Some (7,10--7,11) })],
+              (7,0--7,29), { InKeyword = None });
            Let
              (false,
               [SynBinding
@@ -121,9 +118,8 @@ ImplFile
                      (9,12--9,30), { OpeningBraceRange = (9,12--9,14) }),
                   (9,4--9,9), NoneAtLet, { LeadingKeyword = Let (9,0--9,3)
                                            InlineKeyword = None
-                                           EqualsRange = Some (9,10--9,11)
-                                           InKeyword = None })], (9,0--9,30),
-              { InKeyword = None })],
+                                           EqualsRange = Some (9,10--9,11) })],
+              (9,0--9,30), { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--9,30), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

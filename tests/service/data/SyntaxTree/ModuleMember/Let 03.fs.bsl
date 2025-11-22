@@ -14,8 +14,7 @@ ImplFile
                   ArbitraryAfterError ("localBinding2", (3,5--3,5)), (3,4--3,5),
                   Yes (3,0--3,5), { LeadingKeyword = Let (3,0--3,3)
                                     InlineKeyword = None
-                                    EqualsRange = None
-                                    InKeyword = None })], (3,0--3,5),
+                                    EqualsRange = None })], (3,0--3,5),
               { InKeyword = None });
            Expr (Const (Int32 1, (5,0--5,1)), (5,0--5,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

@@ -23,8 +23,7 @@ ImplFile
                              (3,18--3,37)), (3,8--3,15), Yes (3,4--3,37),
                           { LeadingKeyword = Let (3,4--3,7)
                             InlineKeyword = None
-                            EqualsRange = Some (3,16--3,17)
-                            InKeyword = None })]
+                            EqualsRange = Some (3,16--3,17) })]
                      Body =
                       App
                         (NonAtomic, false, Ident Some, Ident content,

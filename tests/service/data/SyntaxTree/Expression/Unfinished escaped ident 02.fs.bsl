@@ -42,8 +42,7 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (4,4--4,10)
                               InlineKeyword = None
-                              EqualsRange = Some (4,20--4,21)
-                              InKeyword = None }), (4,4--4,24));
+                              EqualsRange = Some (4,20--4,21) }), (4,4--4,24));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -70,9 +69,8 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
-                              EqualsRange = Some (6,23--6,24)
-                              InKeyword = None }), (6,4--6,27))], (4,4--6,27)),
-                  [],
+                              EqualsRange = Some (6,23--6,24) }), (6,4--6,27))],
+                     (4,4--6,27)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (3,6--3,8)), None,

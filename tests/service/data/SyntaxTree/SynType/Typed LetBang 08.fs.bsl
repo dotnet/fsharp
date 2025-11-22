@@ -36,8 +36,7 @@ ImplFile
                              (3,4--3,48), Yes (3,4--3,48),
                              { LeadingKeyword = LetBang (3,4--3,8)
                                InlineKeyword = None
-                               EqualsRange = Some (3,33--3,34)
-                               InKeyword = None })]
+                               EqualsRange = Some (3,33--3,34) })]
                         Body =
                          YieldOrReturn
                            ((false, true), Ident name, (4,4--4,15),

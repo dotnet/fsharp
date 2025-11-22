@@ -346,9 +346,6 @@ type SynBindingTrivia =
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
-
-        // The syntax range of the `in` keyword.
-        InKeyword: range option
     }
 
     static member Zero: SynBindingTrivia

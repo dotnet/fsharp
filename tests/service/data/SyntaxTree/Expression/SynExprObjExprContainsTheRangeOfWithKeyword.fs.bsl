@@ -35,8 +35,7 @@ ImplFile
                            (3,26--3,53)), (3,11--3,23), NoneAtInvisible,
                         { LeadingKeyword = Member (3,4--3,10)
                           InlineKeyword = None
-                          EqualsRange = Some (3,24--3,25)
-                          InKeyword = None }), (3,4--3,53))],
+                          EqualsRange = Some (3,24--3,25) }), (3,4--3,53))],
                  [SynInterfaceImpl
                     (App
                        (LongIdent
@@ -77,10 +76,9 @@ ImplFile
                             (6,11--6,28), NoneAtInvisible,
                             { LeadingKeyword = Member (6,4--6,10)
                               InlineKeyword = None
-                              EqualsRange = Some (6,29--6,30)
-                              InKeyword = None }), (6,4--6,35))], (5,2--6,35))],
-                 (2,2--2,11), (2,0--6,37)), (2,0--6,37))], PreXmlDocEmpty, [],
-          None, (2,0--6,37), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                              EqualsRange = Some (6,29--6,30) }), (6,4--6,35))],
+                     (5,2--6,35))], (2,2--2,11), (2,0--6,37)), (2,0--6,37))],
+          PreXmlDocEmpty, [], None, (2,0--6,37), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

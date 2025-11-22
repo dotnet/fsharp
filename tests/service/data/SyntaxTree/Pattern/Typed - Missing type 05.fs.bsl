@@ -29,8 +29,7 @@ ImplFile
                              (4,8--4,9), Yes (4,4--4,10),
                              { LeadingKeyword = Let (4,4--4,7)
                                InlineKeyword = None
-                               EqualsRange = None
-                               InKeyword = None })]
+                               EqualsRange = None })]
                         Body = ArbitraryAfterError ("seqExpr", (4,10--4,10))
                         Range = (4,4--4,10)
                         Trivia = { InKeyword = None } }, (4,4--4,10)),

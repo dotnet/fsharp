@@ -31,9 +31,8 @@ ImplFile
                         (4,12--4,18), NoneAtInvisible,
                         { LeadingKeyword = Member (4,5--4,11)
                           InlineKeyword = None
-                          EqualsRange = Some (4,19--4,20)
-                          InKeyword = None }), (4,5--4,22))], [], (3,2--3,9),
-                 (3,0--4,22)), (3,0--4,22));
+                          EqualsRange = Some (4,19--4,20) }), (4,5--4,22))], [],
+                 (3,2--3,9), (3,0--4,22)), (3,0--4,22));
            Expr (Const (Unit, (6,0--6,2)), (6,0--6,2))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--6,2), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

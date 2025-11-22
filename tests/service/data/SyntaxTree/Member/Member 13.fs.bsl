@@ -38,8 +38,7 @@ ImplFile
                             { LeadingKeyword =
                                StaticMember ((4,4--4,10), (4,11--4,17))
                               InlineKeyword = None
-                              EqualsRange = None
-                              InKeyword = None }), (4,4--4,20))], (4,4--4,20)),
+                              EqualsRange = None }), (4,4--4,20))], (4,4--4,20)),
                   [], None, (3,5--4,20), { LeadingKeyword = Type (3,0--3,4)
                                            EqualsRange = Some (3,7--3,8)
                                            WithKeyword = None })], (3,0--4,20));

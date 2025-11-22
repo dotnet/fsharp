@@ -31,8 +31,7 @@ ImplFile
                                    (5,15--5,29)), (5,7--5,29)), (5,4--5,29),
                              NoneAtDo, { LeadingKeyword = Do (5,4--5,6)
                                          InlineKeyword = None
-                                         EqualsRange = None
-                                         InKeyword = None })], false, false,
+                                         EqualsRange = None })], false, false,
                          (5,4--5,29), { InKeyword = None })], (5,4--5,29)), [],
                   Some
                     (ImplicitCtor
@@ -59,9 +58,8 @@ ImplFile
                       None, Const (Int32 42, (7,21--7,23)), (7,12--7,18),
                       Yes (7,8--7,23), { LeadingKeyword = Let (7,8--7,11)
                                          InlineKeyword = None
-                                         EqualsRange = Some (7,19--7,20)
-                                         InKeyword = None })], (7,8--7,23),
-                  { InKeyword = None })], false, (6,4--7,23),
+                                         EqualsRange = Some (7,19--7,20) })],
+                  (7,8--7,23), { InKeyword = None })], false, (6,4--7,23),
               { ModuleKeyword = Some (6,4--6,10)
                 EqualsRange = Some (6,13--6,14) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

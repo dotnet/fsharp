@@ -23,12 +23,12 @@ ImplFile
                      WithNull
                        (LongIdent (SynLongIdent ([string], [], [None])), false,
                         (1,8--1,21), { BarRange = (1,15--1,16) }), (1,24--1,28)),
-                  (1,4--1,5), Yes (1,0--1,28), { LeadingKeyword = Let (1,0--1,3)
-                                                 InlineKeyword = None
-                                                 EqualsRange = Some (1,22--1,23)
-                                                 InKeyword = None })],
-              (1,0--1,28), { InKeyword = None })], PreXmlDocEmpty, [], None,
-          (1,0--2,0), { LeadingKeyword = None })], (true, true),
+                  (1,4--1,5), Yes (1,0--1,28),
+                  { LeadingKeyword = Let (1,0--1,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (1,22--1,23) })], (1,0--1,28),
+              { InKeyword = None })], PreXmlDocEmpty, [], None, (1,0--2,0),
+          { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

@@ -39,9 +39,8 @@ ImplFile
                                   (5,17--5,24), NoneAtInvisible,
                                   { LeadingKeyword = Override (5,8--5,16)
                                     InlineKeyword = None
-                                    EqualsRange = Some (5,25--5,26)
-                                    InKeyword = None }), (5,8--5,28))],
-                         (4,4--5,28));
+                                    EqualsRange = Some (5,25--5,26) }),
+                               (5,8--5,28))], (4,4--5,28));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -64,11 +63,11 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (7,4--7,10)
                               InlineKeyword = None
-                              EqualsRange = Some (7,19--7,20)
-                              InKeyword = None }), (7,4--7,22))], (4,4--7,22)),
-                  [], None, (3,5--7,22), { LeadingKeyword = Type (3,0--3,4)
-                                           EqualsRange = Some (3,7--3,8)
-                                           WithKeyword = None })], (3,0--7,22))],
+                              EqualsRange = Some (7,19--7,20) }), (7,4--7,22))],
+                     (4,4--7,22)), [], None, (3,5--7,22),
+                  { LeadingKeyword = Type (3,0--3,4)
+                    EqualsRange = Some (3,7--3,8)
+                    WithKeyword = None })], (3,0--7,22))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--7,22), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

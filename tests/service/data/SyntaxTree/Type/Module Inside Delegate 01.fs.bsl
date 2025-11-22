@@ -80,9 +80,8 @@ ImplFile
                       None, Const (Int32 1, (6,16--6,17)), (6,12--6,13),
                       Yes (6,8--6,17), { LeadingKeyword = Let (6,8--6,11)
                                          InlineKeyword = None
-                                         EqualsRange = Some (6,14--6,15)
-                                         InKeyword = None })], (6,8--6,17),
-                  { InKeyword = None })], false, (5,4--6,17),
+                                         EqualsRange = Some (6,14--6,15) })],
+                  (6,8--6,17), { InKeyword = None })], false, (5,4--6,17),
               { ModuleKeyword = Some (5,4--5,10)
                 EqualsRange = Some (5,25--5,26) })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

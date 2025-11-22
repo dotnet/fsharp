@@ -18,8 +18,7 @@ ImplFile
                   (1,4--1,10), Yes (1,0--1,10),
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
-                    EqualsRange = None
-                    InKeyword = None })], (1,0--1,10), { InKeyword = None });
+                    EqualsRange = None })], (1,0--1,10), { InKeyword = None });
            Expr (Const (Unit, (3,0--3,2)), (3,0--3,2))], PreXmlDocEmpty, [],
           None, (1,0--3,2), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

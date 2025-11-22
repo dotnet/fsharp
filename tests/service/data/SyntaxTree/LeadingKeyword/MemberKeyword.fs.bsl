@@ -38,12 +38,12 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (3,4--3,10)
                               InlineKeyword = None
-                              EqualsRange = Some (3,22--3,23)
-                              InKeyword = None }), (3,4--3,26))], (3,4--3,26)),
-                  [], None, (2,5--3,26), { LeadingKeyword = Type (2,0--2,4)
-                                           EqualsRange = Some (2,7--2,8)
-                                           WithKeyword = None })], (2,0--3,26))],
-          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                              EqualsRange = Some (3,22--3,23) }), (3,4--3,26))],
+                     (3,4--3,26)), [], None, (2,5--3,26),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,7--2,8)
+                    WithKeyword = None })], (2,0--3,26))], PreXmlDocEmpty, [],
+          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

@@ -39,8 +39,7 @@ ImplFile
                             { LeadingKeyword =
                                StaticMember ((3,4--3,10), (3,11--3,17))
                               InlineKeyword = None
-                              EqualsRange = Some (3,27--3,28)
-                              InKeyword = None }), (3,4--3,31));
+                              EqualsRange = Some (3,27--3,28) }), (3,4--3,31));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -67,8 +66,7 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (4,4--4,10)
                               InlineKeyword = None
-                              EqualsRange = Some (4,20--4,21)
-                              InKeyword = None }), (4,4--4,24));
+                              EqualsRange = Some (4,20--4,21) }), (4,4--4,24));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -95,8 +93,7 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Override (5,4--5,12)
                               InlineKeyword = None
-                              EqualsRange = Some (5,22--5,23)
-                              InKeyword = None }), (5,4--5,26));
+                              EqualsRange = Some (5,22--5,23) }), (5,4--5,26));
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -123,12 +120,12 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Default (6,4--6,11)
                               InlineKeyword = None
-                              EqualsRange = Some (6,21--6,22)
-                              InKeyword = None }), (6,4--6,25))], (3,4--6,25)),
-                  [], None, (2,5--6,25), { LeadingKeyword = Type (2,0--2,4)
-                                           EqualsRange = Some (2,9--2,10)
-                                           WithKeyword = None })], (2,0--6,25))],
-          PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                              EqualsRange = Some (6,21--6,22) }), (6,4--6,25))],
+                     (3,4--6,25)), [], None, (2,5--6,25),
+                  { LeadingKeyword = Type (2,0--2,4)
+                    EqualsRange = Some (2,9--2,10)
+                    WithKeyword = None })], (2,0--6,25))], PreXmlDocEmpty, [],
+          None, (2,0--7,0), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

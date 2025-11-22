@@ -22,8 +22,8 @@ ImplFile
                      (5,17--5,20)), (5,4--5,5), Yes (5,0--5,20),
                   { LeadingKeyword = Let (5,0--5,3)
                     InlineKeyword = None
-                    EqualsRange = Some (5,15--5,16)
-                    InKeyword = None })], (5,0--5,20), { InKeyword = None })],
+                    EqualsRange = Some (5,15--5,16) })], (5,0--5,20),
+              { InKeyword = None })],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
           [{ Attributes = [{ TypeName = SynLongIdent ([Foo], [], [None])
                              ArgExpr = Const (Unit, (2,4--2,7))

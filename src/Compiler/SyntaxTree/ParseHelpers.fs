@@ -299,7 +299,6 @@ let mkSynMemberDefnGetSet
                 LeadingKeyword = leadingKeyword
                 InlineKeyword = mOptInline
                 EqualsRange = mEquals
-                InKeyword = None
             }
 
         let binding =
@@ -761,7 +760,6 @@ let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
             LeadingKeyword = SynLeadingKeyword.Do mDo
             InlineKeyword = None
             EqualsRange = None
-            InKeyword = None
         }
     )
 
@@ -874,9 +872,7 @@ let mkClassMemberLocalBindings
     SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole, { InKeyword = mIn })
 
 /// Creates a SynExprAndBang node for and! bindings in computation expressions
-let mkAndBang
-    (mKeyword: range, pat: SynPat, returnInfo: SynBindingReturnInfo option, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option)
-    =
+let mkAndBang (mKeyword: range, pat: SynPat, returnInfo: SynBindingReturnInfo option, rhs: SynExpr, mWhole: range, mEquals: range) =
     let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
     let trivia: SynBindingTrivia =
@@ -884,7 +880,6 @@ let mkAndBang
             LeadingKeyword = SynLeadingKeyword.AndBang mKeyword
             InlineKeyword = None
             EqualsRange = Some mEquals
-            InKeyword = mIn
         }
 
     SynBinding(
@@ -1116,7 +1111,6 @@ let mkLetBangExpression
             LeadingKeyword = leadingKeyword
             InlineKeyword = None
             EqualsRange = mEquals
-            InKeyword = mIn
         }
 
     let binding =

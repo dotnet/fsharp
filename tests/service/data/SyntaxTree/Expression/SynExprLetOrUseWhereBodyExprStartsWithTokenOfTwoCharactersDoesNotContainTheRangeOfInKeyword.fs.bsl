@@ -30,8 +30,7 @@ ImplFile
                           (3,4--3,6), Yes (3,0--3,42),
                           { LeadingKeyword = Let (3,0--3,3)
                             InlineKeyword = None
-                            EqualsRange = Some (3,7--3,8)
-                            InKeyword = None })]
+                            EqualsRange = Some (3,7--3,8) })]
                      Body =
                       Tuple
                         (false,

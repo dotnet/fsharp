@@ -17,10 +17,9 @@ ImplFile
                      Const (Unit, (3,8--3,10)), (3,4--3,5), Yes (3,8--3,10),
                      { LeadingKeyword = Synthetic
                        InlineKeyword = None
-                       EqualsRange = Some (3,6--3,7)
-                       InKeyword = None })], [], [], (2,2--2,16), (2,0--3,12)),
-              (2,0--3,12))], PreXmlDocEmpty, [], None, (2,0--3,12),
-          { LeadingKeyword = None })], (true, true),
+                       EqualsRange = Some (3,6--3,7) })], [], [], (2,2--2,16),
+                 (2,0--3,12)), (2,0--3,12))], PreXmlDocEmpty, [], None,
+          (2,0--3,12), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

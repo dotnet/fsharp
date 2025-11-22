@@ -48,13 +48,12 @@ ImplFile
                                NoneAtInvisible,
                                { LeadingKeyword = Member (5,4--5,10)
                                  InlineKeyword = None
-                                 EqualsRange = Some (5,43--5,44)
-                                 InKeyword = None })), None, (5,4--5,60),
-                         { InlineKeyword = None
-                           WithKeyword = (5,31--5,35)
-                           GetKeyword = Some (5,36--5,39)
-                           AndKeyword = None
-                           SetKeyword = None })], (5,4--5,60)), [],
+                                 EqualsRange = Some (5,43--5,44) })), None,
+                         (5,4--5,60), { InlineKeyword = None
+                                        WithKeyword = (5,31--5,35)
+                                        GetKeyword = Some (5,36--5,39)
+                                        AndKeyword = None
+                                        SetKeyword = None })], (5,4--5,60)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (3,8--3,10)), None,

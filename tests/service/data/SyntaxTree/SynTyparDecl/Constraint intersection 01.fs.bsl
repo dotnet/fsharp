@@ -91,11 +91,11 @@ ImplFile
                             NoneAtInvisible,
                             { LeadingKeyword = Member (4,4--4,10)
                               InlineKeyword = None
-                              EqualsRange = Some (4,30--4,31)
-                              InKeyword = None }), (4,4--4,34))], (4,4--4,34)),
-                  [], None, (3,5--4,34), { LeadingKeyword = Type (3,0--3,4)
-                                           EqualsRange = Some (3,58--3,59)
-                                           WithKeyword = None })], (3,0--4,34))],
+                              EqualsRange = Some (4,30--4,31) }), (4,4--4,34))],
+                     (4,4--4,34)), [], None, (3,5--4,34),
+                  { LeadingKeyword = Type (3,0--3,4)
+                    EqualsRange = Some (3,58--3,59)
+                    WithKeyword = None })], (3,0--4,34))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,34), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

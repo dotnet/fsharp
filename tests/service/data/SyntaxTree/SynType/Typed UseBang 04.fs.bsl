@@ -27,8 +27,7 @@ ImplFile
                              (3,19--3,31)), (3,13--3,31)), (3,0--3,31),
                        Yes (3,0--3,31), { LeadingKeyword = UseBang (3,0--3,4)
                                           InlineKeyword = None
-                                          EqualsRange = Some (3,11--3,12)
-                                          InKeyword = None })]
+                                          EqualsRange = Some (3,11--3,12) })]
                   Body =
                    LetOrUse
                      { IsRecursive = false
@@ -56,8 +55,7 @@ ImplFile
                             Yes (4,0--4,33),
                             { LeadingKeyword = UseBang (4,0--4,4)
                               InlineKeyword = None
-                              EqualsRange = Some (4,13--4,14)
-                              InKeyword = None })]
+                              EqualsRange = Some (4,13--4,14) })]
                        Body = ImplicitZero (4,33--4,33)
                        Range = (4,0--4,33)
                        Trivia = { InKeyword = None } }

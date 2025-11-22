@@ -25,11 +25,11 @@ ImplFile
                                 None),
                              Named (SynIdent (a, None), false, None, (4,8--4,9)),
                              None, Const (Int32 0, (4,12--4,13)), (4,8--4,9),
-                             Yes (4,4--4,13), { LeadingKeyword = Let (4,4--4,7)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (4,10--4,11)
-                                                InKeyword = None })], false,
-                         false, (4,4--4,16), { InKeyword = Some (4,14--4,16) });
+                             Yes (4,4--4,13),
+                             { LeadingKeyword = Let (4,4--4,7)
+                               InlineKeyword = None
+                               EqualsRange = Some (4,10--4,11) })], false, false,
+                         (4,4--4,16), { InKeyword = Some (4,14--4,16) });
                       LetBindings
                         ([SynBinding
                             (None, Normal, false, false, [],
@@ -40,11 +40,11 @@ ImplFile
                                 None),
                              Named (SynIdent (y, None), false, None, (5,8--5,9)),
                              None, Const (Int32 1, (5,12--5,13)), (5,8--5,9),
-                             Yes (5,4--5,13), { LeadingKeyword = Let (5,4--5,7)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (5,10--5,11)
-                                                InKeyword = None })], false,
-                         false, (5,4--5,16), { InKeyword = Some (5,14--5,16) });
+                             Yes (5,4--5,13),
+                             { LeadingKeyword = Let (5,4--5,7)
+                               InlineKeyword = None
+                               EqualsRange = Some (5,10--5,11) })], false, false,
+                         (5,4--5,16), { InKeyword = Some (5,14--5,16) });
                       LetBindings
                         ([SynBinding
                             (None, Normal, false, false, [],
@@ -55,11 +55,11 @@ ImplFile
                                 None),
                              Named (SynIdent (x, None), false, None, (6,8--6,9)),
                              None, Const (Int32 0, (6,12--6,13)), (6,8--6,9),
-                             Yes (6,4--6,13), { LeadingKeyword = Let (6,4--6,7)
-                                                InlineKeyword = None
-                                                EqualsRange = Some (6,10--6,11)
-                                                InKeyword = None })], false,
-                         false, (6,4--6,16), { InKeyword = Some (6,14--6,16) });
+                             Yes (6,4--6,13),
+                             { LeadingKeyword = Let (6,4--6,7)
+                               InlineKeyword = None
+                               EqualsRange = Some (6,10--6,11) })], false, false,
+                         (6,4--6,16), { InKeyword = Some (6,14--6,16) });
                       Member
                         (SynBinding
                            (None, Normal, false, false, [],
@@ -81,9 +81,8 @@ ImplFile
                             (7,11--7,17), NoneAtInvisible,
                             { LeadingKeyword = Member (7,4--7,10)
                               InlineKeyword = None
-                              EqualsRange = Some (7,18--7,19)
-                              InKeyword = None }), (7,4--7,21))], (4,4--7,21)),
-                  [],
+                              EqualsRange = Some (7,18--7,19) }), (7,4--7,21))],
+                     (4,4--7,21)), [],
                   Some
                     (ImplicitCtor
                        (None, [], Const (Unit, (3,8--3,10)), None,

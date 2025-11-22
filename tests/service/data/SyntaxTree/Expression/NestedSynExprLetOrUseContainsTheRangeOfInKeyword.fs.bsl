@@ -30,8 +30,7 @@ ImplFile
                            None, Const (Int32 1, (3,12--3,13)), (3,8--3,9),
                            Yes (3,4--3,13), { LeadingKeyword = Let (3,4--3,7)
                                               InlineKeyword = None
-                                              EqualsRange = Some (3,10--3,11)
-                                              InKeyword = None })]
+                                              EqualsRange = Some (3,10--3,11) })]
                       Body =
                        LetOrUse
                          { IsRecursive = false
@@ -49,8 +48,7 @@ ImplFile
                                 Yes (4,4--4,13),
                                 { LeadingKeyword = Let (4,4--4,7)
                                   InlineKeyword = None
-                                  EqualsRange = Some (4,10--4,11)
-                                  InKeyword = None })]
+                                  EqualsRange = Some (4,10--4,11) })]
                            Body =
                             App
                               (NonAtomic, false,
@@ -69,8 +67,7 @@ ImplFile
                       Trivia = { InKeyword = Some (3,14--3,16) } }, (2,4--2,8),
                   NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
                                InlineKeyword = None
-                               EqualsRange = Some (2,9--2,10)
-                               InKeyword = None })], (2,0--5,9),
+                               EqualsRange = Some (2,9--2,10) })], (2,0--5,9),
               { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--6,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

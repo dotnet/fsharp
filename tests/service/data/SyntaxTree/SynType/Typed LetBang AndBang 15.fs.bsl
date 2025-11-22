@@ -51,8 +51,7 @@ ImplFile
                                  (4,4--4,39), Yes (4,4--4,39),
                                  { LeadingKeyword = LetBang (4,4--4,8)
                                    InlineKeyword = None
-                                   EqualsRange = Some (4,27--4,28)
-                                   InKeyword = None })]
+                                   EqualsRange = Some (4,27--4,28) })]
                             Body = ImplicitZero (4,39--4,39)
                             Range = (4,4--5,16)
                             Trivia = { InKeyword = None } }; Ident y],

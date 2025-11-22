@@ -41,17 +41,17 @@ ImplFile
                                 { LeadingKeyword =
                                    StaticMember ((8,15--8,21), (8,22--8,28))
                                   InlineKeyword = None
-                                  EqualsRange = Some (8,33--8,34)
-                                  InKeyword = None }), (8,15--8,37))],
-                         (7,13--9,16)), [], None, (7,9--9,16),
-                      { LeadingKeyword = Type (7,4--7,8)
-                        EqualsRange = Some (7,11--7,12)
-                        WithKeyword = None })], (7,4--9,16))], false,
-              (6,0--9,16), { ModuleKeyword = Some (6,0--6,6)
-                             EqualsRange = Some (6,9--6,10) })], PreXmlDocEmpty,
-          [], None, (4,0--9,16), { LeadingKeyword = Namespace (4,0--4,9) })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [LineComment (1,0--1,25)] }, set []))
+                                  EqualsRange = Some (8,33--8,34) }),
+                             (8,15--8,37))], (7,13--9,16)), [], None,
+                      (7,9--9,16), { LeadingKeyword = Type (7,4--7,8)
+                                     EqualsRange = Some (7,11--7,12)
+                                     WithKeyword = None })], (7,4--9,16))],
+              false, (6,0--9,16), { ModuleKeyword = Some (6,0--6,6)
+                                    EqualsRange = Some (6,9--6,10) })],
+          PreXmlDocEmpty, [], None, (4,0--9,16),
+          { LeadingKeyword = Namespace (4,0--4,9) })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [LineComment (1,0--1,25)] }, set []))
 
 (7,9)-(7,10) parse error Unexpected character '�' in type name

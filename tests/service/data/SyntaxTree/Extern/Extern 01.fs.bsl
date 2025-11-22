@@ -95,8 +95,7 @@ ImplFile
                   (1,0--2,70), NoneAtInvisible,
                   { LeadingKeyword = Extern (2,0--2,6)
                     InlineKeyword = None
-                    EqualsRange = None
-                    InKeyword = None })], (1,0--2,70), { InKeyword = None })],
+                    EqualsRange = None })], (1,0--2,70), { InKeyword = None })],
           PreXmlDocEmpty, [], None, (1,0--2,70), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []
