@@ -99,9 +99,9 @@ module CacheMetrics =
 
         let rows =
             [
-                for kv in statsByName do
-                    let name = kv.Key
-                    let stats = kv.Value
+                for k in statsByName.Keys |> Seq.sort do
+                    let name = k
+                    let stats = statsByName[k]
                     let totals = stats.GetTotals()
 
                     [
