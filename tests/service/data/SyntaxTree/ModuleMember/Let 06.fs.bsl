@@ -15,7 +15,7 @@ ImplFile
                   { LeadingKeyword = Let (1,0--1,3)
                     InlineKeyword = None
                     EqualsRange = Some (1,6--1,7)
-                    InKeyword = None })], (1,0--1,9),
+                    InKeyword = None })], (1,0--1,12),
               { InKeyword = Some (1,10--1,12) });
            Let
              (false,
@@ -29,7 +29,7 @@ ImplFile
                   { LeadingKeyword = Let (2,0--2,3)
                     InlineKeyword = None
                     EqualsRange = Some (2,6--2,7)
-                    InKeyword = None })], (2,0--2,9),
+                    InKeyword = None })], (2,0--2,12),
               { InKeyword = Some (2,10--2,12) });
            Let
              (false,
@@ -43,7 +43,7 @@ ImplFile
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
                     EqualsRange = Some (3,6--3,7)
-                    InKeyword = None })], (3,0--3,9),
+                    InKeyword = None })], (3,0--3,12),
               { InKeyword = Some (3,10--3,12) });
            Expr (Const (Unit, (4,0--4,2)), (4,0--4,2))], PreXmlDocEmpty, [],
           None, (1,0--4,2), { LeadingKeyword = None })], (true, true),

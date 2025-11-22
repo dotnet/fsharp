@@ -910,7 +910,12 @@ let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _
     let freeAttrs, decls = declsPreAttrs attrs vis
     // decls might have an extended range due to leading attributes
     let mWhole =
-        (mWhole, decls) ||> unionRangeWithListBy (fun (SynBinding(range = m)) -> m)
+        (mWhole, decls)
+        ||> unionRangeWithListBy (fun (SynBinding(range = m)) -> m)
+        |> fun m ->
+            match mIn with
+            | None -> m
+            | Some mIn -> unionRanges m mIn
 
     let letDecls = [ SynModuleDecl.Let(isRec, decls, mWhole, { InKeyword = mIn }) ]
 
