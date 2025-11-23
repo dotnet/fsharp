@@ -812,17 +812,25 @@ val internal ResolveTypeLongIdent:
     genOk: PermitDirectReferenceToGeneratedType ->
         ResultOrException<EnclosingTypeInst * TyconRef * TypeInst>
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type internal ExplicitOrSpread<'Explicit, 'Spread> =
+    /// An expression or value derived from an explicit member or record field.
+    | Explicit of 'Explicit
+
+    /// An expression or value derived from a member or field coming from a spread.
+    | Spread of 'Spread
+
+val (|ExplicitOrSpread|): ExplicitOrSpread<'Value, 'Value> -> 'Value
+
 /// Resolve a long identifier to a field
 val internal ResolveField:
     sink: TcResultsSink ->
     ncenv: NameResolver ->
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
-    ty: TType ->
-    mp: Ident list ->
-    id: Ident ->
+    fldInfo: ExplicitOrSpread<TType * Ident list * Ident, TType * Ident list * Ident> ->
     allFields: Ident list ->
-        FieldResolution list
+        FieldResolution list option
 
 /// Resolve a long identifier to a nested field
 val internal ResolveNestedField:

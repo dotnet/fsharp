@@ -2357,6 +2357,7 @@ type LexFilterImpl (
             match lookaheadTokenTup.Token with
             | RBRACE _
             | IDENT _
+            | DOT_DOT_DOT
             // The next clause detects the access annotations after the 'with' in:
             //    member  x.PublicGetSetProperty
             //                 with public get i = "Ralf"
@@ -2397,18 +2398,26 @@ type LexFilterImpl (
                 //
                 //    with x = ...
                 //
+                //  or
+                //
+                //    with ...spreadSrc
+                //
                 // Which can only be part of
                 //
                 //   { r with x = ... }
                 //
+                // or
+                //
+                //   { r with ...spreadSrc }
+                //
                 // and in this case push a CtxtSeqBlock to cover the sequence
-                let isFollowedByLongIdentEquals =
+                let isFollowedByLongIdentEqualsOrDotDotDot =
                     let tokenTup = popNextTokenTup()
-                    let res = isLongIdentEquals tokenTup.Token
+                    let res = isLongIdentEquals tokenTup.Token || match tokenTup.Token with DOT_DOT_DOT -> true | _ -> false
                     delayToken tokenTup
                     res
 
-                if isFollowedByLongIdentEquals then
+                if isFollowedByLongIdentEqualsOrDotDotDot then
                     pushCtxtSeqBlock tokenTup NoAddBlockEnd
 
                 returnToken tokenLexbufState OWITH
