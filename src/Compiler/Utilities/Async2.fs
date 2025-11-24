@@ -102,13 +102,11 @@ module Async2Implementation =
 
         member this.Ref: ICriticalNotifyCompletion ref = ref this
 
-        member _.Running = running
-
         member _.IsStackSufficient() =
             depth <- depth + 1
             depth % MaxDepth <> 0
 
-        member _.ShouldBounce = pending.IsNone && insufficientStack ()
+        member _.ShouldBounce = not running || pending.IsNone && insufficientStack ()
 
         static member Current = holder.Value
 
@@ -160,8 +158,8 @@ module Async2Implementation =
 
     type Async2Code<'TOverall, 'T> = ResumableCode<Async2Data<'TOverall>, 'T>
 
-    [<NoComparison>]
-    type Async2<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>() =
+    [<Struct; NoComparison>]
+    type Async2<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>> =
         [<DefaultValue(false)>]
         val mutable StateMachine: 'm
 
@@ -553,21 +551,12 @@ type Async2 =
         async2 {
             let! ct = Async2.CancellationToken
             use lcts = CancellationTokenSource.CreateLinkedTokenSource ct
-
-            let tasks =
-                seq {
-                    for c in computations do
-                        async2 {
-                            try
-                                return! c
-                            with exn ->
-                                lcts.Cancel()
-                                return raise exn
-                        }
-                        |> Async2.startInThreadPool lcts.Token
-                }
-
-            return! Task.WhenAll tasks
+            try 
+                let tasks = computations |> Seq.map (Async2.startInThreadPool lcts.Token)
+                return! Task.WhenAll tasks
+            with exn ->
+                lcts.Cancel()
+                return raise exn
         }
 
     static member Sequential(computations: Async2<_> seq) =
