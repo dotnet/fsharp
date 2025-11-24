@@ -178,7 +178,7 @@ namespace Microsoft.FSharp.Linq
         /// 
         /// <example-tbd></example-tbd>
         [<CustomOperation("groupBy",AllowIntoPattern=true)>] 
-        member GroupBy: source:QuerySource<'T,'Q> * [<ProjectionParameter>] keySelector:('T -> 'Key) -> QuerySource<System.Linq.IGrouping<'Key,'T>,'Q> when 'Key: equality 
+        member GroupBy: source:QuerySource<'T,'Q> * [<ProjectionParameter>] keySelector:('T -> 'Key) -> QuerySource<IGrouping<'Key,'T>,'Q> when 'Key: equality 
 
         /// <summary>A query operator that sorts the elements selected so far in ascending order by the given sorting key.
         /// </summary>
@@ -215,7 +215,7 @@ namespace Microsoft.FSharp.Linq
         /// 
         /// <example-tbd></example-tbd>
         [<CustomOperation("groupValBy",AllowIntoPattern=true)>] 
-        member GroupValBy<'T,'Key,'Value,'Q> : source:QuerySource<'T,'Q> * [<ProjectionParameter>] resultSelector:('T -> 'Value) * [<ProjectionParameter>] keySelector:('T -> 'Key) -> QuerySource<System.Linq.IGrouping<'Key,'Value>,'Q> when 'Key: equality 
+        member GroupValBy<'T,'Key,'Value,'Q> : source:QuerySource<'T,'Q> * [<ProjectionParameter>] resultSelector:('T -> 'Value) * [<ProjectionParameter>] keySelector:('T -> 'Key) -> QuerySource<IGrouping<'Key,'Value>,'Q> when 'Key: equality 
 
         /// <summary>A query operator that correlates two sets of selected values based on matching keys. 
         /// Normal usage is 'join y in elements2 on (key1 = key2)'. 

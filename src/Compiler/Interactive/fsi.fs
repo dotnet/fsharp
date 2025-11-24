@@ -103,7 +103,7 @@ module internal Utilities =
     let getAnyToLayoutCall (ty: Type) =
         if ty.IsPointer then
             let pointerToNativeInt (o: obj) : nativeint =
-                System.Reflection.Pointer.Unbox o
+                Pointer.Unbox o
                 |> NativeInterop.NativePtr.ofVoidPtr<nativeptr<byte>>
                 |> NativeInterop.NativePtr.toNativeInt
 
@@ -306,7 +306,7 @@ type ILMultiInMemoryAssemblyEmitEnv
     let internalTypes = HashSet<ILTypeRef>(HashIdentity.Structural)
     let internalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
     let internalFields = HashSet<ILFieldRef>(HashIdentity.Structural)
-    let dynamicCcuScopeRef = ILScopeRef.Assembly(IL.mkSimpleAssemblyRef dynamicCcuName)
+    let dynamicCcuScopeRef = ILScopeRef.Assembly(mkSimpleAssemblyRef dynamicCcuName)
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
     let convAssemblyRef (aref: ILAssemblyRef) =
@@ -322,7 +322,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         | None -> ()
         | Some version -> asmName.Version <- Version(int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
 
-        asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
+        asmName.CultureInfo <- CultureInfo.InvariantCulture
         asmName
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
@@ -485,7 +485,7 @@ type ILMultiInMemoryAssemblyEmitEnv
         fref.DeclaringTypeRef.Scope.IsLocalRef && internalFields.Contains(fref)
 
 type ILAssemblyEmitEnv =
-    | SingleRefEmitAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
+    | SingleRefEmitAssembly of cenv * ILDynamicAssemblyEmitEnv
     | MultipleInMemoryAssemblies of ILMultiInMemoryAssemblyEmitEnv
 
 type internal FsiValuePrinterMode =
@@ -881,7 +881,7 @@ type internal FsiConsoleOutput(tcConfigB, outWriter: TextWriter, errorWriter: Te
         out.uprintfnn fmt
 
     /// clear screen
-    member _.Clear() = System.Console.Clear()
+    member _.Clear() = Console.Clear()
 
     member _.Out = outWriter
 
@@ -909,7 +909,8 @@ type internal DiagnosticsLoggerThatStopsOnFirstError
                 exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        | (FSharpDiagnosticSeverity.Warning | FSharpDiagnosticSeverity.Info) as adjustedSeverity ->
+        | FSharpDiagnosticSeverity.Warning
+        | FSharpDiagnosticSeverity.Info as adjustedSeverity ->
             DoWithDiagnosticColor adjustedSeverity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
@@ -1004,7 +1005,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let displayHelpFsi tcConfigB (blocks: CompilerOptionBlock list) =
         Console.Write(GetBannerText tcConfigB)
         fprintfn fsiConsoleOutput.Out ""
-        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage (executableFileNameWithoutExtension.Value))
+        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage executableFileNameWithoutExtension.Value)
         Console.Write(GetCompilerOptionBlocks blocks tcConfigB.bufferWidth)
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiDetailedHelpLink ())
@@ -1259,7 +1260,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo ())
         fsiConsoleOutput.uprintfn ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine ())
-        fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiIntroTextHeader3 (helpLine))
+        fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiIntroTextHeader3 helpLine)
         fsiConsoleOutput.uprintfn ""
         fsiConsoleOutput.uprintfn ""
 
@@ -1408,7 +1409,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // # silentPrompt
     member _.ShowPrompt
         with get () = showPrompt
-        and set (value) = showPrompt <- value
+        and set value = showPrompt <- value
 
     member _.SkipNext() =
         if showPrompt then
@@ -1445,7 +1446,7 @@ type internal FsiConsoleInput
     do
         if fsiOptions.Interact then
             if fsiOptions.PeekAheadOnConsoleToPermitTyping then
-                (Thread(fun () ->
+                Thread(fun () ->
                     match consoleOpt with
                     | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
                         if List.isEmpty fsiOptions.SourceFiles then
@@ -1463,7 +1464,7 @@ type internal FsiConsoleInput
                             fprintfn outWriter "first-line-reader-thread has set signal and exited."
                     | _ ->
                         ignore (inReader.Peek())
-                        consoleReaderStartupDone.Set() |> ignore))
+                        consoleReaderStartupDone.Set() |> ignore)
                     .Start()
             else
                 if progress then
@@ -1613,8 +1614,7 @@ let rec ConvReflectionTypeToILType (reflectionTy: Type) =
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
 
-    let compPath =
-        (CompilationPath.CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, []))
+    let compPath = CompilationPath.CompPath(ILScopeRef.Local, SyntaxAccess.Unknown, [])
 
     let mutable mty = Unchecked.defaultof<_>
 
@@ -1675,7 +1675,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
     entity, v, CheckedImplFile.CheckedImplFile(qname, mty, contents, false, false, StampMap.Empty, Map.empty)
 
-let dynamicCcuName (isEmitMulti) =
+let dynamicCcuName isEmitMulti =
     $"""FSI-ASSEMBLY{if isEmitMulti then "-MULTI" else ""}"""
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
@@ -1727,7 +1727,7 @@ type internal FsiDynamicCompiler
         else
             let assemBuilder, moduleBuilder =
                 mkDynamicAssemblyAndModule (
-                    dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit),
+                    dynamicCcuName tcConfigB.fsiMultiAssemblyEmit,
                     tcConfigB.optSettings.LocalOptimizationsEnabled,
                     fsiCollectible
                 )
@@ -1820,7 +1820,7 @@ type internal FsiDynamicCompiler
 
             let attrs =
                 [
-                    tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit))
+                    tcGlobals.MakeInternalsVisibleToAttribute(dynamicCcuName tcConfigB.fsiMultiAssemblyEmit)
                     yield! manifest.CustomAttrs.AsList()
                 ]
 
@@ -1867,7 +1867,7 @@ type internal FsiDynamicCompiler
 
         let asm =
             match opts.pdbfile, pdbBytes with
-            | (Some pdbfile), (Some pdbBytes) ->
+            | Some pdbfile, Some pdbBytes ->
                 File.WriteAllBytes(pdbfile, pdbBytes)
 #if FOR_TESTING
                 Directory.CreateDirectory(scriptingSymbolsPath.Value) |> ignore
@@ -1924,7 +1924,7 @@ type internal FsiDynamicCompiler
                                             null,
                                             null,
                                             [||],
-                                            Globalization.CultureInfo.InvariantCulture
+                                            CultureInfo.InvariantCulture
                                         )
                                     )
 
@@ -1969,7 +1969,7 @@ type internal FsiDynamicCompiler
         ReportTime tcConfig "Linking"
 
         let ilxMainModule =
-            CreateModuleFragment(tcConfigB, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit), codegenResults)
+            CreateModuleFragment(tcConfigB, dynamicCcuName tcConfigB.fsiMultiAssemblyEmit, codegenResults)
 
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
@@ -2223,46 +2223,50 @@ type internal FsiDynamicCompiler
                     inputs
                 ))
 
-        // typeCheckOnly either reports all errors found so far or exits with 0 - it stops processing the script
+        // typeCheckOnly: check for errors and skip code generation
         if tcConfig.typeCheckOnly then
+            // Always abort on errors (for both loaded files and main script)
             diagnosticsLogger.AbortOnError(fsiConsoleOutput)
-            raise StopProcessing
+            // Update state with type-checking results but skip code generation
+            let newIState = { istate with tcState = tcState }
 
-        let codegenResults, optEnv, fragName =
-            ProcessTypedImpl(
-                diagnosticsLogger,
-                optEnv,
-                tcState,
-                tcConfig,
-                isInteractiveItExpr,
-                topCustomAttrs,
-                prefixPath,
-                isIncrementalFragment,
-                declaredImpls,
-                ilxGenerator
-            )
+            newIState, tcEnvAtEndOfLastInput, []
+        else
+            let codegenResults, optEnv, fragName =
+                ProcessTypedImpl(
+                    diagnosticsLogger,
+                    optEnv,
+                    tcState,
+                    tcConfig,
+                    isInteractiveItExpr,
+                    topCustomAttrs,
+                    prefixPath,
+                    isIncrementalFragment,
+                    declaredImpls,
+                    ilxGenerator
+                )
 
-        let newState, declaredImpls =
-            ProcessCodegenResults(
-                ctok,
-                diagnosticsLogger,
-                istate,
-                optEnv,
-                tcState,
-                tcConfig,
-                prefixPath,
-                showTypes,
-                isIncrementalFragment,
-                fragName,
-                declaredImpls,
-                ilxGenerator,
-                codegenResults,
-                m
-            )
+            let newState, declaredImpls =
+                ProcessCodegenResults(
+                    ctok,
+                    diagnosticsLogger,
+                    istate,
+                    optEnv,
+                    tcState,
+                    tcConfig,
+                    prefixPath,
+                    showTypes,
+                    isIncrementalFragment,
+                    fragName,
+                    declaredImpls,
+                    ilxGenerator,
+                    codegenResults,
+                    m
+                )
 
-        CheckEntryPoint istate.tcGlobals declaredImpls
+            CheckEntryPoint istate.tcGlobals declaredImpls
 
-        (newState, tcEnvAtEndOfLastInput, declaredImpls)
+            (newState, tcEnvAtEndOfLastInput, declaredImpls)
 
     let tryGetGeneratedValue istate cenv v =
         match istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), v) with
@@ -2607,7 +2611,7 @@ type internal FsiDynamicCompiler
 
         // Check the file can be resolved
         if FileSystem.IsInvalidPathShim(path) then
-            error (Error(FSIstrings.SR.fsiInvalidAssembly (path), m))
+            error (Error(FSIstrings.SR.fsiInvalidAssembly path, m))
 
         // Do the resolution
         let resolutions =
@@ -2628,7 +2632,7 @@ type internal FsiDynamicCompiler
 
         // Print the explicit assembly resolutions. Only for explicit '#r' in direct inputs, not those
         // in #load files. This means those resulting from nuget package resolution are not shown.
-        for (_, resolutions, show, _) in refs do
+        for _, resolutions, show, _ in refs do
             if show then
                 for ar in resolutions do
                     let format =
@@ -2639,32 +2643,32 @@ type internal FsiDynamicCompiler
                             match reportedAssemblies.TryGetValue resolvedPath with
                             | false, _ ->
                                 reportedAssemblies.Add(resolvedPath, fileTime)
-                                FSIstrings.SR.fsiDidAHashr (ar.resolvedPath)
-                            | true, time when time <> fileTime -> FSIstrings.SR.fsiDidAHashrWithStaleWarning (ar.resolvedPath)
-                            | _ -> FSIstrings.SR.fsiDidAHashr (ar.resolvedPath)
+                                FSIstrings.SR.fsiDidAHashr ar.resolvedPath
+                            | true, time when time <> fileTime -> FSIstrings.SR.fsiDidAHashrWithStaleWarning ar.resolvedPath
+                            | _ -> FSIstrings.SR.fsiDidAHashr ar.resolvedPath
                         else
-                            FSIstrings.SR.fsiDidAHashrWithLockWarning (ar.resolvedPath)
+                            FSIstrings.SR.fsiDidAHashrWithLockWarning ar.resolvedPath
 
                     fsiConsoleOutput.uprintnfnn "%s" format
 
         // Collect the overall resolutions
         let resolutions =
             [
-                for (_, resolutions, _, _) in refs do
+                for _, resolutions, _, _ in refs do
                     yield! resolutions
             ]
 
         // Add then to the config.
-        for (path, _, _, m) in refs do
+        for path, _, _, m in refs do
             tcConfigB.AddReferencedAssemblyByPath(m, path)
 
         let tcState = istate.tcState
 
         let tcEnv, asms =
             try
-                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit), resolutions)
+                RequireReferences(ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName tcConfigB.fsiMultiAssemblyEmit, resolutions)
             with _ ->
-                for (path, _, _, m) in refs do
+                for path, _, _, m in refs do
                     tcConfigB.RemoveReferencedAssemblyByPath(m, path)
 
                 reraise ()
@@ -2780,7 +2784,7 @@ type internal FsiDynamicCompiler
                                 // Send outputs via diagnostics
                                 if result.StdOut.Length > 0 || result.StdError.Length > 0 then
                                     for line in Array.append result.StdOut result.StdError do
-                                        errorR (Error(FSComp.SR.packageManagerError (line), m))
+                                        errorR (Error(FSComp.SR.packageManagerError line, m))
 
                                 //Write outputs in F# Interactive and compiler
                                 tcConfigB.packageManagerLines <-
@@ -3031,7 +3035,7 @@ type internal FsiDynamicCompiler
         let emEnv0 =
             if tcConfigB.fsiMultiAssemblyEmit then
                 let emEnv =
-                    ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit))
+                    ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName tcConfigB.fsiMultiAssemblyEmit)
 
                 MultipleInMemoryAssemblies emEnv
             else
@@ -3044,10 +3048,10 @@ type internal FsiDynamicCompiler
                         tryFindSysILTypeRef = tcGlobals.TryFindSysILTypeRef
                     }
 
-                let emEnv = ILDynamicAssemblyWriter.emEnv0
+                let emEnv = emEnv0
                 SingleRefEmitAssembly(cenv, emEnv)
 
-        let ccuName = dynamicCcuName (tcConfigB.fsiMultiAssemblyEmit)
+        let ccuName = dynamicCcuName tcConfigB.fsiMultiAssemblyEmit
 
         let tcEnv, openDecls0 =
             GetInitialTcEnv(ccuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
@@ -3297,7 +3301,7 @@ type internal MagicAssemblyResolution() =
                 | None ->
                     // Check dynamic assemblies by simple name
                     match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName, false) with
-                    | Some asm when not (tcConfigB.fsiMultiAssemblyEmit) -> asm
+                    | Some asm when not tcConfigB.fsiMultiAssemblyEmit -> asm
                     | _ ->
 
                         // Otherwise continue
@@ -3392,7 +3396,7 @@ type internal MagicAssemblyResolution() =
                                             | Some resolvedPath -> OkResult([], Choice1Of2 resolvedPath)
                                             | None ->
 
-                                                ErrorResult([], Failure(FSIstrings.SR.fsiFailedToResolveAssembly (simpleAssemName)))
+                                                ErrorResult([], Failure(FSIstrings.SR.fsiFailedToResolveAssembly simpleAssemName))
 
                         match overallSearchResult with
                         | ErrorResult _ -> null
@@ -3402,7 +3406,7 @@ type internal MagicAssemblyResolution() =
                             match res with
                             | Choice1Of2 assemblyName ->
                                 if simpleAssemName <> "Mono.Posix" && progress then
-                                    fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo (assemblyName))
+                                    fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo assemblyName)
 
                                 if isRunningOnCoreClr then
                                     assemblyLoadFrom assemblyName
@@ -3472,11 +3476,11 @@ type internal MagicAssemblyResolution() =
                     args.Name
                 ))
 
-        AppDomain.CurrentDomain.add_AssemblyResolve (resolveAssembly)
+        AppDomain.CurrentDomain.add_AssemblyResolve resolveAssembly
 
         { new IDisposable with
             member _.Dispose() =
-                AppDomain.CurrentDomain.remove_AssemblyResolve (resolveAssembly)
+                AppDomain.CurrentDomain.remove_AssemblyResolve resolveAssembly
         }
 
 //----------------------------------------------------------------------------
@@ -3682,7 +3686,7 @@ type FsiInteractionProcessor
         if FileSystem.DirectoryExistsShim(path) then
             tcConfigB.implicitIncludeDir <- path
         else
-            error (Error(FSIstrings.SR.fsiDirectoryDoesNotExist (path), m))
+            error (Error(FSIstrings.SR.fsiDirectoryDoesNotExist path, m))
 
     /// Parse one interaction. Called on the parser thread.
     let ParseInteraction diagnosticOptions (tokenizer: LexFilter.LexFilter) =
@@ -3857,7 +3861,7 @@ type FsiInteractionProcessor
             PrintOptionInfo tcConfigB
             istate, Completed None
 #endif
-        | ParsedHashDirective(("clear"), [], _) ->
+        | ParsedHashDirective("clear", [], _) ->
             fsiOptions.ClearScreen()
             istate, Completed None
 
@@ -3975,7 +3979,7 @@ type FsiInteractionProcessor
                     let hashes =
                         List.takeWhile isDefHash defs
                         |> List.choose (function
-                            | (SynModuleDecl.HashDirective(hash, _)) -> Some(hash)
+                            | SynModuleDecl.HashDirective(hash, _) -> Some(hash)
                             | _ -> None)
 
                     let defsB = List.skipWhile isDefHash defs
@@ -4086,8 +4090,8 @@ type FsiInteractionProcessor
             (istate, CtrlC)
 
         | :? TargetInvocationException as e when
-            (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException"
-            || (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "OperationCanceledException"
+            ControlledExecution.StripTargetInvocationException(e).GetType().Name = "ThreadAbortException"
+            || ControlledExecution.StripTargetInvocationException(e).GetType().Name = "OperationCanceledException"
             ->
             fsiInterruptController.ClearInterruptRequest()
             fsiInterruptController.InterruptAllowed <- InterruptIgnored
@@ -4494,7 +4498,7 @@ let internal DriveFsiEventLoop
                 fsi.EventLoopRun()
             with
             | :? TargetInvocationException as e when
-                (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException"
+                ControlledExecution.StripTargetInvocationException(e).GetType().Name = "ThreadAbortException"
                 ->
                 // If this TAE handler kicks it's almost certainly too late to save the
                 // state of the process - the state of the message loop may have been corrupted
@@ -4603,7 +4607,7 @@ type FsiEvaluationSession
     do InstallErrorLoggingOnThisThread diagnosticsLogger // FSI error logging on main thread.
 
     let updateBannerText () =
-        tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName (FSharpBannerVersion)
+        tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName FSharpBannerVersion
 
     do updateBannerText () // setting the correct banner so that 'fsi -?' display the right thing
 
@@ -4633,10 +4637,10 @@ type FsiEvaluationSession
         try
             SetServerCodePages fsiOptions
         with e ->
-            warning (e)
+            warning e
 
     let restoreEncoding =
-        if tcConfigB.utf8output && Console.OutputEncoding <> Text.Encoding.UTF8 then
+        if tcConfigB.utf8output && Console.OutputEncoding <> Encoding.UTF8 then
             let previousEncoding = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
 
@@ -5264,7 +5268,7 @@ type CompilerInputStream() =
 
     /// Feeds content into the stream.
     member _.Add(str: string) =
-        if (String.IsNullOrEmpty(str)) then
+        if String.IsNullOrEmpty(str) then
             ()
         else
 

@@ -150,7 +150,7 @@ module internal WorkspaceDependencyGraphExtensions =
 
         [<Extension>]
         static member AddProjectWithoutFiles
-            (this: GraphBuilder<_, _, (ProjectConfig * FSharpProjectSnapshot seq), _>, computeProjectWithoutFiles)
+            (this: GraphBuilder<_, _, ProjectConfig * FSharpProjectSnapshot seq, _>, computeProjectWithoutFiles)
             =
             this.AddDependentNode(
                 WorkspaceNodeKey.ProjectWithoutFiles this.State,
@@ -168,13 +168,13 @@ module internal WorkspaceDependencyGraphExtensions =
             GraphBuilder(
                 this.Graph,
                 (Seq.append this.Ids ids),
-                (_.UnpackOneMany(WorkspaceNode.projectWithoutFiles, WorkspaceNode.sourceFile)),
+                _.UnpackOneMany(WorkspaceNode.projectWithoutFiles, WorkspaceNode.sourceFile),
                 this.State
             )
 
         [<Extension>]
         static member AddProjectSnapshot
-            (this: GraphBuilder<_, _, (ProjectWithoutFiles * FSharpFileSnapshot seq), _>, computeProjectSnapshot)
+            (this: GraphBuilder<_, _, ProjectWithoutFiles * FSharpFileSnapshot seq, _>, computeProjectSnapshot)
             =
 
             this.AddDependentNode(
@@ -334,27 +334,23 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
             depGraph
                 .AddReferencesOnDisk(projectConfig.ReferencesOnDisk)
                 .AddProjectConfig(projectIdentifier, (fun refsOnDisk -> projectConfig.With(refsOnDisk |> Seq.toList)))
-                .AddProjectWithoutFiles(
-                    (fun (projectConfig, referencedProjects) ->
+                .AddProjectWithoutFiles(fun (projectConfig, referencedProjects) ->
 
-                        let referencedProjects =
-                            referencedProjects
-                            |> Seq.map (fun s ->
-                                FSharpReferencedProjectSnapshot.FSharpReference(
-                                    s.OutputFileName
-                                    |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
-                                    s
-                                ))
-                            |> Seq.toList
+                    let referencedProjects =
+                        referencedProjects
+                        |> Seq.map (fun s ->
+                            FSharpReferencedProjectSnapshot.FSharpReference(
+                                s.OutputFileName
+                                |> Option.defaultWith (fun () -> failwith "project doesn't have output filename"),
+                                s
+                            ))
+                        |> Seq.toList
 
-                        projectConfig, referencedProjects)
-                )
+                    projectConfig, referencedProjects)
                 .AddSourceFiles(sourceFilePaths |> Seq.map (fun path -> path, createFileSnapshot path))
-                .AddProjectSnapshot(
-                    (fun ((projectConfig, referencedProjects), sourceFiles) ->
-                        ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toList)
-                        |> FSharpProjectSnapshot)
-                )
+                .AddProjectSnapshot(fun ((projectConfig, referencedProjects), sourceFiles) ->
+                    ProjectSnapshot(projectConfig, referencedProjects, sourceFiles |> Seq.toList)
+                    |> FSharpProjectSnapshot)
 
             // In case this is an update, we should check for any existing project references that are not contained in the incoming compiler args and remove them
             let existingReferences = depGraph.GetProjectReferencesOf projectIdentifier |> Set
@@ -375,7 +371,7 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
             for dependentProjectId in dependentProjectIds do
                 depGraph.AddProjectReference(dependentProjectId, projectIdentifier)
 
-            this.Debug_DumpGraphOnEveryChange |> Option.iter (this.Debug_DumpMermaid)
+            this.Debug_DumpGraphOnEveryChange |> Option.iter this.Debug_DumpMermaid
 
             projectIdentifier)
 
@@ -448,4 +444,4 @@ type FSharpWorkspaceProjects internal (depGraph: IThreadSafeDependencyGraph<_, _
 
             depGraph.ReplaceSourceFiles(projectIdentifier, newFilesWithSnapshots)
 
-            this.Debug_DumpGraphOnEveryChange |> Option.iter (this.Debug_DumpMermaid))
+            this.Debug_DumpGraphOnEveryChange |> Option.iter this.Debug_DumpMermaid)

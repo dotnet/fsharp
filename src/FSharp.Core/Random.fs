@@ -4,7 +4,6 @@ namespace Microsoft.FSharp.Core
 
 open System
 open System.Runtime.CompilerServices
-open System.Threading
 
 [<AbstractClass; Sealed>]
 type internal ThreadSafeRandom() =

@@ -36,7 +36,7 @@ type ProcessedNode<'Item, 'Result> =
         Result: 'Result
     }
 
-type GraphProcessingException(msg, ex: System.Exception) =
+type GraphProcessingException(msg, ex: Exception) =
     inherit exn(msg, ex)
 
 let processGraphAsync<'Item, 'Result when 'Item: equality and 'Item: comparison>

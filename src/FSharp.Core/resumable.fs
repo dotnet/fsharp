@@ -12,17 +12,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
 open System
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Printf
-open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple = false)>]
 [<Sealed>]
 type NoEagerConstraintApplicationAttribute() =
-    inherit System.Attribute()
+    inherit Attribute()
 
 type IResumableStateMachine<'Data> =
     abstract ResumptionPoint: int
@@ -176,7 +172,7 @@ module ResumableCode =
                 let rf = GetResumptionFunc &sm
 
                 sm.ResumptionDynamicInfo.ResumptionFunc <-
-                    (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+                    ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf))
 
                 false
         else
@@ -195,7 +191,7 @@ module ResumableCode =
             let rf = GetResumptionFunc &sm
 
             sm.ResumptionDynamicInfo.ResumptionFunc <-
-                (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+                ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf))
 
             false
 
@@ -234,8 +230,8 @@ module ResumableCode =
                 let rf = GetResumptionFunc &sm
 
                 sm.ResumptionDynamicInfo.ResumptionFunc <-
-                    (ResumptionFunc<'Data>(fun sm ->
-                        TryWithDynamic(&sm, ResumableCode<'Data, 'T>(fun sm -> rf.Invoke(&sm)), handler)))
+                    ResumptionFunc<'Data>(fun sm ->
+                        TryWithDynamic(&sm, ResumableCode<'Data, 'T>(fun sm -> rf.Invoke(&sm)), handler))
 
                 false
         with exn ->
@@ -290,7 +286,7 @@ module ResumableCode =
             let rf = GetResumptionFunc &sm
 
             sm.ResumptionDynamicInfo.ResumptionFunc <-
-                (ResumptionFunc<'Data>(fun sm -> TryFinallyCompensateDynamic(&sm, rf, savedExn)))
+                ResumptionFunc<'Data>(fun sm -> TryFinallyCompensateDynamic(&sm, rf, savedExn))
 
             false
 
@@ -315,8 +311,8 @@ module ResumableCode =
             let rf = GetResumptionFunc &sm
 
             sm.ResumptionDynamicInfo.ResumptionFunc <-
-                (ResumptionFunc<'Data>(fun sm ->
-                    TryFinallyAsyncDynamic(&sm, ResumableCode<'Data, 'T>(fun sm -> rf.Invoke(&sm)), compensation)))
+                ResumptionFunc<'Data>(fun sm ->
+                    TryFinallyAsyncDynamic(&sm, ResumableCode<'Data, 'T>(fun sm -> rf.Invoke(&sm)), compensation))
 
             false
 

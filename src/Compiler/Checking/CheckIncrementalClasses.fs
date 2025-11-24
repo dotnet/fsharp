@@ -4,7 +4,6 @@ module internal FSharp.Compiler.CheckIncrementalClasses
 
 open System
 
-open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library

@@ -9,18 +9,14 @@ open System.Diagnostics
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
-open Microsoft.FSharp.Control
-open Microsoft.FSharp.Collections
 
 module internal IEnumerator =
 
-    let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
-    let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-    let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+    let noReset() = raise (NotSupportedException(SR.GetString(SR.resetNotSupported)))
+    let notStarted() = raise (InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+    let alreadyFinished() = raise (InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
     let check started = if not started then notStarted()
-    let dispose (r : System.IDisposable) = r.Dispose()
+    let dispose (r : IDisposable) = r.Dispose()
 
     let cast (e : IEnumerator) : IEnumerator<'T> =
         { new IEnumerator<'T> with
@@ -34,10 +30,10 @@ module internal IEnumerator =
 
               member _.Reset() = noReset()
 
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   match e with
-                  | :? System.IDisposable as e -> e.Dispose()
+                  | :? IDisposable as e -> e.Dispose()
                   | _ -> ()   }
 
     /// A concrete implementation of an enumerator that returns no values
@@ -49,7 +45,7 @@ module internal IEnumerator =
                 check started
                 (alreadyFinished() : 'T)
 
-        interface System.Collections.IEnumerator with
+        interface IEnumerator with
             member _.Current =
                 check started
                 (alreadyFinished() : obj)
@@ -61,7 +57,7 @@ module internal IEnumerator =
 
             member _.Reset() = noReset()
 
-        interface System.IDisposable with
+        interface IDisposable with
              member _.Dispose() = ()
             
     let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
@@ -126,7 +122,7 @@ module internal IEnumerator =
 
             member _.Reset() = noReset()
 
-        interface System.IDisposable with
+        interface IDisposable with
              member _.Dispose() = dispose()
 
     [<Sealed>]
@@ -144,7 +140,7 @@ module internal IEnumerator =
 
             member _.Reset() = noReset()
 
-        interface System.IDisposable with
+        interface IDisposable with
             member _.Dispose() = ()
 
     let Singleton x = (new Singleton<'T>(x) :> IEnumerator<'T>)
@@ -161,7 +157,7 @@ module internal IEnumerator =
 
               member _.Reset() = noReset()
 
-          interface System.IDisposable with
+          interface IDisposable with
               member _.Dispose() =
                   try
                       e.Dispose()
@@ -186,14 +182,12 @@ open System
 open System.Diagnostics
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Collections.IEnumerator
 open Microsoft.FSharp.Primitives.Basics
 open System.Collections
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 
 module RuntimeHelpers =
 
@@ -208,13 +202,13 @@ module RuntimeHelpers =
                    member _.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
 
     let Generate openf compute closef =
-        mkSeq (fun () -> new IEnumerator.GeneratedEnumerable<_,_>(openf, compute, closef) :> IEnumerator<'T>)
+        mkSeq (fun () -> new GeneratedEnumerable<_,_>(openf, compute, closef) :> IEnumerator<'T>)
 
     let EnumerateFromFunctions create moveNext current =
         Generate
             create
             (fun x -> if moveNext x then Some(current x) else None)
-            (fun x -> match box(x) with :? System.IDisposable as id -> id.Dispose() | _ -> ())
+            (fun x -> match box(x) with :? IDisposable as id -> id.Dispose() | _ -> ())
 
     // A family of enumerators that can have additional 'finally' actions added to the enumerator through
     // the use of mutation. This is used to 'push' the disposal action for a 'use' into the next enumerator.
@@ -240,7 +234,7 @@ module RuntimeHelpers =
                         a.AppendFinallyAction(compensation)
                         ie
                     | _ ->
-                        IEnumerator.EnumerateThenFinally compensation ie
+                        EnumerateThenFinally compensation ie
                 with e ->
                     compensation()
                     reraise()
@@ -251,7 +245,7 @@ module RuntimeHelpers =
     [<Sealed>]
     type ConcatEnumerator<'T,'U when 'U :> seq<'T>>(sources: seq<'U>) =
         let mutable outerEnum = sources.GetEnumerator()
-        let mutable currInnerEnum = IEnumerator.Empty()
+        let mutable currInnerEnum = Empty()
 
         let mutable started = false
         let mutable finished = false
@@ -291,8 +285,8 @@ module RuntimeHelpers =
                         compensations <- []
 
         member x.GetCurrent() =
-            IEnumerator.check started
-            if finished then IEnumerator.alreadyFinished() else x.currElement
+            check started
+            if finished then alreadyFinished() else x.currElement
 
         interface IFinallyEnumerator with
             member _.AppendFinallyAction(f) =
@@ -337,16 +331,16 @@ module RuntimeHelpers =
                         takeOuter()
                   takeInner ()
 
-            member _.Reset() = IEnumerator.noReset()
+            member _.Reset() = noReset()
 
-        interface System.IDisposable with
+        interface IDisposable with
 
             [<DebuggerStepThrough>]
             member x.Dispose() =
                 if not finished then
                     x.Finish()
 
-    let EnumerateUsing (resource : 'T :> System.IDisposable) (source: 'T -> #seq<'U>) =
+    let EnumerateUsing (resource : 'T :> IDisposable) (source: 'T -> #seq<'U>) =
         (FinallyEnumerable((fun () -> match box resource with null -> () | _ -> resource.Dispose()),
                            (fun () -> source resource :> seq<_>)) :> seq<_>)
 
@@ -357,8 +351,8 @@ module RuntimeHelpers =
         let mutable started = false
         let mutable curr = None
         let getCurr() =
-            IEnumerator.check started
-            match curr with None -> IEnumerator.alreadyFinished() | Some x -> x
+            check started
+            match curr with None -> alreadyFinished() | Some x -> x
         let start() = if not started then (started <- true)
 
         let finish() = (curr <- None)
@@ -379,9 +373,9 @@ module RuntimeHelpers =
                            else
                                finish(); false
 
-                      member x.Reset() = IEnumerator.noReset()
+                      member x.Reset() = noReset()
 
-                   interface System.IDisposable with
+                   interface IDisposable with
                       member x.Dispose() = () }))
 
     let EnumerateThenFinally (source: seq<'T>) (compensation: unit -> unit)  =
@@ -389,7 +383,7 @@ module RuntimeHelpers =
 
 
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
-        let originalSource = lazy(source.GetEnumerator())
+        let originalSource = lazy source.GetEnumerator()
         let mutable shouldDisposeOriginalAtTheEnd = true
         let mutable exceptionalSource : IEnumerator<'T> option = None     
 
@@ -403,7 +397,7 @@ module RuntimeHelpers =
                 shouldDisposeOriginalAtTheEnd <- false
                 originalSource.Value.Dispose() 
 
-        let moveExceptionHandler(exn) = 
+        let moveExceptionHandler exn = 
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())
             exceptionalSource.Value.MoveNext()
 
@@ -440,9 +434,9 @@ module RuntimeHelpers =
                             // We go here when either original's disposal not fail, or failed but with an unmatched exception
                             | e when exceptionFilter e = 1 ->  moveExceptionHandler(e)
 
-                    member x.Reset() = IEnumerator.noReset()
+                    member x.Reset() = noReset()
 
-                interface System.IDisposable with
+                interface IDisposable with
                     member x.Dispose() = 
                         match exceptionalSource with
                         | Some es -> es.Dispose()
@@ -457,11 +451,11 @@ module RuntimeHelpers =
           interface IEvent<'Delegate,'Args> with
              member x.AddHandler(h) = addHandler h
              member x.RemoveHandler(h) = removeHandler h
-          interface System.IObservable<'Args> with
+          interface IObservable<'Args> with
              member x.Subscribe(r:IObserver<'Args>) =
                  let h = createHandler (fun _ args -> r.OnNext(args))
                  addHandler h
-                 { new System.IDisposable with
+                 { new IDisposable with
                       member x.Dispose() = removeHandler h } }
 
     let inline SetFreshConsTail cons tail = cons.( :: ).1 <- tail
@@ -498,7 +492,7 @@ type GeneratedSequenceBase<'T>() =
                              member x.GetFreshEnumerator() = e
 
                              [<DebuggerStepThrough>]
-                             member x.GenerateNext(_) = if e.MoveNext() then 1 else 0
+                             member x.GenerateNext _ = if e.MoveNext() then 1 else 0
 
                              member x.Close() = try e.Dispose() finally active.Close()
 
@@ -529,7 +523,7 @@ type GeneratedSequenceBase<'T>() =
         [<DebuggerStepThrough>]
         member x.MoveNext() = x.MoveNextImpl()
 
-        member _.Reset() = raise <| new System.NotSupportedException()
+        member _.Reset() = raise <| NotSupportedException()
 
 [<Struct; NoEquality; NoComparison>]
 type ListCollector<'T> =

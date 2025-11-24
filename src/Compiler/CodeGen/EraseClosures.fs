@@ -552,7 +552,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         ILMemberAccess.Public,
                         addedGenParams (* method is generic over added ILGenericParameterDefs *) ,
                         [],
-                        mkILReturn (cenv.ilg.typ_Object),
+                        mkILReturn cenv.ilg.typ_Object,
                         MethodBody.IL(notlazy convil)
                     )
 
@@ -628,7 +628,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         for nowField in nowFields do
                             yield! mkLdFreeVar nowCloSpec nowField
                         // Load up all the arguments (including self), which become free variables in the delegated closure
-                        for (n, _) in argToFreeVarMap do
+                        for n, _ in argToFreeVarMap do
                             mkLdarg (uint16 n)
                         // Make the instance of the delegated closure && return it.
                         I_newobj(laterCloSpec.Constructor, None)

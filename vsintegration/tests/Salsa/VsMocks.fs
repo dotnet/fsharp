@@ -1653,12 +1653,18 @@ module internal VsActual =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
-            if String.IsNullOrEmpty var then
-                Environment.GetEnvironmentVariable("VSAPPIDDIR")
+            // Try VS180COMNTOOLS first, then VS170COMNTOOLS, then VSAPPIDDIR
+            // TODO : use tryGetVSInstallDir from test utils instead
+            let var18 = Environment.GetEnvironmentVariable("VS180COMNTOOLS")
+            if String.IsNullOrEmpty var18 then
+                let var17 = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
+                if String.IsNullOrEmpty var17 then
+                    Environment.GetEnvironmentVariable("VSAPPIDDIR")
+                else
+                    var17
             else
-                var
-        if String.IsNullOrEmpty vsvar then failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
+                var18
+        if String.IsNullOrEmpty vsvar then failwith "VS180COMNTOOLS, VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =

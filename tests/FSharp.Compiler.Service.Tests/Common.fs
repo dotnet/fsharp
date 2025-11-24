@@ -7,7 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -189,7 +188,7 @@ let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, 
 let parseAndCheckScript70 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:7.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
-let parseSourceCode (name: string, code: string) =
+let getParseFileResults (name: string) (code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
     let filePath = Path.Combine(location, name)
@@ -198,6 +197,10 @@ let parseSourceCode (name: string, code: string) =
     let options, _errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     Range.setTestSource filePath code
+    parseResults
+
+let parseSourceCode (name: string, code: string) : ParsedInput =
+    let parseResults = getParseFileResults name code
     parseResults.ParseTree
 
 let matchBraces (name: string, code: string) =

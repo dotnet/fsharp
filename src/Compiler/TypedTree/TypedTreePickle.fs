@@ -252,8 +252,8 @@ let p_int32B n st =
     if n >= 0 && n <= 0x7F then
         p_byteB (b0 n) st
     else if n >= 0x80 && n <= 0x3FFF then
-        p_byteB ((0x80 ||| (n >>> 8))) st
-        p_byteB ((n &&& 0xFF)) st
+        p_byteB (0x80 ||| (n >>> 8)) st
+        p_byteB (n &&& 0xFF) st
     else
         p_byteB 0xFF st
         prim_p_int32B n st
@@ -1323,7 +1323,7 @@ let u_ILTypeRef st =
     ILTypeRef.Create(a, b, c)
 
 let u_ILArrayShape =
-    u_wrap (ILArrayShape) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
+    u_wrap ILArrayShape (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
 
 let rec u_ILType st =
     let tag = u_byte st
@@ -2406,6 +2406,7 @@ let u_tyar_spec_data st =
                         typar_constraints = e
                         typar_attribs = c
                         typar_is_contravariant = false
+                        typar_declared_name = None
                     }
     }
 

@@ -654,7 +654,7 @@ let adjustHatPrefixToTyparLookup mFull rightExpr =
         | SynExpr.LongIdent(false, SynLongIdent([ typarIdent ], _, _), None, _) ->
             let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
             SynExpr.Typar(typar, mFull)
-        | SynExpr.LongIdent(false, SynLongIdent((typarIdent :: items), (dotm :: dots), (_ :: itemTrivias)), None, _) ->
+        | SynExpr.LongIdent(false, SynLongIdent(typarIdent :: items, dotm :: dots, _ :: itemTrivias), None, _) ->
             let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
             let lookup = SynLongIdent(items, dots, itemTrivias)
             SynExpr.DotGet(SynExpr.Typar(typar, mFull), dotm, lookup, mFull)
@@ -687,7 +687,7 @@ let mkSynTypeTuple (elementTypes: SynTupleTypeSegment list) : SynType =
 
 #if DEBUG
 let debugPrint s =
-    if Internal.Utilities.Text.Parsing.Flags.debug then
+    if Flags.debug then
         printfn "\n%s" s
 #else
 let debugPrint s = ignore s
@@ -868,7 +868,9 @@ let mkClassMemberLocalBindings
     SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole)
 
 /// Creates a SynExprAndBang node for and! bindings in computation expressions
-let mkAndBang (mKeyword: range, pat: SynPat, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option) =
+let mkAndBang
+    (mKeyword: range, pat: SynPat, returnInfo: SynBindingReturnInfo option, rhs: SynExpr, mWhole: range, mEquals: range, mIn: range option)
+    =
     let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
     let trivia: SynBindingTrivia =
@@ -887,7 +889,7 @@ let mkAndBang (mKeyword: range, pat: SynPat, rhs: SynExpr, mWhole: range, mEqual
         xmlDoc = PreXmlDoc.Empty,
         valData = SynInfo.emptySynValData,
         headPat = pat,
-        returnInfo = None,
+        returnInfo = returnInfo,
         expr = rhs,
         range = mWhole,
         debugPoint = spBind,
@@ -1075,11 +1077,11 @@ let mkLetExpression
         mWhole: range,
         body: SynExpr,
         bindingInfo: BindingSet option,
-        bangInfo: (SynPat * SynExpr * SynBinding list * range * range option * bool) option
+        bangInfo: (SynPat * SynBindingReturnInfo option * SynExpr * SynBinding list * range * range option * bool) option
     ) =
     if isBang then
         match bangInfo with
-        | Some(pat, rhs, andBangs, mKeyword, mEquals, isUse) ->
+        | Some(pat, returnInfo, rhs, andBangs, mKeyword, mEquals, isUse) ->
             let spBind = DebugPointAtBinding.Yes(unionRanges mKeyword rhs.Range)
 
             let trivia: SynBindingTrivia =
@@ -1103,7 +1105,7 @@ let mkLetExpression
                     xmlDoc = PreXmlDoc.Empty,
                     valData = SynInfo.emptySynValData,
                     headPat = pat,
-                    returnInfo = None,
+                    returnInfo = returnInfo,
                     expr = rhs,
                     range = unionRanges mKeyword rhs.Range,
                     debugPoint = spBind,
@@ -1142,11 +1144,7 @@ let mkLetExpression
 
             let mIn' =
                 mIn
-                |> Option.bind (fun (mIn: range) ->
-                    if Position.posEq mIn.Start body.Range.Start then
-                        None
-                    else
-                        Some mIn)
+                |> Option.bind (fun (mIn: range) -> if posEq mIn.Start body.Range.Start then None else Some mIn)
 
             let mLetOrUse =
                 match decls with

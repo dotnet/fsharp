@@ -432,3 +432,44 @@ let x : RecordType = null
     let actual = codeFix |> tryFix code mode
 
     Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - module has multiline attributes`` () =
+    let code =
+        """
+namespace X
+
+open System
+
+[<RequireQualifiedAccess;
+  CompiledName((nameof System.Collections.Immutable.ImmutableArray)
+               + "Module")>]
+module FlatList =
+
+    let a : KeyValuePair<string, int> = KeyValuePair<string, int>("key", 1)
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System.Collections.Generic"
+                FixedCode =
+                    """
+namespace X
+
+open System
+
+[<RequireQualifiedAccess;
+  CompiledName((nameof System.Collections.Immutable.ImmutableArray)
+               + "Module")>]
+module FlatList =
+
+    open System.Collections.Generic
+
+    let a : KeyValuePair<string, int> = KeyValuePair<string, int>("key", 1)
+"""
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)

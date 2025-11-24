@@ -17,7 +17,7 @@ open FSharp.Compiler.Syntax
 
 module Utils =
     let replaceLastIdentToDisplayName (idents: string array) (displayName: string) =
-        match idents |> Array.tryFindIndexBack (fun i -> displayName.StartsWith(i, System.StringComparison.Ordinal)) with
+        match idents |> Array.tryFindIndexBack (fun i -> displayName.StartsWith(i, StringComparison.Ordinal)) with
         | Some x when x = idents.Length - 1 -> idents |> Array.replace (idents.Length - 1) displayName
         | Some x -> 
             let newIdents = Array.zeroCreate (x + 1)

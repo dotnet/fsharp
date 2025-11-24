@@ -9,7 +9,6 @@ open System
 open System.Collections.Generic
 open System.Reflection
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
@@ -47,16 +46,16 @@ module internal Impl =
            else
                Type.op_Equality (ty1, ty2)
 
-    let func = typedefof<(objnull -> objnull)>
+    let func = typedefof<objnull -> objnull>
 
     let isOptionType typ =
-        equivHeadTypes typ (typeof<int option>)
+        equivHeadTypes typ typeof<int option>
 
     let isFunctionType typ =
-        equivHeadTypes typ (typeof<(int -> int)>)
+        equivHeadTypes typ typeof<int -> int>
 
     let isListType typ =
-        equivHeadTypes typ (typeof<int list>)
+        equivHeadTypes typ typeof<int list>
 
     //-----------------------------------------------------------------
     // GENERAL UTILITIES
@@ -334,7 +333,7 @@ module internal Impl =
             )
 
     let sequenceNumberOfMember (x: MemberInfo) =
-        let (_, n, _) = findCompilationMappingAttributeFromMemberInfo x |> Array.head
+        let _, n, _ = findCompilationMappingAttributeFromMemberInfo x |> Array.head
         n
 
     let sequenceNumberOfUnionCaseField (x: MemberInfo) caseTag =
@@ -355,7 +354,7 @@ module internal Impl =
         match findCompilationMappingAttributeFromMemberInfo prop with
         | [||] -> false
         | arr ->
-            let (flags, _, _) = arr |> Array.head
+            let flags, _, _ = arr |> Array.head
             (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
 
     let tryFindSourceConstructFlagsOfType (typ: Type) =
@@ -377,7 +376,7 @@ module internal Impl =
                 match findCompilationMappingAttributeFromMemberInfo minfo with
                 | [||] -> None
                 | arr ->
-                    let (flags, n, _) = arr |> Array.head
+                    let flags, n, _ = arr |> Array.head
 
                     if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then
                         let nm = minfo.Name
@@ -524,7 +523,7 @@ module internal Impl =
         let caseTyp = if isNull caseTyp then typ else caseTyp
         compileRecordOrUnionCaseReaderFunc(caseTyp, props).Invoke
 
-    let getUnionTagReader (typ: Type, bindingFlags) : (objnull -> int) =
+    let getUnionTagReader (typ: Type, bindingFlags) : objnull -> int =
         if isOptionType typ then
             (fun (obj: objnull) ->
                 match obj with
@@ -544,7 +543,7 @@ module internal Impl =
 
                     (fun (obj: objnull) -> m2b.Invoke(null, [| obj |]) :?> int)
 
-    let getUnionTagReaderCompiled (typ: Type, bindingFlags) : (objnull -> int) =
+    let getUnionTagReaderCompiled (typ: Type, bindingFlags) : objnull -> int =
         if isOptionType typ then
             (fun (obj: objnull) ->
                 match obj with
@@ -1054,7 +1053,7 @@ module internal Impl =
                 let msg = String.Format(SR.GetString(SR.notARecordType), recordType.FullName)
                 invalidArg argName msg
 
-    let checkTupleType (argName, (tupleType: Type)) =
+    let checkTupleType (argName, tupleType: Type) =
         checkNonNull argName tupleType
 
         if not (isTupleType tupleType) then
@@ -1062,7 +1061,7 @@ module internal Impl =
             invalidArg argName msg
 
 [<Sealed>]
-type UnionCaseInfo(typ: System.Type, tag: int) =
+type UnionCaseInfo(typ: Type, tag: int) =
 
     // Cache the tag -> name map
     let mutable names = None
@@ -1228,7 +1227,7 @@ type DynamicFunction<'T1, 'T2>() =
     inherit FSharpFunc<obj -> obj, obj>()
 
     override _.Invoke(impl: obj -> obj) : obj =
-        box<('T1 -> 'T2)> (fun inp -> unbox<'T2> (impl (box<'T1> (inp))))
+        box<'T1 -> 'T2> (fun inp -> unbox<'T2> (impl (box<'T1> inp)))
 
 [<AbstractClass; Sealed>]
 type FSharpValue =
@@ -1262,7 +1261,7 @@ type FSharpValue =
         checkNonNull "info" info
         compilePropGetterFunc(info).Invoke
 
-    static member PreComputeRecordReader(recordType: Type, ?bindingFlags) : (obj -> objnull array) =
+    static member PreComputeRecordReader(recordType: Type, ?bindingFlags) : obj -> objnull array =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         checkRecordType ("recordType", recordType, bindingFlags)
         getRecordReaderCompiled (recordType, bindingFlags)
@@ -1277,7 +1276,7 @@ type FSharpValue =
         checkRecordType ("recordType", recordType, bindingFlags)
         getRecordConstructorMethod (recordType, bindingFlags)
 
-    static member MakeFunction(functionType: Type, implementation: (objnull -> objnull)) =
+    static member MakeFunction(functionType: Type, implementation: objnull -> objnull) =
         checkNonNull "functionType" functionType
 
         if not (isFunctionType functionType) then
@@ -1325,7 +1324,7 @@ type FSharpValue =
 
         fields.[index]
 
-    static member PreComputeTupleReader(tupleType: Type) : (obj -> objnull array) =
+    static member PreComputeTupleReader(tupleType: Type) : obj -> objnull array =
         checkTupleType ("tupleType", tupleType)
         (compileTupleReader tupleEncField getTupleElementAccessors tupleType).Invoke
 
@@ -1378,7 +1377,7 @@ type FSharpValue =
         let flds = getUnionCaseRecordReader (unionType, tag, bindingFlags) value
         UnionCaseInfo(unionType, tag), flds
 
-    static member PreComputeUnionTagReader(unionType: Type, ?bindingFlags) : (objnull -> int) =
+    static member PreComputeUnionTagReader(unionType: Type, ?bindingFlags) : objnull -> int =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         checkNonNull "unionType" unionType
         let unionType = getTypeOfReprType (unionType, bindingFlags)
@@ -1392,7 +1391,7 @@ type FSharpValue =
         checkUnionType (unionType, bindingFlags)
         getUnionTagMemberInfo (unionType, bindingFlags)
 
-    static member PreComputeUnionReader(unionCase: UnionCaseInfo, ?bindingFlags) : (objnull -> objnull array) =
+    static member PreComputeUnionReader(unionCase: UnionCaseInfo, ?bindingFlags) : objnull -> objnull array =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         checkNonNull "unionCase" unionCase
         let typ = unionCase.DeclaringType
@@ -1445,7 +1444,7 @@ module FSharpReflectionExtensions =
 
         static member PreComputeRecordReader
             (recordType: Type, ?allowAccessToPrivateRepresentation)
-            : (obj -> objnull array) =
+            : obj -> objnull array =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeRecordReader(recordType, bindingFlags)
 
@@ -1477,15 +1476,13 @@ module FSharpReflectionExtensions =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.GetUnionFields(value, unionType, bindingFlags)
 
-        static member PreComputeUnionTagReader
-            (unionType: Type, ?allowAccessToPrivateRepresentation)
-            : (objnull -> int) =
+        static member PreComputeUnionTagReader(unionType: Type, ?allowAccessToPrivateRepresentation) : objnull -> int =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionTagReader(unionType, bindingFlags)
 
         static member PreComputeUnionReader
             (unionCase: UnionCaseInfo, ?allowAccessToPrivateRepresentation)
-            : (objnull -> objnull array) =
+            : objnull -> objnull array =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionReader(unionCase, bindingFlags)
 

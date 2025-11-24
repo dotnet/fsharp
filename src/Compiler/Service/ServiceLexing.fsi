@@ -6,7 +6,6 @@ open System
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Text
-open FSharp.Compiler.Features
 
 #nowarn "57"
 

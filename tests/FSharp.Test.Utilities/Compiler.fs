@@ -455,6 +455,9 @@ module rec Compiler =
     let FsSource source =
         SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })
 
+    let FsSourceWithFileName name source =
+        SourceCodeFileKind.Fs({FileName=name; SourceText=Some source })
+
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
 

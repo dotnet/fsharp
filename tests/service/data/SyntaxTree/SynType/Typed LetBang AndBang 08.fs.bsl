@@ -17,22 +17,24 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
-                                (LongIdent
-                                   (SynLongIdent ([Union], [], [None]), None,
+                           Paren
+                             (LongIdent
+                                (SynLongIdent ([Union], [], [None]), None, None,
+                                 Pats
+                                   [Named
+                                      (SynIdent (value, None), false, None,
+                                       (4,16--4,21))], None, (4,10--4,21)),
+                              (4,9--4,22)),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([option], [], [None])),
                                     None,
-                                    Pats
-                                      [Named
-                                         (SynIdent (value, None), false, None,
-                                          (4,16--4,21))], None, (4,10--4,21)),
-                                 (4,9--4,22)),
-                              App
-                                (LongIdent (SynLongIdent ([option], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (4,24--4,34)), (4,9--4,34)),
-                           None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (4,24--4,34)), (4,24--4,34), [],
+                                 { ColonRange = Some (4,22--4,23) })),
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (4,48--4,50)), (4,37--4,50)),
@@ -46,22 +48,24 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (Paren
-                                (LongIdent
-                                   (SynLongIdent ([Union], [], [None]), None,
+                           Paren
+                             (LongIdent
+                                (SynLongIdent ([Union], [], [None]), None, None,
+                                 Pats
+                                   [Named
+                                      (SynIdent (value2, None), false, None,
+                                       (5,16--5,22))], None, (5,10--5,22)),
+                              (5,9--5,23)),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([option], [], [None])),
                                     None,
-                                    Pats
-                                      [Named
-                                         (SynIdent (value2, None), false, None,
-                                          (5,16--5,22))], None, (5,10--5,22)),
-                                 (5,9--5,23)),
-                              App
-                                (LongIdent (SynLongIdent ([option], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (5,25--5,35)), (5,9--5,35)),
-                           None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (5,25--5,35)), (5,25--5,35), [],
+                                 { ColonRange = Some (5,23--5,24) })),
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (5,49--5,51)), (5,38--5,51)),

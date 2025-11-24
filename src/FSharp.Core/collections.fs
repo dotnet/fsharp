@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
 #nowarn "51"
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
 open System.Collections.Generic
 
 module HashIdentity =
@@ -13,7 +12,7 @@ module HashIdentity =
     let inline Structural<'T when 'T: equality> : IEqualityComparer<'T> =
         LanguagePrimitives.FastGenericEqualityComparer<'T>
 
-    let inline LimitedStructural<'T when 'T: equality> (limit) : IEqualityComparer<'T> =
+    let inline LimitedStructural<'T when 'T: equality> limit : IEqualityComparer<'T> =
         LanguagePrimitives.FastLimitedGenericEqualityComparer<'T>(limit)
 
     let Reference<'T when 'T: not struct> : IEqualityComparer<'T> =

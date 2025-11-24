@@ -13,7 +13,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
-open TypedTreeOps
 
 /// Merges updates to nested record fields on the same level in record copy-and-update.
 ///
@@ -65,7 +64,7 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             let rec buildLid res (id: Ident) =
                 function
                 | [] -> res
-                | (h: Ident) :: t ->
+                | h: Ident :: t ->
                     // Mark these hidden field accesses as synthetic so that they don't make it
                     // into the name resolution sink.
                     let h = ident (h.idText, h.idRange.MakeSynthetic())

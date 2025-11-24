@@ -1657,7 +1657,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     let checkIsResolved() = 
         if isUnresolved() then 
-            let v = (fsharpInfo()).Value
+            let v = fsharpInfo().Value
             let nm = (match v with VRefNonLocal n -> n.ItemKey.PartialKey.LogicalName | _ -> "<local>")
             invalidOp (sprintf "The value or member '%s' does not exist or is in an unresolved assembly." nm)
 

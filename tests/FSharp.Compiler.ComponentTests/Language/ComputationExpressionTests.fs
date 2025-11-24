@@ -2075,6 +2075,175 @@ but here has type
 'int'   "
         ]
 
+    [<Fact>]
+    let ``Preview: let! return type mismatch error 01`` () =
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+task {
+    let! x: string = Task.FromResult(1)
+    ()
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // x: string
+            Error 1, Line 7, Col 10, Line 7, Col 19, "This expression was expected to have type
+    'int'   
+but here has type
+    'string'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let! return type mismatch error 02`` () =
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+task {
+    let! (x: string): int = Task.FromResult(1)
+    ()
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // x: string
+            Error 1, Line 7, Col 11, Line 7, Col 20, "This expression was expected to have type
+    'int'   
+but here has type
+    'string'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let! return type mismatch error 03`` () =
+        FSharp """
+module Test
+
+open System.Threading.Tasks
+
+task {
+    let! (x: string): int = Task.FromResult("")
+    ()
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // (x: string): int
+            Error 1, Line 7, Col 10, Line 7, Col 26, "This expression was expected to have type
+    'string'   
+but here has type
+    'int'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let!-and! return type mismatch error 01`` () =
+        FSharp """
+module Test
+
+type MyBuilder() =
+    member _.Return(x: int): Result<int, exn> = failwith ""
+    member _.Bind(m: Result<int, exn>, f: int -> Result<int, exn>): Result<int, exn> = failwith ""
+    member _.Bind2(m1: Result<int, exn>, m2: Result<int, exn>, f: int * int -> Result<int, exn>): Result<int, exn> = failwith ""
+
+let builder = MyBuilder()
+
+builder {
+    let! x: int = Ok 1
+    and! y: string = Ok 2
+    return 0
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // y: string
+            Error 1, Line 13, Col 10, Line 13, Col 19, "This expression was expected to have type
+'int'   
+but here has type
+'string'    "
+            // x: int
+            Warning 25, Line 12, Col 10, Line 12, Col 16, "Incomplete pattern matches on this expression."
+        ]
+
+    [<Fact>]
+    let ``Preview: let!-and! return type mismatch error 02`` () =
+        FSharp """
+module Test
+
+type MyBuilder() =
+    member _.Return(x: int): Result<int, exn> = failwith ""
+    member _.Bind(m: Result<int, exn>, f: int -> Result<int, exn>): Result<int, exn> = failwith ""
+    member _.Bind2(m1: Result<int, exn>, m2: Result<int, exn>, f: int * int -> Result<int, exn>): Result<int, exn> = failwith ""
+
+let builder = MyBuilder()
+
+builder {
+    let! x: int = Ok 1
+    and! (y: string): int = Ok 2
+    return 0
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // y: string
+            Error 1, Line 13, Col 11, Line 13, Col 20, "This expression was expected to have type
+'int'   
+but here has type
+'string'    "
+        ]
+
+    [<Fact>]
+    let ``Preview: let!-and! return type mismatch error 03`` () =
+        FSharp """
+module Test
+
+type MyBuilder() =
+    member _.Return(x: int): Result<int, exn> = failwith ""
+    member _.Bind(m: Result<int, exn>, f: int -> Result<int, exn>): Result<int, exn> = failwith ""
+    member _.Bind2(m1: Result<int, exn>, m2: Result<int, exn>, f: int * int -> Result<int, exn>): Result<int, exn> = failwith ""
+
+let builder = MyBuilder()
+
+builder {
+    let! x: int = Ok 1
+    and! (y: int): string = Ok 1
+    return 0
+}
+|> ignore
+"""
+        |> withLangVersionPreview
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            // (y: int): string
+            Error 1, Line 13, Col 10, Line 13, Col 26, "This expression was expected to have type
+'int'   
+but here has type
+'string'    "
+            // y: int
+            Error 1, Line 13, Col 11, Line 13, Col 17, "This expression was expected to have type
+'string'    
+but here has type
+'int'   "
+        ]
+
     [<Theory; FileInlineData("tailcalls.fsx")>]
     let ``tail call methods work`` compilation =
         compilation

@@ -231,9 +231,6 @@ let ``type check neg66`` () = singleNegTest ( "typecheck/sigs") "neg66"
 let ``type check neg67`` () = singleNegTest ( "typecheck/sigs") "neg67"
 
 [<FactForDESKTOP>]
-let ``type check neg68`` () = singleNegTest ( "typecheck/sigs") "neg68"
-
-[<FactForDESKTOP>]
 let ``type check neg69`` () = singleNegTest ( "typecheck/sigs") "neg69"
 
 [<FactForDESKTOP>]

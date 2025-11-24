@@ -17,15 +17,17 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (As
-                                (Named
-                                   (SynIdent (x, None), false, None, (4,9--4,10)),
-                                 Named
-                                   (SynIdent (y, None), false, None,
-                                    (4,14--4,15)), (4,9--4,15)),
-                              LongIdent (SynLongIdent ([int], [], [None])),
-                              (4,9--4,20)), None,
+                           As
+                             (Named
+                                (SynIdent (x, None), false, None, (4,9--4,10)),
+                              Named
+                                (SynIdent (y, None), false, None, (4,14--4,15)),
+                              (4,9--4,15)),
+                           Some
+                             (SynBindingReturnInfo
+                                (LongIdent (SynLongIdent ([int], [], [None])),
+                                 (4,17--4,20), [],
+                                 { ColonRange = Some (4,15--4,16) })),
                            App
                              (Atomic, false, Ident asyncInt,
                               Const (Unit, (4,31--4,33)), (4,23--4,33)),
@@ -39,15 +41,17 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (As
-                                (Named
-                                   (SynIdent (a, None), false, None, (5,9--5,10)),
-                                 Named
-                                   (SynIdent (b, None), false, None,
-                                    (5,14--5,15)), (5,9--5,15)),
-                              LongIdent (SynLongIdent ([string], [], [None])),
-                              (5,9--5,23)), None,
+                           As
+                             (Named
+                                (SynIdent (a, None), false, None, (5,9--5,10)),
+                              Named
+                                (SynIdent (b, None), false, None, (5,14--5,15)),
+                              (5,9--5,15)),
+                           Some
+                             (SynBindingReturnInfo
+                                (LongIdent (SynLongIdent ([string], [], [None])),
+                                 (5,17--5,23), [],
+                                 { ColonRange = Some (5,15--5,16) })),
                            App
                              (Atomic, false, Ident asyncString,
                               Const (Unit, (5,37--5,39)), (5,26--5,39)),
