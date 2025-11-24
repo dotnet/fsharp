@@ -47,15 +47,15 @@ module SignedBuildSkip =
         if isSignedBuild then
             attr.Skip <- skipMessage
 
-type FactSkipOnSignedBuildAttribute() =
+type FactSkipOnSignedBuildAttribute() as this =
     inherit FactAttribute()
     do SignedBuildSkip.skipIfSigned this
 
-type TheorySkipOnSignedBuildAttribute() =
+type TheorySkipOnSignedBuildAttribute() as this =
     inherit TheoryAttribute()
     do SignedBuildSkip.skipIfSigned this
 
-type FactForNETCOREAPPSkipOnSignedBuildAttribute() =
+type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
     inherit FactAttribute()
     #if !NETCOREAPP    
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
