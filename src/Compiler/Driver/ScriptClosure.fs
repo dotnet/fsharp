@@ -435,7 +435,7 @@ module ScriptPreprocessClosure =
                     // Send outputs via diagnostics
                     if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
                         for line in Array.append result.StdOut result.StdError do
-                            errorR (Error(FSComp.SR.packageManagerError (line), m))
+                            errorR (Error(FSComp.SR.packageManagerError line, m))
                     // Resolution produced errors update packagerManagerLines entries to note these failure
                     // failed resolutions will no longer be considered
                     let tcConfigB = tcConfig.CloneToBuilder()

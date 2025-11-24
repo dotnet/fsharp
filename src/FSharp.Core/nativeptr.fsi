@@ -3,7 +3,6 @@
 namespace Microsoft.FSharp.NativeInterop
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
 
 /// <summary>Contains operations on native pointers. Use of these operators may
 /// result in the generation of unverifiable code.</summary>

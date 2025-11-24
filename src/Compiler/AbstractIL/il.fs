@@ -21,7 +21,6 @@ open System.Text
 open System.Threading
 
 open FSharp.Compiler.AbstractIL.Diagnostics
-open Internal.Utilities.Library
 open Internal.Utilities
 
 let logging = false
@@ -83,7 +82,7 @@ let splitNameAt (nm: string) idx =
     if idx > last then
         failwith "splitNameAt: idx > last"
 
-    (nm.Substring(0, idx)), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
+    nm.Substring(0, idx), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
 
 let rec splitNamespaceAux (nm: string) =
     match nm.IndexOf '.' with
@@ -771,13 +770,13 @@ type ILTypeRef =
         let isPrimaryY = isPrimary y
 
         let xApproxId =
-            if isPrimaryX && not (isPrimaryY) then
+            if isPrimaryX && not isPrimaryY then
                 ILTypeRef.ComputeHash(primaryScopeRef, x.Enclosing, x.Name)
             else
                 x.ApproxId
 
         let yApproxId =
-            if isPrimaryY && not (isPrimaryX) then
+            if isPrimaryY && not isPrimaryX then
                 ILTypeRef.ComputeHash(primaryScopeRef, y.Enclosing, y.Name)
             else
                 y.ApproxId
@@ -2284,10 +2283,10 @@ type ILEventDef
                  | Some attrs -> attrs)
         )
 
-    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_> (0)
+    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_> 0
 
     member x.IsRTSpecialName =
-        (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_> (0)
+        (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_> 0
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2362,11 +2361,10 @@ type ILPropertyDef
                  | Some attrs -> attrs)
         )
 
-    member x.IsSpecialName =
-        (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_> (0)
+    member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_> 0
 
     member x.IsRTSpecialName =
-        (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_> (0)
+        (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_> 0
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2388,7 +2386,7 @@ type ILPropertyDefs =
 let convertFieldAccess (ilMemberAccess: ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly -> FieldAttributes.Assembly
-    | ILMemberAccess.CompilerControlled -> enum<FieldAttributes> (0)
+    | ILMemberAccess.CompilerControlled -> enum<FieldAttributes> 0
     | ILMemberAccess.FamilyAndAssembly -> FieldAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly -> FieldAttributes.FamORAssem
     | ILMemberAccess.Family -> FieldAttributes.Family
@@ -2828,7 +2826,7 @@ type ILTypeDef
             events = defaultArg events x.Events,
             properties = defaultArg properties x.Properties,
             additionalFlags = defaultArg newAdditionalFlags additionalFlags,
-            customAttrs = defaultArg customAttrs (x.CustomAttrsStored)
+            customAttrs = defaultArg customAttrs x.CustomAttrsStored
         )
 
     member x.CustomAttrs: ILAttributes =
@@ -3017,7 +3015,7 @@ and [<NoComparison; NoEquality>] ILExportedTypeOrForwarder =
 
     member x.Access = typeAccessOfFlags (int x.Attributes)
 
-    member x.IsForwarder = x.Attributes &&& enum<TypeAttributes> (0x00200000) <> enum 0
+    member x.IsForwarder = x.Attributes &&& enum<TypeAttributes> 0x00200000 <> enum 0
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
@@ -4256,7 +4254,7 @@ let mkTypeForwarder scopeRef name nested customAttrs access =
     {
         ScopeRef = scopeRef
         Name = name
-        Attributes = enum<TypeAttributes> (0x00200000) ||| convertTypeAccessFlags access
+        Attributes = enum<TypeAttributes> 0x00200000 ||| convertTypeAccessFlags access
         Nested = nested
         CustomAttrsStored = storeILCustomAttrs customAttrs
         MetadataIndex = NoMetadataIdx
@@ -4293,7 +4291,7 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
             | Some x -> I_seqpoint x
             | None -> ()
             yield! preblock
-            for (n, (_pnm, nm, fieldTy, _attrs)) in List.indexed flds do
+            for n, (_pnm, nm, fieldTy, _attrs) in List.indexed flds do
                 mkLdarg0
                 mkLdarg (uint16 (n + 1))
                 mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
@@ -4303,7 +4301,7 @@ let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds
 
     let fieldParams =
         [
-            for (pnm, _, ty, attrs) in flds do
+            for pnm, _, ty, attrs in flds do
                 let ilParam = mkILParamNamed (pnm, ty)
 
                 let ilParam =
@@ -5130,17 +5128,17 @@ type ILTypeSigParser(tstring: string) =
                 drop () // step to the number
                 // fetch the arity
                 let arity =
-                    while (int (here ()) >= (int ('0')))
-                          && (int (here ()) <= (int ('9')))
-                          && (int (peek ()) >= (int ('0')))
-                          && (int (peek ()) <= (int ('9'))) do
+                    while (int (here ()) >= (int '0'))
+                          && (int (here ()) <= (int '9'))
+                          && (int (peek ()) >= (int '0'))
+                          && (int (peek ()) <= (int '9')) do
                         step ()
 
                     Int32.Parse(take ())
                 // skip the '['
                 drop ()
                 // get the specializations
-                typeName + "`" + (arity.ToString()),
+                typeName + "`" + arity.ToString(),
                 Some
                     [
                         for _i in 0 .. arity - 1 do

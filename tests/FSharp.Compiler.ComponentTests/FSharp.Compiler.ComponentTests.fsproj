@@ -230,6 +230,7 @@
     <Compile Include="ErrorMessages\UnitOfMeasureTests.fs" />
     <Compile Include="ErrorMessages\AbbreviationTests.fs" />
     <Compile Include="ErrorMessages\NamespaceTests.fs" />
+    <Compile Include="ErrorMessages\NameIsBoundMultipleTimesTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
@@ -276,6 +277,7 @@
     <Compile Include="Interop\Literals.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="Scripting\TypeCheckOnlyTests.fs" />
+    <Compile Include="TypeChecks\TypeRelations.fs" />
     <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="TypeChecks\Graph\Utils.fs" />

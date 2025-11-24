@@ -4,7 +4,6 @@
 /// with generalization at appropriate points.
 module internal FSharp.Compiler.CheckComputationExpressions
 
-open FSharp.Compiler.TcGlobals
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -444,7 +443,7 @@ let customOpUsageText ceenv nm =
                 )
             )
         elif isLikeZip then
-            Some(FSComp.SR.customOperationTextLikeZip (nm.idText))
+            Some(FSComp.SR.customOperationTextLikeZip nm.idText)
         else
             None
     | _ -> None
@@ -854,6 +853,12 @@ let (|OptionalSequential|) e =
     | SynExpr.Sequential(debugPoint = _sp; isTrueSeq = true; expr1 = dataComp1; expr2 = dataComp2) -> (dataComp1, Some dataComp2)
     | _ -> (e, None)
 
+let private mkTypedHeadPat (SynBinding(headPat = headPattern; returnInfo = returnInfo)) =
+    match returnInfo with
+    | None -> headPattern
+    | Some(SynBindingReturnInfo(typeName = typeName; range = range)) ->
+        SynPat.Typed(headPattern, typeName, unionRanges headPattern.Range range)
+
 [<return: Struct>]
 let (|ExprAsUseBang|_|) expr =
     match expr with
@@ -865,7 +870,8 @@ let (|ExprAsUseBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = pat; expr = rhsExpr) :: andBangs ->
+        | SynBinding(debugPoint = spBind; expr = rhsExpr) as binding :: andBangs ->
+            let pat = mkTypedHeadPat binding
             ValueSome(spBind, isFromSource, pat, rhsExpr, andBangs, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
@@ -881,7 +887,8 @@ let (|ExprAsLetBang|_|) expr =
         body = innerComp
         trivia = { LetOrUseKeyword = mBind }) ->
         match bindings with
-        | SynBinding(debugPoint = spBind; headPat = letPat; expr = letRhsExpr) :: andBangBindings ->
+        | SynBinding(debugPoint = spBind; expr = letRhsExpr) as binding :: andBangBindings ->
+            let letPat = mkTypedHeadPat binding
             ValueSome(spBind, isFromSource, letPat, letRhsExpr, andBangBindings, innerComp, mBind)
         | _ -> ValueNone
     | _ -> ValueNone
@@ -974,7 +981,7 @@ let rec TryTranslateComputationExpression
     (ceenv: ComputationExpressionContext<'a>)
     (firstTry: CompExprTranslationPass)
     (q: CustomOperationsMode)
-    (varSpace: LazyWithContext<(Val list * TcEnv), range>)
+    (varSpace: LazyWithContext<Val list * TcEnv, range>)
     (comp: SynExpr)
     (translatedCtxt: SynExpr -> SynExpr)
     : SynExpr option =
@@ -1062,14 +1069,14 @@ let rec TryTranslateComputationExpression
                     SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
                 if Option.isSome later1 then
-                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (nm.idText), firstSourcePat.Range))
+                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, firstSourcePat.Range))
 
                 if Option.isSome later2 then
-                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (nm.idText), secondSourcePat.Range))
+                    errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondSourcePat.Range))
 
                 // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
                 match tryGetDataForCustomOperation nm ceenv with
-                | None -> error (Error(FSComp.SR.tcMissingCustomOperation (nm.idText), nm.idRange))
+                | None -> error (Error(FSComp.SR.tcMissingCustomOperation nm.idText, nm.idRange))
                 | Some opDatas ->
                     let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
@@ -1148,7 +1155,7 @@ let rec TryTranslateComputationExpression
                                 SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
 
                             if Option.isSome later3 then
-                                errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern (nm.idText), secondResultPat.Range))
+                                errorR (Error(FSComp.SR.tcJoinMustUseSimplePattern nm.idText, secondResultPat.Range))
 
                             match relExpr with
                             | JoinRelation ceenv (keySelector1, keySelector2) ->
@@ -1163,7 +1170,7 @@ let rec TryTranslateComputationExpression
                                         )
                                     )
                                 else
-                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
 
                                 let l = wrapInArbErrSequence l "_keySelector1"
                                 let r = wrapInArbErrSequence r "_keySelector2"
@@ -1171,7 +1178,7 @@ let rec TryTranslateComputationExpression
                                 // we've already reported error now we can use operands of binary operation as join components
                                 mkJoinExpr l r secondResultSimplePats, varSpaceWithGroupJoinVars
                             | _ ->
-                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
                                 // since the shape of relExpr doesn't match our expectations (JoinRelation)
                                 // then we assume that this is l.h.s. of the join relation
                                 // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in GroupJoin method
@@ -1192,14 +1199,14 @@ let rec TryTranslateComputationExpression
                                         )
                                     )
                                 else
-                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                    errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
                                 // this is not correct JoinRelation but it is still binary operation
                                 // we've already reported error now we can use operands of binary operation as join components
                                 let l = wrapInArbErrSequence l "_keySelector1"
                                 let r = wrapInArbErrSequence r "_keySelector2"
                                 mkJoinExpr l r secondSourceSimplePats, varSpaceWithGroupJoinVars
                             | _ ->
-                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin (nm.idText), relExpr.Range))
+                                errorR (Error(FSComp.SR.tcInvalidRelationInJoin nm.idText, relExpr.Range))
                                 // since the shape of relExpr doesn't match our expectations (JoinRelation)
                                 // then we assume that this is l.h.s. of the join relation
                                 // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in Join method
@@ -1381,7 +1388,7 @@ let rec TryTranslateComputationExpression
 
                     let condBinding =
                         mkSynBinding
-                            (Xml.PreXmlDoc.Empty, patCond)
+                            (PreXmlDoc.Empty, patCond)
                             (None,
                              false,
                              true,
@@ -1545,10 +1552,10 @@ let rec TryTranslateComputationExpression
                 // and so we use a more specific error message for clarity.
                 | SynExpr.Const(SynConst.Unit, mUnit) when
                     cenv.g.langVersion.SupportsFeature LanguageFeature.EmptyBodiedComputationExpressions
-                    && Range.equals mUnit range0
+                    && equals mUnit range0
                     ->
                     error (Error(FSComp.SR.tcEmptyBodyRequiresBuilderZeroMethod (), ceenv.mWhole))
-                | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod ("Zero"), m))
+                | _ -> error (Error(FSComp.SR.tcRequireBuilderMethod "Zero", m))
 
             Some(translatedCtxt (mkSynCall "Zero" m [] ceenv.builderValName))
 
@@ -1609,7 +1616,7 @@ let rec TryTranslateComputationExpression
                 Some(TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
             else
-                if ceenv.isQuery && not (innerComp1.IsArbExprAndThusAlreadyReportedError) then
+                if ceenv.isQuery && not innerComp1.IsArbExprAndThusAlreadyReportedError then
                     match innerComp1 with
                     | SynExpr.JoinIn _ -> ()
                     | SynExpr.DoBang(trivia = { DoBangKeyword = m }) -> errorR (Error(FSComp.SR.tcBindMayNotBeUsedInQueries (), m))
@@ -1885,7 +1892,9 @@ let rec TryTranslateComputationExpression
                     match pat with
                     | SynPat.Named(ident = SynIdent(id, _); isThisVal = false) -> id, pat
                     | SynPat.LongIdent(longDotId = SynLongIdent(id = [ id ])) -> id, pat
-                    | SynPat.Typed(pat = pat) when supportsTypedLetOrUseBang -> extractIdentifierFromPattern pat
+                    | SynPat.Typed(innerPat, targetType, range) when supportsTypedLetOrUseBang ->
+                        let ident, pat = extractIdentifierFromPattern innerPat
+                        ident, SynPat.Typed(pat, targetType, unionRanges pat.Range range)
                     | SynPat.Wild(m) when supportsUseBangBindingValueDiscard ->
                         // To properly call the Using(disposable) CE member, we need to convert the wildcard to a SynPat.Named
                         let tmpIdent = mkSynId m "_"
@@ -2003,8 +2012,7 @@ let rec TryTranslateComputationExpression
                     (letRhsExpr :: [ for SynBinding(expr = andExpr) in andBangBindings -> andExpr ])
                     |> List.map (fun expr -> mkSourceExprConditional isFromSource expr ceenv.sourceMethInfo ceenv.builderValName)
 
-                let pats =
-                    letPat :: [ for SynBinding(headPat = andPat) in andBangBindings -> andPat ]
+                let pats = letPat :: [ for binding in andBangBindings -> mkTypedHeadPat binding ]
 
                 let sourcesRange = sources |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
@@ -2096,7 +2104,7 @@ let rec TryTranslateComputationExpression
                             loop 2
 
                         if maxMergeSources = 1 then
-                            error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN (bindNName), mBind))
+                            error (Error(FSComp.SR.tcRequireMergeSourcesOrBindN bindNName, mBind))
 
                         let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) =
                             let numSourcesAndPats = sourcesAndPats.Length
@@ -2442,7 +2450,7 @@ and ConsumeCustomOpClauses
                 match optionalIntoPat with
                 | Some intoPat ->
                     if not (customOperationAllowsInto ceenv nm) then
-                        error (Error(FSComp.SR.tcOperatorDoesntAcceptInto (nm.idText), intoPat.Range))
+                        error (Error(FSComp.SR.tcOperatorDoesntAcceptInto nm.idText, intoPat.Range))
 
                     // Rebind using either for ... or let!....
                     let rebind =
@@ -2751,7 +2759,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
             // This only occurs in final position in a sequence
             match comp with
             // "do! expr;" in tail call position is treated as { return! expr } when ReturnFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && ((hasBuilderMethod ceenv m "ReturnFromFinal")) ->
+            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "ReturnFromFinal") ->
                 let returnFrom =
                     // Flags indicate isTrueYield, isTrueReturn
                     SynExpr.YieldOrReturnFrom((false, true), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)
@@ -2759,7 +2767,7 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                 TranslateComputationExpression ceenv CompExprTranslationPass.Initial q varSpace returnFrom translatedCtxt
 
             // "do! expr;" in tail call position is treated as { yield! expr } when YieldFromFinal is provided
-            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && ((hasBuilderMethod ceenv m "YieldFromFinal")) ->
+            | SynExpr.DoBang(rhsExpr, m, _) when ceenv.tailCall && (hasBuilderMethod ceenv m "YieldFromFinal") ->
                 let returnFrom =
                     // Flags indicate isTrueYield, isTrueReturn
                     SynExpr.YieldOrReturnFrom((true, false), rhsExpr, m, SynExprYieldOrReturnFromTrivia.Zero)

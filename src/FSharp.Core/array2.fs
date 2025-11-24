@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
 open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.Operators.Checked
 
 #nowarn "3218" // mismatch of parameter name where 'count1' --> 'length1' would shadow function in module of same name

@@ -7,7 +7,6 @@ open System.Collections.Generic
 
 open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
@@ -25,7 +24,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.TypeProviders
 #endif
 
 /// The ValReprInfo for a value, except the number of typars is not yet inferred
@@ -313,13 +311,13 @@ type TcFileState =
 
       diagnosticOptions: FSharpDiagnosticOptions
 
-      argInfoCache: ConcurrentDictionary<(string * range), ArgReprInfo>
+      argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
 
       // forward call
       TcPat: WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
       // forward call
-      TcSimplePats: TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> string list * TcPatLinearEnv
+      TcSimplePats: TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> SynPat list * bool -> string list * TcPatLinearEnv
 
       // forward call
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
