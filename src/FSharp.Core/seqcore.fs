@@ -383,14 +383,16 @@ module RuntimeHelpers =
 
 
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
-        // Manual thread-safe one-time initialization cell to replace lazy
+        // Manual thread-safe one-time initialization cell to replace lazy (avoids IL2091 trimming warnings)
         let mutable originalSourceValue = None
-        let originalSourceLock = obj()
+        let originalSourceInitLock = obj()
         let getOriginalSource() =
             match originalSourceValue with
             | Some v -> v
             | None ->
-                lock originalSourceLock (fun () ->
+                // Double-checked locking pattern: first check avoids lock overhead after initialization,
+                // second check inside lock ensures only one thread initializes the value
+                lock originalSourceInitLock (fun () ->
                     match originalSourceValue with
                     | Some v -> v
                     | None ->
