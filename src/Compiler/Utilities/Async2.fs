@@ -17,7 +17,7 @@ type IAsync2Invocation<'t> =
 and Async2<'t> =
     abstract StartImmediate: CancellationToken -> IAsync2Invocation<'t>
     abstract StartBound: CancellationToken -> TaskAwaiter<'t>
-    abstract TailCall: CancellationToken * TaskCompletionSource<'t> voption -> unit
+    abstract TailCall: CancellationToken * TaskCompletionSource<'t> -> unit
     abstract GetAwaiter: unit -> TaskAwaiter<'t>
 
 module Async2Implementation =
@@ -50,32 +50,35 @@ module Async2Implementation =
         | Bounce of DynamicState
         | Immediate of DynamicState
 
-    module BindContext =
-        let bindCount = new ThreadLocal<int>()
-
-        [<Literal>]
-        let bindLimit = 100
-
-        let IncrementBindCount () =
-            bindCount.Value <- bindCount.Value + 1
-            bindCount.Value >= bindLimit
-
-        let Reset () = bindCount.Value <- 0
-
     type Trampoline private () =
 
         let ownerThreadId = Thread.CurrentThread.ManagedThreadId
 
         static let holder = new ThreadLocal<_>(fun () -> Trampoline())
 
+        let mutable depth = 0
+
+        [<Literal>]
+        let MaxDepth = 50
+
+        let insufficientStack () =
+            depth <- depth + 1
+            depth % MaxDepth = 0
+        //        if current.Value % MaxDepth = 0 then
+        //#if NETSTANDARD2_0
+        //            try RuntimeHelpers.EnsureSufficientExecutionStack(); true with _ -> false
+        //#else
+        //            RuntimeHelpers.TryEnsureSufficientExecutionStack()
+        //#endif
+        //        else
+        //            true
+
         let mutable pending: Action voption = ValueNone
         let mutable running = false
 
-        let start (action: Action) =
+        let start () =
             try
-                BindContext.Reset()
                 running <- true
-                action.Invoke()
 
                 while pending.IsSome do
                     let next = pending.Value
@@ -88,18 +91,24 @@ module Async2Implementation =
             assert (Thread.CurrentThread.ManagedThreadId = ownerThreadId) // "Trampoline used from wrong thread"
             assert pending.IsNone // "Trampoline set while already pending"
 
-            BindContext.Reset()
+            pending <- ValueSome action
 
-            if running then
-                pending <- ValueSome action
-            else
-                start action
+            if not running then
+                start ()
 
         interface ICriticalNotifyCompletion with
             member _.OnCompleted continuation = set continuation
             member _.UnsafeOnCompleted continuation = set continuation
 
         member this.Ref: ICriticalNotifyCompletion ref = ref this
+
+        member _.Running = running
+
+        member _.IsStackSufficient() =
+            depth <- depth + 1
+            depth % MaxDepth <> 0
+
+        member _.ShouldBounce = pending.IsNone && insufficientStack ()
 
         static member Current = holder.Value
 
@@ -139,13 +148,10 @@ module Async2Implementation =
         val mutable MethodBuilder: AsyncTaskMethodBuilder<'t>
 
         [<DefaultValue(false)>]
-        val mutable TailCallSource: TaskCompletionSource<'t> voption
+        val mutable TailCallSource: TaskCompletionSource<'t> option
 
         [<DefaultValue(false)>]
         val mutable CancellationToken: CancellationToken
-
-        [<DefaultValue(false)>]
-        val mutable IsBound: bool
 
     type Async2StateMachine<'TOverall> = ResumableStateMachine<Async2Data<'TOverall>>
     type IAsync2StateMachine<'TOverall> = IResumableStateMachine<Async2Data<'TOverall>>
@@ -154,17 +160,16 @@ module Async2Implementation =
 
     type Async2Code<'TOverall, 'T> = ResumableCode<Async2Data<'TOverall>, 'T>
 
-    [<Struct; NoComparison>]
-    type Async2<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>> =
+    [<NoComparison>]
+    type Async2<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>() =
         [<DefaultValue(false)>]
         val mutable StateMachine: 'm
 
-        member ts.Start(ct, tailCallSource, isBound) =
+        member ts.Start(ct, ?tailCallSource) =
             let mutable copy = ts
             let mutable data = Async2Data()
             data.CancellationToken <- ct
             data.TailCallSource <- tailCallSource
-            data.IsBound <- isBound
             data.MethodBuilder <- AsyncTaskMethodBuilder<'t>.Create()
             copy.StateMachine.Data <- data
             copy.StateMachine.Data.MethodBuilder.Start(&copy.StateMachine)
@@ -177,15 +182,15 @@ module Async2Implementation =
                 ts.StateMachine.Data.MethodBuilder.Task.GetAwaiter()
 
         interface Async2<'t> with
-            member ts.StartImmediate ct = ts.Start(ct, ValueNone, false)
+            member ts.StartImmediate ct = ts.Start(ct)
 
-            member ts.StartBound ct =
-                ts.Start(ct, ValueNone, true).GetAwaiter()
+            member ts.StartBound ct = ts.Start(ct).GetAwaiter()
 
-            member ts.TailCall(ct, tc) = ts.Start(ct, tc, true) |> ignore
+            member ts.TailCall(ct, tc) =
+                ts.Start(ct, tailCallSource = tc) |> ignore
 
             member ts.GetAwaiter() =
-                ts.Start(CancellationToken.None, ValueNone, true).GetAwaiter()
+                ts.Start(CancellationToken.None).GetAwaiter()
 
     type Async2Dynamic<'t, 'm when 'm :> IAsyncStateMachine and 'm :> IAsync2StateMachine<'t>>(getCopy: bool -> 'm) =
         member ts.GetCopy isBound =
@@ -196,8 +201,7 @@ module Async2Implementation =
 
             member ts.StartBound ct = ts.GetCopy(true).StartBound(ct)
 
-            member ts.TailCall(ct, tc) =
-                ts.GetCopy(true).TailCall(ct, tc) |> ignore
+            member ts.TailCall(ct, tc) = ts.GetCopy(true).TailCall(ct, tc)
 
             member ts.GetAwaiter() = ts.GetCopy(true).GetAwaiter()
 
@@ -220,7 +224,7 @@ module Async2Implementation =
 
         let inline yieldOnBindLimit () =
             Async2Code(fun sm ->
-                if BindContext.IncrementBindCount() then
+                if Trampoline.Current.ShouldBounce then
                     let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
 
                     if not __stack_yield_fin then
@@ -311,7 +315,7 @@ module Async2Implementation =
             let initialResumptionFunc = Async2ResumptionFunc<'T>(fun sm -> code.Invoke &sm)
 
             let maybeBounce state =
-                if BindContext.IncrementBindCount() then
+                if Trampoline.Current.ShouldBounce then
                     Bounce state
                 else
                     Immediate state
@@ -353,11 +357,11 @@ module Async2Implementation =
                             sm.Data.MethodBuilder.AwaitOnCompleted(Trampoline.Current.Ref, &sm)
                         | SetResult ->
                             match sm.Data.TailCallSource with
-                            | ValueSome tcs -> tcs.SetResult sm.Data.Result
+                            | Some tcs -> tcs.SetResult sm.Data.Result
                             | _ -> sm.Data.MethodBuilder.SetResult sm.Data.Result
                         | SetException edi ->
                             match sm.Data.TailCallSource with
-                            | ValueSome tcs -> tcs.TrySetException(edi.SourceException) |> ignore
+                            | Some tcs -> tcs.TrySetException(edi.SourceException) |> ignore
                             | _ -> sm.Data.MethodBuilder.SetException(edi.SourceException)
 
                     member _.SetStateMachine(sm, state) =
@@ -375,7 +379,7 @@ module Async2Implementation =
 
                         let mutable error = ValueNone
 
-                        let __stack_go1 = not sm.Data.IsBound || yieldOnBindLimit().Invoke(&sm)
+                        let __stack_go1 = yieldOnBindLimit().Invoke(&sm)
 
                         if __stack_go1 then
                             try
@@ -386,7 +390,7 @@ module Async2Implementation =
 
                                     if __stack_go2 then
                                         match sm.Data.TailCallSource with
-                                        | ValueSome tcs -> tcs.SetResult sm.Data.Result
+                                        | Some tcs -> tcs.SetResult sm.Data.Result
                                         | _ -> sm.Data.MethodBuilder.SetResult(sm.Data.Result)
                             with exn ->
                                 error <- ValueSome(ExceptionCache.CaptureOrRetrieve exn)
@@ -396,7 +400,7 @@ module Async2Implementation =
 
                                 if __stack_go2 then
                                     match sm.Data.TailCallSource with
-                                    | ValueSome tcs -> tcs.SetException(error.Value.SourceException)
+                                    | Some tcs -> tcs.SetException(error.Value.SourceException)
                                     | _ -> sm.Data.MethodBuilder.SetException(error.Value.SourceException)))
 
                     (SetStateMachineMethodImpl<_>(fun sm state -> sm.Data.MethodBuilder.SetStateMachine state))
@@ -451,15 +455,15 @@ module HighPriority =
         member inline this.ReturnFromFinal(code: Async2<'T>) =
             Async2Code(fun sm ->
                 match sm.Data.TailCallSource with
-                | ValueNone ->
+                | None ->
                     // This is the start of a tail call chain. we need to return here when the entire chain is done.
                     let __stack_tcs = TaskCompletionSource<_>()
-                    code.TailCall(sm.Data.CancellationToken, ValueSome __stack_tcs)
+                    code.TailCall(sm.Data.CancellationToken, __stack_tcs)
                     this.Bind(__stack_tcs.Task, this.Return).Invoke(&sm)
-                | ValueSome tcs ->
+                | Some tcs ->
                     // We are already in a tail call chain.
                     let __stack_ct = sm.Data.CancellationToken
-                    code.TailCall(__stack_ct, ValueSome tcs)
+                    code.TailCall(__stack_ct, tcs)
                     false // Return false to abandon this state machine and continue on the next one.
             )
 
