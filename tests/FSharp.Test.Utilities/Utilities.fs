@@ -57,10 +57,9 @@ type TheorySkipOnSignedBuildAttribute() as this =
 
 type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
     inherit FactAttribute()
+    do SignedBuildSkip.skipIfSigned this
     #if !NETCOREAPP    
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
-    #else
-        do SignedBuildSkip.skipIfSigned this
     #endif
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
