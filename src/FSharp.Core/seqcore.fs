@@ -383,19 +383,33 @@ module RuntimeHelpers =
 
 
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
-        let originalSource = lazy source.GetEnumerator()
+        // Manual thread-safe one-time initialization cell to replace lazy
+        let mutable originalSourceValue = None
+        let originalSourceLock = obj()
+        let getOriginalSource() =
+            match originalSourceValue with
+            | Some v -> v
+            | None ->
+                lock originalSourceLock (fun () ->
+                    match originalSourceValue with
+                    | Some v -> v
+                    | None ->
+                        let v = source.GetEnumerator()
+                        originalSourceValue <- Some v
+                        v)
+        
         let mutable shouldDisposeOriginalAtTheEnd = true
         let mutable exceptionalSource : IEnumerator<'T> option = None     
 
         let current() =
             match exceptionalSource with
             | Some es -> es.Current
-            | None -> originalSource.Value.Current
+            | None -> getOriginalSource().Current
 
         let disposeOriginal() =
             if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
-                originalSource.Value.Dispose() 
+                getOriginalSource().Dispose() 
 
         let moveExceptionHandler exn = 
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())
@@ -421,7 +435,7 @@ module RuntimeHelpers =
                         | Some es -> es.MoveNext()
                         | None ->
                             try
-                                let hasNext = originalSource.Value.MoveNext()
+                                let hasNext = getOriginalSource().MoveNext()
                                 if not hasNext then   
                                     // What if Moving does not fail, but Disposing does?
                                     // In that case, the 'when' guards could actually produce new elements to by yielded
