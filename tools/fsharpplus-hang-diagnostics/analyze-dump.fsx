@@ -3,7 +3,7 @@
 // Analyzes memory dump files to find hang points in FSharpPlus build
 // Uses Microsoft.Diagnostics.Runtime (ClrMD) library
 
-#r "nuget: Microsoft.Diagnostics.Runtime, 3.1.512"
+#r "nuget: Microsoft.Diagnostics.Runtime"
 
 open System
 open System.IO
@@ -24,20 +24,18 @@ let findDumpFiles () =
 
 // Data structures
 type ThreadInfo = {
-    ThreadId: int
+    ThreadId: uint32
     ManagedThreadId: int
     IsAlive: bool
-    IsBackground: bool
     StackFrames: string list
     TopFrame: string
-    IsWaitingOnLock: bool
-    LockObject: string option
+    ThreadState: string
 }
 
 type StackFrameGroup = {
     TopFrame: string
     ThreadCount: int
-    ThreadIds: int list
+    ThreadIds: uint32 list
     FullStack: string list
 }
 
@@ -61,6 +59,19 @@ let getMethodSignature (frame: ClrStackFrame) =
             "[Native Frame]"
     with _ ->
         "[Unknown Frame]"
+
+// Check if a frame looks like it's waiting on synchronization
+let isWaitingFrame (frame: string) =
+    frame.Contains("Monitor.Wait") ||
+    frame.Contains("Monitor.Enter") ||
+    frame.Contains("WaitHandle") ||
+    frame.Contains("Thread.Sleep") ||
+    frame.Contains("Thread.Join") ||
+    frame.Contains("SemaphoreSlim") ||
+    frame.Contains("ManualResetEvent") ||
+    frame.Contains("AutoResetEvent") ||
+    frame.Contains("Task.Wait") ||
+    frame.Contains("TaskAwaiter")
 
 // Analyze a single dump file
 let analyzeDump (dumpPath: string) =
@@ -91,26 +102,13 @@ let analyzeDump (dumpPath: string) =
                     if frames.Length > 0 then frames.[0]
                     else "[No Stack]"
                 
-                // Check if thread is waiting on a lock
-                let (isWaiting, lockObj) =
-                    try
-                        let blockingObj = thread.BlockingObjects |> Seq.tryHead
-                        match blockingObj with
-                        | Some obj -> 
-                            (true, Some (sprintf "0x%X (%s)" obj.Object obj.Reason.ToString()))
-                        | None -> (false, None)
-                    with _ ->
-                        (false, None)
-                
                 threads.Add({
                     ThreadId = thread.OSThreadId
                     ManagedThreadId = thread.ManagedThreadId
                     IsAlive = thread.IsAlive
-                    IsBackground = thread.IsBackground
                     StackFrames = frames
                     TopFrame = topFrame
-                    IsWaitingOnLock = isWaiting
-                    LockObject = lockObj
+                    ThreadState = thread.State.ToString()
                 })
             
             // Group threads by top frame
@@ -138,10 +136,13 @@ let analyzeDump (dumpPath: string) =
                     let heap = runtime.Heap
                     let segments = heap.Segments |> Seq.toList
                     
-                    let gen0Size = segments |> List.sumBy (fun s -> int64 s.Gen0Length)
-                    let gen1Size = segments |> List.sumBy (fun s -> int64 s.Gen1Length)
-                    let gen2Size = segments |> List.sumBy (fun s -> int64 s.Gen2Length)
-                    let lohSize = segments |> List.filter (fun s -> s.IsLargeObjectSegment) |> List.sumBy (fun s -> int64 s.Length)
+                    let gen0Size = segments |> List.sumBy (fun s -> int64 s.Generation0.Length)
+                    let gen1Size = segments |> List.sumBy (fun s -> int64 s.Generation1.Length)
+                    let gen2Size = segments |> List.sumBy (fun s -> int64 s.Generation2.Length)
+                    let lohSize = 
+                        segments 
+                        |> List.filter (fun s -> s.Kind = GCSegmentKind.Large) 
+                        |> List.sumBy (fun s -> int64 s.Length)
                     
                     let totalSize = gen0Size + gen1Size + gen2Size + lohSize
                     
@@ -236,7 +237,13 @@ let generateReport (dumpFiles: string[]) (analysisResults: (string * (ThreadInfo
                 appendFormat "#### %s" name
                 appendFormat "- **Total Threads:** %d" threads.Length
                 appendFormat "- **Alive Threads:** %d" (threads |> List.filter (fun t -> t.IsAlive) |> List.length)
-                appendFormat "- **Threads Waiting on Lock:** %d" (threads |> List.filter (fun t -> t.IsWaitingOnLock) |> List.length)
+                
+                // Count threads that appear to be waiting
+                let waitingCount = 
+                    threads 
+                    |> List.filter (fun t -> t.StackFrames |> List.exists isWaitingFrame)
+                    |> List.length
+                appendFormat "- **Threads in Wait State:** %d" waitingCount
                 appendLine ""
                 
                 // Find most common hang point
@@ -308,11 +315,12 @@ let generateReport (dumpFiles: string[]) (analysisResults: (string * (ThreadInfo
                     appendFormat "#### Thread %d (Managed: %d)" thread.ThreadId thread.ManagedThreadId
                     appendLine ""
                     
-                    if thread.IsWaitingOnLock then
-                        match thread.LockObject with
-                        | Some obj -> appendFormat "⚠️ **Waiting on lock:** %s" obj
-                        | None -> appendLine "⚠️ **Waiting on lock:** (unknown)"
-                        appendLine ""
+                    // Check if thread appears to be waiting
+                    let waitingFrame = thread.StackFrames |> List.tryFind isWaitingFrame
+                    match waitingFrame with
+                    | Some frame -> appendFormat "⚠️ **Waiting at:** `%s`" frame
+                    | None -> ()
+                    appendLine ""
                     
                     appendLine "**Stack Trace (F# related frames highlighted):**"
                     appendLine "```"
@@ -345,11 +353,12 @@ let generateReport (dumpFiles: string[]) (analysisResults: (string * (ThreadInfo
                     appendFormat "#### Thread %d (Managed: %d)" thread.ThreadId thread.ManagedThreadId
                     appendLine ""
                     
-                    if thread.IsWaitingOnLock then
-                        match thread.LockObject with
-                        | Some obj -> appendFormat "⚠️ **Waiting on lock:** %s" obj
-                        | None -> appendLine "⚠️ **Waiting on lock:** (unknown)"
-                        appendLine ""
+                    // Check if thread appears to be waiting
+                    let waitingFrame = thread.StackFrames |> List.tryFind isWaitingFrame
+                    match waitingFrame with
+                    | Some frame -> appendFormat "⚠️ **Waiting at:** `%s`" frame
+                    | None -> ()
+                    appendLine ""
                     
                     appendLine "**Stack Trace (MSBuild related frames highlighted):**"
                     appendLine "```"
@@ -370,34 +379,22 @@ let generateReport (dumpFiles: string[]) (analysisResults: (string * (ThreadInfo
             appendLine "### Lock and Synchronization State"
             appendLine ""
             
-            let waitingThreads = threads |> List.filter (fun t -> t.IsWaitingOnLock)
-            
-            if waitingThreads.Length > 0 then
-                appendFormat "Found **%d threads** waiting on locks:" waitingThreads.Length
-                appendLine ""
-                appendLine "| Thread ID | Lock Object |"
-                appendLine "|-----------|-------------|"
-                for thread in waitingThreads do
-                    let lockObj = thread.LockObject |> Option.defaultValue "unknown"
-                    appendFormat "| %d | %s |" thread.ThreadId lockObj
-                appendLine ""
-            else
-                appendLine "*No threads found waiting on locks*"
-            
             // Threads waiting on sync primitives
             let syncThreads = 
                 threads 
-                |> List.filter (fun t -> t.StackFrames |> List.exists isSyncFrame)
-                |> List.filter (fun t -> not t.IsWaitingOnLock) // Don't duplicate
+                |> List.filter (fun t -> t.StackFrames |> List.exists isWaitingFrame)
             
             if syncThreads.Length > 0 then
+                appendFormat "Found **%d threads** in wait state:" syncThreads.Length
                 appendLine ""
-                appendFormat "Found **%d additional threads** waiting on synchronization primitives:" syncThreads.Length
+                appendLine "| Thread ID | Wait Frame |"
+                appendLine "|-----------|------------|"
+                for thread in syncThreads |> List.truncate 20 do
+                    let syncFrame = thread.StackFrames |> List.find isWaitingFrame
+                    appendFormat "| %d | `%s` |" thread.ThreadId syncFrame
                 appendLine ""
-                for thread in syncThreads |> List.truncate 10 do
-                    let syncFrame = thread.StackFrames |> List.find isSyncFrame
-                    appendFormat "- Thread %d: `%s`" thread.ThreadId syncFrame
-                appendLine ""
+            else
+                appendLine "*No threads found in wait state*"
             
             appendLine ""
             
@@ -422,8 +419,8 @@ let generateReport (dumpFiles: string[]) (analysisResults: (string * (ThreadInfo
             // All Thread Summary
             appendLine "### All Threads Summary"
             appendLine ""
-            appendLine "| Thread ID | Managed ID | Alive | Background | Top Frame |"
-            appendLine "|-----------|------------|-------|------------|-----------|"
+            appendLine "| Thread ID | Managed ID | Alive | State | Top Frame |"
+            appendLine "|-----------|------------|-------|-------|-----------|"
             
             for thread in threads |> List.truncate 50 do
                 let topFrameShort = 
@@ -435,7 +432,7 @@ let generateReport (dumpFiles: string[]) (analysisResults: (string * (ThreadInfo
                     thread.ThreadId 
                     thread.ManagedThreadId
                     (if thread.IsAlive then "✅" else "❌")
-                    (if thread.IsBackground then "✅" else "❌")
+                    thread.ThreadState
                     topFrameShort
             
             appendLine ""

@@ -10,7 +10,6 @@ open System.IO
 open System.Text
 open System.Collections.Generic
 open Microsoft.Diagnostics.Tracing
-open Microsoft.Diagnostics.Tracing.Etlx
 open Microsoft.Diagnostics.Tracing.Parsers.Clr
 
 // Configuration
@@ -108,10 +107,8 @@ let processEvents () =
     else
         printfn "Opening trace file..."
         try
-            // Convert nettrace to etlx for analysis
-            let etlxPath = Path.ChangeExtension(traceFile, ".etlx")
-            let traceLog = TraceLog.OpenOrConvert(traceFile, etlxPath)
-            let source = traceLog.Events.GetSource()
+            // Use EventPipeEventSource for .nettrace files directly
+            use source = new EventPipeEventSource(traceFile)
             
             printfn "Processing events..."
             
@@ -178,13 +175,27 @@ let processEvents () =
                 threadActivity.[data.ThreadID].Add(info)
             )
             
-            source.Process() |> ignore
+            // Process events - may throw if file is truncated
+            try
+                source.Process() |> ignore
+            with
+            | :? EndOfStreamException ->
+                printfn "WARNING: Trace file appears truncated (process may have been killed)"
+            | ex when ex.Message.Contains("end of stream", StringComparison.OrdinalIgnoreCase) ->
+                printfn "WARNING: Trace file appears truncated (process may have been killed)"
+            
             printfn "Processed %d events" allEvents.Count
             true
         with ex ->
-            printfn "ERROR processing trace: %s" ex.Message
-            printfn "Stack trace: %s" ex.StackTrace
-            false
+            // Even if processing fails, we may have some events
+            if allEvents.Count > 0 then
+                printfn "WARNING: Trace processing incomplete: %s" ex.Message
+                printfn "Continuing with %d events collected..." allEvents.Count
+                true
+            else
+                printfn "ERROR processing trace: %s" ex.Message
+                printfn "Stack trace: %s" ex.StackTrace
+                false
 
 // Find time gaps in events
 let findTimeGaps (minGapSeconds: float) =

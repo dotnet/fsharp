@@ -1,0 +1,5 @@
+# Ignore output directory with generated artifacts
+output/
+*.nettrace
+*.etlx
+*.dmp
