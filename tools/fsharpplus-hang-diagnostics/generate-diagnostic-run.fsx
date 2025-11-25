@@ -1,0 +1,165 @@
+#!/usr/bin/env -S dotnet fsi --langversion:preview
+// generate-diagnostic-run.fsx
+// Generates DIAGNOSTIC-RUN.md with metadata about the diagnostic run
+
+open System
+open System.IO
+open System.Text
+open System.Text.Json
+
+// Configuration
+let scriptDir = __SOURCE_DIRECTORY__
+let outputDir = Path.Combine(scriptDir, "output")
+let metadataPath = Path.Combine(outputDir, "run-metadata.json")
+let reportPath = Path.Combine(outputDir, "DIAGNOSTIC-RUN.md")
+
+printfn "Generating DIAGNOSTIC-RUN.md..."
+
+// Parse metadata
+let readMetadata () =
+    try
+        if File.Exists(metadataPath) then
+            let json = File.ReadAllText(metadataPath)
+            let doc = JsonDocument.Parse(json)
+            Some doc.RootElement
+        else
+            None
+    with _ ->
+        None
+
+let metadata = readMetadata()
+
+let getString (root: JsonElement option) (name: string) (def: string) =
+    match root with
+    | Some r ->
+        try
+            r.GetProperty(name).GetString()
+        with _ -> def
+    | None -> def
+
+let getInt (root: JsonElement option) (name: string) (def: int) =
+    match root with
+    | Some r ->
+        try
+            r.GetProperty(name).GetInt32()
+        with _ -> def
+    | None -> def
+
+// Generate report
+let sb = StringBuilder()
+let appendLine (s: string) = sb.AppendLine(s) |> ignore
+let appendFormat fmt = Printf.kprintf appendLine fmt
+
+appendLine "# Diagnostic Run Report"
+appendLine ""
+appendFormat "**Generated:** %s" (DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC"))
+appendLine ""
+appendLine "---"
+appendLine ""
+
+appendLine "## Run Information"
+appendLine ""
+
+appendFormat "| Property | Value |"
+appendLine "|----------|-------|"
+appendFormat "| Start Time | %s |" (getString metadata "start_time" "Unknown")
+appendFormat "| End Time | %s |" (getString metadata "end_time" "Unknown")
+appendFormat "| SDK Version | %s |" (getString metadata "sdk_version" "Unknown")
+appendFormat "| Git Commit | `%s` |" (getString metadata "git_commit" "Unknown")
+appendFormat "| Branch | `%s` |" (getString metadata "branch" "gus/fsharp9")
+appendFormat "| Repository | %s |" (getString metadata "repository_url" "https://github.com/fsprojects/FSharpPlus.git")
+appendLine ""
+
+appendLine "## Command Executed"
+appendLine ""
+appendLine "```bash"
+appendFormat "%s" (getString metadata "command" "dotnet test build.proj -v n")
+appendLine "```"
+appendLine ""
+
+appendLine "## Execution Result"
+appendLine ""
+
+let exitCode = getInt metadata "exit_code" -1
+let result = getString metadata "result" "Unknown"
+let timeoutSeconds = getInt metadata "timeout_seconds" 120
+
+appendFormat "| Property | Value |"
+appendLine "|----------|-------|"
+appendFormat "| Exit Code | %d |" exitCode
+appendFormat "| Result | **%s** |" result
+appendFormat "| Timeout | %d seconds |" timeoutSeconds
+appendLine ""
+
+appendLine "### Exit Code Interpretation"
+appendLine ""
+
+match exitCode with
+| 124 ->
+    appendLine "🔴 **TIMEOUT (124)** - Process exceeded the timeout limit"
+    appendLine ""
+    appendLine "The process was killed after reaching the timeout threshold."
+    appendLine "This confirms the build hang issue."
+| 0 ->
+    appendLine "🟢 **SUCCESS (0)** - Process completed successfully"
+    appendLine ""
+    appendLine "The process completed without hanging."
+    appendLine "The issue may be intermittent or already fixed."
+| 137 ->
+    appendLine "🟡 **KILLED (137)** - Process was terminated (SIGKILL)"
+    appendLine ""
+    appendLine "The process was forcefully terminated, likely due to timeout."
+| _ ->
+    appendFormat "⚠️ **EXIT CODE %d** - Process failed" exitCode
+    appendLine ""
+    appendLine "The process terminated with an error (not a hang)."
+
+appendLine ""
+
+appendLine "## Generated Files"
+appendLine ""
+
+// List files in output directory
+if Directory.Exists(outputDir) then
+    let files = Directory.GetFiles(outputDir)
+    
+    appendLine "| File | Size | Description |"
+    appendLine "|------|------|-------------|"
+    
+    for file in files do
+        let info = FileInfo(file)
+        let name = Path.GetFileName(file)
+        let sizeKb = float info.Length / 1024.0
+        
+        let desc =
+            match Path.GetExtension(file).ToLower() with
+            | ".nettrace" -> "ETW trace file"
+            | ".dmp" -> "Memory dump file"
+            | ".md" -> "Markdown report"
+            | ".json" -> "JSON metadata"
+            | ".txt" -> "Text output"
+            | _ -> "Other"
+        
+        appendFormat "| `%s` | %.2f KB | %s |" name sizeKb desc
+    
+    appendLine ""
+else
+    appendLine "*Output directory not found*"
+    appendLine ""
+
+appendLine "## Next Steps"
+appendLine ""
+appendLine "1. Review `trace-analysis.md` for timeline and event analysis"
+appendLine "2. Review `dump-analysis.md` for thread and lock analysis (if available)"
+appendLine "3. Review `FINAL-REPORT.md` for combined insights and recommendations"
+appendLine ""
+
+appendLine "---"
+appendLine "*Report generated by generate-diagnostic-run.fsx*"
+
+// Write report
+let report = sb.ToString()
+File.WriteAllText(reportPath, report)
+
+printfn "Report written to: %s" reportPath
+printfn "Done."
