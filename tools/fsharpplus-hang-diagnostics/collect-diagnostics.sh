@@ -87,15 +87,17 @@ echo_info "Command: timeout --kill-after=10s ${TIMEOUT_SECONDS}s dotnet-trace co
 # Start the command with trace collection
 TRACE_FILE="${OUTPUT_DIR}/hang-trace.nettrace"
 
-# Run with timeout
+# Run with timeout, capturing all output (including dotnet-trace output)
 set +e
-timeout --kill-after=10s ${TIMEOUT_SECONDS}s dotnet-trace collect \
-    --providers "Microsoft-Windows-DotNETRuntime:0xFFFFFFFFFFFFFFFF:5,Microsoft-Diagnostics-DiagnosticSource,Microsoft-Windows-DotNETRuntimeRundown,System.Threading.Tasks.TplEventSource" \
-    --format speedscope \
-    --output "${TRACE_FILE}" \
-    -- dotnet test build.proj -v n 2>&1 | tee "${OUTPUT_DIR}/console-output.txt"
+{
+    timeout --kill-after=10s ${TIMEOUT_SECONDS}s dotnet-trace collect \
+        --providers "Microsoft-Windows-DotNETRuntime:0xFFFFFFFFFFFFFFFF:5,Microsoft-Diagnostics-DiagnosticSource,Microsoft-Windows-DotNETRuntimeRundown,System.Threading.Tasks.TplEventSource" \
+        --format speedscope \
+        --output "${TRACE_FILE}" \
+        -- dotnet test build.proj -v n
+} 2>&1 | tee "${OUTPUT_DIR}/console-output.txt"
 
-EXIT_CODE=$?
+EXIT_CODE=${PIPESTATUS[0]}
 set -e
 
 # Record end time

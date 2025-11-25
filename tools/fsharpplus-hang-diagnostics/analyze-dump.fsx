@@ -78,13 +78,21 @@ let analyzeDump (dumpPath: string) =
     printfn "Analyzing dump: %s" dumpPath
     
     try
-        use dataTarget = DataTarget.LoadDump(dumpPath)
+        // Try to load the dump file - LoadDump works for both Windows and Linux dumps
+        let dataTarget = 
+            try
+                DataTarget.LoadDump(dumpPath)
+            with ex ->
+                printfn "Standard dump load failed, may be corrupted or unsupported format: %s" ex.Message
+                reraise()
         
-        if dataTarget.ClrVersions.Length = 0 then
-            printfn "ERROR: No CLR versions found in dump"
+        use dt = dataTarget
+        
+        if dt.ClrVersions.Length = 0 then
+            printfn "ERROR: No CLR versions found in dump (may be native crash or corrupted)"
             None
         else
-            let clrVersion = dataTarget.ClrVersions.[0]
+            let clrVersion = dt.ClrVersions.[0]
             printfn "CLR Version: %s" (clrVersion.Version.ToString())
             
             use runtime = clrVersion.CreateRuntime()

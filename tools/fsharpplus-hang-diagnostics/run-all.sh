@@ -68,7 +68,12 @@ echo_step "Step 1/5: Collecting diagnostics..."
 echo ""
 
 chmod +x "${SCRIPT_DIR}/collect-diagnostics.sh"
-"${SCRIPT_DIR}/collect-diagnostics.sh" || true
+COLLECTION_EXIT_CODE=0
+"${SCRIPT_DIR}/collect-diagnostics.sh" || COLLECTION_EXIT_CODE=$?
+
+if [ $COLLECTION_EXIT_CODE -ne 0 ]; then
+    echo_warn "Collection script exited with code ${COLLECTION_EXIT_CODE} (may be expected for timeouts)"
+fi
 
 echo ""
 echo_step "Step 2/5: Analyzing trace file..."

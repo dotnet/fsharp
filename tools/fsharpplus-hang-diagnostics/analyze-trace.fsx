@@ -153,7 +153,16 @@ let processEvents () =
                         if names <> null && names.Length > 0 then
                             names 
                             |> Array.truncate 3
-                            |> Array.map (fun n -> sprintf "%s=%O" n (data.PayloadByName(n)))
+                            |> Array.choose (fun n -> 
+                                try
+                                    let value = data.PayloadByName(n)
+                                    let strValue = 
+                                        if value = null then "null"
+                                        else 
+                                            let s = value.ToString()
+                                            if s.Length > 100 then s.Substring(0, 97) + "..." else s
+                                    Some (sprintf "%s=%s" n strValue)
+                                with _ -> None)
                             |> String.concat ", "
                         else
                             ""
