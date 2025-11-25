@@ -12448,10 +12448,9 @@ Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(Async2Data`1, System.Collections.IEqualityComparer)
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(System.Object)
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Boolean IsBound
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Int32 GetHashCode()
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Microsoft.FSharp.Core.FSharpValueOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]] TailCallSource
+Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]] TailCallSource
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[t] MethodBuilder
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: System.Threading.CancellationToken CancellationToken
 Internal.Utilities.Library.Async2Implementation+Async2Data`1[t]: t Result
@@ -12463,7 +12462,7 @@ Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Boolean Equals(Sy
 Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Int32 GetHashCode()
 Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Int32 GetHashCode(System.Collections.IEqualityComparer)
-Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Internal.Utilities.Library.IAsync2Invocation`1[t] Start(System.Threading.CancellationToken, Microsoft.FSharp.Core.FSharpValueOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]], Boolean)
+Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: Internal.Utilities.Library.IAsync2Invocation`1[t] Start(System.Threading.CancellationToken, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]])
 Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]: m StateMachine
 Internal.Utilities.Library.Async2Implementation+Awaitable: b getAwaiter$W[a,b,c](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[b,c], Microsoft.FSharp.Core.FSharpFunc`2[b,System.Boolean], a)
 Internal.Utilities.Library.Async2Implementation+Awaitable: b getAwaiter[a,b,c](a)
@@ -12475,11 +12474,6 @@ Internal.Utilities.Library.Async2Implementation+Awaiter: Void unsafeOnCompleted$
 Internal.Utilities.Library.Async2Implementation+Awaiter: Void unsafeOnCompleted[a,b](a, System.Action)
 Internal.Utilities.Library.Async2Implementation+Awaiter: b getResult$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
 Internal.Utilities.Library.Async2Implementation+Awaiter: b getResult[a,b](a)
-Internal.Utilities.Library.Async2Implementation+BindContext: Boolean IncrementBindCount()
-Internal.Utilities.Library.Async2Implementation+BindContext: Int32 bindLimit
-Internal.Utilities.Library.Async2Implementation+BindContext: System.Threading.ThreadLocal`1[System.Int32] bindCount
-Internal.Utilities.Library.Async2Implementation+BindContext: System.Threading.ThreadLocal`1[System.Int32] get_bindCount()
-Internal.Utilities.Library.Async2Implementation+BindContext: Void Reset()
 Internal.Utilities.Library.Async2Implementation+DynamicState+Awaiting: System.Runtime.CompilerServices.ICriticalNotifyCompletion Item
 Internal.Utilities.Library.Async2Implementation+DynamicState+Awaiting: System.Runtime.CompilerServices.ICriticalNotifyCompletion get_Item()
 Internal.Utilities.Library.Async2Implementation+DynamicState+Bounce: DynamicState Item
@@ -12534,6 +12528,9 @@ Internal.Utilities.Library.Async2Implementation+ExceptionCache: System.Runtime.E
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: a Throw[a](System.Exception)
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow$W[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[a,System.Boolean], a)
 Internal.Utilities.Library.Async2Implementation+ExceptionCache: b GetResultOrThrow[a,b](a)
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean IsStackSufficient()
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean ShouldBounce
+Internal.Utilities.Library.Async2Implementation+Trampoline: Boolean get_ShouldBounce()
 Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] Ref
 Internal.Utilities.Library.Async2Implementation+Trampoline: Microsoft.FSharp.Core.FSharpRef`1[System.Runtime.CompilerServices.ICriticalNotifyCompletion] get_Ref()
 Internal.Utilities.Library.Async2Implementation+Trampoline: Trampoline Current
@@ -12545,7 +12542,6 @@ Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Asyn
 Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Async2`2[t,m]
 Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Awaitable
 Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Awaiter
-Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+BindContext
 Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+DynamicState
 Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+ExceptionCache
 Internal.Utilities.Library.Async2Implementation: Internal.Utilities.Library.Async2Implementation+Trampoline
@@ -12563,7 +12559,7 @@ Internal.Utilities.Library.Async2Module: t run[t](System.Threading.CancellationT
 Internal.Utilities.Library.Async2`1[t]: Internal.Utilities.Library.IAsync2Invocation`1[t] StartImmediate(System.Threading.CancellationToken)
 Internal.Utilities.Library.Async2`1[t]: System.Runtime.CompilerServices.TaskAwaiter`1[t] GetAwaiter()
 Internal.Utilities.Library.Async2`1[t]: System.Runtime.CompilerServices.TaskAwaiter`1[t] StartBound(System.Threading.CancellationToken)
-Internal.Utilities.Library.Async2`1[t]: Void TailCall(System.Threading.CancellationToken, Microsoft.FSharp.Core.FSharpValueOption`1[System.Threading.Tasks.TaskCompletionSource`1[t]])
+Internal.Utilities.Library.Async2`1[t]: Void TailCall(System.Threading.CancellationToken, System.Threading.Tasks.TaskCompletionSource`1[t])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] CreateDictionary(T[])
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: System.Collections.Generic.IDictionary`2[TDictKey,TDictValue] GetDictionary()
 Internal.Utilities.Library.DelayInitArrayMap`3[T,TDictKey,TDictValue]: T[] GetArray()

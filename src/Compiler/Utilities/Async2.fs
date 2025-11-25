@@ -481,9 +481,9 @@ module Async2 =
 
     let inline start ct (code: Async2<_>) =
 
-        let immediate =
-            isNull SynchronizationContext.Current
-            && TaskScheduler.Current = TaskScheduler.Default
+        let immediate = false
+        //isNull SynchronizationContext.Current
+        //&& TaskScheduler.Current = TaskScheduler.Default
 
         if immediate then
             let oldCt = CheckAndThrowToken.Value
@@ -551,7 +551,8 @@ type Async2 =
         async2 {
             let! ct = Async2.CancellationToken
             use lcts = CancellationTokenSource.CreateLinkedTokenSource ct
-            try 
+
+            try
                 let tasks = computations |> Seq.map (Async2.startInThreadPool lcts.Token)
                 return! Task.WhenAll tasks
             with exn ->
