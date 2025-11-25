@@ -7299,17 +7299,20 @@ namespace Microsoft.FSharp.Core
 namespace Microsoft.FSharp.Control
 
     open System
+    open System.Diagnostics.CodeAnalysis
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
 
     module LazyExtensions = 
         type Lazy<'T> with
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
+            [<return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]
             static member Create(creator : unit -> 'T) : Lazy<'T> =
                 let creator = Func<'T>(creator)
                 Lazy<'T>(creator, true)
 
             [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
+            [<return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]
             static member CreateFromValue(value : 'T) : Lazy<'T> =
                 Lazy<'T>.Create(fun () -> value)
 
