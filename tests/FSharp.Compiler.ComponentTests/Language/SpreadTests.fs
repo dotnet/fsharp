@@ -1176,21 +1176,52 @@ module NominalAndAnonymousRecords =
             let ``Inference works the same`` () =
                 let src =
                     """
+                    module M
+
                     let f x y =
                         if x = y then ()
                         else failwith $"Expected %A{x} = %A{y}."
 
-                    f {| a = 1 - 1 |} {| a = Unchecked.defaultof<_> |}
+                    do f {| a = 1 - 1 |} {| a = Unchecked.defaultof<_> |}
 
                     #nowarn FS3883 // Spread shadowing explicit.
 
                     let r = {| a = Unchecked.defaultof<_> |}
-                    f {| a = 1 - 1 |} {| a = "a"; ...r |}
+                    do f {| a = 1 - 1 |} {| a = "a"; ...r |}
+
+                    let _ =
+                        let r = {| a = Unchecked.defaultof<_> |}
+                        f {| a = 1 - 1 |} {| a = "a"; ...r |}
                     """
 
                 FSharp src
                 |> withLangVersion SupportedLangVersion
                 |> compileExeAndRun
+                |> shouldSucceed
+
+            [<Fact>]
+            let ``Name resolution order is the same`` () =
+                let src =
+                    """
+                    module M
+
+                    type RecordTypeB =
+                        { Name: string
+                          FieldB: int }
+
+                    // When the anonymous record expression is encountered, it must commit to "RecordTypeB".
+                    // The return type of "f" is, at that point, a variable type
+                    // and must be correctly inferred by the point where we process the subsequence
+                    // dot-notation "f().Name"
+                    let rec f() =
+                        {| Name = ""
+                           FieldA =  f().Name
+                        |}
+                    """
+
+                FSharp src
+                |> withLangVersion SupportedLangVersion
+                |> compile
                 |> shouldSucceed
 
         module Conversions =
