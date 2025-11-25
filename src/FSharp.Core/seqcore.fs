@@ -383,35 +383,19 @@ module RuntimeHelpers =
 
 
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
-        // Manual thread-safe one-time initialization cell to replace lazy (avoids IL2091 trimming warnings)
-        let mutable originalSourceValue = None
-        let originalSourceInitLock = obj()
-        let getOriginalSource() =
-            match originalSourceValue with
-            | Some v -> v
-            | None ->
-                // Double-checked locking pattern: first check avoids lock overhead after initialization,
-                // second check inside lock ensures only one thread initializes the value
-                lock originalSourceInitLock (fun () ->
-                    match originalSourceValue with
-                    | Some v -> v
-                    | None ->
-                        let v = source.GetEnumerator()
-                        originalSourceValue <- Some v
-                        v)
-        
+        let originalSource = lazy source.GetEnumerator()
         let mutable shouldDisposeOriginalAtTheEnd = true
         let mutable exceptionalSource : IEnumerator<'T> option = None     
 
         let current() =
             match exceptionalSource with
             | Some es -> es.Current
-            | None -> getOriginalSource().Current
+            | None -> originalSource.Value.Current
 
         let disposeOriginal() =
             if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
-                getOriginalSource().Dispose() 
+                originalSource.Value.Dispose() 
 
         let moveExceptionHandler exn = 
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())
@@ -437,7 +421,7 @@ module RuntimeHelpers =
                         | Some es -> es.MoveNext()
                         | None ->
                             try
-                                let hasNext = getOriginalSource().MoveNext()
+                                let hasNext = originalSource.Value.MoveNext()
                                 if not hasNext then   
                                     // What if Moving does not fail, but Disposing does?
                                     // In that case, the 'when' guards could actually produce new elements to by yielded
