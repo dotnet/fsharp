@@ -150,7 +150,7 @@ let parseAndCheck path source options =
             | _, FSharpCheckFileAnswer.Aborted -> None
             | _, FSharpCheckFileAnswer.Succeeded results -> Some results
 
-        Cancellable.HasCancellationToken |> shouldEqual false
+        Async2.CheckAndThrowToken.Value |> shouldEqual CancellationToken.None
         result
 
     with :? OperationCanceledException ->
@@ -172,11 +172,6 @@ open Ns1.Ns2
 
 let t: T = T()
 """
-
-
-[<Fact>]
-let ``CheckAndThrow is not allowed to throw outside of cancellable`` () =
-    Assert.Throws<Exception>(fun () -> Cancellable.CheckAndThrow())
 
 [<Fact>]
 let ``Type defs 01 - assembly import`` () =

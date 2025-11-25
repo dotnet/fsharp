@@ -2248,7 +2248,7 @@ and [<Sealed>] TcImports
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
         let tryGetAssemblyData (r: AssemblyResolution) =
-            async {
+            async2 {
                 CheckDisposed()
                 let m = r.originalReference.Range
                 let fileName = r.resolvedPath
@@ -2256,7 +2256,7 @@ and [<Sealed>] TcImports
                 try
 
                     let! contentsOpt =
-                        async {
+                        async2 {
                             match r.ProjectReference with
                             | Some ilb -> return! ilb.EvaluateRawContents()
                             | None -> return ProjectAssemblyDataResult.Unavailable true
@@ -2290,7 +2290,7 @@ and [<Sealed>] TcImports
                 let phase2 () =
                     [ tcImports.FindCcuInfo(ctok, m, ilShortAssemName, lookupOnly = true) ]
 
-                async { return phase2 () }
+                async2 { return phase2 () }
             else
                 let dllinfo =
                     {
@@ -2320,9 +2320,9 @@ and [<Sealed>] TcImports
                     else
                         tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
 
-                async { return phase2 () }
+                async2 { return phase2 () }
 
-        async {
+        async2 {
             CheckDisposed()
 
             let tcConfig = tcConfigP.Get ctok
@@ -2371,7 +2371,7 @@ and [<Sealed>] TcImports
                     ReportWarnings warns
 
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res)
-                    |> Async.RunSynchronously
+                    |> Async2.RunSynchronously
                     |> ignore
 
                     true
@@ -2461,7 +2461,7 @@ and [<Sealed>] TcImports
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
     static member BuildFrameworkTcImports(tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
-        async {
+        async2 {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2538,7 +2538,7 @@ and [<Sealed>] TcImports
                 resolvedAssemblies |> List.choose tryFindEquivPrimaryAssembly
 
             let! fslibCcu, fsharpCoreAssemblyScopeRef =
-                async {
+                async2 {
                     if tcConfig.compilingFSharpCore then
                         // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
                         return CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
@@ -2629,7 +2629,7 @@ and [<Sealed>] TcImports
         (tcConfigP: TcConfigProvider, baseTcImports, nonFrameworkReferences, knownUnresolved, dependencyProvider)
         =
 
-        async {
+        async2 {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2647,7 +2647,7 @@ and [<Sealed>] TcImports
         }
 
     static member BuildTcImports(tcConfigP: TcConfigProvider, dependencyProvider) =
-        async {
+        async2 {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
@@ -2679,7 +2679,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
 
     let ccuinfos =
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
-        |> Async.RunSynchronously
+        |> Async2.RunSynchronously
 
     let asms =
         ccuinfos

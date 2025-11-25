@@ -7,10 +7,12 @@ open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 open FSharp.Compiler.DiagnosticsLogger
+open Internal.Utilities.Library
+open System
 
 type AsyncLazyState<'t> =
-    | Initial of computation: Async<'t>
-    | Running of initialComputation: Async<'t> * work: Task<'t> * CancellationTokenSource * requestCount: int
+    | Initial of computation: Async2<'t>
+    | Running of initialComputation: Async2<'t> * work: Task<'t> * CancellationTokenSource * requestCount: int
     | Completed of result: 't
     | Faulted of exn
 
@@ -48,16 +50,16 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
         | state -> state // Nothing more to do if state already transitioned.
 
     let detachable (work: Task<'t>) =
-        async {
+        async2 {
             try
-                let! ct = Async.CancellationToken
+                let! ct = Async2.CancellationToken
                 // Using ContinueWith with a CancellationToken allows detaching from the running 'work' task.
                 // If the current async workflow is canceled, the 'work' task will continue running independently.
-                do! work.ContinueWith(ignore<Task<'t>>, ct) |> Async.AwaitTask
+                do! work.ContinueWith(ignore<Task<'t>>, ct)
             with :? TaskCanceledException ->
                 ()
             // If we're here it means there was no cancellation and the 'work' task has completed.
-            return! work |> Async.AwaitTask
+            return! work
         }
 
     let onComplete (t: Task<'t>) =
@@ -78,21 +80,21 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
             let cts = new CancellationTokenSource()
 
             let work =
-                Async
+                Async2
                     .StartAsTask(computation, cancellationToken = cts.Token)
                     .ContinueWith(onComplete, TaskContinuationOptions.NotOnCanceled)
 
             Running(computation, work, cts, 1), detachable work
         | Running(c, work, cts, count) -> Running(c, work, cts, count + 1), detachable work
-        | Completed result as state -> state, async { return result }
-        | Faulted exn as state -> state, async { return raise exn }
+        | Completed result as state -> state, async2 { return result }
+        | Faulted exn as state -> state, async2 { return raise exn }
 
     // computation will deallocate after state transition to Completed ot Faulted.
     new(computation, ?cancelUnawaited: bool, ?cacheException) =
         AsyncLazy(Initial computation, defaultArg cancelUnawaited true, defaultArg cacheException true)
 
     member _.Request() =
-        async {
+        async2 {
             try
                 return! withStateUpdate request
             finally
@@ -175,7 +177,7 @@ type private KeyData<'TKey, 'TVersion> =
         Version: 'TVersion
     }
 
-type Job<'t> = AsyncLazy<Result<'t, exn> * CapturingDiagnosticsLogger>
+type internal Job<'t> = AsyncLazy<Result<'t, exn> * CapturingDiagnosticsLogger>
 
 [<DebuggerDisplay("{DebuggerDisplay}")>]
 type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
@@ -223,19 +225,19 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
             }
 
         let wrappedComputation =
-            Async.TryCancelled(
-                async {
+            Async2.TryCancelled(
+                async2 {
                     let sw = Stopwatch.StartNew()
                     log Started key
                     let logger = CapturingDiagnosticsLogger "cache"
                     SetThreadDiagnosticsLoggerNoUnwind logger
 
-                    match! computation |> Async.Catch with
-                    | Choice1Of2 result ->
+                    try
+                        let! result = computation
                         log Finished key
                         Interlocked.Add(&duration, sw.ElapsedMilliseconds) |> ignore
                         return Result.Ok result, logger
-                    | Choice2Of2 exn ->
+                    with exn ->
                         log Failed key
                         return Result.Error exn, logger
                 },
@@ -260,7 +262,7 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
 
             cached |> Option.map countHit |> Option.defaultWith cacheSetNewJob
 
-        async {
+        async2 {
             let otherVersions, job = lock cache getOrAdd
 
             log Requested key
@@ -277,6 +279,9 @@ type internal AsyncMemoize<'TKey, 'TVersion, 'TValue
             | Ok result -> return result
             | Error exn -> return raise exn
         }
+
+    member this.GetAsync(key, computation: Async<_>) =
+        this.Get(key, async2 { return! computation }) |> Async2.toAsync
 
     member _.TryGet(key: 'TKey, predicate: 'TVersion -> bool) : 'TValue option =
         lock cache
