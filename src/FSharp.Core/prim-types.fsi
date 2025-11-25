@@ -6153,7 +6153,7 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module LazyExtensions =
 
-        type System.Lazy<'T> with
+        type System.Lazy<[<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]'T> with
 
             /// <summary>Creates a lazy computation that evaluates to the result of the given function when forced.</summary>
             ///
@@ -6161,7 +6161,6 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>The created Lazy object.</returns>
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            [<return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]
             static member Create: creator: (unit -> 'T) -> System.Lazy<'T>
             
             /// <summary>Creates a lazy computation that evaluates to the given value when forced.</summary>
@@ -6170,7 +6169,6 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>The created Lazy object.</returns>
             [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            [<return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]
             static member CreateFromValue: value: 'T -> System.Lazy<'T>
             
             /// <summary>Forces the execution of this value and return its result. Same as Value. Mutual exclusion is used to 
