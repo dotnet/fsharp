@@ -2667,25 +2667,27 @@ module EstablishTypeDefinitionCores =
 
               // We must apply the spread shadowing logic here to get
               // the correct set of field types.
-              let rec collectTys tys fieldsAndSpreads =
+              let rec collectTys tys i fieldsAndSpreads =
                   match fieldsAndSpreads with
                   | [] ->
                       tys
                       |> Map.toList
                       |> List.collect (fun (_, (_, dupes)) -> dupes)
+                      |> List.sortBy (fun (i, _, _) -> i)
+                      |> List.map (fun (_, tyR, m) -> tyR, m)
 
                   | SynFieldOrSpread.Field (SynField (idOpt = None)) :: fieldsAndSpreads ->
-                      collectTys tys fieldsAndSpreads
+                      collectTys tys i fieldsAndSpreads
 
                   | SynFieldOrSpread.Field (SynField (idOpt = Some fieldId; fieldType = ty; range = m)) :: fieldsAndSpreads ->
                       let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
                       let tys =
                           tys |> Map.change fieldId.idText (function
-                              | None -> Some (LeftwardExplicit, [tyR, m])
-                              | Some (LeftwardExplicit, dupes) -> Some (LeftwardExplicit, (tyR, m) :: dupes)
-                              | Some (NoLeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [tyR, m]))
+                              | None -> Some (LeftwardExplicit, [i, tyR, m])
+                              | Some (LeftwardExplicit, dupes) -> Some (LeftwardExplicit, (i, tyR, m) :: dupes)
+                              | Some (NoLeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [i, tyR, m]))
 
-                      collectTys tys fieldsAndSpreads
+                      collectTys tys (i + 1) fieldsAndSpreads
 
                   | SynFieldOrSpread.Spread (SynTypeSpread (ty = ty; range = m)) :: fieldsAndSpreads ->
                       let spreadSrcTy, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv ty
@@ -2702,17 +2704,17 @@ module EstablishTypeDefinitionCores =
                               | ValueSome (anonInfo, tys) -> tys |> List.mapi (fun i ty -> anonInfo.SortedNames[i], ty, m)
                               | ValueNone -> []
 
-                      let tys =
-                          (tys, fieldsFromSpread)
-                          ||> List.fold (fun tys (fieldId, ty, m) ->
-                              tys |> Map.change fieldId (function
-                                  | None -> Some (NoLeftwardExplicit, [ty, m])
-                                  | Some (LeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [ty, m])
-                                  | Some (NoLeftwardExplicit, _dupes) -> Some (NoLeftwardExplicit, [ty, m])))
+                      let i, tys =
+                          ((i, tys), fieldsFromSpread)
+                          ||> List.fold (fun (i, tys) (fieldId, ty, m) ->
+                              i + 1, tys |> Map.change fieldId (function
+                                  | None -> Some (NoLeftwardExplicit, [i, ty, m])
+                                  | Some (LeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [i, ty, m])
+                                  | Some (NoLeftwardExplicit, _dupes) -> Some (NoLeftwardExplicit, [i, ty, m])))
 
-                      collectTys tys fieldsAndSpreads
+                      collectTys tys i fieldsAndSpreads
 
-              yield! collectTys Map.empty fieldsAndSpreads
+              yield! collectTys Map.empty 0 fieldsAndSpreads
 
           | _ ->
               () ], spreadSrcTys

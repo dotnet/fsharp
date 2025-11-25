@@ -8068,92 +8068,174 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
 
     let maybeAnonRecdTargetTy = tryDestAnonRecdTy g overallTy
 
-    let possibleTargetTyAt =
-        match maybeAnonRecdTargetTy with
-        | ValueSome (anonInfo, tys) ->
-            let names = anonInfo.SortedNames
-            let tys = List.toArray tys
-            fun name ->
-                let i = Array.BinarySearch (names, name)
-                if i < 0 then ValueNone
-                else ValueSome tys[i]
-        | ValueNone -> fun _ -> ValueNone
-
-    let spreadSrcs, unsortedCheckedFields, sortedCheckedFields, tpenv =
+    let spreadSrcs, unsortedCheckedFields, anonInfo, tpenv =
         let (|LeftwardExplicit|NoLeftwardExplicit|) hasLeftwardExplicit = if hasLeftwardExplicit then LeftwardExplicit else NoLeftwardExplicit
         let LeftwardExplicit = true
         let NoLeftwardExplicit = false
 
-        let rec mkTcFuncs tys i fieldsAndSpreads =
-            match fieldsAndSpreads with
-            | [] ->
-                let acc =
-                    (Map.empty, tys) ||> Map.fold (fun acc _ (_, tys) ->
-                        let (i, ty), tys = List.headAndTail tys
-                        let acc = acc |> Map.add i (fun _ expr tpenv -> ty, TcExprFlex cenv true false ty env tpenv expr)
-                        (acc, tys) ||> List.fold (fun acc (i, ty) -> acc |> Map.add i (fun m _ tpenv -> ty, (mkThrow m ty (mkOne g m), tpenv))))
+        let allSortedFieldTys, dedupedSortedFieldTys, tcFieldExprAt =
+            let possibleTargetTyAt =
+                match maybeAnonRecdTargetTy with
+                | ValueSome (anonInfo, tys) ->
+                    let names = anonInfo.SortedNames
+                    let tys = List.toArray tys
+                    fun name ->
+                        let i = Array.BinarySearch (names, name)
+                        if i < 0 then ValueNone
+                        else ValueSome tys[i]
+                | ValueNone -> fun _ -> ValueNone
 
-                fun i m expr tpenv ->
-                    acc
-                    |> Map.tryFind i
-                    |> Option.map (fun tc -> tc m expr tpenv)
-                    |> Option.defaultWith (fun () -> g.obj_ty_ambivalent, (mkThrow m g.obj_ty_ambivalent (mkOne g m), tpenv))
+            // ----------------------------------------------------------------------------------
+            // ----------------------------------------------------------------------------------
+            // TODO: Collect spread src exprs so we don't re-typecheck them?
+            // TODO: It would be better if we could _try_ to typecheck fields and undo if they
+            //       end up being shadowed later...
+            // ----------------------------------------------------------------------------------
+            // ----------------------------------------------------------------------------------
 
-            | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent (([] | _ :: _ :: _), _, _); range = m), _) :: _ ->
-                error (InternalError ("All field names should have been transformed into simple identifiers by this point.", m))
+            let rec mkTcFuncs tys i fieldsAndSpreads =
+                match fieldsAndSpreads with
+                | [] ->
+                    // If the target type is a known anonymous record type,
+                    // keep only those fields that are present in that type
+                    // or that are explicitly defined in this one.
+                    let tys =
+                        maybeAnonRecdTargetTy
+                        |> ValueOption.map (fun (anonInfo, _) ->
+                            let sortedNames = anonInfo.SortedNames
+                            tys
+                            |> Map.filter (fun fieldId field ->
+                                match field with
+                                | LeftwardExplicit, _ -> true
+                                | NoLeftwardExplicit, _ -> Array.BinarySearch (sortedNames, fieldId) >= 0))
+                        |> ValueOption.defaultValue tys
 
-            // Explicitly redeclared fields are not allowed:
-            //     {| A = 3; A = 4 |}
-            //               ↑ error FS3522
-            | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent ([fieldId], _, _)), _) :: fieldsAndSpreads ->
-                let ty = possibleTargetTyAt fieldId.idText |> ValueOption.defaultWith (fun () -> NewInferenceType g)
+                    let dedupedSortedFieldTys = tys |> Map.map (fun _ (_, tys) -> let _, _, ty = List.head tys in ty)
 
-                let tys =
-                    tys |> Map.change fieldId.idText (function
-                        | None -> Some (LeftwardExplicit, [i, ty])
-                        | Some (LeftwardExplicit, dupes) -> Some (LeftwardExplicit, (i, ty) :: dupes)
-                        | Some (NoLeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [i, ty]))
+                    let indexedTcFuncs =
+                        (Map.empty, tys)
+                        ||> Map.fold (fun acc _ (_, tys) ->
+                            let (i, _, ty), tys = List.headAndTail tys
+                            let acc = acc |> Map.add i (fun _ cenv env expr tpenv -> ty, TcExprFlex cenv true false ty env tpenv expr)
+                            (acc, tys)
+                            ||> List.fold (fun acc (i, _, ty) ->
+                                acc |> Map.add i (fun m _ _ _ tpenv -> ty, (mkThrow m ty (mkOne g m), tpenv))))
 
-                mkTcFuncs tys (i + 1) fieldsAndSpreads
+                    tys, dedupedSortedFieldTys, fun i m cenv env expr tpenv ->
+                        indexedTcFuncs
+                        |> Map.tryFind i
+                        |> Option.map (fun tc -> tc m cenv env expr tpenv)
+                        |> Option.defaultWith (fun () -> g.obj_ty_ambivalent, (mkThrow m g.obj_ty_ambivalent (mkOne g m), tpenv))
 
-            // Field shadowing from spreads is allowed:
-            //     let a = {| A = 3 |}
-            //     let b = {| A = "4" |}
-            //     let c = {| ...a; ...b |} → {| A = "4" |}
-            | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; range = m), _) :: fieldsAndSpreads ->
-                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
+                | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent (([] | _ :: _ :: _), _, _); range = m), _) :: _ ->
+                    error (InternalError ("All field names should have been transformed into simple identifiers by this point.", m))
 
-                let flex = false
-                let spreadSrcExpr, _ = TcExprFlex cenv flex false (NewInferenceType g) env tpenv expr
-                let tyOfSpreadSrcExpr = tyOfExpr g spreadSrcExpr
+                // Explicitly redeclared fields are not allowed:
+                //     {| A = 3; A = 4 |}
+                //               ↑ error FS3522
+                | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent ([fieldId], _, _)), _) :: fieldsAndSpreads ->
+                    let ty = possibleTargetTyAt fieldId.idText |> ValueOption.defaultWith (fun () -> NewInferenceType g)
 
-                let fieldsFromSpread =
-                    if isRecdTy g tyOfSpreadSrcExpr then
-                        ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad tyOfSpreadSrcExpr false
-                        |> List.choose (function
-                            | Item.RecdField field ->
-                                let fieldId = field.RecdField.Id.idText
-                                Some (fieldId, possibleTargetTyAt fieldId |> ValueOption.defaultValue field.FieldType)
-                            | _ -> None)
-                    else
-                        match tryDestAnonRecdTy g tyOfSpreadSrcExpr with
-                        | ValueSome (anonInfo, tys) ->
-                            tys |> List.mapi (fun j ty ->
-                                let fieldId = anonInfo.SortedNames[j]
-                                fieldId, possibleTargetTyAt fieldId |> ValueOption.defaultValue ty)
-                        | ValueNone -> []
+                    let tys =
+                        tys |> Map.change fieldId.idText (function
+                            | None -> Some (LeftwardExplicit, [i, fieldId, ty])
+                            | Some (LeftwardExplicit, dupes) -> Some (LeftwardExplicit, (i, fieldId, ty) :: dupes)
+                            | Some (NoLeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [i, fieldId, ty]))
 
-                let i, tys =
-                    ((i, tys), fieldsFromSpread)
-                    ||> List.fold (fun (i, tys) (fieldId, ty) ->
-                        i + 1, tys |> Map.change fieldId (function
-                            | None -> Some (NoLeftwardExplicit, [i, ty])
-                            | Some (LeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [i, ty])
-                            | Some (NoLeftwardExplicit, _dupes) -> Some (NoLeftwardExplicit, [i, ty])))
+                    mkTcFuncs tys (i + 1) fieldsAndSpreads
 
-                mkTcFuncs tys i fieldsAndSpreads
+                // Field shadowing from spreads is allowed:
+                //     let a = {| A = 3 |}
+                //     let b = {| A = "4" |}
+                //     let c = {| ...a; ...b |} → {| A = "4" |}
+                | SynExprAnonRecordFieldOrSpread.Spread (SynExprSpread (expr = expr; range = m), _) :: fieldsAndSpreads ->
+                    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RecordSpreads m
 
-        let targetTys = mkTcFuncs Map.empty 0 unsortedFieldIdsAndSynExprsGiven
+                    let flex = false
+                    let spreadSrcExpr, _ = TcExprFlex cenv flex false (NewInferenceType g) env tpenv expr
+                    let tyOfSpreadSrcExpr = tyOfExpr g spreadSrcExpr
+
+                    let fieldsFromSpread =
+                        if isRecdTy g tyOfSpreadSrcExpr then
+                            ResolveRecordOrClassFieldsOfType cenv.nameResolver m ad tyOfSpreadSrcExpr false
+                            |> List.choose (function
+                                | Item.RecdField field ->
+                                    let fieldId = field.RecdField.Id
+                                    Some (fieldId, field.FieldType)
+                                | _ -> None)
+                        else
+                            match tryDestAnonRecdTy g tyOfSpreadSrcExpr with
+                            | ValueSome (anonInfo, tys) ->
+                                tys |> List.mapi (fun j ty ->
+                                    let fieldId = anonInfo.SortedIds[j]
+                                    fieldId, ty)
+                            | ValueNone -> []
+
+                    let i, tys =
+                        ((i, tys), fieldsFromSpread)
+                        ||> List.fold (fun (i, tys) (fieldId, ty) ->
+                            i + 1, tys |> Map.change fieldId.idText (function
+                                | None -> Some (NoLeftwardExplicit, [i, fieldId, ty])
+                                | Some (LeftwardExplicit, _dupes) -> Some (LeftwardExplicit, [i, fieldId, ty])
+                                | Some (NoLeftwardExplicit, _dupes) -> Some (NoLeftwardExplicit, [i, fieldId, ty])))
+
+                    mkTcFuncs tys i fieldsAndSpreads
+
+            mkTcFuncs Map.empty 0 unsortedFieldIdsAndSynExprsGiven
+
+        // Unify the overall ty with the inferred target anonymous record type.
+        let anonInfo, sortedFieldTys =
+            let anonInfo, sortedFieldTys =
+                let unsortedNames =
+                    allSortedFieldTys
+                    |> Map.toList
+                    |> List.collect (fun (_, (_, dupes)) -> dupes)
+                    |> List.sortBy (fun (i, _, _) -> i)
+                    |> List.map (fun (_, fieldId, _) -> fieldId)
+                    |> List.toArray
+
+                match maybeAnonRecdTargetTy with
+                | ValueSome (anonInfo, _) ->
+                    // Note: use the assembly of the known type, not the current assembly
+                    // Note: use the structness of the known type, unless explicit
+                    // Note: use the names of our type, since they are always explicit
+                    let tupInfo = if isStruct then tupInfoStruct else anonInfo.TupInfo
+                    let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
+                    let sortedFieldTys =
+                        [
+                            for KeyValue (_, (_, dupes)) in allSortedFieldTys do
+                                for _, _, ty in dupes do
+                                    ty
+                        ]
+                    anonInfo, sortedFieldTys
+                | ValueNone ->
+                    // Note: no known anonymous record type - use our assembly
+                    let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, mkTupInfo isStruct, unsortedNames)
+                    let sortedFieldTys =
+                        [
+                            for KeyValue (_, (_, dupes)) in allSortedFieldTys do
+                                for _, _, ty in dupes do
+                                    ty
+                        ]
+                    anonInfo, sortedFieldTys
+            let ty2 = TType_anon (anonInfo, sortedFieldTys)
+            AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css mWholeExpr overallTy ty2
+            anonInfo, sortedFieldTys
+
+        // All sorted field identifiers, including potential duplicates.
+        let sortedNames =
+            [|
+                for KeyValue (_, (_, dupes)) in allSortedFieldTys do
+                    for _, fieldName, _ in dupes do
+                        fieldName
+            |]
+
+        // Call name resolution.
+        sortedNames
+        |> Array.iteri (fun j fieldName ->
+            let m = fieldName.idRange
+            let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
+            CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights))
 
         let rec tcFieldsAndSpreads spreadSrcs checkedFields i tpenv fieldsAndSpreads =
             let (|LeftwardExplicit|NoLeftwardExplicit|) hasLeftwardExplicit = if hasLeftwardExplicit then LeftwardExplicit else NoLeftwardExplicit
@@ -8185,7 +8267,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
                     |> List.sortBy (fun (i, _, _, _) -> i)
                     |> List.map (fun (_, fieldId, ty, expr) -> fieldId, ty, expr)
 
-                List.rev spreadSrcs, checkedFieldsInOriginalOrder, checkedFields, tpenv
+                List.rev spreadSrcs, checkedFieldsInOriginalOrder, anonInfo, tpenv
 
             | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent (([] | _ :: _ :: _), _, _); range = m), _) :: _ ->
                 error (InternalError ("All field names should have been transformed into simple identifiers by this point.", m))
@@ -8194,7 +8276,7 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
             //     {| A = 3; A = 4 |}
             //               ↑ error FS3522
             | SynExprAnonRecordFieldOrSpread.Field (SynExprAnonRecordField (fieldName = SynLongIdent ([fieldId], _, _); expr = expr; range = m), _) :: fieldsAndSpreads ->
-                let ty, (expr, tpenv) = targetTys i m expr tpenv
+                let ty, (expr, tpenv) = tcFieldExprAt i m cenv env expr tpenv
 
                 let checkedFields =
                     checkedFields |> Map.change fieldId.idText (function
@@ -8251,7 +8333,8 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
                         | Item.RecdField fieldInfo :: fieldsFromSpread ->
                             let fieldExpr = mkRecdFieldGetViaExprAddr (spreadSrcAddrExpr, fieldInfo.RecdFieldRef, fieldInfo.TypeInst, m)
                             let fieldId = fieldInfo.RecdFieldRef.RecdField.Id
-                            let ty = possibleTargetTyAt fieldId.idText |> ValueOption.defaultValue fieldInfo.FieldType
+                            ignore dedupedSortedFieldTys
+                            let ty = fieldInfo.FieldType
 
                             let checkedFields =
                                 checkedFields |> Map.change fieldId.idText (function
@@ -8337,50 +8420,6 @@ and TcNewAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, unsortedField
                     tcFieldsAndSpreads spreadSrcs checkedFields i tpenv fieldsAndSpreads
 
         tcFieldsAndSpreads [] Map.empty 0 tpenv unsortedFieldIdsAndSynExprsGiven
-
-    let sortedNames =
-        [|
-            for KeyValue (_, (_, dupes)) in sortedCheckedFields do
-                for _, fieldName, _, _ in dupes do
-                    fieldName
-        |]
-
-    let anonInfo, sortedFieldTys =
-        let anonInfo, sortedFieldTys =
-            match maybeAnonRecdTargetTy with
-            | ValueSome (anonInfo, _) ->
-                // Note: use the assembly of the known type, not the current assembly
-                // Note: use the structness of the known type, unless explicit
-                // Note: use the names of our type, since they are always explicit
-                let tupInfo = if isStruct then tupInfoStruct else anonInfo.TupInfo
-                let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, sortedNames)
-                let sortedFieldTys =
-                    [
-                        for KeyValue (_, (_, dupes)) in sortedCheckedFields do
-                            for _, _, ty, _ in dupes do
-                                ty
-                    ]
-                anonInfo, sortedFieldTys
-            | ValueNone ->
-                // Note: no known anonymous record type - use our assembly
-                let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, mkTupInfo isStruct, sortedNames)
-                let sortedFieldTys =
-                    [
-                        for KeyValue (_, (_, dupes)) in sortedCheckedFields do
-                            for _, _, ty, _ in dupes do
-                                ty
-                    ]
-                anonInfo, sortedFieldTys
-        let ty2 = TType_anon (anonInfo, sortedFieldTys)
-        AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css mWholeExpr overallTy ty2
-        anonInfo, sortedFieldTys
-
-    // TODO: Does this make sense for fields derived from a spread?
-    sortedNames
-    |> Array.iteri (fun j fieldName ->
-        let m = fieldName.idRange
-        let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, m)
-        CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.eAccessRights))
 
     let unsortedNames = [| for fieldName, _, _ in unsortedCheckedFields -> fieldName |]
     let unsortedTys = [ for _, fieldTy, _ in unsortedCheckedFields -> fieldTy ]
