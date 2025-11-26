@@ -1,20 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<!--
+  =====================================================================================
+  F# Debug VSIX Compiler Override Props File
+  =====================================================================================
+  
+  PURPOSE:
+    This props file overrides FSharpCompilerPath to point to the VSIX Tools directory,
+    enabling use of locally-built F# compilers from the Debug VSIX.
+  
+  IMPORTANT - MANUAL IMPORT REQUIRED:
+    This file is NOT automatically imported by MSBuild. The Microsoft.VisualStudio.MsBuildProps
+    asset type only deploys the file to the VSIX package - it does NOT auto-import.
+    
+    To use this override, you must MANUALLY import this file in your project or 
+    Directory.Build.props:
+    
+    <Import Project="[VSIX_INSTALL_PATH]\Microsoft.FSharp.VSIX.Debug.Overrides.props" 
+            Condition="Exists('[VSIX_INSTALL_PATH]\Microsoft.FSharp.VSIX.Debug.Overrides.props')" />
+    
+    Typical VSIX install path (replace <version> and <random>):
+    %LOCALAPPDATA%\Microsoft\VisualStudio\<version>\Extensions\<random>\Microsoft.FSharp.VSIX.Debug.Overrides.props
+  
+  VERIFICATION STEPS:
+    1. Build VisualFSharpDebug project in Debug configuration
+    2. Check artifacts\bin\VisualFSharpDebug\Debug\ for this file
+    3. After F5/install, find VSIX at:
+       %LOCALAPPDATA%\Microsoft\VisualStudio\<version>\Extensions\
+    4. Search for "Microsoft.FSharp.VSIX.Debug.Overrides.props" in that directory
+    5. Manually import in your test project's Directory.Build.props
+    6. Build your F# project - look for warning: "[F# Debug VSIX] Using custom F# compiler from: ..."
+  
+  TROUBLESHOOTING:
+    - If no warning appears: props file is not imported (see above)
+    - If warning shows wrong path: check the VSIX install location
+    - To verify compiler is used: add /v:d to MSBuild and search for FSharpCompilerPath
+-->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <PropertyGroup>
-    <!-- Override FSharpCompilerPath to point to VSIX Tools directory -->
-    <!-- This props file is deployed alongside the Tools directory in the VSIX -->
-    <!-- Calculate path from this file's location to Tools -->
+    <!-- Calculate path from this file's location to Tools directory -->
     <_FSharpDebugVsixPropsDir>$(MSBuildThisFileDirectory)</_FSharpDebugVsixPropsDir>
     <_FSharpDebugVsixToolsPath>$(_FSharpDebugVsixPropsDir)Tools\</_FSharpDebugVsixToolsPath>
     
-    <!-- Override only if not already set and compiler exists -->
+    <!-- Override FSharpCompilerPath only if:
+         1. Not already set by user/project
+         2. The compiler actually exists in the Tools directory -->
     <FSharpCompilerPath Condition="'$(FSharpCompilerPath)' == '' and Exists('$(_FSharpDebugVsixToolsPath)fscAnyCpu.exe')">$(_FSharpDebugVsixToolsPath)</FSharpCompilerPath>
   </PropertyGroup>
   
+  <!-- Show a warning during build to indicate custom compiler is in use -->
   <Target Name="WarnAboutDebugVsixCompiler" BeforeTargets="BeforeBuild" Condition="'$(FSharpCompilerPath)' == '$(_FSharpDebugVsixToolsPath)'">
-    <Warning Text="🔧 [F# Debug VSIX] Using custom F# compiler from: $(FSharpCompilerPath)" />
+    <Warning Text="[F# Debug VSIX] Using custom F# compiler from: $(FSharpCompilerPath)" />
   </Target>
 
 </Project>
