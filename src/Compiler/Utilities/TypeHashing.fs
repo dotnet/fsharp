@@ -390,8 +390,8 @@ module StructuralUtilities =
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
         | Stamp of stamp: Stamp
-        | UCase of  int
-        | Nullness of  int
+        | UCase of int
+        | Nullness of int
         | NullnessUnsolved
         | TupInfo of b: bool
         | Forall of int
@@ -403,6 +403,7 @@ module StructuralUtilities =
 
     type TypeStructure =
         | Stable of TypeToken[]
+        // Unstable means that the type structure of a given TType may change because of constraint solving or Trace.Undo.
         | Unstable of TypeToken[]
         | PossiblyInfinite
 
@@ -523,7 +524,8 @@ module StructuralUtilities =
                         idx
 
                 // Solved may become unsolved, in case of Trace.Undo.
-                ctx.Stable <- false
+                if not r.IsFromError then
+                    ctx.Stable <- false
 
                 match r.Solution with
                 | Some ty -> emitTType ctx ty
@@ -555,10 +557,13 @@ module StructuralUtilities =
             | _ -> false)
             getTypeStructureOfStrippedTypeUncached
 
-    // A cooldown counter for unsolved TTypes.
-    // If a TType is unsolved, don't try to compute its structure for the next few calls.
+    // A cooldown counter for unstable TTypes.
+    // If a TType structure was unstable, don't try to recompute it for the next few calls.
     let private unstableTokensCounts =
         System.Runtime.CompilerServices.ConditionalWeakTable<TType, System.Runtime.CompilerServices.StrongBox<int>>()
+
+    [<Literal>]
+    let private cooldown = 10
 
     let tryGetTypeStructureOfStrippedType ty =
         match unstableTokensCounts.TryGetValue(ty) with
@@ -574,7 +579,7 @@ module StructuralUtilities =
                     else
                         unstableTokensCounts.GetOrCreateValue(ty)
 
-                count.Value <- 10
+                count.Value <- cooldown
                 ValueNone
             | Unstable _ as ts ->
                 let count =
@@ -583,6 +588,6 @@ module StructuralUtilities =
                     else
                         unstableTokensCounts.GetOrCreateValue(ty)
 
-                count.Value <- 10
+                count.Value <- cooldown
                 ValueSome ts
             | ts -> ValueSome ts
