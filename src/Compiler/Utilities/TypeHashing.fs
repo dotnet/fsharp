@@ -408,7 +408,7 @@ module StructuralUtilities =
 
     type private GenerationContext() =
         member val TyparMap = System.Collections.Generic.Dictionary<Stamp, int>(4)
-        member val Tokens = ResizeArray<TypeToken>(32)
+        member val Tokens = ResizeArray<TypeToken>(256)
         member val EmitNullness = false with get, set
         member val Stable = true with get, set
 
