@@ -557,37 +557,7 @@ module StructuralUtilities =
             | _ -> false)
             getTypeStructureOfStrippedTypeUncached
 
-    // A cooldown counter for unstable TTypes.
-    // If a TType structure was unstable, don't try to recompute it for the next few calls.
-    let private unstableTokensCounts =
-        System.Runtime.CompilerServices.ConditionalWeakTable<TType, System.Runtime.CompilerServices.StrongBox<int>>()
-
-    [<Literal>]
-    let private cooldown = 10
-
     let tryGetTypeStructureOfStrippedType ty =
-        match unstableTokensCounts.TryGetValue(ty) with
-        | true, count when count.Value > 0 ->
-            count.Value <- count.Value - 1
-            ValueNone
-        | found, count ->
-            match getTypeStructureOfStrippedType ty with
-            | PossiblyInfinite ->
-                let count =
-                    if found then
-                        count
-                    else
-                        unstableTokensCounts.GetOrCreateValue(ty)
-
-                count.Value <- cooldown
-                ValueNone
-            | Unstable _ as ts ->
-                let count =
-                    if found then
-                        count
-                    else
-                        unstableTokensCounts.GetOrCreateValue(ty)
-
-                count.Value <- cooldown
-                ValueSome ts
-            | ts -> ValueSome ts
+        match getTypeStructureOfStrippedType ty with
+        | PossiblyInfinite -> ValueNone
+        | ts -> ValueSome ts
