@@ -198,7 +198,7 @@ let YieldFree (cenv: TcFileState) expr =
 
             | SynExpr.For(doBody = body)
             | SynExpr.TryFinally(tryExpr = body) -> YieldFree body
-            | SynExpr.LetOrUse({ Body = body } as letOrUse) when not letOrUse.IsBang -> YieldFree body
+            | SynExpr.LetOrUse({ Body = body })
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
