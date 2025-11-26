@@ -390,8 +390,8 @@ module StructuralUtilities =
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
         | Stamp of stamp: Stamp
-        | UCase of nameHash: int
-        | Nullness of nullness: int
+        | UCase of  int
+        | Nullness of  int
         | NullnessUnsolved
         | TupInfo of b: bool
         | Forall of int
