@@ -137,7 +137,7 @@ module VSInstallDiscovery =
 
 /// Assembly resolver for Visual Studio test infrastructure.
 /// Provides centralized assembly resolution for VS integration tests.
-module AssemblyResolver =
+module VSAssemblyResolver =
     open System
     open System.IO
     open System.Reflection
