@@ -734,15 +734,6 @@ stages:
               publishLocation: pipeline
             condition: succeeded()
 
-        # F# Compiler Regression Tests using third-party libraries  
-        - template: /eng/templates/regression-test-jobs.yml
-          parameters:
-            testMatrix:
-            - repo: fsprojects/FSharpPlus
-              commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
-              buildScript: build.cmd
-              displayName: FSharpPlus
-
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:
@@ -894,3 +885,15 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+  #-------------------------------------------------------------------------------------------------------------------#
+  #                              F# Compiler Regression Tests                                                         #
+  #-------------------------------------------------------------------------------------------------------------------#
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/templates/regression-test-jobs.yml
+      parameters:
+        testMatrix:
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.cmd
+          displayName: FSharpPlus
