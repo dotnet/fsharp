@@ -60,9 +60,6 @@
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|TextFile;TemplateProjectOutputGroup|" d:ProjectName="TextFile" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|XMLFile;TemplateProjectOutputGroup|" d:ProjectName="XMLFile" d:VsixSubPath="ItemTemplates" />
 
-    <Asset Type="Microsoft.VisualStudio.MsBuildProps" 
-           d:Source="File" 
-           Path="Microsoft.FSharp.VSIX.Debug.Overrides.props" />
   </Assets>
   <Prerequisites>
     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[|%CurrentProject%;GetVSGeneralVersion|,)" DisplayName="Visual Studio core editor" />

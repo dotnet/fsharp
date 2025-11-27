@@ -6,6 +6,8 @@
     <VisualStudioInsertionComponent>Microsoft.FSharp</VisualStudioInsertionComponent>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
+    <!-- Path to the locally built F# compiler for use during VSIX debugging -->
+    <FSharpCompilerPath>$(ArtifactsDir)bin/fsc/$(Configuration)/net472/</FSharpCompilerPath>
     <CreateVsixContainer>true</CreateVsixContainer>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
