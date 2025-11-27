@@ -106,10 +106,11 @@ jobs:
               let projectElement = doc.SelectSingleNode("/Project")
               if projectElement <> null then
                   // Check if our import already exists
-                  let existingImport = doc.SelectSingleNode(sprintf "//Import[@Project='$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props']")
+                  let importPath = "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
+                  let existingImport = doc.SelectSingleNode("//Import[@Project='" + importPath + "']")
                   if existingImport = null then
                       let importElement = doc.CreateElement("Import")
-                      importElement.SetAttribute("Project", "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props")
+                      importElement.SetAttribute("Project", importPath)
                       projectElement.InsertBefore(importElement, projectElement.FirstChild) |> ignore
                       doc.Save(directoryBuildPropsPath)
                       printfn "Added UseLocalCompiler import to existing Directory.Build.props"

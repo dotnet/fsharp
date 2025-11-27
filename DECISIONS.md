@@ -94,20 +94,22 @@ This document records significant design decisions made during the implementatio
 
 ---
 
-## Decision 6: Use net9.0 Target Framework in Template
+## Decision 6: Use net10.0 Target Framework in Template
 
 **Context**: The pipeline needs to reference the correct .NET target framework for the compiler artifacts.
 
 **Options Considered**:
-1. Hardcode net9.0
+1. Hardcode net9.0 (as in PR #18803)
 2. Use net10.0 (per current UseLocalCompiler.Directory.Build.props)
 3. Make it configurable
 
-**Decision**: Use net9.0 as specified in PR #18803.
+**Decision**: Use net10.0 to match the current project state.
 
 **Rationale**:
-- Matches the approach in PR #18803
-- The template is checking for artifacts in Release/net9.0 folder
-- Note: This may need updating to net10.0 if the current codebase uses net10.0
+- The current repository uses .NET 10 SDK
+- UseLocalCompiler.Directory.Build.props references net10.0 paths
+- The artifacts/bin/fsc/Release/net10.0 directory exists
+- PR #18803 used net9.0 because it was based on an older version of the repository
+- Using net10.0 ensures compatibility with the current build output
 
 ---
