@@ -896,4 +896,9 @@ stages:
         - repo: fsprojects/FSharpPlus
           commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
           buildScript: build.cmd
-          displayName: FSharpPlus
+          displayName: FSharpPlus_Windows
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.sh
+          displayName: FSharpPlus_Linux
+          useVmImage: $(UbuntuMachineQueueName)
