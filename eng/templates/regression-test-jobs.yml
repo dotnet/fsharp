@@ -1,0 +1,236 @@
+# Template for F# Compiler Regression Tests
+# Tests third-party F# projects with the freshly built compiler
+
+parameters:
+- name: testMatrix
+  type: object
+
+jobs:
+# Test against third-party repositories
+- ${{ each item in parameters.testMatrix }}:
+  - job: RegressionTest_${{ replace(item.repo, '/', '_') }}
+    displayName: 'Regression Test: ${{ item.repo }}'
+    dependsOn: EndToEndBuildTests
+    pool:
+      name: $(DncEngPublicBuildPool)
+      demands: ImageOverride -equals $(WindowsMachineQueueName)
+    timeoutInMinutes: 60
+    variables:
+      TestRepoName: ${{ item.repo }}
+      TestCommit: ${{ item.commit }}
+      BuildScript: ${{ item.buildScript }}
+      DisplayName: ${{ item.displayName }}
+    steps:
+    - checkout: none
+      displayName: Skip default checkout
+
+    # Download the F# compiler artifacts from EndToEndBuildTests job
+    - task: DownloadPipelineArtifact@2
+      displayName: Download F# Compiler FSC Artifacts
+      inputs:
+        artifactName: 'FSharpCompilerFscArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/bin/fsc'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download F# Core Artifacts
+      inputs:
+        artifactName: 'FSharpCoreArtifacts'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download UseLocalCompiler props
+      inputs:
+        artifactName: 'UseLocalCompilerProps'
+        downloadPath: '$(Pipeline.Workspace)/Props'
+
+    # Checkout the third-party repository at specific commit
+    - task: PowerShell@2
+      displayName: 'Checkout $(DisplayName) at specific commit'
+      inputs:
+        script: |
+          Write-Host "Cloning repository: $(TestRepoName)"
+          git clone https://github.com/$(TestRepoName).git $(Pipeline.Workspace)/TestRepo
+          Set-Location $(Pipeline.Workspace)/TestRepo
+          
+          Write-Host "Checking out commit: $(TestCommit)"
+          git checkout $(TestCommit)
+          
+          Write-Host "Successfully checked out $(TestRepoName) at commit $(TestCommit)"
+          git log -1 --oneline
+          
+          Write-Host "Repository structure:"
+          Get-ChildItem -Name
+          
+          Write-Host "Verifying build script exists: $(BuildScript)"
+          if (Test-Path "$(BuildScript)") {
+            Write-Host "✓ Build script found: $(BuildScript)"
+          } else {
+            Write-Host "✗ Build script not found: $(BuildScript)"
+            Write-Host "Available files in root:"
+            Get-ChildItem
+            exit 1
+          }
+
+    # Install appropriate .NET SDK version using global.json if present
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK for $(DisplayName)'
+      inputs:
+        packageType: sdk
+        useGlobalJson: true
+        workingDirectory: $(Pipeline.Workspace)/TestRepo
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    # Setup Directory.Build.props to import UseLocalCompiler configuration
+    - task: PowerShell@2
+      displayName: 'Setup local compiler configuration for $(DisplayName)'
+      inputs:
+        script: |
+          Set-Location $(Pipeline.Workspace)/TestRepo
+          
+          # Create F# script to handle Directory.Build.props setup
+          $fsharpScript = @'
+          #r "nuget: System.Xml.ReaderWriter"
+          open System.IO
+          open System.Xml
+          
+          let useLocalCompilerImport = """<Import Project="$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props" />"""
+          
+          let directoryBuildPropsPath = "Directory.Build.props"
+          
+          if File.Exists(directoryBuildPropsPath) then
+              printfn "Directory.Build.props exists, modifying it"
+              let doc = XmlDocument()
+              doc.Load(directoryBuildPropsPath)
+              
+              // Find the Project element
+              let projectElement = doc.SelectSingleNode("/Project")
+              if projectElement <> null then
+                  // Check if our import already exists
+                  let existingImport = doc.SelectSingleNode(sprintf "//Import[@Project='$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props']")
+                  if existingImport = null then
+                      let importElement = doc.CreateElement("Import")
+                      importElement.SetAttribute("Project", "$(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props")
+                      projectElement.InsertBefore(importElement, projectElement.FirstChild) |> ignore
+                      doc.Save(directoryBuildPropsPath)
+                      printfn "Added UseLocalCompiler import to existing Directory.Build.props"
+                  else
+                      printfn "UseLocalCompiler import already exists"
+              else
+                  printfn "Warning: Could not find Project element in Directory.Build.props"
+          else
+              printfn "Creating new Directory.Build.props"
+              let content = sprintf "<Project>\n  %s\n</Project>" useLocalCompilerImport
+              File.WriteAllText(directoryBuildPropsPath, content)
+          
+          printfn "Directory.Build.props content:"
+          File.ReadAllText(directoryBuildPropsPath) |> printfn "%s"
+          '@
+          
+          $fsharpScript | Out-File -FilePath "PrepareRepoForTesting.fsx" -Encoding UTF8
+          
+          # Run the F# script using dotnet fsi
+          dotnet fsi PrepareRepoForTesting.fsx
+          
+          Write-Host "UseLocalCompiler.Directory.Build.props will be referenced from: $(Pipeline.Workspace)/Props/UseLocalCompiler.Directory.Build.props"
+
+    # Report dotnet info in test environment
+    - task: PowerShell@2
+      displayName: 'Report build environment for $(DisplayName)'
+      inputs:
+        script: |
+          Set-Location $(Pipeline.Workspace)/TestRepo
+          Write-Host "==========================================="
+          Write-Host "Environment Information for $(DisplayName)"
+          Write-Host "==========================================="
+          dotnet --info
+          Write-Host ""
+          Write-Host "MSBuild version:"
+          dotnet msbuild -version
+          Write-Host ""
+          Write-Host "F# Compiler artifacts available:"
+          Get-ChildItem "$(Pipeline.Workspace)\FSharpCompiler\bin\fsc\Release\net10.0" -Name
+          Write-Host ""
+          Write-Host "F# Core available:"
+          if (Test-Path "$(Pipeline.Workspace)\FSharpCompiler\bin\FSharp.Core\Release\netstandard2.0\FSharp.Core.dll") {
+            Write-Host "✓ FSharp.Core.dll found"
+          } else {
+            Write-Host "✗ FSharp.Core.dll not found"
+          }
+          Write-Host ""
+          Write-Host "Directory.Build.props content:"
+          Get-Content "Directory.Build.props"
+          Write-Host ""
+          Write-Host "==========================================="
+
+    # Build the third-party project using local F# compiler
+    - task: PowerShell@2
+      displayName: 'Build $(DisplayName) with local F# compiler'
+      env:
+        # Set environment variables to use local compiler and enforce binary logs
+        LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler
+        LoadLocalFSharpBuild: true
+        LocalFSharpCompilerConfiguration: Release
+        # Force MSBuild binary logs
+        MSBUILDBINARYLOGGERENABLED: true
+        MSBUILDBINARYLOGGER: "*.binlog"
+      timeoutInMinutes: 45
+      inputs:
+        script: |
+          Set-Location $(Pipeline.Workspace)/TestRepo
+          Write-Host "============================================"
+          Write-Host "Starting build for $(DisplayName)"
+          Write-Host "Repository: $(TestRepoName)"
+          Write-Host "Commit: $(TestCommit)"
+          Write-Host "Build Script: $(BuildScript)"
+          Write-Host "============================================"
+          Write-Host ""
+          
+          Write-Host "Executing: $(BuildScript)"
+          cmd /c "$(BuildScript)"
+          $exitCode = $LASTEXITCODE
+          
+          Write-Host ""
+          Write-Host "============================================"
+          Write-Host "Build completed for $(DisplayName)"
+          Write-Host "Exit code: $exitCode"
+          Write-Host "============================================"
+          
+          if ($exitCode -ne 0) {
+            exit $exitCode
+          }
+
+    # Publish only MSBuild binary logs for efficient storage
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish $(DisplayName) Binary Logs'
+      inputs:
+        targetPath: '$(Pipeline.Workspace)/TestRepo'
+        artifactName: '$(DisplayName)_BinaryLogs'
+        publishLocation: pipeline
+      condition: always()
+      continueOnError: true
+
+    # Report success/failure
+    - task: PowerShell@2
+      displayName: 'Report $(DisplayName) test result'
+      condition: always()
+      inputs:
+        script: |
+          Set-Location $(Pipeline.Workspace)/TestRepo
+          Write-Host ""
+          Write-Host "============================================"
+          Write-Host "Regression test completed for $(DisplayName)"
+          Write-Host "Repository: $(TestRepoName)"
+          Write-Host "Commit: $(TestCommit)"
+          Write-Host "Build Script: $(BuildScript)"
+          if ($env:AGENT_JOBSTATUS -eq "Succeeded") {
+            Write-Host "Status: ✓ SUCCESS"
+            Write-Host "The $(DisplayName) library builds successfully with the new F# compiler"
+          } else {
+            Write-Host "Status: ✗ FAILED"
+            Write-Host "The $(DisplayName) library failed to build with the new F# compiler"
+            Write-Host "Check the build logs and artifacts for details"
+          }
+          Write-Host "============================================"
+          
+          Write-Host "Binary logs found:"
+          Get-ChildItem "*.binlog" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.Name }
