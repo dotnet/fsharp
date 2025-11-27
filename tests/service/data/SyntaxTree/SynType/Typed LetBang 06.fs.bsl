@@ -10,11 +10,11 @@ ImplFile
                     (None, Normal, false, false, [], PreXmlDocEmpty,
                      SynValData
                        (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                        None),
-                     Typed
-                       (Wild (2,5--2,6),
-                        LongIdent (SynLongIdent ([int], [], [None])),
-                        (2,5--2,10)), None,
+                        None), Wild (2,5--2,6),
+                     Some
+                       (SynBindingReturnInfo
+                          (LongIdent (SynLongIdent ([int], [], [None])),
+                           (2,7--2,10), [], { ColonRange = Some (2,6--2,7) })),
                      App
                        (NonAtomic, false, Ident async,
                         ComputationExpr

@@ -934,7 +934,7 @@ type internal ByteBuffer =
 
     member inline private buf.CheckDisposed() =
         if buf.isDisposed then
-            raise (ObjectDisposedException(nameof (ByteBuffer)))
+            raise (ObjectDisposedException(nameof ByteBuffer))
 
     member private buf.Ensure newSize =
         let oldBufSize = buf.bbArray.Length

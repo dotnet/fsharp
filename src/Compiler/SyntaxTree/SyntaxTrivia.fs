@@ -184,7 +184,7 @@ type SynTypeDefnLeadingKeyword =
         match this with
         | SynTypeDefnLeadingKeyword.Type range
         | SynTypeDefnLeadingKeyword.And range -> range
-        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> Range.unionRanges staticRange typeRange
+        | SynTypeDefnLeadingKeyword.StaticType(staticRange, typeRange) -> unionRanges staticRange typeRange
         | SynTypeDefnLeadingKeyword.Synthetic -> failwith "Getting range from synthetic keyword"
 
 [<NoEquality; NoComparison>]
@@ -274,7 +274,7 @@ type SynLeadingKeyword =
         | DefaultVal(m1, m2)
         | MemberVal(m1, m2)
         | OverrideVal(m1, m2)
-        | StaticMemberVal(m1, _, m2) -> Range.unionRanges m1 m2
+        | StaticMemberVal(m1, _, m2) -> unionRanges m1 m2
         | Synthetic -> range0
 
 [<NoEquality; NoComparison>]
@@ -383,10 +383,10 @@ type GetSetKeywords =
         | Get m
         | Set m -> m
         | GetSet(mG, mS) ->
-            if Range.rangeBeforePos mG mS.Start then
-                Range.unionRanges mG mS
+            if rangeBeforePos mG mS.Start then
+                unionRanges mG mS
             else
-                Range.unionRanges mS mG
+                unionRanges mS mG
 
 [<NoEquality; NoComparison>]
 type SynMemberDefnAutoPropertyTrivia =

@@ -17,19 +17,22 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (LongIdent
-                                (SynLongIdent ([Union], [], [None]), None, None,
-                                 Pats
-                                   [Named
-                                      (SynIdent (value, None), false, None,
-                                       (4,15--4,20))], None, (4,9--4,20)),
-                              App
-                                (LongIdent (SynLongIdent ([option], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (4,22--4,32)), (4,9--4,32)),
-                           None,
+                           LongIdent
+                             (SynLongIdent ([Union], [], [None]), None, None,
+                              Pats
+                                [Named
+                                   (SynIdent (value, None), false, None,
+                                    (4,15--4,20))], None, (4,9--4,20)),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([option], [], [None])),
+                                    None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (4,22--4,32)), (4,22--4,32), [],
+                                 { ColonRange = Some (4,20--4,21) })),
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (4,46--4,48)), (4,35--4,48)),
@@ -43,19 +46,22 @@ ImplFile
                              (None,
                               SynValInfo ([], SynArgInfo ([], false, None)),
                               None),
-                           Typed
-                             (LongIdent
-                                (SynLongIdent ([Union], [], [None]), None, None,
-                                 Pats
-                                   [Named
-                                      (SynIdent (value2, None), false, None,
-                                       (5,15--5,21))], None, (5,9--5,21)),
-                              App
-                                (LongIdent (SynLongIdent ([option], [], [None])),
-                                 None,
-                                 [LongIdent (SynLongIdent ([int], [], [None]))],
-                                 [], None, true, (5,23--5,33)), (5,9--5,33)),
-                           None,
+                           LongIdent
+                             (SynLongIdent ([Union], [], [None]), None, None,
+                              Pats
+                                [Named
+                                   (SynIdent (value2, None), false, None,
+                                    (5,15--5,21))], None, (5,9--5,21)),
+                           Some
+                             (SynBindingReturnInfo
+                                (App
+                                   (LongIdent
+                                      (SynLongIdent ([option], [], [None])),
+                                    None,
+                                    [LongIdent
+                                       (SynLongIdent ([int], [], [None]))], [],
+                                    None, true, (5,23--5,33)), (5,23--5,33), [],
+                                 { ColonRange = Some (5,21--5,22) })),
                            App
                              (Atomic, false, Ident asyncOption,
                               Const (Unit, (5,47--5,49)), (5,36--5,49)),

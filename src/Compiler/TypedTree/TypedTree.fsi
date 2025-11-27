@@ -208,7 +208,7 @@ type TyparFlags =
         rigidity: TyparRigidity *
         isFromError: bool *
         isCompGen: bool *
-        staticReq: Syntax.TyparStaticReq *
+        staticReq: TyparStaticReq *
         dynamicReq: TyparDynamicReq *
         equalityDependsOn: bool *
         comparisonDependsOn: bool *
@@ -219,7 +219,7 @@ type TyparFlags =
 
     member WithCompatFlex: b: bool -> TyparFlags
 
-    member WithStaticReq: staticReq: Syntax.TyparStaticReq -> TyparFlags
+    member WithStaticReq: staticReq: TyparStaticReq -> TyparFlags
 
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member ComparisonConditionalOn: bool
@@ -253,7 +253,7 @@ type TyparFlags =
     member Rigidity: TyparRigidity
 
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core type member constraints.
-    member StaticReq: Syntax.TyparStaticReq
+    member StaticReq: TyparStaticReq
 
 /// Encode entity flags into a bit field. We leave lots of space to allow for future expansion.
 [<Struct>]
@@ -349,7 +349,7 @@ type CompilationPath =
 
     member NestedCompPath: n: string -> moduleKind: ModuleOrNamespaceKind -> CompilationPath
 
-    member NestedPublicPath: id: Syntax.Ident -> PublicPath
+    member NestedPublicPath: id: Ident -> PublicPath
 
     member AccessPath: (string * ModuleOrNamespaceKind) list
 
@@ -613,7 +613,7 @@ type Entity =
     member ILTyconRawMetadata: ILTypeDef
 
     /// The identifier at the point of declaration of the type definition.
-    member Id: Syntax.Ident
+    member Id: Ident
 
     /// Gets the immediate interface types of an F# type definition. Further interfaces may be supported through class type interface inheritance.
     member ImmediateInterfaceTypesOfFSharpTycon: TType list
@@ -966,7 +966,7 @@ type TProvidedTypeInfo =
 
         /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
         /// Reading is delayed, since it does an import on the underlying type
-        LazyBaseType: LazyWithContext<TType, (range * TType)>
+        LazyBaseType: LazyWithContext<TType, range * TType>
 
         /// A flag read eagerly from the provided type type used to compute basic properties of the type definition.
         IsClass: bool
@@ -1154,7 +1154,7 @@ type UnionCase =
         mutable XmlDocSig: string
 
         /// Name/range of the case
-        Id: Syntax.Ident
+        Id: Ident
 
         /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is
         /// the signature range for an item in an implementation
@@ -1265,7 +1265,7 @@ type RecdField =
         mutable rfield_fattribs: Attribs
 
         /// Name/declaration-location of the field
-        rfield_id: Syntax.Ident
+        rfield_id: Ident
         rfield_name_generated: bool
 
         /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is
@@ -1297,7 +1297,7 @@ type RecdField =
     member FormalType: TType
 
     /// Name/declaration-location of the field
-    member Id: Syntax.Ident
+    member Id: Ident
 
     /// Indicates a compiler generated field, not visible to Intellisense or name resolution
     member IsCompilerGenerated: bool
@@ -1436,7 +1436,7 @@ type ModuleOrNamespaceType =
     /// Get a table of types defined within this module, namespace or type. The
     /// table is indexed by both name type generic arity. This means that for generic
     /// types "List`1", the entry (List, 1) will be present.
-    member TypesByDemangledNameAndArity: LayeredMap<Syntax.PrettyNaming.NameArityPair, Tycon>
+    member TypesByDemangledNameAndArity: LayeredMap<PrettyNaming.NameArityPair, Tycon>
 
     member TypesByMangledName: NameMap<Tycon>
 
@@ -1446,7 +1446,7 @@ type ModuleOrNamespace = Entity
 /// Represents a type or exception definition in the typed AST
 type Tycon = Entity
 
-val updateSyntaxAccessForCompPath: CompilationPath list -> TypedTree.SyntaxAccess -> CompilationPath list
+val updateSyntaxAccessForCompPath: CompilationPath list -> SyntaxAccess -> CompilationPath list
 
 /// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1494,6 +1494,9 @@ type TyparOptionalData =
 
         /// Set to true if the typar is contravariant, i.e. declared as <in T> in C#
         mutable typar_is_contravariant: bool
+
+        /// The declared name of the type parameter.
+        mutable typar_declared_name: string option
     }
 
     override ToString: unit -> string
@@ -1510,7 +1513,7 @@ type Typar =
 
         /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation
         /// The identifier for the type parameter
-        mutable typar_id: Syntax.Ident
+        mutable typar_id: Ident
 
         /// The flag data for the type parameter
         mutable typar_flags: TyparFlags
@@ -1562,8 +1565,11 @@ type Typar =
     /// Set the IL name of the type parameter
     member SetILName: il_name: string option -> unit
 
+    /// Saves the name as the declared name of the type parameter if it is not already set.
+    member PreserveDeclaredName: unit -> unit
+
     /// Sets the identifier associated with a type variable
-    member SetIdent: id: Syntax.Ident -> unit
+    member SetIdent: id: Ident -> unit
 
     /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member SetIsCompatFlex: b: bool -> unit
@@ -1575,7 +1581,7 @@ type Typar =
     member SetRigidity: b: TyparRigidity -> unit
 
     /// Sets whether a type variable has a static requirement
-    member SetStaticReq: b: Syntax.TyparStaticReq -> unit
+    member SetStaticReq: b: TyparStaticReq -> unit
 
     override ToString: unit -> string
 
@@ -1594,6 +1600,9 @@ type Typar =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
+    /// Gets the declared name of the type parameter.
+    member DeclaredName: string option
+
     /// Indicates the display name of a type variable
     member DisplayName: string
 
@@ -1607,7 +1616,7 @@ type Typar =
     member ILName: string option
 
     /// The identifier for a type parameter definition
-    member Id: Syntax.Ident
+    member Id: Ident
 
     /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
     member IsCompatFlex: bool
@@ -1647,7 +1656,7 @@ type Typar =
     member Stamp: Stamp
 
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core type member constraints.
-    member StaticReq: Syntax.TyparStaticReq
+    member StaticReq: TyparStaticReq
 
     /// Get the XML documentation for the type parameter
     member XmlDoc: XmlDoc
@@ -1735,7 +1744,7 @@ type TraitConstraintInfo =
     | TTrait of
         tys: TTypes *
         memberName: string *
-        memberFlags: Syntax.SynMemberFlags *
+        memberFlags: SynMemberFlags *
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
         source: string option ref *
@@ -1750,7 +1759,7 @@ type TraitConstraintInfo =
     member SupportTypes: TType list
 
     /// Get the member flags associated with the member constraint.
-    member MemberFlags: Syntax.SynMemberFlags
+    member MemberFlags: SynMemberFlags
 
     /// Get the member name associated with the member constraint.  For preop
     member MemberLogicalName: string
@@ -2083,7 +2092,7 @@ type Val =
 
     member HasDeclaringEntity: bool
 
-    member Id: Syntax.Ident
+    member Id: Ident
 
     /// Indicates if the value will ignore byref scoping rules
     member IgnoresByrefScope: bool
@@ -2302,7 +2311,7 @@ type ValMemberInfo =
 
         /// Gets updated with 'true' if an abstract slot is implemented in the file being typechecked. Internal only.
         mutable IsImplemented: bool
-        MemberFlags: Syntax.SynMemberFlags
+        MemberFlags: SynMemberFlags
     }
 
     override ToString: unit -> string
@@ -2538,7 +2547,7 @@ type EntityRef =
     member ILTyconRawMetadata: ILTypeDef
 
     /// The identifier at the point of declaration of the type definition.
-    member Id: Syntax.Ident
+    member Id: Ident
 
     /// Gets the immediate interface types of an F# type definition. Further interfaces may be supported through class type interface inheritance.
     member ImmediateInterfaceTypesOfFSharpTycon: TType list
@@ -2827,7 +2836,7 @@ type ValRef =
 
     member HasDeclaringEntity: bool
 
-    member Id: Syntax.Ident
+    member Id: Ident
 
     /// Gets the dispatch slots implemented by this method, either 0 or 1
     member ImplementedSlotSigs: SlotSig list
@@ -3165,13 +3174,13 @@ type TTypes = TType list
 type AnonRecdTypeInfo =
     { mutable Assembly: CcuThunk
       mutable TupInfo: TupInfo
-      mutable SortedIds: Syntax.Ident[]
+      mutable SortedIds: Ident[]
       mutable Stamp: Stamp
       mutable SortedNames: string[]
       mutable IlTypeName: int64 }
 
     /// Create an AnonRecdTypeInfo from the basic data
-    static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Syntax.Ident[] -> AnonRecdTypeInfo
+    static member Create: ccu: CcuThunk * tupInfo: TupInfo * ids: Ident[] -> AnonRecdTypeInfo
 
     static member NewUnlinked: unit -> AnonRecdTypeInfo
 
@@ -3403,7 +3412,7 @@ type DecisionTreeTest =
         activePatRetKind: ActivePatternReturnKind *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
-        activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo
+        activePatternInfo: PrettyNaming.ActivePatternInfo
 
     /// Used in error recovery
     | Error of range: range
@@ -3435,12 +3444,12 @@ type Bindings = Binding list
 ///  -- debugPoint: The debug point for the binding
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Binding =
-    | TBind of var: Val * expr: Expr * debugPoint: Syntax.DebugPointAtBinding
+    | TBind of var: Val * expr: Expr * debugPoint: DebugPointAtBinding
 
     override ToString: unit -> string
 
     /// The information about whether to emit a sequence point for the binding
-    member DebugPoint: Syntax.DebugPointAtBinding
+    member DebugPoint: DebugPointAtBinding
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
@@ -3456,7 +3465,7 @@ type Binding =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef =
     | APElemRef of
-        activePatternInfo: Syntax.PrettyNaming.ActivePatternInfo *
+        activePatternInfo: PrettyNaming.ActivePatternInfo *
         activePatternVal: ValRef *
         caseIndex: int *
         activePatRetKind: ActivePatternReturnKind
@@ -3464,7 +3473,7 @@ type ActivePatternElemRef =
     override ToString: unit -> string
 
     /// Get the full information about the active pattern being referred to
-    member ActivePatternInfo: Syntax.PrettyNaming.ActivePatternInfo
+    member ActivePatternInfo: PrettyNaming.ActivePatternInfo
 
     /// Get a reference to the value for the active pattern being referred to
     member ActivePatternVal: ValRef
@@ -3524,7 +3533,7 @@ type ArgReprInfo =
         mutable Attribs: Attribs
 
         /// The name for the argument at this position, if any
-        mutable Name: Syntax.Ident option
+        mutable Name: Ident option
 
         /// The range of the signature/implementation counterpart to this argument, if any
         mutable OtherRange: range option
@@ -3539,7 +3548,7 @@ type ArgReprInfo =
 /// compiled as "real" IL type parameters, specifically for values with
 /// ValReprInfo. Any information here is propagated from signature through
 /// to the compiled code.
-type TyparReprInfo = TyparReprInfo of Syntax.Ident * TyparKind
+type TyparReprInfo = TyparReprInfo of Ident * TyparKind
 
 type Typars = Typar list
 
@@ -3610,7 +3619,7 @@ type Expr =
     /// as the range for all the decision making type binding that happens during the decision tree
     /// execution.
     | Match of
-        debugPoint: Syntax.DebugPointAtBinding *
+        debugPoint: DebugPointAtBinding *
         inputRange: Text.range *
         decision: DecisionTree *
         targets: DecisionTreeTarget array *
@@ -3667,7 +3676,7 @@ type Expr =
     | Link of Expr ref
 
     /// Indicates a debug point should be placed prior to the expression.
-    | DebugPoint of Syntax.DebugPointAtLeafExpr * Expr
+    | DebugPoint of DebugPointAtLeafExpr * Expr
 
     member ToDebugString: depth: int -> string
 
@@ -3707,16 +3716,16 @@ type TOp =
     | UInt16s of uint16[]
 
     /// An operation representing a lambda-encoded while loop. The special while loop marker is used to mark compilations of 'foreach' expressions
-    | While of spWhile: Syntax.DebugPointAtWhile * marker: SpecialWhileLoopMarker
+    | While of spWhile: DebugPointAtWhile * marker: SpecialWhileLoopMarker
 
     /// An operation representing a lambda-encoded integer for-loop
-    | IntegerForLoop of spFor: Syntax.DebugPointAtFor * spTo: Syntax.DebugPointAtInOrTo * style: ForLoopStyle
+    | IntegerForLoop of spFor: DebugPointAtFor * spTo: DebugPointAtInOrTo * style: ForLoopStyle
 
     /// An operation representing a lambda-encoded try/with
-    | TryWith of spTry: Syntax.DebugPointAtTry * spWith: Syntax.DebugPointAtWith
+    | TryWith of spTry: DebugPointAtTry * spWith: DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
-    | TryFinally of spTry: Syntax.DebugPointAtTry * spFinally: Syntax.DebugPointAtFinally
+    | TryFinally of spTry: DebugPointAtTry * spFinally: DebugPointAtFinally
 
     /// Construct a record or object-model value. The ValRef is for self-referential class constructors, otherwise
     /// it indicates that we're in a constructor type the purpose of the expression is to
@@ -3910,7 +3919,7 @@ type ObjExprMethod =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
-    member Id: Syntax.Ident
+    member Id: Ident
 
 /// Represents an abstract method slot, or delegate signature.
 ///
@@ -3973,7 +3982,7 @@ type OpenDeclaration =
     {
 
         /// Syntax after 'open' as it's presented in source code.
-        Target: Syntax.SynOpenDeclTarget
+        Target: SynOpenDeclTarget
 
         /// Full range of the open declaration.
         Range: Text.range option
@@ -3993,7 +4002,7 @@ type OpenDeclaration =
 
     /// Create a new instance of OpenDeclaration.
     static member Create:
-        target: Syntax.SynOpenDeclTarget *
+        target: SynOpenDeclTarget *
         modules: ModuleOrNamespaceRef list *
         types: TType list *
         appliedScope: Text.range *
@@ -4077,7 +4086,7 @@ type CheckedImplFile =
 
     member IsScript: bool
 
-    member QualifiedNameOfFile: Syntax.QualifiedNameOfFile
+    member QualifiedNameOfFile: QualifiedNameOfFile
 
     member Signature: ModuleOrNamespaceType
 
@@ -4394,7 +4403,7 @@ type Construct =
     static member KeyTyconByAccessNames: nm: string -> x: 'T -> KeyValuePair<string, 'T>[]
 
     /// Key a Tycon or TyconRef by decoded name
-    static member KeyTyconByDecodedName: nm: string -> x: 'T -> KeyValuePair<Syntax.PrettyNaming.NameArityPair, 'T>
+    static member KeyTyconByDecodedName: nm: string -> x: 'T -> KeyValuePair<PrettyNaming.NameArityPair, 'T>
 
     /// Create the field tables for a record or class type
     static member MakeRecdFieldsTable: ucs: RecdField list -> TyconRecdFields
@@ -4424,7 +4433,7 @@ type Construct =
     /// Create a new TAST Entity node for an F# exception definition
     static member NewExn:
         cpath: CompilationPath option ->
-        id: Syntax.Ident ->
+        id: Ident ->
         access: Accessibility ->
         repr: ExceptionInfo ->
         attribs: Attribs ->
@@ -4464,7 +4473,7 @@ type Construct =
     static member NewModuleOrNamespace:
         cpath: CompilationPath option ->
         access: Accessibility ->
-        id: Syntax.Ident ->
+        id: Ident ->
         xml: XmlDoc ->
         attribs: Attrib list ->
         mtype: MaybeLazy<ModuleOrNamespaceType> ->
@@ -4500,7 +4509,7 @@ type Construct =
     static member NewRecdField:
         stat: bool ->
         konst: Const option ->
-        id: Syntax.Ident ->
+        id: Ident ->
         nameGenerated: bool ->
         ty: TType ->
         isMutable: bool ->
@@ -4545,7 +4554,7 @@ type Construct =
 
     /// Create a new union case node
     static member NewUnionCase:
-        id: Syntax.Ident ->
+        id: Ident ->
         tys: RecdField list ->
         retTy: TType ->
         attribs: Attribs ->
