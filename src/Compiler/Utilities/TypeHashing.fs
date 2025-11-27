@@ -389,14 +389,15 @@ module StructuralUtilities =
 
     [<Struct; NoComparison; RequireQualifiedAccess>]
     type TypeToken =
-        | Stamp of stamp: Stamp
+        | Stamp of int
         | UCase of int
         | Nullness of int
         | NullnessUnsolved
-        | TupInfo of b: bool
+        | TupInfo of int
         | Forall of int
         | MeasureOne
-        | MeasureRational of int * int
+        | MeasureDenominator of int
+        | MeasureNumerator of int
         | Solved of int
         | Unsolved of int
         | Rigid of int
@@ -427,7 +428,7 @@ module StructuralUtilities =
         ctx.Reset()
         ctx
 
-    let private encodeNullness (n: NullnessInfo) =
+    let inline private encodeNullness (n: NullnessInfo) =
         match n with
         | NullnessInfo.AmbivalentToNull -> 0
         | NullnessInfo.WithNull -> 1
@@ -444,6 +445,19 @@ module StructuralUtilities =
                 | ValueSome k -> out.Add(TypeToken.Nullness(encodeNullness k))
                 | ValueNone -> out.Add(TypeToken.NullnessUnsolved)
 
+    let inline private emitStamp (ctx: GenerationContext) (stamp: Stamp) =
+        let out = ctx.Tokens
+
+        if out.Count < 256 then
+            // Emit low 32 bits first
+            let lo = int (stamp &&& 0xFFFFFFFFL)
+            out.Add(TypeToken.Stamp lo)
+            // If high 32 bits are non-zero, emit them as another token
+            let hi64 = stamp >>> 32
+
+            if hi64 <> 0L && out.Count < 256 then
+                out.Add(TypeToken.Stamp(int hi64))
+
     let rec private emitMeasure (ctx: GenerationContext) (m: Measure) =
         let out = ctx.Tokens
 
@@ -451,8 +465,8 @@ module StructuralUtilities =
             ()
         else
             match m with
-            | Measure.Var mv -> out.Add(TypeToken.Stamp mv.Stamp)
-            | Measure.Const(tcref, _) -> out.Add(TypeToken.Stamp tcref.Stamp)
+            | Measure.Var mv -> emitStamp ctx mv.Stamp
+            | Measure.Const(tcref, _) -> emitStamp ctx tcref.Stamp
             | Measure.Prod(m1, m2, _) ->
                 emitMeasure ctx m1
                 emitMeasure ctx m2
@@ -462,7 +476,8 @@ module StructuralUtilities =
                 emitMeasure ctx m1
 
                 if out.Count < 256 then
-                    out.Add(TypeToken.MeasureRational(GetNumerator r, GetDenominator r))
+                    out.Add(TypeToken.MeasureNumerator(GetNumerator r))
+                    out.Add(TypeToken.MeasureDenominator(GetDenominator r))
 
     let rec private emitTType (ctx: GenerationContext) (ty: TType) =
         let out = ctx.Tokens
@@ -472,7 +487,7 @@ module StructuralUtilities =
         else
             match ty with
             | TType_ucase(u, tinst) ->
-                out.Add(TypeToken.Stamp u.TyconRef.Stamp)
+                emitStamp ctx u.TyconRef.Stamp
 
                 if out.Count < 256 then
                     out.Add(TypeToken.UCase(hashText u.CaseName))
@@ -481,20 +496,20 @@ module StructuralUtilities =
                     emitTType ctx arg
 
             | TType_app(tcref, tinst, n) ->
-                out.Add(TypeToken.Stamp tcref.Stamp)
+                emitStamp ctx tcref.Stamp
                 emitNullness ctx n
 
                 for arg in tinst do
                     emitTType ctx arg
 
             | TType_anon(info, tys) ->
-                out.Add(TypeToken.Stamp info.Stamp)
+                emitStamp ctx info.Stamp
 
                 for arg in tys do
                     emitTType ctx arg
 
             | TType_tuple(tupInfo, tys) ->
-                out.Add(TypeToken.TupInfo(evalTupInfoIsStruct tupInfo))
+                out.Add(TypeToken.TupInfo(if evalTupInfoIsStruct tupInfo then 1 else 0))
 
                 for arg in tys do
                     emitTType ctx arg
