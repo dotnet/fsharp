@@ -1115,7 +1115,6 @@ type SynBinding =
 
     member x.Trivia = let (SynBinding(trivia = trivia)) = x in trivia
 
-/// Represents a 'let' or 'use' expression with its bindings and body
 [<NoEquality; NoComparison>]
 type SynLetOrUse =
     {

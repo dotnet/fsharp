@@ -558,7 +558,6 @@ type SynType =
     /// Gets the syntax range of this construct
     member Range: range
 
-/// Represents a syntax tree for F# expressions
 /// Represents a 'let' or 'use' expression with its bindings and body
 [<NoEquality; NoComparison>]
 type SynLetOrUse =
