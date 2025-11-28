@@ -126,3 +126,55 @@ module VSInstallDiscovery =
         | NotFound reason -> 
             logAction $"Visual Studio installation not found: {reason}"
             None
+
+    /// Gets the VS installation directory or fails with a detailed error message.
+    /// This is the recommended method for test scenarios that require VS to be installed.
+    let getVSInstallDirOrFail () : string =
+        match tryFindVSInstallation () with
+        | Found (path, _) -> path
+        | NotFound reason -> 
+            failwith $"Visual Studio installation not found: {reason}. Ensure VS is installed or environment variables (VSAPPIDDIR, VS*COMNTOOLS) are set."
+
+/// Assembly resolver for Visual Studio test infrastructure.
+/// Provides centralized assembly resolution for VS integration tests.
+module VSAssemblyResolver =
+    open System
+    open System.IO
+    open System.Reflection
+    open System.Globalization
+
+    /// Adds an assembly resolver that probes Visual Studio installation directories.
+    /// This should be called early in test initialization to ensure VS assemblies can be loaded.
+    let addResolver () =
+        let vsInstallDir = VSInstallDiscovery.getVSInstallDirOrFail ()
+        
+        let probingPaths =
+            [|
+                Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
+                Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
+                Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
+                Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\ManagedLanguages\VBCSharp\LanguageServices")
+                Path.Combine(vsInstallDir, @"IDE\Extensions\Microsoft\CodeSense\Framework")
+                Path.Combine(vsInstallDir, @"IDE")
+            |]
+
+        AppDomain.CurrentDomain.add_AssemblyResolve(fun _ args ->
+            let found () =
+                probingPaths
+                |> Seq.tryPick (fun p ->
+                    try
+                        let name = AssemblyName(args.Name)
+                        let codebase = Path.GetFullPath(Path.Combine(p, name.Name) + ".dll")
+                        if File.Exists(codebase) then
+                            name.CodeBase <- codebase
+                            name.CultureInfo <- Unchecked.defaultof<CultureInfo>
+                            name.Version <- Unchecked.defaultof<Version>
+                            Some name
+                        else
+                            None
+                    with _ ->
+                        None)
+
+            match found () with
+            | None -> Unchecked.defaultof<Assembly>
+            | Some name -> Assembly.Load(name))
