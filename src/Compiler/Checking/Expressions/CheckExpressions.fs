@@ -7308,6 +7308,15 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                 DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, isOverallTyAbstract, true, implTy, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore
 
         // 3. create the specs of overrides
+        
+        // Fix for struct object expressions: extract captured struct members to avoid byref fields
+        // This transformation is only applied when ALL of the following conditions are met:
+        // 1. The object expression derives from a base class (not just implementing an interface)
+        // 2. The object expression captures instance members from an enclosing struct
+        // See CheckExpressionsOps.TryExtractStructMembersFromObjectExpr for implementation details
+        let capturedStructMembers, methodBodyRemap =
+            CheckExpressionsOps.TryExtractStructMembersFromObjectExpr isInterfaceTy overridesAndVirts mWholeExpr
+        
         let allTypeImpls =
           overridesAndVirts |> List.map (fun (m, implTy, _, dispatchSlotsKeyed, _, overrides) ->
               let overrides' =
@@ -7331,7 +7340,14 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
                                 | Some x -> x
                                 | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), mObjTy))
 
-                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody, id.idRange) ]
+                            // Remap method body to use local copies of struct members
+                            let bindingBody' =
+                                if methodBodyRemap.valRemap.IsEmpty then
+                                    bindingBody
+                                else
+                                    remapExpr g CloneAll methodBodyRemap bindingBody
+
+                            yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody', id.idRange) ]
               (implTy, overrides'))
 
         let objtyR, overrides' = allTypeImpls.Head
@@ -7345,6 +7361,14 @@ and TcObjectExpr (cenv: cenv) env tpenv (objTy, realObjTy, argopt, binds, extraI
         // 4. Build the implementation
         let expr = mkObjExpr(objtyR, baseValOpt, ctorCall, overrides', extraImpls, mWholeExpr)
         let expr = mkCoerceIfNeeded g realObjTy objtyR expr
+        
+        // Wrap with bindings for captured struct members
+        let expr =
+            if capturedStructMembers.IsEmpty then
+                expr
+            else
+                List.foldBack (fun (v, e) body -> mkInvisibleLet mWholeExpr v e body) capturedStructMembers expr
+        
         expr, tpenv
 
 //-------------------------------------------------------------------------
