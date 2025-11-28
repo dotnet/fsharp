@@ -45,11 +45,14 @@ jobs:
 
     - pwsh: |
         Write-Host "Cloning repository: ${{ item.repo }}"
-        git clone https://github.com/${{ item.repo }}.git $(Pipeline.Workspace)/TestRepo
+        git clone --recursive https://github.com/${{ item.repo }}.git $(Pipeline.Workspace)/TestRepo
         Set-Location $(Pipeline.Workspace)/TestRepo
         
         Write-Host "Checking out commit: ${{ item.commit }}"
         git checkout ${{ item.commit }}
+        
+        Write-Host "Initializing submodules (if any)..."
+        git submodule update --init --recursive
         
         Write-Host "Successfully checked out ${{ item.repo }} at commit ${{ item.commit }}"
         git log -1 --oneline
@@ -222,9 +225,10 @@ jobs:
             "",
             "# 2. Clone and checkout the failing library",
             "cd ..",
-            "git clone https://github.com/${{ item.repo }}.git TestRepo",
+            "git clone --recursive https://github.com/${{ item.repo }}.git TestRepo",
             "cd TestRepo",
             "git checkout ${{ item.commit }}",
+            "git submodule update --init --recursive",
             "rm -f global.json",
             "",
             "# 3. Prepare the repo for local compiler",

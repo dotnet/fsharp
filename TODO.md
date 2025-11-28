@@ -3,6 +3,15 @@
 ## Overview
 Implement a reusable Azure DevOps template for F# compiler regression testing, integrated with the existing PR pipeline infrastructure.
 
+## Current Issues (from review feedback)
+
+### Build Failure & Binlog Issues
+- [x] Fix binlog collection (was failing due to missing submodules)
+- [x] Fix the `_GetRestoreSettingsPerFramework` issue (caused by missing git submodules)
+- [x] Add `--recursive` flag to git clone command
+- [x] Add explicit `git submodule update --init --recursive` after checkout
+- [x] Document findings in OBSTACLES.md
+
 ## Tasks
 
 ### Infrastructure Setup
