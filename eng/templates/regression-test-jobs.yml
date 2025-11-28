@@ -80,6 +80,13 @@ jobs:
       displayName: Remove global.json to use latest SDK
 
     - task: UseDotNet@2
+      displayName: Install .NET SDK 8.0.x for ${{ item.displayName }}
+      inputs:
+        packageType: sdk
+        version: '8.0.x'
+        installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
+
+    - task: UseDotNet@2
       displayName: Install .NET SDK 10.0.100 for ${{ item.displayName }}
       inputs:
         packageType: sdk
@@ -204,32 +211,40 @@ jobs:
           Write-Host "Status: FAILED"
           Write-Host "The ${{ item.displayName }} library failed to build with the new F# compiler"
           
-          # Report error using VSO logging commands with file reference to matrix definition
-          Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml]Regression test failed for ${{ item.displayName }} (${{ item.repo }}@${{ item.commit }})"
+          # Build multiline error message with reproduction steps
+          $lines = @(
+            "Regression test FAILED for ${{ item.displayName }} (${{ item.repo }}@${{ item.commit }})",
+            "",
+            "LOCAL REPRODUCTION STEPS (from fsharp repo root):",
+            "==========================================",
+            "# 1. Build the F# compiler",
+            "./build.sh -c Release",
+            "",
+            "# 2. Clone and checkout the failing library",
+            "cd ..",
+            "git clone https://github.com/${{ item.repo }}.git TestRepo",
+            "cd TestRepo",
+            "git checkout ${{ item.commit }}",
+            "rm -f global.json",
+            "",
+            "# 3. Prepare the repo for local compiler",
+            "dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`"",
+            "",
+            "# 4. Build with local compiler",
+            "export LocalFSharpCompilerPath=`$PWD/../fsharp/artifacts",
+            "export LoadLocalFSharpBuild=true",
+            "export LocalFSharpCompilerConfiguration=Release",
+            "./${{ item.buildScript }}",
+            "=========================================="
+          )
           
-          # Provide local reproduction steps
-          Write-Host ""
-          Write-Host "##[error]Local reproduction steps (from fsharp repo root):"
-          Write-Host "##[error]=========================================="
-          Write-Host "##[error]# 1. Build the F# compiler"
-          Write-Host "##[error]./build.sh -c Release"
-          Write-Host "##[error]"
-          Write-Host "##[error]# 2. Clone and checkout the failing library"
-          Write-Host "##[error]cd .."
-          Write-Host "##[error]git clone https://github.com/${{ item.repo }}.git TestRepo"
-          Write-Host "##[error]cd TestRepo"
-          Write-Host "##[error]git checkout ${{ item.commit }}"
-          Write-Host "##[error]rm -f global.json"
-          Write-Host "##[error]"
-          Write-Host "##[error]# 3. Prepare the repo for local compiler"
-          Write-Host "##[error]dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`""
-          Write-Host "##[error]"
-          Write-Host "##[error]# 4. Build with local compiler"
-          Write-Host "##[error]export LocalFSharpCompilerPath=`$PWD/../fsharp/artifacts"
-          Write-Host "##[error]export LoadLocalFSharpBuild=true"
-          Write-Host "##[error]export LocalFSharpCompilerConfiguration=Release"
-          Write-Host "##[error]./${{ item.buildScript }}"
-          Write-Host "##[error]=========================================="
+          # Report using VSO error format - each line separately
+          foreach ($line in $lines) {
+            Write-Host "##[error]$line"
+          }
+          
+          # Also log as VSO issue for Azure DevOps integration
+          Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml]Regression test failed: ${{ item.displayName }}"
         }
         Write-Host "============================================"
         
