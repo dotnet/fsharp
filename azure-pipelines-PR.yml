@@ -700,35 +700,39 @@ stages:
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
-          strategy:
-            maxParallel: 2
-            matrix:
-              regular:
-                _experimental_flag: ''
-              experimental_features:
-                _experimental_flag: ''
           steps:
           - checkout: self
             clean: true
-          # We first download a publicly available .NET SDK. That one has support for `path` in global.json. dotnet.cmd script can then download a version which is not yet shipped, but matches global.json.
-          - task: UseDotNet@2
-            displayName: install SDK
-            inputs:
-              packageType: sdk
-              version: '10.x'
-              includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
-              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\Build.cmd -c Release -pack
             env:
               NativeToolsOnMachine: true
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
-            env:
-              FSHARP_EXPERIMENTAL_FEATURES: $(_experimental_flag)
             displayName: End to end build tests
-          - script: .\eng\common\dotnet.cmd fsi .\tests\FSharp.Compiler.ComponentTests\CompilerCompatibilityTests.fsx
-            displayName: Compiler compatibility tests
+          
+          # Publish artifacts for regression testing
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Compiler FSC Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/fsc'
+              artifactName: 'FSharpCompilerFscArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish F# Core Artifacts for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/bin/FSharp.Core'
+              artifactName: 'FSharpCoreArtifacts'
+              publishLocation: pipeline
+            condition: succeeded()
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish UseLocalCompiler props file for Regression Tests
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/UseLocalCompiler.Directory.Build.props'
+              artifactName: 'UseLocalCompilerProps'
+              publishLocation: pipeline
+            condition: succeeded()
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
@@ -881,3 +885,20 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+  #-------------------------------------------------------------------------------------------------------------------#
+  #                              F# Compiler Regression Tests                                                         #
+  #-------------------------------------------------------------------------------------------------------------------#
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/templates/regression-test-jobs.yml
+      parameters:
+        testMatrix:
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.cmd
+          displayName: FSharpPlus_Windows
+        - repo: fsprojects/FSharpPlus
+          commit: f614035b75922aba41ed6a36c2fc986a2171d2b8
+          buildScript: build.sh
+          displayName: FSharpPlus_Linux
+          useVmImage: $(UbuntuMachineQueueName)
