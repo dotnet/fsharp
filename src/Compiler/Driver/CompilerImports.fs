@@ -6,7 +6,6 @@ module internal FSharp.Compiler.CompilerImports
 
 open System
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.IO.Compression
@@ -40,8 +39,6 @@ open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.BuildGraph
-
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
@@ -666,9 +663,9 @@ type TcConfig with
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile =
                 [|
-                    for (_filename, maxIndexOfReference, references) in groupedReferences do
+                    for _filename, maxIndexOfReference, references in groupedReferences do
                         let assemblyResolution =
-                            references |> List.choose (tcConfig.TryResolveLibWithDirectories)
+                            references |> List.choose tcConfig.TryResolveLibWithDirectories
 
                         if not assemblyResolution.IsEmpty then
                             (maxIndexOfReference, assemblyResolution)
@@ -742,7 +739,7 @@ type TcConfig with
 
             let unresolved =
                 [
-                    for (name, _, r) in unresolvedReferences -> UnresolvedAssemblyReference(name, r)
+                    for name, _, r in unresolvedReferences -> UnresolvedAssemblyReference(name, r)
                 ]
 
             // If mode=Speculative, then we haven't reported any errors.
@@ -1169,7 +1166,7 @@ type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<Tc
     let mutable dllInfos: TcImportsDllInfoFacade list = []
 
     // The name of these fields must not change, see above
-    do assert (nameof (dllInfos) = "dllInfos")
+    do assert (nameof dllInfos = "dllInfos")
 
     member _.SetDllInfos(value: ImportedBinary list) =
         tciLock.AcquireLock(fun tcitok ->
@@ -1180,7 +1177,7 @@ type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<Tc
                     for x in value do
                         let info = { FileName = x.FileName }
                         // The name of this field must not change, see above
-                        assert (nameof (info.FileName) = "FileName")
+                        assert (nameof info.FileName = "FileName")
                         info
                 ]
 
@@ -1188,7 +1185,7 @@ type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<Tc
 
     member this.Base: TcImportsWeakFacade option =
         // The name of this property msut not change, see above
-        assert (nameof (this.Base) = "Base")
+        assert (nameof this.Base = "Base")
 
         match tcImportsWeak.TryGetTarget() with
         | true, tcImports ->
@@ -1523,7 +1520,7 @@ and [<Sealed>] TcImports
                     {
                         IsFSharp = false
                         UsesFSharp20PlusQuotations = false
-                        InvalidateEvent = (Event<_>()).Publish
+                        InvalidateEvent = Event<_>().Publish
                         IsProviderGenerated = true
                         QualifiedName = Some(assembly.PUntaint((fun a -> a.FullName), m))
                         Contents = ccuContents
@@ -1586,8 +1583,10 @@ and [<Sealed>] TcImports
 
 #if !NO_TYPEPROVIDERS
     member private tcImports.AttachDisposeTypeProviderAction action =
-        CheckDisposed()
-        disposeTypeProviderActions.Add action
+        tciLock.AcquireLock(fun tcitok ->
+            CheckDisposed()
+            RequireTcImportsLock(tcitok, disposeTypeProviderActions)
+            disposeTypeProviderActions.Add action)
 #endif
 
     // Note: the returned binary reader is associated with the tcImports, i.e. when the tcImports are closed
@@ -1866,7 +1865,7 @@ and [<Sealed>] TcImports
                 let tcImports = tcImportsWeak
 
                 // The name of this captured value must not change, see comments on TcImportsWeakFacade above
-                assert (nameof (tcImports) = "tcImports")
+                assert (nameof tcImports = "tcImports")
 
                 let mutable systemRuntimeContainsTypeRef = tcImports.SystemRuntimeContainsType
 
@@ -2247,110 +2246,106 @@ and [<Sealed>] TcImports
         phase2
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.TryRegisterAndPrepareToImportReferencedDll
-        (ctok, r: AssemblyResolution)
-        : Async<(_ * (unit -> AvailableImportedAssembly list)) option> =
-        async {
-            CheckDisposed()
-            let m = r.originalReference.Range
-            let fileName = r.resolvedPath
+    member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
+        let tryGetAssemblyData (r: AssemblyResolution) =
+            async {
+                CheckDisposed()
+                let m = r.originalReference.Range
+                let fileName = r.resolvedPath
 
-            let! contentsOpt =
-                async {
-                    match r.ProjectReference with
-                    | Some ilb -> return! ilb.EvaluateRawContents()
-                    | None -> return ProjectAssemblyDataResult.Unavailable true
-                }
+                try
 
-            // If we have a project reference but did not get any valid contents,
-            //     just return None and do not attempt to read elsewhere.
-            match contentsOpt with
-            | ProjectAssemblyDataResult.Unavailable false -> return None
-            | _ ->
-
-                let assemblyData =
-                    match contentsOpt with
-                    | ProjectAssemblyDataResult.Available ilb -> ilb
-                    | ProjectAssemblyDataResult.Unavailable _ ->
-                        let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, fileName, m)
-                        RawFSharpAssemblyDataBackedByFileOnDisk(ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
-
-                let ilShortAssemName = assemblyData.ShortAssemblyName
-                let ilScopeRef = assemblyData.ILScopeRef
-
-                if tcImports.IsAlreadyRegistered ilShortAssemName then
-                    let dllinfo = tcImports.FindDllInfo(ctok, m, ilShortAssemName)
-
-                    let phase2 () =
-                        [ tcImports.FindCcuInfo(ctok, m, ilShortAssemName, lookupOnly = true) ]
-
-                    return Some(dllinfo, phase2)
-                else
-                    let dllinfo =
-                        {
-                            RawMetadata = assemblyData
-                            FileName = fileName
-#if !NO_TYPEPROVIDERS
-                            ProviderGeneratedAssembly = None
-                            IsProviderGenerated = false
-                            ProviderGeneratedStaticLinkMap = None
-#endif
-                            ILScopeRef = ilScopeRef
-                            ILAssemblyRefs = assemblyData.ILAssemblyRefs
+                    let! contentsOpt =
+                        async {
+                            match r.ProjectReference with
+                            | Some ilb -> return! ilb.EvaluateRawContents()
+                            | None -> return ProjectAssemblyDataResult.Unavailable true
                         }
 
-                    tcImports.RegisterDll dllinfo
+                    // If we have a project reference but did not get any valid contents,
+                    //     just return None and do not attempt to read elsewhere.
+                    match contentsOpt with
+                    | ProjectAssemblyDataResult.Unavailable false -> return None
+                    | _ ->
 
-                    let phase2 =
-                        if assemblyData.HasAnyFSharpSignatureDataAttribute then
-                            if not assemblyData.HasMatchingFSharpSignatureDataAttribute then
-                                errorR (Error(FSComp.SR.buildDifferentVersionMustRecompile fileName, m))
-                                tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
-                            else
-                                try
-                                    tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo)
-                                with e ->
-                                    error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), m))
-                        else
+                        match contentsOpt with
+                        | ProjectAssemblyDataResult.Available ilb -> return Some(r, ilb)
+                        | ProjectAssemblyDataResult.Unavailable _ ->
+                            let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, fileName, m)
+                            return Some(r, RawFSharpAssemblyDataBackedByFileOnDisk(ilModule, ilAssemblyRefs))
+
+                with e ->
+                    errorR (Error(FSComp.SR.buildProblemReadingAssembly (fileName, e.Message), m))
+                    return None
+            }
+
+        let registerDll (r: AssemblyResolution, assemblyData: IRawFSharpAssemblyData) =
+            let m = r.originalReference.Range
+            let fileName = r.resolvedPath
+            let ilShortAssemName = assemblyData.ShortAssemblyName
+            let ilScopeRef = assemblyData.ILScopeRef
+
+            if tcImports.IsAlreadyRegistered ilShortAssemName then
+
+                let phase2 () =
+                    [ tcImports.FindCcuInfo(ctok, m, ilShortAssemName, lookupOnly = true) ]
+
+                async { return phase2 () }
+            else
+                let dllinfo =
+                    {
+                        RawMetadata = assemblyData
+                        FileName = fileName
+#if !NO_TYPEPROVIDERS
+                        ProviderGeneratedAssembly = None
+                        IsProviderGenerated = false
+                        ProviderGeneratedStaticLinkMap = None
+#endif
+                        ILScopeRef = ilScopeRef
+                        ILAssemblyRefs = assemblyData.ILAssemblyRefs
+                    }
+
+                tcImports.RegisterDll dllinfo
+
+                let phase2 =
+                    if assemblyData.HasAnyFSharpSignatureDataAttribute then
+                        if not assemblyData.HasMatchingFSharpSignatureDataAttribute then
+                            errorR (Error(FSComp.SR.buildDifferentVersionMustRecompile fileName, m))
                             tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
+                        else
+                            try
+                                tcImports.PrepareToImportReferencedFSharpAssembly(ctok, m, fileName, dllinfo)
+                            with e ->
+                                error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), m))
+                    else
+                        tcImports.PrepareToImportReferencedILAssembly(ctok, m, fileName, dllinfo)
 
-                    return Some(dllinfo, phase2)
-        }
+                async { return phase2 () }
 
-    // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
-    member tcImports.RegisterAndImportReferencedAssemblies(ctok, nms: AssemblyResolution list) =
         async {
             CheckDisposed()
 
             let tcConfig = tcConfigP.Get ctok
 
-            let runMethod =
+            let runMethod computations =
                 match tcConfig.parallelReferenceResolution with
-                | ParallelReferenceResolution.On -> MultipleDiagnosticsLoggers.Parallel
-                | ParallelReferenceResolution.Off -> MultipleDiagnosticsLoggers.Sequential
+                | ParallelReferenceResolution.On -> MultipleDiagnosticsLoggers.Parallel computations
+                | ParallelReferenceResolution.Off -> MultipleDiagnosticsLoggers.Sequential computations
 
-            let! results =
-                nms
-                |> List.map (fun nm ->
-                    async {
-                        try
-                            use _ = new CompilationGlobalsScope()
-                            return! tcImports.TryRegisterAndPrepareToImportReferencedDll(ctok, nm)
-                        with e ->
-                            errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
-                            return None
-                    })
-                |> runMethod
+            let! assemblyData = nms |> List.map tryGetAssemblyData |> runMethod
 
-            let _dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
+            // Preserve determinicstic order of references, because types from later assemblies may shadow earlier ones.
+            let phase2s = assemblyData |> Seq.choose id |> Seq.map registerDll |> List.ofSeq
+
             fixupOrphanCcus ()
-            let ccuinfos = List.collect (fun phase2 -> phase2 ()) phase2s
+
+            let! ccuinfos = phase2s |> runMethod
 
             if importsBase.IsSome then
                 importsBase.Value.CcuTable.Values |> Seq.iter addConstraintSources
                 ccuTable.Values |> Seq.iter addConstraintSources
 
-            return ccuinfos
+            return ccuinfos |> List.concat
         }
 
     /// Note that implicit loading is not used for compilations from MSBuild, which passes ``--noframework``
@@ -2376,7 +2371,7 @@ and [<Sealed>] TcImports
                     ReportWarnings warns
 
                     tcImports.RegisterAndImportReferencedAssemblies(ctok, res)
-                    |> Async.RunImmediate
+                    |> Async.RunSynchronously
                     |> ignore
 
                     true
@@ -2684,13 +2679,13 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
 
     let ccuinfos =
         tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions)
-        |> Async.RunImmediate
+        |> Async.RunSynchronously
 
     let asms =
         ccuinfos
         |> List.map (function
             | ResolvedImportedAssembly(asm, m) -> asm, m
-            | UnresolvedImportedAssembly(assemblyName, m) -> error (Error(FSComp.SR.buildCouldNotResolveAssembly (assemblyName), m)))
+            | UnresolvedImportedAssembly(assemblyName, m) -> error (Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m)))
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()

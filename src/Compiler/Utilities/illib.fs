@@ -96,22 +96,22 @@ module internal PervasiveAutoOpens =
 
     type String with
 
-        member inline x.StartsWithOrdinal value =
+        member inline x.StartsWithOrdinal(value: string) =
             x.StartsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinal value =
+        member inline x.EndsWithOrdinal(value: string) =
             x.EndsWith(value, StringComparison.Ordinal)
 
-        member inline x.EndsWithOrdinalIgnoreCase value =
+        member inline x.EndsWithOrdinalIgnoreCase(value: string) =
             x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
 
         member inline x.IndexOfOrdinal(value: string) =
             x.IndexOf(value, StringComparison.Ordinal)
 
-        member inline x.IndexOfOrdinal(value, startIndex) =
+        member inline x.IndexOfOrdinal(value: string, startIndex) =
             x.IndexOf(value, startIndex, StringComparison.Ordinal)
 
-        member inline x.IndexOfOrdinal(value, startIndex, count) =
+        member inline x.IndexOfOrdinal(value: string, startIndex, count) =
             x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
 
     /// Get an initialization hole
@@ -144,7 +144,7 @@ module internal PervasiveAutoOpens =
 
             let task = ts.Task
 
-            Async.StartWithContinuations(computation, (ts.SetResult), (ts.SetException), (fun _ -> ts.SetCanceled()), cancellationToken)
+            Async.StartWithContinuations(computation, ts.SetResult, ts.SetException, (fun _ -> ts.SetCanceled()), cancellationToken)
 
             try
                 task.Result
@@ -944,7 +944,7 @@ type UniqueStampGenerator<'T when 'T: equality and 'T: not null>() =
     let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
-    let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
+    let computeFunc = Func<'T, _>(fun _ -> lazy Interlocked.Increment(&nItems))
 
     member _.Encode str =
         encodeTable.GetOrAdd(str, computeFunc).Value
@@ -970,7 +970,7 @@ type MemoizationTable<'T, 'U when 'T: not null>(name, compute: 'T -> 'U, keyComp
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
 type internal StampedDictionary<'T, 'U when 'T: not null>(keyComparer: IEqualityComparer<'T>) =
-    let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
+    let table = ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
     let mutable count = -1
 
     member _.Add(key, value) =
@@ -980,7 +980,7 @@ type internal StampedDictionary<'T, 'U when 'T: not null>(keyComparer: IEquality
     member _.UpdateIfExists(key, valueReplaceFunc) =
         match table.TryGetValue key with
         | true, v ->
-            let (stamp, oldVal) = v.Value
+            let stamp, oldVal = v.Value
 
             match valueReplaceFunc oldVal with
             | None -> ()
@@ -1061,7 +1061,7 @@ type LazyWithContext<'T, 'Ctxt> =
             // Re-raise the original exception
             raise (x.findOriginalException res.Exception)
         | :? ('Ctxt -> 'T) as f ->
-            x.funcOrException <- box (LazyWithContextFailure.Undefined)
+            x.funcOrException <- box LazyWithContextFailure.Undefined
 
             try
                 let res = f ctxt

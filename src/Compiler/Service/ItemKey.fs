@@ -578,8 +578,8 @@ and [<Sealed>] ItemKeyStoreBuilder(tcGlobals: TcGlobals) =
         // Items are flattened so multiples are not expected
         | Item.Types(_, _ :: _ :: _) -> ()
         | Item.UnqualifiedType(_ :: _ :: _) -> ()
-        | Item.MethodGroup(_, (_ :: _ :: _), _) -> ()
-        | Item.CtorGroup(_, (_ :: _ :: _)) -> ()
+        | Item.MethodGroup(_, _ :: _ :: _, _) -> ()
+        | Item.CtorGroup(_, _ :: _ :: _) -> ()
         | Item.ModuleOrNamespaces(_ :: _ :: _) -> ()
 
         let postCount = b.Count

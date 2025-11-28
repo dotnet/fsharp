@@ -473,3 +473,15 @@ module WeakMap =
         // Cached factory to avoid allocating a new lambda per lookup.
         let factory = ConditionalWeakTable.CreateValueCallback(fun k -> valueFactory k)
         fun (key: 'Key when 'Key: not null) -> table.GetValue(key, factory)
+
+    /// Like getOrCreate, but only cache the value if it satisfies the given predicate.
+    let cacheConditionally shouldCache valueFactory =
+        let table = ConditionalWeakTable<_, _>()
+        fun (key: 'Key when 'Key: not null) ->
+            match table.TryGetValue key with
+            | true, value -> value
+            | false, _ ->
+                let value = valueFactory key
+                if shouldCache value then 
+                    try table.Add(key, value) with _ -> ()
+                value

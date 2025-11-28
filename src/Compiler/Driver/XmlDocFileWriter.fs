@@ -3,8 +3,6 @@
 module internal FSharp.Compiler.XmlDocFileWriter
 
 open System.IO
-open System.Reflection
-open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
@@ -141,7 +139,7 @@ module XmlDocWriter =
         fprintfn os "<assembly><name>%s</name></assembly>" assemblyName
         fprintfn os "<members>"
 
-        for (nm, doc) in members do
+        for nm, doc in members do
             fprintfn os "<member name=\"%s\">" nm
             fprintfn os "%s" doc
             fprintfn os "</member>"

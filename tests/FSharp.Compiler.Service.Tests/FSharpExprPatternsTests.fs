@@ -146,7 +146,7 @@ let testPatterns handler source =
         |> Async.RunImmediate
 
     match checkResult with
-    | _, FSharpCheckFileAnswer.Succeeded (checkResults) ->
+    | _, FSharpCheckFileAnswer.Succeeded checkResults ->
 
         match checkResults.ImplementationFile with
         | Some implFile ->

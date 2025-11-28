@@ -2,10 +2,7 @@
 
 namespace Microsoft.FSharp.Collections
 
-open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.Operators.Checked
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

@@ -662,7 +662,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     let dtree =
                         TDSwitch(
                             pcExpr,
-                            [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
+                            [  mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
                             Some (addResultTarget (mkUnit g m)),
                             m)
                     let pcIsEndStateComparison = mbuilder.Close(dtree, m, g.unit_ty)

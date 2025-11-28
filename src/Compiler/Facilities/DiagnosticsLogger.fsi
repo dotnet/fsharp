@@ -465,7 +465,7 @@ module internal StackGuardMetrics =
     val CaptureStatsAndWriteToConsole: unit -> IDisposable
 
 type StackGuard =
-    new: maxDepth: int * name: string -> StackGuard
+    new: name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard:
@@ -476,8 +476,6 @@ type StackGuard =
             'T
 
     member GuardCancellable: Internal.Utilities.Library.Cancellable<'T> -> Internal.Utilities.Library.Cancellable<'T>
-
-    static member GetDepthOption: string -> int
 
 /// This represents the global state established as each task function runs as part of the build.
 ///

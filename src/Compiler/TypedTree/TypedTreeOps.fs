@@ -34,10 +34,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
-let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
-let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
-let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
-
 let inline compareBy (x: 'T MaybeNull) (y: 'T MaybeNull) ([<InlineIfLambda>]func: 'T -> 'K)  = 
     match x,y with
     | null,null -> 0
@@ -803,7 +799,8 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
             let reducedTy2 = addNullnessToTy nullness reducedTy
             stripTyEqnsAndErase eraseFuncAndTuple g reducedTy2
         elif tyconRefEq g tcref g.nativeptr_tcr && eraseFuncAndTuple then 
-            stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
+            // Regression fix (issue #7428): nativeptr<'T> erases to ilsigptr<'T>, not nativeint
+            stripTyEqnsAndErase eraseFuncAndTuple g (TType_app(g.ilsigptr_tcr, args, nullness))
         else
             ty
 
@@ -2330,7 +2327,7 @@ let CollectTypars = CollectTyparsAndLocals
 let CollectLocals = CollectTyparsAndLocals
 
 let CollectTyparsAndLocalsWithStackGuard() =
-    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth, "AccFreeVarsStackGuardDepth")
+    let stackGuard = StackGuard("AccFreeVarsStackGuardDepth")
     CollectTyparsAndLocalsImpl (Some stackGuard)
 
 let CollectLocalsWithStackGuard() = CollectTyparsAndLocalsWithStackGuard()
@@ -2715,7 +2712,7 @@ type TraitConstraintInfo with
         match traitInfo.MemberFlags.MemberKind with
         | SynMemberKind.PropertyGet
         | SynMemberKind.PropertySet ->
-            match PrettyNaming.TryChopPropertyName traitName0 with
+            match TryChopPropertyName traitName0 with
             | Some nm -> nm
             | None -> traitName0
         | _ -> traitName0
@@ -3084,8 +3081,8 @@ module PrettyTypes =
             x
  
     let PrettifyInst g x = 
-        PrettifyThings g 
-            (foldTyparInst) 
+        PrettifyThings g
+            foldTyparInst
             (fun f -> mapTyparInst g f)
             x
  
@@ -3208,7 +3205,7 @@ type DisplayEnv =
 
     member x.SetOpenPaths paths = 
         { x with 
-             openTopPathsSorted = (InterruptibleLazy(fun _ -> paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
+             openTopPathsSorted = InterruptibleLazy(fun _ -> paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2)))
              openTopPathsRaw = paths 
         }
 
@@ -3278,8 +3275,8 @@ type DisplayEnv =
                escapeKeywordNames = true
                includeStaticParametersInTypeNames = true }
         denv.SetOpenPaths
-            [ FSharpLib.RootPath
-              FSharpLib.CorePath
+            [ RootPath
+              CorePath
               CollectionsPath
               ControlPath
               (splitNamespace ExtraTopLevelOperatorsName) ]
@@ -4367,7 +4364,7 @@ module DebugPrint =
             (wordL(tagText "slot") --- (wordL (tagText nm)) ^^ wordL(tagText "@") ^^ typeL ty) --
               (wordL(tagText "LAM") --- spaceListL (List.map typarL tps1) ^^ rightL(tagText ".")) ---
               (wordL(tagText "LAM") --- spaceListL (List.map typarL tps2) ^^ rightL(tagText ".")) ---
-              (commaListL (List.map (List.map tslotparamL >> tupleL) pms)) ^^ (wordL(tagText "-> ")) --- (typeL retTy) 
+              (commaListL (List.map (List.map tslotparamL >> tupleL) pms)) ^^ wordL(tagText "-> ") --- (typeL retTy) 
 #else
         ignore slotsig
         wordL(tagText "slotsig")
@@ -4408,12 +4405,12 @@ module DebugPrint =
             | Const.UIntPtr x -> (x |> string)+"un"
             | Const.Single d -> 
                 (let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                 if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
+                 if String.forall (fun c -> Char.IsDigit c || c = '-') s 
                  then s + ".0" 
                  else s) + "f"
             | Const.Double d -> 
                 let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
+                if String.forall (fun c -> Char.IsDigit c || c = '-') s 
                 then s + ".0" 
                 else s
             | Const.Char c -> "'" + c.ToString() + "'" 
@@ -4668,8 +4665,8 @@ module DebugPrint =
             | Expr.Op (TOp.TraitCall _, _tyargs, _args, _) -> wordL(tagText "traitcall...")
             | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
-            | Expr.Op (TOp.TryFinally _, _tyargs, args, _) -> wordL(tagText ("unexpected-try-finally")) ---- aboveListL (List.map atomL args)
-            | Expr.Op (TOp.TryWith _, _tyargs, args, _) -> wordL(tagText ("unexpected-try-with")) ---- aboveListL (List.map atomL args)
+            | Expr.Op (TOp.TryFinally _, _tyargs, args, _) -> wordL(tagText "unexpected-try-finally") ---- aboveListL (List.map atomL args)
+            | Expr.Op (TOp.TryWith _, _tyargs, args, _) -> wordL(tagText "unexpected-try-with") ---- aboveListL (List.map atomL args)
             | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
@@ -4693,7 +4690,7 @@ module DebugPrint =
 
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
-                   (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
+                   (wordL(tagText "|") ^^ exprL csx --- wordL(tagText "when..."))
            
         // For tracking ranges through expr rewrites 
         if layoutRanges then
@@ -4716,7 +4713,7 @@ module DebugPrint =
             let bind = wordL(tagText "let") ^^ bindingL bind
             (bind @@ decisionTreeL body) 
         | TDSuccess (args, n) -> 
-            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL))
+            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map exprL)
         | TDSwitch (test, dcases, dflt, _) ->
             (wordL(tagText "Switch") --- exprL test) @@--
             (aboveListL (List.map dcaseL dcases) @@
@@ -4827,7 +4824,7 @@ module DebugPrint =
         (header @@-- body) @@ footer
 
     let implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
-        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL implFileTy implFileContents]
+        aboveListL [ wordL(tagText "top implementation ") @@-- mexprL implFileTy implFileContents]
         
     let implFilesL implFiles =
         aboveListL (List.map implFileL implFiles)
@@ -5230,7 +5227,7 @@ let (|LinearMatchExpr|_|) expr =
     | _ -> ValueNone
     
 let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, m2, ty) = 
-    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, None))|], m2, ty)
+    primMkMatch (sp, m, dtree, [|tg1;TTarget([], e2, None) |], m2, ty)
 
 /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
 /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
@@ -6525,31 +6522,31 @@ and remapImplFile ctxt compgen tmenv implFile =
 // Entry points
 
 let remapAttrib g tmenv attrib = 
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapAttribImpl ctxt tmenv attrib
 
 let remapExpr g (compgen: ValCopyFlag) (tmenv: Remap) expr =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen tmenv expr
 
 let remapPossibleForallTy g tmenv ty =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapPossibleForallTyImpl ctxt tmenv ty
 
 let copyModuleOrNamespaceType g compgen mtyp =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
 
 let copyExpr g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen Remap.Empty e    
 
 let copyImplFile g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapImplFile ctxt compgen Remap.Empty e |> fst
 
 let instExpr g tpinst e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
 //--------------------------------------------------------------------------
@@ -7439,7 +7436,7 @@ let ExprFolder0 =
 type ExprFolders<'State> (folders: ExprFolder<'State>) =
     let mutable exprFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
     let mutable exprNoInterceptFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
-    let stackGuard = StackGuard(FoldExprStackGuardDepth, "FoldExprStackGuardDepth")
+    let stackGuard = StackGuard("FoldExprStackGuardDepth")
 
     let rec exprsF z xs = 
         List.fold exprFClosure z xs
@@ -8049,7 +8046,7 @@ let tryMkCallCoreFunctionAsBuiltInWitness (g: TcGlobals) info tyargs argExprs m 
 let TryEliminateDesugaredConstants g m c = 
     match c with 
     | Const.Decimal d -> 
-        match System.Decimal.GetBits d with 
+        match Decimal.GetBits d with 
         | [| lo;med;hi; signExp |] -> 
             let scale = (min (((signExp &&& 0xFF0000) >>> 16) &&& 0xFF) 28) |> byte
             let isNegative = (signExp &&& 0x80000000) <> 0
@@ -8240,10 +8237,10 @@ let mkReraise m returnTy = Expr.Op (TOp.Reraise, [returnTy], [], m) (* could sup
 // CompilationMappingAttribute, SourceConstructFlags
 //----------------------------------------------------------------------------
 
-let tnameCompilationSourceNameAttr = FSharpLib.Core + ".CompilationSourceNameAttribute"
-let tnameCompilationArgumentCountsAttr = FSharpLib.Core + ".CompilationArgumentCountsAttribute"
-let tnameCompilationMappingAttr = FSharpLib.Core + ".CompilationMappingAttribute"
-let tnameSourceConstructFlags = FSharpLib.Core + ".SourceConstructFlags"
+let tnameCompilationSourceNameAttr = Core + ".CompilationSourceNameAttribute"
+let tnameCompilationArgumentCountsAttr = Core + ".CompilationArgumentCountsAttribute"
+let tnameCompilationMappingAttr = Core + ".CompilationMappingAttribute"
+let tnameSourceConstructFlags = Core + ".SourceConstructFlags"
 
 let tref_CompilationArgumentCountsAttr (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationArgumentCountsAttr)
 let tref_CompilationMappingAttr (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef, tnameCompilationMappingAttr)
@@ -8253,7 +8250,7 @@ let tref_SourceConstructFlags (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef,
 let mkCompilationMappingAttrPrim (g: TcGlobals) k nums = 
     mkILCustomAttribute (tref_CompilationMappingAttr g, 
                                ((mkILNonGenericValueTy (tref_SourceConstructFlags g)) :: (nums |> List.map (fun _ -> g.ilg.typ_Int32))), 
-                               ((k :: nums) |> List.map (ILAttribElem.Int32)), 
+                               ((k :: nums) |> List.map ILAttribElem.Int32), 
                                [])
 
 let mkCompilationMappingAttr g kind = mkCompilationMappingAttrPrim g kind []
@@ -8264,7 +8261,7 @@ let mkCompilationMappingAttrWithVariantNumAndSeqNum g kind varNum seqNum = mkCom
 
 let mkCompilationArgumentCountsAttr (g: TcGlobals) nums = 
     mkILCustomAttribute (tref_CompilationArgumentCountsAttr g, [ mkILArr1DTy g.ilg.typ_Int32 ], 
-                               [ILAttribElem.Array (g.ilg.typ_Int32, List.map (ILAttribElem.Int32) nums)], 
+                               [ILAttribElem.Array (g.ilg.typ_Int32, List.map ILAttribElem.Int32 nums)], 
                                [])
 
 let mkCompilationSourceNameAttr (g: TcGlobals) n = 
@@ -8304,7 +8301,7 @@ let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull op
 // FSharpInterfaceDataVersionAttribute
 //----------------------------------------------------------------------------
 
-let tname_SignatureDataVersionAttr = FSharpLib.Core + ".FSharpInterfaceDataVersionAttribute"
+let tname_SignatureDataVersionAttr = Core + ".FSharpInterfaceDataVersionAttribute"
 
 let tref_SignatureDataVersionAttr fsharpCoreAssemblyScopeRef = mkILTyRef(fsharpCoreAssemblyScopeRef, tname_SignatureDataVersionAttr)
 
@@ -8316,7 +8313,7 @@ let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo)  =
           ILAttribElem.Int32 (int32 version.Minor) 
           ILAttribElem.Int32 (int32 version.Build)], [])
 
-let tname_AutoOpenAttr = FSharpLib.Core + ".AutoOpenAttribute"
+let tname_AutoOpenAttr = Core + ".AutoOpenAttribute"
 
 let IsSignatureDataVersionAttr cattr = isILAttribByName ([], tname_SignatureDataVersionAttr) cattr
 
@@ -8486,7 +8483,7 @@ let (|NewDelegateExpr|_|) g expr =
 [<return: Struct>]
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
+    | Expr.App (Expr.Val (invokeRef, _, _) as delInvokeRef, delInvokeTy, tyargs, [delExpr;delInvokeArg], m) 
         when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
             ValueSome(delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m)
     | _ -> ValueNone
@@ -9051,7 +9048,7 @@ let buildAccessPath (cp: CompilationPath option) =
     match cp with
     | Some cp ->
         let ap = cp.AccessPath |> List.map fst |> List.toArray
-        System.String.Join(".", ap)      
+        String.Join(".", ap)      
     | None -> "Extension Type"
 
 let prependPath path name = if String.IsNullOrEmpty(path) then name else !!path + "." + name
@@ -9469,7 +9466,7 @@ let mkIsInstConditional g m tgtTy vinputExpr v e2 e3 =
 
 (* match inp with DU(_) -> true | _ -> false *)
 let mkUnionCaseTest (g: TcGlobals) (e1, cref: UnionCaseRef, tinst, m) =
-    let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+    let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
     let tg2 = mbuilder.AddResultTarget(Expr.Const(Const.Bool true, m, g.bool_ty))
     let tg3 = mbuilder.AddResultTarget(Expr.Const(Const.Bool false, m, g.bool_ty))
     let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.UnionCase(cref, tinst), tg2)], Some tg3, m)
@@ -9968,7 +9965,7 @@ and remapValToNonLocal ctxt tmenv inp =
     inp |> Construct.NewModifiedVal (remapValData ctxt tmenv)
 
 let ApplyExportRemappingToEntity g tmenv x =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let ctxt = { g = g; stackGuard = StackGuard("RemapExprStackGuardDepth") }
     remapTyconToNonLocal ctxt tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
@@ -10125,7 +10122,7 @@ let EvalArithShiftOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUI
         | Expr.Const (Const.UInt32 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt32 (opUInt32 x1 shift), m, ty)
         | Expr.Const (Const.UInt64 x1, _, ty), Expr.Const (Const.Int32 shift, _, _) -> Expr.Const (Const.UInt64 (opUInt64 x1 shift), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
-    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+    with :? OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble) (arg1: Expr) =
     // At compile-time we check arithmetic
@@ -10143,7 +10140,7 @@ let EvalArithUnOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt3
         | Expr.Const (Const.Single x1, _, ty) -> Expr.Const (Const.Single (opSingle x1), m, ty)
         | Expr.Const (Const.Double x1, _, ty) -> Expr.Const (Const.Double (opDouble x1), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
-    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+    with :? OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt32, opUInt64, opSingle, opDouble, opDecimal) (arg1: Expr) (arg2: Expr) =
     // At compile-time we check arithmetic
@@ -10162,7 +10159,7 @@ let EvalArithBinOp (opInt8, opInt16, opInt32, opInt64, opUInt8, opUInt16, opUInt
         | Expr.Const (Const.Double x1, _, ty), Expr.Const (Const.Double x2, _, _) -> Expr.Const (Const.Double (opDouble x1 x2), m, ty)
         | Expr.Const (Const.Decimal x1, _, ty), Expr.Const (Const.Decimal x2, _, _) -> Expr.Const (Const.Decimal (opDecimal x1 x2), m, ty)
         | _ -> error (Error ( FSComp.SR.tastNotAConstantExpression(), m))
-    with :? System.OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
+    with :? OverflowException -> error (Error ( FSComp.SR.tastConstantExpressionOverflow(), m))
 
 // See also PostTypeCheckSemanticChecks.CheckAttribArgExpr, which must match this precisely
 let rec EvalAttribArgExpr suppressLangFeatureCheck (g: TcGlobals) (x: Expr) = 
@@ -10639,10 +10636,10 @@ let (|IntegralRange|_|) g expr =
     | ValApp g g.range_uint16_op_vref ([], [start; step; finish], _) -> ValueSome (g.uint16_ty, (start, step, finish))
     | ValApp g g.range_sbyte_op_vref ([], [start; step; finish], _) -> ValueSome (g.sbyte_ty, (start, step, finish))
     | ValApp g g.range_byte_op_vref ([], [start; step; finish], _) -> ValueSome (g.byte_ty, (start, step, finish))
-    | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', Text.Range.range0, g.char_ty), finish))
-    | ValApp g g.range_op_vref (ty :: _, [start; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_char_op_vref ([], [start; finish], _) -> ValueSome (g.char_ty, (start, Expr.Const (Const.Char '\001', range0, g.char_ty), finish))
+    | ValApp g g.range_op_vref (ty :: _, [start; finish], _) when isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty -> ValueSome (ty, (start, mkTypedOne g range0 ty, finish))
     | ValApp g g.range_step_op_vref ([ty; ty2], [start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
-    | ValApp g g.range_generic_op_vref ([ty; ty2], [_one; _add; start; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, mkTypedOne g Text.Range.range0 ty, finish))
+    | ValApp g g.range_generic_op_vref ([ty; ty2], [_one; _add; start; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, mkTypedOne g range0 ty, finish))
     | ValApp g g.range_step_generic_op_vref ([ty; ty2], [_zero; _add; start; step; finish], _) when typeEquiv g ty ty2 && (isIntegerTy g ty || typeEquivAux EraseMeasures g ty g.char_ty) -> ValueSome (ty, (start, step, finish))
     | _ -> ValueNone
 
@@ -11084,7 +11081,8 @@ let mkRangeCount g m rangeTy rangeExpr start step finish =
 
         | _ -> mkRuntimeCalc mkThrowIfStepIsZero (mkCount id) (mkCount mkAddOne)
 
-let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop: (Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr)) =
+let mkOptimizedRangeLoop (g: TcGlobals) (mBody, mFor, mIn, spInWhile) (rangeTy, rangeExpr) (start, step, finish) (buildLoop:
+        Count -> ((Idx -> Elem -> Body) -> Loop) -> Expr) =
     let inline mkLetBindingsIfNeeded f =
         match start, step, finish with
         | (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _), (Expr.Const _ | Expr.Val _) ->
@@ -11598,7 +11596,7 @@ let rec isReturnsResumableCodeTy g ty =
 let (|ResumableCodeInvoke|_|) g expr =
     match expr with
     // defn.Invoke x --> let arg = x in [defn][arg/x]
-    | Expr.App ((Expr.Val (invokeRef, _, _) as iref), a, b, (f :: args), m) 
+    | Expr.App (Expr.Val (invokeRef, _, _) as iref, a, b, f :: args, m) 
             when invokeRef.LogicalName = "Invoke" && isReturnsResumableCodeTy g (tyOfExpr g f) -> 
         ValueSome (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
     | _ -> ValueNone

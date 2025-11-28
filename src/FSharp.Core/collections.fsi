@@ -4,9 +4,6 @@
 namespace Microsoft.FSharp.Collections
 
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Primitives.Basics
-open System
 open System.Collections.Generic
 
 /// <summary>Common notions of value ordering implementing the <see cref="T:System.Collections.Generic.IComparer`1"/>
