@@ -10,8 +10,8 @@ parameters:
 
 jobs:
 - ${{ each item in parameters.testMatrix }}:
-  - job: RegressionTest_${{ replace(replace(item.repo, '/', '_'), '-', '_') }}_${{ replace(item.displayName, '-', '_') }}
-    displayName: 'Regression Test: ${{ item.displayName }}'
+  - job: RegressionTest_${{ replace(item.displayName, '-', '_') }}_${{ replace(replace(item.repo, '/', '_'), '-', '_') }}
+    displayName: '${{ item.displayName }} Regression Test'
     dependsOn: ${{ parameters.dependsOn }}
     ${{ if item.useVmImage }}:
       pool:
@@ -68,12 +68,22 @@ jobs:
         }
       displayName: Checkout ${{ item.displayName }} at specific commit
 
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        Write-Host "Removing global.json to use latest SDK..."
+        if (Test-Path "global.json") {
+          Remove-Item "global.json" -Force
+          Write-Host "global.json removed"
+        } else {
+          Write-Host "No global.json found"
+        }
+      displayName: Remove global.json to use latest SDK
+
     - task: UseDotNet@2
-      displayName: Install .NET SDK for ${{ item.displayName }}
+      displayName: Install .NET SDK 10.0.100 for ${{ item.displayName }}
       inputs:
         packageType: sdk
-        useGlobalJson: true
-        workingDirectory: $(Pipeline.Workspace)/TestRepo
+        version: '10.0.100'
         installationPath: $(Pipeline.Workspace)/TestRepo/.dotnet
 
     - pwsh: |
@@ -150,10 +160,30 @@ jobs:
         MSBUILDBINARYLOGGERENABLED: 'true'
       timeoutInMinutes: 45
 
+    - pwsh: |
+        Set-Location $(Pipeline.Workspace)/TestRepo
+        $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
+        New-Item -ItemType Directory -Force -Path $binlogDir | Out-Null
+        
+        Write-Host "Collecting .binlog files..."
+        $binlogs = Get-ChildItem -Path "." -Filter "*.binlog" -Recurse -ErrorAction SilentlyContinue
+        if ($binlogs.Count -eq 0) {
+          Write-Host "No .binlog files found"
+        } else {
+          foreach ($binlog in $binlogs) {
+            Write-Host "Copying: $($binlog.FullName)"
+            Copy-Item $binlog.FullName -Destination $binlogDir
+          }
+          Write-Host "Collected $($binlogs.Count) .binlog files"
+        }
+      displayName: Collect Binary Logs
+      condition: always()
+      continueOnError: true
+
     - task: PublishPipelineArtifact@1
       displayName: Publish ${{ item.displayName }} Binary Logs
       inputs:
-        targetPath: '$(Pipeline.Workspace)/TestRepo'
+        targetPath: '$(Pipeline.Workspace)/BinaryLogs'
         artifactName: '${{ item.displayName }}_BinaryLogs'
         publishLocation: pipeline
       condition: always()
