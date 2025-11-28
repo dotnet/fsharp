@@ -289,7 +289,7 @@ module NavigationImpl =
                         createTypeDecl (baseName, lid, FSharpGlyph.Enum, m, mBody, nested, NavigationEntityKind.Enum, access)
                     ]
 
-                | SynTypeDefnSimpleRepr.Record(_, fields, mBody) ->
+                | SynTypeDefnSimpleRepr.Record(_, SynFields fields, mBody) ->
                     let fields =
                         [
                             for SynField(idOpt = id; range = m) in fields do
@@ -546,7 +546,7 @@ module NavigationImpl =
                         let nested = cases @ topMembers
                         let mBody = bodyRange mBody nested
                         createTypeDecl (baseName, lid, FSharpGlyph.Enum, m, mBody, nested, NavigationEntityKind.Enum, access)
-                    | SynTypeDefnSimpleRepr.Record(_, fields, mBody) ->
+                    | SynTypeDefnSimpleRepr.Record(_, SynFields fields, mBody) ->
                         let fields =
                             [
                                 for SynField(idOpt = id; range = m) in fields do
@@ -994,7 +994,7 @@ module NavigateTo =
             | SynTypeDefnSimpleRepr.Enum(enumCases, _) ->
                 for c in enumCases do
                     addEnumCase c isSig container
-            | SynTypeDefnSimpleRepr.Record(_, fields, _) ->
+            | SynTypeDefnSimpleRepr.Record(_, SynFields fields, _) ->
                 for f in fields do
                     // TODO: add specific case for record field?
                     addField f isSig container
@@ -1029,7 +1029,8 @@ module NavigateTo =
             | SynMemberDefn.Open _
             | SynMemberDefn.ImplicitInherit _
             | SynMemberDefn.Inherit _
-            | SynMemberDefn.ImplicitCtor _ -> ()
+            | SynMemberDefn.ImplicitCtor _
+            | SynMemberDefn.Spread _ -> ()
 
         match parsedInput with
         | ParsedInput.SigFile input -> walkSigFileInput input

@@ -36,12 +36,14 @@ SigFile
                   Simple
                     (Record
                        (Some (Internal (8,4--8,12)),
-                        [SynField
-                           ([], false, Some LongNameBarBarBarBarBarBarBar,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((10,12), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (10,12--10,46), { LeadingKeyword = None
-                                                    MutableKeyword = None })],
+                        [Field
+                           (SynField
+                              ([], false, Some LongNameBarBarBarBarBarBarBar,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((10,12), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (10,12--10,46), { LeadingKeyword = None
+                                                       MutableKeyword = None }))],
                         (8,4--11,9)), (8,4--11,9)),
                   [Member
                      (SynValSig
