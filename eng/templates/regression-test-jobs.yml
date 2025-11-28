@@ -204,8 +204,8 @@ jobs:
           Write-Host "Status: FAILED"
           Write-Host "The ${{ item.displayName }} library failed to build with the new F# compiler"
           
-          # Report error using VSO logging commands with file/line reference to matrix definition
-          Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml;linenumber=896;columnnumber=1]Regression test failed for ${{ item.displayName }} (${{ item.repo }}@${{ item.commit }})"
+          # Report error using VSO logging commands with file reference to matrix definition
+          Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml]Regression test failed for ${{ item.displayName }} (${{ item.repo }}@${{ item.commit }})"
           
           # Provide local reproduction steps
           Write-Host ""
@@ -225,7 +225,7 @@ jobs:
           Write-Host "##[error]dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`""
           Write-Host "##[error]"
           Write-Host "##[error]# 4. Build with local compiler"
-          Write-Host "##[error]export LocalFSharpCompilerPath=`$(pwd)/../fsharp/artifacts"
+          Write-Host "##[error]export LocalFSharpCompilerPath=`$PWD/../fsharp/artifacts"
           Write-Host "##[error]export LoadLocalFSharpBuild=true"
           Write-Host "##[error]export LocalFSharpCompilerConfiguration=Release"
           Write-Host "##[error]./${{ item.buildScript }}"
