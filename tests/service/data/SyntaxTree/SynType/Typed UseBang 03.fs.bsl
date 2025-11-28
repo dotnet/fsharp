@@ -60,9 +60,11 @@ ImplFile
                               EqualsRange = Some (4,13--4,14) })]
                        Body = ImplicitZero (4,33--4,33)
                        Range = (4,0--4,33)
-                       Trivia = { InKeyword = None } }
+                       Trivia = { InKeyword = None }
+                       IsFromSource = true }
                   Range = (3,0--4,33)
-                  Trivia = { InKeyword = None } }, (3,0--4,33))],
+                  Trivia = { InKeyword = None }
+                  IsFromSource = true }, (3,0--4,33))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,33), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

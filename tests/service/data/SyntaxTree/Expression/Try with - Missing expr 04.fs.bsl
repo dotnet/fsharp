@@ -21,12 +21,13 @@ ImplFile
                             EqualsRange = Some (5,6--5,7) })]
                      Body = ArbitraryAfterError ("seqExpr", (5,10--5,10))
                      Range = (5,0--5,10)
-                     Trivia = { InKeyword = None } }, [], (3,0--5,10),
-                 Yes (3,0--3,3), Yes (5,10--5,10),
-                 { TryKeyword = (3,0--3,3)
-                   TryToWithRange = (3,0--5,10)
-                   WithKeyword = (5,10--5,10)
-                   WithToEndRange = (3,0--5,10) }), (3,0--5,10))],
+                     Trivia = { InKeyword = None }
+                     IsFromSource = true }, [], (3,0--5,10), Yes (3,0--3,3),
+                 Yes (5,10--5,10), { TryKeyword = (3,0--3,3)
+                                     TryToWithRange = (3,0--5,10)
+                                     WithKeyword = (5,10--5,10)
+                                     WithToEndRange = (3,0--5,10) }),
+              (3,0--5,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

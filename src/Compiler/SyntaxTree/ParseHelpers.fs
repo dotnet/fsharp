@@ -1093,6 +1093,7 @@ let mkLetExpression (mIn: range option, mWhole: range, body: SynExpr, bindingInf
             Body = body
             Range = mWhole
             Trivia = { InKeyword = mIn }
+            IsFromSource = true // User-written let/use bindings
         }
     )
 
@@ -1137,4 +1138,5 @@ let mkLetBangExpression
             Body = body
             Range = mWhole
             Trivia = { InKeyword = mIn }
+            IsFromSource = true // User-written let!/use! bindings
         }

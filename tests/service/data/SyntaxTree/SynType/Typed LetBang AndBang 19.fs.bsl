@@ -77,9 +77,11 @@ ImplFile
                                  (8,4--8,13),
                                  { YieldOrReturnKeyword = (8,4--8,10) })
                              Range = (6,4--8,13)
-                             Trivia = { InKeyword = None } }
+                             Trivia = { InKeyword = None }
+                             IsFromSource = true }
                         Range = (4,4--8,13)
-                        Trivia = { InKeyword = None } }, (3,6--9,1)), (3,0--9,1)),
+                        Trivia = { InKeyword = None }
+                        IsFromSource = true }, (3,6--9,1)), (3,0--9,1)),
               (3,0--9,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--9,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

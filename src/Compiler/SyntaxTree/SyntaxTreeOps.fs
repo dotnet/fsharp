@@ -132,6 +132,14 @@ let (|SynSingleIdent|_|) x =
     | SynLongIdent([ id ], _, _) -> ValueSome id
     | _ -> ValueNone
 
+/// Active pattern to match any SynExpr.LetOrUse
+/// Returns a tuple of (isBang, isUse, record) allowing matching on both booleans and accessing the full record
+[<return: Struct>]
+let (|LetOrUse|_|) (expr: SynExpr) =
+    match expr with
+    | SynExpr.LetOrUse(letOrUse) -> ValueSome(letOrUse, letOrUse.IsBang, letOrUse.IsUse)
+    | _ -> ValueNone
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 [<return: Struct>]
 let (|LongOrSingleIdent|_|) inp =

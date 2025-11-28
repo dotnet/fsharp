@@ -39,9 +39,9 @@ ImplFile
                             Body =
                              ArbitraryAfterError ("declExpr3", (5,15--5,16))
                             Range = (4,4--5,16)
-                            Trivia = { InKeyword = None } }; Ident d],
-                       [(5,15--5,16)], (4,4--5,18)), (3,6--5,47)), (3,0--5,47)),
-              (3,0--5,47))],
+                            Trivia = { InKeyword = None }
+                            IsFromSource = true }; Ident d], [(5,15--5,16)],
+                       (4,4--5,18)), (3,6--5,47)), (3,0--5,47)), (3,0--5,47))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,47), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

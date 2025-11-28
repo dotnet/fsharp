@@ -25,7 +25,8 @@ ImplFile
                             EqualsRange = Some (3,14--3,15) })]
                      Body = Const (Unit, (4,4--4,6))
                      Range = (3,4--4,6)
-                     Trivia = { InKeyword = None } }, (2,0--4,6)), (2,0--4,6))],
+                     Trivia = { InKeyword = None }
+                     IsFromSource = true }, (2,0--4,6)), (2,0--4,6))],
           PreXmlDocEmpty, [], None, (2,0--5,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
                       WarnDirectives = []

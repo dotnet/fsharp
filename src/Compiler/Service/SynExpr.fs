@@ -1164,8 +1164,7 @@ module SynExpr =
 
                 ambiguous || dangling inner
 
-            | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _) -> true
-            | OuterBinaryExpr inner (_, Right), (SynExpr.LetOrUse({ Trivia = { InKeyword = None } })) -> true
+            | OuterBinaryExpr inner (_, Right), (SynExpr.Sequential _ | SynExpr.LetOrUse({ Trivia = { InKeyword = None } })) -> true
             | OuterBinaryExpr inner (_, Right), inner -> dangling inner
 
             // new T(expr)

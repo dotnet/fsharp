@@ -62,12 +62,14 @@ ImplFile
                                      (5,6--5,7)), Ident x, (5,4--5,7)), Ident y,
                                (5,4--5,9))
                            Range = (4,4--5,9)
-                           Trivia = { InKeyword = Some (4,14--4,16) } }
+                           Trivia = { InKeyword = Some (4,14--4,16) }
+                           IsFromSource = true }
                       Range = (3,4--5,9)
-                      Trivia = { InKeyword = Some (3,14--3,16) } }, (2,4--2,8),
-                  NoneAtLet, { LeadingKeyword = Let (2,0--2,3)
-                               InlineKeyword = None
-                               EqualsRange = Some (2,9--2,10) })], (2,0--5,9),
+                      Trivia = { InKeyword = Some (3,14--3,16) }
+                      IsFromSource = true }, (2,4--2,8), NoneAtLet,
+                  { LeadingKeyword = Let (2,0--2,3)
+                    InlineKeyword = None
+                    EqualsRange = Some (2,9--2,10) })], (2,0--5,9),
               { InKeyword = None })], PreXmlDocEmpty, [], None, (2,0--6,0),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

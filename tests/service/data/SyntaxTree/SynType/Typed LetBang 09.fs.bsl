@@ -38,7 +38,8 @@ ImplFile
                            ((false, true), Ident value, (4,4--4,16),
                             { YieldOrReturnKeyword = (4,4--4,10) })
                         Range = (3,4--4,16)
-                        Trivia = { InKeyword = None } }, (2,6--5,1)), (2,0--5,1)),
+                        Trivia = { InKeyword = None }
+                        IsFromSource = true }, (2,6--5,1)), (2,0--5,1)),
               (2,0--5,1))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,1), { LeadingKeyword = Module (1,0--1,6) })], (true, true),

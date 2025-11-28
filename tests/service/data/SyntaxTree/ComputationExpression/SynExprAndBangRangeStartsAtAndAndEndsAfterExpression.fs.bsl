@@ -52,7 +52,8 @@ ImplFile
                            ((false, true), Ident bar, (7,4--7,14),
                             { YieldOrReturnKeyword = (7,4--7,10) })
                         Range = (3,4--7,14)
-                        Trivia = { InKeyword = None } }, (2,6--8,1)), (2,0--8,1)),
+                        Trivia = { InKeyword = None }
+                        IsFromSource = true }, (2,6--8,1)), (2,0--8,1)),
               (2,0--8,1))], PreXmlDocEmpty, [], None, (2,0--8,1),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

@@ -47,7 +47,8 @@ ImplFile
                            ((false, true), Const (Unit, (5,11--5,13)),
                             (5,4--5,13), { YieldOrReturnKeyword = (5,4--5,10) })
                         Range = (3,4--5,13)
-                        Trivia = { InKeyword = None } }, (2,5--6,1)), (2,0--6,1)),
+                        Trivia = { InKeyword = None }
+                        IsFromSource = true }, (2,5--6,1)), (2,0--6,1)),
               (2,0--6,1))], PreXmlDocEmpty, [], None, (2,0--6,1),
           { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []

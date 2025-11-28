@@ -1,5 +1,7 @@
 namespace FSharp.Compiler.Syntax
 
+open FSharp.Compiler
+
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module SynPat =
@@ -72,11 +74,6 @@ module SynPat =
         | SynPat.QuoteExpr _ -> ValueSome Atomic
         | _ -> ValueNone
 
-    let (|LetOrUseBang|_|) =
-        function
-        | SynExpr.LetOrUse letOrUse when letOrUse.IsBang -> ValueSome()
-        | _ -> ValueNone
-
     let shouldBeParenthesizedInContext path pat : bool =
         match pat, path with
         // Parens are needed in:
@@ -97,17 +94,17 @@ module SynPat =
         //     set (x: …, y: …) = …
         | SynPat.Typed _, SyntaxNode.SynPat(Rightmost(SynPat.Paren(Is pat, _))) :: SyntaxNode.SynMatchClause _ :: _
         | Rightmost(SynPat.Typed _), SyntaxNode.SynMatchClause _ :: _
-        | SynPat.Typed _, SyntaxNode.SynExpr(LetOrUseBang) :: _
-        | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(LetOrUseBang) :: _
-        | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(LetOrUseBang) :: _
+        | SynPat.Typed _, SyntaxNode.SynExpr(SyntaxTreeOps.LetOrUse(_, true, _)) :: _
+        | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynExpr(SyntaxTreeOps.LetOrUse(_, true, _)) :: _
+        | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynExpr(SyntaxTreeOps.LetOrUse(_, true, _)) :: _
         | SynPat.Typed _, SyntaxNode.SynPat(SynPat.Tuple(isStruct = false)) :: SyntaxNode.SynBinding _ :: _
         | SynPat.Tuple(isStruct = false; elementPats = AnyTyped), SyntaxNode.SynBinding _ :: _
 
         //     let! (_ : obj) = …
-        | SynPat.Typed _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(LetOrUseBang) :: _ -> true
+        | SynPat.Typed _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SyntaxTreeOps.LetOrUse(_, true, _)) :: _ -> true
 
         //     let! (A _) = …
-        | SynPat.LongIdent _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(LetOrUseBang) :: _ -> false
+        | SynPat.LongIdent _, SyntaxNode.SynBinding _ :: SyntaxNode.SynExpr(SyntaxTreeOps.LetOrUse(_, true, _)) :: _ -> false
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynBinding _ :: _
         | SynPat.LongIdent(argPats = SynArgPats.Pats(_ :: _)), SyntaxNode.SynExpr(SynExpr.Lambda _) :: _
         | SynPat.Tuple(isStruct = false), SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _
@@ -253,7 +250,7 @@ module SynPat =
         //     fun (x) -> …
         | _, SyntaxNode.SynBinding _ :: _
         | _, SyntaxNode.SynExpr(SynExpr.ForEach _) :: _
-        | _, SyntaxNode.SynExpr(LetOrUseBang) :: _
+        | _, SyntaxNode.SynExpr(SyntaxTreeOps.LetOrUse(_, true, _)) :: _
         | _, SyntaxNode.SynMatchClause _ :: _
         | Atomic, SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some _)) :: _ -> false
 
