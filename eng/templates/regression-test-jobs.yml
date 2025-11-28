@@ -203,7 +203,33 @@ jobs:
         } else {
           Write-Host "Status: FAILED"
           Write-Host "The ${{ item.displayName }} library failed to build with the new F# compiler"
-          Write-Host "Check the build logs and artifacts for details"
+          
+          # Report error using VSO logging commands with file/line reference to matrix definition
+          Write-Host "##vso[task.logissue type=error;sourcepath=azure-pipelines-PR.yml;linenumber=896;columnnumber=1]Regression test failed for ${{ item.displayName }} (${{ item.repo }}@${{ item.commit }})"
+          
+          # Provide local reproduction steps
+          Write-Host ""
+          Write-Host "##[error]Local reproduction steps (from fsharp repo root):"
+          Write-Host "##[error]=========================================="
+          Write-Host "##[error]# 1. Build the F# compiler"
+          Write-Host "##[error]./build.sh -c Release"
+          Write-Host "##[error]"
+          Write-Host "##[error]# 2. Clone and checkout the failing library"
+          Write-Host "##[error]cd .."
+          Write-Host "##[error]git clone https://github.com/${{ item.repo }}.git TestRepo"
+          Write-Host "##[error]cd TestRepo"
+          Write-Host "##[error]git checkout ${{ item.commit }}"
+          Write-Host "##[error]rm -f global.json"
+          Write-Host "##[error]"
+          Write-Host "##[error]# 3. Prepare the repo for local compiler"
+          Write-Host "##[error]dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`""
+          Write-Host "##[error]"
+          Write-Host "##[error]# 4. Build with local compiler"
+          Write-Host "##[error]export LocalFSharpCompilerPath=`$(pwd)/../fsharp/artifacts"
+          Write-Host "##[error]export LoadLocalFSharpBuild=true"
+          Write-Host "##[error]export LocalFSharpCompilerConfiguration=Release"
+          Write-Host "##[error]./${{ item.buildScript }}"
+          Write-Host "##[error]=========================================="
         }
         Write-Host "============================================"
         
