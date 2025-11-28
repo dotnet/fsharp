@@ -6144,6 +6144,7 @@ namespace Microsoft.FSharp.Core
 
 namespace Microsoft.FSharp.Control
 
+    open System.Diagnostics.CodeAnalysis
     open Microsoft.FSharp.Core
 
     /// <summary>Extensions related to Lazy values.</summary>
@@ -6152,7 +6153,7 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module LazyExtensions =
 
-        type System.Lazy<'T> with
+        type System.Lazy<[<DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)>]'T> with
 
             /// <summary>Creates a lazy computation that evaluates to the result of the given function when forced.</summary>
             ///
