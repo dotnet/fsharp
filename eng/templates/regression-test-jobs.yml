@@ -164,7 +164,7 @@ jobs:
         Set-Location $(Pipeline.Workspace)/TestRepo
         $binlogDir = "$(Pipeline.Workspace)/BinaryLogs"
         New-Item -ItemType Directory -Force -Path $binlogDir | Out-Null
-        
+
         Write-Host "Collecting .binlog files..."
         $binlogs = Get-ChildItem -Path "." -Filter "*.binlog" -Recurse -ErrorAction SilentlyContinue
         if ($binlogs.Count -eq 0) {
