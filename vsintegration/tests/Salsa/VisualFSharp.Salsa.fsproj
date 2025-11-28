@@ -3,7 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <!-- xUnit3 requires test projects to be executable -->
+    <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);44;45;47;52;58;75</NoWarn>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -56,7 +57,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" />
     <PackageReference Include="Microsoft.Internal.VisualStudio.Shell.Framework" Version="$(MicrosoftInternalVisualStudioShellFrameworkVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
-    <PackageReference Include="XUnit" Version="$(XUnitVersion)" />
+    <PackageReference Include="xunit.v3" Version="$(XunitVersion)" />
   </ItemGroup>
 
 </Project>
