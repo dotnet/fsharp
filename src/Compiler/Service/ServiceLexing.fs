@@ -1529,7 +1529,7 @@ type FSharpToken =
         | OINTERFACE_MEMBER -> FSharpTokenKind.OffsideInterfaceMember
         | OBLOCKEND _ -> FSharpTokenKind.OffsideBlockEnd
         | ORIGHT_BLOCK_END _ -> FSharpTokenKind.OffsideRightBlockEnd
-        | ODECLEND _ -> FSharpTokenKind.OffsideDeclEnd
+        | ODECLEND(_, _) -> FSharpTokenKind.OffsideDeclEnd
         | OEND -> FSharpTokenKind.OffsideEnd
         | OBLOCKSEP -> FSharpTokenKind.OffsideBlockSep
         | OBLOCKBEGIN -> FSharpTokenKind.OffsideBlockBegin

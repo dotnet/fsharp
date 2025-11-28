@@ -23,8 +23,8 @@ ImplFile
                              (5,8--5,9), Yes (5,4--5,9),
                              { LeadingKeyword = Let (5,4--5,7)
                                InlineKeyword = None
-                               EqualsRange = None })], false, false, (5,4--7,6),
-                         { InKeyword = Some (7,4--7,6) });
+                               EqualsRange = None })], false, false, (5,4--5,9),
+                         { InKeyword = None });
                       LetBindings
                         ([SynBinding
                             (None, Do, false, false, [], PreXmlDocEmpty,

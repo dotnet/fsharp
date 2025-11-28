@@ -12,8 +12,7 @@ ImplFile
                   ObjectModel
                     (Unspecified,
                      [LetBindings
-                        ([], false, false, (5,4--7,6),
-                         { InKeyword = Some (7,4--7,6) });
+                        ([], false, false, (5,4--5,7), { InKeyword = None });
                       LetBindings
                         ([SynBinding
                             (None, Do, false, false, [], PreXmlDocEmpty,

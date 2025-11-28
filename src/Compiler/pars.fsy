@@ -140,7 +140,7 @@ let parse_error_rich = Some(fun (ctxt: ParseErrorContext<_>) ->
 
 /* LexFilter #light inserts these tokens when closing offside contexts */
 %token OEND                                    // CtxtFun, CtxtMatchClauses, CtxtWithAsLet _
-%token <range> ODECLEND                        // CtxtDo and CtxtLetDecl(block)
+%token <range * bool> ODECLEND                  // CtxtDo and CtxtLetDecl(block), bool indicates if it came from an actual IN keyword
 %token <range> ORIGHT_BLOCK_END                // CtxtSeqBlock(_, _, AddOneSidedBlockEnd)
 %token <range> OBLOCKEND                       // CtxtSeqBlock(_, _, AddBlockEnd)
 %token OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE // CtxtSeqBlock(_, _, AddBlockEnd)
@@ -3141,7 +3141,8 @@ hardwhiteDoBinding:
 
   | ODO ODECLEND
       { let mDo = rhs parseState 1
-        reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectingExpression ())
+        let mDeclEnd, _ = $2
+        reportParseErrorAt mDeclEnd (FSComp.SR.parsExpectingExpression ())
         let seqPt = DebugPointAtBinding.NoneAtDo
         let expr = arbExpr ("hardwhiteDoBinding1", mDo.EndRange)
         BindingSetPreAttrs(mDo, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDo, expr, mDo)]), mDo), expr }
@@ -3165,10 +3166,11 @@ classDefnBindings:
 /* The terminator for a 'let ....' binding in the #light syntax */
 hardwhiteDefnBindingsTerminator:
   | ODECLEND
-     { let mToken = rhs parseState 1
+     { let mToken, isFromInKeyword = $1
        // In LexFilter.fs the IN token could have been transformed to an ODECLEND one.
-       let mIn = if (mToken.EndColumn - mToken.StartColumn) = 2 then Some mToken else None
-       (fun _ m -> ()), mIn, Some $1 }
+       // The boolean flag indicates if it came from an actual IN keyword.
+       let mIn = if isFromInKeyword then Some mToken else None
+       (fun _ m -> ()), mIn, Some mToken }
 
   | recover
      { (fun kwd m ->
@@ -7058,7 +7060,7 @@ doneDeclEnd:
   | DONE
       { rhs parseState 1 }
   | ODECLEND
-      { $1 }
+      { let m, _ = $1 in m }
 
 structOrBegin:
   | STRUCT
