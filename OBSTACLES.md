@@ -18,36 +18,62 @@ D:\a\_work\1\TestRepo\src\FSharpPlus.TypeLevel\Providers\FSharpPlus.Providers.fs
 ```
 
 **Root Cause:**
-FSharpPlus uses git submodules for `FSharp.TypeProviders.SDK`. The regression test was using `git clone` without the `--recursive` flag, which means submodules were not initialized. The TypeProviders project references source files from the submodule (`external/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs` and `ProvidedTypes.fsi`), which didn't exist.
+The artifacts were being downloaded to an incorrect path structure. The UseLocalCompiler.Directory.Build.props file expects:
+```xml
+<LocalFSharpBuildBinPath>$(LocalFSharpCompilerPath)/artifacts/bin/fsc/$(LocalFSharpCompilerConfiguration)/net10.0</LocalFSharpBuildBinPath>
+```
+
+But the artifacts were being downloaded to:
+```
+$(Pipeline.Workspace)/FSharpCompiler/bin/fsc  (missing /artifacts/)
+```
+
+This caused the FSharpTargetsShim property to point to a non-existent path, which prevented Microsoft.FSharp.Targets from being imported. Without Microsoft.FSharp.Targets, Microsoft.Common.targets was not imported, which in turn prevented NuGet.targets from being imported - and NuGet.targets is where `_GetRestoreSettingsPerFramework` is defined.
 
 **Investigation Steps:**
-1. Cloned FSharpPlus locally with `git clone --depth 1` (same as template)
-2. Found `external/FSharp.TypeProviders.SDK/` directory was empty
-3. Identified `.gitmodules` file referencing the submodule
-4. Ran `git submodule update --init --recursive` which populated the directory
-5. Confirmed the TypeProviders source files were now present
+1. Used `dotnet msbuild -pp` to compare preprocessed output with and without local compiler
+2. Found NuGet.targets was referenced 9 times without local compiler, but only 2 times with local compiler
+3. Traced the import chain: FSharpTargetsShim -> Microsoft.FSharp.NetSdk.targets -> Microsoft.FSharp.Targets -> Microsoft.Common.targets -> NuGet.targets
+4. Discovered FSharpTargetsShim was pointing to path with doubled `/artifacts/artifacts/`
+5. Realized artifact download path didn't match UseLocalCompiler.Directory.Build.props expectations
 
 **Solution:**
-1. Changed `git clone` to `git clone --recursive` to clone with submodules
-2. Added explicit `git submodule update --init --recursive` after `git checkout` (in case submodules change between commits)
+Changed the artifact download paths to include `/artifacts/bin/`:
+```yaml
+downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/fsc'
+downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core'
+```
+
+This ensures the directory structure matches what UseLocalCompiler.Directory.Build.props expects.
 
 **Lessons Learned:**
-- Always use `--recursive` flag when cloning repositories that may have submodules
-- The `_GetRestoreSettingsPerFramework` error is often a symptom of missing project files, not an actual SDK issue
+- UseLocalCompiler.Directory.Build.props has specific path expectations that must be matched exactly
+- Use `dotnet msbuild -pp` to debug MSBuild import issues
+- The `_GetRestoreSettingsPerFramework` error often indicates broken MSBuild import chain
 
-### 2. No Binary Log Files Generated
+### 2. Git Submodule Initialization
 
 **Date:** 2025-11-28
 
 **Symptom:**
-No `.binlog` files were being collected or published, even though `MSBUILDBINARYLOGGERENABLED=true` was set.
+Type provider source files were missing.
 
 **Root Cause:**
-The build was failing early (due to the submodule issue above) before any MSBuild commands could generate binlog files. The `dotnet pack` command was failing at the project load stage, not during the actual build.
+FSharpPlus uses git submodules for `FSharp.TypeProviders.SDK`.
 
 **Solution:**
-Fixing the submodule initialization issue above allows the build to proceed past project loading, which enables binlog generation.
+1. Changed `git clone` to `git clone --recursive` to clone with submodules
+2. Added explicit `git submodule update --init --recursive` after `git checkout`
 
-**Lessons Learned:**
-- If no binlog files are generated, the build may be failing before MSBuild even starts
-- Check for project file loading issues (missing files, invalid references) first
+### 3. No Binary Log Files Generated
+
+**Date:** 2025-11-28
+
+**Symptom:**
+No `.binlog` files were being collected or published.
+
+**Root Cause:**
+The build was failing early before any MSBuild commands could generate binlog files.
+
+**Solution:**
+Fixing the path issues above allows the build to proceed, enabling binlog generation.

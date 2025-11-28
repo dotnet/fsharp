@@ -29,13 +29,13 @@ jobs:
       displayName: Download F# Compiler FSC Artifacts
       inputs:
         artifactName: 'FSharpCompilerFscArtifacts'
-        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/bin/fsc'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/fsc'
 
     - task: DownloadPipelineArtifact@2
       displayName: Download F# Core Artifacts
       inputs:
         artifactName: 'FSharpCoreArtifacts'
-        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/bin/FSharp.Core'
+        downloadPath: '$(Pipeline.Workspace)/FSharpCompiler/artifacts/bin/FSharp.Core'
 
     - task: DownloadPipelineArtifact@2
       displayName: Download UseLocalCompiler props
@@ -235,8 +235,8 @@ jobs:
             "dotnet fsi ../fsharp/eng/scripts/PrepareRepoForRegressionTesting.fsx `"../fsharp/UseLocalCompiler.Directory.Build.props`"",
             "",
             "# 4. Build with local compiler",
-            "export LocalFSharpCompilerPath=`$PWD/../fsharp/artifacts",
-            "export LoadLocalFSharpBuild=true",
+            "export LocalFSharpCompilerPath=`$PWD/../fsharp",
+            "export LoadLocalFSharpBuild=True",
             "export LocalFSharpCompilerConfiguration=Release",
             "./${{ item.buildScript }}",
             "=========================================="
