@@ -26,10 +26,11 @@ ImplFile
                       (2,8--2,9), Yes (2,4--4,4),
                       { LeadingKeyword = Let (2,4--2,7)
                         InlineKeyword = None
-                        EqualsRange = Some (2,10--2,11) })], (2,4--4,4))], false,
-              (1,0--4,4), { ModuleKeyword = Some (1,0--1,6)
-                            EqualsRange = Some (1,9--1,10) })], PreXmlDocEmpty,
-          [], None, (1,0--4,4), { LeadingKeyword = None })], (true, true),
+                        EqualsRange = Some (2,10--2,11) })], (2,4--4,4),
+                  { InKeyword = None })], false, (1,0--4,4),
+              { ModuleKeyword = Some (1,0--1,6)
+                EqualsRange = Some (1,9--1,10) })], PreXmlDocEmpty, [], None,
+          (1,0--4,4), { LeadingKeyword = None })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

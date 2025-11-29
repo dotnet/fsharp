@@ -216,7 +216,7 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             Some(mkCond spIfToThen mIfToEndOfElseBranch genOuterTy guardExpr' thenExpr elseExpr, tpenv)
 
         // 'let x = expr in expr'
-        | SynExpr.LetOrUse(isUse = false) ->
+        | LetOrUse(_, _, false) ->
             TcLinearExprs
                 (fun overallTy envinner tpenv e -> tcSequenceExprBody envinner overallTy.Commit tpenv e)
                 cenv
@@ -229,12 +229,17 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             |> Some
 
         // 'use x = expr in expr'
-        | SynExpr.LetOrUse(
-            isUse = true
-            bindings = [ SynBinding(kind = SynBindingKind.Normal; headPat = pat; expr = rhsExpr) ]
-            body = innerComp
-            range = wholeExprMark
-            trivia = { LetOrUseKeyword = mBind }) ->
+        | LetOrUse({
+                       Bindings = [ SynBinding(
+                                        kind = SynBindingKind.Normal
+                                        headPat = pat
+                                        expr = rhsExpr
+                                        trivia = { LeadingKeyword = leadingKeyword }) ]
+                       Body = innerComp
+                       Range = wholeExprMark
+                   },
+                   _,
+                   true) ->
 
             let bindPatTy = NewInferenceType g
             let inputExprTy = NewInferenceType g
@@ -257,12 +262,12 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             let matchv, matchExpr =
                 compileSeqExprMatchClauses cenv envinner inputExprMark (pat', vspecs) innerExpr (Some inputExpr) bindPatTy genOuterTy
 
-            let consumeExpr = mkLambda mBind matchv (matchExpr, genOuterTy)
+            let consumeExpr = mkLambda leadingKeyword.Range matchv (matchExpr, genOuterTy)
 
             // The 'mBind' is attached to the lambda
             Some(mkSeqUsing cenv env wholeExprMark bindPatTy genOuterTy inputExpr consumeExpr, tpenv)
 
-        | SynExpr.LetOrUse(isBang = true; range = m) -> error (Error(FSComp.SR.tcUseForInSequenceExpression (), m))
+        | LetOrUse({ Range = m }, true, _) -> error (Error(FSComp.SR.tcUseForInSequenceExpression (), m))
 
         | SynExpr.Match(spMatch, expr, clauses, _m, _trivia) ->
             let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv expr

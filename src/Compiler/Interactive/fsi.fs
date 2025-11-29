@@ -2587,7 +2587,7 @@ type internal FsiDynamicCompiler
             )
 
         let bindingA = mkBind (mkSynPatVar None itID) expr
-        let defA = SynModuleDecl.Let(false, [ bindingA ], m)
+        let defA = SynModuleDecl.Let(false, [ bindingA ], m, SynModuleDeclLetTrivia.Zero)
         [ defA ]
 
     // Construct an invisible call to Debugger.Break(), in the specified range

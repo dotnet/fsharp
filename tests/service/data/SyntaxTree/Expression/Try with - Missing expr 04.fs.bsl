@@ -7,26 +7,27 @@ ImplFile
           [Expr
              (TryWith
                 (LetOrUse
-                   (false, false, true, false,
-                    [SynBinding
-                       (None, Normal, false, false, [],
-                        PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
-                        SynValData
-                          (None, SynValInfo ([], SynArgInfo ([], false, None)),
-                           None), Wild (5,4--5,5), None,
-                        Const (Unit, (5,8--5,10)), (5,4--5,5), Yes (5,0--5,10),
-                        { LeadingKeyword = Let (5,0--5,3)
-                          InlineKeyword = None
-                          EqualsRange = Some (5,6--5,7) })],
-                    ArbitraryAfterError ("seqExpr", (5,10--5,10)), (5,0--5,10),
-                    { LetOrUseKeyword = (5,0--5,3)
-                      InKeyword = None
-                      EqualsRange = Some (5,6--5,7) }), [], (3,0--5,10),
-                 Yes (3,0--3,3), Yes (5,10--5,10),
-                 { TryKeyword = (3,0--3,3)
-                   TryToWithRange = (3,0--5,10)
-                   WithKeyword = (5,10--5,10)
-                   WithToEndRange = (3,0--5,10) }), (3,0--5,10))],
+                   { IsRecursive = false
+                     Bindings =
+                      [SynBinding
+                         (None, Normal, false, false, [],
+                          PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector),
+                          SynValData
+                            (None, SynValInfo ([], SynArgInfo ([], false, None)),
+                             None), Wild (5,4--5,5), None,
+                          Const (Unit, (5,8--5,10)), (5,4--5,5), Yes (5,0--5,10),
+                          { LeadingKeyword = Let (5,0--5,3)
+                            InlineKeyword = None
+                            EqualsRange = Some (5,6--5,7) })]
+                     Body = ArbitraryAfterError ("seqExpr", (5,10--5,10))
+                     Range = (5,0--5,10)
+                     Trivia = { InKeyword = None }
+                     IsFromSource = true }, [], (3,0--5,10), Yes (3,0--3,3),
+                 Yes (5,10--5,10), { TryKeyword = (3,0--3,3)
+                                     TryToWithRange = (3,0--5,10)
+                                     WithKeyword = (5,10--5,10)
+                                     WithToEndRange = (3,0--5,10) }),
+              (3,0--5,10))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []

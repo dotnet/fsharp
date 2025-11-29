@@ -198,7 +198,7 @@ let YieldFree (cenv: TcFileState) expr =
 
             | SynExpr.For(doBody = body)
             | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse(body = body)
+            | SynExpr.LetOrUse({ Body = body })
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
@@ -224,12 +224,12 @@ let YieldFree (cenv: TcFileState) expr =
 
             | SynExpr.For(doBody = body)
             | SynExpr.TryFinally(tryExpr = body)
-            | SynExpr.LetOrUse(body = body)
+            | SynExpr.LetOrUse({ Body = body })
             | SynExpr.While(doExpr = body)
             | SynExpr.WhileBang(doExpr = body)
             | SynExpr.ForEach(bodyExpr = body) -> YieldFree body
 
-            | SynExpr.LetOrUse(isBang = true)
+            | LetOrUse(_, true, _)
             | SynExpr.YieldOrReturnFrom _
             | SynExpr.YieldOrReturn _
             | SynExpr.ImplicitZero _

@@ -20,7 +20,8 @@ ImplFile
                   Const (Unit, (3,12--3,14)), (3,4--3,9), Yes (3,0--3,14),
                   { LeadingKeyword = Let (3,0--3,3)
                     InlineKeyword = None
-                    EqualsRange = Some (3,10--3,11) })], (3,0--3,14));
+                    EqualsRange = Some (3,10--3,11) })], (3,0--3,14),
+              { InKeyword = None });
            Let
              (false,
               [SynBinding
@@ -38,7 +39,8 @@ ImplFile
                   None, Const (Unit, (4,14--4,16)), (4,4--4,11), Yes (4,0--4,16),
                   { LeadingKeyword = Let (4,0--4,3)
                     InlineKeyword = None
-                    EqualsRange = Some (4,12--4,13) })], (4,0--4,16))],
+                    EqualsRange = Some (4,12--4,13) })], (4,0--4,16),
+              { InKeyword = None })],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--4,16), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
