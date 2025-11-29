@@ -47,14 +47,14 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
         var capabilities = new VSInternalServerCapabilities
         {
             TextDocumentSync = value.TextDocumentSync,
-            SupportsDiagnosticRequests = true,
+            SupportsDiagnosticRequests = config.EnabledFeatures.Diagnostics,
             ProjectContextProvider = true,
             DiagnosticProvider =
                 config.EnabledFeatures.Diagnostics ?
 
             new()
             {
-                SupportsMultipleContextsDiagnostics = true,
+                SupportsMultipleContextsDiagnostics = false,
                 DiagnosticKinds = [
                         // Support a specialized requests dedicated to task-list items.  This way the client can ask just
                         // for these, independently of other diagnostics.  They can also throttle themselves to not ask if
@@ -72,20 +72,6 @@ internal class VsServerCapabilitiesOverride : IServerCapabilitiesOverride
                         //new(PullDiagnosticCategories.DocumentAnalyzerSemantic),
                     ]
             } : null,
-            SemanticTokensOptions = config.EnabledFeatures.SemanticHighlighting ? new()
-            {
-                Legend = new()
-                {
-                    TokenTypes = [.. SemanticTokenTypes.AllTypes], // XXX should be extended
-                    TokenModifiers = [.. SemanticTokenModifiers.AllModifiers]
-                },
-                Full = new SemanticTokensFullOptions()
-                {
-                    Delta = false
-                },
-                Range = false
-            } : null,
-            //,
             //HoverProvider = new HoverOptions()
             //{
             //    WorkDoneProgress = true
@@ -291,8 +277,7 @@ internal class FSharpLanguageServerProvider : LanguageServerProvider
 
         var serverConfig = new FSharpLanguageServerConfig(
             new FSharpLanguageServerFeatures(
-                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH)),
-                semanticHighlighting: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetSemanticHighlightingFrom, defaultValue: FSharpExtensionSettings.BOTH))
+                diagnostics: enabled.Contains(settingsReadResult.ValueOrDefault(FSharpExtensionSettings.GetDiagnosticsFrom, defaultValue: FSharpExtensionSettings.BOTH))
                 ));
 
         var disposeToEndSubscription =
