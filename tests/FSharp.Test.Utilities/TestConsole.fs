@@ -85,6 +85,9 @@ module TestConsole =
             string error
 
     type ProvideInput(input: string) =
+        do
+            // Ensure console redirection is installed before providing input
+            install()
         let oldIn = localIn.Reader
         do
             localIn.Reader <- new StringReader(input)

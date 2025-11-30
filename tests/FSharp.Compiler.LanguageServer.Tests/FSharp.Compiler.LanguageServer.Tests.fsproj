@@ -5,6 +5,7 @@
 		<!-- xUnit3 requires test projects to be executable -->
 		<OutputType>Exe</OutputType>
 		<IsPackable>false</IsPackable>
+		<!-- Let xUnit3 generate the entry point -->
 		<GenerateProgramFile>false</GenerateProgramFile>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
 		<ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
@@ -16,7 +17,6 @@
 
 	<ItemGroup>
 		<Compile Include="Protocol.fs" />
-		<Compile Include="Program.fs" />
 	</ItemGroup>
 
 	<!--<ItemGroup>
