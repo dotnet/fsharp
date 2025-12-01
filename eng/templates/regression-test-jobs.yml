@@ -144,10 +144,13 @@ jobs:
         Write-Host "============================================"
         Write-Host ""
         
-        Write-Host "Executing: ${{ item.buildScript }}"
+        # Use dotnet pack with binary logging on Windows to generate binlog files
+        # On Linux, execute the build script directly
         if ($IsWindows) {
-          cmd /c "${{ item.buildScript }}"
+          Write-Host "Running: dotnet pack build.proj -bl:build.binlog"
+          dotnet pack build.proj -bl:build.binlog
         } else {
+          Write-Host "Executing: ${{ item.buildScript }}"
           chmod +x "${{ item.buildScript }}"
           bash -c "./${{ item.buildScript }}"
         }
@@ -165,9 +168,8 @@ jobs:
       displayName: Build ${{ item.displayName }} with local F# compiler
       env:
         LocalFSharpCompilerPath: $(Pipeline.Workspace)/FSharpCompiler
-        LoadLocalFSharpBuild: 'true'
+        LoadLocalFSharpBuild: 'True'
         LocalFSharpCompilerConfiguration: Release
-        MSBUILDBINARYLOGGERENABLED: 'true'
       timeoutInMinutes: 45
 
     - pwsh: |
