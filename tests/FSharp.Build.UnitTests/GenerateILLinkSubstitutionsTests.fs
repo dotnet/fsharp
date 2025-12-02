@@ -118,7 +118,9 @@ type GenerateILLinkSubstitutionsTests() =
             // Verify assembly element exists with correct fullname attribute
             let assemblyElement = doc.Root.Element(XName.Get("assembly"))
             Assert.NotNull(assemblyElement)
-            Assert.Equal("TestAssembly", assemblyElement.Attribute(XName.Get("fullname")).Value)
+            let fullnameAttr = assemblyElement.Attribute(XName.Get("fullname"))
+            Assert.NotNull(fullnameAttr)
+            Assert.Equal("TestAssembly", fullnameAttr.Value)
         finally
             cleanupTempDirectory tempDir
 
@@ -164,7 +166,9 @@ type GenerateILLinkSubstitutionsTests() =
                 let expectedResourceName = $"{prefix}.TestAssembly"
                 let found =
                     resourceElements
-                    |> Array.exists (fun elem -> elem.Attribute(XName.Get("name")).Value = expectedResourceName)
+                    |> Array.exists (fun elem ->
+                        let nameAttr = elem.Attribute(XName.Get("name"))
+                        nameAttr <> null && nameAttr.Value = expectedResourceName)
 
                 Assert.True(found, $"Expected resource prefix '{expectedResourceName}' not found in generated XML")
 
@@ -194,8 +198,9 @@ type GenerateILLinkSubstitutionsTests() =
 
             // Verify all resource elements have action="remove"
             for elem in resourceElements do
-                let action = elem.Attribute(XName.Get("action")).Value
-                Assert.Equal("remove", action)
+                let actionAttr = elem.Attribute(XName.Get("action"))
+                Assert.NotNull(actionAttr)
+                Assert.Equal("remove", actionAttr.Value)
         finally
             cleanupTempDirectory tempDir
 
@@ -238,13 +243,16 @@ type GenerateILLinkSubstitutionsTests() =
             let doc = XDocument.Load(filePath)
 
             let assemblyElement = doc.Root.Element(XName.Get("assembly"))
-            Assert.Equal("My.Special.Assembly", assemblyElement.Attribute(XName.Get("fullname")).Value)
+            let fullnameAttr = assemblyElement.Attribute(XName.Get("fullname"))
+            Assert.NotNull(fullnameAttr)
+            Assert.Equal("My.Special.Assembly", fullnameAttr.Value)
 
             // Verify resource names contain the full assembly name
             let resourceElements = assemblyElement.Elements(XName.Get("resource")) |> Seq.toArray
 
             for elem in resourceElements do
-                let name = elem.Attribute(XName.Get("name")).Value
-                Assert.True(name.EndsWith(".My.Special.Assembly"), $"Resource name '{name}' should end with assembly name")
+                let nameAttr = elem.Attribute(XName.Get("name"))
+                Assert.NotNull(nameAttr)
+                Assert.True(nameAttr.Value.EndsWith(".My.Special.Assembly"), $"Resource name '{nameAttr.Value}' should end with assembly name")
         finally
             cleanupTempDirectory tempDir
