@@ -520,12 +520,19 @@ module FSharpExprConvert =
                 // comparison/equality intrinsics with type parameters that have ComparisonConditionalOn
                 // or EqualityConditionalOn but not actual constraints. In this case, there's no witness
                 // available at compile time - the constraint is satisfied conditionally at runtime.
+                // For nested types like Outer<'a> with field Inner<'a>, the tyargs contains Inner<'a>,
+                // so we must recursively check type arguments of applied types.
                 // See https://github.com/ionide/FSharp.Analyzers.SDK/issues/276
                 | ErrorResult _ when
-                    tyargs |> List.exists (fun ty ->
+                    let rec hasConditionalTypar ty =
                         match tryDestTyparTy g ty with
                         | ValueSome tp -> tp.ComparisonConditionalOn || tp.EqualityConditionalOn
-                        | ValueNone -> false) -> []
+                        | ValueNone ->
+                            // For applied types like Inner<'a>, recursively check type arguments
+                            match ty with
+                            | AppTy g (_, tinst) -> tinst |> List.exists hasConditionalTypar
+                            | _ -> false
+                    tyargs |> List.exists hasConditionalTypar -> []
                 | res -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 
