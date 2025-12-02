@@ -2550,7 +2550,10 @@ and ConsumeCustomOpClauses
                         expr = dataCompPrior,
                         range = dataCompPrior.Range,
                         debugPoint = DebugPointAtBinding.NoneAtLet,
-                        trivia = SynBindingTrivia.Zero
+                        trivia =
+                            { SynBindingTrivia.Zero with
+                                LeadingKeyword = SynLeadingKeyword.LetBang dataCompPrior.Range
+                            }
                     )
 
                 SynExpr.LetOrUse
@@ -2834,7 +2837,10 @@ and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) fir
                             expr = rhsExpr,
                             range = rhsExpr.Range,
                             debugPoint = DebugPointAtBinding.NoneAtDo,
-                            trivia = SynBindingTrivia.Zero
+                            trivia =
+                                { SynBindingTrivia.Zero with
+                                    LeadingKeyword = SynLeadingKeyword.LetBang m
+                                }
                         )
 
                     SynExpr.LetOrUse
