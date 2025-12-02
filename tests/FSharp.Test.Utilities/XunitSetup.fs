@@ -6,10 +6,7 @@ open Xunit
 // This replaces the OneTimeSetup.EnsureInitialized() call that was done in FSharpXunitFramework
 module private XUnitInit =
     let private ensureInitialized = lazy (
-        TestFramework.log $"Server GC enabled: {System.Runtime.GCSettings.IsServerGC}"
-        TestFramework.log "Installing TestConsole redirection"
         TestConsole.install()
-        TestFramework.logConfig TestFramework.initialConfig
     )
     
     /// Call this to ensure TestConsole is installed. Safe to call multiple times.
