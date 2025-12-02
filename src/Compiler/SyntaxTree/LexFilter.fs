@@ -2627,33 +2627,6 @@ type LexFilterImpl (
         delayToken tokenTup
         true
 
-    and checkXmlDocCommentPosition(tokenTup: TokenTup) =
-        // Check if the current token is a LINE_COMMENT that appears after other content
-        match tokenTup.Token with
-        | LINE_COMMENT _ ->
-            let commentStartPos = startPosOfTokenTup tokenTup
-            let lastTokenEndPos = tokenTup.LastTokenPos
-            
-            // Check if this comment appears after other content on the same line
-            if lastTokenEndPos.Line = commentStartPos.Line && commentStartPos.Column > 0 then
-                // This comment appears after other tokens on the same line
-                // 
-                // We need to be careful here - we want to warn about XML doc comments (///)
-                // but not regular comments (//).
-                // 
-                // For now, let's be conservative and only warn in cases where it's likely
-                // an XML documentation comment. We can infer this from context:
-                // - The comment appears after what looks like a declaration or definition
-                // - The comment is positioned in a way that suggests it was meant as documentation
-                
-                // For the initial implementation, let's warn about LINE_COMMENTS that appear
-                // immediately after tokens on the same line. This will catch the obvious cases
-                // of misplaced /// comments. We may need to refine this later.
-                
-                warn tokenTup (FSComp.SR.xmlDocNotFirstOnLine())
-        | _ -> 
-            () // Not a comment, nothing to check
-
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) =
           match tokenTup.Token with
           | HASH_IDENT ident ->
@@ -2777,8 +2750,6 @@ type LexFilterImpl (
               true
 
           | _ ->
-              // Check for XML documentation comments positioned incorrectly after code
-              checkXmlDocCommentPosition tokenTup
               false
 
     and pushCtxtSeqBlock fallbackToken addBlockEnd =
