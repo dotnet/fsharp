@@ -622,7 +622,7 @@ val reduceTyconRefAbbrevMeasureable: TyconRef -> Measure
 /// <param name="canShortcut">
 /// <c>true</c> to allow shortcutting of type parameter equation chains during stripping
 /// </param>
-val stripTyEqnsA: TcGlobals -> canShortcut:bool -> TType -> TType
+val stripTyEqnsA: TcGlobals -> canShortcut: bool -> TType -> TType
 
 /// <summary>
 /// Normalizes types.
