@@ -508,14 +508,24 @@ module FSharpExprConvert =
 
     and GetWitnessArgs cenv (env: ExprTranslationEnv) (vref: ValRef) m tps tyargs : FSharpExpr list =
         let g = cenv.g
-        if g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing) && not env.suppressWitnesses then 
-            let witnessExprs = 
+        if g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing) && not env.suppressWitnesses then
+            let witnessExprs =
                 match ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs with
                 // There is a case where optimized code makes expressions that do a shift-left on the 'char'
                 // type.  There is no witness for this case.  This is due to the code
                 //    let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
-                // in FSharp.Core. 
+                // in FSharp.Core.
                 | ErrorResult _  when vref.LogicalName = "op_LeftShift" && List.isSingleton tyargs -> []
+                // Auto-generated structural comparison/equality code for generic types may call
+                // comparison/equality intrinsics with type parameters that have ComparisonConditionalOn
+                // or EqualityConditionalOn but not actual constraints. In this case, there's no witness
+                // available at compile time - the constraint is satisfied conditionally at runtime.
+                // See https://github.com/ionide/FSharp.Analyzers.SDK/issues/276
+                | ErrorResult _ when
+                    tyargs |> List.exists (fun ty ->
+                        match tryDestTyparTy g ty with
+                        | ValueSome tp -> tp.ComparisonConditionalOn || tp.EqualityConditionalOn
+                        | ValueNone -> false) -> []
                 | res -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 
