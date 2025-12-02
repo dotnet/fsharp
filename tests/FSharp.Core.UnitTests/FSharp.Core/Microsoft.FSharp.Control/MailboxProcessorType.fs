@@ -203,7 +203,7 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(Some("Scanned 1 Disposed"), result)
 
-    [<Fact>]
+    [<Fact(Timeout = 120000)>] // 2 minute timeout to prevent test host crash from race conditions
     member this.``Receive Races with Post``() =
         let receiveEv = new AutoResetEvent(false)
         let postEv = new AutoResetEvent(false)
@@ -238,7 +238,7 @@ type MailboxProcessorType() =
         postEv.Set() |> ignore
         post.Wait()
 
-    [<Fact>]
+    [<Fact(Timeout = 120000)>] // 2 minute timeout to prevent test host crash from race conditions
     member this.``Receive Races with Post on timeout``() =
         let receiveEv = new AutoResetEvent(false)
         let postEv = new AutoResetEvent(false)
@@ -279,7 +279,7 @@ type MailboxProcessorType() =
         postEv.Set() |> ignore
         post.Wait()
 
-    [<Fact>]
+    [<Fact(Timeout = 120000)>] // 2 minute timeout to prevent test host crash from race conditions
     member this.``TryReceive Races with Post on timeout``() =
         let receiveEv = new AutoResetEvent(false)
         let postEv = new AutoResetEvent(false)

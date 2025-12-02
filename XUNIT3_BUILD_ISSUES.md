@@ -37,4 +37,31 @@ All build issues have been resolved. The migration is complete and verified.
 - All projects build successfully
 - 5,939 tests pass
 - No build errors
-- One pre-existing flaky test may cause timeout (MailboxProcessorType.TryReceive) but this is not related to xUnit3 migration
+
+## Known Pre-existing Flaky Tests (Not Related to xUnit3 Migration)
+
+### MailboxProcessorType Race Condition Tests
+
+The following tests in `tests/FSharp.Core.UnitTests/FSharp.Core/Microsoft.FSharp.Control/MailboxProcessorType.fs` are known to be flaky and can cause test host process crashes:
+
+- `Receive Races with Post on timeout` (lines 242-280)
+- `TryReceive Races with Post on timeout` (lines 283-321)
+
+**Root Cause Analysis:**
+1. These tests run tight loops (10,000 iterations) with race conditions between `Receive`/`TryReceive` and `Post`
+2. Each iteration uses `finishedEv.WaitOne(100)` with a 100ms timeout
+3. The tests use `AutoResetEvent` synchronization primitives that can deadlock under thread pool starvation
+4. The `isErrored.IsCompleted` check combined with `raise` can cause unhandled exceptions that crash the test host
+
+**Why This Can Crash Test Host:**
+- If a race condition leads to a deadlock, the `while not (finishedEv.WaitOne(100))` loop spins forever
+- If `isErrored` completes with an error, the `raise <| Exception(...)` throws an unhandled exception
+- Under CI conditions with resource contention, thread pool starvation can cause these patterns to fail
+
+**This is a pre-existing issue** that predates the xUnit3 migration. The tests are intentionally testing race conditions which makes them inherently flaky.
+
+**Potential Fix Options (for future consideration):**
+1. Add `[<Fact(Timeout = 60000)>]` to limit test runtime
+2. Reduce iteration count from 10,000 to a smaller number
+3. Add `[<Fact(Skip = "Flaky race condition test")>]` to skip in CI
+4. Refactor to use more deterministic synchronization patterns
