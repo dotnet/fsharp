@@ -93,7 +93,7 @@ let (|Members|MemberSigs|) = function
 let (|Decls|LetBindings|ValSig|LetOrUse|) = function
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])])) ->
+                SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse({ Range = range; Bindings = bindings }))])])])) ->
         LetOrUse(range, bindings)
 
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
@@ -103,7 +103,7 @@ let (|Decls|LetBindings|ValSig|LetOrUse|) = function
 
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Expr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
+                SynModuleDecl.Expr(expr = SynExpr.LetOrUse({ Range = range; Bindings = bindings }))])])) ->
         LetBindings(range, bindings)
 
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
@@ -587,7 +587,7 @@ let y = x
     match parseResults.ParseTree with
     | Decls([SynModuleDecl.Let(range = range1; bindings = [binding1])
              SynModuleDecl.Let(range = range2; bindings = [binding2])]) ->
-        assertRange (2, 0) (6, 9) range1
+        assertRange (2, 0) (6, 12) range1
         assertRange (2, 0) (6, 9) binding1.RangeOfBindingWithRhs
         assertRange (8, 0) (12, 9) range2
         assertRange (8, 0) (12, 9) binding2.RangeOfBindingWithRhs

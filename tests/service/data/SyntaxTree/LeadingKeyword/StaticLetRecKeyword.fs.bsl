@@ -35,11 +35,11 @@ ImplFile
                                   ((3,4--3,10), (3,11--3,14), (3,15--3,18))
                                InlineKeyword = None
                                EqualsRange = Some (3,30--3,31) })], true, true,
-                         (3,4--3,41))], (3,4--3,41)), [], None, (2,5--3,41),
-                  { LeadingKeyword = Type (2,0--2,4)
-                    EqualsRange = Some (2,7--2,8)
-                    WithKeyword = None })], (2,0--3,41))], PreXmlDocEmpty, [],
-          None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
-      { ConditionalDirectives = []
-        WarnDirectives = []
-        CodeComments = [] }, set []))
+                         (3,4--3,41), { InKeyword = None })], (3,4--3,41)), [],
+                  None, (2,5--3,41), { LeadingKeyword = Type (2,0--2,4)
+                                       EqualsRange = Some (2,7--2,8)
+                                       WithKeyword = None })], (2,0--3,41))],
+          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
+      (true, true), { ConditionalDirectives = []
+                      WarnDirectives = []
+                      CodeComments = [] }, set []))

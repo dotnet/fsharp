@@ -82,7 +82,7 @@ module XmlDocParsing =
                 | SynModuleDecl.NestedModule(decls = decls) ->
                     for decl in decls do
                         yield! getXmlDocablesSynModuleDecl decl
-                | SynModuleDecl.Let(_, synBindingList, range) ->
+                | SynModuleDecl.Let(bindings = synBindingList; range = range) ->
                     let anyXmlDoc =
                         synBindingList
                         |> List.exists (fun (SynBinding(xmlDoc = preXmlDoc)) -> not (isEmptyXmlDoc preXmlDoc))
