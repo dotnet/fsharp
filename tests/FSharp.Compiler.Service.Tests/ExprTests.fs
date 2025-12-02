@@ -3520,34 +3520,40 @@ module internal ProjectForWitnessConditionalComparison =
     /// This triggers the bug because it forces conversion of auto-generated comparison code
     let walkAllExpressions (source : string) =
         let fileName1 = System.IO.Path.ChangeExtension(getTemporaryFileName (), ".fs")
-        FileSystem.OpenFileForWriteShim(fileName1).Write(source)
-        let options = createProjectOptions [source] []
-        let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
-        let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
+        try
+            FileSystem.OpenFileForWriteShim(fileName1).Write(source)
+            let options = createProjectOptions [source] []
+            let exprChecker = FSharpChecker.Create(keepAssemblyContents=true, useTransparentCompiler=CompilerAssertHelpers.UseTransparentCompiler)
+            let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
-        if wholeProjectResults.Diagnostics.Length > 0 then
-            for diag in wholeProjectResults.Diagnostics do
-                printfn "Diagnostic: %s" diag.Message
+            if wholeProjectResults.Diagnostics.Length > 0 then
+                for diag in wholeProjectResults.Diagnostics do
+                    printfn "Diagnostic: %s" diag.Message
 
-        for implFile in wholeProjectResults.AssemblyContents.ImplementationFiles do
-            // Walk all declarations and their expressions, including ImmediateSubExpressions
-            let rec walkExpr (e: FSharpExpr) =
-                // Access ImmediateSubExpressions - this is what triggers the bug
-                for subExpr in e.ImmediateSubExpressions do
-                    walkExpr subExpr
+            for implFile in wholeProjectResults.AssemblyContents.ImplementationFiles do
+                // Walk all declarations and their expressions, including ImmediateSubExpressions
+                let rec walkExpr (e: FSharpExpr) =
+                    // Access ImmediateSubExpressions - this is what triggered #19118
+                    for subExpr in e.ImmediateSubExpressions do
+                        walkExpr subExpr
 
-            let rec walkDecl d =
-                match d with
-                | FSharpImplementationFileDeclaration.Entity (_, subDecls) ->
-                    for subDecl in subDecls do
-                        walkDecl subDecl
-                | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (_, _, e) ->
-                    walkExpr e
-                | FSharpImplementationFileDeclaration.InitAction e ->
-                    walkExpr e
+                let rec walkDecl d =
+                    match d with
+                    | FSharpImplementationFileDeclaration.Entity (_, subDecls) ->
+                        for subDecl in subDecls do
+                            walkDecl subDecl
+                    | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (_, _, e) ->
+                        walkExpr e
+                    | FSharpImplementationFileDeclaration.InitAction e ->
+                        walkExpr e
 
-            for decl in implFile.Declarations do
-                walkDecl decl
+                for decl in implFile.Declarations do
+                    walkDecl decl
+        finally
+            try
+                FileSystem.FileDeleteShim fileName1
+            with
+            | _ -> ()
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU with no constraints should not crash`` () =
@@ -3559,7 +3565,7 @@ module M
 type Bar<'appEvent> =
     | Wibble of 'appEvent
 """
-    // This should not throw - before the fix it crashes with ConstraintSolverMissingConstraint
+    // This should not throw. Before the fix, it crashed with ConstraintSolverMissingConstraint.
     ProjectForWitnessConditionalComparison.walkAllExpressions source
 
 [<Fact>]
@@ -3609,7 +3615,8 @@ and Inner<'b> =
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU with explicit comparison constraint works`` () =
-    // When the type parameter HAS the comparison constraint, witness generation should work
+    // When the type parameter has the comparison constraint, witness generation should work;
+    // no crash occurred even before the bug was fixed. This test is here for completeness.
     let source = """
 module M
 
@@ -3620,7 +3627,7 @@ type WithConstraint<'a when 'a : comparison> =
 
 [<Fact>]
 let ``ImmediateSubExpressions - non-generic DU works`` () =
-    // Non-generic types should work fine (no generics = no witness issues)
+    // Non-generic types always worked fine (no generics = no witness issues). This test is here for completeness.
     let source = """
 module M
 
@@ -3632,7 +3639,8 @@ type SimpleUnion =
 
 [<Fact>]
 let ``ImmediateSubExpressions - generic DU with NoComparison attribute should not crash`` () =
-    // With NoComparison, no comparison code is generated, so no crash should occur
+    // With NoComparison, no comparison code is generated, so no crash ever occurred even before the bug was fixed.
+    // This test is here for completeness.
     let source = """
 module M
 
