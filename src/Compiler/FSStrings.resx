@@ -359,10 +359,10 @@
   </data>
   <data name="Parser.TOKEN.GREATER.BAR.RBRACE" xml:space="preserve">
     <value>symbol '&gt;|}'</value>
-  </data>  
+  </data>
   <data name="Parser.TOKEN.RQUOTE.BAR.RBRACE" xml:space="preserve">
     <value>symbol '@&gt;|}' or '@@&gt;|}'</value>
-  </data>  
+  </data>
   <data name="Parser.TOKEN.GREATER.BAR.RBRACK" xml:space="preserve">
     <value>symbol '&gt;|]'</value>
   </data>
@@ -1154,5 +1154,8 @@
   </data>
   <data name="NoConstructorsAvailableForType" xml:space="preserve">
     <value>No constructors are available for the type '{0}'</value>
+  </data>
+  <data name="Parser.TOKEN.DOT.DOT.DOT" xml:space="preserve">
+    <value>symbol '...'</value>
   </data>
 </root>

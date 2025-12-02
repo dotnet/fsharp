@@ -28,27 +28,29 @@ open FSharp.Compiler.SyntaxTrivia
 /// which we here convert to
 ///
 /// { x with A = { x.A with B = 10; C = "" } }
-let GroupUpdatesToNestedFields (fields: ((Ident list * Ident) * SynExpr option) list) =
+let GroupUpdatesToNestedFields (fields: (ExplicitOrSpread<(Ident list * Ident) * SynExpr option, (Ident list * Ident) * 'Spread>) list) =
     let rec groupIfNested res xs =
         match xs with
         | [] -> res
         | [ x ] -> x :: res
         | x :: y :: ys ->
             match x, y with
-            | (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))), (_, Some(SynExpr.Record(recordFields = fields2))) ->
+            | ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1, m))),
+              ExplicitOrSpread.Explicit(_, Some(SynExpr.Record(recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
+                    ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.Record(baseInfo, copyInfo, fields1 @ fields2, m)))
 
                 groupIfNested res (reducedRecd :: ys)
-            | (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))), (_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
+            | ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1, m, trivia))),
+              ExplicitOrSpread.Explicit(_, Some(SynExpr.AnonRecd(recordFields = fields2))) ->
                 let reducedRecd =
-                    (lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
+                    ExplicitOrSpread.Explicit(lidwid, Some(SynExpr.AnonRecd(isStruct, copyInfo, fields1 @ fields2, m, trivia)))
 
                 groupIfNested res (reducedRecd :: ys)
             | _ -> groupIfNested (x :: res) (y :: ys)
 
     fields
-    |> List.groupBy (fun ((_, field), _) -> field.idText)
+    |> List.groupBy (fun (ExplicitOrSpread.Explicit((_, field), _) | ExplicitOrSpread.Spread((_, field), _)) -> field.idText)
     |> List.collect (fun (_, fields) ->
         if fields.Length < 2 then
             fields
@@ -122,18 +124,28 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
             | Item.AnonRecdField(
                 anonInfo = {
                                AnonRecdTypeInfo.TupInfo = TupInfo.Const isStruct
-                           }) ->
-                let fields = [ LongIdentWithDots([ fieldId ], []), None, nestedField ]
+                           }
+                range = m) ->
+                let fields =
+                    [
+                        SynExprAnonRecordFieldOrSpread.Field(
+                            SynExprAnonRecordField(LongIdentWithDots([ fieldId ], []), None, nestedField, m),
+                            None
+                        )
+                    ]
+
                 SynExpr.AnonRecd(isStruct, copyInfo outerFieldId, fields, outerFieldId.idRange, { OpeningBraceRange = range0 })
             | _ ->
                 let fields =
                     [
-                        SynExprRecordField(
-                            (LongIdentWithDots([ fieldId ], []), true),
-                            None,
-                            Some nestedField,
-                            unionRanges fieldId.idRange nestedField.Range,
-                            None
+                        SynExprRecordFieldOrSpread.Field(
+                            SynExprRecordField(
+                                (LongIdentWithDots([ fieldId ], []), true),
+                                None,
+                                Some nestedField,
+                                unionRanges fieldId.idRange nestedField.Range,
+                                None
+                            )
                         )
                     ]
 

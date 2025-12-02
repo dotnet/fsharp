@@ -446,7 +446,7 @@ let v = {| A = 1; A = 2 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            (Error 3522, Line 2, Col 19, Line 2, Col 24, "The field 'A' appears multiple times in this record expression.")
         ]
 
     [<Fact>]
@@ -457,8 +457,8 @@ let v = {| A = 1; A = 2; A = 3 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 19, Line 2, Col 20, "The field 'A' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 19, Line 2, Col 24, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 26, Line 2, Col 31, "The field 'A' appears multiple times in this record expression."
         ]
         
     [<Fact>]
@@ -469,8 +469,8 @@ let v = {| A = 0; B = 2; A = 5; B = 6 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 19, Line 2, Col 20, "The field 'B' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 26, Line 2, Col 31, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 33, Line 2, Col 38, "The field 'B' appears multiple times in this record expression."
         ]
         
     [<Fact>]
@@ -481,7 +481,7 @@ let v = {| A = 2; C = "W"; A = 8; B = 6 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 28, Line 2, Col 33, "The field 'A' appears multiple times in this record expression."
         ]
 
     [<Fact>]
@@ -492,8 +492,8 @@ let v = {| A = 0; C = ""; A = 1; B = 2; A = 5 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 13, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 27, Line 2, Col 28, "The field 'A' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 27, Line 2, Col 32, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 41, Line 2, Col 46, "The field 'A' appears multiple times in this record expression."
         ]
         
     [<Fact>]
@@ -504,8 +504,8 @@ let v = {| ``A`` = 0; B = 5; A = ""; B = 0 |}
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 3522, Line 2, Col 12, Line 2, Col 17, "The field 'A' appears multiple times in this record expression.")
-            (Error 3522, Line 2, Col 23, Line 2, Col 24, "The field 'B' appears multiple times in this record expression.")
+            Error 3522, Line 2, Col 30, Line 2, Col 36, "The field 'A' appears multiple times in this record expression."
+            Error 3522, Line 2, Col 38, Line 2, Col 43, "The field 'B' appears multiple times in this record expression."
         ]
             
     [<Fact>]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.EditorServices
 
@@ -830,7 +830,8 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.Inherit _ -> None
-                | SynMemberDefn.ImplicitInherit(_, expr, _, _, _) -> walkExpr expr
+                | SynMemberDefn.ImplicitInherit(_, expr, _, _, _)
+                | SynMemberDefn.Spread(SynExprSpread(expr = expr), _) -> walkExpr expr
 
         and walkBinding (SynBinding(expr = expr)) = walkExpr expr
 
@@ -850,7 +851,11 @@ module InterfaceStubGenerator =
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> List.tryPick walkExpr synExprList
 
                 | SynExpr.Record(_inheritOpt, _copyOpt, fields, _range) ->
-                    List.tryPick (fun (SynExprRecordField(expr = e)) -> Option.bind walkExpr e) fields
+                    List.tryPick
+                        (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = e)) -> Option.bind walkExpr e
+                        | SynExprRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> walkExpr e)
+                        fields
 
                 | SynExpr.New(_, _synType, synExpr, _range) -> walkExpr synExpr
 

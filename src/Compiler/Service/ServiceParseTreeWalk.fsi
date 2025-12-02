@@ -101,8 +101,8 @@ type SyntaxVisitorBase<'T> =
         range: range ->
             'T option
 
-    abstract VisitRecordDefn: path: SyntaxVisitorPath * fields: SynField list * range -> 'T option
-    default VisitRecordDefn: path: SyntaxVisitorPath * fields: SynField list * range -> 'T option
+    abstract VisitRecordDefn: path: SyntaxVisitorPath * fieldsAndSpreads: SynFieldOrSpread list * range -> 'T option
+    default VisitRecordDefn: path: SyntaxVisitorPath * fieldsAndSpreads: SynFieldOrSpread list * range -> 'T option
 
     abstract VisitUnionDefn: path: SyntaxVisitorPath * cases: SynUnionCase list * range -> 'T option
     default VisitUnionDefn: path: SyntaxVisitorPath * cases: SynUnionCase list * range -> 'T option

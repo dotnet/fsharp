@@ -895,15 +895,21 @@ val UnifyTupleTypeAndInferCharacteristics:
     'T list ->
         TupInfo * TTypes
 
+/// Helper used to check for duplicate fields in records.
+val CheckRecdExprDuplicateFields: elems: Ident list -> unit
+
 /// Helper used to check both record expressions and record patterns
 val BuildFieldMap:
     cenv: TcFileState ->
     env: TcEnv ->
     isPartial: bool ->
     ty: TType ->
-    flds: ((Ident list * Ident) * 'T) list ->
+    flds: ExplicitOrSpread<(Ident list * Ident) * 'Explicit, (Ident list * Ident) * 'Spread> list ->
     m: range ->
-        (TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list) option
+        (TypeInst *
+        TyconRef *
+        Map<string, ExplicitOrSpread<'Explicit, 'Spread>> *
+        (string * ExplicitOrSpread<'Explicit, 'Spread>) list) option
 
 /// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
 val TcPatLongIdentActivePatternCase:

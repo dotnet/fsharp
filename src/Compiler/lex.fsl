@@ -868,6 +868,8 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "..^" { DOT_DOT_HAT }
 
+ | "..." { DOT_DOT_DOT }
+
  | "." { DOT }
 
  | ":" { COLON }
