@@ -25,7 +25,7 @@
     <!-- 
       Use FSharpTargetsShim to redirect to the locally built targets file.
       This is how the .NET SDK supports testing against local F# builds.
-      See: dotnet/sdk src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
+      See https://github.com/dotnet/sdk/blob/main/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
     -->
     <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
   </PropertyGroup>
