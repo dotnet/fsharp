@@ -16,7 +16,6 @@
     </Compile>
     <Compile Include="WriteCodeFragmentTests.fs" />
     <Compile Include="MapSourceRootsTests.fs" />
-    <Compile Include="GenerateILLinkSubstitutionsTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

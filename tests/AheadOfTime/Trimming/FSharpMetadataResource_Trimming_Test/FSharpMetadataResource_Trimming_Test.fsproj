@@ -24,15 +24,8 @@
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
   
-  <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
-  
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="AssignTargetPaths">
-    <GenerateILLinkSubstitutions
-      AssemblyName="$(AssemblyName)"
-      IntermediateOutputPath="$(IntermediateOutputPath)">
-      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
-    </GenerateILLinkSubstitutions>
-  </Target>
+  <!-- Import the freshly built targets file to test the real product integration -->
+  <Import Project="$(MSBuildThisFileDirectory)../../../../src/FSharp.Build/Microsoft.FSharp.NetSdk.targets" />
 
   <ItemGroup>
     <Compile Include="..\Program.fs" />
