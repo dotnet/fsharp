@@ -24,8 +24,23 @@
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
   
-  <!-- Import the freshly built targets file to test the real product integration -->
-  <Import Project="$(MSBuildThisFileDirectory)../../../../src/FSharp.Build/Microsoft.FSharp.NetSdk.targets" />
+  <!-- Override the SDK's UsingTask to use the locally built FSharp.Build.dll -->
+  <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
+  
+  <!-- 
+    Override the SDK's GenerateFSharpILLinkSubstitutions target to use the locally built task.
+    This tests the actual product integration - the Output must match what's in Microsoft.FSharp.NetSdk.targets.
+    Currently this should be: <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
+    If the product targets are wrong, this test will fail.
+  -->
+  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="$(DisableILLinkSubstitutions) != 'true'">
+    <GenerateILLinkSubstitutions
+      AssemblyName="$(AssemblyName)"
+      IntermediateOutputPath="$(IntermediateOutputPath)">
+      <!-- This line MUST match the product's Microsoft.FSharp.NetSdk.targets exactly -->
+      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
+    </GenerateILLinkSubstitutions>
+  </Target>
 
   <ItemGroup>
     <Compile Include="..\Program.fs" />
