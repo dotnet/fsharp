@@ -460,6 +460,7 @@ module Keywords =
         // Track token position for XML doc comment checking
         args.lastTokenEndLine <- lexbuf.EndPos.Line
         args.lastTokenEndColumn <- lexbuf.EndPos.Column
+
         match keywordTable.TryGetValue s with
         | true, v ->
             match v with

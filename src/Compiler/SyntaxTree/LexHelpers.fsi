@@ -29,19 +29,21 @@ type LexResourceManager =
 
 /// The context applicable to all lexing functions (tokens, strings etc.)
 type LexArgs =
-    { conditionalDefines: string list
-      resourceManager: LexResourceManager
-      diagnosticsLogger: DiagnosticsLogger
-      applyLineDirectives: bool
-      pathMap: PathMap
-      mutable ifdefStack: LexerIfdefStack
-      mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
-      mutable stringNest: LexerInterpolatedStringNesting
-      mutable interpolationDelimiterLength: int
-      /// Tracks the line number of the last non-whitespace, non-comment token
-      mutable lastTokenEndLine: int
-      /// Tracks the end column of the last non-whitespace, non-comment token  
-      mutable lastTokenEndColumn: int }
+    {
+        conditionalDefines: string list
+        resourceManager: LexResourceManager
+        diagnosticsLogger: DiagnosticsLogger
+        applyLineDirectives: bool
+        pathMap: PathMap
+        mutable ifdefStack: LexerIfdefStack
+        mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
+        mutable stringNest: LexerInterpolatedStringNesting
+        mutable interpolationDelimiterLength: int
+        /// Tracks the line number of the last non-whitespace, non-comment token
+        mutable lastTokenEndLine: int
+        /// Tracks the end column of the last non-whitespace, non-comment token
+        mutable lastTokenEndColumn: int
+    }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
