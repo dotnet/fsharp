@@ -54,6 +54,12 @@ let fail args (lexbuf:UnicodeLexing.Lexbuf) msg dflt =
      args.diagnosticsLogger.ErrorR(Error(msg,m))
      dflt
 
+/// Update tracking of the last token position for XML doc comment position checking
+let updateLastTokenPos (args: LexArgs) (lexbuf: UnicodeLexing.Lexbuf) =
+    let endPos = lexbuf.EndPos
+    args.lastTokenEndLine <- endPos.Line
+    args.lastTokenEndColumn <- endPos.Column
+
 //--------------------------
 // Integer parsing
 
@@ -740,6 +746,10 @@ rule token (args: LexArgs) (skip: bool) = parse
  | "///" op_char*
      { // Match exactly 3 slash, 4+ slash caught by preceding rule
        let m = lexbuf.LexemeRange
+       // Check if there was a token on this line before this /// comment
+       // If lastTokenEndLine matches the current line, there's code before the comment
+       if args.lastTokenEndLine = m.StartLine then
+           warning (Error(FSComp.SR.xmlDocNotFirstOnLine(), m))
        let doc = lexemeTrimLeft lexbuf 3
        let sb = (new StringBuilder(100)).Append(doc)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
@@ -852,7 +862,7 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | '(' { LPAREN }
 
- | ')' { RPAREN }
+ | ')' { updateLastTokenPos args lexbuf; RPAREN }
 
  | '*' { STAR }
 

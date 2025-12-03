@@ -37,7 +37,11 @@ type LexArgs =
       mutable ifdefStack: LexerIfdefStack
       mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
-      mutable interpolationDelimiterLength: int }
+      mutable interpolationDelimiterLength: int
+      /// Tracks the line number of the last non-whitespace, non-comment token
+      mutable lastTokenEndLine: int
+      /// Tracks the end column of the last non-whitespace, non-comment token  
+      mutable lastTokenEndColumn: int }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
