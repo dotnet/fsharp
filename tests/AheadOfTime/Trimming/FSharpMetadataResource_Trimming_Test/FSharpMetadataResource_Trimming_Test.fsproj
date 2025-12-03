@@ -33,7 +33,7 @@
     Currently this should be: <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
     If the product targets are wrong, this test will fail.
   -->
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="$(DisableILLinkSubstitutions) != 'true'">
+  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="$(DisableILLinkSubstitutions) != 'true' and $(AssemblyName) != 'FSharp.Core'">
     <GenerateILLinkSubstitutions
       AssemblyName="$(AssemblyName)"
       IntermediateOutputPath="$(IntermediateOutputPath)">
