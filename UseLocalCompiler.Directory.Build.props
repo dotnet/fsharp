@@ -29,6 +29,7 @@
 
   <UsingTask Condition="'$(LoadLocalFSharpBuild)' == 'True'" TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
   <UsingTask Condition="'$(LoadLocalFSharpBuild)' == 'True'" TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
+  <UsingTask Condition="'$(LoadLocalFSharpBuild)' == 'True'" TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
 
   <ItemGroup>
     <Reference Include="$(LocalFSharpCompilerPath)/artifacts/bin/FSharp.Core/$(LocalFSharpCompilerConfiguration)/netstandard2.0/FSharp.Core.dll" />
