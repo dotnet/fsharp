@@ -5,6 +5,8 @@ module FSharp.Compiler.BuildGraph
 open System.Threading
 open System.Globalization
 
+open Internal.Utilities.Library
+
 [<RequireQualifiedAccess>]
 module GraphNode =
 
@@ -20,13 +22,13 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T>, cachedResultNode: Async<'T>) =
+type internal GraphNode<'T> private (computation: Async2<'T>, cachedResult: ValueOption<'T>, cachedResultNode: Async2<'T>) =
 
     let mutable computation = computation
     let mutable requestCount = 0
 
     let mutable cachedResult = cachedResult
-    let mutable cachedResultNode: Async<'T> = cachedResultNode
+    let mutable cachedResultNode: Async2<'T> = cachedResultNode
 
     let isCachedResultNodeNotNull () =
         not (obj.ReferenceEquals(cachedResultNode, null))
@@ -38,13 +40,15 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
         if isCachedResultNodeNotNull () then
             cachedResultNode
         else
-            async {
-                let! ct = Async.CancellationToken
+            async2 {
+                let! ct = Async2.CancellationToken
                 Interlocked.Increment(&requestCount) |> ignore
-                let enter = semaphore.WaitAsync(ct)
+
+                let mutable acquired = false
 
                 try
-                    do! enter |> Async.AwaitTask
+                    do! semaphore.WaitAsync(ct)
+                    acquired <- true
 
                     match cachedResult with
                     | ValueSome value -> return value
@@ -52,17 +56,15 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
                         Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
                         let! result = computation
                         cachedResult <- ValueSome result
-                        cachedResultNode <- async.Return result
+                        cachedResultNode <- Async2.fromValue result
                         computation <- Unchecked.defaultof<_>
                         return result
                 finally
-                    // At this point, the semaphore awaiter is either already completed or about to get canceled.
-                    // If calling Wait() does not throw an exception it means the semaphore was successfully taken and needs to be released.
-                    try
-                        enter.Wait()
-                        semaphore.Release() |> ignore
-                    with _ ->
-                        ()
+                    if acquired then
+                        try
+                            semaphore.Release() |> ignore
+                        with _ ->
+                            ()
 
                     Interlocked.Decrement(&requestCount) |> ignore
             }
@@ -74,7 +76,7 @@ type GraphNode<'T> private (computation: Async<'T>, cachedResult: ValueOption<'T
     member _.IsComputing = requestCount > 0
 
     static member FromResult(result: 'T) =
-        let nodeResult = async.Return result
+        let nodeResult = Async2.fromValue result
         GraphNode(nodeResult, ValueSome result, nodeResult)
 
     new(computation) = GraphNode(computation, ValueNone, Unchecked.defaultof<_>)

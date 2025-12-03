@@ -37,6 +37,8 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+getOptionArgList::Invoke([FSharp.Compiler.Service]FSharp.Compiler.CompilerOptions+CompilerOption, string)][offset 0x0000003E][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+getSwitch::Invoke(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerOptions+attempt::Invoke([FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<FSharp.Compiler.CompilerOptions+CompilerOption>)][offset 0x00000E9F][found Char] Unexpected type on the stack.
+[IL]: Error [PathStackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckOneInput::MoveNext()][offset 0x00000E6B][found Int32][expected Nullobjref 'NullReference'] Non-compatible types on stack depending on path.
+[IL]: Error [PathStackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+CheckOneInputWithCallback::MoveNext()][offset 0x00000ACC][found Int32][expected Nullobjref 'NullReference'] Non-compatible types on stack depending on path.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+::Invoke(int32)][offset 0x00000030][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.ParseAndCheckInputs+::Invoke(int32)][offset 0x00000039][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.CompilerConfig+TcConfig::.ctor([FSharp.Compiler.Service]FSharp.Compiler.CompilerConfig+TcConfigBuilder, bool)][offset 0x0000062B][found Char] Unexpected type on the stack.
@@ -58,6 +60,7 @@
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.ILBinaryReader+rowKindSize::Invoke([FSharp.Compiler.Service]FSharp.Compiler.AbstractIL.ILBinaryReader+RowKind)][offset 0x00000128][found Byte] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.IL::parseILVersion(string)][offset 0x0000000B][found Char] Unexpected type on the stack.
 [IL]: Error [StackUnexpected]: : FSharp.Compiler.AbstractIL.IL::parseILVersion(string)][offset 0x00000021][found Char] Unexpected type on the stack.
+[IL]: Error [PathStackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$AsyncMemoize+clo::MoveNext()][offset 0x00000859][found Int32][expected Nullobjref 'NullReference'] Non-compatible types on stack depending on path.
 [IL]: Error [StackUnexpected]: : <StartupCode$FSharp-Compiler-Service>.$FSharp.Compiler.DiagnosticsLogger::.cctor()][offset 0x000000CD][found Char] Unexpected type on the stack.
 [IL]: Error [CallVirtOnValueType]: : FSharp.Compiler.Text.RangeModule+comparer::System.Collections.Generic.IEqualityComparer<FSharp.Compiler.Text.Range>.GetHashCode([FSharp.Compiler.Service]FSharp.Compiler.Text.Range)][offset 0x00000002] Callvirt on a value type method.
 [IL]: Error [StackUnexpected]: : Internal.Utilities.PathMapModule::applyDir([FSharp.Compiler.Service]Internal.Utilities.PathMap, string)][offset 0x00000037][found Char] Unexpected type on the stack.

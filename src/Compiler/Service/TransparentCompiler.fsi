@@ -21,6 +21,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
+open Internal.Utilities.Library
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -198,19 +199,19 @@ type internal TransparentCompiler =
 
     member FindReferencesInFile:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * symbol: FSharpSymbol * userOpName: string ->
-            Async<range seq>
+            Async2<range seq>
 
     member GetAssemblyData:
         projectSnapshot: ProjectSnapshot.ProjectSnapshot * fileName: string * _userOpName: string ->
-            Async<ProjectAssemblyDataResult>
+            Async2<ProjectAssemblyDataResult>
 
     member ParseAndCheckFileInProject:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * userOpName: string ->
-            Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+            Async2<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     member ParseFile:
         fileName: string * projectSnapshot: ProjectSnapshot.ProjectSnapshot * _userOpName: 'a ->
-            Async<FSharpParseFileResults>
+            Async2<FSharpParseFileResults>
 
     member SetCacheSize: cacheSize: CacheSizes -> unit
     member SetCacheSizeFactor: sizeFactor: int -> unit

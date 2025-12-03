@@ -6,6 +6,7 @@ open System
 open System.IO
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
+open Internal.Utilities.Library
 
 [<RequireQualifiedAccess>]
 type TextContainer =
@@ -27,7 +28,7 @@ type FSharpSource internal () =
 
     abstract TimeStamp: DateTime
 
-    abstract GetTextContainer: unit -> Async<TextContainer>
+    abstract GetTextContainer: unit -> Async2<TextContainer>
 
 type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime, openStream: unit -> Stream) =
     inherit FSharpSource()
@@ -37,7 +38,7 @@ type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime,
     override _.TimeStamp = timeStamp
 
     override _.GetTextContainer() =
-        openStream () |> TextContainer.Stream |> async.Return
+        async2 { return openStream () |> TextContainer.Stream }
 
 type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
     inherit FSharpSource()
@@ -47,8 +48,7 @@ type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes:
     override _.TimeStamp = timeStamp
 
     override _.GetTextContainer() =
-        TextContainer.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
-        |> async.Return
+        async2 { return TextContainer.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream) }
 
 type private FSharpSourceFromFile(filePath: string) =
     inherit FSharpSource()
@@ -57,9 +57,9 @@ type private FSharpSourceFromFile(filePath: string) =
 
     override _.TimeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-    override _.GetTextContainer() = TextContainer.OnDisk |> async.Return
+    override _.GetTextContainer() = async2 { return TextContainer.OnDisk }
 
-type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText) =
+type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText: unit -> Async<ISourceText option>) =
     inherit FSharpSource()
 
     override _.FilePath = filePath
@@ -67,7 +67,7 @@ type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText) =
     override _.TimeStamp = getTimeStamp ()
 
     override _.GetTextContainer() =
-        async {
+        async2 {
             let! sourceOpt = getSourceText ()
 
             return
