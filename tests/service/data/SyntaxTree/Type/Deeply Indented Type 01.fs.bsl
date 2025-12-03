@@ -58,9 +58,9 @@ ImplFile
                               { LeadingKeyword = Let (9,16--9,19)
                                 InlineKeyword = None
                                 EqualsRange = Some (9,22--9,23) })],
-                          (9,16--9,25))], false, (8,12--9,25),
-                      { ModuleKeyword = Some (8,12--8,18)
-                        EqualsRange = Some (8,32--8,33) });
+                          (9,16--9,25), { InKeyword = None })], false,
+                      (8,12--9,25), { ModuleKeyword = Some (8,12--8,18)
+                                      EqualsRange = Some (8,32--8,33) });
                    Exception
                      (SynExceptionDefn
                         (SynExceptionDefnRepr
