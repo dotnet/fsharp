@@ -22,25 +22,13 @@
     <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>  
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
+    <!-- 
+      Use FSharpTargetsShim to redirect to the locally built targets file.
+      This is how the .NET SDK supports testing against local F# builds.
+      See: dotnet/sdk src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
+    -->
+    <FSharpTargetsShim>$(LocalFSharpBuildBinPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
   </PropertyGroup>
-  
-  <!-- Override the SDK's UsingTask to use the locally built FSharp.Build.dll -->
-  <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" Override="true" />
-  
-  <!-- 
-    Override the SDK's GenerateFSharpILLinkSubstitutions target to use the locally built task.
-    This tests the actual product integration - the Output must match what's in Microsoft.FSharp.NetSdk.targets.
-    Currently this should be: <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
-    If the product targets are wrong, this test will fail.
-  -->
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="$(DisableILLinkSubstitutions) != 'true' and $(AssemblyName) != 'FSharp.Core'">
-    <GenerateILLinkSubstitutions
-      AssemblyName="$(AssemblyName)"
-      IntermediateOutputPath="$(IntermediateOutputPath)">
-      <!-- This line MUST match the product's Microsoft.FSharp.NetSdk.targets exactly -->
-      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
-    </GenerateILLinkSubstitutions>
-  </Target>
 
   <ItemGroup>
     <Compile Include="..\Program.fs" />
