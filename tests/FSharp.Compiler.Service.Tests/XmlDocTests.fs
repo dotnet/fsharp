@@ -909,8 +909,6 @@ type B =
     parseResults
     |> checkParsingErrors [|
         Warning 3879, Line 5, Col 11, Line 5, Col 14, "XML documentation comments should be the first non-whitespace text on a line."
-        Warning 3879, Line 7, Col 16, Line 7, Col 19, "XML documentation comments should be the first non-whitespace text on a line."
-        Warning 3879, Line 9, Col 16, Line 9, Col 19, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."
         Information 3520, Line 7, Col 16, Line 7, Col 22, "XML comment is not placed on a valid language element."
         Information 3520, Line 9, Col 16, Line 9, Col 22, "XML comment is not placed on a valid language element."
