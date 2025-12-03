@@ -63,8 +63,6 @@ type LexArgs =
         mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
         mutable stringNest: LexerInterpolatedStringNesting
         mutable interpolationDelimiterLength: int
-        /// Tracks the line number of the last non-whitespace token seen
-        mutable lastNonWhitespaceTokenLine: int
     }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -87,7 +85,6 @@ let mkLexargs
         stringNest = []
         pathMap = pathMap
         interpolationDelimiterLength = 0
-        lastNonWhitespaceTokenLine = 0
     }
 
 /// Register the lexbuf and call the given function
@@ -448,13 +445,9 @@ module Keywords =
         if IsCompilerGeneratedName s then
             warning (Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved (), lexbuf.LexemeRange))
 
-        // Track that we've seen a non-whitespace token on this line
-        args.lastNonWhitespaceTokenLine <- lexbuf.StartPos.Line
         args.resourceManager.InternIdentifierToken s
 
     let KeywordOrIdentifierToken args (lexbuf: Lexbuf) s =
-        // Track that we've seen a non-whitespace token on this line  
-        args.lastNonWhitespaceTokenLine <- lexbuf.StartPos.Line
         match keywordTable.TryGetValue s with
         | true, v ->
             match v with
