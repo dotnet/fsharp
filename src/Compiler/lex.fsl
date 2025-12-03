@@ -418,6 +418,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | int
      { let s = removeUnderscores (lexeme lexbuf)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
+       updateLastTokenPos args lexbuf
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
@@ -428,6 +429,7 @@ rule token (args: LexArgs) (skip: bool) = parse
  | int32
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator.
+       updateLastTokenPos args lexbuf
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
@@ -490,10 +492,12 @@ rule token (args: LexArgs) (skip: bool) = parse
      }
 
  | ieee64
-     { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
+     { updateLastTokenPos args lexbuf
+       IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal
-     { try
+     { updateLastTokenPos args lexbuf
+       try
           let s = removeUnderscores (lexemeTrimRight lexbuf 1)
           // This implements a range check for decimal literals
           let d = System.Decimal.Parse(s,System.Globalization.NumberStyles.AllowExponent ||| System.Globalization.NumberStyles.Number,System.Globalization.CultureInfo.InvariantCulture)
@@ -920,13 +924,13 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | "[<" { LBRACK_LESS }
 
- | "]" { RBRACK }
+ | "]" { updateLastTokenPos args lexbuf; RBRACK }
 
- | "|]" { BAR_RBRACK }
+ | "|]" { updateLastTokenPos args lexbuf; BAR_RBRACK }
 
- | "|}" { BAR_RBRACE }
+ | "|}" { updateLastTokenPos args lexbuf; BAR_RBRACE }
 
- | ">]" { GREATER_RBRACK }
+ | ">]" { updateLastTokenPos args lexbuf; GREATER_RBRACK }
 
  | "{"
      {
@@ -976,10 +980,12 @@ rule token (args: LexArgs) (skip: bool) = parse
            // will be reported w.r.t. the first '{'
            args.stringNest <- (counter - 1, style, d, altR, m) :: rest
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+           updateLastTokenPos args lexbuf
            RBRACE cont
 
        | _ ->
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+           updateLastTokenPos args lexbuf
            RBRACE cont
      }
 

@@ -523,6 +523,9 @@ let ///f2
 
     parseResults
     |> checkParsingErrors [|
+        Warning 3879, Line 3, Col 4, Line 3, Col 7, "XML documentation comments should be the first non-whitespace text on a line."
+        Warning 3879, Line 4, Col 8, Line 4, Col 11, "XML documentation comments should be the first non-whitespace text on a line."
+        Warning 3879, Line 5, Col 15, Line 5, Col 18, "XML documentation comments should be the first non-whitespace text on a line."
         Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
         Information 3520, Line 4, Col 8, Line 4, Col 13, "XML comment is not placed on a valid language element."
         Information 3520, Line 5, Col 15, Line 5, Col 20, "XML comment is not placed on a valid language element."
