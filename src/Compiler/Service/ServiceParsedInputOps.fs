@@ -834,7 +834,7 @@ module ParsedInput =
                 walkExprWithKind (Some EntityKind.Type) e
                 |> Option.orElseWith (fun () -> List.tryPick walkType tys)
 
-            | SynExpr.LetOrUse(bindings = bindings; body = e) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = e }) ->
                 List.tryPick walkBinding bindings
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
@@ -906,7 +906,7 @@ module ParsedInput =
 
             | SynMemberDefn.ImplicitInherit(t, e, _, _, _) -> walkType t |> Option.orElseWith (fun () -> walkExpr e)
 
-            | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
+            | SynMemberDefn.LetBindings(bindings = bindings) -> List.tryPick walkBinding bindings
 
             | SynMemberDefn.Interface(interfaceType = t; members = members) ->
                 walkType t
@@ -990,7 +990,7 @@ module ParsedInput =
 
             | SynModuleDecl.Open _ -> None
 
-            | SynModuleDecl.Let(_, bindings, _) -> List.tryPick walkBinding bindings
+            | SynModuleDecl.Let(bindings = bindings) -> List.tryPick walkBinding bindings
 
             | SynModuleDecl.Expr(expr, _) -> walkExpr expr
 
@@ -2127,7 +2127,7 @@ module ParsedInput =
                 List.iter walkType tys
                 walkExpr e
 
-            | SynExpr.LetOrUse(bindings = bindings; body = e) ->
+            | SynExpr.LetOrUse({ Bindings = bindings; Body = e }) ->
                 List.iter walkBinding bindings
                 walkExpr e
 
@@ -2252,7 +2252,7 @@ module ParsedInput =
             | SynMemberDefn.ImplicitInherit(t, e, _, _, _) ->
                 walkType t
                 walkExpr e
-            | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.iter walkBinding bindings
+            | SynMemberDefn.LetBindings(bindings = bindings) -> List.iter walkBinding bindings
             | SynMemberDefn.Interface(interfaceType = t; members = members) ->
                 walkType t
                 members |> Option.iter (List.iter walkMember)
@@ -2331,7 +2331,7 @@ module ParsedInput =
             | SynModuleDecl.NestedModule(moduleInfo = info; decls = modules) ->
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
-            | SynModuleDecl.Let(_, bindings, _) -> List.iter walkBinding bindings
+            | SynModuleDecl.Let(bindings = bindings) -> List.iter walkBinding bindings
             | SynModuleDecl.Expr(expr, _) -> walkExpr expr
             | SynModuleDecl.Types(types, _) -> List.iter walkTypeDefn types
             | SynModuleDecl.Attributes(Attributes attrs, _) -> List.iter walkAttribute attrs
