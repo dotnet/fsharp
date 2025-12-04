@@ -118,11 +118,18 @@ In `src/Compiler/Checking/import.fs`, the `ImportILTypeDef` function was storing
 
 ### Fix Applied
 Modified `ImportILTypeDef` to:
-1. Check if nullness features are enabled (`amap.g.langFeatureNullness && amap.g.checkNullness`)
-2. If enabled: immediately read attrs with `tdef.CustomAttrsStored.GetCustomAttrs(tdef.MetadataIndex)` and wrap in `Given`
-3. If disabled: use empty attributes to avoid any reference
+1. Added type annotation `(amap: ImportMap)` to fix type inference
+2. Check if nullness features are enabled (`amap.g.langFeatureNullness && amap.g.checkNullness`)
+3. If enabled: immediately read attrs with `tdef.CustomAttrsStored.GetCustomAttrs(tdef.MetadataIndex)` and wrap in `Given`
+4. If disabled: use empty attributes to avoid any reference
 
 This prevents the closure from keeping large `ILTypeDef` objects alive.
+
+### Validation Status
+**Pending**: After CI builds the fixed compiler, the 5000-module experiment should be repeated to verify:
+- Reduced memory growth rate
+- Stable or reduced `ImportILTypeDef@712` closure count
+- Improved CPU utilization over time
 
 ## Key Findings
 
